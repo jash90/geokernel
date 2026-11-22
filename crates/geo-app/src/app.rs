@@ -21,6 +21,7 @@ pub fn open(app: &mut App, path: &Path) {
     match crate::cli::load_into(&mut app.wb, path) {
         Ok(()) => {
             app.load_error = None;
+            app.source_path = Some(path.into());
             if app.wb.file_view().is_some() {
                 app.decor = geo_app_core::app::Decor::for_document(&app.wb);
             }
@@ -175,14 +176,21 @@ fn save_dialog(app: &mut App, ctx: &egui::Context) {
     let Some(path) = &mut app.save_path else {
         return;
     };
+    let (skipped, mismatched) = app.wb.file_import_losses();
+    let incomplete = skipped != 0 || mismatched != 0;
     let response = egui::Modal::new(egui::Id::unique("save-ggb")).show(ctx, |ui| {
         ui.heading(text::label(Label::SaveAsGgb));
+        if incomplete {
+            ui.label(format!("Zapis niedostępny. Pominięte obiekty: {skipped}. Niezgodne wartości: {mismatched}."));
+        } else {
+            ui.label("Biblioteka JavaScript nie zostanie zapisana. Skrypty obiektów będą wyłączone.");
+        }
         ui.label(text::label(Label::SavePath));
         ui.add(egui::TextEdit::singleline(path).desired_width(320.0));
         ui.horizontal(|ui| {
             (
                 ui.add_enabled(
-                    !path.trim().is_empty(),
+                    !incomplete && !path.trim().is_empty(),
                     egui::Button::new(text::label(Label::SaveFile)),
                 )
                 .clicked(),
@@ -193,7 +201,7 @@ fn save_dialog(app: &mut App, ctx: &egui::Context) {
     });
     let (save, cancel) = response.inner;
     if save {
-        let path = Path::new(path.trim()).with_extension("ggb");
+        let path = ggb_path(Path::new(path.trim()));
         if let Err(error) = save_to(app, &path) {
             app.load_error = Some(format!(
                 "{} ({})\n{error}",
@@ -205,6 +213,39 @@ fn save_dialog(app: &mut App, ctx: &egui::Context) {
     if save || cancel || response.should_close() {
         app.save_path = None;
     }
+}
+
+fn has_ggb_extension(path: &Path) -> bool {
+    path.extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("ggb"))
+}
+
+fn ggb_path(path: &Path) -> std::path::PathBuf {
+    let mut path = path.to_path_buf();
+    if !has_ggb_extension(&path) {
+        path.as_mut_os_string().push(".ggb");
+    }
+    path
+}
+
+pub(crate) fn default_save_path(source: Option<&Path>) -> String {
+    let path = source.map_or_else(
+        || "construction.ggb".into(),
+        |path| {
+            if has_ggb_extension(path) {
+                let mut name = path.file_stem().unwrap_or_default().to_os_string();
+                name.push("-copy.ggb");
+                path.with_file_name(name)
+            } else if path.extension().is_some_and(|ext| {
+                ext.eq_ignore_ascii_case("geo") || ext.eq_ignore_ascii_case("xml")
+            }) {
+                path.with_extension("ggb")
+            } else {
+                ggb_path(path)
+            }
+        },
+    );
+    path.to_string_lossy().into_owned()
 }
 
 fn save_to(app: &App, path: &Path) -> Result<(), String> {
@@ -288,5 +329,25 @@ fn number_dialog(app: &mut App, ctx: &egui::Context) {
         }
         Some(None) => app.reset_tool(),
         None => {}
+    }
+}
+
+#[cfg(test)]
+mod export_path_tests {
+    use super::*;
+
+    #[test]
+    fn save_as_defaults_next_to_the_source_and_keeps_a_dotted_name() {
+        let source = Path::new("worksheets/my.v2.ggb");
+        assert_eq!(
+            default_save_path(Some(source)),
+            source.with_file_name("my.v2-copy.ggb").to_string_lossy()
+        );
+        assert_eq!(ggb_path(Path::new("my.v2")), Path::new("my.v2.ggb"));
+        assert_eq!(
+            default_save_path(Some(Path::new("worksheets/my.v2"))),
+            Path::new("worksheets/my.v2.ggb").to_string_lossy()
+        );
+        assert_eq!(ggb_path(Path::new("my.GGB")), Path::new("my.GGB"));
     }
 }

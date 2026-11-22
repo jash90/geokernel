@@ -14,3 +14,4 @@ path = "src/main.rs"
 geo-kernel = { path = "../geo-kernel" }
 geo-import = { path = "../geo-import" }
 geo-app-core = { path = "../geo-app-core" }
+same-file = "1"

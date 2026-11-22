@@ -2237,6 +2237,19 @@ impl Construction {
         self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
     }
 
+    pub(crate) fn add_saved_curve_point(
+        &mut self,
+        label: &str,
+        path: Id,
+        t: f64,
+    ) -> Result<Id, Error> {
+        if self.kind(path) != Kind::Curve || !t.is_finite() {
+            return Err(Error::NotFinite);
+        }
+        let state = PathState::saved_curve(self, path, t);
+        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
+    }
+
     /// Gives the point on a path `id` the state `state` read from another
     /// construction with [`Self::path_state`], and recomputes everything
     /// that depends on it. Returns how many dependent objects were

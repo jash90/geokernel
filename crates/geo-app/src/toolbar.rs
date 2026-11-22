@@ -214,7 +214,7 @@ fn main_menu(app: &mut App, button: &Response) {
         ui.set_min_width(200.0);
         ui.menu_button(text::label(Label::File), |ui| {
             if ui.button(text::label(Label::SaveAsGgb)).clicked() {
-                app.save_path = Some("construction.ggb".into());
+                app.save_path = Some(crate::app::default_save_path(app.source_path.as_deref()));
                 ui.close();
             }
         });

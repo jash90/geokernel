@@ -155,8 +155,28 @@ pub(crate) fn convert_with_assets(
             layer: el.layer,
             ..default_style
         };
-        style.show_label = el.label_shown.unwrap_or(style.show_label);
-        style.line_thickness = el.thickness.unwrap_or(style.line_thickness);
+        // Layers affect draw order. Only charts use saved thickness and
+        // label visibility in the renderer. Keep the other styles for export
+        // outside the script so they do not change the editor's drawing.
+        let mut saved_style = el.object_style.clone();
+        if c.kernel.chart(id).is_some() {
+            style.show_label = el.label_shown.unwrap_or(style.show_label);
+            style.line_thickness = el.thickness.map_or(style.line_thickness, |t| t.min(13));
+        } else {
+            saved_style.show_label = el.label_shown.filter(|&v| v != default_style.show_label);
+            saved_style.thickness = el.thickness.filter(|&v| v != default_style.line_thickness);
+        }
+        if c.kernel.control(id).is_none() {
+            saved_style.caption.clone_from(&el.caption);
+        }
+        if saved_style != crate::export::ObjectStyle::default() {
+            c.out.object_styles.insert(el.label.clone(), saved_style);
+        }
+        if let Some(animation) = el.slider_animation.as_ref().filter(|_| el.slider.is_some()) {
+            c.out
+                .slider_animation
+                .insert(el.label.clone(), animation.clone());
+        }
         if let Some([x, y]) = el.label_offset.filter(|[x, y]| [*x, *y] != [0, 0]) {
             c.out
                 .label_offsets
@@ -551,28 +571,30 @@ impl Converter {
             name
         };
         if let ("Point", [path], [label]) = (name, args.as_slice(), outputs) {
-            if let Some([x, y, z]) = elements
-                .get(label.as_str())
-                .and_then(|el| coords3(el))
-                .filter(|_| {
-                    self.kernel
-                        .id(path)
-                        .is_some_and(|id| self.kernel.kind(id) != Kind::List)
-                })
-            {
-                let (x, y) = (x / z, y / z);
-                if x.is_finite() && y.is_finite() {
-                    let bounds = self
-                        .kernel
-                        .id(path)
-                        .filter(|&id| self.kernel.kind(id) == Kind::Function)
-                        .and(self.function_path_bounds)
-                        .map_or_else(String::new, |[min, max]| format!(", {min}, {max}"));
-                    return Ok(vec![Step {
-                        line: format!("{label} = $pointOnPath({path}, {x}, {y}{bounds})"),
-                        labels: vec![label.clone()],
-                        auto: false,
-                    }]);
+            if let Some((el, path_id)) = elements.get(label.as_str()).zip(self.kernel.id(path)) {
+                let kind = self.kernel.kind(path_id);
+                if kind == Kind::Curve {
+                    if let Some(t) = el.curve_parameter {
+                        return Ok(vec![Step {
+                            line: format!("{label} = $pointOnPath({path}, {t})"),
+                            labels: vec![label.clone()],
+                            auto: false,
+                        }]);
+                    }
+                }
+                if let Some([x, y, z]) = coords3(el).filter(|_| kind != Kind::List) {
+                    let (x, y) = (x / z, y / z);
+                    if x.is_finite() && y.is_finite() {
+                        let bounds = self
+                            .function_path_bounds
+                            .filter(|_| kind == Kind::Function)
+                            .map_or_else(String::new, |[min, max]| format!(", {min}, {max}"));
+                        return Ok(vec![Step {
+                            line: format!("{label} = $pointOnPath({path}, {x}, {y}{bounds})"),
+                            labels: vec![label.clone()],
+                            auto: false,
+                        }]);
+                    }
                 }
             }
         }

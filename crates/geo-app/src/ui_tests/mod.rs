@@ -639,3 +639,27 @@ fn hiding_through_the_marker_is_one_undo_step() {
     redo(&mut h);
     assert!(!h.state().wb.is_visible(a));
 }
+
+#[test]
+fn a_saved_camera_with_every_point_offscreen_fits_the_construction() {
+    let mut h = harness("A = (0, 0)");
+    let source = br#"<geogebra><euclidianView>
+      <size width="800" height="600"/>
+      <coordSystem xZero="-15000" yZero="-15000" scale="50"/>
+    </euclidianView><construction>
+      <element type="point" label="A"><coords x="1" y="2" z="1"/></element>
+      <element type="point" label="B"><coords x="4" y="3" z="1"/></element>
+    </construction></geogebra>"#;
+    h.state_mut().wb.load_bytes(source, "distant.ggb").unwrap();
+    h.state_mut().view_request = Some(crate::app::ViewRequest::Initial);
+    h.run();
+    for label in ["A", "B"] {
+        let app = h.state();
+        let id = app.wb.construction().id(label).unwrap();
+        assert!(app
+            .label_rects
+            .borrow()
+            .iter()
+            .any(|(drawn, _)| *drawn == id));
+    }
+}

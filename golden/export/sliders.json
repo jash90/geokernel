@@ -1,0 +1,37 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "export-sliders-001",
+      "group": "export",
+      "script": [
+        "a = Slider(-3, 3, 0.25)",
+        "b = Slider(1, 5, 0.5)",
+        "P = (a, b)",
+        "ls = {a, b}",
+        "m = Mean(ls)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "ls": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    }
+  ]
+}

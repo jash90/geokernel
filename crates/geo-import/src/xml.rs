@@ -29,6 +29,7 @@
 //! as many outputs, and an attribute value has at most
 //! [`MAX_ATTRIBUTE_BYTES`] bytes.
 
+use crate::export::{ObjectStyle, SliderAnimation};
 use crate::{ImportError, Settings};
 use geo_kernel::kernel::control::ControlScript;
 use geo_kernel::kernel::image::{ImageCorner, ImageStyle};
@@ -75,6 +76,9 @@ pub struct Element {
     pub auxiliary: bool,
     pub condition: Option<String>,
     pub caption: String,
+    pub object_style: ObjectStyle,
+    pub curve_parameter: Option<f64>,
+    pub slider_animation: Option<SliderAnimation>,
     pub scripts: Vec<ControlScript>,
     pub slider: Option<[Option<String>; 2]>,
     /// A `<startPoint>` of a vector: not used, counted for a note.
@@ -516,9 +520,27 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     }
                 }
                 "lineStyle" if element.is_some() => {
-                    element.as_mut().expect("checked above").thickness = attr(e, "thickness")?
+                    let el = element.as_mut().expect("checked above");
+                    el.thickness = attr(e, "thickness")?
                         .and_then(|v| v.parse::<i32>().ok())
-                        .map(|v| v.clamp(0, 13) as u8);
+                        .map(|v| v.clamp(0, 255) as u8);
+                    el.object_style.line_type = attr(e, "type")?
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or_default();
+                }
+                "labelMode" if element.is_some() => {
+                    element
+                        .as_mut()
+                        .expect("checked above")
+                        .object_style
+                        .label_mode = attr(e, "val")?
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or_default();
+                }
+                "curveParam" if element.is_some() => {
+                    element.as_mut().expect("checked above").curve_parameter = attr(e, "t")?
+                        .and_then(|v| v.parse::<f64>().ok())
+                        .filter(|v| v.is_finite());
                 }
                 "coords" if element.is_some() => {
                     let get = |k: &str| attr(e, k).map(Option::unwrap_or_default);
@@ -569,6 +591,17 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         }
                     }
                 }
+                "animation" if element.as_ref().is_some_and(|el| el.kind == "numeric") => {
+                    element.as_mut().expect("checked above").slider_animation =
+                        Some(SliderAnimation {
+                            step: attr(e, "step")?,
+                            speed: attr(e, "speed")?,
+                            mode: attr(e, "type")?
+                                .and_then(|v| v.parse().ok())
+                                .unwrap_or_default(),
+                            playing: attr(e, "playing")?.is_some_and(|v| v == "true"),
+                        });
+                }
                 "slider" if element.is_some() => {
                     element.as_mut().expect("checked above").slider =
                         Some([attr(e, "min")?, attr(e, "max")?]);
@@ -577,13 +610,26 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 | "inBackground"
                 | "interpolate"
                 | "centered"
-                | "objColor"
                 | "cropBox"
                 | "absoluteScreenLocation"
                 | "startPoint"
                     if element.as_ref().is_some_and(|el| el.kind == "image") =>
                 {
                     read_image(element.as_mut().expect("checked above"), &name, e)?;
+                }
+                "objColor" if element.is_some() => {
+                    let el = element.as_mut().expect("checked above");
+                    if el.kind == "image" {
+                        read_image(el, &name, e)?;
+                    }
+                    let channel = |key| -> Result<Option<u8>, ImportError> {
+                        Ok(attr(e, key)?.and_then(|v| v.parse().ok()))
+                    };
+                    if let (Some(r), Some(g), Some(b)) =
+                        (channel("r")?, channel("g")?, channel("b")?)
+                    {
+                        el.object_style.color = Some([r, g, b]);
+                    }
                 }
                 "labelOffset" if element.as_ref().is_some_and(|el| el.kind != "text") => {
                     let x = attr(e, "x")?.and_then(|n| n.parse().ok());

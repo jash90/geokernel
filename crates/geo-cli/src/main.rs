@@ -87,6 +87,9 @@ fn import_file(path: &str, bytes: &[u8]) -> Result<geo_import::Imported, String>
 }
 
 fn export(path: &str, out: &str) -> Result<(), String> {
+    if same_file::is_same_file(path, out).unwrap_or(false) {
+        return Err("Export would overwrite its input file.".into());
+    }
     let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
     let mut wb = geo_app_core::workbench::Workbench::default();
     wb.load_for_export(&bytes, path)?;

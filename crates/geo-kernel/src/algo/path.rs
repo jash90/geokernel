@@ -69,6 +69,7 @@ pub(crate) const PATH: &[Kind] = &[
     Kind::PolyLine,
     Kind::Arc,
     Kind::Sector,
+    Kind::Curve,
 ];
 const NUMBER: &[Kind] = &[Kind::Number];
 
@@ -183,6 +184,16 @@ impl PathState {
         let mut state = Self::new();
         state.function_bounds = bounds;
         state.set_coords(&geom(c, path), x, y);
+        state
+    }
+
+    /// Restore a curve point from its saved parameter, which identifies its
+    /// branch even when multiple parameters share the same coordinates.
+    pub(crate) fn saved_curve(c: &Construction, curve: Id, t: f64) -> Self {
+        let mut state = Self::new();
+        state.t = t;
+        state.temp_t = t;
+        geom(c, curve).path_changed(&mut state);
         state
     }
 
@@ -457,6 +468,12 @@ pub(crate) enum Geom<'a> {
         id: Id,
         n: usize,
     },
+    Curve {
+        c: &'a Construction,
+        id: Id,
+        start: f64,
+        end: f64,
+    },
     /// An arc or sector (`GeoConicPart`) with its record.
     Arc(ArcData),
     Function {
@@ -639,6 +656,7 @@ impl Geom<'_> {
             Geom::Polygon { n, .. } => (0.0, *n as f64),
             Geom::PolyLine { n, .. } => (0.0, *n as f64 - 1.0),
             Geom::Arc(a) => a.range(),
+            Geom::Curve { start, end, .. } => (*start, *end),
             Geom::Function { c, id } => {
                 let [min, max, ..] = c
                     .locus_view()
@@ -671,6 +689,17 @@ impl Geom<'_> {
             &Geom::Polygon { c, id, n } => polygonal_point_changed(c, id, n, true, p),
             &Geom::PolyLine { c, id, n } => polygonal_point_changed(c, id, n, false, p),
             Geom::Arc(a) => a.point_changed(p),
+            Geom::Curve { c, id, .. } => {
+                let (x, y) = (p.x / p.z, p.y / p.z);
+                if let Some(curve) = super::curve::Cartesian::new(c, *id) {
+                    let (px, py) = curve.value(p.t);
+                    let tolerance = crate::tol::MIN_PRECISION;
+                    if (px - x).hypot(py - y) >= tolerance || !(px.is_finite() && py.is_finite()) {
+                        p.t = curve.closest_with_start((x, y), p.t);
+                    }
+                }
+                self.path_changed(p);
+            }
             Geom::Function { c, id } => {
                 let (x, y) = (p.x / p.z, p.y / p.z);
                 if let Some((a, b)) = c.chart(*id).and_then(|d| d.function_domain()) {
@@ -745,6 +774,11 @@ impl Geom<'_> {
                 p.set_coords_2d(x, y, 1.0);
             }
             Geom::Arc(a) => a.path_changed(p),
+            Geom::Curve { c, id, start, end } => {
+                p.t = p.t.clamp(*start, *end);
+                let (x, y) = c.curve_point(*id, p.t).unwrap_or((f64::NAN, f64::NAN));
+                p.set_coords_2d(x, y, 1.0);
+            }
         }
     }
 }
@@ -1019,6 +1053,12 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
         (Kind::PolyLine, _) => match polygonal() {
             Some(n) => Geom::PolyLine { c, id: path, n },
             None => Geom::Undefined,
+        },
+        (Kind::Curve, Value::Curve { start, end }) => Geom::Curve {
+            c,
+            id: path,
+            start,
+            end,
         },
         (Kind::Function, Value::Function)
             if crate::expr::function_signature(c, path).is_some_and(|sig| !sig.boolean) =>

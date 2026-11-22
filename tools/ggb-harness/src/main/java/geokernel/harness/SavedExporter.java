@@ -39,6 +39,7 @@ import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoVector;
+import org.geogebra.common.kernel.kernelND.GeoCurveCartesianND;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
@@ -159,6 +160,11 @@ public final class SavedExporter {
             if ("move".equals(action) && geo instanceof GeoPoint p
                     && (p.isIndependent() || p.isPointOnPath())) {
                 p.setCoords(number(step.get("x")), number(step.get("y")), 1.0);
+            } else if ("curve_parameter".equals(action) && geo instanceof GeoPoint p
+                    && p.getPath() instanceof GeoCurveCartesianND curve) {
+                p.getPathParameter().setT(number(step.get("value")));
+                curve.pathChanged(p);
+                p.updateCoords();
             } else if ("set_number".equals(action) && geo instanceof GeoNumeric n
                     && n.isIndependent()) {
                 double value = number(step.get("value"));

@@ -51,16 +51,18 @@ for the checkout. Two runs produce byte-identical files.
 ## Export oracle
 
 `harness.sh export-snapshot <directory>` opens each `.ggb` in a fresh headless
-app and writes a `.ggb.snapshot` alongside it. Reader warnings fail the run.
-The integration test exports cases from the existing golden scripts after
-replaying them in the Rust kernel. Saved text, raster and control fixtures
-extend the corpus. It compares every labelled object against both the live
-and re-imported Rust construction at the normal golden tolerance.
+app and writes a `.ggb.snapshot` alongside it. GeoGebra warnings, errors and
+unrecognized XML tags fail the run. The integration test exports constructions
+replayed from harness goldens, including `cases/export.json`, and exports
+reference-saved text, raster, control and path fixtures. It compares every
+labelled object against both Rust constructions at the golden tolerance and
+checks object styles, slider settings and the primary view directly in the
+Java reader.
 
 After building the harness, run the ignored
 `geogebra_reloads_exports_and_matches_the_kernel` test in
 `geo-golden`'s `export` integration suite with `GEOGEBRA_SRC` set.
-The `export-oracle` CI job runs this test with the pinned reference revision.
+The `check` CI job runs this test with the pinned reference revision.
 
 ## How a case is replayed
 

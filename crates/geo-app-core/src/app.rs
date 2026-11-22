@@ -130,6 +130,8 @@ pub struct App {
     pub load_error: Option<String>,
     /// Path being edited in the Save As dialog.
     pub save_path: Option<String>,
+    /// Path of the document opened into this window.
+    pub source_path: Option<std::path::PathBuf>,
     pub decor: Decor,
     /// The object under the pointer in the drawing area.
     pub hovered: Option<Id>,
@@ -222,6 +224,7 @@ impl App {
             tool_error: None,
             load_error,
             save_path: None,
+            source_path: None,
             decor,
             hovered: None,
             focus_input: false,

@@ -494,6 +494,9 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
                 };
                 c.add(name, def).map_err(|e| e.to_string())
             }
+            ("$pointOnPath", [curve, parameter]) => c
+                .add_saved_curve_point(name, object(c, curve)?, parse_number(parameter)?)
+                .map_err(|e| e.to_string()),
             ("$pointOnPath", [path, x, y, bounds @ ..]) => {
                 let path = object(c, path)?;
                 let (x, y) = (parse_number(x)?, parse_number(y)?);

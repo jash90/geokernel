@@ -1,0 +1,69 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "export-curve-001",
+      "group": "export",
+      "script": [
+        "a = 0",
+        "c = Curve(t^2, t * (t^2 - 1) + a * t, t, -2, 2)",
+        "u = 0.75",
+        "P = Point(c, u)",
+        "Q = Point(c)",
+        "p = PathParameter(P)",
+        "q = PathParameter(Q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -2.0,
+            "end": 2.0,
+            "samples_curve": [
+              [
+                -2.0,
+                [4.0, -6.0]
+              ],
+              [
+                -1.5,
+                [2.25, -1.875]
+              ],
+              [
+                -1.0,
+                [1.0, -0.0]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                1.0,
+                [1.0, 0.0]
+              ],
+              [
+                1.5,
+                [2.25, 1.875]
+              ],
+              [
+                2.0,
+                [4.0, 6.0]
+              ]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 0.75 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "p": { "type": "number", "defined": true, "value": 0.75 },
+          "q": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    }
+  ]
+}

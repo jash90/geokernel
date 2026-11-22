@@ -32,8 +32,13 @@
 //! * `import`, `no` versus the rest: a file of `golden/ggb` imports to an
 //!   object of the kind; `yes` or `partial` is declared.
 //!
-//! The Java export test checks the set of kinds with a defined export example.
-//! Declared, not checked: `tool`.
+//! * `export`, exact: `yes` for editor objects serialized from their own
+//!   stored data and references (raster images, buttons and input boxes).
+//!   `partial` for construction kinds whose export also depends on supported
+//!   journal forms and command history. `no` for kinds without a writer.
+//!   The Java oracle checks a defined example of each `yes` and `partial` kind.
+//!
+//! Tool coverage is declared in the table.
 //! A row without a kernel kind is `no` in every column.
 //!
 //! The samples a checked cell is graded over come from a fixed allow-list
@@ -993,6 +998,20 @@ fn every_kernel_kind_and_upstream_kind_has_a_row() {
             errors.push(format!(
                 "row `{}`: `{}` is no 2D upstream class",
                 r["kind"], r["upstream"]
+            ));
+        }
+        let export = match kk.as_str() {
+            "" => "no",
+            "Image" | "Button" | "InputBox" => "yes",
+            "Point" | "Line" | "Segment" | "Ray" | "Vector" | "Circle" | "Conic" | "Arc"
+            | "Sector" | "Number" | "Angle" | "Boolean" | "Function" | "Polygon" | "PolyLine"
+            | "List" | "Text" | "Locus" | "Curve" | "FunctionNVar" | "PieChart" => "partial",
+            _ => "no",
+        };
+        if r["export"] != export {
+            errors.push(format!(
+                "row `{}`: export is `{}`, expected `{export}`",
+                r["kind"], r["export"]
             ));
         }
         for col in CELLS {

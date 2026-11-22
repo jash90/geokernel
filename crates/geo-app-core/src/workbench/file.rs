@@ -61,7 +61,9 @@ impl Workbench {
             )
             .map_err(|e| format!("{name}: {e}"))?;
             self.file_settings = imported.settings;
-            self.file_javascript = imported.javascript;
+            self.file_import_losses = (imported.skipped.len(), imported.mismatched.len());
+            self.file_object_styles = imported.object_styles;
+            self.file_slider_animation = imported.slider_animation;
             self.file_view = imported.view;
             self.label_offsets = imported.label_offsets;
             return Ok(());
@@ -75,23 +77,40 @@ impl Workbench {
         self.file_view
     }
 
-    /// Exports the live document. The window can provide its current view.
-    pub fn export_ggb(&self, view: Option<View>) -> Result<Vec<u8>, export::ExportError> {
+    /// Skipped objects and mismatched values in the file used to open the document.
+    pub fn file_import_losses(&self) -> (usize, usize) {
+        self.file_import_losses
+    }
+
+    /// Presentation the document will write to a construction file.
+    pub fn export_presentation(&self, view: Option<View>) -> Presentation<'_> {
         let c = self.construction();
         let palette = self.palette();
         let mut presentation = Presentation {
             view: view.or(self.file_view).unwrap_or_default(),
             settings: self.file_settings.clone(),
-            javascript: &self.file_javascript,
+            object_styles: self
+                .file_object_styles
+                .iter()
+                .map(|(label, style)| (label.as_str(), style))
+                .collect(),
+            slider_animation: self
+                .file_slider_animation
+                .iter()
+                .map(|(label, animation)| (label.as_str(), animation))
+                .collect(),
             hidden: self.log.hidden.iter().map(String::as_str).collect(),
             ..Presentation::default()
         };
         for id in self.object_ids() {
             let label = c.label(id);
             let color = palette.color(id);
-            presentation
-                .colors
-                .insert(label, [color.r, color.g, color.b]);
+            let rgb = self
+                .file_object_styles
+                .get(label)
+                .and_then(|style| style.color)
+                .unwrap_or([color.r, color.g, color.b]);
+            presentation.colors.insert(label, rgb);
             if let Some(condition) = self.log.condition_source(label) {
                 presentation.conditions.insert(label, condition);
             }
@@ -108,11 +127,24 @@ impl Workbench {
                     .insert(label, bounds.each_ref().map(|b| b.as_deref()));
             }
         }
+        presentation
+    }
+
+    /// Exports the live document. The window can provide its current view.
+    pub fn export_ggb(&self, view: Option<View>) -> Result<Vec<u8>, export::ExportError> {
+        let (skipped, mismatched) = self.file_import_losses;
+        if skipped != 0 || mismatched != 0 {
+            return Err(export::ExportError::incomplete_import(skipped, mismatched));
+        }
         let definitions = self.log.entries().map(|entry| Definition {
             line: &entry.line,
             outputs: &entry.labels,
         });
-        export::ggb(c, definitions, &presentation)
+        export::ggb(
+            self.construction(),
+            definitions,
+            &self.export_presentation(view),
+        )
     }
 
     /// The whole document as a script that `restore_text` (or `load_bytes`)

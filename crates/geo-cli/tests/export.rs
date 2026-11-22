@@ -44,3 +44,27 @@ fn exports_the_upstream_midpoint_and_segment_forms() {
         }
     );
 }
+
+#[test]
+fn export_refuses_to_replace_its_input() {
+    let path = std::env::temp_dir().join(format!(
+        "geokernel-export-source-{}.ggb",
+        std::process::id()
+    ));
+    let source = br#"<geogebra><construction><element type="point" label="A"><coords x="1" y="2" z="1"/></element></construction></geogebra>"#;
+    fs::write(&path, source).unwrap();
+    let alias = path.with_extension("alias.ggb");
+    fs::hard_link(&path, &alias).unwrap();
+    for destination in [&path, &alias] {
+        let result = Command::new(env!("CARGO_BIN_EXE_geokernel"))
+            .arg("export")
+            .arg(&path)
+            .arg(destination)
+            .output()
+            .unwrap();
+        assert!(!result.status.success());
+        assert_eq!(fs::read(destination).unwrap(), source);
+    }
+    fs::remove_file(alias).unwrap();
+    fs::remove_file(path).unwrap();
+}

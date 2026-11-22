@@ -1,4 +1,5 @@
-use super::{failure, flag, ExportError, Writer};
+use super::{failure, flag, number, ExportError, Writer};
+use geo_kernel::algo::path::PathDef;
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::{Def, Id, Kind, Value};
@@ -32,7 +33,7 @@ pub(super) fn kind(kind: Kind) -> &'static str {
 }
 
 impl Writer<'_> {
-    pub(super) fn element(&mut self, id: Id) -> Result<(), ExportError> {
+    pub(super) fn element(&mut self, id: Id, line: &str) -> Result<(), ExportError> {
         let c = self.c;
         let label = c.label(id);
         let object_kind = c.kind(id);
@@ -49,10 +50,21 @@ impl Writer<'_> {
             self.image(id)?;
         }
         let style = c.drawing_style(id);
+        let saved = self.presentation.object_styles.get(label).copied();
         let shown = !self.presentation.hidden.contains(label);
         self.xml.tag(
             "show",
-            &[("object", flag(shown)), ("label", flag(style.show_label))],
+            &[
+                ("object", flag(shown)),
+                (
+                    "label",
+                    flag(
+                        saved
+                            .and_then(|style| style.show_label)
+                            .unwrap_or(style.show_label),
+                    ),
+                ),
+            ],
         )?;
         if let Some(condition) = self.presentation.conditions.get(label) {
             self.xml.tag("condition", &[("showObject", condition)])?;
@@ -62,6 +74,7 @@ impl Writer<'_> {
             .colors
             .get(label)
             .copied()
+            .or_else(|| saved.and_then(|style| style.color))
             .unwrap_or([0; 3]);
         let alpha = c.image(id).map_or(0.0, |image| image.style.alpha);
         self.xml.tag(
@@ -74,7 +87,10 @@ impl Writer<'_> {
             ],
         )?;
         self.xml.val("layer", &style.layer.to_string())?;
-        self.xml.val("labelMode", "0")?;
+        self.xml.val(
+            "labelMode",
+            &saved.map_or(0, |style| style.label_mode).to_string(),
+        )?;
         if !matches!(
             object_kind,
             Kind::Point | Kind::Image | Kind::Text | Kind::Boolean | Kind::Button | Kind::InputBox
@@ -82,8 +98,17 @@ impl Writer<'_> {
             self.xml.tag(
                 "lineStyle",
                 &[
-                    ("thickness", &style.line_thickness.to_string()),
-                    ("type", "0"),
+                    (
+                        "thickness",
+                        &saved
+                            .and_then(|style| style.thickness)
+                            .unwrap_or(style.line_thickness)
+                            .to_string(),
+                    ),
+                    (
+                        "type",
+                        &saved.map_or(0, |style| style.line_type).to_string(),
+                    ),
                     ("typeHidden", "1"),
                 ],
             )?;
@@ -106,13 +131,15 @@ impl Writer<'_> {
             }
             self.xml.tag("eqnStyle", &attrs)?;
         }
-        if let Some(control) = c.control(id) {
-            if !control.caption.is_empty() {
-                self.xml.val("caption", &control.caption)?;
-            }
-            if object_kind == Kind::Boolean {
-                self.xml.tag("checkbox", &[("fixed", "false")])?;
-            }
+        let caption = c.control(id).map_or_else(
+            || saved.map_or("", |style| style.caption.as_str()),
+            |control| control.caption.as_str(),
+        );
+        if !caption.is_empty() {
+            self.xml.val("caption", caption)?;
+        }
+        if c.control(id).is_some() && object_kind == Kind::Boolean {
+            self.xml.tag("checkbox", &[("fixed", "false")])?;
         }
         for script in c.object_scripts(label) {
             let tag = match script.language.as_str() {
@@ -140,22 +167,52 @@ impl Writer<'_> {
                 .copied()
                 .unwrap_or_else(|| numeric.each_ref().map(|n| n.as_deref()));
             if bounds.iter().any(Option::is_some) {
-                let mut attrs = vec![
+                // Stack sliders in rows, with another column as the view fills.
+                let rows = usize::try_from(self.presentation.view.size[1] / 40)
+                    .unwrap_or(usize::MAX)
+                    .saturating_sub(1)
+                    .max(1);
+                let x = (30 + 130 * (self.sliders / rows)).to_string();
+                let y = (30 + 40 * (self.sliders % rows)).to_string();
+                self.sliders += 1;
+                let attrs = [
                     ("width", "100"),
-                    ("x", "30"),
-                    ("y", "30"),
+                    ("x", &x),
+                    ("y", &y),
                     ("fixed", "false"),
                     ("horizontal", "true"),
                     ("showAlgebra", "true"),
                     ("absoluteScreenLocation", "true"),
+                    // The reader supplies default bounds for visible sliders
+                    // before reading this tag. An undefined endpoint clears it.
+                    ("min", bounds[0].unwrap_or("0 / 0")),
+                    ("max", bounds[1].unwrap_or("0 / 0")),
                 ];
-                attrs.extend(
-                    ["min", "max"]
-                        .into_iter()
-                        .zip(bounds)
-                        .filter_map(|(key, v)| v.map(|v| (key, v))),
-                );
                 self.xml.tag("slider", &attrs)?;
+                let animation = self.presentation.slider_animation.get(label).copied();
+                let command_step = line
+                    .split_once(['=', ':'])
+                    .and_then(|(_, rhs)| {
+                        geo_kernel::script::split_call(
+                            geo_kernel::script::split_comment(rhs).0.trim(),
+                        )
+                    })
+                    .and_then(|(name, args)| match (name, args.as_slice()) {
+                        ("Slider", [_, _, step]) => Some(*step),
+                        _ => None,
+                    });
+                let step = animation.map_or(command_step.or(Some("0.1")), |a| a.step.as_deref());
+                let speed = animation.and_then(|a| a.speed.as_deref()).unwrap_or("1");
+                let mode = animation.map_or(0, |a| a.mode).to_string();
+                let mut attrs = vec![
+                    ("speed", speed),
+                    ("type", mode.as_str()),
+                    ("playing", flag(animation.is_some_and(|a| a.playing))),
+                ];
+                if let Some(step) = step {
+                    attrs.push(("step", step));
+                }
+                self.xml.tag("animation", &attrs)?;
             }
         }
         if c.text_presentation(id).is_some() {
@@ -167,6 +224,12 @@ impl Writer<'_> {
 
     fn value(&mut self, id: Id) -> Result<(), ExportError> {
         let c = self.c;
+        if let Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) = c.def(id) {
+            if let Some(state) = c.path_state(id).filter(|_| c.kind(path) == Kind::Curve) {
+                self.xml
+                    .tag("curveParam", &[("t", &number(state.parameter()))])?;
+            }
+        }
         match c.stored_value(id) {
             Value::Point { x, y } => self.xml.coords("coords", [x, y, 1.0])?,
             Value::HomogeneousPoint { x, y, z } => self.xml.coords("coords", [x, y, z])?,
@@ -298,8 +361,8 @@ impl Writer<'_> {
                             self.xml.tag("startPoint", &attrs)?;
                         }
                         Some(ImageCorner::Coordinates([x, y])) => {
-                            let x = x.to_string();
-                            let y = y.to_string();
+                            let x = number(x);
+                            let y = number(y);
                             attrs.extend_from_slice(&[("x", &x), ("y", &y), ("z", "1")]);
                             self.xml.tag("startPoint", &attrs)?;
                         }
@@ -321,13 +384,5 @@ impl Writer<'_> {
             )?;
         }
         Ok(())
-    }
-}
-
-fn number(value: f64) -> String {
-    match value {
-        f64::INFINITY => "Infinity".into(),
-        f64::NEG_INFINITY => "-Infinity".into(),
-        other => other.to_string(),
     }
 }

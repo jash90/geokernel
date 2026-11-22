@@ -9,25 +9,31 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.zip.ZipFile;
 
 import javax.imageio.ImageIO;
 
 import org.geogebra.common.awt.MyImage;
-import java.util.Map;
 
 import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.jre.io.MyXMLioJre;
+import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.geos.GeoButton;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoImage;
 import org.geogebra.common.kernel.geos.GeoInputBox;
+import org.geogebra.common.kernel.geos.GeoNumeric;
+import org.geogebra.common.kernel.geos.GeoPoint;
+import org.geogebra.common.kernel.geos.GeoText;
+import org.geogebra.common.kernel.kernelND.GeoCurveCartesianND;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.debug.Log;
 
@@ -94,25 +100,78 @@ public final class ExportSnapshot {
                 throw new IllegalStateException(message + ": " + detail);
             }
         };
-        Log.setLogger(new Log() {
+        Log logger = new Log() {
             @Override
             public void print(Level level, Object message) {
-                if (level.compareTo(Level.WARN) <= 0 || message instanceof Throwable) {
+                String text = Objects.toString(message).toLowerCase(Locale.ROOT);
+                if (level.compareTo(Level.WARN) <= 0 || message instanceof Throwable
+                        || text.contains("unknown tag")) {
                     throw new IllegalStateException(level + ": " + message);
                 }
             }
-        });
+        };
+        logger.setLogLevel(Log.Level.TRACE);
+        Log.setLogger(logger);
         try (InputStream in = Files.newInputStream(file)) {
             ((MyXMLioJre) app.getXMLio()).readZipFromInputStream(in, false);
         }
 
         Map<String, Object> objects = new LinkedHashMap<>();
+        Map<String, Object> styles = new LinkedHashMap<>();
         for (GeoElement geo : app.getKernel().getConstruction().getGeoSetConstructionOrder()) {
             if (geo.isLabelSet()) {
                 objects.put(geo.getLabelSimple(), describe(geo));
+                styles.put(geo.getLabelSimple(), describeStyle(geo));
             }
         }
-        return objects;
+        var view = app.getSettings().getEuclidian(1);
+        var kernel = app.getKernel();
+        String angle = switch (kernel.getAngleUnit()) {
+            case Kernel.ANGLE_RADIANT -> "radiant";
+            case Kernel.ANGLE_DEGREES_MINUTES_SECONDS -> "degreesMinutesSeconds";
+            default -> "degree";
+        };
+        Map<String, Object> settings = new LinkedHashMap<>();
+        settings.put("origin", List.of(view.getXZero(), view.getYZero()));
+        settings.put("scale", List.of(view.getXscale(), view.getYscale()));
+        settings.put("axes", List.of(view.getShowAxes()[0], view.getShowAxes()[1]));
+        settings.put("grid", view.getShowGrid());
+        settings.put("angle", angle);
+        settings.put("rounding", kernel.useSignificantFigures ? "figures" : "decimals");
+        settings.put("digits", kernel.useSignificantFigures ? kernel.getPrintFigures() : kernel.getPrintDecimals());
+        return Map.of("objects", objects, "styles", styles, "settings", settings);
+    }
+
+    private static Map<String, Object> describeStyle(GeoElement geo) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("shown", geo.isSetEuclidianVisible());
+        fields.put("label_shown", geo.getLabelVisible());
+        fields.put("layer", geo.getLayer());
+        fields.put("label_mode", geo.getLabelMode());
+        fields.put("label_offset", List.of(geo.labelOffsetX, geo.labelOffsetY));
+        fields.put("caption", geo.getRawCaption());
+        var color = geo.getObjectColor();
+        fields.put("color", List.of(color.getRed(), color.getGreen(), color.getBlue()));
+        fields.put("line_style", List.of(geo.getLineType(), geo.getLineThickness()));
+        if (geo instanceof GeoNumeric n && n.isIndependent()
+                && (n.isIntervalMinActive() || n.isIntervalMaxActive())) {
+            Map<String, Object> slider = new LinkedHashMap<>();
+            slider.put("min", n.isIntervalMinActive() ? n.getIntervalMin() : null);
+            slider.put("max", n.isIntervalMaxActive() ? n.getIntervalMax() : null);
+            slider.put("step", n.isAutoStep() ? null : n.getAnimationStep());
+            slider.put("speed", n.getAnimationSpeed());
+            slider.put("mode", n.getAnimationType());
+            slider.put("playing", n.isAnimating());
+            slider.put("position", List.of(n.getSliderX(), n.getSliderY()));
+            fields.put("slider", slider);
+        }
+        if (geo instanceof GeoPoint p && p.getPath() instanceof GeoCurveCartesianND) {
+            fields.put("curve_parameter", p.getPathParameter().t);
+        }
+        if (geo instanceof GeoText text) {
+            fields.put("latex", text.isLaTeX());
+        }
+        return fields;
     }
 
     private static Map<String, Object> describe(GeoElement geo) {
@@ -122,7 +181,7 @@ public final class ExportSnapshot {
         if (geo instanceof GeoInputBox box) {
             var link = box.getLinkedGeo();
             return Map.of("type", "textfield", "caption", Objects.toString(geo.getCaptionSimple(), ""),
-                    "defined", geo.isDefined(), "link", link.isLabelSet() ? link.getLabelSimple() : "");
+                    "defined", geo.isDefined(), "link", link != null && link.isLabelSet() ? link.getLabelSimple() : "");
         }
         if (geo instanceof GeoButton) {
             return Map.of("type", "button", "caption", Objects.toString(geo.getCaptionSimple(), ""),

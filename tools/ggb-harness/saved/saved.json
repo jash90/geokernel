@@ -1,5 +1,6 @@
 {
   "cases": [
+    {"id": "saved-curve-branch-001", "script": ["a = 0", "c = Curve(t^2, t * (t^2 - 1) + a * t, t, -2, 2)", "P = Point(c)", "Q = Point(c)", "p = PathParameter(P)", "q = PathParameter(Q)"], "steps": [{"action": "curve_parameter", "label": "P", "value": 1}, {"action": "curve_parameter", "label": "Q", "value": -1}]},
     {"id": "saved-lc-001", "script": ["A = (2.77, 0.05)", "r = 2.2", "k = Circle(A, r)", "C = (-2.23, 0.25)", "D = (7.77, 0.06)", "f = Line(C, D)", "P = Intersect(f, k)"], "steps": [{"action": "move", "label": "A", "x": 2.67, "y": -0.66}]},
     {"id": "saved-lc-002", "script": ["A = (-2.25, -2.33)", "r = 2.88", "k = Circle(A, r)", "C = (-7.25, -2.39)", "D = (2.75, -2.69)", "f = Line(C, D)", "P = Intersect(f, k)"], "steps": [{"action": "move", "label": "C", "x": -4.88, "y": -1.17}, {"action": "move", "label": "D", "x": -4.57, "y": -3.92}, {"action": "move", "label": "D", "x": -0.14, "y": -0.94}, {"action": "move", "label": "D", "x": 5.67, "y": -1.4}]},
     {"id": "saved-lc-003", "script": ["A = (-2.44, 2.47)", "r = 2.89", "k = Circle(A, r)", "C = (-7.44, 2.81)", "D = (2.56, 2.45)", "f = Line(C, D)", "P = Intersect(f, k)"], "steps": [{"action": "move", "label": "C", "x": -9.66, "y": 1.49}]},

@@ -46,12 +46,32 @@ impl Default for View {
 pub struct Presentation<'a> {
     pub view: View,
     pub settings: Settings,
-    pub javascript: &'a [u8],
     pub colors: BTreeMap<&'a str, [u8; 3]>,
     pub hidden: HashSet<&'a str>,
     pub conditions: BTreeMap<&'a str, &'a str>,
     pub label_offsets: BTreeMap<&'a str, (i32, i32)>,
+    pub object_styles: BTreeMap<&'a str, &'a ObjectStyle>,
+    pub slider_animation: BTreeMap<&'a str, &'a SliderAnimation>,
     pub slider_bounds: BTreeMap<&'a str, [Option<&'a str>; 2]>,
+}
+
+/// Saved presentation that the editor does not change.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ObjectStyle {
+    pub caption: String,
+    pub show_label: Option<bool>,
+    pub thickness: Option<u8>,
+    pub label_mode: u8,
+    pub line_type: u8,
+    pub color: Option<[u8; 3]>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SliderAnimation {
+    pub step: Option<String>,
+    pub speed: Option<String>,
+    pub mode: u8,
+    pub playing: bool,
 }
 
 #[derive(Debug)]
@@ -64,6 +84,12 @@ impl fmt::Display for ExportError {
 }
 
 impl std::error::Error for ExportError {}
+
+impl ExportError {
+    pub fn incomplete_import(skipped: usize, mismatched: usize) -> Self {
+        failure(format!("Export refused: the source had {skipped} skipped objects and {mismatched} saved value mismatches."))
+    }
+}
 
 fn failure(message: impl Into<String>) -> ExportError {
     ExportError(message.into())
@@ -80,6 +106,7 @@ pub fn ggb<'a>(
         presentation,
         xml: Xml::default(),
         images: BTreeMap::new(),
+        sliders: 0,
     };
     writer.xml.buffer.push_str(
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<geogebra format=\"5.0\" app=\"classic\">\n",
@@ -107,7 +134,7 @@ pub fn ggb<'a>(
         if let Some(&first) = ids.first() {
             writer.definition(first, &ids, definition.line)?;
             for id in ids {
-                writer.element(id)?;
+                writer.element(id, definition.line)?;
             }
         }
         if writer.xml.buffer.len() as u64 > archive::MAX_XML_BYTES {
@@ -125,8 +152,7 @@ pub fn ggb<'a>(
     }
     writer.xml.buffer.push_str("</construction>\n</geogebra>\n");
     if writer.xml.buffer.len() as u64 > archive::MAX_XML_BYTES
-        || writer.images.len() + 1 + usize::from(!presentation.javascript.is_empty())
-            > archive::MAX_ZIP_ENTRIES
+        || writer.images.len() + 1 > archive::MAX_ZIP_ENTRIES
     {
         return Err(failure("construction exceeds the import archive limits"));
     }
@@ -142,14 +168,6 @@ pub fn ggb<'a>(
     for (name, asset) in writer.images.values() {
         write(name, asset.bytes())?;
     }
-    if !presentation.javascript.is_empty() {
-        if presentation.javascript.len() as u64 > archive::MAX_JAVASCRIPT_BYTES {
-            return Err(failure(
-                "the JavaScript library exceeds the import size limit",
-            ));
-        }
-        write(archive::JAVASCRIPT_FILE, presentation.javascript)?;
-    }
     write(archive::XML_FILE, writer.xml.buffer.as_bytes())?;
     zip.finish()
         .map(Cursor::into_inner)
@@ -161,6 +179,7 @@ struct Writer<'a> {
     presentation: &'a Presentation<'a>,
     xml: Xml,
     images: BTreeMap<u64, (String, &'a RasterAsset)>,
+    sliders: usize,
 }
 
 impl Writer<'_> {
@@ -296,7 +315,6 @@ impl Writer<'_> {
                 let name = match name {
                     "PerpendicularLine" => "OrthogonalLine",
                     "PerpendicularBisector" => "LineBisector",
-                    "ParallelLine" => "Line",
                     "AngleBisector" => "AngularBisector",
                     "CircularArc" => "CircleArc",
                     "CircularSector" => "CircleSector",
@@ -304,7 +322,6 @@ impl Writer<'_> {
                     "CircumcircularSector" => "CircumcircleSector",
                     "Reflect" => "Mirror",
                     "Curve" => "CurveCartesian",
-                    "Polyline" => "PolyLine",
                     other => other,
                 };
                 let inputs = inputs
@@ -399,6 +416,14 @@ fn text_expression(text: &str) -> String {
         .map(|part| format!("\"{part}\""))
         .collect::<Vec<_>>()
         .join(" + UnicodeToLetter[34] + ")
+}
+
+fn number(value: f64) -> String {
+    match value {
+        f64::INFINITY => "Infinity".into(),
+        f64::NEG_INFINITY => "-Infinity".into(),
+        other => other.to_string(),
+    }
 }
 
 fn flag(value: bool) -> &'static str {
@@ -503,15 +528,27 @@ impl Xml {
     fn coords(&mut self, name: &str, [x, y, z]: [f64; 3]) -> Result<(), ExportError> {
         self.tag(
             name,
-            &[
-                ("x", &x.to_string()),
-                ("y", &y.to_string()),
-                ("z", &z.to_string()),
-            ],
+            &[("x", &number(x)), ("y", &number(y)), ("z", &number(z))],
         )
     }
 
     fn pixels(&mut self, name: &str, x: i32, y: i32) -> Result<(), ExportError> {
         self.tag(name, &[("x", &x.to_string()), ("y", &y.to_string())])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn coordinates_use_reference_spellings_for_nonfinite_numbers() {
+        let mut xml = Xml::default();
+        xml.coords("coords", [f64::INFINITY, f64::NEG_INFINITY, f64::NAN])
+            .unwrap();
+        assert_eq!(
+            xml.buffer,
+            "<coords x=\"Infinity\" y=\"-Infinity\" z=\"NaN\"/>\n"
+        );
     }
 }

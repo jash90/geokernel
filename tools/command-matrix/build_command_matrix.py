@@ -118,7 +118,7 @@ PARTIAL = {
     "Circumference": "Conic, conic part, polygon or locus",
     "Perimeter": "Polygon, conic, conic part or locus",
     "Area": "Area(conic, arc, sector or polygon); Area of three or more points",
-    "Point": "Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc or sector with an optional path parameter",
+    "Point": "Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter",
     "PathParameter": "PathParameter(point on a path)",
     "CircleArc": "CircularArc(centre, point, point)",
     "CircleSector": "CircularSector(centre, point, point)",

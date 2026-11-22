@@ -225,7 +225,11 @@ impl<'a> Cartesian<'a> {
         super::elliptic::numeric_integration(&integrand, start, end).abs()
     }
 
-    pub(super) fn closest(&self, (px, py): (f64, f64)) -> f64 {
+    pub(super) fn closest(&self, point: (f64, f64)) -> f64 {
+        self.closest_with_start(point, self.start)
+    }
+
+    pub(super) fn closest_with_start(&self, (px, py): (f64, f64), start: f64) -> f64 {
         let squared = |t| {
             if !self.has_budget() {
                 return f64::NAN;
@@ -259,8 +263,8 @@ impl<'a> Cartesian<'a> {
             }
         };
         let result = adjust(minimum(left, right, squared));
-        if self.start < left {
-            let alternate = adjust(minimum(self.start - step, self.start + step, squared));
+        if start < left || start > right {
+            let alternate = adjust(minimum(start - step, start + step, squared));
             if squared(alternate) < squared(result) + crate::tol::MIN_PRECISION / 2.0 {
                 return alternate;
             }

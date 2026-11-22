@@ -52,6 +52,9 @@ pub struct Imported {
     pub script: Vec<String>,
     /// Raster sources for replay without serializing or decoding them again.
     pub image_assets: Vec<geo_kernel::script::saved::Property>,
+    /// Saved object presentation used when writing a construction.
+    pub object_styles: std::collections::BTreeMap<String, export::ObjectStyle>,
+    pub slider_animation: std::collections::BTreeMap<String, export::SliderAnimation>,
     /// Global JavaScript carried as inert archive data.
     pub javascript: Vec<u8>,
     /// Every object that could not be imported, including the objects that
@@ -210,10 +213,16 @@ pub fn import_for_replay(bytes: &[u8]) -> Result<Imported, ImportError> {
         let text = archive::extract_xml(bytes)?;
         xml::parse(&text)?
     };
-    let archive = archive::is_zip(bytes)
-        .then(|| archive::AssetArchive::new(bytes))
-        .transpose()?;
+    let (archive, archive_error) = if archive::is_zip(bytes) {
+        let (archive, error) = archive::AssetArchive::index(bytes);
+        (Some(archive), error)
+    } else {
+        (None, None)
+    };
     let mut imported = convert::convert_with_assets(doc, archive.as_ref())?;
+    if let Some(error) = archive_error {
+        imported.notes.push(format!("Archive extras: {error}"));
+    }
     if let Some(archive) = archive {
         match archive.javascript() {
             Ok(script) => imported.javascript = script,

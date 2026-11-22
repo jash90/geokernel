@@ -156,20 +156,20 @@ fn read_entry(bytes: &[u8], at: usize) -> Result<Entry, ImportError> {
     Ok(entry)
 }
 
-/// Index the archive once when the XML references image assets.
+/// Index optional entries, keeping those located before a damaged entry.
 pub(crate) struct AssetArchive<'a> {
     bytes: &'a [u8],
     offsets: HashMap<&'a [u8], usize>,
 }
 
 impl<'a> AssetArchive<'a> {
-    pub(crate) fn new(bytes: &'a [u8]) -> Result<Self, ImportError> {
+    pub(crate) fn index(bytes: &'a [u8]) -> (Self, Option<ImportError>) {
         let mut offsets = HashMap::new();
-        scan_entries(bytes, |name, offset| {
+        let result = scan_entries(bytes, |name, offset| {
             offsets.entry(name).or_insert(offset);
             true
-        })?;
-        Ok(Self { bytes, offsets })
+        });
+        (Self { bytes, offsets }, result.err())
     }
 
     pub(crate) fn javascript(&self) -> Result<Vec<u8>, ImportError> {
@@ -317,7 +317,8 @@ mod tests {
             .unwrap();
         zip.write_all(&png).unwrap();
         let bytes = zip.finish().unwrap().into_inner();
-        let mut archive = AssetArchive::new(&bytes).unwrap();
+        let (mut archive, error) = AssetArchive::index(&bytes);
+        assert!(error.is_none());
         let directory_entry = archive.offsets[b"tile.png".as_slice()];
         assert!(archive.image_entry("tile.png").is_ok());
 

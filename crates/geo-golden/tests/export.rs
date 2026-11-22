@@ -26,6 +26,13 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("charts-barchart-001", 0),
     ("charts-piechart-001", 0),
     ("expr-apply-001", 1),
+    ("export-geometry-001", 0),
+    ("export-transforms-001", 0),
+    ("export-conics-001", 0),
+    ("export-paths-001", 3),
+    ("export-curve-001", 0),
+    ("export-sliders-001", 0),
+    ("export-texts-001", 0),
     ("funcanalysis-curvatureupstream-002", 0),
     ("lists-objects-001", 0),
     ("locus-slider-001", 0),
@@ -38,6 +45,8 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
 
 const SAVED_CASES: &[&str] = &[
     "saved-controls-002.xml",
+    "saved-curve-branch-001.xml",
+    "saved-paths-002.xml",
     "saved-images-001.ggb",
     "saved-images-002.ggb",
     "saved-object-scripts-001.xml",
@@ -45,6 +54,38 @@ const SAVED_CASES: &[&str] = &[
     "saved-texts-001.ggb",
     "saved-text-equations-001.xml",
 ];
+
+const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
+  <euclidianView>
+    <size width="720" height="640"/>
+    <coordSystem xZero="377.5" yZero="296" scale="70" yscale="43.25"/>
+    <evSettings axes="false" grid="true"/>
+    <axis id="0" show="true"/>
+  </euclidianView>
+  <kernel><significantfigures val="6"/><angleUnit val="radiant"/></kernel>
+  <construction>
+    <element type="point" label="A">
+      <coords x="2" y="3" z="1"/>
+      <layer val="7"/>
+      <labelOffset x="-5" y="6"/>
+      <show object="false" label="false"/>
+    </element>
+    <element type="point" label="B"><coords x="4" y="1" z="1"/></element>
+    <command name="Line"><input a0="A" a1="B"/><output a0="g"/></command>
+    <element type="line" label="g">
+      <objColor r="123" g="45" b="67" alpha="0"/>
+      <lineStyle thickness="7" type="10"/>
+      <labelMode val="3"/>
+      <caption val="A caption"/>
+      <labelOffset x="9" y="-12"/>
+    </element>
+    <element type="numeric" label="a">
+      <value val="2"/>
+      <slider min="0" max="5" x="20" y="40" width="100" horizontal="true" absoluteScreenLocation="true"/>
+      <animation step="0.125" speed="2.5" type="2" playing="false"/>
+    </element>
+  </construction>
+</geogebra>"#;
 
 fn labelled(c: &Construction) -> BTreeMap<&str, Id> {
     c.ids()
@@ -105,6 +146,9 @@ fn corpus() -> Vec<(String, Workbench, Option<FileView>)> {
         let name = file.split_once('.').unwrap().0;
         out.push((name.into(), wb, None));
     }
+    let mut styled = Workbench::default();
+    styled.load_for_export(STYLED_FILE, "styled").unwrap();
+    out.push(("styled".into(), styled, None));
     out
 }
 
@@ -212,32 +256,16 @@ fn exported_constructions_import_with_all_labelled_kinds_and_properties() {
 
 #[test]
 fn archive_preserves_view_kernel_settings_and_application_edits() {
-    let source = br#"<geogebra format="5.0">
-      <euclidianView>
-        <size width="720" height="640"/>
-        <coordSystem xZero="377.5" yZero="296" scale="70" yscale="43.25"/>
-        <evSettings axes="false" grid="true"/>
-        <axis id="0" show="true"/>
-      </euclidianView>
-      <kernel><significantfigures val="6"/><angleUnit val="radiant"/></kernel>
-      <construction>
-        <element type="point" label="A">
-          <coords x="2" y="3" z="1"/>
-          <layer val="7"/>
-          <labelOffset x="-5" y="6"/>
-          <show object="false" label="false"/>
-        </element>
-      </construction>
-    </geogebra>"#;
     let mut wb = Workbench::default();
-    wb.load_for_export(source, "settings").unwrap();
+    wb.load_for_export(STYLED_FILE, "settings").unwrap();
     let id = wb.construction().id("A").unwrap();
+    assert!(!wb.snapshot_text().contains("$drawingStyle(g,"));
     assert!(wb.move_point(id, -1.5, 2.25));
     let (exported, again) = round_trip("settings", &wb, None);
     let imported = geo_import::import(&exported).unwrap();
     assert_eq!(
         imported.settings,
-        geo_import::import(source).unwrap().settings
+        geo_import::import(STYLED_FILE).unwrap().settings
     );
     let view = again.file_view().unwrap();
     assert_eq!(view.axes, [true, false]);
@@ -257,22 +285,18 @@ fn archive_preserves_view_kernel_settings_and_application_edits() {
 #[test]
 #[ignore = "requires the GeoGebra Java harness"]
 fn geogebra_reloads_exports_and_matches_the_kernel() {
-    let dir = Scratch::new();
+    let dir = Scratch::new("valid");
     let constructions: Vec<_> = corpus()
         .into_iter()
         .map(|(name, wb, view)| {
             let (bytes, again) = round_trip(&name, &wb, view);
             fs::write(dir.0.join(format!("{name}.ggb")), bytes).unwrap();
-            (name, wb, again)
+            (name, wb, again, view)
         })
         .collect();
-    let output = Command::new(repo_root().join("tools/ggb-harness/harness.sh"))
-        .arg("export-snapshot")
-        .arg(&dir.0)
-        .output()
-        .expect("run Java harness");
+    let output = java_snapshots(&dir.0);
     assert!(
-        output.status.success() && output.stderr.is_empty(),
+        output.status.success(),
         "Java export oracle failed:\n{}\n{}",
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
@@ -280,10 +304,11 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
 
     let mut covered = BTreeSet::new();
     let mut count = 0;
-    for (name, live, imported) in &constructions {
+    for (name, live, imported, view) in &constructions {
         let path = dir.0.join(format!("{name}.ggb.snapshot"));
-        let snapshot: BTreeMap<String, Value> =
-            serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+        let snap: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+        let snapshot = snap["objects"].as_object().unwrap();
+        check_styles(name, live, *view, &snap);
         let c = live.construction();
         let labels = labelled(c);
         assert!(
@@ -329,6 +354,157 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
         constructions.len(),
         covered.len()
     );
+}
+
+fn java_snapshots(dir: &std::path::Path) -> std::process::Output {
+    Command::new(repo_root().join("tools/ggb-harness/harness.sh"))
+        .arg("export-snapshot")
+        .arg(dir)
+        .output()
+        .expect("run Java harness")
+}
+
+#[test]
+#[ignore = "requires the GeoGebra Java harness"]
+fn java_oracle_rejects_an_unknown_element_tag() {
+    let dir = Scratch::new("unknown-tag");
+    let xml = br#"<geogebra format="5.0"><construction>
+      <element type="point" label="A">
+        <coords x="1" y="2" z="1"/>
+        <unknownExportTag val="1"/>
+      </element>
+    </construction></geogebra>"#;
+    fs::write(dir.0.join("bad.ggb"), archive(xml, None)).unwrap();
+    let result = java_snapshots(&dir.0);
+    let error = String::from_utf8_lossy(&result.stderr);
+    assert!(!result.status.success(), "{error}");
+    assert!(
+        error.contains("unknown tag in <element>: unknownExportTag"),
+        "{error}"
+    );
+}
+
+fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value) {
+    let presentation = wb.export_presentation(view);
+    let view = presentation.view;
+    let settings = presentation.settings;
+    assert_json(
+        &json!({
+            "origin": view.origin,
+            "scale": view.scale,
+            "axes": view.axes,
+            "grid": view.grid,
+            "angle": settings.angle_unit.as_deref().unwrap_or("degree"),
+            "rounding": if settings.significant_figures.is_some() { "figures" } else { "decimals" },
+            "digits": settings.significant_figures.or(settings.decimals).unwrap_or(2),
+        }),
+        &snap["settings"],
+        name,
+    );
+
+    let c = wb.construction();
+    let mut positions = BTreeSet::new();
+    for (label, id) in labelled(c) {
+        let actual = &snap["styles"][label];
+        let where_ = format!("{name}: {label}");
+        let drawing = c.drawing_style(id);
+        let style = presentation.object_styles.get(label);
+        let caption = c.control(id).map_or_else(
+            || style.map_or("", |s| s.caption.as_str()),
+            |control| control.caption.as_str(),
+        );
+        let offset = c.text_presentation(id).map_or_else(
+            || {
+                presentation
+                    .label_offsets
+                    .get(label)
+                    .map_or([0, 0], |&(x, y)| [x, y])
+            },
+            |text| match text.position {
+                TextPosition::Screen { x, y } => [x as i32, y as i32],
+                _ => text.offset,
+            },
+        );
+        let expected = json!({
+            "shown": !presentation.hidden.contains(label),
+            "label_shown": style.and_then(|s| s.show_label).unwrap_or(drawing.show_label),
+            "layer": drawing.layer,
+            "label_mode": style.map_or(0, |s| s.label_mode),
+            "label_offset": offset,
+            "caption": caption,
+            "color": presentation.colors[label],
+        });
+        for (key, value) in expected.as_object().unwrap() {
+            assert_json(value, &actual[key], &format!("{where_}.{key}"));
+        }
+        let kind = c.kind(id);
+        if !matches!(
+            kind,
+            Kind::Point | Kind::Image | Kind::Text | Kind::Boolean | Kind::Button | Kind::InputBox
+        ) {
+            assert_json(
+                &json!([
+                    style.map_or(0, |s| s.line_type),
+                    style
+                        .and_then(|s| s.thickness)
+                        .unwrap_or(drawing.line_thickness)
+                ]),
+                &actual["line_style"],
+                &where_,
+            );
+        }
+        if let Some(text) = c.text_presentation(id) {
+            assert_json(&json!(text.latex), &actual["latex"], &where_);
+        }
+        if let Some(t) = actual.get("curve_parameter") {
+            assert_json(&json!(c.path_state(id).unwrap().parameter()), t, &where_);
+        }
+        if matches!(c.def(id), Def::Number(_)) {
+            let [min, max] = c.slider_bounds(id);
+            if min.is_some() || max.is_some() {
+                let slider = &actual["slider"];
+                assert_json(&json!(min), &slider["min"], &where_);
+                assert_json(&json!(max), &slider["max"], &where_);
+                let animation = presentation.slider_animation.get(label);
+                let step = match (name, label) {
+                    ("export-sliders-001", "a") => json!(0.25),
+                    ("export-sliders-001", "b") => json!(0.5),
+                    _ => {
+                        animation.map_or(json!(0.1), |a| number_or_reference(c, a.step.as_deref()))
+                    }
+                };
+                let speed = animation.and_then(|a| a.speed.as_deref()).or(Some("1"));
+                assert_json(&step, &slider["step"], &format!("{where_}.step"));
+                assert_json(&number_or_reference(c, speed), &slider["speed"], &where_);
+                assert_json(
+                    &json!(animation.map_or(0, |a| a.mode)),
+                    &slider["mode"],
+                    &where_,
+                );
+                assert_json(
+                    &json!(animation.is_some_and(|a| a.playing)),
+                    &slider["playing"],
+                    &where_,
+                );
+                assert!(
+                    positions.insert(slider["position"].to_string()),
+                    "{where_}: overlapping sliders"
+                );
+            }
+        }
+    }
+}
+
+fn number_or_reference(c: &Construction, source: Option<&str>) -> Value {
+    source.map_or(Value::Null, |source| {
+        let value = source.parse::<f64>().unwrap_or_else(|_| {
+            let geo_kernel::Value::Number(value) = c.value(c.id(source).unwrap()) else {
+                panic!("expected a numeric reference for {source}")
+            };
+            value
+        });
+        json!(value)
+    })
 }
 
 fn special(c: &Construction, id: Id) -> Value {
@@ -392,9 +568,11 @@ fn assert_json(expected: &Value, actual: &Value, where_: &str) {
 struct Scratch(PathBuf);
 
 impl Scratch {
-    fn new() -> Self {
-        let path =
-            std::env::temp_dir().join(format!("geokernel-ggb-oracle-{}", std::process::id()));
+    fn new(case: &str) -> Self {
+        let path = std::env::temp_dir().join(format!(
+            "geokernel-ggb-oracle-{case}-{}",
+            std::process::id()
+        ));
         fs::create_dir(&path).unwrap();
         Self(path)
     }
@@ -404,4 +582,53 @@ impl Drop for Scratch {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.0);
     }
+}
+
+fn archive(xml: &[u8], library: Option<&[u8]>) -> Vec<u8> {
+    use std::io::{Cursor, Write};
+
+    let mut zip = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    let options = zip::write::SimpleFileOptions::default();
+    zip.start_file("geogebra.xml", options).unwrap();
+    zip.write_all(xml).unwrap();
+    if let Some(library) = library {
+        zip.start_file("geogebra_javascript.js", options).unwrap();
+        zip.write_all(library).unwrap();
+    }
+    zip.finish().unwrap().into_inner()
+}
+
+#[test]
+fn imported_library_is_omitted_from_export() {
+    let library = b"function ggbOnInit() { throw Error('unexpected execution'); }";
+    let source = archive(b"<geogebra><construction/></geogebra>", Some(library));
+    assert_eq!(geo_import::import(&source).unwrap().javascript, library);
+    let mut wb = Workbench::default();
+    wb.load_for_export(&source, "library.ggb").unwrap();
+    let exported = wb.export_ggb(None).unwrap();
+    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(exported.as_slice())).unwrap();
+    assert!(matches!(
+        archive.by_name("geogebra_javascript.js"),
+        Err(zip::result::ZipError::FileNotFound)
+    ));
+    let xml = geo_import::archive::extract_xml(&exported).unwrap();
+    assert!(xml.contains("disabled=\"true\""));
+}
+
+#[test]
+fn export_refuses_a_document_opened_with_skips() {
+    let source = br#"<geogebra><construction>
+      <element type="point" label="A"><coords x="1" y="2" z="1"/></element>
+      <element type="unsupported" label="B"/>
+    </construction></geogebra>"#;
+    let mut wb = Workbench::default();
+    wb.load_bytes(source, "partial.ggb").unwrap();
+    assert!(wb.construction().id("A").is_some());
+    assert!(wb
+        .export_ggb(None)
+        .unwrap_err()
+        .to_string()
+        .contains("1 skipped"));
+    wb.load_script("A = (1, 2)").unwrap();
+    assert!(wb.export_ggb(None).is_ok());
 }
