@@ -349,7 +349,7 @@ fn fraction(value: f64) -> Option<Rat> {
     // The denominators at least double every second term.
     for _ in 0..40 {
         let whole = rest.floor();
-        if !(whole < 1e15) {
+        if whole.is_nan() || whole >= 1e15 {
             break;
         }
         let term = whole as i128;

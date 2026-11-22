@@ -426,7 +426,8 @@ pub fn script_uses_form(
                     // The solving variable is a name the case does not use
                     // for anything but a number: the label of a point or a
                     // text there is that object, not a variable.
-                    let solving = matches!(command, "Solve" | "Solutions" | "NSolve" | "NSolutions");
+                    let solving =
+                        matches!(command, "Solve" | "Solutions" | "NSolve" | "NSolutions");
                     let other_object = solving
                         && labels
                             .get(args[i].trim())

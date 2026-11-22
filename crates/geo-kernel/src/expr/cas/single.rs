@@ -576,7 +576,7 @@ fn square_part(mut n: u128, work: &mut Work<'_>) -> Option<(u128, u128)> {
     let mut p = 2u128;
     while p <= TRIED && p * p <= n {
         work.spend(1)?;
-        while n % (p * p) == 0 {
+        while n.is_multiple_of(p * p) {
             n /= p * p;
             outside *= p;
         }
