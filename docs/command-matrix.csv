@@ -431,7 +431,7 @@ Name,,geogebra,P2,done,1,1,
 SlowPlot,,geogebra,P2,todo,2,0,Static initial plot at the left edge of the view. Animation and repeat behavior require view state.
 ToolImage,,geogebra,,out_of_scope,,,"Draws a tool's icon image into the graphics view, not a construction object."
 DynamicCoordinates,,geogebra,P2,done,1,1,
-SetConstructionStep,,geogebra,P2,todo,1,0,
+SetConstructionStep,,geogebra,P2,done,1,1,
 Maximize,,optimization,P2,partial,2,1,
 Minimize,,optimization,P2,partial,2,1,
 ExportImage,,scripting,,out_of_scope,,,

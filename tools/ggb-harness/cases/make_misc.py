@@ -188,6 +188,18 @@ cases.case("protocol", [
     "aa = ConstructionStep(A)",
 ], [])
 
+# Step arguments are rounded when the command runs. Later edits of the
+# argument do not navigate the protocol again.
+cases.case("protocol", [
+    "cs = ConstructionStep()", "n = 1.6", pt("A", 0, 0), pt("B", 1, 1),
+    "SetConstructionStep(n)",
+], [setn("n", 0), setn("n", 4), mv("B", 4, 5)])
+for target in ("-3", "0", "0/0", "1.5"):
+    cases.case("protocol", [
+        "cs = ConstructionStep()", pt("A", 0, 0), pt("B", 1, 1),
+        f"SetConstructionStep({target})",
+    ], [])
+
 # The view readers.
 cases.case("view", [
     "p = Corner(1)", "q = Corner(2)", "r = Corner(3)", "s = Corner(4)",

@@ -3697,3 +3697,9 @@ cases = ["funcrest-vertexform-001", "funcrest-vertexform-004", "funcrest-vertexf
 command = "Sum"
 form = "vector,..."
 difference = "list-commands: `Sum(vector, ...)`"
+
+[[form]]
+command = "SetConstructionStep"
+form = "number"
+cases = ["misc-protocol-004", "misc-protocol-008", "misc-protocol-009", "misc-protocol-013"]
+difference = "numerical-function-analysis: `SetConstructionStep(number)`"
