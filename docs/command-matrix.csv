@@ -173,33 +173,33 @@ Polar,,conic,P1,done,2,2,"Polar(point, circle or conic)"
 Excentricity,,conic,P1,done,1,1,Excentricity(conic)
 Eccentricity,,conic,P1,done,1,1,Eccentricity(conic)
 Axes,,conic,P1,done,1,1,Axes(conic)
-Sort,,list,P2,partial,3,1,"Sort(list of numbers, booleans or points)"
-First,,list,P2,partial,5,2,"First(list); First(list, number of elements)"
-Last,,list,P2,partial,5,1,"Last(list); Last(list, number of elements)"
-Take,,list,P2,todo,4,0,
-RemoveUndefined,,list,P2,todo,1,0,
-Reverse,,list,P2,partial,3,1,Reverse(list)
-Element,,list,P2,partial,3,1,"Element(list, index)"
-IndexOf,,list,P2,todo,4,0,
-Append,,list,P2,todo,2,0,"Append(list, object); Append(object, list)"
+Sort,,list,P2,done,3,3,"Sort(list of numbers, booleans or points); Sort(value list, key list); Sort(point, point, ...)"
+First,,list,P2,done,5,5,"First(list); First(list, number of elements); First(locus, number of elements)"
+Last,,list,P2,done,5,5,"Last(list); Last(list, number of elements)"
+Take,,list,P2,done,4,4,"Take(list, from[, to])"
+RemoveUndefined,,list,P2,done,1,1,RemoveUndefined(list)
+Reverse,,list,P2,done,3,3,"Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)"
+Element,,list,P2,done,3,3,"Element(list, index); Element(list, index, index, ...)"
+IndexOf,,list,P2,done,4,4,"IndexOf(object, list[, start])"
+Append,,list,P2,done,2,2,"Append(list, object); Append(object, list)"
 Join,,list,P2,done,2,2,"Join(list, list, ...); Join(list of lists)"
-Flatten,,list,P2,todo,1,0,
-Insert,,list,P2,todo,1,0,
-Sequence,,list,P2,partial,5,3,"Sequence(end); Sequence(start, end); Sequence(start, end, step); Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)"
-SelectedElement,,list,P2,todo,1,0,
-SelectedIndex,,list,P2,todo,1,0,
-RandomElement,,list,P2,todo,3,0,
-Product,,list,P2,partial,4,2,"Product(list); Product(list, number of elements)"
-Frequency,,list,P2,todo,8,0,
-Unique,,list,P2,todo,1,0,
-Classes,,list,P2,todo,2,0,
-Zip,,list,P2,todo,1,0,
-Intersection,,list,P2,todo,1,0,
-PointList,,list,P2,todo,3,0,
-OrdinalRank,,list,P2,todo,3,0,
-TiedRank,,list,P2,todo,3,0,
-Union,,list,P2,todo,2,0,
-Remove,,list,P2,todo,1,0,
+Flatten,,list,P2,done,1,1,Flatten(list)
+Insert,,list,P2,done,1,1,"Insert(object, list, position)"
+Sequence,,list,P2,done,5,5,"Sequence(end); Sequence(start, end); Sequence(start, end, step); Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)"
+SelectedElement,,list,,out_of_scope,,,
+SelectedIndex,,list,,out_of_scope,,,
+RandomElement,,list,,out_of_scope,,,
+Product,,list,P2,done,4,4,"Product(list); Product(list, number of elements); Product(list, list of frequencies); Product(expression, variable, from, to)"
+Frequency,,list,P2,done,8,8,"Frequency of numbers, with classes, a cumulative flag, density and a scale factor"
+Unique,,list,P2,done,1,1,Unique(list)
+Classes,,list,P2,done,2,2,"Classes(list, number of classes); Classes(list, start, width)"
+Zip,,list,P2,done,1,1,"Zip(expression, variable, list, ...)"
+Intersection,,list,P2,done,1,1,"Intersection(list, list)"
+PointList,,list,P2,done,3,3,"PointList(list); PointList(number, number, ...); PointList(point, point, ...)"
+OrdinalRank,,list,P2,done,3,3,"OrdinalRank(list); OrdinalRank(number, number, ...)"
+TiedRank,,list,P2,done,3,3,"TiedRank(list); TiedRank(number, number, ...)"
+Union,,list,P2,done,2,2,"Union(list, list)"
+Remove,,list,P2,done,1,1,"Remove(list, list)"
 BarChart,,charts,P2,todo,7,0,
 BoxPlot,,charts,P2,todo,4,0,
 Histogram,,charts,P2,todo,8,0,

@@ -101,6 +101,16 @@ form = "point,point,point"
 cases = ["intersect-groups-002", "intersect-startpoint-001", "intersect-startpoint-002"]
 
 [[form]]
+command = "Append"
+form = "any,list"
+difference = "list-commands: `Append(list, any)` and `Append(any, list)`"
+
+[[form]]
+command = "Append"
+form = "list,any"
+difference = "list-commands: `Append(list, any)` and `Append(any, list)`"
+
+[[form]]
 command = "Arc"
 form = "conic,number,number"
 cases = ["arcs-conicparams-007"]
@@ -204,6 +214,16 @@ cases = ["arcs-circum-001", "arcs-circum-002", "arcs-circum-005"]
 command = "CircumcircleSector"
 form = "point,point,point"
 cases = ["arcs-circum-003", "arcs-circum-004", "arcs-circum-007"]
+
+[[form]]
+command = "Classes"
+form = "list,number"
+cases = ["lists-classes-001", "lists-classes-002", "lists-classes-003"]
+
+[[form]]
+command = "Classes"
+form = "list,number,number"
+cases = ["lists-classes-008", "lists-classes-009", "lists-classes-010"]
 
 [[form]]
 command = "ClosestPoint"
@@ -341,6 +361,16 @@ form = "list,number"
 cases = ["lists-index-003", "lists-index-004", "lists-index-013"]
 
 [[form]]
+command = "Element"
+form = "list,number,number,..."
+cases = ["lists-element2-001", "lists-element2-002", "lists-element2-003"]
+
+[[form]]
+command = "Element"
+form = "text,number"
+difference = "list-commands: `Element(text, number)`"
+
+[[form]]
 command = "Ellipse"
 form = "point,point,number"
 cases = ["conics-focilength-001", "conics-focilength-002", "conics-focilength-003"]
@@ -366,6 +396,21 @@ form = "list,number"
 cases = ["lists-objects-037", "lists-order-004", "lists-order-017"]
 
 [[form]]
+command = "First"
+form = "locus,number"
+cases = ["lists-locusfirst-001", "lists-locusfirst-002", "lists-locusfirst-003"]
+
+[[form]]
+command = "First"
+form = "text"
+difference = "list-commands: `First(text)`, `First(text, number)`, `Last(text)`, `Last(text, number)`"
+
+[[form]]
+command = "First"
+form = "text,number"
+difference = "list-commands: `First(text)`, `First(text, number)`, `Last(text)`, `Last(text, number)`"
+
+[[form]]
 command = "FirstAxis"
 form = "conic"
 cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
@@ -376,9 +421,54 @@ form = "conic"
 cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 
 [[form]]
+command = "Flatten"
+form = "list"
+cases = ["lists-flatten-001", "lists-flatten-002", "lists-flatten-003"]
+
+[[form]]
 command = "Focus"
 form = "conic"
 cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
+
+[[form]]
+command = "Frequency"
+form = "boolean,list"
+cases = ["lists-freq-004", "lists-freq-005"]
+
+[[form]]
+command = "Frequency"
+form = "boolean,list,list"
+cases = ["lists-freq-007", "lists-freq-008", "lists-freq-009"]
+
+[[form]]
+command = "Frequency"
+form = "boolean,list,list,boolean"
+cases = ["lists-freq-011"]
+
+[[form]]
+command = "Frequency"
+form = "boolean,list,list,boolean,number"
+cases = ["lists-freq-013"]
+
+[[form]]
+command = "Frequency"
+form = "list"
+cases = ["lists-freq-001", "lists-freq-002", "lists-freq-003"]
+
+[[form]]
+command = "Frequency"
+form = "list,list"
+cases = ["lists-freq-006", "lists-freq-017", "lists-freq-018"]
+
+[[form]]
+command = "Frequency"
+form = "list,list,boolean"
+cases = ["lists-freq-010", "lists-freq-024"]
+
+[[form]]
+command = "Frequency"
+form = "list,list,boolean,number"
+cases = ["lists-freq-012", "lists-freq-014", "lists-freq-015"]
 
 [[form]]
 command = "GCD"
@@ -399,6 +489,31 @@ cases = ["conics-hyperbola-001", "conics-hyperbola-002", "conics-hyperbola-003"]
 command = "Incircle"
 form = "point,point,point"
 cases = ["conic-center-009", "conic-incircle-001", "conic-incircle-002"]
+
+[[form]]
+command = "IndexOf"
+form = "any,list"
+difference = "list-commands: `IndexOf(any, list)` and `IndexOf(any, list, number)`"
+
+[[form]]
+command = "IndexOf"
+form = "any,list,number"
+difference = "list-commands: `IndexOf(any, list)` and `IndexOf(any, list, number)`"
+
+[[form]]
+command = "IndexOf"
+form = "text,text"
+difference = "list-commands: `IndexOf(text, text)`, `IndexOf(text, text, number)`"
+
+[[form]]
+command = "IndexOf"
+form = "text,text,number"
+difference = "list-commands: `IndexOf(text, text)`, `IndexOf(text, text, number)`"
+
+[[form]]
+command = "Insert"
+form = "any,list,number"
+difference = "list-commands: `Insert(any, list, number)`"
 
 [[form]]
 command = "InteriorAngles"
@@ -561,6 +676,11 @@ form = "function,polygon,point"
 cases = ["intersections-boundaryseed-004", "intersections-boundaryseed-008"]
 
 [[form]]
+command = "Intersection"
+form = "list,list"
+cases = ["lists-setops-001", "lists-setops-002", "lists-setops-003"]
+
+[[form]]
 command = "Join"
 form = "list"
 cases = ["lists-join-010", "lists-join-011", "lists-objects-045"]
@@ -577,8 +697,28 @@ cases = ["expr-twonum-004", "expr-twonum-009", "expr-twonum-014"]
 
 [[form]]
 command = "Last"
+form = "function"
+difference = "list-commands: `Last(function)`"
+
+[[form]]
+command = "Last"
+form = "list"
+cases = ["lists-wrapped-001"]
+
+[[form]]
+command = "Last"
 form = "list,number"
 cases = ["lists-objects-038", "lists-order-005", "lists-order-007"]
+
+[[form]]
+command = "Last"
+form = "text"
+difference = "list-commands: `First(text)`, `First(text, number)`, `Last(text)`, `Last(text, number)`"
+
+[[form]]
+command = "Last"
+form = "text,number"
+difference = "list-commands: `First(text)`, `First(text, number)`, `Last(text)`, `Last(text, number)`"
 
 [[form]]
 command = "Length"
@@ -727,6 +867,21 @@ form = "number,number"
 cases = ["expr-syntax-008", "expr-syntax-010", "expr-syntax-011"]
 
 [[form]]
+command = "OrdinalRank"
+form = "list"
+cases = ["lists-ranks-001", "lists-ranks-003", "lists-ranks-005"]
+
+[[form]]
+command = "OrdinalRank"
+form = "number,number,..."
+cases = ["lists-ranks-009"]
+
+[[form]]
+command = "OrdinalRank"
+form = "point,point,..."
+cases = ["lists-wrapped-005"]
+
+[[form]]
 command = "OrthogonalLine"
 form = "point,line"
 cases = ["geometry-chain-001", "geometry-chain-002", "geometry-chain-003"]
@@ -772,6 +927,21 @@ form = "polygon"
 cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
 
 [[form]]
+command = "PointList"
+form = "list"
+cases = ["lists-pointlist-001", "lists-pointlist-002", "lists-pointlist-003"]
+
+[[form]]
+command = "PointList"
+form = "number,number,..."
+cases = ["lists-pointlist-006"]
+
+[[form]]
+command = "PointList"
+form = "point,point,..."
+cases = ["lists-pointlist-007"]
+
+[[form]]
 command = "Polar"
 form = "point,conic"
 cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
@@ -798,8 +968,18 @@ cases = ["paths-chain-003", "paths-polygon-001", "paths-polygon-002"]
 
 [[form]]
 command = "Product"
+form = "any,number,number,number"
+difference = "list-commands: `Product(any, number, number, number)`"
+
+[[form]]
+command = "Product"
 form = "list"
 cases = ["lists-objects-032", "lists-stats-001", "lists-stats-002"]
+
+[[form]]
+command = "Product"
+form = "list,list"
+cases = ["lists-prodfreq-001", "lists-prodfreq-002", "lists-prodfreq-003"]
 
 [[form]]
 command = "Product"
@@ -817,9 +997,29 @@ form = "point,vector"
 cases = ["paths-ray-006", "points-closestray-006", "predicates-equal-026"]
 
 [[form]]
+command = "Remove"
+form = "list,list"
+cases = ["lists-setops-012", "lists-setops-013", "lists-setops-014"]
+
+[[form]]
+command = "RemoveUndefined"
+form = "list"
+cases = ["lists-undef-002", "lists-undef-006", "lists-undef-007"]
+
+[[form]]
 command = "Reverse"
 form = "list"
 cases = ["lists-join-015", "lists-objects-036", "lists-order-001"]
+
+[[form]]
+command = "Reverse"
+form = "number,number,..."
+cases = ["lists-wrapped-002"]
+
+[[form]]
+command = "Reverse"
+form = "point,point,..."
+cases = ["lists-wrapped-003"]
 
 [[form]]
 command = "Rotate"
@@ -883,6 +1083,16 @@ cases = ["arcs-points-006", "arcs-semicircle-001", "arcs-semicircle-002"]
 
 [[form]]
 command = "Sequence"
+form = "any,number,number,number"
+difference = "list-commands: `Sequence(any, number, number, number)` and `Sequence(any, number, number, number, number)`"
+
+[[form]]
+command = "Sequence"
+form = "any,number,number,number,number"
+difference = "list-commands: `Sequence(any, number, number, number)` and `Sequence(any, number, number, number, number)`"
+
+[[form]]
+command = "Sequence"
 form = "number"
 cases = ["lists-arith-013", "lists-if-012", "lists-join-012"]
 
@@ -938,6 +1148,16 @@ form = "list"
 cases = ["lists-objects-039", "lists-objects-040", "lists-objects-041"]
 
 [[form]]
+command = "Sort"
+form = "list,list"
+cases = ["lists-sort2-001", "lists-sort2-002", "lists-sort2-003"]
+
+[[form]]
+command = "Sort"
+form = "point,point,..."
+cases = ["lists-wrapped-004"]
+
+[[form]]
 command = "Stretch"
 form = "any,vector"
 cases = [
@@ -980,6 +1200,26 @@ form = "list,number"
 cases = ["lists-objects-030", "lists-stats-018", "lists-sum-005"]
 
 [[form]]
+command = "Take"
+form = "list,number"
+cases = ["lists-take-001", "lists-take-003", "lists-take-005"]
+
+[[form]]
+command = "Take"
+form = "list,number,number"
+cases = ["lists-take-002", "lists-take-004", "lists-take-007"]
+
+[[form]]
+command = "Take"
+form = "text,number"
+difference = "list-commands: `Take(text, number)`, `Take(text, number, number)`"
+
+[[form]]
+command = "Take"
+form = "text,number,number"
+difference = "list-commands: `Take(text, number)`, `Take(text, number, number)`"
+
+[[form]]
 command = "Tangent"
 form = "line,conic"
 cases = ["conics-tangent-002", "conics-tangent-005", "conics-tangent-008"]
@@ -988,6 +1228,21 @@ cases = ["conics-tangent-002", "conics-tangent-005", "conics-tangent-008"]
 command = "Tangent"
 form = "point,conic"
 cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007"]
+
+[[form]]
+command = "TiedRank"
+form = "list"
+cases = ["lists-ranks-002", "lists-ranks-004", "lists-ranks-006"]
+
+[[form]]
+command = "TiedRank"
+form = "number,number,..."
+cases = ["lists-ranks-010"]
+
+[[form]]
+command = "TiedRank"
+form = "point,point,..."
+cases = ["lists-wrapped-006"]
 
 [[form]]
 command = "Translate"
@@ -1016,6 +1271,21 @@ cases = [
 command = "Trilinear"
 form = "point,point,point,number,number,number"
 cases = ["points-trilinear-001", "points-trilinear-002", "points-trilinear-003"]
+
+[[form]]
+command = "Union"
+form = "list,list"
+cases = ["lists-setops-006", "lists-setops-007", "lists-setops-008"]
+
+[[form]]
+command = "Union"
+form = "polygon,polygon"
+difference = "list-commands: `Union(polygon, polygon)`"
+
+[[form]]
+command = "Unique"
+form = "list"
+cases = ["lists-unique-001", "lists-unique-002", "lists-unique-003"]
 
 [[form]]
 command = "UnitOrthogonalVector"
@@ -1311,3 +1581,9 @@ cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-002"]
 command = "Vertex"
 form = "segment,number"
 cases = ["geomextras-vertexsegment-001", "geomextras-vertexsegment-002", "geomextras-vertexsegment-003"]
+
+[[form]]
+command = "Zip"
+form = "any,any,list,..."
+difference = "list-commands: `Zip(any, any, list, ...)`"
+

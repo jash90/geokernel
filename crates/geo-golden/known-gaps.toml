@@ -741,3 +741,45 @@ mismatches = ["0:script line 7"]
 id = "geomextras-polylinelist-002"
 reason = "The boolean argument is ignored by the reference list form. The kernel lacks the list-backed polyline that this form also needs."
 mismatches = ["0:script line 8"]
+
+# lists
+
+[[gap]]
+id = "lists-classes-015"
+reason = "intended difference, recorded in DIFFERENCES.md: in GeoGebra 1 / 0 is infinity and defined, so it takes part in the bounds of Classes (min 2, max infinity, width -infinity); the three bounds come out NaN, -infinity and infinity, which all show as undefined numbers. The kernel has no infinity: 1 / 0 is undefined, the bounds stay 2 and the three classes are defined"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p", "6:p", "7:p", "8:p", "9:p"]
+
+[[gap]]
+id = "lists-take-016"
+reason = "intended difference, recorded in DIFFERENCES.md: Take(l, m) with m past the end of the list makes an undefined list, but GeoGebra keeps the elements of the last defined one, and + 1 maps over them, giving one undefined number per stale element. The undefined value of the kernel has no elements"
+mismatches = ["5:p", "6:p", "7:p"]
+
+[[gap]]
+id = "lists-undef-001"
+reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so RemoveUndefined keeps it (and a point with an infinite coordinate); the kernel has no infinity and drops those elements like undefined ones"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-003"
+reason = "intended difference, recorded in DIFFERENCES.md: a point with an infinite coordinate is defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined point"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-004"
+reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined number"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-005"
+reason = "intended difference, recorded in DIFFERENCES.md: a point with an infinite coordinate is defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined point"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-008"
+reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so it survives arithmetic and RemoveUndefined keeps the point built from it; the kernel has no infinity and drops it like an undefined one"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-010"
+reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so RemoveUndefined keeps the list element built from it; the kernel has no infinity and drops it like an undefined one"
+mismatches = ["0:p", "1:p", "3:p", "4:p", "5:p"]

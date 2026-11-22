@@ -15,18 +15,41 @@
 //! so rejecting the same trees here gives the same lines errors.
 
 use super::commands;
-use super::{Bin, Elem, IfMode, Node, Ty, Un, NONE};
+use super::{Bin, CallOp, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Kind};
 
 /// Types, depths, costs and variable counts of the nodes reachable from
 /// `root`; children always come before their parents in the arena, and
 /// nodes left behind by a rewrite are skipped.
 #[allow(clippy::type_complexity)]
-pub(crate) fn check(
-    c: &Construction,
-    nodes: &[Node],
-    root: u32,
-) -> Result<(Vec<Ty>, Vec<u32>, Vec<u64>, Vec<u64>), String> {
+/// The types, depths, costs and variable counts of the nodes typed so far.
+struct State {
+    tys: Vec<Ty>,
+    depth: Vec<u32>,
+    cost: Vec<u64>,
+    vars: Vec<u64>,
+    /// the type of the variable of every `Zip` seen so far
+    /// (`GeoList.createTemplateElement`), newest last
+    zip_locals: Vec<(u32, Ty)>,
+}
+
+impl State {
+    /// The type of the variable of the `Zip` of `depth`: the innermost one
+    /// that binds it, a number for a `Sequence`.
+    fn local(&self, depth: u32) -> Ty {
+        self.zip_locals
+            .iter()
+            .rev()
+            .find(|&&(d, _)| d == depth)
+            .map_or(Ty::Num(0), |&(_, t)| t)
+    }
+}
+
+/// What `check` returns: the type, depth, cost and variable count of every
+/// node, in the order of the arena.
+pub(crate) type Checked = (Vec<Ty>, Vec<u32>, Vec<u64>, Vec<u64>);
+
+pub(crate) fn check(c: &Construction, nodes: &[Node], root: u32) -> Result<Checked, String> {
     let n = nodes.len();
     let mut reachable = vec![false; n];
     reachable[root as usize] = true;
@@ -37,174 +60,316 @@ pub(crate) fn check(
             }
         }
     }
-    let mut tys: Vec<Ty> = Vec::with_capacity(n);
-    let mut depth: Vec<u32> = Vec::with_capacity(n);
-    let mut cost: Vec<u64> = Vec::with_capacity(n);
-    let mut vars: Vec<u64> = Vec::with_capacity(n);
-    for (i, node) in nodes.iter().enumerate() {
-        if !reachable[i] {
-            tys.push(Ty::Num(0));
-            depth.push(0);
-            cost.push(0);
-            vars.push(0);
+    let mut state = State {
+        tys: Vec::with_capacity(n),
+        depth: Vec::with_capacity(n),
+        cost: Vec::with_capacity(n),
+        vars: Vec::with_capacity(n),
+        zip_locals: Vec::new(),
+    };
+    // the expressions of `Zip` calls are typed by their own arm, with the
+    // variables bound to the elements of their lists
+    let mut in_zip = vec![false; n];
+    for node in nodes {
+        if let Node::Call(CallOp::Zip, first, _) = *node {
+            if let Node::Item(e) = nodes[first as usize] {
+                for j in subtree_min(nodes, e)..=e {
+                    in_zip[j as usize] = true;
+                }
+            }
+        }
+    }
+    for i in 0..n {
+        state.tys.push(Ty::Num(0));
+        state.depth.push(0);
+        state.cost.push(0);
+        state.vars.push(0);
+        if !reachable[i] || in_zip[i] {
             continue;
         }
-        let (ty, d, k, v) = match *node {
-            Node::Num(_) | Node::MinusOne => (Ty::Num(0), 1, 1, 0),
-            Node::Bool(_) => (Ty::Bool, 1, 1, 0),
-            Node::Degree => (Ty::Num(1), 1, 1, 0),
-            Node::Var | Node::VarY => (Ty::Num(0), 1, 1, 1),
-            Node::Obj(id) => (object_type(c, id)?, 1, 1, 0),
-            Node::Cmd(def, _) => (result_type(def.kind())?, 1, 1, 0),
-            Node::FnName(_) => return Err("a function name needs an argument".into()),
-            Node::Tuple(a, b) | Node::Polar(a, b) => {
-                let (a, b) = (a as usize, b as usize);
-                if !matches!(tys[a], Ty::Num(_) | Ty::Bool)
-                    || !matches!(tys[b], Ty::Num(_) | Ty::Bool)
-                {
-                    return Err("coordinates must be numbers".into());
-                }
-                (
-                    Ty::Vec,
-                    1 + depth[a].max(depth[b]),
-                    1u64.saturating_add(cost[a]).saturating_add(cost[b]),
-                    vars[a].saturating_add(vars[b]),
-                )
-            }
-            Node::Un(op, a) => {
-                let a = a as usize;
-                (
-                    unary_type(op, tys[a])?,
-                    1 + depth[a],
-                    cost[a].saturating_add(1),
-                    vars[a],
-                )
-            }
-            Node::Bin(op, a, b) => {
-                let (a, b) = (a as usize, b as usize);
-                if op.is_command() && vars[a].saturating_add(vars[b]) > 0 {
-                    // GeoGebra rejects `Mod(x, 3)` in a function
-                    return Err("a command cannot take `x`".into());
-                }
-                (
-                    binary_type(op, tys[a], tys[b])?,
-                    1 + depth[a].max(depth[b]),
-                    1u64.saturating_add(cost[a]).saturating_add(cost[b]),
-                    vars[a].saturating_add(vars[b]),
-                )
-            }
-            Node::If(mode, cond, then, rest) => {
-                let (cond, then) = (cond as usize, then as usize);
-                if tys[cond] != Ty::Bool {
-                    // `CmdIf`: `argErr` for a condition that is no boolean
-                    return Err("the condition of `If` must be a boolean".into());
-                }
-                let (ty, d, k, v) = if rest == NONE {
-                    (tys[then], 0, 0, 0)
-                } else {
-                    let r = rest as usize;
-                    (join(tys[then], tys[r])?, depth[r], cost[r], vars[r])
-                };
-                if mode != IfMode::Algo && !matches!(ty, Ty::Num(_)) {
-                    // `CmdIf.checkAdd`: the branches must be functions
-                    return Err("the branches of a function's `If` must be numbers".into());
-                }
-                (
-                    ty,
-                    1 + depth[cond].max(depth[then]).max(d),
-                    1u64.saturating_add(cost[cond])
-                        .saturating_add(cost[then])
-                        .saturating_add(k),
-                    vars[cond].saturating_add(vars[then]).saturating_add(v),
-                )
-            }
-            Node::Apply(f, a) => {
-                let a = a as usize;
-                if !matches!(tys[a], Ty::Num(_) | Ty::Bool) {
-                    return Err("a function takes a number".into());
-                }
-                let (fd, fc, fv) = super::function_metrics(c, f);
-                (
-                    Ty::Num(0),
-                    fd.saturating_add(depth[a]),
-                    fc.saturating_add(fv.saturating_mul(cost[a])),
-                    fv.saturating_mul(vars[a]),
-                )
-            }
-            Node::Local(_) => (Ty::Num(0), 1, 1, 0),
-            Node::Item(a) => {
-                let a = a as usize;
-                (tys[a], depth[a], cost[a], vars[a])
-            }
-            Node::List(first, len) => {
-                let mut elem = Elem::Empty;
-                let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
-                for item in first..first.saturating_add(len) {
-                    let item = item as usize;
-                    elem = join_elem(elem, elem_of(tys[item]));
-                    d = d.max(depth[item]);
-                    k = k.saturating_add(cost[item]);
-                    v = v.saturating_add(vars[item]);
-                }
-                (Ty::List(elem), 1 + d, k, v)
-            }
-            Node::ListOp(op, l, n) => {
-                let Ty::List(elem) = tys[l as usize] else {
-                    return Err("the command needs a list".into());
-                };
-                let object = commands::takes_object(op);
-                if n != NONE && !object && !matches!(tys[n as usize], Ty::Num(_) | Ty::Bool) {
-                    return Err("the index must be a number".into());
-                }
-                // a list of numbers and booleans has mixed elements
-                let numbers = matches!(elem, Elem::Num | Elem::Bool | Elem::Empty | Elem::Any);
-                let ty = commands::list_type(op, elem, numbers, nodes, &tys, l, n)?;
-                let (l, n) = (l as usize, n as usize);
-                let (nd, nc, nv) = if n == NONE as usize {
-                    (0, 0, 0)
-                } else {
-                    (depth[n], cost[n], vars[n])
-                };
-                (
-                    ty,
-                    1 + depth[l].max(nd),
-                    1u64.saturating_add(cost[l]).saturating_add(nc),
-                    vars[l].saturating_add(nv),
-                )
-            }
-            Node::Range(..) | Node::Seq(..) => {
-                let (args, elem): (&[u32], Elem) = match *node {
-                    Node::Range(a, b, c) => (&[a, b, c], Elem::Num),
-                    Node::Seq(e, a, b, c, _) => (&[a, b, c, e], elem_of(tys[e as usize])),
-                    _ => unreachable!("matched above"),
-                };
-                let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
-                for (j, &a) in args.iter().enumerate() {
-                    if a == NONE {
-                        continue;
-                    }
-                    let a = a as usize;
-                    if j < 3 && !matches!(tys[a], Ty::Num(_) | Ty::Bool) {
-                        return Err("the bounds of `Sequence` must be numbers".into());
-                    }
-                    d = d.max(depth[a]);
-                    k = k.saturating_add(cost[a]);
-                    v = v.saturating_add(vars[a]);
-                }
-                (Ty::List(elem), 1 + d, k, v)
-            }
-        };
-        tys.push(ty);
-        depth.push(d);
-        cost.push(k);
-        vars.push(v);
+        type_node(c, nodes, &mut state, i as u32)?;
     }
-    Ok((tys, depth, cost, vars))
+    Ok((state.tys, state.depth, state.cost, state.vars))
+}
+
+/// The first node of the subtree of `root` (its children come before it).
+fn subtree_min(nodes: &[Node], root: u32) -> u32 {
+    let mut min = root;
+    for child in super::children(&nodes[root as usize]) {
+        min = min.min(subtree_min(nodes, child));
+    }
+    min
+}
+
+/// Types node `i` from the types of its children (which come before it in
+/// the arena), assigns the result to `state` and returns it.
+fn type_node(
+    c: &Construction,
+    nodes: &[Node],
+    state: &mut State,
+    i: u32,
+) -> Result<(Ty, u32, u64, u64), String> {
+    let i = i as usize;
+    let (ty, d, k, v) = match nodes[i] {
+        Node::Num(_) | Node::MinusOne => (Ty::Num(0), 1, 1, 0),
+        Node::Bool(_) => (Ty::Bool, 1, 1, 0),
+        Node::Degree => (Ty::Num(1), 1, 1, 0),
+        Node::Var | Node::VarY => (Ty::Num(0), 1, 1, 1),
+        Node::Obj(id) => (object_type(c, id)?, 1, 1, 0),
+        Node::Cmd(def, _) => (result_type(def.kind())?, 1, 1, 0),
+        Node::FnName(_) => return Err("a function name needs an argument".into()),
+        Node::Tuple(a, b) | Node::Polar(a, b) => {
+            let (a, b) = (a as usize, b as usize);
+            if !matches!(state.tys[a], Ty::Num(_) | Ty::Bool)
+                || !matches!(state.tys[b], Ty::Num(_) | Ty::Bool)
+            {
+                return Err("coordinates must be numbers".into());
+            }
+            (
+                Ty::Vec,
+                1 + state.depth[a].max(state.depth[b]),
+                1u64.saturating_add(state.cost[a])
+                    .saturating_add(state.cost[b]),
+                state.vars[a].saturating_add(state.vars[b]),
+            )
+        }
+        Node::Un(op, a) => {
+            let a = a as usize;
+            (
+                unary_type(op, state.tys[a])?,
+                1 + state.depth[a],
+                state.cost[a].saturating_add(1),
+                state.vars[a],
+            )
+        }
+        Node::Bin(op, a, b) => {
+            let (a, b) = (a as usize, b as usize);
+            if op.is_command() && state.vars[a].saturating_add(state.vars[b]) > 0 {
+                // GeoGebra rejects `Mod(x, 3)` in a function
+                return Err("a command cannot take `x`".into());
+            }
+            (
+                binary_type(op, state.tys[a], state.tys[b])?,
+                1 + state.depth[a].max(state.depth[b]),
+                1u64.saturating_add(state.cost[a])
+                    .saturating_add(state.cost[b]),
+                state.vars[a].saturating_add(state.vars[b]),
+            )
+        }
+        Node::If(mode, cond, then, rest) => {
+            let (cond, then) = (cond as usize, then as usize);
+            if state.tys[cond] != Ty::Bool {
+                // `CmdIf`: `argErr` for a condition that is no boolean
+                return Err("the condition of `If` must be a boolean".into());
+            }
+            let (ty, d, k, v) = if rest == NONE {
+                (state.tys[then], 0, 0, 0)
+            } else {
+                let r = rest as usize;
+                (
+                    join(state.tys[then], state.tys[r])?,
+                    state.depth[r],
+                    state.cost[r],
+                    state.vars[r],
+                )
+            };
+            if mode != IfMode::Algo && !matches!(ty, Ty::Num(_)) {
+                // `CmdIf.checkAdd`: the branches must be functions
+                return Err("the branches of a function's `If` must be numbers".into());
+            }
+            (
+                ty,
+                1 + state.depth[cond].max(state.depth[then]).max(d),
+                1u64.saturating_add(state.cost[cond])
+                    .saturating_add(state.cost[then])
+                    .saturating_add(k),
+                state.vars[cond]
+                    .saturating_add(state.vars[then])
+                    .saturating_add(v),
+            )
+        }
+        Node::Apply(f, a) => {
+            let a = a as usize;
+            if !matches!(state.tys[a], Ty::Num(_) | Ty::Bool) {
+                return Err("a function takes a number".into());
+            }
+            let (fd, fc, fv) = super::function_metrics(c, f);
+            (
+                Ty::Num(0),
+                fd.saturating_add(state.depth[a]),
+                fc.saturating_add(fv.saturating_mul(state.cost[a])),
+                fv.saturating_mul(state.vars[a]),
+            )
+        }
+        Node::Local(depth_of) => (state.local(depth_of), 1, 1, 0),
+        Node::Item(a) => {
+            let a = a as usize;
+            (state.tys[a], state.depth[a], state.cost[a], state.vars[a])
+        }
+        Node::List(first, len) => {
+            let mut elem = Elem::Empty;
+            let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
+            for item in first..first.saturating_add(len) {
+                let item = item as usize;
+                elem = join_elem(elem, elem_of(state.tys[item]));
+                d = d.max(state.depth[item]);
+                k = k.saturating_add(state.cost[item]);
+                v = v.saturating_add(state.vars[item]);
+            }
+            (Ty::List(elem), 1 + d, k, v)
+        }
+        Node::Call(CallOp::Zip, first, len) => {
+            // the variables of the `Zip` take the elements of their lists;
+            // the expression, parsed before them, is typed again with every
+            // variable bound, as `resArgsForZip` resolves it last
+            let expression = match nodes[first as usize] {
+                Node::Item(e) => e,
+                _ => return Err("the expression of a `Zip` is missing".into()),
+            };
+            for k in 0..(len - 1) / 2 {
+                let local = nodes[(first + 1 + 2 * k) as usize];
+                let list = match nodes[(first + 2 + 2 * k) as usize] {
+                    Node::Item(a) => a,
+                    _ => return Err("the list of a `Zip` variable is missing".into()),
+                };
+                if let (Node::Local(d), Ty::List(e)) = (local, state.tys[list as usize]) {
+                    let elem = ty_of(e).unwrap_or(Ty::Num(0));
+                    state.zip_locals.retain(|&(depth_of, _)| depth_of != d);
+                    state.zip_locals.push((d, elem));
+                }
+            }
+            // the whole expression is typed again, now with its variables
+            // bound (`check` leaves it out of its own walk)
+            let block = subtree_min(nodes, expression);
+            for j in block..=first {
+                if (j as usize) < i {
+                    type_node(c, nodes, state, j)?;
+                }
+            }
+            let tys = &state.tys[..i];
+            let (mut md, mut mk, mut mv) = (0u32, 1u64, 0u64);
+            for arg in first..first.saturating_add(len) {
+                let arg = arg as usize;
+                if arg < tys.len() {
+                    md = md.max(state.depth[arg]);
+                    mk = mk.saturating_add(state.cost[arg]);
+                    mv = mv.saturating_add(state.vars[arg]);
+                }
+            }
+            (Ty::List(elem_of(state.tys[first as usize])), 1 + md, mk, mv)
+        }
+        Node::Call(op, first, len) => {
+            let ty = commands::call_type(op, c, nodes, &state.tys[..i], first, len)?;
+            let (mut md, mut mk, mut mv) = (0u32, 1u64, 0u64);
+            for arg in first..first.saturating_add(len) {
+                let arg = arg as usize;
+                md = md.max(state.depth[arg]);
+                mk = mk.saturating_add(state.cost[arg]);
+                mv = mv.saturating_add(state.vars[arg]);
+            }
+            (ty, 1 + md, mk, mv)
+        }
+        Node::ListOp(op, l, n) => {
+            let elem = match state.tys[l as usize] {
+                Ty::List(e) => e,
+                _ => {
+                    // `First(locus, n)`: the points of the locus
+                    // (`AlgoFirstLocus`)
+                    if matches!(op, ListOp::First | ListOp::Last)
+                        && matches!(nodes[l as usize], Node::Obj(id) if c.kind(id) == Kind::Locus)
+                        && (n == NONE || matches!(state.tys[n as usize], Ty::Num(_) | Ty::Bool))
+                    {
+                        return Ok(assign(
+                            state,
+                            i as u32,
+                            Ty::List(Elem::Vec),
+                            1 + if n == NONE {
+                                0
+                            } else {
+                                state.depth[n as usize]
+                            },
+                            1u64 + if n == NONE { 0 } else { state.cost[n as usize] },
+                            if n == NONE { 0 } else { state.vars[n as usize] },
+                        ));
+                    }
+                    return Err("the command needs a list".into());
+                }
+            };
+            let object = commands::takes_object(op);
+            let second_list = commands::second_list(op);
+            if n != NONE
+                && !object
+                && !second_list
+                && !matches!(state.tys[n as usize], Ty::Num(_) | Ty::Bool)
+            {
+                return Err("the index must be a number".into());
+            }
+            // a list of numbers and booleans has mixed elements
+            let numbers = matches!(elem, Elem::Num | Elem::Bool | Elem::Empty | Elem::Any);
+            let ty = commands::list_type(op, elem, numbers, nodes, &state.tys[..i], l, n)?;
+            let (nd, nc, nv) = if n == NONE {
+                (0, 0, 0)
+            } else {
+                (
+                    state.depth[n as usize],
+                    state.cost[n as usize],
+                    state.vars[n as usize],
+                )
+            };
+            (
+                ty,
+                1 + state.depth[l as usize].max(nd),
+                1u64.saturating_add(state.cost[l as usize])
+                    .saturating_add(nc),
+                state.vars[l as usize].saturating_add(nv),
+            )
+        }
+        Node::Range(..) | Node::Seq(..) => {
+            let (args, elem): (&[u32], Elem) = match nodes[i] {
+                Node::Range(a, b, c2) => (&[a, b, c2], Elem::Num),
+                Node::Seq(e, a, b, c2, _) => (&[a, b, c2, e], elem_of(state.tys[e as usize])),
+                _ => unreachable!("matched above"),
+            };
+            let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
+            for (j, &a) in args.iter().enumerate() {
+                if a == NONE {
+                    continue;
+                }
+                let a = a as usize;
+                if j < 3 && !matches!(state.tys[a], Ty::Num(_) | Ty::Bool) {
+                    return Err("the bounds of `Sequence` must be numbers".into());
+                }
+                d = d.max(state.depth[a]);
+                k = k.saturating_add(state.cost[a]);
+                v = v.saturating_add(state.vars[a]);
+            }
+            (Ty::List(elem), 1 + d, k, v)
+        }
+    };
+    state.tys[i] = ty;
+    state.depth[i] = d;
+    state.cost[i] = k;
+    state.vars[i] = v;
+    Ok((ty, d, k, v))
+}
+
+/// Assigns an already computed type and returns it (a typing that does not
+/// read the state any further).
+fn assign(state: &mut State, i: u32, ty: Ty, d: u32, k: u64, v: u64) -> (Ty, u32, u64, u64) {
+    state.tys[i as usize] = ty;
+    state.depth[i as usize] = d;
+    state.cost[i as usize] = k;
+    state.vars[i as usize] = v;
+    (ty, d, k, v)
 }
 
 fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
     match (c.kind(id), c.def(id)) {
         (Kind::List, Def::Expr(d)) => Ok(super::entry(c, d).root_ty()),
+        // a locus is the argument of `First(locus, n)` (`AlgoFirstLocus`);
+        // anywhere else it reads as a plain number, which no operation
+        // makes sense of and evaluates to the undefined number
+        (Kind::Locus, _) => Ok(Ty::Num(0)),
         (kind, _) => result_type(kind),
     }
 }

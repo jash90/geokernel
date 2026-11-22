@@ -66,7 +66,7 @@ use super::commands;
 use super::decimal::Dec;
 use super::list::{copy_tree, List, Slot};
 use super::math::{self, PI_180};
-use super::{Bin, Entry, ListOp, Node, Raw, Ty, Un};
+use super::{Bin, CallOp, Entry, ListOp, Node, Raw, Ty, Un};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
@@ -385,10 +385,11 @@ impl Lists {
     }
 }
 
-/// The value of the variable of a `Sequence`, inside those around it.
+/// The element the variable of a `Sequence` or `Zip` holds, inside those
+/// around it.
 pub(super) struct Local<'a> {
     pub(super) depth: u32,
-    pub(super) value: f64,
+    pub(super) slot: Slot,
     pub(super) up: Option<&'a Local<'a>>,
 }
 
@@ -413,7 +414,7 @@ impl Val {
 }
 
 /// `MyBoolean.getDouble`.
-fn bool_number(b: bool) -> f64 {
+pub(super) fn bool_number(b: bool) -> f64 {
     if b {
         1.0
     } else {
@@ -749,12 +750,14 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Apply(f, a) => self.apply_full(f, a),
             Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
             Node::Item(a) => self.full(a),
-            // the variable of a `Sequence` is a `GeoNumeric`
+            // the variable of a `Sequence` is a `GeoNumeric`; the variable
+            // of a `Zip` is the element it walks (`createTemplateElement`)
             Node::Local(depth) => Ex {
                 obj: true,
-                ..Ex::plain(N(self.local(depth)))
+                ..Ex::plain(slot_val(self.local_slot(depth)))
             },
             Node::ListOp(op, l, n) => self.list_command(i, op, l, n),
+            Node::Call(op, first, len) => self.call_command(op, first, len),
             // a list is only read through `list`
             Node::FnName(_) | Node::List(..) | Node::Range(..) | Node::Seq(..) => {
                 Ex::plain(N(f64::NAN))
@@ -1029,20 +1032,21 @@ impl<const M: bool> Ctx<'_, M> {
 
 /// Lists: built in the scratch buffer, read by the list commands.
 impl<const M: bool> Ctx<'_, M> {
-    /// The value of the variable of the `Sequence` of `depth`.
+    /// The element the variable of `depth` holds: a number for a `Sequence`
+    /// (`AlgoSequence`), any element for a `Zip` (`updateLocalVar`).
     #[inline(never)]
-    fn local(&self, depth: u32) -> f64 {
+    pub(super) fn local_slot(&self, depth: u32) -> Slot {
         let mut local = self.locals;
         while let Some(l) = local {
             if l.depth == depth {
-                return l.value;
+                return l.slot;
             }
             local = l.up;
         }
-        f64::NAN
+        Slot::undefined(Kind::Number)
     }
 
-    fn is_list(&self, i: u32) -> bool {
+    pub(super) fn is_list(&self, i: u32) -> bool {
         matches!(self.e.tys[i as usize], Ty::List(_))
     }
 
@@ -1072,6 +1076,8 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Un(op, a) => self.list_unary(op, a),
             Node::Range(from, to, step) => self.range(from, to, step),
             Node::Seq(e, from, to, step, depth) => self.sequence(e, from, to, step, depth),
+            Node::Call(op, first, len) => self.call_list(op, first, len),
+            Node::Local(depth) => self.local_slot(depth).run(),
             Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, op, l, n),
             // an element that is a list: its elements were built with the
             // list it belongs to
@@ -1085,6 +1091,15 @@ impl<const M: bool> Ctx<'_, M> {
     /// what is there and kept; anything else is evaluated, and what that
     /// built is dropped.
     pub(super) fn element(&self, i: u32) -> Slot {
+        if let Node::Local(depth) = self.node(i) {
+            // the variable of a `Zip` holds the element itself; a number
+            // keeps the ordinary path, so that its work is charged as
+            // before
+            let slot = self.local_slot(depth);
+            if !matches!(slot.kind, Kind::Number | Kind::Angle) {
+                return slot;
+            }
+        }
         let i = match self.node(i) {
             Node::Item(a) => a,
             _ => i,
@@ -1121,6 +1136,14 @@ impl<const M: bool> Ctx<'_, M> {
         match self.node(i) {
             Node::Obj(id) => kind(self.c.kind(id)),
             Node::Cmd(def, _) => kind(def.kind()),
+            Node::Local(depth) => {
+                let slot = self.local_slot(depth);
+                if slot.kind == Kind::Vector {
+                    Kind::Vector
+                } else {
+                    Kind::Point
+                }
+            }
             Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => self.vec_kind(a),
             Node::Bin(_, a, b) => {
                 let kinds = [a, b].map(|j| self.is_vec(j).then(|| self.vec_kind(j)));
@@ -1279,6 +1302,22 @@ impl<const M: bool> Ctx<'_, M> {
         };
         let mark = lists.len();
         let val = commands::list_value(self, i, op, l, n);
+        lists.truncate(mark);
+        Ex {
+            obj: true,
+            ..Ex::plain(val)
+        }
+    }
+
+    /// A command of more arguments than a [`Node::ListOp`] holds that gives
+    /// a number (see [`commands::list::call_value`]).
+    #[inline(never)]
+    fn call_command(&self, op: CallOp, first: u32, len: u32) -> Ex {
+        let Some(lists) = self.lists else {
+            return Ex::plain(Val::N(f64::NAN));
+        };
+        let mark = lists.len();
+        let val = commands::call_value(self, op, first, len).unwrap_or(Val::N(f64::NAN));
         lists.truncate(mark);
         Ex {
             obj: true,

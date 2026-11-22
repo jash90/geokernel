@@ -1,0 +1,4587 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "lists-classes-001",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.6666666666666665 },
+              { "type": "number", "defined": true, "value": 3.333333333333333 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.4 },
+              { "type": "number", "defined": true, "value": 2.8 },
+              { "type": "number", "defined": true, "value": 3.2 },
+              { "type": "number", "defined": true, "value": 3.6 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.6666666666666665 },
+              { "type": "number", "defined": true, "value": 3.333333333333333 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-002",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-003",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-004",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-005",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, 2.9)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-006",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-007",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-008",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, n, w)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-009",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, 2, 0.5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 4.5 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 5.5 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 4.5 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 5.5 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.5 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 3.5 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-010",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, 3, -1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-011",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, 13, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-012",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(l, 1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 7.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 7.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-013",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes({}, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-014",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes(m, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "lists-classes-015",
+      "group": "lists",
+      "script": [
+        "n = 3",
+        "w = 1",
+        "a = 3",
+        "l = {2, a, 4}",
+        "m = {(1, 1), (2, 2)}",
+        "p = Classes({1 / 0, 2}, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 },
+        { "action": "set_number", "label": "w", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 },
+        { "action": "set_number", "label": "w", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "w": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

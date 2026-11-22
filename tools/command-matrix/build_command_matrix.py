@@ -30,8 +30,10 @@ OUT_OF_SCOPE_GROUPS = {"3d", "spreadsheet", "probability", "cas", "scripting", "
 # a statistics pair (var, cov), 3D objects (Polyhedron, CornerThreeD), a
 # command of the CAS view (Evaluate) and whiteboard-only objects (Stadium,
 # TableToChart).
+# `SelectedElement`, `SelectedIndex` read the UI selection state and
+# `RandomElement` a random value, so no golden data can pin them down.
 OUT_OF_SCOPE_COMMANDS = {"var", "cov", "Polyhedron", "CornerThreeD", "Evaluate", "Stadium",
-                         "TableToChart"}
+                         "TableToChart", "SelectedElement", "SelectedIndex", "RandomElement"}
 P1_GROUPS = {"geometry", "conic", "transformation"}
 # Groups the rule knows how to place. Anything else becomes todo/P2 and is reported.
 KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
@@ -112,18 +114,37 @@ PARTIAL = {
     "Vertex": "Vertex(polygon); Vertex(polygon, index); Vertex(conic)",
     "InteriorAngles": "InteriorAngles(polygon)",
     "If": "If(condition, then); If(condition, then, else); If(condition, value, condition, value, ..., else)",
-    "Element": "Element(list, index)",
+    "Element": "Element(list, index); Element(list, index, index, ...)",
     "Sum": "Sum(list); Sum(list, number of elements); numbers, points or vectors",
-    "Product": "Product(list); Product(list, number of elements)",
+    "Product": "Product(list); Product(list, number of elements); "
+                "Product(list, list of frequencies); Product(expression, variable, from, to)",
     "Mean": "Mean(list)",
     "Sequence": "Sequence(end); Sequence(start, end); Sequence(start, end, step); "
                 "Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)",
-    "Reverse": "Reverse(list)",
-    "First": "First(list); First(list, number of elements)",
+    "Reverse": "Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)",
+    "First": "First(list); First(list, number of elements); First(locus, number of elements)",
     "Last": "Last(list); Last(list, number of elements)",
-    "Sort": "Sort(list of numbers, booleans or points)",
+    "Sort": "Sort(list of numbers, booleans or points); Sort(value list, key list); "
+            "Sort(point, point, ...)",
     "Append": "Append(list, object); Append(object, list)",
     "Join": "Join(list, list, ...); Join(list of lists)",
+    "Take": "Take(list, from[, to])",
+    "RemoveUndefined": "RemoveUndefined(list)",
+    "IndexOf": "IndexOf(object, list[, start])",
+    "Flatten": "Flatten(list)",
+    "Insert": "Insert(object, list, position)",
+    "Frequency": "Frequency of numbers, with classes, a cumulative flag, "
+                 "density and a scale factor",
+    "Unique": "Unique(list)",
+    "Classes": "Classes(list, number of classes); Classes(list, start, width)",
+    "Zip": "Zip(expression, variable, list, ...)",
+    "Intersection": "Intersection(list, list)",
+    "Union": "Union(list, list)",
+    "Remove": "Remove(list, list)",
+    "PointList": "PointList(list); PointList(number, number, ...); "
+                 "PointList(point, point, ...)",
+    "OrdinalRank": "OrdinalRank(list); OrdinalRank(number, number, ...)",
+    "TiedRank": "TiedRank(list); TiedRank(number, number, ...)",
     "Mod": "Mod(number, number)",
     "Div": "Div(number, number)",
     "GCD": "GCD(number, number)",
