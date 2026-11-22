@@ -175,7 +175,14 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         return result;
     }
     let Some(call) = resolve_geometry_arguments(c, rhs) else {
-        return define_resolved(c, name, rhs);
+        // a command may build hidden argument objects and still fail (an
+        // inline function of `Derivative(sin(x), )`); they leave with the
+        // error too
+        let result = define_resolved(c, name, rhs);
+        if result.is_err() {
+            c.discard_since(start);
+        }
+        return result;
     };
     let result = define_resolved(c, name, &call);
     if result.is_err() {
@@ -255,6 +262,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         return result;
     }
     if let Some(result) = define_vector_call(c, name, rhs) {
+        return result;
+    }
+    if let Some(result) = crate::algo::calculus::exec(c, name, rhs) {
         return result;
     }
     // GeoGebra returns an already labelled angle unchanged.
@@ -699,6 +709,16 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             | "Arc"
             | "Sector"
             | "Circle"
+            | "LowerSum"
+            | "UpperSum"
+            | "LeftSum"
+            | "TrapezoidalSum"
+            | "RectangleSum"
+            | "Integral"
+            | "NIntegral"
+            | "IntegralBetween"
+            | "Derivative"
+            | "NDerivative"
     ) {
         return None;
     }
@@ -728,14 +748,77 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         {
             &[(1, Kind::Number)]
         }
+        // the calculus commands: their number and boolean positions, in
+        // the order the commands check them
+        ("LowerSum" | "UpperSum" | "LeftSum" | "TrapezoidalSum", [f, _, _, _])
+            if is_kind(f, Kind::Function) =>
+        {
+            &[(1, Kind::Number), (2, Kind::Number), (3, Kind::Number)]
+        }
+        ("RectangleSum", [f, _, _, _, _]) if is_kind(f, Kind::Function) => &[
+            (1, Kind::Number),
+            (2, Kind::Number),
+            (3, Kind::Number),
+            (4, Kind::Number),
+        ],
+        ("Integral" | "NIntegral", [f, _, _]) if is_kind(f, Kind::Function) => {
+            &[(1, Kind::Number), (2, Kind::Number)]
+        }
+        // the boolean fourth argument is tried as a number first, so an
+        // inline `true` or `false` falls through to the boolean row
+        ("Integral" | "NIntegral" | "IntegralBetween", [f, _, _, _])
+            if is_kind(f, Kind::Function) =>
+        {
+            &[
+                (1, Kind::Number),
+                (2, Kind::Number),
+                (3, Kind::Number),
+                (3, Kind::Boolean),
+            ]
+        }
+        ("Integral" | "NIntegral" | "IntegralBetween", [f, _, _, _, _])
+            if is_kind(f, Kind::Function) =>
+        {
+            &[
+                (1, Kind::Number),
+                (2, Kind::Number),
+                (3, Kind::Number),
+                (3, Kind::Boolean),
+                (4, Kind::Boolean),
+            ]
+        }
+        ("IntegralBetween", [f, _, _]) if is_kind(f, Kind::Function) => {
+            &[(1, Kind::Number), (2, Kind::Number)]
+        }
+        ("Derivative" | "NDerivative", [f, order]) if is_kind(f, Kind::Function) => {
+            &[(1, Kind::Number)]
+        }
+        ("Derivative" | "NDerivative", [f, _, order]) if is_kind(f, Kind::Function) => {
+            &[(2, Kind::Number)]
+        }
         _ => return None,
     };
+    // the calculus commands keep their numbers as live objects; the
+    // geometry commands parse a plain decimal into their own definition
+    let live_numbers = matches!(
+        func,
+        "LowerSum"
+            | "UpperSum"
+            | "LeftSum"
+            | "TrapezoidalSum"
+            | "RectangleSum"
+            | "Integral"
+            | "NIntegral"
+            | "IntegralBetween"
+            | "Derivative"
+            | "NDerivative"
+    );
     let replacements: Vec<_> = inputs
         .iter()
         .filter_map(|&(index, kind)| {
             let arg = args[index];
             if c.id(arg).is_some()
-                || (!matches!(func, "Point" | "Arc" | "Sector" | "Circle")
+                || (!(live_numbers || matches!(func, "Point" | "Arc" | "Sector" | "Circle"))
                     && crate::algo::polygon::decimal(arg).is_some())
             {
                 return None;

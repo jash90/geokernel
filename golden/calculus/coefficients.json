@@ -1,0 +1,426 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "calculus-coefficients-001",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2",
+        "c = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-coefficients-002",
+      "group": "calculus",
+      "script": [
+        "f(x) = sin(x)",
+        "c = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-coefficients-003",
+      "group": "calculus",
+      "script": [
+        "f(x) = 7x^3 + sin(x)",
+        "c = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -3584.9893582466234],
+              [-4.0, -447.2431975046921],
+              [-2.0, -56.90929742682568],
+              [-1.0, -7.841470984807897],
+              [-0.5, -1.354425538604203],
+              [0.0, 0.0],
+              [0.5, 1.354425538604203],
+              [1.0, 7.841470984807897],
+              [2.0, 56.90929742682568],
+              [4.0, 447.2431975046921],
+              [8.0, 3584.9893582466234]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 7.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-coefficients-004",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^3/6 + x^2/4 + 3",
+        "c = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -66.33333333333333],
+              [-4.0, -3.666666666666666],
+              [-2.0, 2.666666666666667],
+              [-1.0, 3.0833333333333335],
+              [-0.5, 3.0416666666666665],
+              [0.0, 3.0],
+              [0.5, 3.0833333333333335],
+              [1.0, 3.4166666666666665],
+              [2.0, 5.333333333333333],
+              [4.0, 17.666666666666664],
+              [8.0, 104.33333333333333]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.16666666666666666 },
+              { "type": "number", "defined": true, "value": 0.25 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-coefficients-005",
+      "group": "calculus",
+      "script": [
+        "f(x) = (x - 1)(x + 2)",
+        "c = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 54.0],
+              [-4.0, 10.0],
+              [-2.0, -0.0],
+              [-1.0, -2.0],
+              [-0.5, -2.25],
+              [0.0, -2.0],
+              [0.5, -1.25],
+              [1.0, 0.0],
+              [2.0, 4.0],
+              [4.0, 18.0],
+              [8.0, 70.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-coefficients-006",
+      "group": "calculus",
+      "script": [
+        "f(x) = 3",
+        "c = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.0],
+              [-4.0, 3.0],
+              [-2.0, 3.0],
+              [-1.0, 3.0],
+              [-0.5, 3.0],
+              [0.0, 3.0],
+              [0.5, 3.0],
+              [1.0, 3.0],
+              [2.0, 3.0],
+              [4.0, 3.0],
+              [8.0, 3.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-coefficients-007",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2 + x",
+        "c = Coefficients(f)",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 56.0],
+              [-4.0, 12.0],
+              [-2.0, 2.0],
+              [-1.0, 0.0],
+              [-0.5, -0.25],
+              [0.0, 0.0],
+              [0.5, 0.75],
+              [1.0, 2.0],
+              [2.0, 6.0],
+              [4.0, 20.0],
+              [8.0, 72.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-coefficients-008",
+      "group": "calculus",
+      "script": [
+        "a = 1",
+        "f(x) = a*x^2 + 3",
+        "c = Coefficients(f)",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 67.0],
+              [-4.0, 19.0],
+              [-2.0, 7.0],
+              [-1.0, 4.0],
+              [-0.5, 3.25],
+              [0.0, 3.0],
+              [0.5, 3.25],
+              [1.0, 4.0],
+              [2.0, 7.0],
+              [4.0, 19.0],
+              [8.0, 67.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.0],
+              [-4.0, 3.0],
+              [-2.0, 3.0],
+              [-1.0, 3.0],
+              [-0.5, 3.0],
+              [0.0, 3.0],
+              [0.5, 3.0],
+              [1.0, 3.0],
+              [2.0, 3.0],
+              [4.0, 3.0],
+              [8.0, 3.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 35.0],
+              [-4.0, 11.0],
+              [-2.0, 5.0],
+              [-1.0, 3.5],
+              [-0.5, 3.125],
+              [0.0, 3.0],
+              [0.5, 3.125],
+              [1.0, 3.5],
+              [2.0, 5.0],
+              [4.0, 11.0],
+              [8.0, 35.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 67.0],
+              [-4.0, 19.0],
+              [-2.0, 7.0],
+              [-1.0, 4.0],
+              [-0.5, 3.25],
+              [0.0, 3.0],
+              [0.5, 3.25],
+              [1.0, 4.0],
+              [2.0, 7.0],
+              [4.0, 19.0],
+              [8.0, 67.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -963,7 +963,7 @@ impl Mover {
 /// (two graphics views and the 3D view), of which only the first is shown.
 /// The others keep their zero-initialised bounds, which upstream still
 /// consults (see [`Run::distance_ok`]).
-struct View {
+pub(crate) struct View {
     visible: [bool; 3],
     max_x: [f64; 3],
     max_y: [f64; 3],

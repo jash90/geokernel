@@ -39,6 +39,7 @@ pub mod locus;
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use self::locus::{LocusData, LocusDef};
 use crate::algo::arc::{ArcData, ArcDef};
+use crate::algo::calculus::{CalcRecord, CalculusDef};
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
@@ -494,6 +495,13 @@ pub enum Def {
     /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
     /// handle is valid only in the construction that made it.
     Equation(EquationDef),
+    /// The calculus commands of the function group: the integrals, the
+    /// derivatives, the Riemann sums and the polynomial queries. An
+    /// object whose value samples a tree keeps it in the construction's
+    /// calculus records (see [`Construction::calculus_record`]). The
+    /// objects it reads are `u32` indices, so the five inputs of a sum
+    /// still fit the fixed size of a definition.
+    Calculus(CalculusDef),
 }
 
 /// A line or conic defined by an equation in `x` and `y`: which of the two
@@ -564,6 +572,7 @@ impl Def {
                 }
             }
             Def::Locus(d) => d.kind(),
+            Def::Calculus(d) => d.kind(),
         }
     }
 
@@ -636,6 +645,7 @@ impl Def {
             Def::Path(d) => d.parents(),
             Def::Arc(d) => d.parents(),
             Def::Locus(d) => d.parents(),
+            Def::Calculus(d) => d.parents(),
         }
     }
 }
@@ -761,6 +771,9 @@ pub struct Construction {
     /// The points of the loci, with the index of each object, in creation
     /// order.
     loci: Vec<(usize, LocusData)>,
+    /// The calculus records: the tree or list elements of the calculus
+    /// objects that keep one (`algo::calculus`), by owner index.
+    calculus: Vec<(usize, CalcRecord)>,
     /// The graphics window used to sample loci. A headless construction
     /// uses the reference window.
     locus_view: Option<[f64; 6]>,
@@ -1184,6 +1197,13 @@ impl Construction {
             self.loci.pop();
         }
         while self
+            .calculus
+            .last()
+            .is_some_and(|&(owner, _)| owner >= at.len)
+        {
+            self.calculus.pop();
+        }
+        while self
             .sliders
             .last()
             .is_some_and(|&(owner, _, _)| owner >= at.len)
@@ -1307,6 +1327,11 @@ impl Construction {
                 let data = locus::record(self, d);
                 let value = data.value();
                 self.loci.push((id.0, data));
+                value
+            }
+            Def::Calculus(d) if d.has_record() => {
+                let (value, record) = algo::calculus::initialize(self, &d);
+                self.calculus.push((id.0, record));
                 value
             }
             _ => self.compute(def, id.0),
@@ -1665,6 +1690,11 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Calculus(d) if d.has_record() => {
+                    if !self.update_calculus(i, &d) {
+                        continue;
+                    }
+                }
                 _ => {
                     let new = self.compute(def, i);
                     if let Def::IntersectBoundary(intersection) = def {
@@ -1826,6 +1856,19 @@ impl Construction {
         true
     }
 
+    /// Recomputes the calculus object `i`; tells whether its children
+    /// must follow. A function always counts as changed, like an
+    /// expression function (see `expr::store`).
+    fn update_calculus(&mut self, i: usize, d: &CalculusDef) -> bool {
+        let Some(slot) = self.calculus_slot(i) else {
+            return false;
+        };
+        let (value, record) = algo::calculus::refresh(self, d);
+        self.values[i] = value;
+        self.calculus[slot].1 = record;
+        true
+    }
+
     /// Recomputes the equation object `i` from its coefficients; tells
     /// whether its children must follow: whether any coefficient changed,
     /// bit for bit. A conic is classified again from its record, as
@@ -1856,6 +1899,20 @@ impl Construction {
     /// Where the record of object `i` is kept in `arcs`.
     fn arc_slot(&self, i: usize) -> Option<usize> {
         self.arcs.binary_search_by_key(&i, |&(owner, _)| owner).ok()
+    }
+
+    /// The slot of the calculus record of object `i`, if it has one.
+    pub(crate) fn calculus_slot(&self, i: usize) -> Option<usize> {
+        self.calculus
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+            .ok()
+    }
+
+    /// The calculus record of object `id`: the tree its function value
+    /// samples, or the elements of its coefficient list. `None` for any
+    /// other object.
+    pub(crate) fn calculus_record(&self, id: Id) -> Option<&CalcRecord> {
+        self.calculus_slot(id.0).map(|slot| &self.calculus[slot].1)
     }
 
     /// The record of the arc or sector `id`: its conic, the range of its
@@ -2076,6 +2133,7 @@ impl Construction {
             // the coefficient entries were checked when they were parsed
             Def::Equation(d) => crate::expr::equation::check(self, d),
             Def::Locus(d) => d.check(self),
+            Def::Calculus(d) => d.check(self),
         }
     }
 
@@ -2170,6 +2228,7 @@ impl Construction {
             Def::Arc(d) => d.compute(self),
             Def::Equation(d) => Some(expr::equation::current(self, d)),
             Def::Locus(d) => d.compute(self),
+            Def::Calculus(d) => d.compute(self),
         }
     }
 

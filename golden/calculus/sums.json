@@ -1,0 +1,690 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "calculus-sums-001",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2",
+        "d = LowerSum(f, 0, 2, 4)",
+        "u = UpperSum(f, 0, 2, 4)",
+        "l = LeftSum(f, 0, 2, 4)",
+        "t = TrapezoidalSum(f, 0, 2, 4)",
+        "r = RectangleSum(f, 0, 2, 4, 0.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.75 },
+          "u": { "type": "number", "defined": true, "value": 3.749999674520497 },
+          "l": { "type": "number", "defined": true, "value": 1.75 },
+          "t": { "type": "number", "defined": true, "value": 2.75 },
+          "r": { "type": "number", "defined": true, "value": 2.625 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-002",
+      "group": "calculus",
+      "script": [
+        "f(x) = sin(x)",
+        "d = LowerSum(f, -2, 5, 10)",
+        "u = UpperSum(f, -2, 5, 10)",
+        "l = LeftSum(f, -2, 5, 10)",
+        "t = TrapezoidalSum(f, -2, 5, 10)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": -2.1153660847588203 },
+          "u": { "type": "number", "defined": true, "value": 0.7208626728708544 },
+          "l": { "type": "number", "defined": true, "value": -0.6536279669487667 },
+          "t": { "type": "number", "defined": true, "value": -0.6709973636918766 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-003",
+      "group": "calculus",
+      "script": [
+        "f(x) = sqrt(x)",
+        "d = LowerSum(f, -1, 2, 4)",
+        "l = LeftSum(f, -1, 2, 4)",
+        "t = TrapezoidalSum(f, -1, 2, 4)",
+        "u = UpperSum(f, -1, 2, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "d": { "type": "number", "defined": false },
+          "l": { "type": "number", "defined": false },
+          "t": { "type": "number", "defined": false },
+          "u": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-004",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2",
+        "d = LowerSum(f, 2, 0, 4)",
+        "u = UpperSum(f, 2, 0, 4)",
+        "l = LeftSum(f, 2, 0, 4)",
+        "t = TrapezoidalSum(f, 2, 0, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": -1.7500000793298134 },
+          "u": { "type": "number", "defined": true, "value": -3.7499996325241503 },
+          "l": { "type": "number", "defined": true, "value": -3.75 },
+          "t": { "type": "number", "defined": true, "value": -2.75 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-005",
+      "group": "calculus",
+      "script": [
+        "f(x) = 0.5x + 1",
+        "d = LowerSum(f, 0, 100, 200)",
+        "u = UpperSum(f, 0, 100, 200)",
+        "t = TrapezoidalSum(f, 0, 100, 200)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -3.0],
+              [-4.0, -1.0],
+              [-2.0, 0.0],
+              [-1.0, 0.5],
+              [-0.5, 0.75],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 1.5],
+              [2.0, 2.0],
+              [4.0, 3.0],
+              [8.0, 5.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2587.5000440607414 },
+          "u": { "type": "number", "defined": true, "value": 2612.4999553818047 },
+          "t": { "type": "number", "defined": true, "value": 2600.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-006",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2",
+        "d = RectangleSum(f, 0, 2, 4, 2)",
+        "e = RectangleSum(f, 0, 2, 4, -0.5)",
+        "h = RectangleSum(f, 0, 2, 4, 1.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": false },
+          "e": { "type": "number", "defined": false },
+          "h": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-007",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2",
+        "d = LowerSum(f, 1, 5, 10.7)",
+        "u = UpperSum(f, 1, 5, 10.2)",
+        "l = LeftSum(f, 1, 5, 10.5)",
+        "t = TrapezoidalSum(f, 1, 5, 9.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 37.057851239669425 },
+          "u": { "type": "number", "defined": true, "value": 46.23999847728976 },
+          "l": { "type": "number", "defined": true, "value": 37.057851239669425 },
+          "t": { "type": "number", "defined": true, "value": 41.44 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-008",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2",
+        "d = LowerSum(f, 0, 2, 1)",
+        "u = UpperSum(f, 0, 2, 1)",
+        "l = LeftSum(f, 0, 2, 1)",
+        "t = TrapezoidalSum(f, 0, 2, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 7.999999316203169 },
+          "l": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-009",
+      "group": "calculus",
+      "script": [
+        "n = 4",
+        "f(x) = x^2",
+        "d = LowerSum(f, 0, 2, n)",
+        "u = UpperSum(f, 0, 2, n)",
+        "l = LeftSum(f, 0, 2, n)",
+        "t = TrapezoidalSum(f, 0, 2, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": -3.0 },
+        { "action": "set_number", "label": "n", "value": 0.4 },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 10001.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.75 },
+          "u": { "type": "number", "defined": true, "value": 3.749999674520497 },
+          "l": { "type": "number", "defined": true, "value": 1.75 },
+          "t": { "type": "number", "defined": true, "value": 2.75 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": false },
+          "u": { "type": "number", "defined": false },
+          "l": { "type": "number", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": false },
+          "u": { "type": "number", "defined": false },
+          "l": { "type": "number", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.4 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": false },
+          "u": { "type": "number", "defined": false },
+          "l": { "type": "number", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 7.999999316203169 },
+          "l": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 10001.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.6662669930538003 },
+          "u": { "type": "number", "defined": true, "value": 2.667066366873716 },
+          "l": { "type": "number", "defined": true, "value": 2.666266679999987 },
+          "t": { "type": "number", "defined": true, "value": 2.6666666799999867 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.75 },
+          "u": { "type": "number", "defined": true, "value": 3.749999674520497 },
+          "l": { "type": "number", "defined": true, "value": 1.75 },
+          "t": { "type": "number", "defined": true, "value": 2.75 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-010",
+      "group": "calculus",
+      "script": [
+        "d = 0.5",
+        "f(x) = x^2",
+        "r = RectangleSum(f, 0, 2, 4, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "d", "value": 0.0 },
+        { "action": "set_number", "label": "d", "value": 1.0 },
+        { "action": "set_number", "label": "d", "value": -1.0 },
+        { "action": "set_number", "label": "d", "value": 2.0 },
+        { "action": "set_number", "label": "d", "value": 0.25 }
+      ],
+      "snapshots": [
+        {
+          "d": { "type": "number", "defined": true, "value": 0.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 2.625 }
+        },
+        {
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.75 }
+        },
+        {
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 3.75 }
+        },
+        {
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "d": { "type": "number", "defined": true, "value": 0.25 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 2.15625 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-sums-011",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x > 1, sqrt(x - 1), 0)",
+        "d = LowerSum(f, 0, 2, 4)",
+        "l = LeftSum(f, 0, 2, 4)",
+        "t = TrapezoidalSum(f, 0, 2, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 1.0],
+              [4.0, 1.7320508075688772],
+              [8.0, 2.6457513110645907]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.3535533905932738 },
+          "l": { "type": "number", "defined": true, "value": 0.3535533905932738 },
+          "t": { "type": "number", "defined": true, "value": 0.6035533905932737 }
+        }
+      ]
+    }
+  ]
+}

@@ -289,10 +289,10 @@ fn map_children(
 /// One monomial: the degrees of `x` and `y` and the root of its
 /// coefficient tree, an index into the builder's arena.
 #[derive(Clone, Copy)]
-struct Term {
-    x: u32,
-    y: u32,
-    coeff: u32,
+pub(crate) struct Term {
+    pub(crate) x: u32,
+    pub(crate) y: u32,
+    pub(crate) coeff: u32,
 }
 
 /// A polynomial in `x` and `y`: GeoGebra's `Polynomial`, as its list of
@@ -300,10 +300,10 @@ struct Term {
 /// every operation ends in [`Poly::simplify`], which leaves no two terms
 /// of one monomial and no term of a constant zero coefficient.
 #[derive(Clone)]
-struct Poly(Vec<Term>);
+pub(crate) struct Poly(Vec<Term>);
 
 /// Why an expression is no polynomial in `x` and `y`.
-enum NotPolynomial {
+pub(crate) enum NotPolynomial {
     /// The equation would be an implicit curve.
     ImplicitCurve,
     /// An exponent reads an object (`x^n`): GeoGebra makes an implicit
@@ -313,7 +313,7 @@ enum NotPolynomial {
 
 /// The merged arena of the two sides of an equation, which the coefficient
 /// trees of its terms are built in.
-struct Builder {
+pub(crate) struct Builder {
     nodes: Vec<Node>,
     lits: Vec<Lit>,
     /// How many more nodes the bodies of function calls may add (see
@@ -327,19 +327,41 @@ struct Builder {
 }
 
 impl Builder {
-    fn push(&mut self, node: Node) -> u32 {
+    pub(crate) fn push(&mut self, node: Node) -> u32 {
         self.nodes.push(node);
         self.lits.push(Lit::default());
         (self.nodes.len() - 1) as u32
     }
 
-    fn node(&self, i: u32) -> Node {
+    pub(crate) fn node(&self, i: u32) -> Node {
         self.nodes[i as usize]
+    }
+
+    /// A builder over the whole tree of the function `e`, which the
+    /// calculus commands expand (see `algo::calculus`).
+    pub(crate) fn function(e: &super::Entry) -> Self {
+        Builder {
+            nodes: e.nodes.clone(),
+            lits: e.lits.clone(),
+            function_nodes: MAX_FUNCTION_NODES,
+            function_dependent: false,
+        }
+    }
+
+    /// An empty builder, for a tree the calculus commands build from
+    /// numbers alone (see `algo::calculus`).
+    pub(crate) fn empty() -> Self {
+        Builder {
+            nodes: Vec::new(),
+            lits: Vec::new(),
+            function_nodes: MAX_FUNCTION_NODES,
+            function_dependent: false,
+        }
     }
 
     /// `ExpressionNode.makePolynomialTree` of the subtree at `i`, with the
     /// operations of `Polynomial.apply` and `Term` on the coefficients.
-    fn expand(&mut self, c: &Construction, i: u32) -> Result<Poly, NotPolynomial> {
+    pub(crate) fn expand(&mut self, c: &Construction, i: u32) -> Result<Poly, NotPolynomial> {
         match self.node(i) {
             Node::Var => Ok(Poly(vec![Term {
                 x: 1,
@@ -481,7 +503,7 @@ impl Builder {
 
     /// Whether the subtree at `i` reads the variable `x` or `y`
     /// (`containsFunctionVariable`).
-    fn contains_var(&self, i: u32) -> bool {
+    pub(crate) fn contains_var(&self, i: u32) -> bool {
         match self.node(i) {
             Node::Var | Node::VarY => true,
             node => children(&node).any(|child| self.contains_var(child)),
@@ -491,7 +513,7 @@ impl Builder {
     /// Whether the subtree at `i` reads an object (`isDynamicGeoElement`):
     /// the coefficient of such a term is recomputed when the object
     /// changes, and it survives `simplify` even at the value 0.
-    fn contains_object(&self, i: u32) -> bool {
+    pub(crate) fn contains_object(&self, i: u32) -> bool {
         match self.node(i) {
             Node::Obj(_) | Node::Apply(..) | Node::Cmd(..) | Node::If(..) => true,
             node => children(&node).any(|child| self.contains_object(child)),
@@ -501,7 +523,7 @@ impl Builder {
     /// The value of a subtree that reads no object (`isConstant` with
     /// `evaluateDouble`); `None` when it does read one, or is nested too
     /// deeply to look at.
-    fn constant_value(&self, i: u32) -> Option<f64> {
+    pub(crate) fn constant_value(&self, i: u32) -> Option<f64> {
         self.constant_at(i, 0)
     }
 
@@ -532,7 +554,7 @@ impl Builder {
 
     /// `Term.add` of two coefficients: constants fold into one number,
     /// and the tree is otherwise the operation.
-    fn add(&mut self, a: u32, b: u32) -> u32 {
+    pub(crate) fn add(&mut self, a: u32, b: u32) -> u32 {
         match (self.constant_value(a), self.constant_value(b)) {
             (Some(x), Some(y)) => self.push(Node::Num(x + y)),
             _ => self.push(Node::Bin(Bin::Add, a, b)),
@@ -540,7 +562,7 @@ impl Builder {
     }
 
     /// `Term.multiply` of two coefficients, with its constant reductions.
-    fn multiply(&mut self, a: u32, b: u32) -> u32 {
+    pub(crate) fn multiply(&mut self, a: u32, b: u32) -> u32 {
         match (self.constant_value(a), self.constant_value(b)) {
             (Some(x), Some(y)) => self.push(Node::Num(x * y)),
             (Some(0.0), _) => self.push(Node::Num(0.0)),
@@ -550,7 +572,7 @@ impl Builder {
     }
 
     /// `Term.divide` of two coefficients, with its constant reductions.
-    fn divide(&mut self, a: u32, b: u32) -> u32 {
+    pub(crate) fn divide(&mut self, a: u32, b: u32) -> u32 {
         match (self.constant_value(a), self.constant_value(b)) {
             (Some(x), Some(y)) => self.push(Node::Num(x / y)),
             (Some(0.0), _) => self.push(Node::Num(0.0)),
@@ -559,7 +581,13 @@ impl Builder {
         }
     }
 
-    fn collect_reads(&self, c: &Construction, i: u32, parents: &mut Vec<Id>, inputs: &mut Vec<Id>) {
+    pub(crate) fn collect_reads(
+        &self,
+        c: &Construction,
+        i: u32,
+        parents: &mut Vec<Id>,
+        inputs: &mut Vec<Id>,
+    ) {
         let mut read = |id: Id, input: bool| {
             if !parents.contains(&id) {
                 parents.push(id);
@@ -596,12 +624,35 @@ impl Builder {
             }
         }
     }
+
+    /// The tree at `root` as a self-contained [`parse::Parsed`], with the
+    /// objects it reads as its parents: what the calculus commands hand to
+    /// the expression table.
+    pub(crate) fn finish(&self, c: &Construction, root: u32) -> Result<parse::Parsed, String> {
+        let (mut parents, mut inputs) = (Vec::new(), Vec::new());
+        self.collect_reads(c, root, &mut parents, &mut inputs);
+        let (tys, depth, cost, vars_read) = types::check(c, &self.nodes, root)?;
+        let r = root as usize;
+        Ok(parse::Parsed {
+            root,
+            depth: depth[r],
+            cost: cost[r],
+            vars: vars_read[r],
+            nodes: self.nodes.clone(),
+            lits: self.lits.clone(),
+            tys,
+            parents,
+            inputs,
+            uses_var: false,
+            uses_y: false,
+        })
+    }
 }
 
 impl Poly {
     /// The degree of the polynomial: the largest sum of the variable
     /// degrees of its terms (`Polynomial.degree`).
-    fn degree(&self) -> u32 {
+    pub(crate) fn degree(&self) -> u32 {
         self.0
             .iter()
             .map(|t| t.x.saturating_add(t.y))
@@ -650,6 +701,23 @@ impl Poly {
             uses_var: false,
             uses_y: false,
         })
+    }
+
+    /// The coefficient root of every power of `x` from `0` up to the
+    /// polynomial's degree, summed like [`Poly::coefficient`] sums one
+    /// monomial; `None` for a power no term has, whose coefficient
+    /// GeoGebra reads as zero.
+    pub(crate) fn coefficient_roots(&self, b: &mut Builder) -> Vec<Option<u32>> {
+        let degree = self.degree() as usize;
+        let mut roots = vec![None; degree + 1];
+        for term in &self.0 {
+            let acc = &mut roots[term.x as usize];
+            *acc = Some(match (*acc, term.coeff) {
+                (None, coeff) => coeff,
+                (Some(a), coeff) => b.add(a, coeff),
+            });
+        }
+        roots
     }
 
     /// The coefficient roots of the monomial `vars`, in term order.

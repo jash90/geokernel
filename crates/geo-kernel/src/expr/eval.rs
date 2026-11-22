@@ -661,6 +661,20 @@ pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
     }
 }
 
+/// `GeoFunction.value` of the subtree `i` of a function's tree at `x`,
+/// on the `y = 0` slice: a branch of a conditional function the
+/// conditional integral integrates
+/// (`AlgoIntegralDefinite.computeConditional`).
+pub(super) fn sample_subtree(c: &Construction, e: &Entry, i: u32, x: f64) -> f64 {
+    Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).fast(i)
+}
+
+/// The full-evaluator value of the subtree `i` of a function's tree at
+/// `x`: the condition of a branch bound (`Bounds.addRestriction`).
+pub(super) fn subtree(c: &Construction, e: &Entry, i: u32, x: f64) -> Val {
+    Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).full(i).val
+}
+
 /// The tree of the function object `f`, when it is defined.
 pub(super) fn function_entry(c: &Construction, f: Id) -> Option<&Entry> {
     match (c.def(f), c.value(f)) {

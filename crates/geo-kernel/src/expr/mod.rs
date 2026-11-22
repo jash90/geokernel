@@ -100,11 +100,12 @@ impl IntersectionWork {
 mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
-use list::Slot;
+pub(crate) use list::Slot;
 pub use list::{Element, List};
 pub(crate) mod math;
 mod names;
 mod parse;
+pub(crate) use parse::{Parsed, MAX_DEPTH};
 mod types;
 mod wide;
 
@@ -131,7 +132,7 @@ impl ExprDef {
 
 /// One node of an expression tree. Children are indices into the same
 /// arena and always smaller than the index of their parent.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Node {
     /// A constant (`MyDouble`): a literal, `π`, `e`, `∞` or `?`.
     Num(f64),
@@ -557,10 +558,10 @@ impl From<Option<eval::Exact>> for StoredExtra {
 
 #[derive(Clone)]
 pub(crate) struct Entry {
-    nodes: Vec<Node>,
+    pub(crate) nodes: Vec<Node>,
     lits: Vec<Lit>,
     tys: Vec<Ty>,
-    root: u32,
+    pub(crate) root: u32,
     parents: Vec<Id>,
     /// Whether this is a function.
     function: bool,
@@ -1290,6 +1291,10 @@ pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
 pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
     match (c.def(id), c.value(id)) {
         (Def::Expr(d), Value::List { len }) => Some(List::new(&entry(c, d).items, len)),
+        (Def::Calculus(_), Value::List { len }) => {
+            let record = c.calculus_record(id)?;
+            Some(List::new(&record.slots, len))
+        }
         _ => None,
     }
 }
@@ -1324,6 +1329,10 @@ pub(crate) fn store(c: &mut Construction, d: ExprDef, out: Outcome) -> bool {
 pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
     match (c.def(f), c.value(f)) {
         (Def::Expr(d), Value::Function) => Some(eval::sample(c, entry(c, d), x)),
+        (Def::Calculus(d), Value::Function) => {
+            let record = c.calculus_record(f)?;
+            d.record_value(c, record, f, x)
+        }
         _ => None,
     }
 }
@@ -1368,6 +1377,133 @@ pub(crate) fn relation_number(c: &Construction, id: Id) -> f64 {
     }
 }
 
+/// The entry of a tree the calculus commands built themselves (see
+/// `algo::calculus`), sampled like a function's tree.
+pub(crate) fn function_entry(c: &Construction, parsed: parse::Parsed) -> Entry {
+    Entry::new(c, parsed, true)
+}
+
+/// The entry of the expression object `d`, for the calculus commands that
+/// read the tree of their source function.
+pub(crate) fn source_entry(c: &Construction, d: ExprDef) -> &Entry {
+    entry(c, d)
+}
+
+/// `GeoFunction.value` of a tree the calculus commands built, without
+/// keeping the entry (the antiderivative at a bound of integration).
+pub(crate) fn sample_parsed(c: &Construction, parsed: &parse::Parsed, x: f64) -> f64 {
+    eval::sample(c, &Entry::new(c, parsed.clone(), true), x)
+}
+
+/// `GeoFunction.value` of a tree the calculus commands built; the entry is
+/// one of their records.
+pub(crate) fn sample_tree(c: &Construction, e: &Entry, x: f64) -> f64 {
+    eval::sample(c, e, x)
+}
+
+/// `GeoFunction.value` of the subtree `i` of a function's tree: a branch
+/// of a conditional function the conditional integral integrates
+/// (`AlgoIntegralDefinite.computeConditional`).
+pub(crate) fn sample_subtree(c: &Construction, e: &Entry, i: u32, x: f64) -> f64 {
+    eval::sample_subtree(c, e, i, x)
+}
+
+/// The boolean value of the subtree `i` of a function's tree at `x`, and
+/// whether it is defined (`Bounds.addRestriction`'s condition checks).
+pub(crate) fn subtree_bool(c: &Construction, e: &Entry, i: u32, x: f64) -> Option<(bool, bool)> {
+    match eval::subtree(c, e, i, x) {
+        eval::Val::B(v, defined) => Some((v, defined)),
+        _ => None,
+    }
+}
+
+/// Whether the subtree `i` of a function's tree is a number (`Ty::Num`),
+/// which the constant side of a branch bound's comparison must be
+/// (`NumberValue`).
+pub(crate) fn subtree_is_number(e: &Entry, i: u32) -> bool {
+    matches!(e.tys[i as usize], Ty::Num(_))
+}
+
+/// `GeoFunction.isDefined` of a tree the calculus commands built: its
+/// objects are defined, and the root is not the constant `NaN` that
+/// GeoGebra's no-CAS integrator builds for a rule it cannot integrate
+/// (`ExpressionNode.isDefined`).
+pub(crate) fn tree_defined(c: &Construction, e: &Entry) -> bool {
+    inputs_defined(c, e) && !matches!(e.nodes[e.root as usize], Node::Num(v) if v.is_nan())
+}
+
+/// The nodes of an entry, for the calculus commands that walk the tree of
+/// their source function.
+pub(crate) fn nodes_of(e: &Entry) -> &[Node] {
+    &e.nodes
+}
+
+/// The root node index of an entry.
+pub(crate) fn root_of(e: &Entry) -> u32 {
+    e.root
+}
+
+/// The number literals of a tree, in tree order
+/// (`AlgoCoefficients.extractConstants`: every `MyDouble` leaf is a
+/// constant, the CAS-less fallback of `Coefficients`).
+pub(crate) fn constant_literals(e: &Entry) -> Vec<f64> {
+    e.nodes
+        .iter()
+        .filter_map(|n| match n {
+            Node::Num(v) => Some(*v),
+            Node::MinusOne => Some(-1.0),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The parsed tree of an entry again, for the copy an order-zero
+/// derivative is.
+pub(crate) fn parsed_of(e: &Entry) -> parse::Parsed {
+    parse::Parsed {
+        root: e.root,
+        nodes: e.nodes.clone(),
+        lits: e.lits.clone(),
+        tys: e.tys.clone(),
+        parents: e.parents.clone(),
+        inputs: e.inputs.clone(),
+        depth: e.depth,
+        cost: e.cost,
+        vars: e.vars,
+        uses_var: false,
+        uses_y: false,
+    }
+}
+
+/// The current value of a tree the calculus commands built, reading the
+/// current values of its objects: what a polynomial coefficient is.
+pub(crate) fn value_of_tree(c: &Construction, parsed: &parse::Parsed) -> Option<f64> {
+    let entry = Entry::new(c, parsed.clone(), false);
+    match eval::root(c, &entry, None).0 {
+        Raw::Num(v) => Some(v),
+        _ => None,
+    }
+}
+
+/// Charges `n` units of evaluation work (see [`eval`]), which the loops of
+/// the calculus commands stay inside.
+pub(crate) fn charge(n: u64) {
+    eval::work(n);
+}
+
+/// Adds a tree the calculus commands built as the object `name`: a
+/// coefficient list, or a hidden list of points. The kinds are those
+/// [`add_parsed`] takes; a tree without parents still becomes a
+/// dependent object, like a list it builds.
+pub(crate) fn add_built(
+    c: &mut Construction,
+    name: &str,
+    parsed: parse::Parsed,
+    kind: Kind,
+) -> Result<Id, Error> {
+    add_parsed(c, name, parsed, kind, AngleStyle::Unbounded, false)
+}
+
 /// The last stored result.
 pub(crate) fn raw(c: &Construction, d: ExprDef) -> Raw {
     entry(c, d).raw
@@ -1399,6 +1535,7 @@ pub(crate) fn argument_object(c: &mut Construction, text: &str, label: &str, kin
     let kind = match (kind, parsed.tys[parsed.root as usize]) {
         (Kind::Number, Ty::Num(1)) => Kind::Angle,
         (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) => kind,
+        (Kind::Boolean, Ty::Bool) => kind,
         _ => return false,
     };
     !parsed.uses_var && add(c, label, parsed, kind).is_ok()
@@ -1600,6 +1737,29 @@ fn function(
 
 fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> Result<Id, String> {
     add_parsed(c, name, parsed, kind, AngleStyle::Unbounded, false).map_err(|e| e.to_string())
+}
+
+/// A hidden function object of the inline expression `text`, the argument
+/// of a command that reads a function (`sin(x)` in `Polynomial(sin(x))`;
+/// see `script::resolve_geometry_arguments`).
+pub(crate) fn argument_function(c: &mut Construction, text: &str, label: &str) -> Option<Id> {
+    let parsed = parse::parse(c, text).ok()?;
+    match parsed.tys[parsed.root as usize] {
+        Ty::Num(_) if parsed.uses_var => add(c, label, parsed, Kind::Function).ok(),
+        _ => None,
+    }
+}
+
+/// A number as the constant function it counts as where GeoGebra accepts
+/// one (`isRealValuedFunction` of a `GeoNumeric`): the second curve of
+/// `Integral` and `IntegralBetween` (`CmdIntegral`'s first four-argument
+/// branch).
+pub(crate) fn constant_function(c: &mut Construction, text: &str, label: &str) -> Option<Id> {
+    let parsed = parse::parse(c, text).ok()?;
+    match parsed.tys[parsed.root as usize] {
+        Ty::Num(_) if !parsed.uses_var => add(c, label, parsed, Kind::Function).ok(),
+        _ => None,
+    }
 }
 
 fn add_parsed(

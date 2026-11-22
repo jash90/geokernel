@@ -1,0 +1,555 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "calculus-fraction-001",
+      "group": "calculus",
+      "script": [
+        "a = 3/6",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-002",
+      "group": "calculus",
+      "script": [
+        "a = 5/(-8)",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.625 },
+          "n": { "type": "number", "defined": true, "value": -5.0 },
+          "d": { "type": "number", "defined": true, "value": 8.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-003",
+      "group": "calculus",
+      "script": [
+        "a = 2/0",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": false },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-004",
+      "group": "calculus",
+      "script": [
+        "a = 0",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-005",
+      "group": "calculus",
+      "script": [
+        "a = 1/(-3)",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -0.3333333333333333 },
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-006",
+      "group": "calculus",
+      "script": [
+        "a = 10/6",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.6666666666666667 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-007",
+      "group": "calculus",
+      "script": [
+        "a = (-10)/(-6)",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.6666666666666667 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-008",
+      "group": "calculus",
+      "script": [
+        "a = 0.125/3",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.041666666666666664 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 24.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-009",
+      "group": "calculus",
+      "script": [
+        "a = 3/0.16666666666666666",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 18.0 },
+          "n": { "type": "number", "defined": true, "value": 18.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-010",
+      "group": "calculus",
+      "script": [
+        "a = 2.5",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-011",
+      "group": "calculus",
+      "script": [
+        "a = sqrt(2)",
+        "n = Numerator(a)",
+        "d = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "n": { "type": "number", "defined": true, "value": 19601.0 },
+          "d": { "type": "number", "defined": true, "value": 13860.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-012",
+      "group": "calculus",
+      "script": [
+        "a = 3",
+        "b = 6",
+        "q = a/b",
+        "n = Numerator(q)",
+        "d = Denominator(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -5.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 6.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "q": { "type": "number", "defined": true, "value": 0.5 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -5.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "q": { "type": "number", "defined": true, "value": -0.8333333333333334 },
+          "n": { "type": "number", "defined": true, "value": -5.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -5.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "q": { "type": "number", "defined": false },
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -5.0 },
+          "b": { "type": "number", "defined": true, "value": 8.0 },
+          "q": { "type": "number", "defined": true, "value": -0.625 },
+          "n": { "type": "number", "defined": true, "value": -5.0 },
+          "d": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 8.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 8.0 },
+          "q": { "type": "number", "defined": true, "value": 0.375 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "q": { "type": "number", "defined": true, "value": 0.5 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-013",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2 + 1",
+        "n = Numerator(f)",
+        "d = Denominator(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "n": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "d": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-014",
+      "group": "calculus",
+      "script": [
+        "f(x) = (x^2 + 1)/(x - 3)",
+        "n = Numerator(f)",
+        "d = Denominator(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.909090909090909],
+              [-4.0, -2.4285714285714284],
+              [-2.0, -1.0],
+              [-1.0, -0.5],
+              [-0.5, -0.35714285714285715],
+              [0.0, -0.3333333333333333],
+              [0.5, -0.5],
+              [1.0, -1.0],
+              [2.0, -5.0],
+              [4.0, 17.0],
+              [8.0, 13.0]
+            ]
+          },
+          "n": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "d": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -11.0],
+              [-4.0, -7.0],
+              [-2.0, -5.0],
+              [-1.0, -4.0],
+              [-0.5, -3.5],
+              [0.0, -3.0],
+              [0.5, -2.5],
+              [1.0, -2.0],
+              [2.0, -1.0],
+              [4.0, 1.0],
+              [8.0, 5.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-015",
+      "group": "calculus",
+      "script": [
+        "f(x) = (x + 2)/(x + 1)",
+        "n = Numerator(f)",
+        "d = Denominator(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.8571428571428571],
+              [-4.0, 0.6666666666666666],
+              [-2.0, -0.0],
+              [-1.0, null],
+              [-0.5, 3.0],
+              [0.0, 2.0],
+              [0.5, 1.6666666666666667],
+              [1.0, 1.5],
+              [2.0, 1.3333333333333333],
+              [4.0, 1.2],
+              [8.0, 1.1111111111111112]
+            ]
+          },
+          "n": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -6.0],
+              [-4.0, -2.0],
+              [-2.0, 0.0],
+              [-1.0, 1.0],
+              [-0.5, 1.5],
+              [0.0, 2.0],
+              [0.5, 2.5],
+              [1.0, 3.0],
+              [2.0, 4.0],
+              [4.0, 6.0],
+              [8.0, 10.0]
+            ]
+          },
+          "d": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-fraction-016",
+      "group": "calculus",
+      "script": [
+        "f(x) = 2/(3x)",
+        "n = Numerator(f)",
+        "d = Denominator(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.08333333333333333],
+              [-4.0, -0.16666666666666666],
+              [-2.0, -0.3333333333333333],
+              [-1.0, -0.6666666666666666],
+              [-0.5, -1.3333333333333333],
+              [0.0, null],
+              [0.5, 1.3333333333333333],
+              [1.0, 0.6666666666666666],
+              [2.0, 0.3333333333333333],
+              [4.0, 0.16666666666666666],
+              [8.0, 0.08333333333333333]
+            ]
+          },
+          "n": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 2.0],
+              [-4.0, 2.0],
+              [-2.0, 2.0],
+              [-1.0, 2.0],
+              [-0.5, 2.0],
+              [0.0, 2.0],
+              [0.5, 2.0],
+              [1.0, 2.0],
+              [2.0, 2.0],
+              [4.0, 2.0],
+              [8.0, 2.0]
+            ]
+          },
+          "d": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -24.0],
+              [-4.0, -12.0],
+              [-2.0, -6.0],
+              [-1.0, -3.0],
+              [-0.5, -1.5],
+              [0.0, 0.0],
+              [0.5, 1.5],
+              [1.0, 3.0],
+              [2.0, 6.0],
+              [4.0, 12.0],
+              [8.0, 24.0]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
