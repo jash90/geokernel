@@ -85,7 +85,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      GEOGEBRA_SRC: ${{ runner.temp }}/geogebra
       GEOGEBRA_REV: 112919f2d450ec7430a5cd3b65dba226fdc43b74
     steps:
       - uses: actions/checkout@v4
@@ -97,6 +96,8 @@ jobs:
           java-version: '17'
       - name: Build the headless reference harness
         run: |
+          export GEOGEBRA_SRC="$RUNNER_TEMP/geogebra"
+          printf 'GEOGEBRA_SRC=%s\n' "$GEOGEBRA_SRC" >> "$GITHUB_ENV"
           git init "$GEOGEBRA_SRC"
           git -C "$GEOGEBRA_SRC" fetch --depth=1 https://github.com/geogebra/geogebra.git "$GEOGEBRA_REV"
           git -C "$GEOGEBRA_SRC" checkout --detach FETCH_HEAD
