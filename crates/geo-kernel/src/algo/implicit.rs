@@ -1,6 +1,9 @@
 // Licensed under the EUPL 1.2.
 
 use crate::{Construction, Id, Value};
+mod conic;
+pub(super) mod intersection;
+mod polynomial;
 
 pub(crate) fn asymptotes(
     c: &Construction,

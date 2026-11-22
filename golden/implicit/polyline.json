@@ -1,0 +1,195 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-polyline-001",
+      "group": "implicit",
+      "script": [
+        "c: (x + 1)^4 + (y - 3)^4 = 1",
+        "A = (-1, -2)",
+        "B = (-1, 3)",
+        "C = (5, 3)",
+        "path = PolyLine(A, B, C)",
+        "P = Intersect(c, path)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -1.0, "y": 4.0 },
+        { "action": "move", "label": "A", "x": -1.0, "y": -2.0 },
+        { "action": "move", "label": "C", "x": -2.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [81.0, -108.0, 54.0, -12.0, 1.0],
+              [4.0, 0.0, 0.0, 0.0, 0.0],
+              [6.0, 0.0, 0.0, 0.0, 0.0],
+              [4.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "(x + 1)^(4) + (y - 3)^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "path": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-1.0, -2.0],
+              [-1.0, 3.0],
+              [5.0, 3.0]
+            ],
+            "length": 11.0
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 2.0000000000000293 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [81.0, -108.0, 54.0, -12.0, 1.0],
+              [4.0, 0.0, 0.0, 0.0, 0.0],
+              [6.0, 0.0, 0.0, 0.0, 0.0],
+              [4.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "(x + 1)^(4) + (y - 3)^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 4.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "path": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-1.0, 4.0],
+              [-1.0, 3.0],
+              [5.0, 3.0]
+            ],
+            "length": 7.0
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [81.0, -108.0, 54.0, -12.0, 1.0],
+              [4.0, 0.0, 0.0, 0.0, 0.0],
+              [6.0, 0.0, 0.0, 0.0, 0.0],
+              [4.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "(x + 1)^(4) + (y - 3)^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "path": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-1.0, -2.0],
+              [-1.0, 3.0],
+              [5.0, 3.0]
+            ],
+            "length": 11.0
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 2.0000000000000293 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [81.0, -108.0, 54.0, -12.0, 1.0],
+              [4.0, 0.0, 0.0, 0.0, 0.0],
+              [6.0, 0.0, 0.0, 0.0, 0.0],
+              [4.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "(x + 1)^(4) + (y - 3)^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "path": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-1.0, -2.0],
+              [-1.0, 3.0],
+              [-2.0, 3.0]
+            ],
+            "length": 6.0
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 2.0000000000000293 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-polyline-002",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 1",
+        "A = (-2, 0)",
+        "B = (-1, 0)",
+        "C = (2, 0)",
+        "path = PolyLine(A, B, C)",
+        "P = Intersect(path, c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "path": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [2.0, 0.0]
+            ],
+            "length": 4.0
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ use crate::compare::{
     compare_arc, compare_conic, compare_extra, compare_list, compare_locus, compare_sampled,
     line_scale_agrees, Sign,
 };
-use crate::model::{Case, Step};
+use crate::model::{implicit_intersection_label, indexed_prefix, label_prefix, Case, Step};
 use geo_kernel::{script, Construction, Kind};
 
 /// One disagreement between GeoGebra and the kernel.
@@ -69,6 +69,11 @@ pub fn replay(case: &Case) -> CaseOutcome {
             }
         }
     }
+    let implicit_outputs: Vec<_> = case
+        .script
+        .iter()
+        .filter_map(|line| implicit_intersection_label(line, &case.snapshots[0]))
+        .collect();
     for (i, (step, snapshot)) in case.steps.iter().zip(&case.snapshots).enumerate() {
         match apply(&mut c, step) {
             Ok(Some(id)) => boundary_outputs.grow(&mut c, id, |_, _, _| {}),
@@ -77,6 +82,22 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 out.mismatches
                     .push(failure(i, "step", "the kernel applies the step", e));
                 return out;
+            }
+        }
+        if !implicit_outputs.is_empty() {
+            for label in c.ids().map(|id| c.label(id)) {
+                if !snapshot.contains_key(label)
+                    && implicit_outputs.iter().any(|base| {
+                        label == *base || indexed_prefix(label) == Some(label_prefix(base))
+                    })
+                {
+                    out.mismatches.push(failure(
+                        i,
+                        label,
+                        "no output",
+                        "unexpected intersection point".into(),
+                    ));
+                }
             }
         }
         for (label, expected) in snapshot {

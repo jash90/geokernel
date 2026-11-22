@@ -928,6 +928,15 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     {
                         clip_prefixes.insert(label_prefix(label));
                     }
+                    if let Some(label) = implicit_intersection_label(line, snap) {
+                        let prefix = label_prefix(label);
+                        boundary_prefixes.insert(prefix);
+                        if !keys.contains(label)
+                            && !keys.iter().any(|key| indexed_prefix(key) == Some(prefix))
+                        {
+                            outputs.remove(label);
+                        }
+                    }
                     if let Some((label, "Intersect", args)) = command_args(line) {
                         let kind = |name: &str| snap.get(name).map(|o| o.kind);
                         match args.as_slice() {
@@ -1027,13 +1036,13 @@ fn validate_case(case: &Case) -> Result<(), String> {
 
 /// The part of a label before its first `_`, which GeoGebra numbers when a
 /// command creates several objects (`t` -> `t_{1}`, `t_{2}`).
-fn label_prefix(label: &str) -> &str {
+pub(crate) fn label_prefix(label: &str) -> &str {
     label.split('_').next().unwrap_or(label)
 }
 
 /// `Some(prefix)` when `key` has the form `prefix_{n}` with `n` a positive
 /// integer written without leading zeros.
-fn indexed_prefix(key: &str) -> Option<&str> {
+pub(crate) fn indexed_prefix(key: &str) -> Option<&str> {
     let (prefix, rest) = key.split_once("_{")?;
     let n = rest.strip_suffix('}')?;
     let digits = !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit());
@@ -1239,6 +1248,25 @@ fn command_args(line: &str) -> Option<(&str, &str, Vec<&str>)> {
     let (name, inner) = rhs.trim().split_once('(')?;
     let args = inner.strip_suffix(')')?.split(',').map(str::trim).collect();
     Some((label.trim(), name.trim(), args))
+}
+
+pub(crate) fn implicit_intersection_label<'a>(
+    line: &'a str,
+    snapshot: &BTreeMap<String, Expected>,
+) -> Option<&'a str> {
+    let (label, "Intersect", args) = command_args(line)? else {
+        return None;
+    };
+    let [a, b] = args.as_slice() else { return None };
+    let (a, b) = (snapshot.get(*a)?.kind, snapshot.get(*b)?.kind);
+    let partner = |k| {
+        matches!(
+            k,
+            Kind::Line | Kind::PolyLine | Kind::Function | Kind::Conic | Kind::Circle
+        )
+    };
+    (a == Kind::ImplicitCurve && partner(b) || b == Kind::ImplicitCurve && partner(a))
+        .then_some(label)
 }
 
 /// The transformed object of a script line `name = Mirror(p, ...)` and the

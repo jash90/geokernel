@@ -1,0 +1,434 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-conic-001",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 2",
+        "k: x^2 + y^2 = 2",
+        "n = 1",
+        "P = Intersect(c, k)",
+        "R = Intersect(c, k, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -2.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -2.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -2.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -2.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -2.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-conic-002",
+      "group": "implicit",
+      "script": [
+        "a = 1",
+        "c: x^4 + y^4 = 2",
+        "k: x^2 + 2*y^2 = 3*a",
+        "P = Intersect(c, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.1 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 2.0, -3.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.7320508075688772, 1.224744871391589],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": -0.44721359549995815, "y": -1.18321595661996 },
+          "P_{4}": { "type": "point", "defined": true, "x": -0.44721359549995743, "y": 1.1832159566257678 },
+          "P_{5}": { "type": "point", "defined": true, "x": 0.44721359549995815, "y": -1.18321595661996 },
+          "P_{6}": { "type": "point", "defined": true, "x": 0.44721359549995743, "y": 1.1832159566257678 },
+          "P_{7}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "P_{8}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.1 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 2.0, -0.30000000000000004, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [0.5477225575051662, 0.3872983346207417],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "P_{3}": { "type": "point", "defined": false },
+          "P_{4}": { "type": "point", "defined": false },
+          "P_{5}": { "type": "point", "defined": false },
+          "P_{6}": { "type": "point", "defined": false },
+          "P_{7}": { "type": "point", "defined": false },
+          "P_{8}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 2.0, 3.0, 0.0, 0.0, 0.0]
+          },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "P_{3}": { "type": "point", "defined": false },
+          "P_{4}": { "type": "point", "defined": false },
+          "P_{5}": { "type": "point", "defined": false },
+          "P_{6}": { "type": "point", "defined": false },
+          "P_{7}": { "type": "point", "defined": false },
+          "P_{8}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 2.0, -3.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.7320508075688772, 1.224744871391589],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": -0.44721359549995815, "y": -1.18321595661996 },
+          "P_{4}": { "type": "point", "defined": true, "x": -0.44721359549995743, "y": 1.1832159566257678 },
+          "P_{5}": { "type": "point", "defined": true, "x": 0.44721359549995815, "y": -1.18321595661996 },
+          "P_{6}": { "type": "point", "defined": true, "x": 0.44721359549995743, "y": 1.1832159566257678 },
+          "P_{7}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "P_{8}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-conic-003",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 2",
+        "k: x + y^2 = 0",
+        "P = Intersect(c, k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, 0.5, 0.0],
+            "vertex": [0.0, 0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [-1.0, -0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-conic-004",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 2",
+        "k: x^2 + y^2 = 2",
+        "Q = Intersect(k, c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 2",
+            "input_form": true
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -2.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q_{3}": { "type": "point", "defined": true, "x": 1.0, "y": -1.0 },
+          "Q_{4}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    }
+  ]
+}

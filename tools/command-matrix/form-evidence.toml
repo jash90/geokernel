@@ -3433,3 +3433,68 @@ cases = ["implicit-sides-001", "implicit-sides-002"]
 command = "Asymptote"
 form = "implicit"
 cases = ["implicit-asymptotes-001", "implicit-asymptotes-002", "implicit-asymptotes-003", "implicit-asymptotes-004", "implicit-asymptotes-005"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,line"
+cases = ["implicit-line-001", "implicit-line-002", "implicit-line-003", "implicit-line-004", "implicit-line-005"]
+
+[[form]]
+command = "Intersect"
+form = "line,implicit"
+cases = ["implicit-line-001"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,polyline"
+cases = ["implicit-polyline-001"]
+
+[[form]]
+command = "Intersect"
+form = "polyline,implicit"
+cases = ["implicit-polyline-002"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,function"
+cases = ["implicit-graph-001", "implicit-graph-002"]
+
+[[form]]
+command = "Intersect"
+form = "function,implicit"
+cases = ["implicit-graph-001"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,conic"
+cases = ["implicit-conic-001", "implicit-conic-002", "implicit-conic-003"]
+
+[[form]]
+command = "Intersect"
+form = "conic,implicit"
+cases = ["implicit-conic-004"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,line,number"
+cases = ["implicit-line-001", "implicit-line-004"]
+
+[[form]]
+command = "Intersect"
+form = "line,implicit,number"
+cases = ["implicit-line-001"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,function,number"
+cases = ["implicit-graph-001"]
+
+[[form]]
+command = "Intersect"
+form = "function,implicit,number"
+cases = ["implicit-graph-001"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,conic,number"
+cases = ["implicit-conic-001"]

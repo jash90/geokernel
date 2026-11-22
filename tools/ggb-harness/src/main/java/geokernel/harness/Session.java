@@ -55,6 +55,9 @@ import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoVector;
 import org.geogebra.common.kernel.geos.GeoCurveCartesian;
 import org.geogebra.common.kernel.implicit.GeoImplicitCurve;
+import org.geogebra.common.kernel.implicit.AlgoIntersectImplicitpolyParametric;
+import org.geogebra.common.kernel.implicit.AlgoIntersectImplicitpolyPolyLine;
+import org.geogebra.common.kernel.implicit.AlgoIntersectImplicitPolynomials;
 import org.geogebra.common.kernel.StringTemplate;
 import org.geogebra.common.kernel.kernelND.GeoConicND;
 import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
@@ -262,7 +265,10 @@ final class Session {
             }
             if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLineCurve
                     || parent instanceof AlgoIntersectLinePolyLine
-                    || parent instanceof AlgoIntersectPolyLines)) {
+                    || parent instanceof AlgoIntersectPolyLines
+                    || parent instanceof AlgoIntersectImplicitpolyParametric
+                    || parent instanceof AlgoIntersectImplicitpolyPolyLine
+                    || parent instanceof AlgoIntersectImplicitPolynomials)) {
                 growingPoints.put(parent, label.split("_", 2)[0] + "_{");
                 recordGrowingPoints();
                 return first;
@@ -271,6 +277,12 @@ final class Session {
         if ((out == null || out.length == 0) && definition.startsWith("Segment(")
                 && definition.chars().filter(ch -> ch == ',').count() == 2) {
             return null;
+        }
+        if (out != null && out.length == 0 && definition.startsWith("Intersect(")) {
+            List<String> inputs = arguments(definition);
+            if (inputs.size() == 2 && inputs.stream().anyMatch(a -> objects.get(a) instanceof GeoImplicitCurve)) {
+                return null;
+            }
         }
         if (out != null && out.length == 2 && definition.startsWith("Segment(")) {
             return runFixedSegment(line, label, out);

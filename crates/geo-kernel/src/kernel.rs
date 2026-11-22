@@ -2194,6 +2194,9 @@ impl Construction {
                     self.values[i] = new;
                 }
                 _ => {
+                    if matches!(def, Def::IntersectBoundary(d) if d.retains_output(self)) {
+                        continue;
+                    }
                     let new = self.compute(def, i);
                     if let Def::IntersectBoundary(intersection) = def {
                         if let Some(saved) = intersection.with_root(new) {
