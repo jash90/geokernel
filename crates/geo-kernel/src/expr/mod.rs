@@ -1080,7 +1080,6 @@ fn reads_list(nodes: &[Node], tys: &[Ty]) -> bool {
 
 /// The commands that expressions compute themselves; `Length` and `Sum`
 /// also of a list.
-pub(crate) use commands::fmin;
 pub(crate) use commands::polynomial::division_list;
 
 pub(crate) fn is_expression_command(name: &str) -> bool {

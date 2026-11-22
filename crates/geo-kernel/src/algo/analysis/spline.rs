@@ -148,7 +148,10 @@ impl Spline {
             // The piece as `AlgoSpline.compute` writes it: the terms
             // `c * t^j` added from the highest power, a constant term
             // within `MAX_PRECISION` of zero left out.
-            let terms = row.iter().enumerate().map(|(i, &pair)| (self.stride - 1 - i, pair));
+            let terms = row
+                .iter()
+                .enumerate()
+                .map(|(i, &pair)| (self.stride - 1 - i, pair));
             let [x, y] = terms.fold([0.0; 2], |sum, (power, pair)| {
                 let t_power = crate::expr::math::my_pow(t, power as f64);
                 [0, 1].map(|axis| {
@@ -446,9 +449,15 @@ mod tests {
                 &format!("s = Spline(Sequence((k, Mod(k^2, 7)), k, 1, n), {degree})"),
             ]);
             let _ = defined(&c, "s");
-            assert!(start.elapsed() < Duration::from_secs(5), "{n} points, degree {degree}");
+            assert!(
+                start.elapsed() < Duration::from_secs(5),
+                "{n} points, degree {degree}"
+            );
         }
-        let c = run(&["n = 2000", "s = Spline(Sequence((k, Mod(k^2, 7)), k, 1, n))"]);
+        let c = run(&[
+            "n = 2000",
+            "s = Spline(Sequence((k, Mod(k^2, 7)), k, 1, n))",
+        ]);
         assert!(defined(&c, "s"));
     }
 

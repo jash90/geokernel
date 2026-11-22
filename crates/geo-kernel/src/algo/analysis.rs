@@ -161,7 +161,11 @@ pub(super) fn spline_degree(c: &Construction, input: SplineInput) -> Option<usiz
         Some(id) => {
             let degree = c.number(Id(id as usize))?;
             // Java's narrowing: NaN is 0, out of range saturates
-            Some(if degree.is_nan() { 0 } else { degree.max(0.0) as usize })
+            Some(if degree.is_nan() {
+                0
+            } else {
+                degree.max(0.0) as usize
+            })
         }
         None => Some(3),
     }

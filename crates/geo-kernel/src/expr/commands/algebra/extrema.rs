@@ -22,13 +22,6 @@ impl<const M: bool> Ctx<'_, M> {
     }
 }
 
-/// The tolerance GeoGebra minimizes with (`5e-8`). `None` is an undefined
-/// answer of the method itself (an undefined sample or the trial limit),
-/// so a maximum is searched as the minimum of the negated function.
-pub(crate) fn fmin(a: f64, b: f64, f: impl FnMut(f64) -> f64) -> Option<f64> {
-    brent_minimum(a, b, 5e-8, f, |_| false)
-}
-
 /// Successive parabolic interpolation safeguarded by golden-section
 /// steps, the approach described in Chapter 5 of Brent's *Algorithms
 /// for Minimization without Derivatives*. The interval keeps the lowest

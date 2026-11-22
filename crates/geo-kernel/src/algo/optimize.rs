@@ -153,12 +153,11 @@ impl Group for OptimizeDef {
 /// update returns at once and the result stays undefined, also after
 /// bounds are added. A point on a path always has bounds.
 pub(crate) fn disabled(c: &Construction, d: OptimizeDef) -> Option<OptimizeDef> {
-    (!d.point && d.watch != Watch::Disabled && c.slider_interval(d.independent).is_none()).then_some(
-        OptimizeDef {
+    (!d.point && d.watch != Watch::Disabled && c.slider_interval(d.independent).is_none())
+        .then_some(OptimizeDef {
             watch: Watch::Disabled,
             ..d
-        },
-    )
+        })
 }
 
 /// Runs the search and returns the value of the result: the independent
