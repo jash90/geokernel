@@ -1875,12 +1875,6 @@ reason = "the kernel refuses the input: unknown command `FillRow`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1684"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1691"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `MajorAxis`"
