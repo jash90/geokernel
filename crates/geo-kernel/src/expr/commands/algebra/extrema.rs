@@ -72,34 +72,31 @@ pub(crate) fn brent_minimum(
         if (x - midpoint).abs() <= twice - (b - a) * 0.5 {
             return Some(x);
         }
-        let (step, before) = next_step(
-            NextStep {
-                a,
-                b,
-                x,
-                midpoint,
-                tol,
-                twice,
-                d,
-                e,
-                w,
-                v,
-                fw,
-                fv,
-                fx,
-                ratio,
-            },
-        );
+        let (step, before) = next_step(NextStep {
+            a,
+            b,
+            x,
+            midpoint,
+            tol,
+            twice,
+            d,
+            e,
+            w,
+            v,
+            fw,
+            fv,
+            fx,
+            ratio,
+        });
         d = step;
         e = before;
-        let u = x
-            + if d.abs() >= tol {
-                d
-            } else if d > 0.0 {
-                tol
-            } else {
-                -tol
-            };
+        let u = x + if d.abs() >= tol {
+            d
+        } else if d > 0.0 {
+            tol
+        } else {
+            -tol
+        };
         let fu = f(u);
         if fu.is_nan() {
             return None;

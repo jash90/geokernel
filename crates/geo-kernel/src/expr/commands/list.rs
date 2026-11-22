@@ -65,12 +65,12 @@
 //! `Remove`, `PointList`, `OrdinalRank` and `TiedRank`.
 
 use crate::expr::eval::{count, number_of, slot_val, work, Ctx, Local, Val, OBJECT_SHIFT};
-use crate::expr::Bin;
 use crate::expr::lex::Tok;
 use crate::expr::list::Slot;
 use crate::expr::math;
 use crate::expr::parse::{list_arity, list_form, Parser};
 use crate::expr::types::{elem_of, join_elem, of_numbers, ty_of};
+use crate::expr::Bin;
 use crate::expr::{CallOp, Elem, ListOp, Node, Ty, NONE};
 use crate::kernel::{Construction, Kind, Value};
 use std::collections::{BTreeMap, BTreeSet};

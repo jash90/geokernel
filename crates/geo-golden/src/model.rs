@@ -733,7 +733,12 @@ impl TryFrom<RawObject> for Expected {
 /// without the argument of a function.
 /// The scripting commands a script line may run without assigning a label
 /// (the harness's `SCRIPTING` pattern).
-const SCRIPTING_COMMANDS: &[&str] = &["SetConstructionStep(", "ZoomIn(", "ZoomOut(", "SetActiveView("];
+const SCRIPTING_COMMANDS: &[&str] = &[
+    "SetConstructionStep(",
+    "ZoomIn(",
+    "ZoomOut(",
+    "SetActiveView(",
+];
 
 /// How many lines of the script run a scripting command of their own.
 fn scripting_lines(script: &[String]) -> usize {

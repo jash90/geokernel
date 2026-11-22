@@ -317,9 +317,7 @@ impl<const M: bool> Ctx<'_, M> {
             }
             Table => table::evaluate(self, &args),
             UnicodeToLetter | UnicodeToText | ReplaceAll | Take | Sum | First | Last
-            | TextElement => {
-                strings::evaluate(self, op, &args)
-            }
+            | TextElement => strings::evaluate(self, op, &args),
             _ => None,
         }?;
         self.bounded_text(result.len())?;

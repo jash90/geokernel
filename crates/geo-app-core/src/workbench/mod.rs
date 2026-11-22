@@ -152,14 +152,10 @@ impl Workbench {
     /// pan or zoom and after a rebuild restored the view.
     pub fn set_view(&mut self, view: crate::interact::ViewTransform) {
         let v = view.view();
-        if self.construction.set_view(
-            v.xmin,
-            v.xmax,
-            v.ymin,
-            v.ymax,
-            view.xscale(),
-            view.yscale(),
-        ) {
+        if self
+            .construction
+            .set_view(v.xmin, v.xmax, v.ymin, v.ymax, view.xscale(), view.yscale())
+        {
             self.version += 1;
         }
     }
