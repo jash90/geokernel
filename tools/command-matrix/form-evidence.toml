@@ -3880,3 +3880,9 @@ cases = [
   "locusequation-midpointlocus-002", "locusequation-midpointlocus-003",
   "locusequation-midpointlocus-004",
 ]
+
+[[form]]
+command = "Corner"
+form = "inequality"
+cases = ["corners-inequality-014", "corners-inequality-015"]
+difference = "geometry-command-arguments: `Corner(inequality)` and `Vertex(inequality)`"

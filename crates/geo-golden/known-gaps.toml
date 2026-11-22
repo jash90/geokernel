@@ -12,6 +12,30 @@
 # the list says it does not, so an entry can neither hide a new difference
 # nor go stale.
 
+# intersectgrowth
+
+[[gap]]
+id = "intersectgrowth-interval-003"
+reason = "AlgoRoots.initPoints removes every output from slot max(number, 1) on that has no dependents and is undefined, which unsets its label; when the slot is defined again AlgoGeoPointsFunction.updateLabels gives it the next default point label (B, then D past the taken C). The harness still reads the same object under its old label R_{2} or R_{3}. The kernel keeps one fixed label per output, so the slots stay R_{2} and R_{3} and no B or D exists"
+mismatches = ["3:B", "3:D", "4:B", "4:D"]
+
+[[gap]]
+id = "intersectgrowth-interval-005"
+reason = "AlgoRoots.initPoints unlabels the undefined second slot when the interval collapses; when it is defined again it is labelled with the next default point label A, which the harness reads besides the old label R_{2}. The kernel keeps one fixed label per output, so the slot stays R_{2} and no A exists"
+mismatches = ["2:A", "3:A", "4:A"]
+
+[[gap]]
+id = "intersectgrowth-interval-007"
+reason = "When b moves to 5.5, R = Intersect(f, h, b, 3) loses its roots and AlgoRoots.initPoints removes its second output A, which frees the label before S = Intersect(g, h, 0, b) grows; S then names its roots 4 and 5 A and B. The kernel keeps A on R's undefined slot, so S's new outputs are B and C"
+mismatches = ["2:A", "2:B"]
+
+# corners
+
+[[gap]]
+id = "corners-review-004"
+reason = "AlgoVertexIneq keeps the intersection helper it created on the first update. The helper for y > x^n and x > 1 was made while n = 2 made the border polynomial; after n becomes 0.5 that cached polynomial helper still evaluates the border on the vertical line and finds (1, 1). Which helper exists depends on the edit history, so the kernel leaves the variable exponent undefined instead"
+mismatches = ["1:P_{1}"]
+
 # conic
 
 [[gap]]
@@ -466,11 +490,6 @@ mismatches = ["1:S"]
 # intersectgrowth
 
 [[gap]]
-id = "intersectgrowth-interval-001"
-reason = "Intersect(f, h, a, b) keeps its creation-time output count. When b increases from 0.5 to 2, AlgoRoots allocates and labels one more point A, then keeps that label while the root is outside the interval and reuses it when b increases again."
-mismatches = ["1:A", "2:A", "3:A"]
-
-[[gap]]
 id = "vectorforms-identity-002"
 reason = "AlgoIdentity marks its list undefined at size zero and never marks it defined again. After the size returns to two, the kernel's list expression recomputes a defined identity matrix."
 mismatches = ["2:m"]
@@ -791,11 +810,6 @@ reason = "Text corners require the drawable bounding box, including its headless
 mismatches = ["0:P", "1:P", "2:P", "4:P"]
 
 [[gap]]
-id = "corners-inequality-002"
-reason = "A sinusoidal border prevents polynomial expansion of the full inequality tree. The reference can still return the three vertices from pairs of linear borders."
-mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}"]
-
-[[gap]]
 id = "corners-text-002"
 reason = "A text corner reads the drawable's font metrics and anchor bounds. The kernel has no drawable bounds."
 mismatches = ["0:P", "3:P"]
@@ -804,11 +818,6 @@ mismatches = ["0:P", "3:P"]
 id = "corners-checkbox-001"
 reason = "A Boolean corner reads the checkbox drawable. This headless drawable reports a zero-size rectangle at the pixel origin, and the kernel has no checkbox bounds."
 mismatches = ["0:P", "1:P", "3:P"]
-
-[[gap]]
-id = "corners-vertex-003"
-reason = "The bounded polynomial solver cannot expand the sinusoidal border. The reference can still use it as a filter for crossings of the three linear borders."
-mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}"]
 
 [[gap]]
 id = "curvepairs-growth-001"

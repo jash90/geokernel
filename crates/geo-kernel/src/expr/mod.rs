@@ -105,6 +105,38 @@ impl IntersectionWork {
     pub(crate) fn exhausted(&self) -> bool {
         self.0.over()
     }
+
+    /// The subtree `i` of the two-variable function `e` at `(x, y)`, with
+    /// the function's first two locals bound to the coordinates.
+    pub(crate) fn sample_plane(&self, c: &Construction, e: &Entry, i: u32, x: f64, y: f64) -> f64 {
+        if !self.charge(1) {
+            return f64::NAN;
+        }
+        let env = eval::Env::Pair(x, y);
+        let ctx = eval::Ctx::<true> {
+            meter: Some(&self.0),
+            ..eval::Ctx::new(c, e, &env)
+        };
+        let first = eval::Local {
+            depth: 0,
+            value: eval::Val::N(x),
+            run: None,
+            vector: false,
+            up: None,
+        };
+        let second = eval::Local {
+            depth: 1,
+            value: eval::Val::N(y),
+            run: None,
+            vector: false,
+            up: Some(&first),
+        };
+        eval::Ctx {
+            locals: Some(&second),
+            ..ctx
+        }
+        .fast(i)
+    }
 }
 
 fn system_value(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::Lists) -> eval::Val {

@@ -45,13 +45,6 @@ fn slice(polynomial: &PlanePolynomial, x: f64) -> Vec<f64> {
     polynomial.iter().map(|row| evaluate(row, x)).collect()
 }
 
-pub(crate) fn value(polynomial: &PlanePolynomial, x: f64, y: f64) -> f64 {
-    polynomial
-        .iter()
-        .rev()
-        .fold(0.0, |sum, row| sum * y + evaluate(row, x))
-}
-
 fn multiply_add(to: &mut Vec<f64>, a: &[f64], b: &[f64], sign: f64) {
     to.resize(to.len().max(a.len() + b.len() - 1), 0.0);
     for (i, u) in a.iter().enumerate() {
@@ -144,6 +137,13 @@ fn resultant(
         return Some(Vec::new());
     }
     Some(determinant)
+}
+
+/// Real roots from the coefficients as they are (`EquationSolver`
+/// solves a quadratic with its own coefficients): no rescaling that could
+/// shrink a small leading coefficient into a lower degree.
+pub(crate) fn unscaled_roots(coefficients: &[f64], work: &IntersectionWork) -> Vec<f64> {
+    graph_roots(coefficients, &|units| work.charge(units))
 }
 
 fn real_roots(coefficients: &[f64], work: &IntersectionWork) -> Vec<f64> {
