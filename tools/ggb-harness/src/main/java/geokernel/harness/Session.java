@@ -373,6 +373,10 @@ final class Session {
             namedMultivariate.add(geo);
         }
         String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : schemaType(geo);
+        if (COORDINATES.equals(expected)) {
+            // the class of the folded expression decides, not the label
+            expected = actual.equals("vector") ? "vector" : "point";
+        }
         if (expression && !equationLine) {
             expected = expressionType(label, actual, line);
         }
@@ -804,6 +808,54 @@ final class Session {
                 if (depth == 0) {
                     return i == definition.length() - 1;
                 }
+            }
+        }
+        return false;
+    }
+
+    /** Stands for a point or a vector where the script cannot tell which. */
+    private static final String COORDINATES = "point or vector";
+
+    /**
+     * Whether the expression of a four-argument `Sum` or `Product` is a
+     * point or a vector: it holds a coordinate pair or names such an object.
+     */
+    private boolean foldsCoordinates(String expression) {
+        int depth = 0;
+        for (int i = 0; i < expression.length(); i++) {
+            char ch = expression.charAt(i);
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                depth--;
+            } else if ((ch == ',' || ch == ';') && depth > 0
+                    && !isCallArgument(expression, i)) {
+                return true;
+            }
+        }
+        Matcher m = LABEL.matcher(expression);
+        while (m.find()) {
+            GeoElement named = objects.get(m.group());
+            if (named instanceof GeoPoint || named instanceof GeoVector) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether the separator at `at` splits the arguments of a call, not a pair. */
+    private static boolean isCallArgument(String expression, int at) {
+        int depth = 0;
+        for (int i = at - 1; i >= 0; i--) {
+            char ch = expression.charAt(i);
+            if (ch == ')') {
+                depth++;
+            } else if (ch == '(') {
+                if (depth == 0) {
+                    return i > 0 && (Character.isLetterOrDigit(expression.charAt(i - 1))
+                            || expression.charAt(i - 1) == '_');
+                }
+                depth--;
             }
         }
         return false;
@@ -1318,6 +1370,9 @@ final class Session {
                         && VARIABLE_X.matcher(folded.get(0).trim()).find()) {
                     return "function";
                 }
+                if (folded.size() == 4 && foldsCoordinates(folded.get(0))) {
+                    return COORDINATES;
+                }
                 return !folded.isEmpty()
                         && (POINT.matcher(folded.get(0).trim()).matches()
                                 || lead instanceof GeoPoint
@@ -1375,6 +1430,12 @@ final class Session {
             case "IntersectRegion":
             case "IntersectionPaths":
                 return "polygon";
+            case "Product":
+                // like `Sum`: the fold of points or vectors is one of them;
+                // every other product is typed like an expression
+                List<String> factors = arguments(definition);
+                return factors.size() == 4 && foldsCoordinates(factors.get(0))
+                        ? COORDINATES : null;
             default:
                 // a mathematical function such as `sqrt(a)` or `x(A)`
                 return null;

@@ -158,7 +158,8 @@ pub fn ggb_double(v: f64) -> Option<String> {
 /// The GeoGebra-style value string of an object, `None` where this crate
 /// has no GeoGebra-compatible formatting yet (expressions, equations).
 /// Undefined numbers print `NaN`, undefined points and vectors `(NaN, NaN)`
-/// and undefined booleans `?`, as GeoGebra's templates do.
+/// and undefined booleans, lists, functions and lines `?`, as GeoGebra's
+/// templates do.
 pub fn value_string(c: &Construction, id: Id) -> Option<String> {
     let value = c.value(id);
     let text = |x: f64, y: f64| {
@@ -179,7 +180,8 @@ pub fn value_string(c: &Construction, id: Id) -> Option<String> {
         (Value::Undefined, kind) => match kind {
             Kind::Number => Some("NaN".into()),
             Kind::Point | Kind::Vector => Some("(NaN, NaN)".into()),
-            Kind::Boolean | Kind::List => Some("?".into()),
+            // an undefined function or line prints the undefined sign too
+            Kind::Boolean | Kind::List | Kind::Function | Kind::Line => Some("?".into()),
             Kind::Text => Some(String::new()),
             _ => None,
         },

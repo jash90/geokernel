@@ -783,3 +783,25 @@ mismatches = ["0:c"]
 id = "infinity-functions-097"
 reason = "intended difference, recorded in DIFFERENCES.md: nroot(-Infinity, 4) is Infinity in GeoGebra, whose NROOT operation hands a negative base with an even degree to Math.pow; the kernel reads nroot(a, n) as a^(1/n), where a negative base with an even root is undefined"
 mismatches = ["0:c"]
+
+# tpairfixes
+
+[[gap]]
+id = "tpairfixes-fnundef-003"
+reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `? + 0 x` after dropping the zero term; the kernel asks whether the function is defined"
+mismatches = ["0:b"]
+
+[[gap]]
+id = "tpairfixes-fnundef-024"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps `-(?)` as the product of -1 and the undefined constant, a defined function; the kernel negates the constant as it does for `-?`, which leaves the undefined constant alone and an undefined function"
+mismatches = ["0:b", "0:f", "0:g"]
+
+[[gap]]
+id = "tpairfixes-fnundef-029"
+reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `? + 0` after dropping the zero term; the kernel asks whether the function is defined"
+mismatches = ["0:b"]
+
+[[gap]]
+id = "tpairfixes-fnundef-030"
+reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `1 ?` after dropping the factor 1; the kernel asks whether the function is defined"
+mismatches = ["0:b"]

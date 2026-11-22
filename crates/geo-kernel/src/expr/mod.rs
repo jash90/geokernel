@@ -130,6 +130,7 @@ fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::
                 value: eval::Val::N(t),
                 run: None,
                 vector: false,
+                text: None,
                 up: None,
             };
             eval::system_locals(
@@ -1335,7 +1336,9 @@ pub(crate) struct Outcome {
 pub(crate) fn evaluate(c: &Construction, d: ExprDef) -> Outcome {
     let e = entry(c, d);
     if e.function {
-        let raw = Raw::Num(if inputs_defined(c, e) { 0.0 } else { f64::NAN });
+        // a function that is the undefined constant alone is undefined
+        // (`f(x) = ?`), any other one with undefined values is defined
+        let raw = Raw::Num(if tree_defined(c, e) { 0.0 } else { f64::NAN });
         Outcome { raw, dec: None }
     } else {
         let (raw, dec) = eval::root(c, e, None);
@@ -1817,6 +1820,14 @@ pub(crate) fn add_built(
     add_parsed(c, name, parsed, kind, AngleStyle::Unbounded, false)
 }
 
+/// Whether the expression is `Product(expression, k, from, to)` of a point
+/// or vector expression.
+pub(crate) fn is_coordinate_product(c: &Construction, d: ExprDef) -> bool {
+    let e = entry(c, d);
+    matches!(e.nodes[e.root as usize], Node::Call(CallOp::Fold, ..))
+        && e.tys[e.root as usize] == Ty::Vec
+}
+
 /// The last stored result.
 pub(crate) fn raw(c: &Construction, d: ExprDef) -> Raw {
     entry(c, d).raw
@@ -1981,6 +1992,15 @@ fn define_with_coordinates(
         }
         return function(c, name, parsed, false);
     }
+    // `Sum` or `Product` of a point or vector expression over a range
+    // (`AlgoFoldExpression`): the result has the class of the expression,
+    // whatever the label is.
+    let vector_label = match parsed.nodes[parsed.root as usize] {
+        Node::Call(CallOp::Fold | CallOp::SumFold, first, _) => {
+            Some(folds_to_vector(c, &parsed, first))
+        }
+        _ => vector_label,
+    };
     let kind = match parsed.tys[parsed.root as usize] {
         Ty::Num(1) => Kind::Angle,
         Ty::Num(_) => Kind::Number,
@@ -2015,6 +2035,40 @@ fn argument_is_vector(c: &Construction, parsed: &parse::Parsed) -> bool {
         vectors.push(vector);
     }
     vectors[parsed.root as usize]
+}
+
+/// `ExpressionNode.shouldEvaluateToGeoVector` for the expression at `at`
+/// that `Sum` or `Product` folds over a range: whether the terms, and with
+/// them the result, are vectors and not points. The left operand decides
+/// (a number or a vector object makes a vector, a coordinate pair or a
+/// point does not), and the right operand can only take the answer back:
+/// a point object does, a coordinate pair leaves it as it is.
+fn folds_to_vector(c: &Construction, parsed: &parse::Parsed, at: u32) -> bool {
+    let number = |id: Id| matches!(c.kind(id), Kind::Number | Kind::Angle);
+    let node = parsed.nodes[at as usize];
+    // As the left operand, or as the whole expression.
+    let left = |n: u32| match parsed.nodes[n as usize] {
+        Node::Num(_) | Node::MinusOne | Node::Degree | Node::Local(..) => true,
+        Node::Obj(id) => c.kind(id) == Kind::Vector || number(id),
+        Node::Cmd(def, _) => def.kind() == Kind::Vector,
+        Node::Bin(..) | Node::Un(..) => folds_to_vector(c, parsed, n),
+        _ => false,
+    };
+    match node {
+        Node::Item(value) => folds_to_vector(c, parsed, value),
+        Node::Obj(id) => c.kind(id) == Kind::Vector,
+        Node::Un(_, a) => left(a),
+        Node::Bin(_, a, b) => {
+            left(a)
+                && match parsed.nodes[b as usize] {
+                    Node::Bin(..) | Node::Un(..) => folds_to_vector(c, parsed, b),
+                    Node::Obj(id) => number(id) || c.kind(id) == Kind::Vector,
+                    _ => true,
+                }
+        }
+        Node::Cmd(def, _) => def.kind() == Kind::Vector,
+        _ => false,
+    }
 }
 
 /// Defines a coordinate expression with an explicit kind, regardless of

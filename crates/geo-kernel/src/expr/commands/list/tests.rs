@@ -1721,3 +1721,65 @@ fn the_casts_of_a_start_and_a_fold_saturate_like_java() {
     assert_eq!(num(&c, "f"), 5.5);
     rebuilt(&c);
 }
+
+#[test]
+fn a_fold_over_points_adds_or_multiplies_coordinates() {
+    // `PointNDFold`: a sum adds, a product multiplies as complex numbers
+    // and shows the result as one (golden topic `tpairfixes-fold`)
+    let mut c = load(
+        "a = 2\n\
+         A = (1, 2)\n\
+         u = (2, -1)\n\
+         C = Sum((k, k), k, 1, 5)\n\
+         D = Product((k, k), k, 1, 5)\n\
+         v = Sum((k, a), k, 1, 3)\n\
+         E = Sum(2 (k, k), k, 1, 3)\n\
+         F = Sum(u + (k, 0), k, 1, 3)\n\
+         w = Sum(k A, k, 1, 3)\n\
+         G = Sum((k, 1 / (k - 2)), k, 1, 3)\n\
+         s = Sum(k^2, k, 1, 3)",
+    )
+    .unwrap();
+    let value = |c: &Construction, label: &str| c.value(c.id(label).unwrap());
+    assert_eq!(value(&c, "C"), Value::Point { x: 15.0, y: 15.0 });
+    assert_eq!(
+        value(&c, "D"),
+        Value::Point {
+            x: -480.0,
+            y: -480.0
+        }
+    );
+    assert_eq!(
+        c.coordinate_mode(c.id("D").unwrap()),
+        Some(crate::algo::point::CoordMode::Complex)
+    );
+    assert_eq!(c.coordinate_mode(c.id("C").unwrap()), None);
+    // the class follows the folded expression, never the label
+    assert_eq!(value(&c, "v"), Value::Point { x: 6.0, y: 6.0 });
+    assert_eq!(value(&c, "E"), Value::Vector { x: 12.0, y: 12.0 });
+    assert_eq!(value(&c, "F"), Value::Vector { x: 12.0, y: -3.0 });
+    assert_eq!(value(&c, "w"), Value::Point { x: 6.0, y: 12.0 });
+    // a term with an infinite coordinate makes the point undefined
+    assert_eq!(value(&c, "G"), Value::Undefined);
+    assert_eq!(num(&c, "s"), 14.0);
+    c.set_number(c.id("a").unwrap(), -1.0).unwrap();
+    assert_eq!(value(&c, "v"), Value::Point { x: 6.0, y: -3.0 });
+    rebuilt(&c);
+}
+
+#[test]
+fn a_zip_variable_over_texts_is_the_text() {
+    let c = load(
+        "t = {\"ab\", \"c\"}\n\
+         l = Zip(A, A, t)\n\
+         m = Zip(A + \"-\" + k, A, t, k, {1, 2, 3})\n\
+         n = Zip(Text(A), A, t)\n\
+         p = Zip(Zip(A + B, B, {\"x\", \"y\"}), A, t)",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "l"), "{ab, c}");
+    assert_eq!(elems(&c, "m"), "{ab-1, c-2}");
+    assert_eq!(elems(&c, "n"), "{ab, c}");
+    assert_eq!(elems(&c, "p"), "{{abx, aby}, {cx, cy}}");
+    rebuilt(&c);
+}

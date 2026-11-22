@@ -1217,6 +1217,11 @@ impl Construction {
         match self.def(id) {
             Def::Point(PointDef::Convert { mode, .. })
             | Def::Vector(VectorDef::Convert { mode, .. }) => Some(mode),
+            // `Product` of points over a range multiplies them as complex
+            // numbers and shows the result as one (`AlgoFoldExpression`)
+            Def::Expr(d) if expr::is_coordinate_product(self, d) => {
+                Some(crate::algo::point::CoordMode::Complex)
+            }
             _ => None,
         }
     }

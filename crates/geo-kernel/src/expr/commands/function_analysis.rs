@@ -349,6 +349,7 @@ fn local_formula<const M: bool>(ctx: &Ctx<'_, M>, node: u32, depth: u32, values:
             value,
             run: None,
             vector: false,
+            text: None,
             up: ctx.locals,
         };
         local_formula(

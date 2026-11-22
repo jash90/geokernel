@@ -719,3 +719,23 @@ fn histogram_respects_the_work_allowance_for_named_lists() {
     assert_eq!(c.value(id), crate::Value::Undefined);
     assert!(super::work_done() - before <= 600);
 }
+
+#[test]
+fn the_undefined_constant_alone_is_an_undefined_function() {
+    // golden topic `tpairfixes-fnundef`
+    let c = load(
+        "f(x) = ?\ng(x) = f(x) + 1\nh(x) = 0 / 0\nk(x) = ? + x\nm(x) = (?)\nr = f(1)\n\
+         b = IsDefined(f)\nd = IsDefined(h)\n",
+    )
+    .unwrap();
+    let value = |label: &str| c.value(c.id(label).unwrap());
+    assert_eq!(value("f"), Value::Undefined);
+    assert_eq!(value("g"), Value::Undefined);
+    assert_eq!(value("m"), Value::Undefined);
+    // every other function without a value is defined
+    assert_eq!(value("h"), Value::Function);
+    assert_eq!(value("k"), Value::Function);
+    assert_eq!(value("r"), Value::Undefined);
+    assert_eq!(value("b"), Value::Bool(false));
+    assert_eq!(value("d"), Value::Bool(true));
+}

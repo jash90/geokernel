@@ -1253,7 +1253,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:1244"
 category = "kernel-mismatch"
-reason = "Vector { x: 0.2723957318354948, y: -0.5041543019103322 } does not match `(NaN, NaN)` (expected undefined, kernel has a value)"
+reason = "GeoGebra's test and the replay run without a CAS, so the derivatives of sin(x) that CurvatureVector needs are missing and the vector is undefined; the kernel computes it from its own derivatives (the golden case funcanalysis-curvatureupstream-004 is a known gap for the same reason)"
 mismatches = ["cv"]
 
 [[gap]]
@@ -1295,7 +1295,7 @@ mismatches = ["q_1"]
 [[gap]]
 id = "commands/CommandsTest.java:1281"
 category = "kernel-mismatch"
-reason = "Function does not match `NaN` (value at x = -8 differs: kernel has Some(63.0))"
+reason = "recorded without a CAS, where CommonDenominator of two rational functions is the function NaN; the kernel's polynomial CAS answers x^2 - 1"
 mismatches = ["f"]
 
 [[gap]]
@@ -1655,7 +1655,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:1633"
 category = "kernel-mismatch"
-reason = "string `(1.5707963267977079, 1)`, GeoGebra prints `(1.5708, 1)`"
+reason = "the reference's extremum search stops 7e-9 short of 3 pi / 2 (4.712388973431372), outside the 1e-9 tolerance of the kernel's 4.712388980384689; its search code is not under the EUPL and its iteration is not reproduced, and the five-digit strings need the rounding template"
 mismatches = ["A", "B"]
 
 [[gap]]
@@ -1685,7 +1685,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:1649"
 category = "kernel-mismatch"
-reason = "List { len: 1 } does not match `?` (expected undefined, kernel has a value)"
+reason = "recorded without a CAS, where Factors of a polynomial is undefined; the kernel's polynomial CAS answers {{x, 2}}"
 mismatches = ["m2"]
 
 [[gap]]
@@ -1889,7 +1889,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:1822"
 category = "kernel-mismatch"
-reason = "Undefined does not match `{{1, 0}, {0, 1}}` (expected a value, kernel is undefined)"
+reason = "Frequency of two lists of texts is a contingency table in GeoGebra; the kernel's Frequency reads two lists as class boundaries and data, numbers only, and is undefined here"
 mismatches = ["m1"]
 
 [[gap]]
@@ -2379,24 +2379,6 @@ reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style 
 mismatches = ["h"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2395"
-category = "incomplete-context"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
-mismatches = ["p"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2396"
-category = "incomplete-context"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
-mismatches = ["q"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2397"
-category = "incomplete-context"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
-mismatches = ["r"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2398"
 category = "incomplete-context"
 reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `2 / (x - 3)`"
@@ -2461,12 +2443,6 @@ id = "commands/CommandsTest.java:2457"
 category = "redefine"
 reason = "the kernel refuses the input: object `check2` already exists"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2463"
-category = "kernel-mismatch"
-reason = "Function does not match `?` (expected undefined, kernel has a value)"
-mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2465"
@@ -2719,36 +2695,6 @@ id = "commands/CommandsTest.java:2619"
 category = "text-formatting"
 reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `DataFunction[{1, 2}, {3, 4},x]`"
 mismatches = ["f"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2621"
-category = "text-formatting"
-reason = "values agree but `GeoLine` of kind line has no GeoGebra-style text yet; GeoGebra prints `?`"
-mismatches = ["tpairs_probe_2621_0"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2626"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
-mismatches = ["f"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2627"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
-mismatches = ["g"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2628"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
-mismatches = ["h"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2629"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
-mismatches = ["p"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2634"
@@ -3843,12 +3789,6 @@ reason = "the kernel refuses the input: the command needs a list of numbers"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3443"
-category = "kernel-mismatch"
-reason = "the fold over points multiplies them as complex numbers in GeoGebra (`-480 - 480i`); the kernel only folds numbers and its point is undefined"
-mismatches = ["z_{1}"]
-
-[[gap]]
 id = "commands/CommandsTest.java:347"
 category = "incomplete-context"
 reason = "the kernel refuses the input: unknown object `pia`"
@@ -4259,7 +4199,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:3734"
 category = "kernel-mismatch"
-reason = "string `(6.28318530725133, 0)`, GeoGebra prints `(6.283185305816606, 0)`"
+reason = "the values agree within the tolerance, but a numerically polished root differs from the reference's in its last digits (6.28318530725133 against 6.283185305816606), so the full-precision strings cannot agree"
 mismatches = ["A", "B", "C"]
 
 [[gap]]
@@ -5093,13 +5033,13 @@ mismatches = ["slopefield4"]
 [[gap]]
 id = "commands/CommandsTest.java:4225"
 category = "kernel-mismatch"
-reason = "the kernel creates an object here, GeoGebra's replay created none (the upstream helper asserts the input has no result)"
+reason = "the reference creates the function (and a hidden animated number) but its scripting command reports no result; the kernel's line creates the function under the label the runner gives it"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4226"
 category = "kernel-mismatch"
-reason = "the kernel creates an object here, GeoGebra's replay created none (the upstream helper asserts the input has no result)"
+reason = "the reference creates the function (and a hidden animated number) but its scripting command reports no result; the kernel's line creates the function under the label the runner gives it"
 mismatches = ["step"]
 
 [[gap]]
@@ -5281,12 +5221,6 @@ id = "commands/CommandsTest.java:4356"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Sum`"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4358"
-category = "kernel-mismatch"
-reason = "Undefined does not match `(15, 15)` (type mismatch: expected point, got number)"
-mismatches = ["C"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4359"
@@ -5851,12 +5785,6 @@ id = "commands/CommandsTest.java:4878"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `RemoveUndefined(Zip(Object(xx),xx,{\"y\",\"a\",\"x\"}))`: a command inside a command is not supported"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4883"
-category = "kernel-mismatch"
-reason = "List { len: 3 } does not match `{\"t1\", \"t2\", \"t3\"}` (element 1: expected a value, kernel is undefined)"
-mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4896"
@@ -6437,7 +6365,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:764"
 category = "kernel-mismatch"
-reason = "Number(1.0) does not match `2000` (values differ)"
+reason = "follows ZoomOut(2000), an app command the kernel does not run: the axis step stays the 1 of the view it has, GeoGebra's zoomed view has 2000"
 mismatches = ["b"]
 
 [[gap]]
@@ -6449,7 +6377,7 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/CommandsTest.java:771"
 category = "kernel-mismatch"
-reason = "Number(1.0) does not match `2000` (values differ)"
+reason = "follows ZoomOut(2000), an app command the kernel does not run: the axis step stays the 1 of the view it has, GeoGebra's zoomed view has 2000"
 mismatches = ["b"]
 
 [[gap]]
