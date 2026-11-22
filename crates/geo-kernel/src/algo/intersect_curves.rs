@@ -284,10 +284,8 @@ fn pair_roots(c: &Construction, first: Id, second: Id) -> Option<CurveRoots> {
                 .chain(rhs.iter().enumerate().map(|(i, &value)| (0, i, -value))),
         )
     };
-    let mut parameters =
+    let parameters =
         plane_polynomial::intersections(&difference(&x, &u), &difference(&y, &v), &work)?;
-    // The polynomial cases use decreasing first-curve parameter order.
-    parameters.reverse();
     let in_domain = |curve: &Cartesian<'_>, t| {
         let (start, end) = curve.parameter_bounds();
         (start - STANDARD_PRECISION..=end + STANDARD_PRECISION).contains(&t)

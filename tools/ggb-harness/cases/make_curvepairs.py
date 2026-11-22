@@ -37,4 +37,10 @@ cases.case("growth", [
 ], [setn("a", 1), setn("a", -1), setn("a", 2)])
 cases.cases[-1]["track_boundary_growth"] = True
 
+for height in (2, 3, 5, 7):
+    cases.case("radical", [
+        f"a = {height}", "c = Curve(t, t^2, t, -4, 4)",
+        "d = Curve(s, a, s, -4, 4)", "P = Intersect(c, d)",
+    ], [setn("a", 4), setn("a", -1), setn("a", height)])
+
 cases.write()

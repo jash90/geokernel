@@ -21,6 +21,190 @@
           "P_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
         }
       ]
+    },
+    {
+      "id": "curvepairs-radical-002",
+      "group": "curvepairs",
+      "script": [
+        "a = 2",
+        "c = Curve(t, t^2, t, -4, 4)",
+        "d = Curve(s, a, s, -4, 4)",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.4142135623730951, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.4142135623730951, "y": 2.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "curvepairs-radical-003",
+      "group": "curvepairs",
+      "script": [
+        "a = 3",
+        "c = Curve(t, t^2, t, -4, 4)",
+        "d = Curve(s, a, s, -4, 4)",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.7320508075688772, "y": 3.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.7320508075688772, "y": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.7320508075688772, "y": 3.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.7320508075688772, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "curvepairs-radical-004",
+      "group": "curvepairs",
+      "script": [
+        "a = 5",
+        "c = Curve(t, t^2, t, -4, 4)",
+        "d = Curve(s, a, s, -4, 4)",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.23606797749979, "y": 5.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.23606797749979, "y": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.23606797749979, "y": 5.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.23606797749979, "y": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "curvepairs-radical-005",
+      "group": "curvepairs",
+      "script": [
+        "a = 7",
+        "c = Curve(t, t^2, t, -4, 4)",
+        "d = Curve(s, a, s, -4, 4)",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 7.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.6457513110645907, "y": 7.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.6457513110645907, "y": 7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 7.0 },
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "d": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.6457513110645907, "y": 7.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.6457513110645907, "y": 7.0 }
+        }
+      ]
     }
   ]
 }
