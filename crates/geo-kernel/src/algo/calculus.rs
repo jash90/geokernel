@@ -36,7 +36,7 @@
 //! evaluator. `NDerivative` of a non-polynomial builds the derivative tree
 //! of `Derivative.get`, one `ExpressionNode.derivative` pass per order.
 
-use super::{Group, Parents};
+use super::{Group, Parents, POINT};
 use crate::expr::derivative::decimal_to_fraction;
 use crate::expr::equation::Builder;
 use crate::expr::{self, Bin, Element, Entry, IfMode, Node, Parsed, Raw, Un, NONE};
@@ -154,6 +154,12 @@ pub enum CalculusDef {
     /// `Polynomial(points)`: the interpolating polynomial
     /// (`AlgoPolynomialFromCoordinates`).
     PolynomialPoints { points: u32 },
+    /// `SolveODE(f[, P])` and `SolveODE(curve[, P])` (`AlgoSolveODECas`):
+    /// the solution of `y' = f(x)` as a function. The kernel solves a
+    /// polynomial right-hand side in `x` (its antiderivative, through `P`
+    /// when there is one); everything else needs the CAS and is undefined,
+    /// and a curve is undefined in the reference too.
+    SymbolicOde { source: u32, point: Option<u32> },
 }
 
 /// The object index `x` as an `Id` again.
@@ -172,6 +178,7 @@ impl CalculusDef {
                 | CalculusDef::CurveDerivative { .. }
                 | CalculusDef::NumericInterval { .. }
                 | CalculusDef::PolynomialPoints { .. }
+                | CalculusDef::SymbolicOde { .. }
         )
     }
 
@@ -238,7 +245,8 @@ impl Group for CalculusDef {
             CalculusDef::IndefiniteIntegral { .. }
             | CalculusDef::Derivative { .. }
             | CalculusDef::NumericInterval { .. }
-            | CalculusDef::PolynomialPoints { .. } => Kind::Function,
+            | CalculusDef::PolynomialPoints { .. }
+            | CalculusDef::SymbolicOde { .. } => Kind::Function,
             CalculusDef::CurveDerivative { .. } => Kind::Curve,
         }
     }
@@ -291,6 +299,10 @@ impl Group for CalculusDef {
                 function, a, b, c, ..
             } => Parents::of(&[gid(function), gid(a), gid(b), gid(c)]),
             CalculusDef::PolynomialPoints { points } => Parents::of(&[gid(points)]),
+            CalculusDef::SymbolicOde { source, point } => match point {
+                Some(point) => Parents::of(&[gid(source), gid(point)]),
+                None => Parents::of(&[gid(source)]),
+            },
         }
     }
 
@@ -371,6 +383,15 @@ impl Group for CalculusDef {
             CalculusDef::PolynomialPoints { points } => {
                 c.expect(gid(points), &[Kind::List])?;
             }
+            CalculusDef::SymbolicOde { source, point } => {
+                c.expect(
+                    gid(source),
+                    &[Kind::Function, Kind::FunctionNVar, Kind::Curve],
+                )?;
+                if let Some(point) = point {
+                    c.expect(gid(point), POINT)?;
+                }
+            }
         }
         Ok(())
     }
@@ -386,7 +407,8 @@ impl Group for CalculusDef {
             | CalculusDef::Derivative { .. }
             | CalculusDef::CurveDerivative { .. }
             | CalculusDef::NumericInterval { .. }
-            | CalculusDef::PolynomialPoints { .. } => {
+            | CalculusDef::PolynomialPoints { .. }
+            | CalculusDef::SymbolicOde { .. } => {
                 // the record-backed objects answer through their record;
                 // this path only decides whether they are defined
                 let (value, record) = refresh(c, self);
@@ -1351,6 +1373,52 @@ fn polynomial_antiderivative(c: &Construction, entry: &Entry) -> Option<Parsed> 
             b.divide(root, divisor)
         });
         shifted.push(shifted_root);
+    }
+    poly_function_tree(c, &mut b, &shifted)
+}
+
+/// The solution of `y' = p(x)` for a polynomial source `p`: the
+/// antiderivative with the constant zero (the initial value of the
+/// arbitrary constant the CAS answer carries), or with the constant that
+/// puts the graph through the point `through`. `None` for a source that
+/// is no polynomial in `x` or has a coefficient that is not finite.
+fn polynomial_ode_solution(
+    c: &Construction,
+    entry: &Entry,
+    through: Option<(f64, f64)>,
+) -> Option<Parsed> {
+    let mut b = Builder::function(entry);
+    let poly = b.expand(c, entry.root).ok()?;
+    let roots = poly.coefficient_roots(&mut b);
+    let mut shifted: Vec<Option<u32>> = vec![None];
+    for (k, root) in roots.into_iter().enumerate() {
+        shifted.push(root.map(|root| {
+            let divisor = b.push(Node::Num((k + 1) as f64));
+            b.divide(root, divisor)
+        }));
+    }
+    // the coefficients of the antiderivative, the constant term left out
+    let mut values = Vec::with_capacity(shifted.len());
+    let mut evaluated = b
+        .number_values(c, shifted.iter().copied().flatten())
+        .into_iter();
+    for root in &shifted {
+        let value = match root {
+            Some(_) => evaluated.next().flatten()?,
+            None => 0.0,
+        };
+        if !value.is_finite() {
+            return None;
+        }
+        values.push(value);
+    }
+    if let Some((x, y)) = through {
+        let at_x = values.iter().rev().fold(0.0, |sum, &v| sum * x + v);
+        let constant = y - at_x;
+        if !constant.is_finite() {
+            return None;
+        }
+        shifted[0] = Some(b.push(Node::Num(constant)));
     }
     poly_function_tree(c, &mut b, &shifted)
 }
@@ -2677,6 +2745,21 @@ fn build_record(c: &Construction, d: &CalculusDef) -> (Option<Entry>, Option<Ent
         }
         CalculusDef::PolynomialPoints { .. } => {
             polynomial_points_tree(c, d).map(|p| expr::function_entry(c, p))
+        }
+        CalculusDef::SymbolicOde { source, point } => {
+            // a curve, a function of two variables and a function made by
+            // a command have no entry here: they stay undefined
+            let Some(entry) = source_entry(c, gid(source)) else {
+                return (None, None);
+            };
+            let through = match point {
+                Some(point) => match c.value(gid(point)) {
+                    Value::Point { x, y } if x.is_finite() && y.is_finite() => Some((x, y)),
+                    _ => return (None, None),
+                },
+                None => None,
+            };
+            polynomial_ode_solution(c, entry, through).map(|p| expr::function_entry(c, p))
         }
         _ => None,
     };

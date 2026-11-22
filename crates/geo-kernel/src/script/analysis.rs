@@ -281,6 +281,46 @@ fn add_ode(c: &mut Construction, label: &str, command: &str, args: &[&str]) -> R
         let defs = resolve_system(c, args)?;
         return add_analysis_outputs(c, label, defs);
     }
+    // the one- and two-argument symbolic forms (`AlgoSolveODECas`): a
+    // function, a function of two variables or a curve, and a point. A
+    // number is no function here (`CasEvaluableFunction`)
+    if command == "SolveODE" && matches!(args.len(), 1 | 2) {
+        let source = match c.id(args[0]) {
+            Some(id)
+                if matches!(
+                    c.kind(id),
+                    Kind::Function | Kind::FunctionNVar | Kind::Curve
+                ) =>
+            {
+                packed(id)?
+            }
+            Some(_) => return Err("SolveODE needs a function or a curve".into()),
+            None => match expr::slope_variables(c, args[0]) {
+                Some((false, false)) => {
+                    return Err("SolveODE needs a function or a curve".into());
+                }
+                // a slope in `x` alone is a function of one variable
+                Some((true, false)) => {
+                    let label = format!("\0arg{}", c.len());
+                    match expr::argument_function(c, args[0], &label) {
+                        Some(id) => packed(id)?,
+                        None => slope(c, args[0])?,
+                    }
+                }
+                _ => slope(c, args[0])?,
+            },
+        };
+        let point = match args.get(1) {
+            Some(point) => Some(packed(argument(c, point, Kind::Point)?)?),
+            None => None,
+        };
+        return c
+            .add(
+                label,
+                Def::Calculus(crate::algo::calculus::CalculusDef::SymbolicOde { source, point }),
+            )
+            .map_err(|e| e.to_string());
+    }
     let functions = match (command, args.len()) {
         ("SlopeField", 2 | 3 | 7) | ("SolveODE", 5) => 1,
         ("SolveODE", 6) => 2,

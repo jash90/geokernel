@@ -84,7 +84,7 @@ FORM_NOTES = {
     "Roots": "Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.",
     "Extremum": "Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.",
     "Function": "Domain restrictions with an optional local variable. Empty and freehand functions are pending.",
-    "SolveODE": "Numeric first-order, parametric and second-order systems. Symbolic function and curve forms, with or without an initial point, use the CAS.",
+    "SolveODE": "Numeric first-order, parametric and second-order systems. The symbolic forms solve a polynomial right-hand side in x, with or without an initial point; other right-hand sides use the CAS.",
     "ComplexRoot": "Numeric polynomial roots, returned as points with real and imaginary coordinates.",
 
     "CommonDenominator": "Number pairs and rational-function pairs.",

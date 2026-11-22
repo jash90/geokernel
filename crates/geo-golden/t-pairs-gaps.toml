@@ -5266,15 +5266,15 @@ mismatches = ["numericalIntegral3"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4238"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `SolveODE`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Function does not match `?` (expected undefined, kernel has a value): the upstream test runs without a CAS, where the symbolic SolveODE is undefined; with the CAS the reference answers the antiderivative of the polynomial right-hand side (golden group odesymbolic), and so does the kernel"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4239"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `SolveODE`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Function does not match `?` (expected undefined, kernel has a value): the upstream test runs without a CAS, where the symbolic SolveODE is undefined; with the CAS the reference answers the antiderivative of the polynomial right-hand side (golden group odesymbolic), and so does the kernel"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:424"

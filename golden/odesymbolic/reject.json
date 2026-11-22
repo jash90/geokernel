@@ -1,0 +1,196 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "odesymbolic-reject-001",
+      "group": "odesymbolic",
+      "script": [
+        "n = 1",
+        "f(x) = x",
+        "c = Curve(t, t, t, 0, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "g = SolveODE(3)" },
+        { "action": "reject", "line": "g = SolveODE(n)" },
+        { "action": "reject", "line": "g = SolveODE(f, 2)" },
+        { "action": "reject", "line": "g = SolveODE(f, (1, 1), 2)" },
+        { "action": "reject", "line": "g = SolveODE(n, (1, 1))" },
+        { "action": "reject", "line": "g = SolveODE(c, 2)" },
+        { "action": "reject", "line": "g = SolveODE((1, 1))" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 }
+        }
+      ]
+    }
+  ]
+}

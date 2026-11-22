@@ -2185,6 +2185,14 @@ pub(crate) fn function_interval(c: &Construction, id: Id) -> Option<Option<[f64;
     Some(entry(c, def).interval?.range)
 }
 
+/// Whether the slope expression `text` reads `x` and whether it reads
+/// `y`; `None` when it does not parse. The symbolic `SolveODE` forms
+/// refuse a slope that reads neither (a number).
+pub(crate) fn slope_variables(c: &Construction, text: &str) -> Option<(bool, bool)> {
+    let parsed = parse::parse_equation(c, text).ok()?;
+    Some((parsed.uses_var, parsed.uses_y))
+}
+
 /// Hidden two-variable function for a slope field or integral curve.
 pub(crate) fn define_slope(c: &mut Construction, label: &str, rhs: &str) -> Result<Id, String> {
     numeric_function(c, label, parse::parse_equation(c, rhs)?)

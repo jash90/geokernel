@@ -138,7 +138,7 @@ case "$cmd" in
               run_golden degree
               exit
               ;;
-            cas.json) enable_giac ;;
+            cas.json | odesymbolic.json) enable_giac ;;
           esac
         fi
         run_golden
@@ -154,8 +154,10 @@ case "$cmd" in
     zipstep="${2:-50}"
     for file in "$here"/cases/*.json; do
       (
-        if [ "${file##*/}" = cas.json ] && [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
-          enable_giac
+        if [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
+          case "${file##*/}" in
+            cas.json | odesymbolic.json) enable_giac ;;
+          esac
         fi
         java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
           geokernel.harness.GgbExporter "$file" "$repo/golden/ggb" "$sample" "$zipstep"
