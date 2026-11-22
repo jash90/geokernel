@@ -456,6 +456,11 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     if let Some(("SlowPlot", args)) = split_call(rhs) {
         return slow_plot(c, name, &args);
     }
+    // `name = PenStroke(...)`: literal points frozen into a smoothed stroke
+    // (`CmdPenStroke` reads its arguments without resolving them)
+    if let Some(("PenStroke", args)) = split_call(rhs) {
+        return c.add_pen_stroke(name, &args).map(Some);
+    }
     // `name = Maximize(expr, independent)` and `Minimize`: the dependent value
     // may be an inline arithmetic expression, which becomes a hidden
     // expression object, as GeoGebra's argument resolver makes a temporary
@@ -1737,7 +1742,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Conic { .. } => true,
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
-        Value::Locus { .. } => true,
+        Value::Locus { .. } | Value::PenStroke { .. } => true,
         Value::HomogeneousPoint { .. }
         | Value::Button
         | Value::InputBox

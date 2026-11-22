@@ -53,6 +53,7 @@ import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoLocus;
+import org.geogebra.common.kernel.geos.GeoLocusStroke;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.statistics.GeoPieChart;
@@ -1019,6 +1020,10 @@ final class Session {
         if (geo instanceof GeoImage) {
             return "image";
         }
+        // a pen stroke is a locus with cubic control points
+        if (geo instanceof GeoLocusStroke) {
+            return "stroke";
+        }
         if (geo instanceof GeoLocus) {
             return "locus";
         }
@@ -1354,6 +1359,8 @@ final class Session {
             case "ShortestDistance":
             case "TravelingSalesman":
             case "Voronoi":
+            case "PenStroke":
+                return "stroke";
             case "Locus":
             case "SlopeField":
             case "NSolveODE":
@@ -1701,7 +1708,7 @@ final class Session {
 
     /** Whether a field is finite: a number, or a list of finite fields or nulls; a name is. */
     private static boolean finite(Object v) {
-        if (v == null || v instanceof String || v instanceof Boolean) {
+        if (v == null || v instanceof String || v instanceof Boolean || v instanceof Integer) {
             return true;
         }
         if (v instanceof List) {
@@ -1862,6 +1869,19 @@ final class Session {
                 for (MyPoint p : ((GeoLocus) geo).getPoints()) {
                     points.add(Arrays.asList(Double.isFinite(p.x) ? (Object) p.x : null,
                             Double.isFinite(p.y) ? (Object) p.y : null, p.getLineTo()));
+                }
+                f.put("points", points);
+                return f;
+            }
+            case "stroke": {
+                // every point with its segment code (0 line, 1 move, 3 curve
+                // end, 4 control point); a subpath break has null coordinates
+                List<Object> points = new ArrayList<>();
+                for (MyPoint p : ((GeoLocus) geo).getPoints()) {
+                    boolean defined = p.isDefined();
+                    points.add(Arrays.asList(defined ? (Object) p.x : null,
+                            defined && Double.isFinite(p.y) ? (Object) p.y : null,
+                            defined ? p.getSegmentType().code : 0));
                 }
                 f.put("points", points);
                 return f;

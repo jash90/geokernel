@@ -98,6 +98,12 @@ impl View {
                     }
                 }
                 Value::Ray { x, y, .. } => grow(x, y),
+                Value::PenStroke { .. } => {
+                    if let Some([xmin, xmax, ymin, ymax]) = c.stroke(id).and_then(|s| s.bounds()) {
+                        grow(xmin, ymin);
+                        grow(xmax, ymax);
+                    }
+                }
                 Value::Polygon { .. } | Value::PolyLine { .. } => {
                     for (x, y) in c.vertices(id).flatten() {
                         grow(x, y);
@@ -483,6 +489,11 @@ fn render_geometry(
                 };
                 write_locus(&locus.points, &mut segments, |x, y| (sx(x), sy(y)));
             }
+            Value::PenStroke { .. } => {
+                if let Some(stroke) = c.stroke(id) {
+                    write_stroke(&stroke.points, &mut segments, |x, y| (sx(x), sy(y)));
+                }
+            }
             Value::Text => {
                 let Some((source, style)) = c
                     .text(id)
@@ -658,6 +669,57 @@ fn write_locus(
         }
     }
     flush(&mut run, out);
+}
+
+/// A pen stroke as one path with round caps: every subpath starts with a
+/// move, and cubic pieces take the two control points before their end. A
+/// subpath of one point is a line to itself, which the round cap shows as
+/// a dot.
+fn write_stroke(
+    points: &[crate::algo::stroke::StrokePoint],
+    out: &mut String,
+    at: impl Fn(f64, f64) -> (f64, f64),
+) {
+    use crate::algo::stroke::Segment;
+    let mut d = String::new();
+    let mut open = false;
+    let mut controls: Vec<(f64, f64)> = Vec::with_capacity(2);
+    for p in points {
+        if !p.is_defined() || !p.y.is_finite() {
+            open = false;
+            controls.clear();
+            continue;
+        }
+        let (x, y) = at(p.x, p.y);
+        match p.segment {
+            Segment::Move => {
+                let _ = write!(d, "M{x:.2} {y:.2}");
+                open = true;
+                controls.clear();
+            }
+            Segment::Control => controls.push((x, y)),
+            _ if !open => {
+                // a piece without a start draws nothing, as the reference
+                // path does before its first move
+                controls.clear();
+            }
+            Segment::Curve if controls.len() == 2 => {
+                let [(x1, y1), (x2, y2)] = [controls[0], controls[1]];
+                let _ = write!(d, "C{x1:.2} {y1:.2} {x2:.2} {y2:.2} {x:.2} {y:.2}");
+                controls.clear();
+            }
+            Segment::Curve | Segment::Line => {
+                let _ = write!(d, "L{x:.2} {y:.2}");
+                controls.clear();
+            }
+        }
+    }
+    if !d.is_empty() {
+        let _ = writeln!(
+            out,
+            r##"<path d="{d}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>"##
+        );
+    }
 }
 
 /// The points of an arc or sector, sampled from its start to its end

@@ -299,9 +299,10 @@ final class Json {
             return;
         }
         // A list of numbers (a vertex `[x, y]`, or a function sample `[x, y]`
-        // whose `y` may be null, or a locus point `[x, y, lineTo]`) stays on
-        // one line.
-        if (list.stream().allMatch(v -> v == null || v instanceof Double || v instanceof Boolean)
+        // whose `y` may be null, a locus point `[x, y, lineTo]` or a stroke
+        // point `[x, y, code]`) stays on one line.
+        if (list.stream().allMatch(v -> v == null || v instanceof Double || v instanceof Boolean
+                        || v instanceof Integer)
                 && list.stream().anyMatch(v -> v instanceof Double)) {
             sb.append('[');
             for (int i = 0; i < list.size(); i++) {
