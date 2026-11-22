@@ -3418,3 +3418,18 @@ cases = ["implicit-constructors-003", "implicit-constructors-004"]
 command = "ImplicitCurve"
 form = "point,point,point,point,point,..."
 cases = ["implicit-constructors-002"]
+
+[[form]]
+command = "LeftSide"
+form = "implicit"
+cases = ["implicit-sides-001", "implicit-sides-002"]
+
+[[form]]
+command = "RightSide"
+form = "implicit"
+cases = ["implicit-sides-001", "implicit-sides-002"]
+
+[[form]]
+command = "Asymptote"
+form = "implicit"
+cases = ["implicit-asymptotes-001", "implicit-asymptotes-002", "implicit-asymptotes-003", "implicit-asymptotes-004", "implicit-asymptotes-005"]

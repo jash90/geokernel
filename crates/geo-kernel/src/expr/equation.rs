@@ -1133,7 +1133,9 @@ pub(crate) fn parents(c: &Construction, d: EquationDef) -> Vec<Id> {
 pub(super) fn side_entry(c: &Construction, equation: Id, left: bool) -> Option<&Entry> {
     let sides = match c.def(equation) {
         Def::Equation(def) => c.equations.get(def.index as usize)?.1.sides,
-        Def::ImplicitCurve(index) => c.implicit_curves.get(index as usize)?.1.sides()?,
+        Def::ImplicitCurve(index) if c.equation_form(equation) == Some(&EquationForm::User) => {
+            c.implicit_curves.get(index as usize)?.1.sides()?
+        }
         _ => return None,
     };
     c.exprs.entries.get(sides[usize::from(!left)] as usize)
@@ -1177,6 +1179,18 @@ pub(super) fn sample_side(
             (a / g * x + b / g * y, -c / g)
         }
         Value::Circle { cx, cy, r } => ((x - cx).powi(2) + (y - cy).powi(2), r * r),
+        Value::ImplicitCurve => {
+            let coefficients = c.implicit_coefficients(equation)?;
+            let constant = coefficients
+                .first()
+                .and_then(|row| row.first())
+                .copied()
+                .unwrap_or(0.0);
+            (
+                crate::plot::implicit::evaluate(coefficients, x, y) - constant,
+                -constant,
+            )
+        }
         Value::Conic { .. } => {
             let [a, b, constant, h, u, v] = c.conic(equation)?.matrix;
             let coefficients = [a, 2.0 * h, b, 2.0 * u, 2.0 * v, constant];
@@ -1217,10 +1231,13 @@ pub(crate) fn define_side(
             let hidden = format!("\0equation{}", c.len());
             define(c, &hidden, arg)?
         } else {
-            return Err(format!("expected a line or conic, got `{arg}`"));
+            return Err(format!("expected an equation, got `{arg}`"));
         };
-        if !matches!(c.kind(equation), Kind::Line | Kind::Circle | Kind::Conic) {
-            return Err(format!("expected a line or conic, got `{arg}`"));
+        if !matches!(
+            c.kind(equation),
+            Kind::Line | Kind::Circle | Kind::Conic | Kind::ImplicitCurve
+        ) {
+            return Err(format!("expected an equation, got `{arg}`"));
         }
         let node = Node::Side(equation, command == "LeftSide");
         let parsed = super::reparse(c, Kind::FunctionNVar, &[node], &[Lit::default()], 0)

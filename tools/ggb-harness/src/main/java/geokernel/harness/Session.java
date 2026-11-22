@@ -1204,7 +1204,7 @@ final class Session {
             case "ImplicitCurve":
                 return "implicit";
             case "Asymptote":
-                return first instanceof GeoFunction ? "list" : "line";
+                return first instanceof GeoFunction || first instanceof GeoImplicitCurve ? "list" : "line";
             case "Segment":
                 return "segment";
             case "ConvexHull":

@@ -11,6 +11,13 @@
     {"id": "implicit-constructors-004", "group": "implicit", "script": ["f(x,y) = x*y", "c = ImplicitCurve(f)"], "steps": [{"action": "initial"}]},
     {"id": "implicit-constructors-005", "group": "implicit", "script": ["A = (1, 1)", "B = (2, 2)", "C = (3, 3)", "pts = {A, B, C}", "c = ImplicitCurve(pts)"], "steps": [{"action": "initial"}]},
     {"id": "implicit-constructors-006", "group": "implicit", "script": ["A = (1, 1)", "B = (2, 2)", "pts = {A, B}", "c = ImplicitCurve(pts)"], "steps": [{"action": "initial"}, {"action": "move", "label": "B", "x": 1.0, "y": 1.0}, {"action": "move", "label": "B", "x": 2.0, "y": 3.0}]},
-    {"id": "implicit-constructors-007", "group": "implicit", "script": ["c = ImplicitCurve(x*y)"], "steps": [{"action": "initial"}]}
+    {"id": "implicit-constructors-007", "group": "implicit", "script": ["c = ImplicitCurve(x*y)"], "steps": [{"action": "initial"}]},
+    {"id": "implicit-sides-001", "group": "implicit", "script": ["a = 2", "c: x^3/a + y^2 = y^3 - a", "left = LeftSide(c)", "right = RightSide(c)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 0.0}, {"action": "set_number", "label": "a", "value": -2.0}]},
+    {"id": "implicit-sides-002", "group": "implicit", "script": ["f(x,y) = x^2*y + 1", "c = ImplicitCurve(f)", "left = LeftSide(c)", "right = RightSide(c)"], "steps": [{"action": "initial"}]},
+    {"id": "implicit-asymptotes-001", "group": "implicit", "script": ["c: x^3 - x*y^2 = 1", "lines = Asymptote(c)"], "steps": [{"action": "initial"}]},
+    {"id": "implicit-asymptotes-002", "group": "implicit", "script": ["a = 2", "b = 1", "c: (x-a)*(y-b)^2 = 1/b", "lines = Asymptote(c)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "b", "value": 0.0}, {"action": "set_number", "label": "b", "value": -2.0}, {"action": "set_number", "label": "a", "value": -3.0}]},
+    {"id": "implicit-asymptotes-003", "group": "implicit", "script": ["c: x^4 + y^4 = 1", "lines = Asymptote(c)"], "steps": [{"action": "initial"}]},
+    {"id": "implicit-asymptotes-004", "group": "implicit", "script": ["c: (x-2*y-1)*(x-2*y+3)*y = 2", "lines = Asymptote(c)"], "steps": [{"action": "initial"}]},
+    {"id": "implicit-asymptotes-005", "group": "implicit", "script": ["c: x^3 - 3*x^2*y + 2*x*y^2 = y^2 + x^2", "lines = Asymptote(c)"], "steps": [{"action": "initial"}]}
   ]
 }

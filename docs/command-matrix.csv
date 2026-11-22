@@ -17,9 +17,9 @@ Divisors,,algebra,P2,done,1,1,
 DivisorsList,,algebra,P2,done,1,1,
 DivisorsSum,,algebra,P2,done,1,1,
 IsPrime,,algebra,P2,done,1,1,
-LeftSide,,algebra,P2,partial,3,2,Lines and conics. The implicit-curve form needs an implicit curve object.
+LeftSide,,algebra,P2,done,3,3,"Lines, conics and implicit polynomial equations."
 NextPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of the numeric object.
-RightSide,,algebra,P2,partial,3,2,Lines and conics. The implicit-curve form needs an implicit curve object.
+RightSide,,algebra,P2,done,3,3,"Lines, conics and implicit polynomial equations."
 PreviousPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of the numeric object.
 IsFactored,,algebra,P2,done,2,2,Number and univariate polynomial inputs with the reference degree limit.
 Line,,geometry,P0,done,5,5,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
@@ -139,7 +139,7 @@ SolveODE,,function,P2,partial,7,3,"Numeric first-order, parametric and second-or
 SlopeField,,function,P2,done,4,4,
 Iteration,,function,P2,done,3,3,
 PathParameter,,function,P2,done,1,1,PathParameter(point on a path)
-Asymptote,,function,P2,partial,3,2,Conics and rational functions have reference evidence. Implicit polynomials are pending.
+Asymptote,,function,P2,done,3,3,Conics and rational functions have reference evidence. Implicit polynomials are pending.
 CurvatureVector,,function,P2,done,3,3,
 Curvature,,function,P2,done,3,3,
 OsculatingCircle,,function,P2,done,3,3,

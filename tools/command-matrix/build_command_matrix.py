@@ -88,8 +88,8 @@ FORM_NOTES = {
     "ComplexRoot": "Numeric polynomial roots, returned as points with real and imaginary coordinates.",
 
     "CommonDenominator": "Number pairs and rational-function pairs.",
-    "LeftSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
-    "RightSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
+    "LeftSide": "Lines, conics and implicit polynomial equations.",
+    "RightSide": "Lines, conics and implicit polynomial equations.",
     "If": "Scalar, coordinate, boolean, text, list and numeric-function branches, and named alternatives of a single line, segment, ray, circle or conic kind.",
     "Relation": "Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.",
 }

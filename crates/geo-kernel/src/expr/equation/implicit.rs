@@ -2,7 +2,7 @@
 
 use super::{build_normal, Builder, Entry, NotPolynomial};
 use crate::algo::{conic_nd::ConicData, general_conic};
-use crate::expr::{eval, parse, shift_children, Element, Node, Raw, Ty};
+use crate::expr::{eval, parse, shift_children, Element, Lit, Node, Raw, Ty};
 use crate::{Construction, Def, Error, Id, Kind, Value};
 
 /// Coefficients indexed by the power of x, then by the power of y.
@@ -561,4 +561,27 @@ fn solve(rows: &[Vec<f64>], fixed: usize) -> Option<Vec<f64>> {
     }
     result.insert(fixed, 1.0);
     Some(result)
+}
+
+pub(crate) fn asymptote_command(
+    c: &mut Construction,
+    label: &str,
+    input: &str,
+) -> Option<Result<Id, String>> {
+    let ("Asymptote", args) = crate::script::split_call(input)? else {
+        return None;
+    };
+    let [argument] = args.as_slice() else {
+        return None;
+    };
+    let curve = c
+        .id(argument)
+        .filter(|&id| c.kind(id) == Kind::ImplicitCurve)?;
+    let nodes = [Node::Obj(curve), Node::FunctionAsymptotes(0)];
+    let Some(parsed) =
+        crate::expr::reparse(c, Kind::List, &nodes, &[Lit::default(), Lit::default()], 1)
+    else {
+        return Some(Err("cannot build an implicit asymptote list".into()));
+    };
+    Some(crate::expr::add(c, label, parsed, Kind::List))
 }

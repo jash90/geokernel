@@ -37,4 +37,24 @@ cases.case("constructors", points[:2] + ["pts = {A, B}", "c = ImplicitCurve(pts)
            [mv("B", 1, 1), mv("B", 2, 3)])
 cases.case("constructors", ["c = ImplicitCurve(x*y)"], [])
 
+cases.case(
+    "sides",
+    ["a = 2", "c: x^3/a + y^2 = y^3 - a", "left = LeftSide(c)", "right = RightSide(c)"],
+    [setn("a", 0), setn("a", -2)],
+)
+cases.case(
+    "sides",
+    ["f(x,y) = x^2*y + 1", "c = ImplicitCurve(f)", "left = LeftSide(c)", "right = RightSide(c)"],
+    [],
+)
+cases.case("asymptotes", ["c: x^3 - x*y^2 = 1", "lines = Asymptote(c)"], [])
+cases.case(
+    "asymptotes",
+    ["a = 2", "b = 1", "c: (x-a)*(y-b)^2 = 1/b", "lines = Asymptote(c)"],
+    [setn("b", 0), setn("b", -2), setn("a", -3)],
+)
+cases.case("asymptotes", ["c: x^4 + y^4 = 1", "lines = Asymptote(c)"], [])
+cases.case("asymptotes", ["c: (x-2*y-1)*(x-2*y+3)*y = 2", "lines = Asymptote(c)"], [])
+cases.case("asymptotes", ["c: x^3 - 3*x^2*y + 2*x*y^2 = y^2 + x^2", "lines = Asymptote(c)"], [])
+
 cases.write()
