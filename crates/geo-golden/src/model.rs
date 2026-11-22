@@ -26,6 +26,8 @@ pub struct Case {
     /// Generator of the file this case came from. Filled by the loader.
     #[serde(skip)]
     pub generator: String,
+    #[serde(skip)]
+    schema: u32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -912,6 +914,7 @@ pub fn parse_file(text: &str, source: &str) -> Result<File, String> {
     encoding(file.schema).map_err(|e| format!("{source}: {e}"))?;
     for case in &mut file.cases {
         case.generator = file.generator.clone();
+        case.schema = file.schema;
         for snapshot in &mut case.snapshots {
             set_snapshot_schema(file.schema, snapshot).map_err(|e| format!("{source}: {e}"))?;
         }
@@ -1533,6 +1536,12 @@ fn restore_legacy_infinities(cases: &mut [Case]) -> Result<(), String> {
             .ok_or_else(|| format!("missing case in legacy infinity pair {pair}"))?;
         let recording = &cases[new_pos];
         let legacy = &cases[old_pos];
+        if !matches!(legacy.schema, 1 | 2)
+            || recording.schema != 3
+            || recording.generator != "ggb-harness"
+        {
+            return Err(format!("unexpected formats in legacy infinity pair {pair}"));
+        }
         if legacy.script != recording.script
             || legacy.view != recording.view
             || legacy.steps != recording.steps

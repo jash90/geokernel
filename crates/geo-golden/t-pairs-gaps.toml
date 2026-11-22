@@ -21,6 +21,66 @@ reason = "the kernel refuses the input: unknown command `Extremum`"
 mismatches = ["step"]
 
 [[gap]]
+id = "arithmetic/ArithmeticTest.java:176"
+category = "incomplete-context"
+reason = "string `6.740340335894E10`, the reference prints `67403403358.94`"
+mismatches = ["c"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:177"
+category = "incomplete-context"
+reason = "string `6.740340335894E10`, the reference prints `67403403358.94`"
+mismatches = ["d"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:178"
+category = "incomplete-context"
+reason = "string `6.740340335894E10`, the reference prints `67403403358.94`"
+mismatches = ["e"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:179"
+category = "incomplete-context"
+reason = "string `6.740340335894E10`, the reference prints `67403403358.94`"
+mismatches = ["f"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:180"
+category = "incomplete-context"
+reason = "string `6.740340335894E10`, the reference prints `67403403358.94`"
+mismatches = ["g"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:182"
+category = "incomplete-context"
+reason = "string `6.74034033589E10`, the reference prints `67403403358.9`"
+mismatches = ["i"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:184"
+category = "incomplete-context"
+reason = "string `6.740340335894E9`, the reference prints `6740340335.894`"
+mismatches = ["k"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:185"
+category = "incomplete-context"
+reason = "string `6.740340335894E8`, the reference prints `674034033.5894`"
+mismatches = ["l"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:186"
+category = "incomplete-context"
+reason = "string `6.740340335894E7`, the reference prints `67403403.35894`"
+mismatches = ["m"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:204"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(2)`"
+mismatches = ["f"]
+
+[[gap]]
 id = "arithmetic/ArithmeticTest.java:205"
 category = "unsupported-form"
 reason = "the kernel refuses the input: the function `f` needs an argument"
@@ -177,6 +237,12 @@ reason = "the kernel refuses the input: unknown object `list1`; the method's ste
 mismatches = ["step"]
 
 [[gap]]
+id = "arithmetic/ArithmeticTest.java:302"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `abs(x + 2)`"
+mismatches = ["f"]
+
+[[gap]]
 id = "arithmetic/ArithmeticTest.java:309"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `x()` and `y()` need a point or a vector"
@@ -187,6 +253,12 @@ id = "arithmetic/ArithmeticTest.java:310"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `x()` and `y()` need a point or a vector"
 mismatches = ["step"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:316"
+category = "incomplete-context"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x`"
+mismatches = ["f"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:317"
@@ -267,6 +339,12 @@ reason = "the kernel refuses the input: `f(x):` is not a valid object name"
 mismatches = ["step"]
 
 [[gap]]
+id = "arithmetic/ArithmeticTest.java:386"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x + 1`"
+mismatches = ["g"]
+
+[[gap]]
 id = "arithmetic/ArithmeticTest.java:387"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:382` fails earlier here, so the object is missing only in its wake"
@@ -277,6 +355,12 @@ id = "arithmetic/ArithmeticTest.java:388"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:382` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:404"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x`"
+mismatches = ["f"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:405"
@@ -295,6 +379,36 @@ id = "arithmetic/ArithmeticTest.java:408"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `gg(a,b)` is not a valid object name"
 mismatches = ["step"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:414"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `4 < x < 5`"
+mismatches = ["r"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:417"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1 < x`"
+mismatches = ["p1"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:418"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1 < x < 2`"
+mismatches = ["p2"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:419"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(1 < x) + (x < 2)`"
+mismatches = ["p3"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:420"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1 < x + x < 2`"
+mismatches = ["p4"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:443"
@@ -369,6 +483,18 @@ reason = "the kernel refuses the input: unexpected `\\`"
 mismatches = ["step"]
 
 [[gap]]
+id = "arithmetic/ArithmeticTest.java:504"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(3)`"
+mismatches = ["f"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:505"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(-x^(3))`"
+mismatches = ["g"]
+
+[[gap]]
 id = "arithmetic/ArithmeticTest.java:506"
 category = "unsupported-form"
 reason = "the kernel refuses the input: the function `f` needs an argument"
@@ -391,6 +517,18 @@ id = "arithmetic/ArithmeticTest.java:509"
 category = "unsupported-form"
 reason = "the kernel refuses the input: the function `f` needs an argument"
 mismatches = ["step"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:514"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(3 * x) + 2`"
+mismatches = ["f"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:515"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1`"
+mismatches = ["g"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:516"
@@ -427,6 +565,12 @@ id = "arithmetic/ArithmeticTest.java:521"
 category = "unsupported-form"
 reason = "the kernel refuses the input: geometric objects cannot be used as arithmetic operands"
 mismatches = ["step"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:581"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `If[x / abs(x) < 0, 1, 2]`"
+mismatches = ["f"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:681"
@@ -499,6 +643,12 @@ id = "arithmetic/ArithmeticTest.java:700"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unexpected `̅`"
 mismatches = ["step"]
+
+[[gap]]
+id = "arithmetic/ArithmeticTest.java:716"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x - 0`"
+mismatches = ["f"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:72"
@@ -591,6 +741,54 @@ reason = "the kernel refuses the input: unknown command `matrix2`"
 mismatches = ["step"]
 
 [[gap]]
+id = "arithmetic/FractionTest.java:104"
+category = "text-formatting"
+reason = "string `19.69`, the reference prints `1969 / 100`"
+mismatches = ["b"]
+
+[[gap]]
+id = "arithmetic/FractionTest.java:122"
+category = "text-formatting"
+reason = "string `-0.1`, the reference prints `-0.096910013`"
+mismatches = ["a"]
+
+[[gap]]
+id = "arithmetic/FractionTest.java:123"
+category = "text-formatting"
+reason = "string `-0.05`, the reference prints `-0.0484550065`"
+mismatches = ["b"]
+
+[[gap]]
+id = "arithmetic/FractionTest.java:124"
+category = "text-formatting"
+reason = "string `-0.05`, the reference prints `-0.0484550065`"
+mismatches = ["c"]
+
+[[gap]]
+id = "arithmetic/FractionTest.java:39"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(3 / 2)^x`"
+mismatches = ["fracPower"]
+
+[[gap]]
+id = "arithmetic/FractionTest.java:40"
+category = "text-formatting"
+reason = "string `2.25`, the reference prints `9 / 4`"
+mismatches = ["a"]
+
+[[gap]]
+id = "arithmetic/FractionTest.java:41"
+category = "text-formatting"
+reason = "string `0.67`, the reference prints `2 / 3`"
+mismatches = ["b"]
+
+[[gap]]
+id = "arithmetic/FractionTest.java:42"
+category = "text-formatting"
+reason = "string `0.44`, the reference prints `4 / 9`"
+mismatches = ["c"]
+
+[[gap]]
 id = "arithmetic/FractionTest.java:47"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unknown command `erf`"
@@ -601,6 +799,24 @@ id = "arithmetic/FractionTest.java:48"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unknown command `erf`"
 mismatches = ["step"]
+
+[[gap]]
+id = "arithmetic/FractionTest.java:63"
+category = "text-formatting"
+reason = "string `0.05`, the reference prints `1 / 20`"
+mismatches = ["a"]
+
+[[gap]]
+id = "arithmetic/SurdTest.java:25"
+category = "text-formatting"
+reason = "string `2.83`, the reference prints `2√(2)`"
+mismatches = ["a"]
+
+[[gap]]
+id = "arithmetic/SurdTest.java:26"
+category = "text-formatting"
+reason = "string `78.38`, the reference prints `32√(6)`"
+mismatches = ["b"]
 
 [[gap]]
 id = "cas/AlgoDerivativeTest.java:35"
@@ -625,6 +841,18 @@ id = "cas/AlgoDerivativeTest.java:43"
 category = "incomplete-context"
 reason = "the kernel refuses the input: unknown command `Heaviside`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CmdCopyFreeObjectTest.java:27"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(3 * 1)`"
+mismatches = ["myFunc"]
+
+[[gap]]
+id = "commands/CmdCopyFreeObjectTest.java:28"
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{(3 * 1)}`"
+mismatches = ["myList"]
 
 [[gap]]
 id = "commands/CmdCopyFreeObjectTest.java:29"
@@ -681,10 +909,28 @@ reason = "the kernel refuses the input: `OrthogonalLine` does not take 4 argumen
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:100"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `0`"
+mismatches = ["h"]
+
+[[gap]]
+id = "commands/CommandsTest.java:101"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(4) - (3 * x^(2)) + x - 4`"
+mismatches = ["p"]
+
+[[gap]]
 id = "commands/CommandsTest.java:1029"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Cross`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:103"
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{x^(2) - x - 3, (5 * x) - 1}`"
+mismatches = ["l3"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1030"
@@ -705,6 +951,18 @@ reason = "the kernel refuses the input: unknown command `Cube`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:104"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(2) - x - 3`"
+mismatches = ["q"]
+
+[[gap]]
+id = "commands/CommandsTest.java:105"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(5 * x) - 1`"
+mismatches = ["r"]
+
+[[gap]]
 id = "commands/CommandsTest.java:1064"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Cube`"
@@ -715,6 +973,18 @@ id = "commands/CommandsTest.java:1090"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Cube`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:115"
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{2, -1}`"
+mismatches = ["l4"]
+
+[[gap]]
+id = "commands/CommandsTest.java:116"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `2`"
+mismatches = ["s"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1165"
@@ -733,6 +1003,12 @@ id = "commands/CommandsTest.java:1167"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `ClosestPoint` does not take 3 argument(s)"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:117"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `-1`"
+mismatches = ["t"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1170"
@@ -777,6 +1053,12 @@ reason = "the kernel refuses the input: `Fit({(0,0),(1,1),(2,4)},{x^2,sin(x),x})
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:119"
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{1, 0}`"
+mismatches = ["l5"]
+
+[[gap]]
 id = "commands/CommandsTest.java:1190"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Column`"
@@ -801,10 +1083,22 @@ reason = "the kernel refuses the input: unknown command `ColumnName`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:120"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1`"
+mismatches = ["f_1"]
+
+[[gap]]
 id = "commands/CommandsTest.java:1208"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `CopyFreeObject`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:121"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `0`"
+mismatches = ["g_1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1224"
@@ -817,6 +1111,12 @@ id = "commands/CommandsTest.java:1225"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Covariance`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:123"
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{2, 3}`"
+mismatches = ["l6"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1230"
@@ -832,9 +1132,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1237"
-category = "text-formatting"
-reason = "string `-0.5730366435550952`, the reference prints `-0.5730366435551724`"
-mismatches = ["tpairs_probe_1237_0"]
+category = "redefine"
+reason = "the kernel refuses the input: object `k` already exists: this definition cannot be replaced in place"
+mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1238"
@@ -843,10 +1143,28 @@ reason = "the kernel refuses the input: unexpected `[`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:124"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `2`"
+mismatches = ["h_1"]
+
+[[gap]]
 id = "commands/CommandsTest.java:1244"
-category = "kernel-mismatch"
-reason = "Vector { x: 0.2723957318354948, y: -0.5041543019103322 } does not match `(NaN, NaN)` (expected undefined, kernel has a value)"
-mismatches = ["tpairs_probe_1244_0"]
+category = "redefine"
+reason = "the kernel refuses the input: object `cv` already exists: this definition cannot be replaced in place"
+mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:1245"
+category = "redefine"
+reason = "the kernel refuses the input: object `cv` already exists: this definition cannot be replaced in place"
+mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:125"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `3`"
+mismatches = ["p_1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1250"
@@ -855,10 +1173,16 @@ reason = "class `GeoCurveCartesian` has no schema object (unsupported-type); str
 mismatches = ["a"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1255"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Cubic`"
-mismatches = ["step"]
+id = "commands/CommandsTest.java:127"
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{x + 1, 0}`"
+mismatches = ["l7"]
+
+[[gap]]
+id = "commands/CommandsTest.java:128"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x + 1`"
+mismatches = ["q_1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1281"
@@ -871,6 +1195,12 @@ id = "commands/CommandsTest.java:1286"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `CenterView`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:129"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `0`"
+mismatches = ["r_1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1291"
@@ -921,6 +1251,12 @@ reason = "the kernel refuses the input: `s(1,2)*x` is not a valid object name"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:1358"
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `x - y = 0`"
+mismatches = ["f"]
+
+[[gap]]
 id = "commands/CommandsTest.java:1359"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `ConjugateDiameter` does not take 3 argument(s)"
@@ -969,6 +1305,24 @@ reason = "the kernel refuses the input: `Distance` does not take 12 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:1386"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(2)`"
+mismatches = ["f"]
+
+[[gap]]
+id = "commands/CommandsTest.java:140"
+category = "incomplete-context"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(2)`"
+mismatches = ["f"]
+
+[[gap]]
+id = "commands/CommandsTest.java:141"
+category = "incomplete-context"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `1 / x`"
+mismatches = ["g"]
+
+[[gap]]
 id = "commands/CommandsTest.java:142"
 category = "incomplete-context"
 reason = "string `If[0 < x ≤ 2, x^(2), If[x > 2, 1 / x]]`, the reference prints `If[0 < x ≤ 2, x^(2), x > 2, 1 / x]`"
@@ -1003,6 +1357,12 @@ id = "commands/CommandsTest.java:145"
 category = "incomplete-context"
 reason = "string `If[x ≤ 2, x^(2), If[x > 2, 1 / x]]`, the reference prints `If[x ≤ 2, x^(2), x > 2, 1 / x]`"
 mismatches = ["h2"]
+
+[[gap]]
+id = "commands/CommandsTest.java:1459"
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{x - 1, 1}`"
+mismatches = ["l2"]
 
 [[gap]]
 id = "commands/CommandsTest.java:146"
@@ -1479,6 +1839,12 @@ reason = "the kernel refuses the input: unknown command `Function`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:1876"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `If[4 ≤ x ≤ 13, sin(x)]`"
+mismatches = ["g"]
+
+[[gap]]
 id = "commands/CommandsTest.java:1877"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Function`"
@@ -1657,6 +2023,12 @@ id = "commands/CommandsTest.java:2267"
 category = "incomplete-context"
 reason = "the kernel refuses the input: unknown command `IntersectPath`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:2282"
+category = "kernel-mismatch"
+reason = "the reference creates a `GeoSegment` here, the kernel has no object with this label"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2287"
@@ -1849,6 +2221,30 @@ id = "commands/CommandsTest.java:2415"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `IsFactored`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:2450"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(x * ((2 * x) - 2))`"
+mismatches = ["redef1"]
+
+[[gap]]
+id = "commands/CommandsTest.java:2451"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(x^(50) * (x - 1))`"
+mismatches = ["redef2"]
+
+[[gap]]
+id = "commands/CommandsTest.java:2454"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(x * (x - 1))`"
+mismatches = ["redef1"]
+
+[[gap]]
+id = "commands/CommandsTest.java:2455"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(x * (x - 1))`"
+mismatches = ["redef2"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2465"
@@ -2163,6 +2559,12 @@ reason = "the kernel refuses the input: unknown command `mad`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:2698"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `2 < x < 3`"
+mismatches = ["interval"]
+
+[[gap]]
 id = "commands/CommandsTest.java:2703"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetValue`"
@@ -2373,6 +2775,12 @@ reason = "the kernel refuses the input: unknown command `Mode`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:2853"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `4`"
+mismatches = ["f"]
+
+[[gap]]
 id = "commands/CommandsTest.java:2858"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Name`"
@@ -2397,6 +2805,12 @@ reason = "the kernel refuses the input: unknown command `NIntegral`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:2950"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `NIntegral[x^(2)]`"
+mismatches = ["f"]
+
+[[gap]]
 id = "commands/CommandsTest.java:2951"
 category = "cas"
 reason = "the kernel refuses the input: unknown command `NIntegral`"
@@ -2419,6 +2833,12 @@ id = "commands/CommandsTest.java:2956"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `G1`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:2962"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `NInvert[sin(x)]`"
+mismatches = ["ni"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2968"
@@ -2482,14 +2902,14 @@ mismatches = ["nint_{1}", "nint_{2}"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3040"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `nint_1`; the method's step `commands/CommandsTest.java:3033` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-command"
+reason = "the kernel refuses the input: `Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, sector or curve, and `nint_1` is a locus"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3041"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `nint_1`; the method's step `commands/CommandsTest.java:3033` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-command"
+reason = "the kernel refuses the input: `Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, sector or curve, and `nint_1` is a locus"
 mismatches = ["step"]
 
 [[gap]]
@@ -2677,6 +3097,12 @@ id = "commands/CommandsTest.java:3177"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `ParseToFunction`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:3178"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(3 * x^(2)) + 2`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3180"
@@ -3117,6 +3543,12 @@ reason = "the kernel refuses the input: unknown command `RandomUniform`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:354"
+category = "incomplete-context"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `sin(x)`"
+mismatches = ["h"]
+
+[[gap]]
 id = "commands/CommandsTest.java:3545"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `RandomPointIn`"
@@ -3367,6 +3799,12 @@ id = "commands/CommandsTest.java:3734"
 category = "kernel-mismatch"
 reason = "the values agree within the tolerance, but a numerically polished root differs from the reference's in its last digits (6.28318530725133 against 6.283185305816606), so the full-precision strings cannot agree"
 mismatches = ["A", "B", "C"]
+
+[[gap]]
+id = "commands/CommandsTest.java:3739"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(2.00011 * sin(x / 2)) - x`"
+mismatches = ["flat"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3746"
@@ -4419,6 +4857,12 @@ reason = "the kernel refuses the input: unknown command `SVD`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:443"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(2)`"
+mismatches = ["f"]
+
+[[gap]]
 id = "commands/CommandsTest.java:444"
 category = "error-behaviour"
 reason = "the kernel refuses the input: unknown object `i`"
@@ -4429,6 +4873,18 @@ id = "commands/CommandsTest.java:445"
 category = "unsupported-form"
 reason = "the kernel refuses the input: a function takes a number"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/CommandsTest.java:446"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x > 1`"
+mismatches = ["g"]
+
+[[gap]]
+id = "commands/CommandsTest.java:4464"
+category = "incomplete-context"
+reason = "values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `x + y = 1.4142135623730951`"
+mismatches = ["f", "g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4465"
@@ -4578,12 +5034,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4625"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `TriangleCenter` does not take 7 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4632"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `TriangleCurve`"
 mismatches = ["step"]
 
 [[gap]]
@@ -5229,6 +5679,12 @@ reason = "the kernel refuses the input: `AffineRatio` does not take 6 argument(s
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:658"
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `0.9238795325112867x + 0.3826834323650897y = 8.670402750791315`"
+mismatches = ["anbisA_{1}", "anbisA_{2}"]
+
+[[gap]]
 id = "commands/CommandsTest.java:662"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `AngleBisector` does not take 6 argument(s)"
@@ -5475,6 +5931,24 @@ reason = "the kernel refuses the input: `CircularArc` does not take 6 argument(s
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:896"
+category = "text-formatting"
+reason = "values agree but `GeoConic` of kind circle has no the reference-style text yet; the reference prints `(x - 1)² + (y - 1)² = 1764`"
+mismatches = ["c"]
+
+[[gap]]
+id = "commands/CommandsTest.java:897"
+category = "text-formatting"
+reason = "values agree but `GeoConic` of kind circle has no the reference-style text yet; the reference prints `(x - 1)² + (y - 1)² = 1.2500000000000002`"
+mismatches = ["d"]
+
+[[gap]]
+id = "commands/CommandsTest.java:898"
+category = "text-formatting"
+reason = "values agree but `GeoConic` of kind circle has no the reference-style text yet; the reference prints `(x - 3.083333333333333)² + (y - 3.916666666666666)² = 12.847222222222216`"
+mismatches = ["e"]
+
+[[gap]]
 id = "commands/CommandsTest.java:901"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Circle` does not take 6 argument(s)"
@@ -5511,6 +5985,24 @@ reason = "the kernel refuses the input: `CircumcircularSector` does not take 6 a
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:95"
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{x^(3) - x^(2) - (2 * x) + 3, -7}`"
+mismatches = ["l1"]
+
+[[gap]]
+id = "commands/CommandsTest.java:96"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(3) - x^(2) - (2 * x) + 3`"
+mismatches = ["f"]
+
+[[gap]]
+id = "commands/CommandsTest.java:97"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `-7`"
+mismatches = ["g"]
+
+[[gap]]
 id = "commands/CommandsTest.java:979"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `ConstructionStep`"
@@ -5521,6 +6013,12 @@ id = "commands/CommandsTest.java:984"
 category = "unsupported-type"
 reason = "class `GeoLocus` has no schema object (unsupported-type); string `ConvexHull[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
 mismatches = ["graph1"]
+
+[[gap]]
+id = "commands/CommandsTest.java:99"
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no the reference-style text yet; the reference prints `{0, x^(4) - (3 * x^(2)) + x - 4}`"
+mismatches = ["l2"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:105"
@@ -5757,6 +6255,18 @@ reason = "the kernel refuses the input: unknown command `Limit`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/FormulaTextTest.java:34"
+category = "incomplete-context"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `sin((1 * x) + (1 * x) - (1 * x))`"
+mismatches = ["f"]
+
+[[gap]]
+id = "commands/FormulaTextTest.java:38"
+category = "incomplete-context"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `sin((1 * x) + (1 * x) - (1 * x))`"
+mismatches = ["f"]
+
+[[gap]]
 id = "commands/FormulaTextTest.java:42"
 category = "incomplete-context"
 reason = "the kernel refuses the input: unknown command `FormulaText`"
@@ -5781,10 +6291,16 @@ reason = "the kernel refuses the input: a function must give a number or a boole
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/RedefineTest.java:154"
+id = "commands/RedefineTest.java:129"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x`"
+mismatches = ["f"]
+
+[[gap]]
+id = "commands/RedefineTest.java:163"
 category = "incomplete-context"
-reason = "Number(2.0) does not match `3` (values differ)"
-mismatches = ["r_2"]
+reason = "the kernel refuses the input: object `a_1` already exists: a replacement must define an object"
+mismatches = ["step"]
 
 [[gap]]
 id = "commands/RedefineTest.java:172"
@@ -5919,6 +6435,12 @@ reason = "the kernel refuses the input: unknown object `B20`; the method's step 
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/RedefineTest.java:296"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `(1 * x^(2))`"
+mismatches = ["f"]
+
+[[gap]]
 id = "commands/RedefineTest.java:297"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, sector or curve, and `f` is a function"
@@ -5935,6 +6457,12 @@ id = "commands/RedefineTest.java:305"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `ZoomIn`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/RedefineTest.java:308"
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `If[x ≟ 0, 1, NaN]`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/RedefineTest.java:309"
@@ -5959,6 +6487,12 @@ id = "commands/RedefineTest.java:332"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unexpected `=`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/RedefineTest.java:345"
+category = "incomplete-context"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x^(2)`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/RedefineTest.java:346"
@@ -5989,6 +6523,18 @@ id = "commands/RedefineTest.java:384"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetValue`"
 mismatches = ["step"]
+
+[[gap]]
+id = "commands/RedefineTest.java:417"
+category = "incomplete-context"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `-3 < x < 6`"
+mismatches = ["a"]
+
+[[gap]]
+id = "commands/RedefineTest.java:418"
+category = "incomplete-context"
+reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `x < 3`"
+mismatches = ["b"]
 
 [[gap]]
 id = "commands/RedefineTest.java:423"

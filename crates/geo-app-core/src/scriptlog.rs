@@ -731,33 +731,33 @@ impl Log {
             .collect();
         let mut defined = BTreeSet::new();
         let repeated: BTreeSet<_> = self
-                .entries()
-                .flat_map(|entry| entry.labels.iter().map(String::as_str))
-                .filter(|&label| !defined.insert(label))
-                .collect();
-            if !repeated.is_empty() {
-                // If an active replacement depends on a deleted object, drop
-                // its whole history before replay can restore an older rule.
-                let mut pending: Vec<_> = labels.iter().filter_map(|label| c.id(label)).collect();
-                let mut visited = BTreeSet::new();
-                let mut remaining = 1_000_000usize;
-                while let Some(id) = pending.pop() {
-                    if !visited.insert(id) {
-                        continue;
-                    }
-                    let label = c.label(id);
-                    if repeated.contains(label) {
-                        labels.insert(label.to_owned());
-                    }
-                    for child in c.direct_dependents(id) {
-                        let Some(next) = remaining.checked_sub(1) else {
-                            return false;
-                        };
-                        remaining = next;
-                        pending.push(child);
-                    }
+            .entries()
+            .flat_map(|entry| entry.labels.iter().map(String::as_str))
+            .filter(|&label| !defined.insert(label))
+            .collect();
+        if !repeated.is_empty() {
+            // If an active replacement depends on a deleted object, drop
+            // its whole history before replay can restore an older rule.
+            let mut pending: Vec<_> = labels.iter().filter_map(|label| c.id(label)).collect();
+            let mut visited = BTreeSet::new();
+            let mut remaining = 1_000_000usize;
+            while let Some(id) = pending.pop() {
+                if !visited.insert(id) {
+                    continue;
+                }
+                let label = c.label(id);
+                if repeated.contains(label) {
+                    labels.insert(label.to_owned());
+                }
+                for child in c.direct_dependents(id) {
+                    let Some(next) = remaining.checked_sub(1) else {
+                        return false;
+                    };
+                    remaining = next;
+                    pending.push(child);
                 }
             }
+        }
         self.ops.retain(|op| match op {
             Op::Define(e) => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Set { label, .. } | Op::EquationStyle { label, .. } => !labels.contains(label),
@@ -1536,6 +1536,19 @@ impl Log {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn journal_position_tracks_the_active_assignment() {
+        let (_, mut log) = Log::load("a = 1\nb = a + 1\nn = 4\na = 2 n").unwrap();
+        let (at, labels) = log.define_entry("a").unwrap();
+        assert!(at > log.define_entry("n").unwrap().0);
+        assert_eq!(labels, ["a"]);
+        assert!(log.remove("a"));
+        let (c, _) = log.rebuild().unwrap();
+        assert!(c.id("a").is_none());
+        assert!(c.id("b").is_none());
+        assert_eq!(c.value(c.id("n").unwrap()), Value::Number(4.0));
+    }
+
     use super::*;
     use geo_kernel::kernel::Value;
 

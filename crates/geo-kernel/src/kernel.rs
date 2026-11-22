@@ -999,51 +999,63 @@ pub struct Construction {
 
 // Small adjacency lists are cheap to iterate and append to. Large families
 // use a tree so moving a child to another parent costs logarithmic work.
-#[derive(Clone, Debug, Default, PartialEq)]
-struct Children {
-    small: Vec<Id>,
-    large: Option<Box<BTreeSet<Id>>>,
+#[derive(Clone, Debug, PartialEq)]
+enum Children {
+    Small(Vec<Id>),
+    Large(BTreeSet<Id>),
+}
+
+impl Default for Children {
+    fn default() -> Self {
+        Self::Small(Vec::new())
+    }
 }
 
 impl Children {
     fn iter(&self) -> impl DoubleEndedIterator<Item = Id> + '_ {
-        self.small.iter().copied().chain(
-            self.large
-                .iter()
-                .flat_map(|children| children.iter().copied()),
-        )
+        let (small, large) = match self {
+            Self::Small(ids) => (ids.as_slice(), None),
+            Self::Large(ids) => (&[][..], Some(ids.iter())),
+        };
+        small.iter().chain(large.into_iter().flatten()).copied()
     }
 
     fn is_empty(&self) -> bool {
-        self.small.is_empty()
-            && self
-                .large
-                .as_ref()
-                .is_none_or(|children| children.is_empty())
+        match self {
+            Self::Small(ids) => ids.is_empty(),
+            Self::Large(ids) => ids.is_empty(),
+        }
     }
 
     fn insert(&mut self, id: Id) {
         const SMALL_LIMIT: usize = 64;
-        if let Some(children) = &mut self.large {
-            children.insert(id);
-        } else {
-            if self.small.last().is_none_or(|&last| last < id) {
-                self.small.push(id);
-            } else if let Err(slot) = self.small.binary_search(&id) {
-                self.small.insert(slot, id);
+        match self {
+            Self::Small(ids) => {
+                if ids.last().is_none_or(|&last| last < id) {
+                    ids.push(id);
+                } else if let Err(slot) = ids.binary_search(&id) {
+                    ids.insert(slot, id);
+                }
+                if ids.len() > SMALL_LIMIT {
+                    *self = Self::Large(ids.iter().copied().collect());
+                }
             }
-            if self.small.len() > SMALL_LIMIT {
-                self.large = Some(Box::new(self.small.iter().copied().collect()));
-                self.small = Vec::new();
+            Self::Large(ids) => {
+                ids.insert(id);
             }
         }
     }
 
     fn remove(&mut self, id: Id) {
-        if let Some(children) = &mut self.large {
-            children.remove(&id);
-        } else if let Ok(slot) = self.small.binary_search(&id) {
-            self.small.remove(slot);
+        match self {
+            Self::Small(ids) => {
+                if let Ok(slot) = ids.binary_search(&id) {
+                    ids.remove(slot);
+                }
+            }
+            Self::Large(ids) => {
+                ids.remove(&id);
+            }
         }
     }
 }
@@ -1509,10 +1521,10 @@ impl Construction {
     }
 
     pub(crate) fn children_slice(&self, id: Id) -> Option<&[Id]> {
-        self.children
-            .get(id.0)
-            .filter(|children| children.large.is_none())
-            .map(|children| children.small.as_slice())
+        match self.children.get(id.0)? {
+            Children::Small(ids) => Some(ids),
+            Children::Large(_) => None,
+        }
     }
 
     /// The IDs whose current rules read this object.
@@ -3520,7 +3532,7 @@ impl Construction {
 mod tests {
     #[test]
     fn replacement_preserves_scripts_and_saved_presentation() {
-        use crate::control::{encode_text, ControlScript};
+        use crate::kernel::control::{encode_text, ControlScript};
         use crate::script::{self, saved::Property};
 
         let caption = encode_text("Keep this caption");

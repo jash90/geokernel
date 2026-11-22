@@ -351,12 +351,7 @@ fn list_string(
             Element::Value(Kind::Boolean, Value::Bool(b)) => parts.push(b.to_string()),
             Element::List(inner) => parts.push(list_string(c, inner, template, remaining)?),
             Element::Value(Kind::Function, _) if template == "xml" => {
-                let text = if let Some(id) = list.function_at(index) {
-                    value_string(c, id, template)?
-                } else {
-                    return None;
-                };
-                parts.push(text);
+                parts.push(value_string(c, list.function_at(index)?, template)?);
             }
             Element::Text(s) => parts.push(format!("\"{s}\"")),
             _ => return None,

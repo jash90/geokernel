@@ -196,7 +196,7 @@ cases = ["arcs-circum-003", "arcs-circum-004", "arcs-circum-007"]
 [[form]]
 command = "Classes"
 form = "list,number"
-cases = ["lists-classes-001", "lists-classes-002", "lists-classes-003"]
+cases = ["lists-classes-001", "lists-classes-002", "lists-classes-003", "infinity-legacy-001"]
 
 [[form]]
 command = "Classes"
@@ -491,7 +491,7 @@ cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007"]
 [[form]]
 command = "Intersect"
 form = "line,conic,number"
-cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003"]
+cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003", "redefine-intersection-001", "redefine-intersection-002", "redefine-order-001"]
 
 [[form]]
 command = "Intersect"
@@ -526,7 +526,7 @@ cases = ["intersections-conics-001", "intersectconics-pencil-001", "intersectcon
 [[form]]
 command = "Intersect"
 form = "conic,conic,number"
-cases = ["intersections-conics-002", "intersectconics-index-001", "intersectconics-index-002"]
+cases = ["intersections-conics-002", "intersectconics-index-001", "intersectconics-index-002", "redefine-circlepair-001"]
 
 [[form]]
 command = "Intersect"
@@ -546,7 +546,7 @@ cases = ["intersections-boundary-002", "intersectconics-lineboundary-002"]
 [[form]]
 command = "Intersect"
 form = "line,polygon"
-cases = ["intersections-boundary-003", "intersectconics-lineboundary-003", "intersectreview-growth-001", "intersectgrowth-slider-001"]
+cases = ["intersections-boundary-003", "intersectconics-lineboundary-003", "intersectreview-growth-001", "intersectgrowth-slider-001", "intersectgrowth-redefinition-001"]
 
 [[form]]
 command = "Intersect"
@@ -931,7 +931,7 @@ cases = ["lists-setops-012", "lists-setops-013", "lists-setops-014"]
 [[form]]
 command = "RemoveUndefined"
 form = "list"
-cases = ["lists-undef-002", "lists-undef-006", "lists-undef-007"]
+cases = ["lists-undef-002", "lists-undef-006", "lists-undef-007", "infinity-legacy-002", "infinity-legacy-003", "infinity-legacy-005"]
 
 [[form]]
 command = "Reverse"
@@ -1081,7 +1081,7 @@ cases = ["conics-tangent-002", "conics-tangent-005", "conics-tangent-008"]
 [[form]]
 command = "Tangent"
 form = "point,conic"
-cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007"]
+cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007", "redefine-tangent-001"]
 
 [[form]]
 command = "TiedRank"
@@ -2117,7 +2117,7 @@ cases = ["calculus-sums-001"]
 [[form]]
 command = "Text"
 form = "any"
-cases = ["textformat-signatures-001"]
+cases = ["textformat-signatures-001", "tpairfixes-numbertext-001", "tpairfixes-numbertext-002"]
 difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
 
 [[form]]
