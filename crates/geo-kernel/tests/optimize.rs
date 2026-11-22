@@ -124,7 +124,7 @@ fn optimize_refuses_wrong_arguments() {
     assert!(script::exec(&mut c, "m = Minimize(f, a, a)")
         .unwrap_err()
         .contains("does not take 3"));
-    assert!(script::exec(&mut c, "m = Maximize(f, P)")
+    assert!(script::exec(&mut c, "m = Maximize(P, a)")
         .unwrap_err()
         .contains("number"));
 }
