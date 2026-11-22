@@ -872,6 +872,7 @@ pub struct Construction {
     conic_intersections: Vec<(usize, PairState)>,
     continuous_conic_intersections: bool,
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
+    pub(crate) clips: algo::polygon_clip::ClipCache,
     pub(crate) analysis: AnalysisCache,
     last_update_changed_automatic_root: bool,
     /// The states of the points on paths, with the index of each point, in
@@ -1415,6 +1416,7 @@ impl Construction {
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
         self.function_roots.clear();
+        self.clips.clear();
         self.analysis.clear();
         self.conic_intersections.truncate(
             self.conic_intersections
@@ -1903,6 +1905,7 @@ impl Construction {
     fn propagate_dirty(&mut self, mut dirty: DirtySet, mut from: usize) -> usize {
         self.last_update_changed_automatic_root = false;
         self.function_roots.clear();
+        self.clips.clear();
         self.analysis.clear();
         let mut recomputed = 0;
         while let Some(i) = dirty.pop_first(from) {

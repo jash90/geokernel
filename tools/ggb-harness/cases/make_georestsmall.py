@@ -117,4 +117,27 @@ b = y(B) > 0
 q = If(b, k, m)
 d = FirstAxisLength(q)""", [mv("B", 2, -1), mv("A", 1, 2), mv("B", 2, 1)])
 
+case("matrixfunction", """f(x) = x^2
+m = {{0, 1}, {1, 0}}
+c = ApplyMatrix(m, f)""", curve=True)
+cases.cases[-1]["view"] = [3, 3, -2, 4, 50, 50]
+
+case("matrixfunction", """f(x) = x^2
+a = -2
+b = 3
+g = Function(f, a, b)
+m = {{0, 1}, {1, 0}}
+c = ApplyMatrix(m, g)""", [setn("b", 4), setn("a", 5), setn("a", 1)], curve=True)
+cases.cases[-1]["file_loading"] = True
+
+reference = Cases("georestsmall")
+reference.case("iflimited", """A = (0, 0)
+B = (4, 0)
+C = (0, 3)
+r = Segment(A, B)
+b = x(B) > 0
+s = If(b, r, Segment(A, C))""".splitlines(), [])
+reference.case("surdcomplex", ["A = 1 + 2i", "s = SurdText(A)"], [])
+
 cases.write()
+reference.write("reference")

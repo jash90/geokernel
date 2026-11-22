@@ -421,6 +421,24 @@ impl Matrix {
         }
     }
 
+    /// Substitute the matrix image into a line equation. A constant
+    /// homogeneous scale keeps the residual polynomial in the input.
+    pub(in crate::algo) fn pull_back_affine_line(
+        self,
+        (a, b, c): (f64, f64, f64),
+    ) -> Option<(f64, f64, f64)> {
+        let (x1, y1, w1) = self.curve_coordinates((1.0, 0.0), 0.0);
+        let (x2, y2, w2) = self.curve_coordinates((0.0, 1.0), 0.0);
+        let (x0, y0, w0) = self.curve_coordinates((0.0, 0.0), 1.0);
+        (w1 == 0.0 && w2 == 0.0 && w0 != 0.0).then(|| {
+            (
+                (a * x1 + b * y1) / w0,
+                (a * x2 + b * y2) / w0,
+                c + (a * x0 + b * y0) / w0,
+            )
+        })
+    }
+
     pub(crate) fn conic(self, out: &mut crate::algo::conic_nd::ConicData) {
         let [a, b, c, d, e, f, g, h, i] = self.data;
         if self.size == 2 {

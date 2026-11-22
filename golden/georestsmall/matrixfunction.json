@@ -840,6 +840,493 @@
           }
         }
       ]
+    },
+    {
+      "id": "georestsmall-matrixfunction-003",
+      "group": "georestsmall",
+      "script": [
+        "f(x) = x^2",
+        "m = {{0, 1}, {1, 0}}",
+        "c = ApplyMatrix(m, f)"
+      ],
+      "view": [
+        3,
+        3,
+        -2,
+        4,
+        50,
+        50
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -10.0,
+            "end": 10.0,
+            "samples_curve": [
+              [
+                -10.0,
+                [100.0, -10.0]
+              ],
+              [
+                -7.5,
+                [56.25, -7.5]
+              ],
+              [
+                -5.0,
+                [25.0, -5.0]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                5.0,
+                [25.0, 5.0]
+              ],
+              [
+                7.5,
+                [56.25, 7.5]
+              ],
+              [
+                10.0,
+                [100.0, 10.0]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "georestsmall-matrixfunction-004",
+      "group": "georestsmall",
+      "script": [
+        "f(x) = x^2",
+        "a = -2",
+        "b = 3",
+        "g = $functionInterval(f, a, b)",
+        "m = {{0, 1}, {1, 0}}",
+        "c = ApplyMatrix(m, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -2.0,
+            "end": 3.0,
+            "samples_curve": [
+              [
+                -2.0,
+                [4.0, -2.0]
+              ],
+              [
+                -1.375,
+                [1.890625, -1.375]
+              ],
+              [
+                -0.75,
+                [0.5625, -0.75]
+              ],
+              [
+                0.5,
+                [0.25, 0.5]
+              ],
+              [
+                1.75,
+                [3.0625, 1.75]
+              ],
+              [
+                2.375,
+                [5.640625, 2.375]
+              ],
+              [
+                3.0,
+                [9.0, 3.0]
+              ]
+            ]
+          }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -2.0,
+            "end": 4.0,
+            "samples_curve": [
+              [
+                -2.0,
+                [4.0, -2.0]
+              ],
+              [
+                -1.25,
+                [1.5625, -1.25]
+              ],
+              [
+                -0.5,
+                [0.25, -0.5]
+              ],
+              [
+                1.0,
+                [1.0, 1.0]
+              ],
+              [
+                2.5,
+                [6.25, 2.5]
+              ],
+              [
+                3.25,
+                [10.5625, 3.25]
+              ],
+              [
+                4.0,
+                [16.0, 4.0]
+              ]
+            ]
+          }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "g": { "type": "function", "defined": false },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -2.0,
+            "end": 4.0,
+            "samples_curve": [
+              [
+                -2.0,
+                [4.0, -2.0]
+              ],
+              [
+                -1.25,
+                [1.5625, -1.25]
+              ],
+              [
+                -0.5,
+                [0.25, -0.5]
+              ],
+              [
+                1.0,
+                [1.0, 1.0]
+              ],
+              [
+                2.5,
+                [6.25, 2.5]
+              ],
+              [
+                3.25,
+                [10.5625, 3.25]
+              ],
+              [
+                4.0,
+                [16.0, 4.0]
+              ]
+            ]
+          }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": 1.0,
+            "end": 4.0,
+            "samples_curve": [
+              [
+                1.0,
+                [1.0, 1.0]
+              ],
+              [
+                1.375,
+                [1.890625, 1.375]
+              ],
+              [
+                1.75,
+                [3.0625, 1.75]
+              ],
+              [
+                2.5,
+                [6.25, 2.5]
+              ],
+              [
+                3.25,
+                [10.5625, 3.25]
+              ],
+              [
+                3.625,
+                [13.140625, 3.625]
+              ],
+              [
+                4.0,
+                [16.0, 4.0]
+              ]
+            ]
+          }
+        }
+      ]
     }
   ]
 }

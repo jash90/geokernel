@@ -682,6 +682,13 @@ struct TextResult {
     presentation: crate::kernel::text::TextPresentation,
 }
 
+#[derive(Clone, Copy)]
+struct FunctionInterval {
+    bounds: [u32; 2],
+    range: Option<[f64; 2]>,
+    defined: bool,
+}
+
 #[derive(Clone)]
 pub(crate) struct Entry {
     pub(crate) nodes: Vec<Node>,
@@ -695,6 +702,8 @@ pub(crate) struct Entry {
     function_of_y: bool,
     /// The name used by a Cartesian curve's coordinate function.
     curve_parameter: Option<Box<str>>,
+    /// Explicit domain of a function loaded from a legacy Function command.
+    interval: Option<FunctionInterval>,
     /// Whether a function's tree requires checking its branches or transforms
     /// to decide whether it is defined (see [`inputs_defined`]).
     checks_branches: bool,
@@ -718,6 +727,19 @@ pub(crate) struct Entry {
 }
 
 impl Entry {
+    fn evaluate_interval(&self, c: &Construction) -> Option<FunctionInterval> {
+        let mut interval = self.interval?;
+        let [min, max] = interval
+            .bounds
+            .map(|bound| sample_subtree(c, self, bound, 0.0));
+        interval.defined = min <= max;
+        // AlgoFunctionInterval keeps the previous domain when bounds reverse.
+        if min.partial_cmp(&max) != Some(std::cmp::Ordering::Greater) {
+            interval.range = interval.defined.then_some([min, max]);
+        }
+        Some(interval)
+    }
+
     fn new(c: &Construction, p: parse::Parsed, function: bool) -> Self {
         let checks_branches = function
             && p.nodes.iter().any(|n| {
@@ -738,6 +760,7 @@ impl Entry {
             lists,
             items: Vec::new(),
             coordinate_layout: None,
+            interval: None,
             nodes: p.nodes,
             lits: p.lits,
             tys: p.tys,
@@ -1315,6 +1338,9 @@ pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) 
     if entry(c, d).lists {
         return update_lists(c, d);
     }
+    if let Some(interval) = entry(c, d).evaluate_interval(c) {
+        c.exprs.entries[d.index as usize].interval = Some(interval);
+    }
     let e = entry(c, d);
     if let Node::PolynomialPart(remainder, a, b) = e.nodes[e.root as usize] {
         let coefficients = commands::polynomial::divide(c, e, remainder, a, b);
@@ -1363,6 +1389,9 @@ pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
 /// object it names is, and every command in it has a result. A number with
 /// an infinite raw value counts as defined, as in GeoGebra.
 fn inputs_defined(c: &Construction, e: &Entry) -> bool {
+    if e.interval.is_some_and(|interval| !interval.defined) {
+        return false;
+    }
     if e.checks_branches {
         let meter = eval::Lists::new(Vec::new());
         let ctx = eval::Ctx::<true> {
@@ -2005,6 +2034,49 @@ pub(crate) fn define_parametric_coordinate(
     Ok(id)
 }
 
+/// Legacy Function stores the graph's bounds separately. Parse the bounds
+/// with the body to retain all of their construction dependencies.
+pub(crate) fn define_function_interval(
+    c: &mut Construction,
+    label: &str,
+    restriction: &str,
+    parameter: &str,
+) -> Result<Id, String> {
+    let parsed = parse::parse_parameter(c, restriction, parameter)?;
+    let Node::If(_, condition, body, _) = parsed.nodes[parsed.root as usize] else {
+        return Err("expected a function interval".into());
+    };
+    let Node::Bin(Bin::And, left, right) = parsed.nodes[condition as usize] else {
+        return Err("expected two function bounds".into());
+    };
+    let (Node::Bin(Bin::LessEqual, min, _), Node::Bin(Bin::LessEqual, _, max)) =
+        (parsed.nodes[left as usize], parsed.nodes[right as usize])
+    else {
+        return Err("expected two inclusive function bounds".into());
+    };
+    if !matches!(parsed.tys[body as usize], Ty::Num(_)) || reads_list(&parsed.nodes, &parsed.tys) {
+        return Err("expected a numeric function on the interval".into());
+    }
+    let mut e = Entry::new(c, parsed, true);
+    e.root = body;
+    e.interval = Some(FunctionInterval {
+        bounds: [min, max],
+        range: None,
+        defined: false,
+    });
+    e.interval = e.evaluate_interval(c);
+    e.curve_parameter = Some(parameter.into());
+    add_entry(c, label, e, Kind::Function, AngleStyle::Unbounded).map_err(|e| e.to_string())
+}
+
+/// A legacy function exposes its saved graph interval even while undefined.
+pub(crate) fn function_interval(c: &Construction, id: Id) -> Option<Option<[f64; 2]>> {
+    let Def::Expr(def) = c.def(id) else {
+        return None;
+    };
+    Some(entry(c, def).interval?.range)
+}
+
 /// Hidden two-variable function for a slope field or integral curve.
 pub(crate) fn define_slope(c: &mut Construction, label: &str, rhs: &str) -> Result<Id, String> {
     numeric_function(c, label, parse::parse_equation(c, rhs)?)
@@ -2132,6 +2204,16 @@ fn add_parsed(
             return Ok(id);
         }
     }
+    add_entry(c, name, entry, kind, angle_style)
+}
+
+fn add_entry(
+    c: &mut Construction,
+    name: &str,
+    entry: Entry,
+    kind: Kind,
+    angle_style: AngleStyle,
+) -> Result<Id, Error> {
     let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
     c.exprs.entries.push(entry);
     c.exprs.pending = Some(index);

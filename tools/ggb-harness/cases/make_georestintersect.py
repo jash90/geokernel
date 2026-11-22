@@ -66,4 +66,20 @@ intersect("growth", ["A = (0, 0)", "q = Curve(t, t^2+y(A), t, -2, 2)", "g: y = 0
           "g, q", [mv("A", 0, -1), mv("A", 0, 1), mv("A", 0, -1)])
 cases.cases[-1]["track_boundary_growth"] = True
 
+parabola = ["q = Curve(t, t^2, t, -2, 2)", "d = Dilate(q, 2)",
+            "g: y = 0", "h: y = 100"]
+cases.case("affine", parabola + ["P = Intersect(g, d)", "Q = Intersect(h, d)"], [])
+cases.case("affine", ["q = Curve(t, (t-0.125)^2, t, -2, 2)",
+                       "m = {{2, 1}, {0, 3}}", "d = ApplyMatrix(m, q)",
+                       "r = Dilate(d, 2, (1, 1))", "g: y = 0", "h: y = -1",
+                       "P = Intersect(d, g)", "Q = Intersect(h, r)"], [])
+cases.case("affine", ["f(x) = (x-0.125)^2", "m = {{0, 1}, {1, 0}}", "d = ApplyMatrix(m, f)",
+                       "g: x = 0", "P = Intersect(g, d)"], [])
+cases.case("affine", ["q = Curve(2t+1, (t-0.125)^3, t, -2, 2)",
+                       "r = ParametricDerivative(q)", "d = Dilate(r, 2)",
+                       "g: y = 0", "P = Intersect(g, d)"], [])
+cases.case("seedrounding", ["q = Curve(10000000000*(t-1), 0, t, 0, 2)",
+                             "r = Curve(1, s, s, -2, 2)",
+                             "P = Intersect(q, r, 1, 0)"], [])
+
 cases.write()

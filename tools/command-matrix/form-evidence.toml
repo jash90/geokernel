@@ -1210,11 +1210,6 @@ cases = ["geomclip-carrier-001", "geomclip-carrier-002"]
 
 [[form]]
 command = "IntersectPath"
-form = "conic,polygon"
-cases = ["geomclip-conic-003"]
-
-[[form]]
-command = "IntersectPath"
 form = "polygon,polygon"
 cases = ["geomclip-polygon-001", "geomclip-polygon-002"]
 
@@ -2942,17 +2937,17 @@ cases = ["georesttangent-curve-001", "georesttangent-curve-002", "georesttangent
 [[form]]
 command = "Intersect"
 form = "line,curve"
-cases = ["georestintersect-trig-001", "georestintersect-tangent-001", "georestintersect-bounded-001", "georestintersect-growth-001"]
+cases = ["georestintersect-trig-001", "georestintersect-tangent-001", "georestintersect-bounded-001", "georestintersect-growth-001", "georestintersect-affine-001", "georestintersect-affine-003", "georestintersect-affine-004"]
 
 [[form]]
 command = "Intersect"
 form = "curve,line"
-cases = ["georestintersect-trig-002", "georestintersect-tangent-002", "georestintersect-polynomial-001", "georestintersect-splineend-001", "georestintersect-splineend-002"]
+cases = ["georestintersect-trig-002", "georestintersect-tangent-002", "georestintersect-polynomial-001", "georestintersect-splineend-001", "georestintersect-splineend-002", "georestintersect-affine-002"]
 
 [[form]]
 command = "Intersect"
 form = "curve,curve,number,number"
-cases = ["georestintersect-seed-001", "georestintersect-seedlines-001"]
+cases = ["georestintersect-seed-001", "georestintersect-seedlines-001", "georestintersect-seedrounding-001"]
 
 [[form]]
 command = "Intersect"
@@ -2982,21 +2977,6 @@ form = "conic,segment"
 cases = ["georestclip-segment-004"]
 
 [[form]]
-command = "IntersectPath"
-form = "polyline,conic"
-cases = ["georestclip-polyline-003"]
-
-[[form]]
-command = "IntersectPath"
-form = "conic,polyline"
-cases = ["georestclip-polyline-004"]
-
-[[form]]
-command = "IntersectPath"
-form = "polygon,conic"
-cases = ["georestclip-polygon-002"]
-
-[[form]]
 command = "Dilate"
 form = "curve,number"
 cases = ["georestsmall-dilatecurve-001", "georestsmall-dilatecurve-002"]
@@ -3014,16 +2994,10 @@ cases = ["georestsmall-matrixcurve-001", "georestsmall-matrixcurve-002", "geores
 [[form]]
 command = "ApplyMatrix"
 form = "list,function"
-cases = ["georestsmall-matrixfunction-001", "georestsmall-matrixfunction-002"]
+cases = ["georestsmall-matrixfunction-001", "georestsmall-matrixfunction-002", "georestsmall-matrixfunction-003", "georestsmall-matrixfunction-004"]
 difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyMatrix(list, function)`"
 
 [[form]]
 command = "SurdText"
 form = "point"
 cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
-
-[[form]]
-command = "If"
-form = "boolean,any,..."
-cases = ["georestsmall-ifgeometry-001", "georestsmall-ifgeometry-002", "georestsmall-ifgeometry-003", "georestsmall-ifgeometry-004"]
-difference = "remaining-transformations-equation-sides-and-conditionals: `If(boolean, any, ...)`"

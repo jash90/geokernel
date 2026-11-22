@@ -820,7 +820,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
     if let Some(view) = case.view {
         let [xmin, xmax, ymin, ymax, xscale, yscale] = view;
         if !view.iter().all(|v| v.is_finite())
-            || xmin >= xmax
+            || xmin > xmax
             || ymin >= ymax
             || xscale <= 0.0
             || yscale <= 0.0

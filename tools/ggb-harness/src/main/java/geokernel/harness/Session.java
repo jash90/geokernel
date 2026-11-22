@@ -143,7 +143,7 @@ final class Session {
 
     void setView(double[] view) {
         if (!Arrays.stream(view).allMatch(Double::isFinite)
-                || view[0] >= view[1] || view[2] >= view[3] || view[4] <= 0 || view[5] <= 0) {
+                || view[0] > view[1] || view[2] >= view[3] || view[4] <= 0 || view[5] <= 0) {
             throw new IllegalArgumentException("invalid sampling view");
         }
         app.getEuclidianView1().setCoordSystem(-view[0] * view[4], view[3] * view[5], view[4], view[5]);

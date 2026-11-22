@@ -12,23 +12,33 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use crate::expr::derivative::FunctionDerivative;
+use crate::expr::IntersectionWork;
+use crate::tol::STANDARD_PRECISION;
 use crate::{Construction, Id, Value};
 
 use super::{transform::TransformDef, vector::matrix::Matrix};
 
-/// Bounds of the reference function-to-curve conversion. `Function(f, a, b)`
-/// is a piecewise function whose restriction remains in its expression.
+/// Bounds of the reference function-to-curve conversion. Only legacy saved
+/// interval functions carry a domain in addition to their expression.
 pub(super) fn function_graph_range(c: &Construction, id: Id) -> Option<Value> {
-    if c.value(id) != Value::Function {
+    let interval = crate::expr::function_interval(c, id);
+    if interval.is_none() && c.value(id) != Value::Function {
         return None;
     }
-    let [xmin, xmax, ymin, ymax, ..] = c
-        .locus_view()
-        .unwrap_or(crate::kernel::locus::HEADLESS_VIEW);
-    Some(Value::Curve {
-        start: (2.0 * xmin) - xmax + ymin - ymax,
-        end: (2.0 * xmax) - xmin + ymax - ymin,
-    })
+    let [start, end] = interval.flatten().unwrap_or_else(|| {
+        let [xmin, xmax, ymin, ymax, ..] = c
+            .locus_view()
+            .unwrap_or(crate::kernel::locus::HEADLESS_VIEW);
+        if xmin == xmax {
+            [-10.0, 10.0]
+        } else {
+            [
+                (2.0 * xmin) - xmax + ymin - ymax,
+                (2.0 * xmax) - xmin + ymax - ymin,
+            ]
+        }
+    });
+    (start <= end).then_some(Value::Curve { start, end })
 }
 
 /// A bracket with a nonpositive left value and a nonnegative right value.
@@ -149,7 +159,7 @@ pub(super) struct Cartesian<'a> {
 }
 
 enum CurveSource<'a> {
-    Coordinates(Box<[FunctionDerivative<'a>; 2]>),
+    Coordinates([Id; 2], Box<[FunctionDerivative<'a>; 2]>),
     Spline(std::sync::Arc<super::analysis::Spline>),
     ParametricDerivative(Box<Cartesian<'a>>),
     Dilated {
@@ -164,6 +174,32 @@ enum CurveSource<'a> {
         derivative: Option<Box<FunctionDerivative<'a>>>,
         matrix: Matrix,
     },
+}
+
+enum LinePolynomial<'a> {
+    Coefficients(Vec<f64>),
+    Spline(&'a super::analysis::Spline, (f64, f64, f64)),
+}
+
+fn line_coefficients(
+    x: &[f64],
+    y: &[f64],
+    (a, b, constant): (f64, f64, f64),
+    work: &IntersectionWork,
+) -> Option<Vec<f64>> {
+    let len = x.len().max(y.len());
+    if !work.charge(len as u64) {
+        return None;
+    }
+    let mut coefficients = vec![0.0; len];
+    for (coefficient, v) in coefficients.iter_mut().zip(x) {
+        *coefficient = a * v;
+    }
+    for (coefficient, v) in coefficients.iter_mut().zip(y) {
+        *coefficient += b * v;
+    }
+    coefficients[0] += constant;
+    Some(coefficients)
 }
 
 fn matrix_value(matrix: Matrix, value: (f64, f64)) -> (f64, f64) {
@@ -193,10 +229,16 @@ impl<'a> Cartesian<'a> {
             Def::Measure(MeasureDef::CartesianCurve {
                 coordinates: [x, y],
                 ..
-            }) => CurveSource::Coordinates(Box::new([
-                FunctionDerivative::new(c, Id(x as usize))?,
-                FunctionDerivative::new(c, Id(y as usize))?,
-            ])),
+            }) => {
+                let ids = [Id(x as usize), Id(y as usize)];
+                CurveSource::Coordinates(
+                    ids,
+                    Box::new([
+                        FunctionDerivative::new(c, ids[0])?,
+                        FunctionDerivative::new(c, ids[1])?,
+                    ]),
+                )
+            }
             Def::Analysis(AnalysisDef::Spline(input)) => {
                 CurveSource::Spline(c.analysis.spline(c, input)?)
             }
@@ -232,7 +274,7 @@ impl<'a> Cartesian<'a> {
             }) => CurveSource::MatrixGraph {
                 construction: c,
                 function: src,
-                derivative: FunctionDerivative::new(c, src).map(Box::new),
+                derivative: FunctionDerivative::for_curve_graph(c, src).map(Box::new),
                 matrix: Matrix::read(c.elements(matrix)?)?,
             },
             _ => return None,
@@ -245,12 +287,117 @@ impl<'a> Cartesian<'a> {
         })
     }
 
+    pub(super) fn polynomial_line_roots(
+        &self,
+        c: &Construction,
+        work: &IntersectionWork,
+        line: (f64, f64, f64),
+    ) -> Option<Vec<f64>> {
+        use super::intersect::graph_roots;
+        match self.line_polynomial(c, work, line)? {
+            LinePolynomial::Coefficients(coefficients) => {
+                let roots = graph_roots(&coefficients, &|units| work.charge(units));
+                (!roots.is_empty()).then_some(roots)
+            }
+            LinePolynomial::Spline(spline, (a, b, constant)) => {
+                let mut roots = Vec::new();
+                for (left, right, row) in spline.pieces() {
+                    let mut coefficients: Vec<f64> =
+                        row.iter().rev().map(|&[x, y]| a * x + b * y).collect();
+                    coefficients[0] += constant;
+                    for parameter in graph_roots(&coefficients, &|units| work.charge(units)) {
+                        // Adjacent pieces meet at a knot. Rounding can put either
+                        // polynomial's root just outside its own interval.
+                        if (left - STANDARD_PRECISION..=right + STANDARD_PRECISION)
+                            .contains(&parameter)
+                        {
+                            roots.push(parameter.clamp(left, right));
+                        }
+                    }
+                    if work.exhausted() {
+                        return Some(Vec::new());
+                    }
+                }
+                Some(roots)
+            }
+        }
+    }
+
+    fn line_polynomial(
+        &self,
+        c: &Construction,
+        work: &IntersectionWork,
+        (a, b, constant): (f64, f64, f64),
+    ) -> Option<LinePolynomial<'_>> {
+        let coefficients = match &self.source {
+            CurveSource::Coordinates([x, y], _) => {
+                let x = work.curve_polynomial(c, *x)?;
+                let y = work.curve_polynomial(c, *y)?;
+                line_coefficients(&x, &y, (a, b, constant), work)?
+            }
+            CurveSource::Spline(spline) => {
+                return Some(LinePolynomial::Spline(spline, (a, b, constant)));
+            }
+            CurveSource::Dilated {
+                original,
+                ratio,
+                center: (x, y),
+            } => {
+                return original.line_polynomial(
+                    c,
+                    work,
+                    (
+                        a * ratio,
+                        b * ratio,
+                        constant + (1.0 - ratio) * (a * x + b * y),
+                    ),
+                );
+            }
+            CurveSource::MatrixCurve(original, matrix) => {
+                let line = matrix.pull_back_affine_line((a, b, constant))?;
+                return original.line_polynomial(c, work, line);
+            }
+            CurveSource::MatrixGraph {
+                function, matrix, ..
+            } => {
+                let line = matrix.pull_back_affine_line((a, b, constant))?;
+                let y = work.curve_polynomial(c, *function)?;
+                line_coefficients(&[0.0, 1.0], &y, line, work)?
+            }
+            CurveSource::ParametricDerivative(original) => {
+                let LinePolynomial::Coefficients(x) =
+                    original.line_polynomial(c, work, (1.0, 0.0, 0.0))?
+                else {
+                    return None;
+                };
+                let dx = *x.get(1)?;
+                if dx == 0.0 || x.iter().skip(2).any(|&coefficient| coefficient != 0.0) {
+                    return None;
+                }
+                let LinePolynomial::Coefficients(y) =
+                    original.line_polynomial(c, work, (0.0, 1.0, 0.0))?
+                else {
+                    return None;
+                };
+                let dy: Vec<_> = y
+                    .iter()
+                    .enumerate()
+                    .skip(1)
+                    .map(|(power, coefficient)| power as f64 * coefficient)
+                    .collect();
+                // With a nonzero constant x', y'/x' is also polynomial.
+                line_coefficients(&x, &dy, (a, b / dx, constant), work)?
+            }
+        };
+        Some(LinePolynomial::Coefficients(coefficients))
+    }
+
     pub(super) fn value(&self, t: f64) -> (f64, f64) {
         if !self.has_budget() {
             return (f64::NAN, f64::NAN);
         }
         match &self.source {
-            CurveSource::Coordinates(f) => (f[0].value(t), f[1].value(t)),
+            CurveSource::Coordinates(_, f) => (f[0].value(t), f[1].value(t)),
             CurveSource::Spline(spline) => spline.sample(t, 0),
             CurveSource::ParametricDerivative(original) => {
                 let (x, _) = original.value(t);
@@ -290,7 +437,7 @@ impl<'a> Cartesian<'a> {
             return (f64::NAN, f64::NAN);
         }
         match &self.source {
-            CurveSource::Coordinates(f) => (f[0].slope(t), f[1].slope(t)),
+            CurveSource::Coordinates(_, f) => (f[0].slope(t), f[1].slope(t)),
             CurveSource::Spline(spline) => spline.sample(t, 1),
             CurveSource::ParametricDerivative(original) => {
                 let (dx, dy) = original.first(t);

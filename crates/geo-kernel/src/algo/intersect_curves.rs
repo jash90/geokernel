@@ -9,11 +9,8 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::boundary::{BoundaryDef, Carrier};
-use super::conics::graph_roots;
 use super::function_roots::fixed_steps_roots;
-use crate::algo::analysis::AnalysisDef;
 use crate::algo::curve::Cartesian;
-use crate::algo::measure::MeasureDef;
 use crate::algo::{Group, Parents, CARRIERS, POINT};
 use crate::expr::{IntersectionWork, Raw};
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
@@ -38,7 +35,11 @@ enum Method {
 }
 
 impl CurveIntersection {
-    fn carrier_pair(c: &Construction, name: &str, args: &[&str]) -> Option<Self> {
+    // A polynomial has degree at most 300. For splines the cubic solve
+    // budget admits fewer than 432 coefficients across all pieces.
+    pub(crate) const MAX_SAVED_SLOTS: usize = 512;
+
+    pub(crate) fn carrier_pair(c: &Construction, name: &str, args: &[&str]) -> Option<Self> {
         let ("Intersect", [first, second]) = (name, args) else {
             return None;
         };
@@ -61,14 +62,8 @@ impl CurveIntersection {
     }
 
     /// Slots in a saved construction survive an edit that removed crossings.
-    pub(crate) fn saved_slots(c: &Construction, args: &[&str], count: usize) -> Option<Vec<Def>> {
-        let first = Self::carrier_pair(c, "Intersect", args)?;
-        Some(
-            first
-                .line_slots(count)
-                .map(Def::IntersectBoundary)
-                .collect(),
-        )
+    pub(crate) fn saved_slots(self, count: usize) -> Vec<Def> {
+        self.line_slots(count).map(Def::IntersectBoundary).collect()
     }
 
     fn line_slots(self, count: usize) -> impl Iterator<Item = BoundaryDef> {
@@ -231,59 +226,13 @@ fn line_roots(c: &Construction, curve: Id, line: Id) -> CurveRoots {
             f64::NAN
         }
     };
-    let mut parameters = match c.def(curve) {
-        Def::Measure(MeasureDef::CartesianCurve { coordinates, .. }) => {
-            let polynomial = || {
-                let (x, x_denominator) = work.fraction(c, Id(coordinates[0] as usize))?;
-                let (y, y_denominator) = work.fraction(c, Id(coordinates[1] as usize))?;
-                let (&[xd], &[yd]) = (x_denominator.as_slice(), y_denominator.as_slice()) else {
-                    return None;
-                };
-                let mut coefficients = vec![0.0; x.len().max(y.len())];
-                for (coefficient, v) in coefficients.iter_mut().zip(x) {
-                    *coefficient = a * (v / xd);
-                }
-                for (coefficient, v) in coefficients.iter_mut().zip(y) {
-                    *coefficient += b * (v / yd);
-                }
-                coefficients[0] += constant;
-                Some(graph_roots(&coefficients, &|units| work.charge(units)))
-            };
-            polynomial()
-                .filter(|roots| !roots.is_empty())
-                .unwrap_or_else(|| {
-                    fixed_steps_roots(&residual, start, end, 100, || {
-                        work.exhausted() || !cartesian.has_budget()
-                    })
-                })
-        }
-        Def::Analysis(AnalysisDef::Spline(input)) => {
-            let Some(spline) = c.analysis.spline(c, input) else {
-                return Vec::new();
-            };
-            let mut roots = Vec::new();
-            for (left, right, row) in spline.pieces() {
-                let mut coefficients: Vec<f64> =
-                    row.iter().rev().map(|&[x, y]| a * x + b * y).collect();
-                coefficients[0] += constant;
-                for parameter in graph_roots(&coefficients, &|units| work.charge(units)) {
-                    // The spline's adjacent polynomial expressions meet at a knot.
-                    // Roundoff on either one can put the root just outside the piece.
-                    if (left - STANDARD_PRECISION..=right + STANDARD_PRECISION).contains(&parameter)
-                    {
-                        roots.push(parameter.clamp(left, right));
-                    }
-                }
-                if work.exhausted() {
-                    return Vec::new();
-                }
-            }
-            roots
-        }
-        _ => fixed_steps_roots(&residual, start, end, 100, || {
-            work.exhausted() || !cartesian.has_budget()
-        }),
-    };
+    let mut parameters = cartesian
+        .polynomial_line_roots(c, &work, (a, b, constant))
+        .unwrap_or_else(|| {
+            fixed_steps_roots(&residual, start, end, 100, || {
+                work.exhausted() || !cartesian.has_budget()
+            })
+        });
     parameters.sort_by(f64::total_cmp);
     parameters.dedup_by(|a, b| (*a - *b).abs() < STANDARD_PRECISION);
     let points = parameters
@@ -325,11 +274,8 @@ fn seeded(c: &Construction, first: Id, second: Id, seeds: [u32; 2]) -> Option<Po
             {
                 return None;
             }
-            let point = left.value(u);
-            let other = right.value(v);
-            return ((point.0 - other.0).abs() <= STANDARD_PRECISION
-                && (point.1 - other.1).abs() <= STANDARD_PRECISION)
-                .then_some(point);
+            // The reference's onCurve2 compares the z coordinates, both zero in 2D.
+            return Some(left.value(u));
         }
         previous = (u, v);
         let (ax, ay) = left.first(u);

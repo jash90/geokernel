@@ -11,19 +11,22 @@
 
 use super::path::{conic_contains, part_contains, part_end, polygon_contains};
 use super::{conic_object, polygon, Parents, CARRIERS, CONIC_OBJECTS};
+use crate::expr::IntersectionWork;
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 use crate::{Construction, Error, Id, Kind, Value};
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::num::NonZeroU32;
+use std::sync::{Arc, Mutex};
 
 type XY = (f64, f64);
 type Edge = (XY, XY);
 
 const CONIC_CLIP_PATHS: &[Kind] = &[Kind::Polygon, Kind::PolyLine, Kind::Segment];
-const MAX_CLIPPED_POLYLINE_VERTICES: usize = polygon::MAX_REGULAR_VERTICES;
+const MAX_CONIC_PATH_VERTICES: usize = polygon::MAX_REGULAR_VERTICES;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ClipMode {
     Carrier,
     Conic,
@@ -32,7 +35,7 @@ pub enum ClipMode {
     SymmetricDifference,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ClipOutput {
     Polygon,
     Point,
@@ -41,7 +44,7 @@ pub enum ClipOutput {
 }
 
 /// An output slot of polygon clipping. Labels attach to the slots at creation.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct ClipDef {
     first: Id,
     second: Id,
@@ -49,6 +52,22 @@ pub struct ClipDef {
     index: u32,
     mode: ClipMode,
     output: ClipOutput,
+}
+
+#[derive(Default)]
+pub(crate) struct ClipCache {
+    conic_segments: Mutex<HashMap<[Id; 2], Arc<[Edge]>>>,
+    rings: Mutex<HashMap<ClipDef, Arc<[Vec<XY>]>>>,
+}
+
+impl ClipCache {
+    pub(crate) fn clear(&mut self) {
+        self.conic_segments
+            .get_mut()
+            .expect("conic clip cache")
+            .clear();
+        self.rings.get_mut().expect("polygon overlay cache").clear();
+    }
 }
 
 impl ClipDef {
@@ -183,11 +202,7 @@ impl ClipDef {
         if c.kind(self.first) == Kind::Segment {
             3
         } else {
-            c.vertices(self.first)
-                .size_hint()
-                .0
-                .max(MAX_CLIPPED_POLYLINE_VERTICES)
-                .saturating_mul(3)
+            MAX_CONIC_PATH_VERTICES * 3
         }
     }
 
@@ -199,31 +214,61 @@ impl ClipDef {
         }
     }
 
-    pub(crate) fn rings(self, c: &Construction) -> Vec<Vec<XY>> {
-        let vertices = |id| c.vertices(id).collect::<Option<Vec<_>>>();
-        let Some((a, b)) = vertices(self.first).zip(vertices(self.second)) else {
-            return Vec::new();
-        };
+    pub(crate) fn rings(self, c: &Construction) -> Arc<[Vec<XY>]> {
+        let key = self.slot(ClipOutput::Polygon, 0);
+        let cache = &c.clips.rings;
+        if let Some(rings) = cache.lock().expect("polygon overlay cache").get(&key) {
+            return Arc::clone(rings);
+        }
+        // An input can itself be a clipped polygon. Release the lock before
+        // fetching its vertices so its own overlay can use this cache.
+        let rings = self.overlay(c).unwrap_or_default().into();
+        cache
+            .lock()
+            .expect("polygon overlay cache")
+            .insert(key, Arc::clone(&rings));
+        rings
+    }
+
+    fn overlay(self, c: &Construction) -> Option<Vec<Vec<XY>>> {
         let mode = if self.flag().is_some_and(|i| c.value(i) == Value::Bool(true)) {
             ClipMode::SymmetricDifference
         } else {
             self.mode
         };
-        overlay(&a, &b, mode)
+        let a = c.vertices(self.first);
+        let b = c.vertices(self.second);
+        let work = IntersectionWork::new();
+        if !charge_overlay_pairs(&work, a.size_hint().0, b.size_hint().0) {
+            return None;
+        }
+        let a = a.collect::<Option<Vec<_>>>()?;
+        let b = b.collect::<Option<Vec<_>>>()?;
+        overlay(&a, &b, mode, &work)
     }
 
     pub(crate) fn vertices(self, c: &Construction) -> Option<Vec<XY>> {
-        self.rings(c).into_iter().nth(self.index as usize)
+        self.rings(c).get(self.index as usize).cloned()
     }
 
-    pub(crate) fn segments(self, c: &Construction) -> Vec<Edge> {
+    pub(crate) fn segments(self, c: &Construction) -> Arc<[Edge]> {
         if self.mode == ClipMode::Conic {
-            return conic_segments(c, self.first, self.second, usize::MAX);
+            let key = [self.first, self.second];
+            let cache = &c.clips.conic_segments;
+            if let Some(segments) = cache.lock().expect("conic clip cache").get(&key) {
+                return Arc::clone(segments);
+            }
+            let segments = conic_segments(c, self.first, self.second).into();
+            cache
+                .lock()
+                .expect("conic clip cache")
+                .insert(key, Arc::clone(&segments));
+            return segments;
         }
         let Some(vertices) = c.vertices(self.first).collect::<Option<Vec<_>>>() else {
-            return Vec::new();
+            return Arc::default();
         };
-        carrier(c.value(self.second), &vertices)
+        carrier(c.value(self.second), &vertices).into()
     }
 
     pub(crate) fn compute(self, c: &Construction) -> Option<Value> {
@@ -233,7 +278,7 @@ impl ClipDef {
                 area: area(&self.vertices(c)?),
             }),
             ClipOutput::Point => {
-                let (x, y) = self.rings(c).into_iter().flatten().nth(index)?;
+                let &(x, y) = self.rings(c).iter().flatten().nth(index)?;
                 Some(Value::Point { x, y })
             }
             ClipOutput::Edge => self
@@ -242,12 +287,6 @@ impl ClipDef {
                 .flat_map(|ring| edges(ring))
                 .nth(index)
                 .map(segment),
-            ClipOutput::Segment if self.mode == ClipMode::Conic => {
-                conic_segments(c, self.first, self.second, index + 1)
-                    .get(index)
-                    .copied()
-                    .map(segment)
-            }
             ClipOutput::Segment => self.segments(c).get(index).copied().map(segment),
         }
     }
@@ -353,7 +392,7 @@ fn carrier(line: Value, polygon: &[XY]) -> Vec<Edge> {
     segments
 }
 
-fn conic_segments(c: &Construction, path: Id, id: Id, limit: usize) -> Vec<Edge> {
+fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
     let Some(d) = conic_object(c, id).filter(|d| d.defined) else {
         return Vec::new();
     };
@@ -361,38 +400,49 @@ fn conic_segments(c: &Construction, path: Id, id: Id, limit: usize) -> Vec<Edge>
     let inside = |p| conic_contains(&d, p) && arc.as_ref().is_none_or(|a| part_contains(a, p));
     let [xx, yy, z, xy, xz, yz] = d.matrix;
     let mut result = Vec::new();
+    let kind = c.kind(path);
+    let work = IntersectionWork::new();
     let vertices;
-    let path_edges: Box<dyn Iterator<Item = Edge>> = match c.kind(path) {
+    let path_edges: Box<dyn Iterator<Item = Edge>> = match kind {
         Kind::Segment => {
             let Value::Segment { x1, y1, x2, y2 } = c.value(path) else {
                 return result;
             };
             Box::new(std::iter::once(((x1, y1), (x2, y2))))
         }
-        Kind::PolyLine => {
+        Kind::PolyLine | Kind::Polygon => {
             let points = c.vertices(path);
-            if points.size_hint().0 > MAX_CLIPPED_POLYLINE_VERTICES {
+            let count = points.size_hint().0;
+            // Each edge has at most two conic roots and two closure cuts.
+            // Reserve a fixed allowance for collecting, cutting and testing it.
+            if count > MAX_CONIC_PATH_VERTICES || !work.charge(32 * count as u64) {
                 return result;
             }
+            vertices = points.collect::<Vec<_>>();
+            if kind == Kind::Polygon && vertices.iter().any(Option::is_none) {
+                return result;
+            }
+            let points = vertices.iter().copied();
+            let count = if kind == Kind::Polygon {
+                count
+            } else {
+                count.saturating_sub(1)
+            };
             Box::new(
                 points
-                    .zip(c.vertices(path).skip(1))
+                    .clone()
+                    .zip(points.cycle().skip(1))
+                    .take(count)
                     .filter_map(|(p, q)| p.zip(q)),
             )
         }
-        _ => {
-            let Some(points) = c.vertices(path).collect::<Option<Vec<_>>>() else {
-                return result;
-            };
-            vertices = points;
-            Box::new(edges(&vertices))
-        }
+        _ => return result,
     };
     let mut cuts = Vec::with_capacity(6);
     for (p, end) in path_edges {
         let dir = sub(end, p);
         if dir == (0.0, 0.0) {
-            if c.kind(path) == Kind::Segment && inside(p) {
+            if kind == Kind::Segment && inside(p) {
                 result.push((p, end));
             }
             continue;
@@ -430,9 +480,6 @@ fn conic_segments(c: &Construction, path: Id, id: Id, limit: usize) -> Vec<Edge>
             let (a, b) = (interval[0], interval[1]);
             if inside(along(a.midpoint(b))) {
                 result.push((along(a), along(b)));
-                if result.len() == limit {
-                    return result;
-                }
             }
         }
     }
@@ -457,9 +504,14 @@ fn top_right(a: XY, b: XY) -> Ordering {
     a.1.total_cmp(&b.1).then(a.0.total_cmp(&b.0))
 }
 
+fn charge_overlay_pairs(work: &IntersectionWork, a: usize, b: usize) -> bool {
+    let vertices = (a as u64).saturating_add(b as u64);
+    work.charge(vertices.saturating_mul(vertices.saturating_add(1)))
+}
+
 /// Split all boundary edges at crossings, orient the pieces with the result
 /// interior on the left, and join them into closed rings.
-fn overlay(a: &[XY], b: &[XY], mode: ClipMode) -> Vec<Vec<XY>> {
+fn overlay(a: &[XY], b: &[XY], mode: ClipMode, work: &IntersectionWork) -> Option<Vec<Vec<XY>>> {
     let all: Vec<_> = edges(a)
         .chain(edges(b))
         .filter(|&(p, q)| !near(p, q))
@@ -479,8 +531,16 @@ fn overlay(a: &[XY], b: &[XY], mode: ClipMode) -> Vec<Vec<XY>> {
         for &edge in &all {
             cuts_on_line(origin, dir, edge, &mut cuts);
         }
+        // Charge sorting, both containment tests per piece, and boundary scans.
+        let cuts_len = cuts.len() as u64;
+        if !work.charge(cuts_len * u64::from(cuts_len.ilog2() + 1)) {
+            return None;
+        }
         restrict(&mut cuts, 0.0, 1.0);
         for cut in cuts.windows(2) {
+            if !work.charge(2 * (a.len() + b.len()) as u64 + 1) {
+                return None;
+            }
             let (u, v) = (cut[0], cut[1]);
             let p = add(origin, scale(dir, u));
             let q = add(origin, scale(dir, v));
@@ -494,6 +554,9 @@ fn overlay(a: &[XY], b: &[XY], mode: ClipMode) -> Vec<Vec<XY>> {
                 (false, true) => (q, p),
                 _ => continue,
             };
+            if !work.charge(boundary.len() as u64 + 1) {
+                return None;
+            }
             if !boundary
                 .iter()
                 .any(|&(a, b)| near(a, piece.0) && near(b, piece.1))
@@ -506,6 +569,9 @@ fn overlay(a: &[XY], b: &[XY], mode: ClipMode) -> Vec<Vec<XY>> {
     while let Some((start, mut end)) = boundary.pop() {
         let mut ring = vec![start];
         while !near(end, start) {
+            if !work.charge(boundary.len() as u64 + 1) {
+                return None;
+            }
             let incoming = sub(end, *ring.last().unwrap());
             let turn = |q| {
                 let out = sub(q, end);
@@ -524,7 +590,10 @@ fn overlay(a: &[XY], b: &[XY], mode: ClipMode) -> Vec<Vec<XY>> {
         if !near(end, start) || ring.len() < 3 {
             continue;
         }
-        remove_collinear(&mut ring);
+        if !work.charge(4 * ring.len() as u64) {
+            return None;
+        }
+        remove_collinear(&mut ring, work)?;
         let signed = area(&ring);
         if signed.abs() < STANDARD_PRECISION || ring.len() < 3 {
             continue;
@@ -543,11 +612,14 @@ fn overlay(a: &[XY], b: &[XY], mode: ClipMode) -> Vec<Vec<XY>> {
         }
         rings.push(ring);
     }
+    if !work.charge(rings.len() as u64 * u64::from(rings.len().max(1).ilog2() + 1)) {
+        return None;
+    }
     rings.sort_by(|a, b| b[0].1.total_cmp(&a[0].1).then(a[0].0.total_cmp(&b[0].0)));
-    rings
+    Some(rings)
 }
 
-fn remove_collinear(ring: &mut Vec<XY>) {
+fn remove_collinear(ring: &mut Vec<XY>, work: &IntersectionWork) -> Option<()> {
     let mut i = ring.len();
     while i > 0 && ring.len() > 2 {
         i -= 1;
@@ -555,7 +627,65 @@ fn remove_collinear(ring: &mut Vec<XY>) {
         let a = sub(ring[i], ring[(i + n - 1) % n]);
         let b = sub(ring[(i + 1) % n], ring[i]);
         if cross(a, b).abs() < STANDARD_PRECISION && dot(a, b) >= 0.0 {
+            if !work.charge((n - i) as u64) {
+                return None;
+            }
             ring.remove(i);
         }
+    }
+    Some(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{expr, script};
+
+    #[test]
+    fn polygon_conic_outputs_share_the_clip_until_the_next_update() {
+        let mut c = script::load("A = (0, 0)\nB = (4, 0)\nD = (0, 4)\np = Polygon(A, B, D)\nO = (1, 1)\nk = Circle(O, 3)").unwrap();
+        let clip = ClipDef::parse(&c, "IntersectPath", &["p", "k"]).unwrap();
+        let before = expr::work_done();
+        let segments = clip.segments(&c);
+        assert!(expr::work_done() > before);
+        assert!(segments.len() >= 2);
+        let after = expr::work_done();
+        for (i, edge) in segments.iter().enumerate() {
+            assert_eq!(
+                clip.slot(ClipOutput::Segment, i).compute(&c),
+                Some(segment(*edge))
+            );
+        }
+        assert_eq!(expr::work_done(), after);
+
+        c.move_point(c.id("O").unwrap(), 50.0, 50.0).unwrap();
+        assert!(clip.segments(&c).is_empty());
+    }
+
+    #[test]
+    fn overlay_refuses_more_vertices_than_the_work_bound_allows() {
+        // Even the initial edge-pair pass exceeds the work allowance.
+        let work = IntersectionWork::new();
+        let before = expr::work_done();
+        assert!(!charge_overlay_pairs(&work, 10_000, 10_000));
+        assert!(work.exhausted());
+        assert_eq!(expr::work_done(), before);
+    }
+
+    #[test]
+    fn polygon_overlay_charges_one_solve_for_its_outputs() {
+        let c = script::load(
+            "A = (0, 0)\nB = (4, 0)\nC = (0, 4)\np = Polygon(A, B, C)\nq = Polygon(A, B, C)",
+        )
+        .unwrap();
+        let clip = ClipDef::parse(&c, "IntersectPath", &["p", "q"]).unwrap();
+        let before = expr::work_done();
+        let rings = clip.rings(&c);
+        assert_eq!(rings.len(), 1);
+        let after = expr::work_done();
+        assert!(after > before);
+        assert!(clip.slot(ClipOutput::Edge, 0).compute(&c).is_some());
+        assert_eq!(expr::work_done(), after);
+        assert!(expr::work_done() > before);
     }
 }

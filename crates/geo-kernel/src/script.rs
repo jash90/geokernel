@@ -963,6 +963,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             | "Integral"
             | "NIntegral"
             | "IntegralBetween"
+            | "Dilate"
             | "Derivative"
             | "NDerivative"
     ) {
@@ -996,6 +997,10 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             if is_kind(center, Kind::Point) && crate::expr::plain_number(radius).is_none() =>
         {
             &[(1, Kind::Number)]
+        }
+        ("Dilate", [curve, _]) if is_kind(curve, Kind::Curve) => &[(1, Kind::Number)],
+        ("Dilate", [curve, _, _]) if is_kind(curve, Kind::Curve) => {
+            &[(1, Kind::Number), (2, Kind::Point)]
         }
         // the calculus commands: their number and boolean positions, in
         // the order the commands check them
@@ -1051,7 +1056,8 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     // geometry commands parse a plain decimal into their own definition
     let live_numbers = matches!(
         func,
-        "LowerSum"
+        "Dilate"
+            | "LowerSum"
             | "UpperSum"
             | "LeftSum"
             | "TrapezoidalSum"
@@ -1731,13 +1737,16 @@ fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<
             .collect();
         return add_named_outputs(c, slots, defs);
     }
-    if let Some(("Intersect", args)) = split_call(rhs) {
-        if let Some(defs) = intersect::curves::CurveIntersection::saved_slots(c, &args, slots.len())
-        {
-            return add_named_outputs(c, slots, defs);
+    if let Some((name @ "Intersect", args)) = split_call(rhs) {
+        use intersect::curves::CurveIntersection;
+        if let Some(curve) = CurveIntersection::carrier_pair(c, name, &args) {
+            if slots.len() > CurveIntersection::MAX_SAVED_SLOTS {
+                return Err("too many output labels for the curve intersection".into());
+            }
+            return add_named_outputs(c, slots, curve.saved_slots(slots.len()));
         }
         let checkpoint = c.checkpoint();
-        if let Some(def) = intersect::curves::CurveIntersection::selected(c, &args) {
+        if let Some(def) = CurveIntersection::selected(c, &args) {
             let result = def.and_then(|def| add_named_outputs(c, slots, vec![def]));
             if result.is_err() {
                 c.discard_since(checkpoint);
@@ -1818,6 +1827,17 @@ pub(crate) fn add_named_outputs(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn saved_curve_intersections_reject_overlong_output_lists() {
+        let mut c = super::load("q = Curve(t, t^2, t, -2, 2)\ng: y = 100").unwrap();
+        let labels = (1..=513).map(|i| format!("P_{{{i}}}")).collect::<Vec<_>>();
+        let line = format!("{{{}}} = Intersect(g, q)", labels.join(","));
+        let before = c.len();
+        let error = super::exec(&mut c, &line).unwrap_err();
+        assert_eq!(error, "too many output labels for the curve intersection");
+        assert_eq!(c.len(), before);
+    }
+
     use super::*;
     use crate::kernel::Value;
 

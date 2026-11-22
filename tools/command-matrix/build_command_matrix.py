@@ -222,7 +222,7 @@ PARTIAL = {
     "RigidPolygon": "Copy of a polygon with optional offsets or rigid polygon from three or more points",
     "TriangleCenter": "TriangleCenter(point, point, point, index)",
     "PointIn": "PointIn(polygon, conic or conic part as a single region argument)",
-    "IntersectPath": "Polygon and line, segment or ray; conic and segment, polyline or polygon; two polygons",
+    "IntersectPath": "Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices.",
     "Difference": "Difference(polygon, polygon); Difference(polygon, polygon, boolean)",
 }
 

@@ -48,4 +48,14 @@ cases.case("homogeneous", [
     "f: -3x + 2y = 10", "s = IntersectPath(p, f)",
 ], [mv("B", -4, -1), mv("C", 5, -2)])
 
+cases.case("overlay", [pt("A", 0, 0), pt("B", 0, 4), pt("C", 4, 4), pt("D", 4, 0),
+                       pt("E", 2, -1), pt("F", 5, -1), pt("G", 5, 2), pt("H", 2, 2),
+                       "p = Polygon(A, B, C, D)", "q = Polygon(E, F, G, H)",
+                       "r = IntersectPath(p, q)", "s = Difference(p, q)"], [mv("H", 1, 3)])
+
+for path in ("PolyLine", "Polygon"):
+    cases.case("largepath", [pt("O", 0, 0), "k = Circle(O, 1.5)",
+                             f"p = {path}(Sequence((j, If(j < 1000, 0, 3)), j, 0, 1000))",
+                             "s = IntersectPath(p, k)"], [])
+
 cases.write()

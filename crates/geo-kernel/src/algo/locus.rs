@@ -170,7 +170,8 @@ impl Construction {
     }
 
     /// Sets the sampling window and cascades updates from the loci. The
-    /// scales are in pixels per world unit. Invalid views are ignored.
+    /// scales are in pixels per world unit. Coincident horizontal bounds let
+    /// a transformed function use its default parameter interval.
     pub fn set_locus_view(
         &mut self,
         xmin: f64,
@@ -182,7 +183,7 @@ impl Construction {
     ) {
         let view = [xmin, xmax, ymin, ymax, xscale, yscale];
         let valid = view.iter().all(|v| v.is_finite())
-            && xmax > xmin
+            && xmax >= xmin
             && ymax > ymin
             && xscale > 0.0
             && yscale > 0.0;

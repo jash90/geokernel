@@ -531,9 +531,11 @@ impl Converter {
             }),
             _ => false,
         };
+        let legacy_interval = name == "Function" && matches!(inputs.len(), 3 | 4);
         let mut args = Vec::with_capacity(inputs.len());
         for (index, arg) in inputs.iter().enumerate() {
             let raw = text_command
+                || legacy_interval
                 || matches!(name, "Curve" | "CurveCartesian" | "Slider")
                 || (index == 0 && matches!(name, "Locus" | "SlopeField"));
             let arg = expression_line(arg)?;
@@ -547,10 +549,10 @@ impl Converter {
             }
             args.push(pass_argument(&arg, raw)?);
         }
-        let name = if name == "CurveCartesian" {
-            "Curve"
-        } else {
-            name
+        let name = match name {
+            "CurveCartesian" => "Curve",
+            "Function" if legacy_interval => "$functionInterval",
+            _ => name,
         };
         if let ("Point", [path], [label]) = (name, args.as_slice(), outputs) {
             if let Some([x, y, z]) = elements
