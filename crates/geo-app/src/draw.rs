@@ -472,7 +472,8 @@ fn paint_layer<'c>(
     }
     for functions in [false, true] {
         if functions {
-            paint_charts(70, u8::MAX, &mut labels);
+            paint_charts(70, 89, &mut labels);
+            paint_charts(90, u8::MAX, &mut labels);
         }
         let Some(curves) = curves.as_ref() else {
             continue;
@@ -899,6 +900,57 @@ mod tests {
         });
         out.textures_delta.clear();
         out.shapes.len()
+    }
+
+    #[test]
+    fn charts_draw_by_layer_then_kind_priority() {
+        let wb = crate::Workbench::from_script(
+            "graph = LineGraph({-3, 3}, {0, 0})\npie = PieChart({1, 2})\ndots = DotPlot({-1, 0, 1})\n$drawingStyle(_646f7473, 1, false, 3)",
+        )
+        .unwrap();
+        let c = wb.construction();
+        let ctx = Context::default();
+        let rect = Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0));
+        let view = Camera::STANDARD.transform(800.0, 600.0);
+
+        let meshes = |only: Option<&str>| {
+            let visible = |id| only.is_none_or(|label| c.label(id) == label);
+            let mut output = ctx.run_ui(Default::default(), |ui| {
+                let scene = Scene {
+                    visible: &visible,
+                    ghost: &|_| false,
+                    selected: None,
+                    hovered: None,
+                    palette: wb.palette(),
+                    cull: true,
+                    generation: wb.rebuilds(),
+                    label_offset: &|_| None,
+                    label_rects: None,
+                    text_rects: None,
+                };
+                paint(ui.painter(), rect, c, &view, &scene);
+            });
+            output.textures_delta.clear();
+            output
+                .shapes
+                .into_iter()
+                .filter_map(|shape| match shape.shape {
+                    Shape::Mesh(mesh) => Some(mesh),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        };
+
+        let expected: Vec<_> = ["pie", "graph", "dots"]
+            .into_iter()
+            .flat_map(|label| meshes(Some(label)))
+            .collect();
+        assert_eq!(expected.len(), 3);
+        let actual = meshes(None);
+        assert_eq!(actual.len(), expected.len());
+        for (slot, (actual, expected)) in actual.iter().zip(expected).enumerate() {
+            assert!(actual == &expected, "wrong chart drawn in slot {slot}");
+        }
     }
 
     #[test]
