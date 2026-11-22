@@ -401,8 +401,8 @@ impl<'a> Triangulation<'a> {
                 result.insert(ray, edge_cmp, work)?;
                 result.insert(ray, edge_cmp, work)?;
             } else {
-                for i in 0..3 {
-                    self.cell_edges(t, f.vertex[i], &mut result, work)?;
+                for vertex in f.vertex {
+                    self.cell_edges(t, vertex, &mut result, work)?;
                 }
             }
         }
