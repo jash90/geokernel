@@ -3263,12 +3263,6 @@ form = "list"
 cases = ["cas-solve-019"]
 
 [[form]]
-command = "Solve"
-form = "list,any"
-cases = ["cas-solve-020"]
-difference = "polynomial-cas: `Solve(list, any)`"
-
-[[form]]
 command = "Solutions"
 form = "function"
 cases = ["cas-solve-021"]
@@ -3282,12 +3276,6 @@ cases = ["cas-solve-022"]
 command = "Solutions"
 form = "list"
 cases = ["cas-solve-023"]
-
-[[form]]
-command = "Solutions"
-form = "list,any"
-cases = ["cas-solve-024"]
-difference = "polynomial-cas: `Solutions(list, any)`"
 
 [[form]]
 command = "NSolve"
@@ -3305,12 +3293,6 @@ form = "list"
 cases = ["cas-solve-027"]
 
 [[form]]
-command = "NSolve"
-form = "list,any"
-cases = ["cas-solve-028"]
-difference = "polynomial-cas: `NSolve(list, any)`"
-
-[[form]]
 command = "NSolutions"
 form = "function"
 cases = ["cas-solve-029"]
@@ -3324,12 +3306,6 @@ cases = ["cas-solve-030"]
 command = "NSolutions"
 form = "list"
 cases = ["cas-solve-031"]
-
-[[form]]
-command = "NSolutions"
-form = "list,any"
-cases = ["cas-solve-032"]
-difference = "polynomial-cas: `NSolutions(list, any)`"
 
 [[form]]
 command = "Tangent"
@@ -3403,18 +3379,6 @@ difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyM
 command = "SurdText"
 form = "point"
 cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
-
-[[form]]
-command = "Solve"
-form = "line,any"
-cases = ["cas-hint-005", "cas-hint-009", "cas-hint-014"]
-difference = "polynomial-cas: `Solve(line, any)`, `Solutions(line, any)`, `NSolve(line, any)`, `NSolutions(line, any)`"
-
-[[form]]
-command = "Solutions"
-form = "line,any"
-cases = ["cas-hint-006", "cas-hint-010", "cas-hint-014"]
-difference = "polynomial-cas: `Solve(line, any)`, `Solutions(line, any)`, `NSolve(line, any)`, `NSolutions(line, any)`"
 
 [[form]]
 command = "NSolve"
@@ -3528,12 +3492,6 @@ difference = "polynomial-cas: `Simplify(list)`"
 command = "PlotSolve"
 form = "list"
 cases = ["cas-plot-004", "cas-plot-021"]
-
-[[form]]
-command = "PlotSolve"
-form = "line"
-cases = ["cas-plot-002", "cas-plot-007", "cas-plot-008"]
-difference = "polynomial-cas: `PlotSolve(function)`, `PlotSolve(line)`"
 
 [[form]]
 command = "IntersectPath"
