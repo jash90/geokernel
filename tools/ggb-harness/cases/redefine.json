@@ -13,6 +13,8 @@
     {"id": "redefine-assignment-011", "group": "redefine", "script": ["A = (1, 1)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "A = Point(xAxis)"}, {"action": "move", "label": "A", "x": 5.0, "y": 2.0}]},
     {"id": "redefine-assignment-012", "group": "redefine", "script": ["a = 2"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = {1, 2}"}]},
     {"id": "redefine-assignment-013", "group": "redefine", "script": ["A = (1, 2)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "A = 6"}]},
-    {"id": "redefine-assignment-014", "group": "redefine", "script": ["r = 1", "a = 2", "b = a + 1"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = r + 2"}, {"action": "reject", "line": "a = b + 1"}, {"action": "set_number", "label": "r", "value": 3.0}]}
+    {"id": "redefine-assignment-014", "group": "redefine", "script": ["r = 1", "a = 2", "b = a + 1"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = r + 2"}, {"action": "reject", "line": "a = b + 1"}, {"action": "set_number", "label": "r", "value": 3.0}]},
+    {"id": "redefine-assignment-015", "group": "redefine", "script": ["A = (1, 2)", "B = 2 A", "n = 2"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "A = (1 + n, 1 / n)"}, {"action": "set_number", "label": "n", "value": 0.0}, {"action": "set_number", "label": "n", "value": 4.0}]},
+    {"id": "redefine-assignment-016", "group": "redefine", "script": ["a = 1", "b = a + 1", "n = 2", "d = n + b"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = 2 n"}, {"action": "reject", "line": "a = d"}, {"action": "set_number", "label": "n", "value": 4.0}]}
   ]
 }

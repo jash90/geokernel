@@ -1744,8 +1744,10 @@ fn rigid_point_definitions(
     let &[anchor, pivot, ref rest @ ..] = points else {
         return None;
     };
-    if anchor >= pivot
-        || rest.iter().any(|&id| id <= pivot)
+    if c.evaluation_rank(anchor) >= c.evaluation_rank(pivot)
+        || rest
+            .iter()
+            .any(|&id| c.evaluation_rank(id) <= c.evaluation_rank(pivot))
         || points[1..]
             .iter()
             .any(|&id| !matches!(c.def(id), Def::FreePoint { .. }))
@@ -2242,7 +2244,7 @@ mod tests {
     fn outputs_need_a_free_name() {
         let mut c = load("A = (0, 0)\nB = (4, 0)\nC = (4, 3)\np = Polygon(A, B, C)\n").unwrap();
         let n = c.len();
-        for line in ["A = Vertex(p)", "B = InteriorAngles(p)", "p = Angle(p)"] {
+        for line in ["A = Vertex(p)", "B = InteriorAngles(p)", "A = Angle(p)"] {
             let e = run(&mut c, line).unwrap_err();
             assert!(e.contains("already exists"), "{line}: {e}");
             assert_eq!(c.len(), n, "{line}");

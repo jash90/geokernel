@@ -1,12 +1,12 @@
 //! Construction kernel: a dependency graph of geometric objects.
 //!
 //! Every object is either *free* (a point or a number the user can change)
-//! or *dependent* (defined by a rule over earlier objects). An object can
-//! only refer to objects created before it, so creation order is already a
-//! topological order and an update never has to sort the graph.
+//! or *dependent* (defined by a rule over other objects). New definitions
+//! read earlier objects. A redefinition can change the evaluation order
+//! while keeping the same object IDs.
 //!
 //! When a free object changes, only its descendants are recomputed, in
-//! creation order, and a branch is cut as soon as a recomputed value turns
+//! dependency order, and a branch is cut as soon as a recomputed value turns
 //! out to be unchanged.
 //!
 //! # Definitions with any number of parents
@@ -68,7 +68,8 @@ use crate::algo::{
     self, check_index, join, line_through, Group, Parents, CIRCLE, LINE, LINE_LIKE, NUMBER, POINT,
 };
 use crate::expr::{self, ExprDef};
-use std::collections::HashMap;
+use std::cmp::Reverse;
+use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
 
 /// Handle of an object inside one [`Construction`].
@@ -902,6 +903,8 @@ pub struct Construction {
     labels: Vec<String>,
     /// For each object, the objects that read it directly.
     children: Vec<Vec<Id>>,
+    /// Empty while creation order is also evaluation order.
+    evaluation_order: EvaluationOrder,
     /// For each object, what its rule needs from the definitions of other
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
@@ -989,6 +992,12 @@ pub struct Construction {
     saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
     controls: Vec<(Id, control::Control)>,
     pub(crate) object_scripts: HashMap<String, Vec<control::ControlScript>>,
+}
+
+#[derive(Default)]
+struct EvaluationOrder {
+    ids: Vec<usize>,
+    ranks: Vec<usize>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -1541,6 +1550,8 @@ impl Construction {
                 self.object_scripts.remove(&label);
             }
         }
+        self.evaluation_order.ids.truncate(at.len);
+        self.evaluation_order.ranks.truncate(at.len);
         // A removed object may have opened an element before a surviving
         // one if it was created after navigating back. Normally only the
         // tail changes, so a brief probe need not scan the whole protocol.
@@ -1648,7 +1659,6 @@ impl Construction {
     }
 
     /// Stages a single definition and installs it at the existing object ID.
-    /// The dependency order stays valid when every input precedes that ID.
     pub(crate) fn redefine(
         &mut self,
         id: Id,
@@ -1704,19 +1714,20 @@ impl Construction {
             if def.kind() != old.kind() && !self.children[id.0].is_empty() {
                 return Err(refuse("a dependent object requires the original kind"));
             }
-            let parents = self.read_ids(&def);
-            if parents
+            let mut parents = self.read_ids(&def);
+            parents.retain(|&parent| axis::get(parent).is_none());
+            parents.sort_unstable();
+            parents.dedup();
+            let order = parents
                 .iter()
-                .any(|&parent| parent >= id && axis::get(parent).is_none())
-            {
-                return Err(refuse(
-                    "a replacement input must precede the original definition",
-                ));
-            }
-            Ok((new, def, parents))
+                .any(|&parent| self.evaluation_rank(parent) >= self.evaluation_rank(id))
+                .then(|| self.replacement_order(id, &parents, checkpoint.len))
+                .transpose()
+                .map_err(refuse)?;
+            Ok((new, def, parents, order))
         })();
 
-        let (new, mut def, parents) = match replacement {
+        let (new, mut def, parents, order) = match replacement {
             Ok(staged) => staged,
             Err(error) => {
                 self.discard_since(checkpoint);
@@ -1774,6 +1785,9 @@ impl Construction {
         self.defs[id.0] = def;
         self.values[id.0] = value;
         self.hints[id.0] = hint;
+        if let Some(order) = order {
+            self.evaluation_order = order;
+        }
         expr::replace_free_decimal(self, id, decimal);
         self.construction_sources.remove(&id);
         if let Some(source) = source {
@@ -1783,6 +1797,98 @@ impl Construction {
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;
         Ok(Some(id))
+    }
+
+    /// Prepares a replacement's order before any existing object is changed.
+    fn replacement_order(
+        &self,
+        target: Id,
+        parents: &[Id],
+        len: usize,
+    ) -> Result<EvaluationOrder, &'static str> {
+        const MAX_OBJECTS: usize = 250_000;
+        const MAX_EDGES: usize = 1_000_000;
+        if len > MAX_OBJECTS {
+            return Err("the dependency graph exceeds the redefinition budget");
+        }
+        // Loci monitor only the inputs relevant to ordinary edits. Their two
+        // inputs still have to precede them and count toward cycle detection.
+        let mut locus_inputs = vec![Vec::new(); len];
+        for (i, def) in self.defs[..len].iter().enumerate() {
+            if let Def::Locus(
+                LocusDef::Path {
+                    point,
+                    mover: driver,
+                }
+                | LocusDef::Slider {
+                    point,
+                    slider: driver,
+                },
+            ) = *def
+            {
+                locus_inputs[point.0].push(Id(i));
+                locus_inputs[driver.0].push(Id(i));
+            }
+        }
+        let successors = |i: usize| {
+            self.children[i]
+                .iter()
+                .chain(&locus_inputs[i])
+                .copied()
+                .filter(|&child| child.0 < len && child != target)
+                .chain(parents.binary_search(&Id(i)).is_ok().then_some(target))
+        };
+        let mut remaining = MAX_EDGES;
+        let mut indegree = vec![0; len];
+        for i in 0..len {
+            for child in successors(i) {
+                remaining = remaining
+                    .checked_sub(1)
+                    .ok_or("the dependency graph exceeds the redefinition budget")?;
+                indegree[child.0] += 1;
+            }
+        }
+        let mut ready: BinaryHeap<_> = (0..len)
+            .filter(|&i| indegree[i] == 0)
+            .map(Reverse)
+            .collect();
+        let mut ids = Vec::with_capacity(len);
+        let mut ranks = vec![0; len];
+        while let Some(Reverse(i)) = ready.pop() {
+            ranks[i] = ids.len();
+            ids.push(i);
+            for child in successors(i) {
+                indegree[child.0] -= 1;
+                if indegree[child.0] == 0 {
+                    ready.push(Reverse(child.0));
+                }
+            }
+        }
+        if ids.len() != len {
+            return Err("a replacement cannot introduce a dependency cycle");
+        }
+        Ok(EvaluationOrder { ids, ranks })
+    }
+
+    /// The position of an object in dependency order.
+    pub fn evaluation_rank(&self, id: Id) -> usize {
+        self.evaluation_order
+            .ranks
+            .get(id.0)
+            .copied()
+            .unwrap_or(id.0)
+    }
+
+    pub(crate) fn evaluation_id(&self, rank: usize) -> usize {
+        self.evaluation_order.ids.get(rank).copied().unwrap_or(rank)
+    }
+
+    pub(crate) fn predecessor_storage_len(&self, id: Id) -> usize {
+        if self.evaluation_order.ids.is_empty() {
+            id.0 + 1
+        } else {
+            self.len()
+        }
     }
 
     /// Every object `def` reads: its parents, the objects its rule also
@@ -1927,6 +2033,10 @@ impl Construction {
         }
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
+        if !self.evaluation_order.ids.is_empty() {
+            self.evaluation_order.ids.push(id.0);
+            self.evaluation_order.ranks.push(id.0);
+        }
         self.by_label.insert(label.to_string(), id);
         let element = if let Some(owner) = owner {
             self.output_entry(owner)
@@ -2025,7 +2135,7 @@ impl Construction {
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
         for &i in &self.protocol {
-            dirty.insert(i);
+            dirty.insert(self.evaluation_rank(Id(i)));
         }
         self.propagate_dirty(dirty, 0);
     }
@@ -2049,7 +2159,7 @@ impl Construction {
                 let slot = self.paths.partition_point(|&(other, _)| other < id.0);
                 self.paths.insert(slot, (id.0, path.create(self)));
             }
-            dirty.insert(id.0);
+            dirty.insert(self.evaluation_rank(id));
         }
         self.propagate_dirty(dirty, 0);
     }
@@ -2203,9 +2313,9 @@ impl Construction {
             self.construction_sources.remove(&id);
             self.defs[id.0] = Def::FreePoint { x, y };
             self.values[id.0] = Value::Point { x, y };
-            first = first.min(id.0);
+            first = first.min(self.evaluation_rank(id));
             for &child in &self.children[id.0] {
-                dirty.insert(child.0);
+                dirty.insert(self.evaluation_rank(child));
             }
         }
         Ok(self.propagate_dirty(dirty, first))
@@ -2293,10 +2403,10 @@ impl Construction {
         self.last_update_changed_automatic_root
     }
 
-    /// Recomputes the descendants of `start` in creation order.
+    /// Recomputes the descendants of `start` in dependency order.
     ///
     /// A set of dirty indices ([`DirtySet`]) gives the order: the smallest
-    /// is taken next. Because children always have larger indices than their
+    /// is taken next. Because children always have larger ranks than their
     /// parents, by the time an object is reached every parent that could
     /// still change has already been handled. Unlike a heap, inserting and
     /// taking cost a few bit operations, which matters when a point has tens
@@ -2307,9 +2417,9 @@ impl Construction {
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
         for &child in &self.children[start.0] {
-            dirty.insert(child.0);
+            dirty.insert(self.evaluation_rank(child));
         }
-        self.propagate_dirty(dirty, start.0)
+        self.propagate_dirty(dirty, self.evaluation_rank(start))
     }
 
     fn propagate_dirty(&mut self, mut dirty: DirtySet, mut from: usize) -> usize {
@@ -2318,9 +2428,9 @@ impl Construction {
         self.clips.clear();
         self.analysis.clear();
         let mut recomputed = 0;
-        while let Some(i) = dirty.pop_first(from) {
-            // children only add larger indices
-            from = i + 1;
+        while let Some(rank) = dirty.pop_first(from) {
+            from = rank + 1;
+            let i = self.evaluation_id(rank);
             let def = self.defs[i];
             recomputed += 1;
             match def {
@@ -2426,7 +2536,7 @@ impl Construction {
                 }
             }
             for &child in &self.children[i] {
-                dirty.insert(child.0);
+                dirty.insert(self.evaluation_rank(child));
             }
         }
 

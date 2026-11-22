@@ -26,5 +26,9 @@ cases.case("assignment", ["a = 2"], [redefine("a = {1, 2}")])
 cases.case("assignment", ["A = (1, 2)"], [redefine("A = 6")])
 cases.case("assignment", ["r = 1", "a = 2", "b = a + 1"],
            [redefine("a = r + 2"), {"action": "reject", "line": "a = b + 1"}, setn("r", 3)])
+cases.case("assignment", ["A = (1, 2)", "B = 2 A", "n = 2"],
+           [redefine("A = (1 + n, 1 / n)"), setn("n", 0), setn("n", 4)])
+cases.case("assignment", ["a = 1", "b = a + 1", "n = 2", "d = n + b"],
+           [redefine("a = 2 n"), {"action": "reject", "line": "a = d"}, setn("n", 4)])
 
 cases.write()

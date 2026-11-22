@@ -2217,12 +2217,6 @@ reason = "class `GeoLocus` has no schema object (unsupported-type); string `Locu
 mismatches = ["loc"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2644"
-category = "redefine"
-reason = "the kernel refuses the input: object `Q` already exists: a replacement input must precede the original definition"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2645"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Locus(Q, slider)` needs a point that depends on the slider `slider`"
@@ -5880,12 +5874,6 @@ mismatches = ["step"]
 id = "commands/CommandsUsingMockedCasTest.java:99"
 category = "cas"
 reason = "the kernel refuses the input: unknown command `Limit`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/FormulaTextTest.java:38"
-category = "incomplete-context"
-reason = "the kernel refuses the input: object `f` already exists: a replacement input must precede the original definition"
 mismatches = ["step"]
 
 [[gap]]

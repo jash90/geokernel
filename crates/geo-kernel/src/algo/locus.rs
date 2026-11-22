@@ -313,7 +313,7 @@ fn path_of(c: &Construction, id: Id) -> Option<Id> {
 /// Every object `q` depends on, `q` excluded, as flags by index
 /// (`GeoElement.getAllPredecessors`).
 fn ancestors(c: &Construction, q: Id) -> Vec<bool> {
-    let mut seen = vec![false; q.0 + 1];
+    let mut seen = vec![false; c.predecessor_storage_len(q)];
     let mut stack = vec![q];
     while let Some(id) = stack.pop() {
         for parent in c.read_ids(&c.def(id)) {
@@ -328,7 +328,7 @@ fn ancestors(c: &Construction, q: Id) -> Vec<bool> {
 
 /// `GeoElement.isParentOf`: whether `b` depends on `a`.
 fn is_ancestor(c: &Construction, a: Id, b: Id) -> bool {
-    a.0 < b.0 && ancestors(c, b)[a.0]
+    c.evaluation_rank(a) < c.evaluation_rank(b) && ancestors(c, b)[a.0]
 }
 
 /// `isPointerChangeable`: a free object, or a point that can be moved on a
@@ -386,20 +386,22 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
 }
 
 /// The objects that depend on `mover` and that `q` depends on, `q`
-/// included, in creation order: what a sample recomputes.
+/// included, in dependency order: what a sample recomputes.
 pub(crate) fn chain(c: &Construction, q: Id, mover: Id) -> Vec<usize> {
     let anc = ancestors(c, q);
-    let mut desc = vec![false; q.0 + 1];
+    let mut desc = vec![false; anc.len()];
+    let last = c.evaluation_rank(q);
     let mut stack = vec![mover];
     while let Some(id) = stack.pop() {
         for &child in c.children(id) {
-            if child.0 <= q.0 && !desc[child.0] {
+            if c.evaluation_rank(child) <= last && !desc[child.0] {
                 desc[child.0] = true;
                 stack.push(child);
             }
         }
     }
-    (0..=q.0)
+    (0..=last)
+        .map(|rank| c.evaluation_id(rank))
         .filter(|&i| desc[i] && (anc[i] || i == q.0))
         .collect()
 }

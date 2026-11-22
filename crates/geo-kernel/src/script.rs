@@ -2595,7 +2595,9 @@ mod tests {
         assert_eq!(c.value(c.id("a").unwrap()), Value::Point { x: 7.0, y: 8.0 });
         assert!(exec(&mut c, "d = $point(1)").is_err());
         assert!(exec(&mut c, "d = $point(1, x)").is_err());
-        assert!(exec(&mut c, "a = $vector(1, 2)").is_err());
+        let a = c.id("a").unwrap();
+        assert_eq!(exec(&mut c, "a = $vector(1, 2)").unwrap(), Some(a));
+        assert_eq!(c.value(a), Value::Vector { x: 1.0, y: 2.0 });
     }
 
     #[test]

@@ -8,7 +8,7 @@
 mod common;
 
 use common::*;
-use geo_kernel::script::{exec, load};
+use geo_kernel::script::{assignment_label, exec, load};
 use geo_kernel::Construction;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -77,6 +77,7 @@ struct Problem {
 fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
     let len = c.len();
     let before = values(c);
+    let replacement = assignment_label(line).and_then(|label| c.id(label));
     let started = Instant::now();
     let work = geo_kernel::expr::work_done();
     let result = match catch(|| exec(c, line)) {
@@ -103,16 +104,14 @@ fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
     }
     match result {
         Ok(Some(first)) => {
-            if c.len() <= len {
-                return Err(Problem {
-                    key: "Ok(Some) but no object was created".into(),
-                    detail: format!("{len} objects before and after"),
-                });
-            }
-            let expected = c.ids().skip(len).find(|&id| !c.label(id).starts_with('\0'));
+            let expected = if c.len() == len {
+                replacement
+            } else {
+                c.ids().skip(len).find(|&id| !c.label(id).starts_with('\0'))
+            };
             if Some(first) != expected {
                 return Err(Problem {
-                    key: "Ok(Some(id)) is not the first new output".into(),
+                    key: "Ok(Some(id)) is not the assigned object or first new output".into(),
                     detail: format!("id {} with {len} objects before", first.index()),
                 });
             }

@@ -47,6 +47,8 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("paths-chain-001", 1),
     ("polygon-polyline-001", 0),
     ("polygon-regular-001", 0),
+    ("redefine-assignment-001", 2),
+    ("redefine-assignment-015", 3),
     ("textobjects-dynamic-001", 1),
     ("vector-chain-001", 0),
 ];

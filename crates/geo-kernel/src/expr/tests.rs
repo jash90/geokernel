@@ -172,7 +172,7 @@ fn errors_leave_the_construction_unchanged() {
         "b = 1 / Line(A, A)",
         "b = Distance(A, Midpoint(A, A))",
         "b = sin",
-        "a = 2 + 2",
+        "a = a + 2",
     ] {
         let before = (c.len(), c.exprs.len());
         assert!(exec(&mut c, bad).is_err(), "{bad}");
@@ -292,7 +292,7 @@ fn bad_function_lines_are_rejected() {
         "g(x) = (x, 1)",
         "g(x) = Line(A, B)",
         "1(x) = x",
-        "f(x) = x",
+        "f(x) = f(x)",
         "g(x) = Mod(x, 3)",
         "b = Max(a, f)",
         "b = GCD((1, 2), a)",

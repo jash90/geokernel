@@ -171,20 +171,46 @@ impl Workbench {
                 grown.remove(owner);
             }
         }
-        let definitions = self.log.entries().filter_map(|entry| {
-            if boundary_slot_owner(entry.rhs()).is_some_and(|owner| grown.contains_key(owner)) {
-                return None;
+        let mut redefined = false;
+        let mut assignments = BTreeMap::new();
+        for entry in self.log.entries() {
+            if let [label] = entry.labels.as_slice() {
+                let label = label.as_str();
+                redefined |= assignments.insert(label, entry).is_some();
             }
-            let outputs = entry
-                .labels
-                .first()
-                .and_then(|label| grown.get(label.as_str()))
-                .unwrap_or(&entry.labels);
-            Some(Definition {
-                line: &entry.line,
-                outputs,
+        }
+        let mut definitions: Vec<_> = self
+            .log
+            .entries()
+            .filter_map(|entry| {
+                if let [label] = entry.labels.as_slice() {
+                    if !std::ptr::eq(entry, assignments[label.as_str()]) {
+                        return None;
+                    }
+                }
+                if boundary_slot_owner(entry.rhs()).is_some_and(|owner| grown.contains_key(owner)) {
+                    return None;
+                }
+                let outputs = entry
+                    .labels
+                    .first()
+                    .and_then(|label| grown.get(label.as_str()))
+                    .unwrap_or(&entry.labels);
+                Some(Definition {
+                    line: &entry.line,
+                    outputs,
+                })
             })
-        });
+            .collect();
+        if redefined {
+            definitions.sort_by_key(|definition| {
+                definition
+                    .outputs
+                    .first()
+                    .and_then(|label| c.id(label))
+                    .map_or(usize::MAX, |id| c.evaluation_rank(id))
+            });
+        }
         export::ggb(c, definitions, &self.export_presentation(view))
     }
 
