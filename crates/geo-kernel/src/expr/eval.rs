@@ -623,9 +623,10 @@ pub(super) fn root_list(
     lists.copy_out(c, start, len, out).then_some(len)
 }
 
-/// `Function.value`: a function entry at `x`.
+/// `Function.value`: a function entry at `x`, using the `y = 0` slice
+/// for a two-variable slope.
 pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
-    Ctx::<false>::new(c, e, &Env::Value(x)).fast(e.root)
+    Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).fast(e.root)
 }
 
 /// The value of the condition at `i` of an entry's `AlgoIf`, which reads
@@ -758,9 +759,11 @@ impl<const M: bool> Ctx<'_, M> {
             },
             Node::ListOp(op, l, n) => self.list_command(i, op, l, n),
             // a list is only read through `list`
-            Node::FnName(_) | Node::List(..) | Node::Range(..) | Node::Seq(..) => {
-                Ex::plain(N(f64::NAN))
-            }
+            Node::FnName(_)
+            | Node::List(..)
+            | Node::ItemObject(_)
+            | Node::Range(..)
+            | Node::Seq(..) => Ex::plain(N(f64::NAN)),
         }
     }
 
@@ -798,14 +801,34 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
-    /// `f(a)`: expanded inside a function, in the current mode; elsewhere
-    /// `a` is evaluated and `f` sampled there (`GeoFunction.value`).
-    fn apply(&self, f: Id, a: u32, fast: bool) -> f64 {
+    /// The fast path for `f(a)` inside a function, with the argument
+    /// substituted into the body.
+    fn apply_fast(&self, f: Id, a: u32) -> f64 {
         let Some(e) = function_entry(self.c, f) else {
             return f64::NAN;
         };
         // the function's nodes are charged to the evaluation with lists
         // this one is part of, if any
+        let env = Env::Arg(self, a);
+        Ctx {
+            meter: self.meter,
+            ..Ctx::new(self.c, e, &env)
+        }
+        .fast(e.root)
+    }
+
+    /// `f(a)` in the full evaluation: inside a function the expanded tree
+    /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
+    fn apply_full(&self, f: Id, a: u32) -> Ex {
+        let Some(e) = function_entry(self.c, f) else {
+            return Ex::plain(
+                if super::function_signature(self.c, f).is_some_and(|f| f.boolean) {
+                    Val::B(false, false)
+                } else {
+                    Val::N(f64::NAN)
+                },
+            );
+        };
         let env = if self.e.function {
             Env::Arg(self, a)
         } else {
@@ -815,29 +838,11 @@ impl<const M: bool> Ctx<'_, M> {
             meter: self.meter,
             ..Ctx::new(self.c, e, &env)
         };
-        if fast || !self.e.function {
-            // `sample`
-            inner.fast(e.root)
+        if self.e.function || e.root_ty() == Ty::Bool {
+            inner.full(e.root)
         } else {
-            inner.full_number(e.root)
+            Ex::plain(Val::N(inner.fast(e.root)))
         }
-    }
-
-    /// `f(a)` in the full evaluation: inside a function the expanded tree
-    /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
-    fn apply_full(&self, f: Id, a: u32) -> Ex {
-        if !self.e.function {
-            return Ex::plain(Val::N(self.apply(f, a, false)));
-        }
-        let Some(e) = function_entry(self.c, f) else {
-            return Ex::plain(Val::N(f64::NAN));
-        };
-        let env = Env::Arg(self, a);
-        Ctx {
-            meter: self.meter,
-            ..Ctx::new(self.c, e, &env)
-        }
-        .full(e.root)
     }
 
     pub(super) fn full_number(&self, i: u32) -> f64 {
@@ -906,7 +911,7 @@ impl<const M: bool> Ctx<'_, M> {
                 Env::Pair(_, y) => y,
                 _ => f64::NAN,
             },
-            Node::Apply(f, a) if self.e.function => self.apply(f, a, true),
+            Node::Apply(f, a) if self.e.function => self.apply_fast(f, a),
             Node::Obj(id) => object(self.c, id).num(),
             _ => self.full_number(i),
         }
@@ -1092,6 +1097,7 @@ impl<const M: bool> Ctx<'_, M> {
     pub(super) fn element(&self, i: u32) -> Slot {
         let i = match self.node(i) {
             Node::Item(a) => a,
+            Node::ItemObject(id) => return Slot::object(self.c, id),
             _ => i,
         };
         if self.is_list(i) {

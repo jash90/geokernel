@@ -19,7 +19,12 @@
         { "action": "set_number", "label": "n", "value": 6.0 },
         { "action": "set_number", "label": "v", "value": 2.0 },
         { "action": "set_number", "label": "v", "value": 1.0 },
-        { "action": "set_number", "label": "n", "value": 0.0 }
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "v", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
       ],
       "snapshots": [
         {
@@ -62,6 +67,36 @@
           "n": { "type": "number", "defined": true, "value": 0.0 },
           "v": { "type": "number", "defined": true, "value": 1.0 },
           "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 11.72, "y": 6.32 },
+          "Q": { "type": "point", "defined": true, "x": 11.72, "y": 6.32 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -4.32, "y": 6.32 },
+          "Q": { "type": "point", "defined": true, "x": -4.32, "y": 6.32 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "v": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 800.0, "y": 600.0 },
+          "Q": { "type": "point", "defined": true, "x": 800.0, "y": 600.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "v": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 800.0, "y": 600.0 },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "v": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 11.72, "y": -5.72 },
           "Q": { "type": "point", "defined": false }
         }
       ]

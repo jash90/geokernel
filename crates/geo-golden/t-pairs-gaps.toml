@@ -532,21 +532,21 @@ mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:414"
-category = "unsupported-form"
-reason = "the kernel refuses the input: a function that gives a boolean is not supported"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `4 < x < 5`"
+mismatches = ["r"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:417"
-category = "unsupported-form"
-reason = "the kernel refuses the input: a function that gives a boolean is not supported"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1 < x`"
+mismatches = ["p1"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:418"
-category = "unsupported-form"
-reason = "the kernel refuses the input: a function that gives a boolean is not supported"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1 < x < 2`"
+mismatches = ["p2"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:419"
@@ -556,9 +556,9 @@ mismatches = ["p3"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:420"
-category = "unsupported-form"
-reason = "the kernel refuses the input: a function that gives a boolean is not supported"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1 < x + x < 2`"
+mismatches = ["p4"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:443"
@@ -1504,9 +1504,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1250"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Curve`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoCurveCartesian` has no schema object (unsupported-type); string `(t^(2), t^(2))`"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1255"
@@ -3741,12 +3741,6 @@ reason = "the kernel refuses the input: unknown object `freehandFunc`; the metho
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2590"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `\"`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2595"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `LetterToUnicode`"
@@ -3952,14 +3946,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2698"
-category = "unsupported-form"
-reason = "the kernel refuses the input: a function that gives a boolean is not supported"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `2 < x < 3`"
+mismatches = ["interval"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2699"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `interval`; the method's step `commands/CommandsTest.java:2697` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-command"
+reason = "the kernel refuses the input: the function `interval` needs an argument"
 mismatches = ["step"]
 
 [[gap]]
@@ -5164,9 +5158,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3330"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `{(1,1),(2,2),(3,3),(4,1/4),(5,1/5)}`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoPolygon` of kind polygon has no GeoGebra-style text yet; GeoGebra prints `3.4499999999999997`"
+mismatches = ["poly1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3331"
@@ -5182,9 +5176,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3342"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `PolyLine` does not take 1 argument(s)"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoPolyLine` of kind polyline has no GeoGebra-style text yet; GeoGebra prints `6.755851322151136`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3343"
@@ -6526,9 +6520,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4090"
-category = "unsupported-form"
-reason = "the kernel refuses the input: `y` needs arguments"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `x + y`"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4093"
@@ -6730,9 +6724,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4217"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SlopeField`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoLocus` has no schema object (unsupported-type); string `SlopeField[x / y]`"
+mismatches = ["slopefield1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4218"
@@ -7312,9 +7306,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:446"
-category = "unsupported-form"
-reason = "the kernel refuses the input: a function that gives a boolean is not supported"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x > 1`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4463"
@@ -9425,37 +9419,37 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:417"
 category = "incomplete-context"
-reason = "the kernel refuses the input: a function that gives a boolean is not supported"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `-3 < x < 6`"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/RedefineTest.java:418"
 category = "incomplete-context"
-reason = "the kernel refuses the input: a function that gives a boolean is not supported"
-mismatches = ["step"]
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x < 3`"
+mismatches = ["b"]
 
 [[gap]]
 id = "commands/RedefineTest.java:419"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:417` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: the function `a` needs an argument"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/RedefineTest.java:420"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `a`; the method's step `commands/RedefineTest.java:417` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: the function `a` needs an argument"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/RedefineTest.java:421"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `b`; the method's step `commands/RedefineTest.java:417` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: the function `b` needs an argument"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/RedefineTest.java:422"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `b`; the method's step `commands/RedefineTest.java:417` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: the function `b` needs an argument"
 mismatches = ["step"]
 
 [[gap]]
@@ -9473,14 +9467,8 @@ mismatches = ["step"]
 [[gap]]
 id = "commands/RedefineTest.java:425"
 category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `a`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:426"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `b`"
-mismatches = ["step"]
+reason = "Bool(true) does not match `false` (values differ)"
+mismatches = ["c"]
 
 [[gap]]
 id = "commands/RedefineTest.java:771"

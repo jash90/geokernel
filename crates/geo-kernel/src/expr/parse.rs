@@ -703,7 +703,16 @@ impl Parser<'_> {
                 }
                 let first = self.nodes.len() as u32;
                 for &e in &elements {
-                    self.push(Node::Item(e));
+                    let item = match self.node(e) {
+                        Node::Obj(id) if super::list::object_kind(self.c.kind(id)) => {
+                            for p in super::list::object_parents(self.c, id) {
+                                self.read(p, false);
+                            }
+                            Node::ItemObject(id)
+                        }
+                        _ => Node::Item(e),
+                    };
+                    self.push(item);
                 }
                 Ok(self.push(Node::List(first, elements.len() as u32)))
             }

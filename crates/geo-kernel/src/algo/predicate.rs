@@ -27,6 +27,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoBoolean.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoList.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoElement.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoQuadricND.java
@@ -329,7 +331,7 @@ fn truth(v: Value) -> bool {
     matches!(v, Value::Bool(true))
 }
 
-fn list_equal(a: List<'_>, b: List<'_>) -> bool {
+fn list_equal(c: &Construction, a: List<'_>, b: List<'_>) -> bool {
     let mut stack = vec![(a, b, 0)];
     let mut work = MAX_EVALUATION_WORK;
     while let Some((a, b, i)) = stack.last_mut() {
@@ -344,24 +346,47 @@ fn list_equal(a: List<'_>, b: List<'_>) -> bool {
             return false;
         };
         work = left;
+        let (left, right) = (a.object(*i), b.object(*i));
         let pair = (a.get(*i), b.get(*i));
         *i += 1;
         match pair {
             (Some(Element::List(a)), Some(Element::List(b))) => stack.push((a, b, 0)),
             (Some(Element::Value(ka, a)), Some(Element::Value(kb, b)))
-                if ka == kb && equal_list_values(a, b) => {}
+                if match (left, right) {
+                    (Some(a), Some(b)) => equal(c, a, b),
+                    _ => equal_value(ka, a, kb, b),
+                } => {}
             _ => return false,
         }
     }
     true
 }
 
-fn equal_list_values(a: Value, b: Value) -> bool {
-    match (a, b) {
-        (Value::Number(a), Value::Number(b)) => is_equal(a, b),
-        (Value::Point { x, y }, Value::Point { x: u, y: v })
-        | (Value::Vector { x, y }, Value::Vector { x: u, y: v }) => same_point((x, y), (u, v)),
-        (Value::Bool(a), Value::Bool(b)) => a == b,
+/// The equality methods whose operands can be compared from their values.
+fn equal_value(ka: Kind, a: Value, kb: Kind, b: Value) -> bool {
+    match (ka, kb, a, b) {
+        (ka, kb, Value::Number(a), Value::Number(b)) if ka.is_number() && kb.is_number() => {
+            is_equal(a, b)
+        }
+        (_, _, Value::Point { x, y }, Value::Point { x: u, y: v })
+        | (_, _, Value::Vector { x, y }, Value::Vector { x: u, y: v }) => {
+            x.is_finite() && y.is_finite() && same_point((x, y), (u, v))
+        }
+        (
+            _,
+            _,
+            Value::Segment { x1, y1, x2, y2 },
+            Value::Segment {
+                x1: u1,
+                y1: v1,
+                x2: u2,
+                y2: v2,
+            },
+        ) => {
+            let (s, e, t, f) = ((x1, y1), (x2, y2), (u1, v1), (u2, v2));
+            (same_point(s, t) && same_point(e, f)) || (same_point(s, f) && same_point(e, t))
+        }
+        (Kind::Boolean, Kind::Boolean, _, _) => truth(a) == truth(b),
         _ => false,
     }
 }
@@ -396,7 +421,7 @@ fn polygon_congruent(c: &Construction, a: Id, b: Id) -> bool {
         return false;
     };
     if let Value::Number(bb) = c.value(b) {
-        return c.kind(b) == Kind::Number && is_equal(aa.abs(), bb);
+        return c.kind(b).is_number() && is_equal(aa.abs(), bb);
     }
     let Value::Polygon { area: bb } = c.value(b) else {
         return false;
@@ -474,7 +499,22 @@ fn poly_equal(c: &Construction, a: Id, b: Id, kind: Kind) -> bool {
 }
 
 fn function_equal(c: &Construction, a: Id, b: Id) -> bool {
-    if !c.value(a).is_defined() || !c.value(b).is_defined() {
+    let Some(signature) = crate::expr::function_signature(c, a) else {
+        return false;
+    };
+    if Some(signature) != crate::expr::function_signature(c, b) {
+        return false;
+    }
+    if signature.boolean {
+        return c.boolean_functions_equal(a, b);
+    }
+    let differ_at = |x| {
+        let (Some(p), Some(q)) = (c.function_value(a, x), c.function_value(b, x)) else {
+            return false;
+        };
+        p.abs() <= 1e8 && q.abs() <= 1e8 && !is_equal_eps(p, q, MIN_PRECISION)
+    };
+    if differ_at(0.31) || differ_at(10.89) || !c.value(a).is_defined() || !c.value(b).is_defined() {
         return false;
     }
     match (c.function_polynomial(a), c.function_polynomial(b)) {
@@ -489,7 +529,9 @@ fn function_equal(c: &Construction, a: Id, b: Id) -> bool {
 fn equal(c: &Construction, a: Id, b: Id) -> bool {
     let (ka, kb) = (c.kind(a), c.kind(b));
     match ka {
-        Kind::Point => ka == kb && same_point(point(c, a), point(c, b)),
+        Kind::Point | Kind::Segment | Kind::Vector | Kind::Number | Kind::Angle | Kind::Boolean => {
+            equal_value(ka, c.value(a), kb, c.value(b))
+        }
         Kind::Line => match kb {
             Kind::Line => lines_equal(c, a, b),
             // A segment or ray is never equal to a line, but a line that
@@ -498,21 +540,6 @@ fn equal(c: &Construction, a: Id, b: Id) -> bool {
                 (!c.value(a).is_defined() || !c.value(b).is_defined())
                     && degenerate(raw_line(c, a))
                     && degenerate(raw_line(c, b))
-            }
-            _ => false,
-        },
-        Kind::Segment => match (c.value(a), c.value(b)) {
-            (
-                Value::Segment { x1, y1, x2, y2 },
-                Value::Segment {
-                    x1: u1,
-                    y1: v1,
-                    x2: u2,
-                    y2: v2,
-                },
-            ) => {
-                let (s, e, s2, e2) = ((x1, y1), (x2, y2), (u1, v1), (u2, v2));
-                (same_point(s, s2) && same_point(e, e2)) || (same_point(s, e2) && same_point(e, s2))
             }
             _ => false,
         },
@@ -547,22 +574,11 @@ fn equal(c: &Construction, a: Id, b: Id) -> bool {
         },
         Kind::Polygon | Kind::PolyLine => ka == kb && poly_equal(c, a, b, ka),
         Kind::List => match (c.elements(a), c.elements(b)) {
-            (Some(a), Some(b)) => list_equal(a, b),
+            (Some(a), Some(b)) => list_equal(c, a, b),
             _ => false,
         },
         Kind::Function => kb == Kind::Function && function_equal(c, a, b),
         Kind::Locus | Kind::Curve => a == b,
-        Kind::Vector => match (c.value(a), c.value(b)) {
-            (Value::Vector { x, y }, Value::Vector { x: u, y: v }) => {
-                x.is_finite() && y.is_finite() && is_equal(x, u) && is_equal(y, v)
-            }
-            _ => false,
-        },
-        Kind::Number | Kind::Angle if ka == kb => match (c.value(a), c.value(b)) {
-            (Value::Number(p), Value::Number(q)) => is_equal(p, q),
-            _ => false,
-        },
-        Kind::Boolean => kb == Kind::Boolean && truth(c.value(a)) == truth(c.value(b)),
         _ => false,
     }
 }

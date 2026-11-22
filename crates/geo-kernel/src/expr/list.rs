@@ -6,7 +6,7 @@
 //! elements. The object's [`Value::List`] only carries the length, so values
 //! stay `Copy` and of fixed size; [`List`] reads the elements.
 
-use crate::kernel::{Kind, Value};
+use crate::kernel::{Construction, Id, Kind, Value};
 
 /// One element of a list: its kind (also when it is undefined), its value,
 /// and for a nested list where its elements start.
@@ -15,6 +15,8 @@ pub(crate) struct Slot {
     pub(crate) kind: Kind,
     pub(crate) value: Value,
     pub(crate) start: u32,
+    /// A named geometric object whose equality uses its construction data.
+    object: Option<Id>,
 }
 
 impl Slot {
@@ -23,6 +25,7 @@ impl Slot {
             kind,
             value: Value::Undefined,
             start: 0,
+            object: None,
         }
     }
 
@@ -34,6 +37,7 @@ impl Slot {
                 kind: Kind::Number,
                 value: Value::Number(v),
                 start: 0,
+                object: None,
             }
         } else {
             Slot::undefined(Kind::Number)
@@ -54,6 +58,7 @@ impl Slot {
             kind,
             value,
             start: 0,
+            object: None,
         }
     }
 
@@ -62,6 +67,7 @@ impl Slot {
             kind: Kind::Boolean,
             value: Value::Bool(b),
             start: 0,
+            object: None,
         }
     }
 
@@ -71,6 +77,16 @@ impl Slot {
             kind: Kind::List,
             value: Value::List { len },
             start,
+            object: None,
+        }
+    }
+
+    pub(super) fn object(c: &Construction, id: Id) -> Self {
+        Self {
+            kind: c.kind(id),
+            value: c.value(id),
+            start: 0,
+            object: Some(id),
         }
     }
 
@@ -84,6 +100,12 @@ impl Slot {
 
     /// Bit equality, so that a change from `0` to `-0` is seen.
     fn same(&self, other: &Slot) -> bool {
+        if self.object.is_some() || other.object.is_some() {
+            // An undefined line can retain coefficients used by equality.
+            return self.object == other.object
+                && self.value == other.value
+                && (self.kind != Kind::Line || self.value.is_defined());
+        }
         let bits = |v: &Value| -> [u64; 2] {
             match *v {
                 Value::Number(x) => [x.to_bits(), 0],
@@ -98,6 +120,20 @@ impl Slot {
             && std::mem::discriminant(&self.value) == std::mem::discriminant(&other.value)
             && bits(&self.value) == bits(&other.value)
     }
+}
+
+/// Named geometric objects supported as entries in a literal list.
+pub(super) fn object_kind(kind: Kind) -> bool {
+    matches!(kind, Kind::Segment | Kind::Line | Kind::Circle)
+}
+
+/// Parents whose changes can alter an undefined named line's equality.
+pub(super) fn object_parents(c: &Construction, id: Id) -> Vec<Id> {
+    let mut parents = Vec::new();
+    if c.kind(id) == Kind::Line {
+        crate::algo::vector::line_hidden(c, id, &mut parents);
+    }
+    parents
 }
 
 /// Whether two flattened lists are the same, bit for bit.
@@ -135,8 +171,8 @@ pub struct List<'a> {
 /// One element of a [`List`].
 #[derive(Clone, Copy, Debug)]
 pub enum Element<'a> {
-    /// A number, point, vector or boolean, with its kind; an undefined
-    /// element (of any kind, a list too) is [`Value::Undefined`].
+    /// A non-list element and its kind; an undefined element is
+    /// [`Value::Undefined`].
     Value(Kind, Value),
     /// A defined list.
     List(List<'a>),
@@ -229,6 +265,13 @@ impl<'a> List<'a> {
             }),
             None => Element::Value(slot.kind, slot.value),
         })
+    }
+
+    /// The original object when the element is a named geometry object.
+    pub(crate) fn object(&self, k: usize) -> Option<Id> {
+        (k < self.len())
+            .then(|| self.slots[self.start as usize + k].object)
+            .flatten()
     }
 
     /// The elements in order.

@@ -278,8 +278,8 @@ mismatches = [
 
 [[gap]]
 id = "conicforms-namedinterval-001"
-reason = "A named inequality is a boolean-valued function in GeoGebra. Kernel functions are numeric, so the named input fails before Center can read its bounds."
-mismatches = ["0:script line 3"]
+reason = "Center accepts the bounds of an inline inequality. Reading interval bounds from a named boolean function is unsupported."
+mismatches = ["0:script line 4"]
 
 # intersections
 

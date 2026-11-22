@@ -145,7 +145,7 @@ fn misplaced_booleans_are_errors() {
         "b = !A",
         "b = A < B",
         "b = A >= 1",
-        "f(x) = x < 3",
+        "f(x) = x < A",
         "b = a = 3",
         "b = a < ",
         "b = == a",

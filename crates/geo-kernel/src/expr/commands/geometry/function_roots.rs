@@ -1,11 +1,13 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoFunctionInvert.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/FunctionNVar.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use crate::expr::eval::{Ctx, Env};
-use crate::expr::{self, math, Bin, IntersectionWork, Node, Un};
+use crate::expr::{self, math, Bin, IntersectionWork, Node, Un, MAX_EVALUATION_WORK};
 use crate::kernel::{Construction, Def, Id, Value};
 
 type Polynomial = [f64; 5];
@@ -23,6 +25,73 @@ impl Construction {
     /// tree consists of operations with scalar differentiation rules.
     pub(crate) fn function_derivative(&self, id: Id, x: f64) -> Option<f64> {
         IntersectionWork::new().derivative(self, id, x)
+    }
+
+    /// `GeoFunction.isEqualBooleanFunction`: test both functions at the
+    /// inequality boundaries and inside each interval they delimit.
+    pub(crate) fn boolean_functions_equal(&self, a: Id, b: Id) -> bool {
+        let Some(a_ctx) = function_context::<false>(self, a, &Env::None, None) else {
+            return false;
+        };
+        let Some(b_ctx) = function_context::<false>(self, b, &Env::None, None) else {
+            return false;
+        };
+        let mut work = MAX_EVALUATION_WORK;
+        let mut zeros = Vec::new();
+        for ctx in [&a_ctx, &b_ctx] {
+            let cost = ctx.e.cost.saturating_mul(u64::from(ctx.e.depth));
+            let Some(left) = work.checked_sub(cost) else {
+                return false;
+            };
+            work = left;
+            if inequality_zeros(ctx, ctx.e.root, &mut zeros).is_none() {
+                return false;
+            }
+        }
+        if zeros.is_empty() {
+            zeros.push(0.0);
+        }
+        zeros.sort_by(f64::total_cmp);
+        zeros.dedup();
+        let samples = (2 * zeros.len() + 1) as u64;
+        if (a_ctx.e.cost + b_ctx.e.cost).saturating_mul(samples) > work {
+            return false;
+        }
+        let agrees = |x| self.function_value(a, x) == self.function_value(b, x);
+        let mut last = zeros[0] - 1.0;
+        for zero in zeros {
+            if !agrees(zero) || !agrees((last + zero) / 2.0) {
+                return false;
+            }
+            last = zero;
+        }
+        agrees(last + 1.0)
+    }
+}
+
+fn inequality_zeros(ctx: &Ctx<'_, false>, i: u32, zeros: &mut Vec<f64>) -> Option<()> {
+    match ctx.node(i) {
+        Node::Bin(Bin::Less | Bin::LessEqual | Bin::Greater | Bin::GreaterEqual, a, b) => {
+            let a = polynomial(ctx, a)?;
+            let b = polynomial(ctx, b)?;
+            let coefficients = std::array::from_fn(|i| a[i] - b[i]);
+            if coefficients.iter().any(|x| !x.is_finite()) {
+                return None;
+            }
+            let (roots, count) = crate::algo::intersect::polynomial_roots(coefficients);
+            zeros.extend(roots[..count].iter().copied().filter(|x| x.is_finite()));
+            Some(())
+        }
+        Node::Bin(
+            Bin::Equal | Bin::NotEqual | Bin::And | Bin::Or | Bin::Xor | Bin::Implies,
+            a,
+            b,
+        ) => {
+            inequality_zeros(ctx, a, zeros)?;
+            inequality_zeros(ctx, b, zeros)
+        }
+        Node::Un(Un::Not, a) => inequality_zeros(ctx, a, zeros),
+        _ => None,
     }
 }
 

@@ -350,7 +350,7 @@ def read_evidence(text, forms):
             raise ValueError("form-evidence.toml: unknown form %s(%s)" % (command, form))
         if (command, form) in seen:
             raise ValueError("form-evidence.toml: %s(%s) is listed twice" % (command, form))
-        if bool(row.get("cases")) == bool(row.get("difference")):
+        if not row.get("cases") and not row.get("difference"):
             raise ValueError("form-evidence.toml: %s(%s) needs cases or a difference"
                              % (command, form))
         seen.add((command, form))

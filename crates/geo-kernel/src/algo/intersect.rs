@@ -51,6 +51,7 @@ pub(crate) mod boundary;
 pub(crate) mod common_tangents;
 #[path = "intersect_conics.rs"]
 mod conics;
+pub(crate) use conics::polynomial_roots;
 #[path = "intersect_function_roots.rs"]
 mod function_roots;
 #[path = "intersect_functions.rs"]

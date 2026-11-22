@@ -28,6 +28,13 @@ k = Circle(A, r)
 P = PointIn(k)
 """, mv("P", 1, 1), setn("r", 1), mv("P", 4, 0), setn("r", 0), setn("r", -1),
      setn("r", 2), mv("A", 1, -2))
+case("regionmoves", """
+A = (0, 0)
+B = (6, 0)
+C = (0, 6)
+p = Polygon(A, B, C)
+P = PointIn(p)
+""", mv("P", 2, 1), mv("B", 12, 3), mv("C", -3, 9), mv("A", -6, -3))
 
 # cmdClosestPoint and cmdDistance: use both argument orders.
 case("projection", """
@@ -54,6 +61,23 @@ C = (0, 1)
 k = CircleArc(A, B, C)
 d = Length(k)
 """, mv("C", 1, 0), mv("B", 0, 0), mv("B", 2, 0))
+
+# The endpoints are off the underlying conic. The arc has no value, so its
+# dependent point can be moved until the next change to an arc input.
+case("openarc", """
+k: y^2 = 4x
+P = (1, -3)
+Q = (2, 4)
+a = Arc(k, P, Q)
+R = Point(a)
+""", mv("R", 2, 1), mv("P", 3, -1), mv("Q", 0, 3))
+case("openarc", """
+k: x^2-y^2 = 1
+P = (2, -2)
+Q = (3, 1)
+a = Arc(k, P, Q)
+R = Point(a)
+""", mv("R", 2, 1), mv("P", 3, -1), mv("Q", -3, 1))
 
 # cmdPerimeter and cmdLocus: the locus of a horizontal translation.
 case("locusmeasure", """
@@ -110,6 +134,7 @@ p = Polygon(l)
 q = PolyLine(l)
 v = PolyLine(l, b)
 P = Vertex(v, 3)
+Q = Vertex(v, 5)
 """, mv("E", 4, 0.25), setn("t", 0), mv("C", 2, 2), setn("t", 1))
 case("shapelist", """
 A = (0, 0)
@@ -120,6 +145,13 @@ t = 1
 p = Polygon(If(t > 0, {A, B, C}, {A, B, C, D}))
 q = PolyLine({A, B, C}, true)
 """, setn("t", 0), mv("B", 0, 0), setn("t", 1))
+case("polylineflag", """
+A = (0, 0)
+B = (1, 2)
+C = (3, 1)
+b = false
+q = PolyLine(A, B, C, b)
+""", mv("C", 3, -1))
 
 # The upstream rigid triangle, with a descendant already attached to B.
 case("rigid", """
@@ -183,7 +215,8 @@ n = 1
 v = 1
 P = Vertex(n)
 Q = Vertex(v, n)
-""", setn("n", 2), setn("n", 5), setn("n", 6), setn("v", 2), setn("v", 1), setn("n", 0))
+""", setn("n", 2), setn("n", 5), setn("n", 6), setn("v", 2), setn("v", 1), setn("n", 0),
+     setn("n", 3), setn("n", 4), setn("n", 5), setn("v", 2), setn("n", 2))
 case("textlength", '''
 n = Length("line 😀")
 ''')

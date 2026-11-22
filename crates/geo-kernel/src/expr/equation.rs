@@ -132,7 +132,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
     // GeoGebra shows the degree 1 and 2 ones as the line and the conic the
     // degree makes below.
     if builder.function_dependent && is_function_form(lhs_text, rhs.uses_y) {
-        return super::define_function(c, name, rhs_text.trim());
+        return super::define_function(c, name, rhs_text.trim(), false);
     }
     match poly.degree() {
         0 | 1 => {
@@ -195,7 +195,7 @@ fn function_or_refuse(
     what: &str,
 ) -> Result<Id, String> {
     if is_function_form(lhs_text, rhs_uses_y) {
-        return super::define_function(c, name, rhs_text.trim());
+        return super::define_function(c, name, rhs_text.trim(), false);
     }
     Err(what.into())
 }

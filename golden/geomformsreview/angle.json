@@ -1,0 +1,105 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomformsreview-angle-001",
+      "group": "geomformsreview",
+      "script": [
+        "a = 180°",
+        "n = 3.141592653589793",
+        "u = AreEqual(n, a)",
+        "v = AreEqual(a, n)",
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (0, 3.141592653589793)",
+        "p = Polygon(A, B, C)",
+        "w = AreCongruent(p, a)",
+        "q = AreCongruent(a, p)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "n": { "type": "number", "defined": true, "value": 3.141592653589793 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.141592653589793 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 3.141592653589793]
+            ],
+            "area": 3.141592653589793,
+            "signed_area": 3.141592653589793
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 3.141592653589793 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.141592653589793, "x2": 0.0, "y2": 0.0 },
+          "w": { "type": "boolean", "defined": true, "value": true },
+          "q": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.141592653589793 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 3.141592653589793]
+            ],
+            "area": 3.141592653589793,
+            "signed_area": 3.141592653589793
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 3.141592653589793 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.141592653589793, "x2": 0.0, "y2": 0.0 },
+          "w": { "type": "boolean", "defined": true, "value": true },
+          "q": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "angle", "defined": true, "value": 3.141592653589793 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 0.0, "y2": 0.0 },
+          "w": { "type": "boolean", "defined": true, "value": false },
+          "q": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}

@@ -7,16 +7,17 @@
 # form = "point,point"          # one form of forms.csv, exactly as written there
 # cases = ["conic-midseg-001"]  # golden cases that call it in this form
 #
-# or, instead of `cases`, `difference = "section-slug: Area text"`: a row of
+# A row can also use `difference = "section-slug: Area text"`: a row of
 # DIFFERENCES.md (the slug of the heading it is under and its first cell)
 # whose first cell names the form, such as `Mod(function, function)` in
 # backticks, and whose reason is a disposition, not "Not implemented".
 #
 # crates/geo-golden/tests/command_forms.rs checks every row: each case exists,
-# is not a known gap, and calls the command with arguments of exactly the
-# form's kinds. For a transformation's `any` source argument, the cited
+# is not a known gap, and calls the command with arguments matching the
+# form. For a transformation's `any` source argument, the cited
 # cases together cover all supported core geometry kinds for that signature.
-# Other wildcard forms are covered through a difference row.
+# Other wildcard forms require a difference row and can cite cases that
+# demonstrate the supported arguments.
 # `forms_done` in docs/command-matrix.csv counts these rows; regenerate the
 # matrix after editing (README.md in this directory).
 
@@ -1390,16 +1391,18 @@ cases = ["geomextras-vertexsegment-001", "geomextras-vertexsegment-002", "geomex
 [[form]]
 command = "Arc"
 form = "conic,point,point"
-cases = ["geomextras-conicparts-001"]
+cases = ["geomextras-conicparts-001", "geomclosure-openarc-001", "geomclosure-openarc-002"]
 
 [[form]]
 command = "AreCongruent"
 form = "any,any"
+cases = ["geomclosure-comparison-001", "geomclosure-comparison-002", "geomformsreview-angle-001"]
 difference = "geometry-command-arguments: `AreCongruent(any, any)`"
 
 [[form]]
 command = "AreEqual"
 form = "any,any"
+cases = ["geomclosure-comparison-001", "geomclosure-comparison-002", "geomclosure-comparison-003", "geomformsreview-angle-001", "geomformsreview-shapes-001", "geomformsreview-function-001", "geomformsreview-booleanfunction-001", "geomformsreview-functionofy-001"]
 difference = "geometry-command-arguments: `AreEqual(any, any)`"
 
 [[form]]
@@ -1410,26 +1413,31 @@ cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
 [[form]]
 command = "ClosestPoint"
 form = "path,point"
+cases = ["geomclosure-projection-001"]
 difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
 
 [[form]]
 command = "ClosestPoint"
 form = "point,path"
+cases = ["geomclosure-projection-001"]
 difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
 
 [[form]]
 command = "Distance"
 form = "path,point"
+cases = ["geomclosure-projection-001"]
 difference = "geometry-command-arguments: `Distance(point, path)` and `Distance(path, point)`"
 
 [[form]]
 command = "Distance"
 form = "point,path"
+cases = ["geomclosure-projection-001"]
 difference = "geometry-command-arguments: `Distance(point, path)` and `Distance(path, point)`"
 
 [[form]]
 command = "Length"
 form = "conic"
+cases = ["geomclosure-partlength-001"]
 difference = "geometry-command-arguments: `Length(conic)`"
 
 [[form]]
@@ -1455,12 +1463,13 @@ cases = ["geomclosure-pointlength-001", "geomextras-lengthpoint-001"]
 [[form]]
 command = "Length"
 form = "text"
+cases = ["geomclosure-textlength-001"]
 difference = "geometry-command-arguments: `Length(text)`"
 
 [[form]]
 command = "Locus"
 form = "function,point"
-cases = ["geomclosure-ode-001"]
+cases = ["geomclosure-ode-001", "geomformsreview-odenamed-001"]
 
 [[form]]
 command = "Locus"
@@ -1475,16 +1484,19 @@ cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
 [[form]]
 command = "Point"
 form = "path"
+cases = ["geomclosure-path-001", "geomclosure-openarc-001", "geomclosure-openarc-002"]
 difference = "geometry-command-arguments: `Point(path)` and `Point(path, number)`"
 
 [[form]]
 command = "Point"
 form = "path,number"
+cases = ["geomclosure-path-001"]
 difference = "geometry-command-arguments: `Point(path)` and `Point(path, number)`"
 
 [[form]]
 command = "PointIn"
 form = "region"
+cases = ["geomclosure-region-001", "geomclosure-region-002", "geomclosure-regionmoves-001"]
 difference = "geometry-command-arguments: `PointIn(region)`"
 
 [[form]]
@@ -1500,6 +1512,7 @@ cases = ["geomextras-polylinelist-002", "geomclosure-shapelist-001"]
 [[form]]
 command = "PolyLine"
 form = "point,point,...,boolean"
+cases = ["geomclosure-polylineflag-001"]
 difference = "geometry-command-arguments: `PolyLine(point, point, ..., boolean)`"
 
 [[form]]

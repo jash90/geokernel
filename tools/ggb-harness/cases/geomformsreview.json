@@ -1,0 +1,14 @@
+{
+  "cases": [
+    {"id": "geomformsreview-ode-001", "group": "geomformsreview", "script": ["P = (1, 1)", "loc = Locus(x/y*2, P)"], "steps": [{"action": "initial"}]},
+    {"id": "geomformsreview-ode-002", "group": "geomformsreview", "script": ["P = (1, 1)", "loc = Locus(x*(1/y), P)"], "steps": [{"action": "initial"}]},
+    {"id": "geomformsreview-ode-003", "group": "geomformsreview", "script": ["P = (1, 1)", "loc = Locus((x/y)/2, P)"], "steps": [{"action": "initial"}]},
+    {"id": "geomformsreview-ode-004", "group": "geomformsreview", "script": ["P = (1, 1)", "loc = Locus(x*y^(-1), P)"], "steps": [{"action": "initial"}]},
+    {"id": "geomformsreview-odenamed-001", "group": "geomformsreview", "script": ["f = x/y*2", "P = (1, 1)", "loc = Locus(f, P)"], "steps": [{"action": "initial"}]},
+    {"id": "geomformsreview-angle-001", "group": "geomformsreview", "script": ["a = 180\u00b0", "n = 3.141592653589793", "u = AreEqual(n, a)", "v = AreEqual(a, n)", "A = (0, 0)", "B = (2, 0)", "C = (0, 3.141592653589793)", "p = Polygon(A, B, C)", "w = AreCongruent(p, a)", "q = AreCongruent(a, p)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "n", "value": 2.0}, {"action": "move", "label": "C", "x": 0.0, "y": 2.0}]},
+    {"id": "geomformsreview-shapes-001", "group": "geomformsreview", "script": ["A = (0, 0)", "B = (2, 0)", "C = (4, 0)", "D = (2, 0)", "E = (2, 0)", "s = Segment(A, B)", "t = Segment(D, A)", "g = Line(A, B)", "h = Line(A, C)", "c = Circle(A, B)", "d = Circle(A, E)", "l = {{s}, g, c}", "m = {{t}, h, d}", "u = AreEqual(l, m)"], "steps": [{"action": "initial"}, {"action": "move", "label": "C", "x": 4.0, "y": 1.0}, {"action": "move", "label": "C", "x": 4.0, "y": 0.0}, {"action": "move", "label": "E", "x": 3.0, "y": 0.0}, {"action": "move", "label": "E", "x": 2.0, "y": 0.0}, {"action": "move", "label": "D", "x": 3.0, "y": 0.0}]},
+    {"id": "geomformsreview-function-001", "group": "geomformsreview", "script": ["a = 1.000000005", "f(x) = x^4", "g(x) = a*x^4", "u = AreEqual(f, g)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 1.0}, {"action": "set_number", "label": "a", "value": 1.000000005}]},
+    {"id": "geomformsreview-booleanfunction-001", "group": "geomformsreview", "script": ["f(x) = x>0", "g(x) = x>=0", "h(x) = 0<x", "j(x) = 1", "u = AreEqual(f, g)", "v = AreEqual(f, h)", "w = AreEqual(f, j)"], "steps": [{"action": "initial"}]},
+    {"id": "geomformsreview-functionofy-001", "group": "geomformsreview", "script": ["f(y) = y>0", "g(y) = y>=0", "h(y) = 0<y", "j(x) = x>0", "u = AreEqual(f, g)", "v = AreEqual(f, h)", "w = AreEqual(f, j)"], "steps": [{"action": "initial"}]}
+  ]
+}

@@ -75,6 +75,7 @@ pub(crate) mod derivative;
 /// Equations in `x` and `y` as lines and conics (see the module docs).
 pub(crate) mod equation;
 mod eval;
+pub(crate) mod fraction;
 #[doc(hidden)]
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
 
@@ -172,6 +173,8 @@ pub(crate) enum Node {
     List(u32, u32),
     /// One element of a list literal.
     Item(u32),
+    /// A named geometric object in a list literal.
+    ItemObject(Id),
     /// A command on a list and an optional number ([`NONE`] when absent).
     ListOp(ListOp, u32, u32),
     /// `Sequence(n)`, `Sequence(a, b)` and `Sequence(a, b, step)`
@@ -380,6 +383,7 @@ pub(crate) enum Ty {
     Vec,
     Bool,
     List(Elem),
+    Object,
 }
 
 /// The type of the elements of a list.
@@ -390,6 +394,8 @@ pub(crate) enum Elem {
     Vec,
     Bool,
     List,
+    /// Named geometric objects.
+    Object,
     /// No element: `{}`.
     Empty,
     /// Elements of different types, such as `{1, (1, 2)}`.
@@ -431,14 +437,17 @@ pub(crate) struct Lit {
     pub(crate) dec: Option<Dec>,
 }
 
+#[derive(Clone)]
 pub(crate) struct Entry {
     nodes: Vec<Node>,
     lits: Vec<Lit>,
     tys: Vec<Ty>,
     root: u32,
     parents: Vec<Id>,
-    /// Whether this is a function of `x`.
+    /// Whether this is a function.
     function: bool,
+    /// Whether a one-variable function uses the vertical coordinate.
+    function_of_y: bool,
     /// Whether a function's tree has an `If`, which changes what decides
     /// whether it is defined (see [`inputs_defined`]).
     has_if: bool,
@@ -476,6 +485,7 @@ impl Entry {
             root: p.root,
             parents: p.parents,
             function,
+            function_of_y: false,
             inputs: p.inputs,
             raw: Raw::Num(f64::NAN),
             dec: None,
@@ -525,6 +535,7 @@ enum Form {
         lits: Vec<Lit>,
         root: u32,
         angle_style: AngleStyle,
+        function_of_y: bool,
     },
     /// A free number with its exact decimal (see [`Table`]).
     Exact { def: Def, dec: Dec },
@@ -610,6 +621,7 @@ fn is_list_node(node: &Node) -> bool {
         node,
         Node::List(..)
             | Node::Item(_)
+            | Node::ItemObject(_)
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..)
@@ -687,6 +699,7 @@ pub(crate) fn expression(c: &Construction, id: Id) -> Option<Expression> {
                     lits: e.lits.clone(),
                     root: e.root,
                     angle_style: d.angle_style,
+                    function_of_y: e.function_of_y,
                 },
             })
         }
@@ -710,13 +723,14 @@ pub(crate) fn add_expression(
     name: &str,
     e: &Expression,
 ) -> Result<Id, Error> {
-    let (nodes, lits, root, angle_style) = match &e.form {
+    let (nodes, lits, root, angle_style, function_of_y) = match &e.form {
         Form::Tree {
             nodes,
             lits,
             root,
             angle_style,
-        } => (nodes, lits, *root, *angle_style),
+            function_of_y,
+        } => (nodes, lits, *root, *angle_style, *function_of_y),
         Form::Exact { def, dec } => {
             let id = c.add(name, *def)?;
             set_free_decimal(c, id, dec.clone());
@@ -727,14 +741,14 @@ pub(crate) fn add_expression(
     let fits = matches!(
         (e.kind, parsed.tys[parsed.root as usize]),
         (Kind::Function | Kind::Number | Kind::Angle, Ty::Num(_))
-            | (Kind::Boolean, Ty::Bool)
+            | (Kind::Boolean | Kind::Function, Ty::Bool)
             | (Kind::Point | Kind::Vector, Ty::Vec)
             | (Kind::List, Ty::List(_))
     );
     if !fits {
         return Err(Error::UnknownObject);
     }
-    add_parsed(c, name, parsed, e.kind, angle_style)
+    add_parsed(c, name, parsed, e.kind, angle_style, function_of_y)
 }
 
 /// What [`parse::parse`] would have given for a tree, or `None` when the
@@ -772,6 +786,13 @@ fn reparse(
             Node::Obj(id) => {
                 (id.0 < c.len()).then_some(())?;
                 read(id, true);
+            }
+            Node::ItemObject(id) => {
+                (id.0 < c.len() && list::object_kind(c.kind(id))).then_some(())?;
+                read(id, true);
+                for p in list::object_parents(c, id) {
+                    read(p, false);
+                }
             }
             Node::Apply(f, _) => {
                 (f.0 < c.len() && c.kind(f) == Kind::Function).then_some(())?;
@@ -1027,6 +1048,24 @@ pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
     }
 }
 
+/// The attributes that must agree before comparing two univariate functions.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) struct FunctionSignature {
+    pub(crate) boolean: bool,
+    of_y: bool,
+}
+
+pub(crate) fn function_signature(c: &Construction, id: Id) -> Option<FunctionSignature> {
+    let Def::Expr(d) = c.def(id) else {
+        return None;
+    };
+    let e = entry(c, d);
+    e.function.then(|| FunctionSignature {
+        boolean: e.root_ty() == Ty::Bool,
+        of_y: e.function_of_y,
+    })
+}
+
 /// The last stored result.
 pub(crate) fn raw(c: &Construction, d: ExprDef) -> Raw {
     entry(c, d).raw
@@ -1087,9 +1126,23 @@ pub(crate) fn define(
     rhs: &str,
     vector_label: bool,
 ) -> Result<Id, String> {
-    let parsed = parse::parse(c, rhs)?;
+    let parsed = match parse::parse(c, rhs) {
+        Ok(parsed) => parsed,
+        Err(error) => match parse::parse_equation(c, rhs) {
+            // A labelled slope can use both coordinate variables, as an
+            // inline argument to Locus or SlopeField already can.
+            Ok(parsed)
+                if parsed.uses_var
+                    && parsed.uses_y
+                    && matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) =>
+            {
+                parsed
+            }
+            _ => return Err(error),
+        },
+    };
     if parsed.uses_var {
-        return function(c, name, parsed);
+        return function(c, name, parsed, false);
     }
     let kind = match parsed.tys[parsed.root as usize] {
         Ty::Num(1) => Kind::Angle,
@@ -1098,14 +1151,25 @@ pub(crate) fn define(
         Ty::Vec => Kind::Point,
         Ty::Bool => Kind::Boolean,
         Ty::List(_) => Kind::List,
+        Ty::Object => return Err("an object can only be used here as a list element".into()),
     };
     add(c, name, parsed, kind)
 }
 
-/// Defines the function `name(x) = rhs`. A function that reads no object
-/// (`f(x) = 3`) stays a function.
-pub(crate) fn define_function(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
-    function(c, name, parse::parse(c, rhs)?)
+/// Defines a named function. A constant right side (`f(x) = 3`) is still
+/// a function.
+pub(crate) fn define_function(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    of_y: bool,
+) -> Result<Id, String> {
+    let parsed = if of_y {
+        parse::parse_parameter(c, rhs, "y")?
+    } else {
+        parse::parse(c, rhs)?
+    };
+    function(c, name, parsed, of_y)
 }
 
 pub(crate) fn define_parametric_coordinate(
@@ -1114,29 +1178,42 @@ pub(crate) fn define_parametric_coordinate(
     rhs: &str,
     parameter: &str,
 ) -> Result<Id, String> {
-    function(c, label, parse::parse_parameter(c, rhs, parameter)?)
+    numeric_function(c, label, parse::parse_parameter(c, rhs, parameter)?)
 }
 
 /// Hidden two-variable function for a slope field or integral curve.
 pub(crate) fn define_slope(c: &mut Construction, label: &str, rhs: &str) -> Result<Id, String> {
-    function(c, label, parse::parse_equation(c, rhs)?)
+    numeric_function(c, label, parse::parse_equation(c, rhs)?)
 }
 
-fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<Id, String> {
+fn numeric_function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<Id, String> {
+    if parsed.tys[parsed.root as usize] == Ty::Bool {
+        return Err("a function that gives a boolean is not supported here".into());
+    }
+    function(c, name, parsed, false)
+}
+
+fn function(
+    c: &mut Construction,
+    name: &str,
+    parsed: parse::Parsed,
+    of_y: bool,
+) -> Result<Id, String> {
     match parsed.tys[parsed.root as usize] {
-        Ty::Vec => return Err("a function must give a number".into()),
-        Ty::Bool => return Err("a function that gives a boolean is not supported".into()),
+        Ty::Vec | Ty::Object => return Err("a function must give a number or a boolean".into()),
         Ty::List(_) => return Err("a function cannot give a list".into()),
-        Ty::Num(_) => {}
+        Ty::Num(_) if of_y => return Err("a function of y must give a boolean".into()),
+        Ty::Num(_) | Ty::Bool => {}
     }
     if reads_list(&parsed.nodes, &parsed.tys) {
         return Err("a list in a function is not supported".into());
     }
-    add(c, name, parsed, Kind::Function)
+    add_parsed(c, name, parsed, Kind::Function, AngleStyle::Unbounded, of_y)
+        .map_err(|e| e.to_string())
 }
 
 fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> Result<Id, String> {
-    add_parsed(c, name, parsed, kind, AngleStyle::Unbounded).map_err(|e| e.to_string())
+    add_parsed(c, name, parsed, kind, AngleStyle::Unbounded, false).map_err(|e| e.to_string())
 }
 
 fn add_parsed(
@@ -1145,6 +1222,7 @@ fn add_parsed(
     parsed: parse::Parsed,
     kind: Kind,
     angle_style: AngleStyle,
+    function_of_y: bool,
 ) -> Result<Id, Error> {
     let function = kind == Kind::Function;
     // `AlgebraProcessor.processNumber`: independent unless it reads an
@@ -1162,7 +1240,8 @@ fn add_parsed(
         && !has_command
         && !matches!(kind, Kind::Boolean | Kind::List);
     let vector_label = kind == Kind::Vector;
-    let entry = Entry::new(parsed, function);
+    let mut entry = Entry::new(parsed, function);
+    entry.function_of_y = function_of_y;
     if constant {
         // `AlgebraProcessor`: an expression without objects is free.
         let angle = entry.root_ty() == Ty::Num(1);

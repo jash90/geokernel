@@ -5,7 +5,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLocusND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLocus.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntegralODE.java
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSlopeField.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoSlopeField.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLocusSliderND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLocusSlider.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLocusND.java
@@ -52,6 +52,7 @@
 use crate::algo::conic_nd::ConicType;
 use crate::algo::path::{self, inf_function, inverse_inf_function, Geom, PathDef, PathState};
 use crate::algo::{Group, Parents, NUMBER, POINT};
+use crate::expr::fraction::FunctionFraction;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use std::sync::Arc;
 
@@ -478,12 +479,11 @@ pub(crate) fn record(c: &mut Construction, d: LocusDef) -> LocusData {
 // AlgoIntegralODE uses classical Runge-Kutta with step 0.02 and integrates
 // the numerator and denominator in both time directions for 20 units.
 fn record_ode(c: &Construction, point: Id, source: Id) -> LocusData {
-    use crate::expr::derivative::FunctionDerivative;
     let function = match c.def(source) {
         Def::Locus(LocusDef::SlopeField(function)) => function,
         _ => source,
     };
-    let (Some((x, y)), Some(function)) = (c.point(point), FunctionDerivative::new(c, function))
+    let (Some((x, y)), Some(function)) = (c.point(point), FunctionFraction::new(c, function))
     else {
         return LocusData::default();
     };
@@ -501,12 +501,12 @@ fn record_ode(c: &Construction, point: Id, source: Id) -> LocusData {
             let remaining = end - time;
             let last = remaining.abs() <= 0.02;
             let h = if last { remaining } else { direction * 0.02 };
-            let (a, b) = function.fraction(x, y);
-            let (d, e) = function.fraction(x + h * a / 2.0, y + h * b / 2.0);
-            let (f, g) = function.fraction(x + h * d / 2.0, y + h * e / 2.0);
-            let (j, k) = function.fraction(x + h * f, y + h * g);
-            x += h * (a + 2.0 * d + 2.0 * f + j) / 6.0;
-            y += h * (b + 2.0 * e + 2.0 * g + k) / 6.0;
+            let (dy1, dx1) = function.evaluate(x, y);
+            let (dy2, dx2) = function.evaluate(x + h * dx1 / 2.0, y + h * dy1 / 2.0);
+            let (dy3, dx3) = function.evaluate(x + h * dx2 / 2.0, y + h * dy2 / 2.0);
+            let (dy4, dx4) = function.evaluate(x + h * dx3, y + h * dy3);
+            x += h * (dx1 + 2.0 * dx2 + 2.0 * dx3 + dx4) / 6.0;
+            y += h * (dy1 + 2.0 * dy2 + 2.0 * dy3 + dy4) / 6.0;
             points.push(LocusPoint {
                 x,
                 y,
@@ -522,7 +522,7 @@ fn record_ode(c: &Construction, point: Id, source: Id) -> LocusData {
 }
 
 fn record_slope_field(c: &Construction, source: Id) -> LocusData {
-    let Some(function) = crate::expr::derivative::FunctionDerivative::new(c, source) else {
+    let Some(function) = FunctionFraction::new(c, source) else {
         return LocusData::default();
     };
     let [xmin, xmax, ymin, ymax, xs, ys] = c.locus_view.unwrap_or(HEADLESS_VIEW);
@@ -535,7 +535,7 @@ fn record_slope_field(c: &Construction, source: Id) -> LocusData {
     for _ in 0..40 {
         let mut y = ymin;
         for _ in 0..40 {
-            let (dx, dy) = function.fraction(x, y);
+            let (dy, dx) = function.evaluate(x, y);
             let scaled = dy * ratio;
             let norm = (dx * dx + scaled * scaled).sqrt();
             let (dx, dy) = if dx.abs() < crate::tol::STANDARD_PRECISION

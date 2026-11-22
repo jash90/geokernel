@@ -1793,8 +1793,8 @@ impl Construction {
     }
 
     /// Recomputes the record of the arc or sector `i`; tells whether its
-    /// children must follow: whether the record changed, bit for bit. Out
-    /// of line like [`Self::update_expr`].
+    /// children must follow: whether the record changed or is undefined.
+    /// Out of line like [`Self::update_expr`].
     #[inline(never)]
     fn update_arc(&mut self, i: usize, d: ArcDef) -> bool {
         let Some(slot) = self.arc_slot(i) else {
@@ -1802,7 +1802,9 @@ impl Construction {
         };
         let new = d.record(self);
         if new.same(&self.arcs[slot].1) {
-            return false;
+            // A point can be placed directly on an undefined arc. Its next
+            // AlgoPointOnPath update clears it even when the arc stays undefined.
+            return !new.defined;
         }
         self.arcs[slot].1 = new;
         self.values[i] = algo::arc::value(d.kind() == Kind::Sector, &new);

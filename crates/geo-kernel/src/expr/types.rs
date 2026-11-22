@@ -124,8 +124,13 @@ pub(crate) fn check(
                     return Err("a function takes a number".into());
                 }
                 let (fd, fc, fv) = super::function_metrics(c, f);
+                let ty = if super::function_signature(c, f).is_some_and(|f| f.boolean) {
+                    Ty::Bool
+                } else {
+                    Ty::Num(0)
+                };
                 (
-                    Ty::Num(0),
+                    ty,
                     fd.saturating_add(depth[a]),
                     fc.saturating_add(fv.saturating_mul(cost[a])),
                     fv.saturating_mul(vars[a]),
@@ -136,6 +141,7 @@ pub(crate) fn check(
                 let a = a as usize;
                 (tys[a], depth[a], cost[a], vars[a])
             }
+            Node::ItemObject(_) => (Ty::Object, 1, 1, 0),
             Node::List(first, len) => {
                 let mut elem = Elem::Empty;
                 let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
@@ -216,6 +222,7 @@ pub(super) fn elem_of(t: Ty) -> Elem {
         Ty::Vec => Elem::Vec,
         Ty::Bool => Elem::Bool,
         Ty::List(_) => Elem::List,
+        Ty::Object => Elem::Object,
     }
 }
 
@@ -235,6 +242,7 @@ pub(super) fn ty_of(e: Elem) -> Result<Ty, String> {
         Elem::Vec => Ok(Ty::Vec),
         Elem::Bool => Ok(Ty::Bool),
         Elem::List => Ok(Ty::List(Elem::Any)),
+        Elem::Object => Err("geometric list elements cannot be used as operands".into()),
         Elem::Any => Err("the elements of the list have different types".into()),
     }
 }
@@ -286,6 +294,7 @@ fn scalar_unary_type(op: Un, a: Ty) -> Result<Ty, String> {
         (Un::AsinD | Un::AcosD | Un::AtanD, Ty::Num(_)) => Ok(Ty::Num(1)),
         (_, Ty::Num(_) | Ty::Bool) => Ok(Ty::Num(0)),
         (_, Ty::List(_)) => Err("a list of lists cannot be used here".into()),
+        (_, Ty::Object) => Err("geometric list elements cannot be used as operands".into()),
     }
 }
 
@@ -318,7 +327,7 @@ fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     }
 }
 
-fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
+pub(super) fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     use Ty::{Num, Vec};
     if matches!(a, Ty::List(_)) || matches!(b, Ty::List(_)) {
         return Err("arithmetic on lists of lists is not supported".into());

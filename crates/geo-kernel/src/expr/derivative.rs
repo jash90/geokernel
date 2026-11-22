@@ -42,18 +42,6 @@ impl<'a> FunctionDerivative<'a> {
         self.context(self.function, &env).fast(self.function.root)
     }
 
-    /// The denominator and numerator of a slope for parametric integration.
-    pub(crate) fn fraction(&self, x: f64, y: f64) -> (f64, f64) {
-        let env = Env::Pair(x, y);
-        let ctx = self.context(self.function, &env);
-        match self.function.nodes[self.function.root as usize] {
-            Node::Bin(Bin::Div, numerator, denominator) => {
-                (ctx.fast(denominator), ctx.fast(numerator))
-            }
-            _ => (1.0, ctx.fast(self.function.root)),
-        }
-    }
-
     pub(crate) fn slope(&self, x: f64) -> f64 {
         let env = Env::Value(x);
         Walker {
@@ -157,6 +145,7 @@ impl Walker<'_> {
             | Node::Polar(..)
             | Node::List(..)
             | Node::Item(_)
+            | Node::ItemObject(_)
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..)

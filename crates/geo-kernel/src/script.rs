@@ -130,13 +130,18 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     }
     let (name, rhs) = line.split_once('=').ok_or("expected `name = definition`")?;
     let name = name.trim();
-    // `f(x) = ...`: a function of `x`
-    if let Some(f) = name.strip_suffix("(x)").map(str::trim_end) {
+    // Named functions use `x`, and also `y` for inequalities.
+    let function = name
+        .strip_suffix("(x)")
+        .map(|f| (f, false))
+        .or_else(|| name.strip_suffix("(y)").map(|f| (f, true)));
+    if let Some((f, of_y)) = function {
+        let f = f.trim_end();
         if !is_identifier(f) {
             return Err(format!("`{f}` is not a valid object name"));
         }
         check_label(f)?;
-        return crate::expr::define_function(c, f, rhs.trim()).map(Some);
+        return crate::expr::define_function(c, f, rhs.trim(), of_y).map(Some);
     }
     if !is_output_label(name) {
         return Err(format!("`{name}` is not a valid object name"));

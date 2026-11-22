@@ -86,7 +86,7 @@ impl<const M: bool> Ctx<'_, M> {
             Ty::Vec => Ex::plain(Val::V(f64::NAN, f64::NAN)),
             // `GeoBoolean.setUndefined` only sets false
             Ty::Bool => Ex::plain(Val::B(false, true)),
-            Ty::Num(_) | Ty::List(_) => Ex::plain(Val::N(f64::NAN)),
+            Ty::Num(_) | Ty::List(_) | Ty::Object => Ex::plain(Val::N(f64::NAN)),
         };
         if mode == IfMode::Else && !defined {
             return undefined();
