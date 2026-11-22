@@ -2091,7 +2091,7 @@ fn rule_derivative(c: &Construction, entry: &Entry, order: u32) -> Option<Parsed
         // pass would otherwise build millions of nodes first
         b.abort_at = budget.end;
         let root = differentiate_node(c, &mut b, source.root, 0);
-        if budget.over() {
+        if stop_derivative(&mut b, 0) {
             return None;
         }
         parsed = Some(b.finish(c, root).ok()?);
@@ -2102,11 +2102,8 @@ fn rule_derivative(c: &Construction, entry: &Entry, order: u32) -> Option<Parsed
 /// One step of `Derivative.get` for the subtree at `i`, a node of the
 /// derivative in the builder's arena.
 fn differentiate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> u32 {
-    if depth > crate::expr::MAX_DEPTH
-        || expr::work_done() > b.abort_at
-        || b.nodes.len() > MAX_RULE_NODES
-    {
-        return b.push(Node::Num(f64::NAN));
+    if stop_derivative(b, depth) {
+        return i;
     }
     expr::charge(1);
     match b.node(i) {
@@ -2135,8 +2132,18 @@ fn differentiate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> 
             let Some(entry) = source_entry(c, f) else {
                 return b.push(Node::Num(f64::NAN));
             };
+            expr::charge(entry.nodes.len() as u64);
+            if entry.nodes.len() > MAX_RULE_NODES || stop_derivative(b, depth) {
+                b.exhausted = true;
+                return i;
+            }
             let mut fb = Builder::function(entry);
+            fb.abort_at = b.abort_at;
             let df = differentiate_node(c, &mut fb, entry.root, depth + 1);
+            if fb.exhausted {
+                b.exhausted = true;
+                return i;
+            }
             let cloned = clone_with_subst(b, &fb, df, Some(arg), depth + 1);
             let d = differentiate_node(c, b, arg, depth + 1);
             b.push(Node::Bin(Bin::Mul, cloned, d))
@@ -2144,6 +2151,13 @@ fn differentiate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> 
         // MyDouble.derivative and every object leaf: the constant 0
         _ => b.push(Node::Num(0.0)),
     }
+}
+
+fn stop_derivative(b: &mut Builder, depth: u32) -> bool {
+    b.exhausted |= depth > expr::MAX_DEPTH
+        || expr::work_done() > b.abort_at
+        || b.nodes.len() >= MAX_RULE_NODES;
+    b.exhausted
 }
 
 /// `Derivative.get` of a unary operation; `u` is the argument's node and
@@ -2553,8 +2567,8 @@ fn clone_with_subst(
     subst: Option<u32>,
     depth: u32,
 ) -> u32 {
-    if depth > crate::expr::MAX_DEPTH {
-        return dst.push(Node::Num(f64::NAN));
+    if stop_derivative(dst, depth) {
+        return 0;
     }
     expr::charge(1);
     if let Some(s) = subst {
@@ -2909,17 +2923,12 @@ fn build_record(c: &Construction, d: &CalculusDef) -> (Option<Entry>, Option<Ent
     (tree, None)
 }
 
-/// `Math.round` of the order object's value; `None` (an undefined
-/// derivative) for a negative or infinite order.
+/// Round to a signed long, then keep the low 32 bits as a signed order.
 fn derivative_order(c: &Construction, order: Option<u32>) -> Option<u32> {
-    let order = match order {
-        Some(id) => (number(c, gid(id)) + 0.5).floor(),
-        None => 1.0,
-    };
-    if !(order.is_finite() && order >= 0.0) {
-        return None;
-    }
-    Some(order as u32)
+    let order = order.map_or(1, |id| {
+        expr::math::java_round(expr::relation_number(c, gid(id))) as i32
+    });
+    u32::try_from(order).ok()
 }
 
 /// `Function.getDerivative(n, fast)`: the polynomial path with its factor
@@ -3328,7 +3337,9 @@ pub(crate) fn exec(
         // function variable) and ignores it: a number literal or an
         // expression in that place is an error
         ("Derivative", [f, x, order]) | ("NDerivative", [f, x, order]) => {
-            if !(crate::script::is_identifier(x) || c.id(x).is_some()) {
+            if !(c.id(x).is_some()
+                || crate::script::is_identifier(x) && !matches!(*x, "pi" | "Pi" | "\u{3c0}"))
+            {
                 return Some(Err(format!("`{x}` is not a variable name")));
             }
             let order = number_argument(c, order)?;
@@ -3566,4 +3577,18 @@ fn point_list(c: &mut Construction, ids: &[Id]) -> Option<Id> {
     let root = b.push(Node::List(first, ids.len() as u32));
     let parsed = b.finish(c, root).ok()?;
     expr::add_built(c, &format!("\0pts{}", c.len()), parsed, Kind::List).ok()
+}
+
+#[test]
+fn derivative_discards_a_tree_that_exceeds_the_depth_limit() {
+    let c = Construction::new();
+    let mut b = Builder::empty();
+    let x = b.push(Node::Var);
+    let condition = b.push(Node::Bool(false));
+    let mut root = x;
+    for _ in 0..=expr::MAX_DEPTH {
+        root = b.push(Node::If(IfMode::List, condition, x, root));
+    }
+    let entry = expr::function_entry(&c, b.finish(&c, root).unwrap());
+    assert!(rule_derivative(&c, &entry, 1).is_none());
 }

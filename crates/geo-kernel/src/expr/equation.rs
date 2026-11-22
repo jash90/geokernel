@@ -132,6 +132,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         function_dependent: false,
         variable_powers: false,
         abort_at: u64::MAX,
+        exhausted: false,
         expansion_work: None,
         max_degree: u32::MAX,
     };
@@ -363,6 +364,7 @@ pub(crate) struct Builder {
     /// no-CAS rules set it so that one pass of `rule_derivative` cannot
     /// build a tree far past the budget before the next pass is checked.
     pub(crate) abort_at: u64,
+    pub(crate) exhausted: bool,
     expansion_work: Option<u64>,
     max_degree: u32,
 }
@@ -400,6 +402,7 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            exhausted: false,
             expansion_work: None,
             max_degree: u32::MAX,
         }
@@ -415,6 +418,7 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            exhausted: false,
             expansion_work: None,
             max_degree: u32::MAX,
         }

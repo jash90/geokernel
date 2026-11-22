@@ -1246,6 +1246,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         name.trim(),
         "Tangent"
             | "Length"
+            | "Line"
             | "Vertex"
             | "Corner"
             | "Point"
@@ -1270,8 +1271,27 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         return None;
     }
     let (func, mut args) = split_call(rhs)?;
+    let inline_source = match (func, args.first().and_then(|arg| split_call(arg))) {
+        ("Derivative" | "NDerivative", Some(("Curve" | "CurveCartesian", coords))) => {
+            let label = format!("\0curve{}", c.len());
+            define_cartesian_curve(c, &label, &coords)
+                .ok()
+                .map(|_| label)
+        }
+        ("Point", Some(("Segment", _))) => {
+            let label = format!("\0path{}", c.len());
+            let def = parse_def(c, args[0]).ok()?;
+            c.add(&label, def).ok().map(|_| label)
+        }
+        _ => None,
+    };
+    if let Some(source) = &inline_source {
+        args[0] = source;
+    }
     let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
     let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
+        ("Line", [_, _]) => &[(0, Kind::Point), (1, Kind::Point)],
+        ("Point", [_]) if inline_source.is_some() => &[],
         ("Tangent", [f, _]) if is_kind(f, Kind::ImplicitCurve) => &[(1, Kind::Point)],
         ("Tangent", [_, f]) if is_kind(f, Kind::ImplicitCurve) => &[(0, Kind::Point)],
         ("Tangent", [f, _]) if is_kind(f, Kind::Function) => &[(1, Kind::Point)],
@@ -1301,11 +1321,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         }
         ("Point" | "Polygon" | "PolyLine", [_]) | ("PolyLine", [_, _]) => &[(0, Kind::List)],
         ("Barycenter", [_, _]) => &[(0, Kind::List), (1, Kind::List)],
-        ("Circle", [center, radius])
-            if is_kind(center, Kind::Point) && crate::expr::plain_number(radius).is_none() =>
-        {
-            &[(1, Kind::Number)]
-        }
+        ("Circle", [_, _]) => &[(0, Kind::Point), (1, Kind::Number), (1, Kind::Point)],
         ("Dilate", [src, _]) if is_kind(src, Kind::Curve) || is_kind(src, Kind::Image) => {
             &[(1, Kind::Number)]
         }
@@ -1354,18 +1370,9 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         ("IntegralBetween", [f, _, _]) if is_kind(f, Kind::Function) => {
             &[(1, Kind::Number), (2, Kind::Number)]
         }
-        ("Derivative" | "NDerivative", [f, order]) if is_kind(f, Kind::Function) => {
-            &[(1, Kind::Number)]
-        }
-        ("Derivative" | "NDerivative", [f, _, order]) if is_kind(f, Kind::Function) => {
-            &[(2, Kind::Number)]
-        }
-        ("Derivative" | "NDerivative", [f, order]) if is_kind(f, Kind::Curve) => {
-            &[(1, Kind::Number)]
-        }
-        ("Derivative" | "NDerivative", [f, _, order]) if is_kind(f, Kind::Curve) => {
-            &[(2, Kind::Number)]
-        }
+        ("Derivative" | "NDerivative", [_]) => &[],
+        ("Derivative" | "NDerivative", [_, _]) => &[(1, Kind::Number)],
+        ("Derivative" | "NDerivative", [_, _, _]) => &[(2, Kind::Number)],
         _ => return None,
     };
     // the calculus commands keep their numbers as live objects; the
@@ -1405,7 +1412,8 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     for (index, label) in &replacements {
         args[*index] = label;
     }
-    (!replacements.is_empty()).then(|| format!("{func}({})", args.join(", ")))
+    (inline_source.is_some() || !replacements.is_empty())
+        .then(|| format!("{func}({})", args.join(", ")))
 }
 
 /// Asks the groups for a command that creates several objects.
