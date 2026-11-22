@@ -199,17 +199,19 @@ fn saved_style_fixtures_import_every_object_with_a_style() {
                 "{name}: no style for {label}"
             );
         }
-        // Every fixture but the one of images colours an object dynamically.
+        // The helpers of every fixture are there, and something is styled.
+        for helper in ["r", "g", "b", "show", "note"] {
+            assert!(imported.object_styles.contains_key(helper), "{name}");
+        }
         assert!(
-            name.ends_with(".ggb")
-                || imported
-                    .object_styles
-                    .values()
-                    .any(|style| style.dynamic_color.is_some()),
+            imported
+                .object_styles
+                .values()
+                .any(|style| style.color.is_some() && style.layer.is_some()),
             "{name}"
         );
     }
-    assert_eq!(fixtures, 10);
+    assert_eq!(fixtures, 11);
 }
 
 #[test]
