@@ -1,0 +1,127 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "charts-stickgraph-001",
+      "group": "charts",
+      "script": [
+        "chart = StickGraph({1,2,3,4,5}, {2,3,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-stickgraph-002",
+      "group": "charts",
+      "script": [
+        "chart = StickGraph({(1,1),(2,2),(3,3),(4,1/4),(5,1/5)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 6.45 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stickgraph-003",
+      "group": "charts",
+      "script": [
+        "chart = StickGraph({1,2,3,4,5}, {2,3,4},true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-stickgraph-004",
+      "group": "charts",
+      "script": [
+        "chart = StickGraph({(1,1),(2,2),(3,3),(4,1/4),(5,1/5)},true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 6.45 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stickgraph-005",
+      "group": "charts",
+      "script": [
+        "chart = StickGraph({(2,-3),(1,2),(2,-1)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stickgraph-006",
+      "group": "charts",
+      "script": [
+        "chart = StickGraph({2, 1, 2}, {-3, 2, -1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stickgraph-007",
+      "group": "charts",
+      "script": [
+        "chart = StickGraph({2}, {-3}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stickgraph-008",
+      "group": "charts",
+      "script": [
+        "chart = StickGraph({(2,-3)}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": -3.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -108,12 +108,29 @@ pub fn content_bounds(c: &Construction) -> Option<Bounds> {
                     add(&mut b, xmax, ymax);
                 }
             }
+            Value::Image => {
+                if let Some(points) = c
+                    .image(id)
+                    .filter(|image| !image.placement.is_screen())
+                    .and_then(|_| c.image_quad(id, STANDARD_SCALE))
+                {
+                    for [x, y] in points {
+                        add(&mut b, x, y);
+                    }
+                }
+            }
             Value::Text => {
                 if let Some(TextPosition::World { x, y }) = c.text_position(id) {
                     add(&mut b, x, y);
                 }
             }
             _ => {}
+        }
+    }
+    for (_, chart) in c.charts() {
+        if let Some([xmin, ymin, xmax, ymax]) = chart.bounds() {
+            add(&mut b, xmin, ymin);
+            add(&mut b, xmax, ymax);
         }
     }
     any.then_some(b)
@@ -299,14 +316,15 @@ impl Camera {
 
     #[inline]
     pub fn transform(&self, width: f64, height: f64) -> ViewTransform {
-        ViewTransform::new(
+        ViewTransform::with_scales(
             View {
                 xmin: self.cx - 0.5 * width / self.xscale,
                 ymin: self.cy - 0.5 * height / self.yscale,
                 xmax: self.cx + 0.5 * width / self.xscale,
                 ymax: self.cy + 0.5 * height / self.yscale,
             },
-            width,
+            self.xscale,
+            self.yscale,
             height,
         )
     }

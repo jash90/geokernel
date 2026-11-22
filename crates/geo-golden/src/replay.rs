@@ -141,6 +141,8 @@ pub fn replay(case: &Case) -> CaseOutcome {
             let sample = |x| c.function_value(id, x);
             let outcome = if c.kind(id) == Kind::List {
                 compare_list(&c, expected, Kind::List, c.elements(id))
+            } else if c.kind(id) == Kind::PieChart {
+                crate::compare::compare_pie(expected, c.chart(id).and_then(|d| d.pie.as_ref()))
             } else if matches!(c.kind(id), Kind::Text | Kind::FunctionNVar | Kind::Curve) {
                 compare_extra(&c, id, expected)
             } else {

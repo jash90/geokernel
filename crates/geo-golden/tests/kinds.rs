@@ -355,6 +355,21 @@ const SAMPLE_CASES: &[&str] = &[
     "calculus-between-005",
     "calculus-between-006",
     "calculus-between-007",
+    "charts-frequencypolygon-001",
+    "charts-frequencypolygon-002",
+    "charts-frequencypolygon-003",
+    "charts-frequencypolygon-004",
+    "charts-frequencypolygon-005",
+    "charts-frequencypolygon-006",
+    "charts-frequencypolygon-007",
+    "charts-frequencypolygon-100",
+    "charts-piechart-001",
+    "charts-piechart-002",
+    "charts-piechart-004",
+    "charts-piechart-006",
+    "charts-piechart-007",
+    "charts-piechart-008",
+    "charts-piechart-009",
     "commontangents-arc-001",
     "commontangents-arc-002",
     "commontangents-arc-003",
@@ -425,6 +440,36 @@ const SAMPLE_CASES: &[&str] = &[
     "conics-transform-009",
     "conics-transform-017",
     "conics-transform-025",
+    "discrete-delaunay-001",
+    "discrete-delaunay-006",
+    "discrete-delaunay-007",
+    "discrete-delaunay-008",
+    "discrete-delaunay-009",
+    "discrete-delaunay-010",
+    "discrete-delaunay-011",
+    "discrete-delaunay-012",
+    "discrete-delaunay-013",
+    "discrete-delaunay-014",
+    "discrete-delaunay-015",
+    "discrete-delaunay-016",
+    "discrete-delaunay-017",
+    "discrete-hull-001",
+    "discrete-hull-003",
+    "discrete-hull-004",
+    "discrete-hull-005",
+    "discrete-hull-006",
+    "discrete-hull-007",
+    "discrete-hullreview-001",
+    "discrete-hullreview-002",
+    "discrete-hullreview-003",
+    "discrete-hullreview-004",
+    "discrete-hullreview-005",
+    "discrete-hullreview-006",
+    "discrete-path-001",
+    "discrete-path-002",
+    "discrete-tour-006",
+    "discrete-tree-008",
+    "discrete-voronoi-006",
     "expr-apply-015",
     "expr-cmd-011",
     "expr-fncmd-006",
@@ -437,6 +482,32 @@ const SAMPLE_CASES: &[&str] = &[
     "expr-label-006",
     "expr-negpow-007",
     "expr-point-001",
+    "funcanalysis-curvatureupstream-002",
+    "funcanalysis-curvatureupstream-005",
+    "funcanalysis-curvatureupstream-008",
+    "funcanalysis-curveedge-003",
+    "funcanalysis-curveedge-004",
+    "funcanalysis-curveedge-005",
+    "funcanalysis-curveedge-006",
+    "funcanalysis-curveedge-007",
+    "funcanalysis-curveedge-008",
+    "funcanalysis-curveedge-009",
+    "funcanalysis-curveedge-010",
+    "funcanalysis-curveedge-011",
+    "funcanalysis-curveedge-012",
+    "funcanalysis-curveupstream-002",
+    "funcanalysis-curveupstream-003",
+    "funcanalysis-forms-012",
+    "funcanalysis-forms-015",
+    "funcanalysis-forms-016",
+    "funcanalysis-forms-023",
+    "funcanalysis-nsode-002",
+    "funcanalysis-nsode-003",
+    "funcanalysis-reviewode-002",
+    "funcanalysis-splineupstream-001",
+    "funcanalysis-splineupstream-002",
+    "funcanalysis-splineupstream-003",
+    "funcanalysis-splineupstream-005",
     "geomclip-carrier-001",
     "geomclip-carrier-002",
     "geomclip-carrier-003",
@@ -460,7 +531,6 @@ const SAMPLE_CASES: &[&str] = &[
     "geomclosure-locusmeasure-001",
     "geomclosure-locusmeasure-002",
     "geomclosure-ode-001",
-    "geomclosure-ode-002",
     "geomclosure-polylineflag-001",
     "geomclosure-projection-001",
     "geomclosure-region-001",
@@ -489,12 +559,9 @@ const SAMPLE_CASES: &[&str] = &[
     "geomformsreview-booleanfunction-001",
     "geomformsreview-function-001",
     "geomformsreview-functionofy-001",
-    "geomformsreview-ode-001",
-    "geomformsreview-ode-002",
-    "geomformsreview-ode-003",
-    "geomformsreview-ode-004",
     "geomformsreview-odenamed-001",
     "geomformsreview-shapes-001",
+    "importgaps-curve-001",
     "intersectconics-conicboundary-001",
     "intersectconics-conicboundary-002",
     "intersectconics-conicboundary-003",
@@ -539,12 +606,6 @@ const SAMPLE_CASES: &[&str] = &[
     "locus-line-002",
     "locus-line-003",
     "locus-line-004",
-    "locus-line-005",
-    "locus-line-006",
-    "locus-line-007",
-    "locus-line-008",
-    "locus-line-009",
-    "locus-polygon-001",
     "logic-boolconst-001",
     "logic-boolconst-002",
     "matrixdilate-applypoly-003",
@@ -672,6 +733,15 @@ fn samples() -> Samples {
             }
         }
     }
+    let rasters = include_bytes!("../../../golden/ggb/saved/saved-images-001.ggb");
+    let imported = geo_import::import(rasters).unwrap();
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    s.any.insert(
+        "Image".into(),
+        c.images()
+            .map(|(id, _)| (imported.script.clone(), c.label(id).into()))
+            .collect(),
+    );
     if regenerating() {
         println!(
             "SAMPLE_CASES ({} cases):\n{}",
@@ -977,6 +1047,8 @@ fn text_grade(c: &Construction, id: Id) -> u8 {
     let v = c.value(id);
     if !describe::is_known(&v) {
         0
+    } else if v == Value::PieChart && describe::object_text(c, id) == "PieChart" {
+        2
     } else if describe::object_text(c, id) == format!("{v:?}") {
         1
     } else {
@@ -993,7 +1065,13 @@ fn checked_cells_agree_with_the_code() {
     let s = samples();
     let imported = imported_kinds();
     let draw = code_only(
-        &(read("crates/geo-app/src/draw.rs") + "\n" + &read("crates/geo-app/src/curves/mod.rs")),
+        &(read("crates/geo-app/src/draw.rs")
+            + "\n"
+            + &read("crates/geo-app/src/curves/mod.rs")
+            + "\n"
+            + &read("crates/geo-app/src/draw/image.rs")
+            + "\n"
+            + &read("crates/geo-app/src/draw/charts.rs")),
     );
     let mut errors = Vec::new();
     for r in &rows {

@@ -1,0 +1,172 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "charts-boxplot-001",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot( 4, 50, {2,3,4} )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-002",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot( 4, 50, {2,3,4}, true )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-003",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot( 4, 50, {2,3,4}, {1,2,3,4,5}, false )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-004",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot( 50, 42, 42, 4, 42, 13, 50 )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 42.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-005",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot(0, 1, {})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-006",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot(0, 1, {4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-007",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot(0, 1, {4, 4, 4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-008",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot(0, 1, {3, 1, 1, 2, 500}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-009",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot(0, 1, {3, 1, 1, 2}, {0, 1, 1, 2}, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 1.5 }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-010",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot(0, 1, {3, 1, 2}, {0, -1, 4}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-boxplot-011",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot(0, 1, {3, 1, 2}, {0, 0.7, 1.9}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

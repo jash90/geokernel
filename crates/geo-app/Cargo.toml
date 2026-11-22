@@ -28,6 +28,7 @@ geo-app-core = { path = "../geo-app-core" }
 # Default features are off to avoid pulling in glow, accesskit and the web
 # helpers. We want the wgpu renderer and the bundled fonts everywhere.
 eframe = { version = "0.37.0", default-features = false, features = ["wgpu", "default_fonts"] }
+vello_cpu = { version = "0.2.0", default-features = false, features = ["std"] }
 
 # Both Linux window systems, on Linux only: Cargo merges these features with
 # the ones above, and other targets (macOS, Windows, later Android) build

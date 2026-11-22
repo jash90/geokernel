@@ -275,17 +275,18 @@ impl Workbench {
         hidden: &[String],
         notice: Option<String>,
     ) -> Result<(), String> {
-        self.load_imported_with_conditions(src, hidden, &[], notice)
+        self.load_imported_with_conditions(src, &[], hidden, &[], notice)
     }
 
     fn load_imported_with_conditions(
         &mut self,
         src: &str,
+        assets: &[geo_kernel::script::saved::Property],
         hidden: &[String],
         conditions: &[(String, String)],
         notice: Option<String>,
     ) -> Result<(), String> {
-        let (mut c, mut log) = Log::load(src)?;
+        let (mut c, mut log) = Log::load_with_assets(src, assets)?;
         for label in hidden {
             if c.id(label).is_some() {
                 log.hidden.insert(label.clone());

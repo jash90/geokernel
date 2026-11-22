@@ -160,7 +160,7 @@ pub(crate) mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
 use commands::text::TextOp;
-pub(crate) use list::Slot;
+pub(crate) use list::{same_slots, Slot};
 pub use list::{Element, List};
 pub(crate) mod math;
 mod names;
@@ -1420,12 +1420,17 @@ pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
 
 /// The elements of the list object `id`, when it is a defined list.
 pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
-    match (c.def(id), c.value(id)) {
-        (Def::Expr(d), Value::List { len }) => Some(List::new(&entry(c, d).items, len)),
-        (Def::Calculus(_), Value::List { len }) => {
-            let record = c.calculus_record(id)?;
-            Some(List::new(&record.slots, len))
-        }
+    let Value::List { len } = c.value(id) else {
+        return None;
+    };
+    Some(List::new(list_slots(c, id)?, len))
+}
+
+fn list_slots(c: &Construction, id: Id) -> Option<&[Slot]> {
+    match c.def(id) {
+        Def::Expr(d) => Some(&entry(c, d).items),
+        Def::Calculus(_) => c.calculus_record(id).map(|record| record.slots.as_slice()),
+        Def::Chart(_) => c.chart(id).map(|data| data.slots.as_slice()),
         _ => None,
     }
 }
@@ -1464,6 +1469,7 @@ pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
             let record = c.calculus_record(f)?;
             d.record_value(c, record, f, x)
         }
+        (Def::Chart(_), Value::Function) => c.chart(f).map(|data| data.sample(x)),
         _ => None,
     }
 }
@@ -1476,6 +1482,12 @@ pub(crate) struct FunctionSignature {
 }
 
 pub(crate) fn function_signature(c: &Construction, id: Id) -> Option<FunctionSignature> {
+    if c.kind(id) == Kind::Function && matches!(c.def(id), Def::Chart(_)) {
+        return Some(FunctionSignature {
+            boolean: false,
+            of_y: false,
+        });
+    }
     let Def::Expr(d) = c.def(id) else {
         return None;
     };

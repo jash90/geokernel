@@ -1,0 +1,185 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "charts-dotplot-001",
+      "group": "charts",
+      "script": [
+        "chart = DotPlot( {1,1,1,2} )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-dotplot-002",
+      "group": "charts",
+      "script": [
+        "chart = DotPlot( {1,1,1,2},2 )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 6.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-dotplot-003",
+      "group": "charts",
+      "script": [
+        "chart = DotPlot( {1,1,1,2}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.3 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.1 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-dotplot-004",
+      "group": "charts",
+      "script": [
+        "chart = DotPlot( {1,1,1,2}, true, 5 )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.1 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.1 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.1 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.1 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-dotplot-005",
+      "group": "charts",
+      "script": [
+        "chart = DotPlot({})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-dotplot-006",
+      "group": "charts",
+      "script": [
+        "chart = DotPlot({4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 4.0, "y": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-dotplot-007",
+      "group": "charts",
+      "script": [
+        "chart = DotPlot({2, 2, 2}, -2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": -4.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": -6.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-dotplot-008",
+      "group": "charts",
+      "script": [
+        "chart = DotPlot({\"b\", \"a\", \"b\"})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
