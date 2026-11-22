@@ -117,8 +117,9 @@ pub mod image;
 pub mod saved;
 pub mod text;
 
-/// Runs one line. Returns the first output, or `Ok(None)` if the line
-/// creates nothing. Internal objects for inline arguments precede the outputs.
+/// Runs one line. An assignment returns its first output and a bare label
+/// returns the existing object. Directives with no output return `Ok(None)`.
+/// Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(asset) = saved::load_image_asset(c, raw) {
         return asset.map(|_| None);
@@ -133,7 +134,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if line.is_empty() {
         return Ok(None);
     }
-    if let Some(id) = c.resolve_label(line) {
+    if let Some(id) = c.id(line) {
         return Ok(Some(id));
     }
     if let Some(property) = saved::parse(line) {

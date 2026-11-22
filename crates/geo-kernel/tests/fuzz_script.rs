@@ -1,6 +1,6 @@
 //! Fuzzing of the script parser: random and mutated input lines must never
 //! panic or hang, a failing line must leave the construction as it was, and
-//! a line that succeeds must create an object and leave only finite values.
+//! a successful line must return its expected output and leave valid values.
 //!
 //! Inputs come from fixed seeds. Each distinct failure is reported once,
 //! with its input reduced as far as it still fails.
@@ -8,7 +8,7 @@
 mod common;
 
 use common::*;
-use geo_kernel::script::{assignment_label, exec, load};
+use geo_kernel::script::{assignment_target, exec, load, split_comment};
 use geo_kernel::Construction;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -77,7 +77,8 @@ struct Problem {
 fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
     let len = c.len();
     let before = values(c);
-    let replacement = assignment_label(line).and_then(|label| c.id(label));
+    let replacement = assignment_target(c, line);
+    let reference = c.id(split_comment(line).0.trim());
     let started = Instant::now();
     let work = geo_kernel::expr::work_done();
     let result = match catch(|| exec(c, line)) {
@@ -104,15 +105,19 @@ fn check_line(c: &mut Construction, line: &str) -> Result<bool, Problem> {
     }
     match result {
         Ok(Some(first)) => {
-            let expected = if c.len() == len {
-                replacement
-            } else {
-                c.ids().skip(len).find(|&id| !c.label(id).starts_with('\0'))
-            };
+            let expected = reference
+                .or(replacement)
+                .or_else(|| c.ids().skip(len).find(|&id| !c.label(id).starts_with('\0')));
             if Some(first) != expected {
                 return Err(Problem {
-                    key: "Ok(Some(id)) is not the assigned object or first new output".into(),
+                    key: "Ok(Some(id)) is not the named object or first new output".into(),
                     detail: format!("id {} with {len} objects before", first.index()),
+                });
+            }
+            if reference.is_some() && (c.len() != len || values(c) != before) {
+                return Err(Problem {
+                    key: "a bare read changed the construction".into(),
+                    detail: String::new(),
                 });
             }
             if let Some(bad) = first_non_finite(c) {

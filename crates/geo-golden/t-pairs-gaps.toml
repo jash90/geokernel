@@ -5627,7 +5627,7 @@ mismatches = ["a"]
 [[gap]]
 id = "commands/CommandsTest.java:605"
 category = "incomplete-context"
-reason = "string `2.7088378687594363`, GeoGebra prints `2.70883786875944`"
+reason = "string `2.7088378687594363`, the reference prints `2.70883786875944`"
 mismatches = ["a"]
 
 [[gap]]
@@ -5639,7 +5639,7 @@ mismatches = ["b"]
 [[gap]]
 id = "commands/CommandsTest.java:609"
 category = "incomplete-context"
-reason = "string `2.714891744381287`, GeoGebra prints `2.71489174438129`"
+reason = "string `2.714891744381287`, the reference prints `2.71489174438129`"
 mismatches = ["b"]
 
 [[gap]]
