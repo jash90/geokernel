@@ -1,0 +1,22 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-ordinalupstream-001",
+      "group": "textnumbers",
+      "script": [
+        "ta = Ordinal( 4 )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "ta": { "type": "text", "defined": true, "text": "4th" }
+        }
+      ]
+    }
+  ]
+}

@@ -42,7 +42,7 @@ impl GeneralConicDef {
             0 => return Err("missing `Conic` arguments".into()),
             1 => {
                 let Node::Item(arg) = parsed.nodes[first as usize] else {
-                    unreachable!("a list contains item nodes");
+                    return Err("`Conic` expects a coefficient list".into());
                 };
                 if !matches!(parsed.tys[arg as usize], Ty::List(_)) {
                     return Err("`Conic` expects a coefficient list".into());

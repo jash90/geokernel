@@ -163,21 +163,24 @@ fn older_expression_spellings_and_invalid_expressions() {
     );
     assert_eq!(
         r.script,
-        ["n = 2", "f(x) = If(x ≥ 0, n * x² + π)", "after = f(n)"]
+        [
+            "n = 2",
+            "f(x) = If(x ≥ 0, n * x² + π)",
+            "text = \"[text]\"",
+            "after = f(n)"
+        ]
     );
     let skips: Vec<_> = r
         .skipped
         .iter()
         .map(|s| (s.label.as_str(), s.reason.as_str()))
         .collect();
-    assert_eq!(skips.len(), 4);
+    assert_eq!(skips.len(), 3);
     assert_eq!(skips[0].0, "bad");
     assert!(skips[0].1.contains("square bracket"));
     assert_eq!(skips[1], ("g", "depends on the skipped object `bad`"));
-    assert_eq!(skips[2].0, "text");
-    assert!(skips[2].1.contains("text"));
-    assert_eq!(skips[3].0, "injection");
-    assert!(skips[3].1.contains("comment marker"));
+    assert_eq!(skips[2].0, "injection");
+    assert!(skips[2].1.contains("comment marker"));
 }
 
 #[test]

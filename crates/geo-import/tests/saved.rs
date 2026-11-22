@@ -1,4 +1,4 @@
-//! Files saved after their free points were moved. `golden/ggb/saved/<id>.xml`
+//! Files saved after edits. `golden/ggb/saved/<id>.xml` or `<id>.ggb`
 //! is the file GeoGebra writes for the state the harness reached after the
 //! moves, `<id>.snapshot` what GeoGebra computed in that same state (see
 //! `tools/ggb-harness/harness.sh saved`). Every object the importer gives
@@ -8,11 +8,12 @@
 //! circle dragged until the two intersection points swap, tangents, angles
 //! under both angle units).
 
-use geo_golden::compare::{compare, compare_conic, compare_list, compare_locus, compare_sampled};
-use geo_golden::model::{set_snapshot_schema, Expected};
+use geo_golden::compare::{compare, compare_conic, compare_list, compare_sampled};
+use geo_golden::model::{set_snapshot_schema, Expected, ExpectedData};
 use geo_golden::repo_root;
 use geo_import::import;
 use geo_kernel::expr::{work_done, MAX_EVALUATION_WORK};
+use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::{script, Construction, Kind, Value};
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -23,18 +24,6 @@ struct Snapshot {
     schema: u32,
     id: String,
     objects: BTreeMap<String, Expected>,
-}
-
-#[derive(Deserialize)]
-struct TangencyGap {
-    id: String,
-    label: String,
-    reason: String,
-}
-
-#[derive(Deserialize)]
-struct TangencyGaps {
-    saved_tangency: Vec<TangencyGap>,
 }
 
 const EXPRESSION_FIXTURES: [&str; 3] = [
@@ -48,6 +37,11 @@ const REVIEW_FIXTURES: [&str; 4] = [
     "saved-review-001",
     "saved-coordinates-001",
 ];
+const TEXT_FIXTURES: [&str; 2] = ["saved-texts-001", "saved-texts-002"];
+const TEXT_EQUATION_FIXTURES: [&str; 2] = ["saved-text-equations-001", "saved-text-equations-002"];
+const TEXT_CONIC_STYLE_FIXTURE: &str = "saved-text-conic-styles-001";
+const TEXT_TEMPLATE_FIXTURES: [&str; 2] = ["saved-text-template-001", "saved-text-template-002"];
+
 const INLINE_FIXTURES: [&str; 2] = ["saved-inline-001", "saved-inline-002"];
 
 fn fixture(name: &str) -> (Snapshot, geo_import::Imported) {
@@ -74,7 +68,17 @@ fn check_review_values(snap: &Snapshot, c: &Construction, skipped: &[&str]) {
         let result = match kind {
             Kind::List => compare_list(c, expected, kind, c.elements(id)),
             Kind::Conic => compare_conic(expected, kind, &value, c.conic(id).as_ref()).0,
-            Kind::Locus => compare_locus(expected, kind, &value, c.locus(id)),
+            Kind::Text => {
+                assert_eq!(kind, expected.kind);
+                match &expected.data {
+                    Some(ExpectedData::Text(text)) => {
+                        assert_eq!(c.text(id), Some(text.as_str()), "{}: {label}", snap.id)
+                    }
+                    None => assert_eq!(value, Value::Undefined),
+                    other => panic!("{}: {label}: unexpected text snapshot {other:?}", snap.id),
+                }
+                continue;
+            }
             _ => {
                 let vertices: Vec<_> = c.vertices(id).collect();
                 let sample = |x| within_budget(|| c.function_value(id, x));
@@ -121,6 +125,100 @@ fn saved_elements_rebuild_their_geometry() {
     assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
     let c = script::load(&imported.script.join("\n")).unwrap();
     check_review_values(&snap, &c, &[]);
+}
+
+#[test]
+fn saved_text_objects_match_before_and_after_edits() {
+    let dir = repo_root().join("golden/ggb/saved");
+    let load = |name: &str| {
+        let bytes = fs::read(dir.join(format!("{name}.ggb"))).unwrap();
+        let imported = import(&bytes).unwrap();
+        let mut snap: Snapshot =
+            serde_json::from_slice(&fs::read(dir.join(format!("{name}.snapshot"))).unwrap())
+                .unwrap();
+        set_snapshot_schema(snap.schema, &mut snap.objects).unwrap();
+        assert!(
+            imported.skipped.is_empty(),
+            "{name}: {:?}",
+            imported.skipped
+        );
+        assert!(
+            imported.mismatched.is_empty(),
+            "{name}: {:?}",
+            imported.mismatched
+        );
+        assert!(imported.hidden.iter().any(|name| name == "hiddenText"));
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        check_review_values(&snap, &c, &[]);
+        let style = |label| c.text_presentation(c.id(label).unwrap()).unwrap();
+        assert_eq!(
+            style("caption").position,
+            TextPosition::Screen { x: 51.0, y: 73.0 }
+        );
+        assert_eq!(
+            style("note").position,
+            TextPosition::World { x: -3.0, y: 2.0 }
+        );
+        assert_eq!(
+            style("marker").position,
+            TextPosition::Point(c.id("P").unwrap())
+        );
+        assert_eq!(
+            style("atPoint").position,
+            TextPosition::Point(c.id("P").unwrap())
+        );
+        assert_eq!(style("atPoint").horizontal, Some(0));
+        assert_eq!(style("atPoint").vertical, Some(1));
+        let formula = style("formula");
+        assert!(formula.latex && formula.serif && formula.bold && formula.italic);
+        assert_eq!(formula.size, 1.4);
+        (snap, c)
+    };
+    let (_, mut live) = load(TEXT_FIXTURES[0]);
+    let (after, _) = load(TEXT_FIXTURES[1]);
+    let ExpectedData::Point { x, y } = after.objects["P"].data.as_ref().unwrap() else {
+        panic!("expected a point");
+    };
+    let ExpectedData::Number(n) = after.objects["a"].data.as_ref().unwrap() else {
+        panic!("expected a number");
+    };
+    live.move_point(live.id("P").unwrap(), *x, *y).unwrap();
+    live.set_number(live.id("a").unwrap(), *n).unwrap();
+    check_review_values(&after, &live, &[]);
+}
+
+#[test]
+fn saved_styles_are_used_to_recompute_texts() {
+    for pair in [TEXT_EQUATION_FIXTURES, TEXT_TEMPLATE_FIXTURES] {
+        check_saved_text_recompute(pair);
+    }
+}
+
+#[test]
+fn text_matches_saved_conic_equation_styles() {
+    let (snapshot, imported) = fixture(TEXT_CONIC_STYLE_FIXTURE);
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snapshot, &c, &[]);
+}
+
+fn check_saved_text_recompute(pair: [&str; 2]) {
+    let [before, after] = pair.map(fixture);
+    let load = |(snapshot, imported): &(Snapshot, geo_import::Imported)| {
+        assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+        assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        check_review_values(snapshot, &c, &[]);
+        c
+    };
+    let mut live = load(&before);
+    load(&after);
+    let Some(ExpectedData::Number(a)) = after.0.objects["a"].data else {
+        panic!("expected a number");
+    };
+    live.set_number(live.id("a").unwrap(), a).unwrap();
+    check_review_values(&after.0, &live, &[]);
 }
 
 #[test]
@@ -237,6 +335,9 @@ fn saved_expressions_match_geogebra_before_and_after_edits() {
             ("bad", "NextPrime"),
             ("lost", "depends on the skipped object `bad`"),
             ("multi", "function with multiple variables"),
+            ("control", "checkbox control"),
+            ("button", "button control"),
+            ("field", "text field control"),
         ]);
         let snapshot: serde_json::Value =
             serde_json::from_slice(&fs::read(dir.join(format!("{file}.snapshot"))).unwrap())
@@ -291,10 +392,6 @@ fn saved_expressions_match_geogebra_before_and_after_edits() {
         }
         let mut expectations = BTreeMap::new();
         for (label, value) in snapshot["objects"].as_object().unwrap() {
-            if ["button", "field"].contains(&label.as_str()) {
-                assert!(replay.id(label).is_some(), "{file}: {label}");
-                continue;
-            }
             if expected_skips.contains_key(label.as_str()) {
                 assert!(replay.id(label).is_none(), "{file}: {label}");
             } else {
@@ -310,7 +407,7 @@ fn saved_expressions_match_geogebra_before_and_after_edits() {
         )
         .unwrap();
         for c in std::iter::once(&replay).chain(live.as_ref()) {
-            assert_eq!(c.len(), expectations.len() + 2, "{file}");
+            assert_eq!(c.len(), expectations.len(), "{file}");
             for (label, expected) in &expectations {
                 let id = c
                     .id(label)
@@ -350,38 +447,62 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     "saved-controls-002",
                     "saved-elements-001",
                 ])
+                .chain(&TEXT_FIXTURES)
+                .chain(&TEXT_EQUATION_FIXTURES)
+                .chain(&TEXT_TEMPLATE_FIXTURES)
+                .chain(std::iter::once(&TEXT_CONIC_STYLE_FIXTURE))
                 .any(|id| p.file_stem().unwrap() == *id)
         })
         .collect();
     names.sort();
     assert!(names.len() >= 116, "only {} saved cases", names.len());
     let (mut compared, mut failures) = (0, Vec::new());
-    let mut first_moves = 0;
-    let gaps: TangencyGaps = toml::from_str(include_str!("../known-import-gaps.toml")).unwrap();
-    let gap_count = gaps.saved_tangency.len();
-    let mut double_tangents: BTreeMap<_, _> = gaps
-        .saved_tangency
-        .into_iter()
-        .map(|gap| (gap.id, (gap.label, gap.reason)))
-        .collect();
-    assert_eq!(double_tangents.len(), gap_count);
+    let mut first_moves = Vec::new();
+    let mut double_tangents = 0;
     for path in &names {
         let mut snap: Snapshot = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
         set_snapshot_schema(snap.schema, &mut snap.objects).unwrap();
         let xml = fs::read(path.with_extension("xml")).unwrap();
         let imported = import(&xml).unwrap();
-        if snap.id.starts_with("saved-firstmove-") {
-            first_moves += 1;
+        let first_move = snap.id.starts_with("saved-firstmove-");
+        if first_move {
+            // GeoGebra fixes the order of the two points at the first update
+            // after creation; the kernel does not remember it. Where the two
+            // orders differ, the file's values disagree with the kernel's
+            // and must show up in `mismatched`, never silently.
+            first_moves.push((snap.id.clone(), imported.mismatched.len()));
+            let c = geo_kernel::script::load(&imported.script.join("\n")).unwrap();
+            if !snap.objects.contains_key("P_{2}") {
+                println!("{}: labels {:?}", snap.id, snap.objects.keys());
+                continue;
+            }
+            let value = |l: &str| c.value(c.id(l).unwrap());
+            let swapped = |e: &Expected, v: geo_kernel::Value| {
+                compare(e, geo_kernel::Kind::Point, &v).is_ok()
+            };
+            if imported.mismatched.is_empty() {
+                for l in ["P_{1}", "P_{2}"] {
+                    assert!(swapped(&snap.objects[l], value(l)), "{}: {l}", snap.id);
+                }
+            } else {
+                // exactly the two points, each holding the other's place
+                assert_eq!(imported.mismatched.len(), 2, "{}", snap.id);
+                assert!(
+                    swapped(&snap.objects["P_{1}"], value("P_{2}"))
+                        && swapped(&snap.objects["P_{2}"], value("P_{1}")),
+                    "{}: not a swap",
+                    snap.id
+                );
+            }
+            continue;
         }
-        let tangency = double_tangents.remove(&snap.id);
-        if let Some((label, reason)) = &tangency {
+        if snap.id.starts_with("saved-doubletangent-") {
             // `avoidDoubleTangentPoint` keeps a labelled second output at the
             // tangent point, equal to the first; the kernel makes the second
             // intersection undefined there (known gap, DIFFERENCES.md). It
             // must be reported as exactly that one mismatch.
             let c = geo_kernel::script::load(&imported.script.join("\n")).unwrap();
-            assert!(!reason.is_empty());
-            let second = c.id(label).unwrap();
+            let second = c.id("P_{2}").unwrap();
             assert!(
                 !c.value(second).is_defined(),
                 "{}: {:?} {:?}",
@@ -389,21 +510,24 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                 c.value(second),
                 imported.mismatched
             );
-            assert!(snap.objects[label].data.is_some(), "{}", snap.id);
+            assert!(snap.objects["P_{2}"].data.is_some(), "{}", snap.id);
             assert!(imported.skipped.is_empty(), "{}", snap.id);
             let labels: Vec<_> = imported
                 .mismatched
                 .iter()
                 .map(|m| m.label.as_str())
                 .collect();
-            assert_eq!(labels, [label], "{}", snap.id);
+            assert_eq!(labels, ["P_{2}"], "{}", snap.id);
             assert!(compare(
                 &snap.objects["P_{1}"],
                 geo_kernel::Kind::Point,
                 &c.value(c.id("P_{1}").unwrap())
             )
             .is_ok());
-        } else if !imported.skipped.is_empty() || !imported.mismatched.is_empty() {
+            double_tangents += 1;
+            continue;
+        }
+        if !imported.skipped.is_empty() || !imported.mismatched.is_empty() {
             failures.push(format!(
                 "{}: skipped {:?}, mismatched {:?}",
                 snap.id, imported.skipped, imported.mismatched
@@ -411,12 +535,6 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
         }
         let c = geo_kernel::script::load(&imported.script.join("\n")).unwrap();
         for (label, expected) in &snap.objects {
-            if tangency
-                .as_ref()
-                .is_some_and(|(gap_label, _)| gap_label == label)
-            {
-                continue;
-            }
             let Some(id) = c.id(label) else {
                 // An object that is undefined when saved has no label in the file.
                 if expected.data.is_some() {
@@ -434,9 +552,14 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
             }
         }
     }
-    assert_eq!(gap_count, 12);
-    assert!(double_tangents.is_empty(), "{double_tangents:?}");
-    assert_eq!(first_moves, 24);
+    // Recorded with GeoGebra: dragging a line through reversal as the very
+    // first update swaps the two points of every line-circle case (12 of 12),
+    // and of 5 of the 12 circle-circle cases; DIFFERENCES.md has the row.
+    let swapped = first_moves.iter().filter(|(_, n)| *n > 0).count();
+    assert_eq!(double_tangents, 12);
+    assert_eq!(first_moves.len(), 24);
+    assert_eq!(swapped, 17, "{first_moves:?}");
+    assert!(first_moves[..12].iter().all(|(_, n)| *n == 2));
     println!("saved files: {}, objects compared: {compared}", names.len());
     assert!(failures.is_empty(), "{}", failures.join("\n"));
     assert!(compared >= 300, "only {compared} objects compared");

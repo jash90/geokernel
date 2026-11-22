@@ -1463,8 +1463,7 @@ cases = ["geomclosure-pointlength-001", "geomextras-lengthpoint-001"]
 [[form]]
 command = "Length"
 form = "text"
-cases = ["geomclosure-textlength-001"]
-difference = "geometry-command-arguments: `Length(text)`"
+cases = ["geomclosure-textlength-001", "textobjects-dynamic-001", "textobjects-unicode-002"]
 
 [[form]]
 command = "Locus"
@@ -1826,3 +1825,221 @@ cases = ["relationreview-asymptotes-001"]
 command = "CurveCartesian"
 form = "number,number,number,number,number"
 cases = ["importgaps-curve-001"]
+command = "Text"
+form = "any"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean,boolean,number"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean,boolean,number,number"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "LaTeX"
+form = "any"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `LaTeX(any)`, `LaTeX(any, boolean)`, `LaTeX(any, boolean, boolean)`"
+
+[[form]]
+command = "LaTeX"
+form = "any,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `LaTeX(any)`, `LaTeX(any, boolean)`, `LaTeX(any, boolean, boolean)`"
+
+[[form]]
+command = "LaTeX"
+form = "any,boolean,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `LaTeX(any)`, `LaTeX(any, boolean)`, `LaTeX(any, boolean, boolean)`"
+
+[[form]]
+command = "LetterToUnicode"
+form = "text"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "TextToUnicode"
+form = "text"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "UnicodeToText"
+form = "list"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "UnicodeToLetter"
+form = "number"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "Ordinal"
+form = "number"
+cases = ["textnumbers-ordinalupstream-001"]
+
+[[form]]
+command = "FractionText"
+form = "number"
+cases = ["textnumbers-fractionupstream-001"]
+
+[[form]]
+command = "FractionText"
+form = "point"
+cases = ["textnumbers-fractionupstream-001"]
+
+[[form]]
+command = "FractionText"
+form = "number,boolean"
+cases = ["textnumbers-fractionupstream-001"]
+
+[[form]]
+command = "ScientificText"
+form = "number"
+cases = ["textnumbers-scientificupstream-001"]
+
+[[form]]
+command = "ScientificText"
+form = "number,number"
+cases = ["textnumbers-scientificedit-001"]
+
+[[form]]
+command = "SurdText"
+form = "number"
+cases = ["textnumbers-surdupstream-001"]
+
+[[form]]
+command = "SurdText"
+form = "number,list"
+cases = ["textnumbers-surdupstream-001"]
+
+[[form]]
+command = "TableText"
+form = "list"
+cases = ["textnumbers-tableshapes-001"]
+
+[[form]]
+command = "TableText"
+form = "list,text"
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "TableText"
+form = "list,list"
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "TableText"
+form = "list,number"
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "TableText"
+form = "list,text,number"
+cases = ["textnumbers-tableupstream-001"]
+
+[[form]]
+command = "TableText"
+form = "list,list,..."
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "VerticalText"
+form = "text"
+cases = ["textformat-vertical-001"]
+
+[[form]]
+command = "VerticalText"
+form = "text,point"
+cases = ["textformat-vertical-002"]
+
+[[form]]
+command = "RotateText"
+form = "text,number"
+cases = ["textformat-signatures-001"]
+
+[[form]]
+command = "RotateText"
+form = "text,number,point"
+cases = ["textformat-rotate-002"]
+
+[[form]]
+command = "ReplaceAll"
+form = "text,text,text"
+cases = ["textobjects-replace-001"]
+
+[[form]]
+command = "Split"
+form = "text,list"
+cases = ["textobjects-split-001"]
+
+[[form]]
+command = "IndexOf"
+form = "text,text"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "IndexOf"
+form = "text,text,number"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "Take"
+form = "text,number"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "Take"
+form = "text,number,number"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number,boolean"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number,number"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number,number,boolean"
+cases = ["textnumbers-continuedlong-001"]

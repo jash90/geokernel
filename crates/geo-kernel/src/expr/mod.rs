@@ -97,9 +97,10 @@ impl IntersectionWork {
     }
 }
 
-mod lex;
+pub(crate) mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
+use commands::text::TextOp;
 use list::Slot;
 pub use list::{Element, List};
 pub(crate) mod math;
@@ -162,6 +163,7 @@ pub(crate) enum Node {
     Bin(Bin, u32, u32),
     Algebra(AlgebraOp, u32, u32),
     Text,
+    TextCmd(TextOp, u32, u32),
     Relation {
         objects: [Id; 4],
         count: u8,
@@ -531,7 +533,7 @@ enum StoredExtra {
     None,
     Double,
     Decimal(Dec),
-    Text(String),
+    Text(Box<TextResult>),
     Polynomial(Vec<f64>),
 }
 
@@ -555,6 +557,12 @@ impl From<Option<eval::Exact>> for StoredExtra {
     }
 }
 
+#[derive(Clone, PartialEq)]
+struct TextResult {
+    text: Option<String>,
+    presentation: crate::kernel::text::TextPresentation,
+}
+
 #[derive(Clone)]
 pub(crate) struct Entry {
     nodes: Vec<Node>,
@@ -566,6 +574,8 @@ pub(crate) struct Entry {
     function: bool,
     /// Whether a one-variable function uses the vertical coordinate.
     function_of_y: bool,
+    /// The name used by a Cartesian curve's coordinate function.
+    curve_parameter: Option<Box<str>>,
     /// Whether a function's tree requires checking its branches or transforms
     /// to decide whether it is defined (see [`inputs_defined`]).
     checks_branches: bool,
@@ -616,6 +626,7 @@ impl Entry {
             parents: p.parents,
             function,
             function_of_y: false,
+            curve_parameter: None,
             inputs: p.inputs,
             raw: Raw::Num(f64::NAN),
             extra: StoredExtra::None,
@@ -627,9 +638,13 @@ impl Entry {
 
     fn text(&self) -> Option<&str> {
         match &self.extra {
-            StoredExtra::Text(text) => Some(text),
+            StoredExtra::Text(result) => result.text.as_deref(),
             _ => None,
         }
+    }
+
+    fn text_latex(&self) -> bool {
+        matches!(&self.extra, StoredExtra::Text(result) if result.presentation.latex)
     }
 
     fn polynomial(&self) -> Option<&[f64]> {
@@ -737,7 +752,9 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         } => fixed[..2].copy_from_slice(&[list, condition]),
         Node::Defined(a) => fixed[0] = a,
         Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
-        Node::List(first, len) => run = first..first.saturating_add(len),
+        Node::List(first, len) | Node::TextCmd(_, first, len) => {
+            run = first..first.saturating_add(len)
+        }
         _ => {}
     }
     fixed.into_iter().filter(|&c| c != NONE).chain(run)
@@ -792,7 +809,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(c);
             shift(d);
         }
-        Node::List(first, _) => shift(first),
+        Node::List(first, _) | Node::TextCmd(_, first, _) => shift(first),
         _ => {}
     }
 }
@@ -802,6 +819,7 @@ fn is_list_node(node: &Node) -> bool {
     matches!(
         node,
         Node::List(..)
+            | Node::TextCmd(..)
             | Node::Item(_)
             | Node::ItemObject(_)
             | Node::ListOp(..)
@@ -1123,15 +1141,21 @@ fn evaluate_lists(
 
 /// Recomputes the expression object `d` and keeps its result; its value,
 /// and whether it changed (see [`store`]).
-pub(crate) fn update(c: &mut Construction, d: ExprDef) -> (Value, bool) {
+pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) {
     if d.kind == Kind::FunctionNVar {
         return (current(c, d), true);
     }
     if d.kind == Kind::Text {
-        let result = eval::text_root(c, entry(c, d));
+        let result = eval::text_root(c, entry(c, d), c.text_latex_override(id));
         let e = &mut c.exprs.entries[d.index as usize];
-        let changed = result.as_deref() != e.text();
-        e.extra = result.map_or(StoredExtra::None, StoredExtra::Text);
+        let old = match &e.extra {
+            StoredExtra::Text(old) => Some(old.as_ref()),
+            _ => None,
+        };
+        let changed = Some(&result) != old;
+        if changed {
+            e.extra = StoredExtra::Text(Box::new(result));
+        }
         return (
             if e.text().is_some() {
                 Value::Text
@@ -1272,7 +1296,7 @@ pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
         };
     }
     if d.kind == Kind::Text {
-        return if eval::text_root(c, entry(c, d)).is_some() {
+        return if eval::text_root(c, entry(c, d), None).text.is_some() {
             Value::Text
         } else {
             Value::Undefined
@@ -1348,6 +1372,27 @@ pub(crate) fn function_signature(c: &Construction, id: Id) -> Option<FunctionSig
 
 pub(crate) use commands::relation::{define_relation, relation_reports};
 
+pub(crate) fn is_independent_text(c: &Construction, id: Id) -> bool {
+    commands::text::is_independent(c, id)
+}
+
+pub(crate) fn text_presentation(
+    c: &Construction,
+    id: Id,
+) -> Option<crate::kernel::text::TextPresentation> {
+    let Def::Expr(def) = c.def(id) else {
+        return None;
+    };
+    match &entry(c, def).extra {
+        StoredExtra::Text(result) => Some(result.presentation),
+        _ => None,
+    }
+}
+
+pub(crate) fn accepts_text_argument(c: &Construction, source: &str) -> bool {
+    parse::parse_argument(c, source).is_ok()
+}
+
 pub(crate) fn text_value(c: &Construction, id: Id) -> Option<&str> {
     let Def::Expr(d) = c.def(id) else {
         return None;
@@ -1398,7 +1443,7 @@ pub(crate) fn argument_object(c: &mut Construction, text: &str, label: &str, kin
     };
     let kind = match (kind, parsed.tys[parsed.root as usize]) {
         (Kind::Number, Ty::Num(1)) => Kind::Angle,
-        (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) | (Kind::Boolean, Ty::Bool) => kind,
+        (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) | (Kind::Boolean, Ty::Bool) | (Kind::Point, Ty::Vec) => kind,
         _ => return false,
     };
     !parsed.uses_var && add(c, label, parsed, kind).is_ok()
@@ -1470,7 +1515,7 @@ fn define_with_coordinates(
         Ty::Vec => Kind::Point,
         Ty::Bool => Kind::Boolean,
         Ty::List(_) => Kind::List,
-        Ty::Object => return Err("an object can only be used here as a list element".into()),
+        Ty::Object => return Err("this object cannot be assigned as an expression".into()),
         Ty::Text => Kind::Text,
         Ty::Function => return Err("a function needs an argument".into()),
     };
@@ -1590,7 +1635,12 @@ pub(crate) fn define_parametric_coordinate(
     rhs: &str,
     parameter: &str,
 ) -> Result<Id, String> {
-    numeric_function(c, label, parse::parse_parameter(c, rhs, parameter)?)
+    let id = numeric_function(c, label, parse::parse_parameter(c, rhs, parameter)?)?;
+    let Def::Expr(def) = c.def(id) else {
+        unreachable!("a curve coordinate is a function expression");
+    };
+    c.exprs.entries[def.index as usize].curve_parameter = Some(parameter.into());
+    Ok(id)
 }
 
 /// Hidden two-variable function for a slope field or integral curve.

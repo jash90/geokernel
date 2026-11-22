@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="C" exp="(1, -2)" type="point"/>
+<element type="point" label="C">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="1" y="-2" z="1"/>
+</element>
+<expression label="O" exp="(0, 0)" type="point"/>
+<element type="point" label="O">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="0" y="0" z="1"/>
+</element>
+<expression label="pe" exp="y = x^(2) - (4 * x) + 7" type="conic"/>
+<element type="conic" label="pe">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="explicit"/>
+	<eigenvectors x0="0" y0="1" z0="1" x1="-1" y1="0" z1="1"/>
+	<matrix A0="-1" A1="0" A2="-7" A3="0" A4="2" A5="0.5"/>
+</element>
+<expression label="pv" exp="y = x^(2) - (4 * x) + 7" type="conic"/>
+<element type="conic" label="pv">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="vertex"/>
+	<eigenvectors x0="0" y0="1" z0="1" x1="-1" y1="0" z1="1"/>
+	<matrix A0="-1" A1="0" A2="-7" A3="0" A4="2" A5="0.5"/>
+</element>
+<expression label="pc" exp="x = (2 * y^(2)) + (8 * y) + 11" type="conic"/>
+<element type="conic" label="pc">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="conic"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="0" A1="-2" A2="-11" A3="0" A4="0.5" A5="-4"/>
+</element>
+<expression label="ps" exp="y^(2) = (4 * x)" type="conic"/>
+<element type="conic" label="ps">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="0" A1="1" A2="0" A3="0" A4="-2" A5="0"/>
+</element>
+<command name="Circle">
+	<input a0="C" a1="3"/>
+	<output a0="s"/>
+</command>
+<element type="conic" label="s">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="-4" A3="0" A4="-1" A5="2"/>
+</element>
+<command name="Circle">
+	<input a0="O" a1="3"/>
+	<output a0="cp"/>
+</command>
+<element type="conic" label="cp">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="parametric"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="-9" A3="0" A4="0" A5="0"/>
+</element>
+<expression label="ee" exp="(4 * x^(2)) + (9 * y^(2)) = 36" type="conic"/>
+<element type="conic" label="ee">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="4" A1="9" A2="-36" A3="0" A4="0" A5="0"/>
+</element>
+<expression label="h" exp="(4 * x^(2)) - (9 * y^(2)) = 36" type="conic"/>
+<element type="conic" label="h">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="4" A1="-9" A2="-36" A3="0" A4="0" A5="0"/>
+</element>
+<expression label="di" exp="x^(2) - y^(2) = 0" type="conic"/>
+<element type="conic" label="di">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="specific"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="-1" A2="0" A3="0" A4="0" A5="0"/>
+</element>
+<expression label="dp" exp="x^(2) - y^(2) = 0" type="conic"/>
+<element type="conic" label="dp">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="parametric"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="-1" A2="0" A3="0" A4="0" A5="0"/>
+</element>
+<expression label="pp" exp="(x - 1)^(2) = 4" type="conic"/>
+<element type="conic" label="pp">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="parametric"/>
+	<eigenvectors x0="0" y0="1" z0="1" x1="-1" y1="0" z1="1"/>
+	<matrix A0="1" A1="0" A2="-3" A3="0" A4="-1" A5="0"/>
+</element>
+<expression label="pl" exp="(x - 1)^(2) = 0" type="conic"/>
+<element type="conic" label="pl">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="parametric"/>
+	<eigenvectors x0="0" y0="1" z0="1" x1="-1" y1="0" z1="1"/>
+	<matrix A0="1" A1="0" A2="1" A3="0" A4="-1" A5="0"/>
+</element>
+<expression label="sp" exp="x^(2) + y^(2) = 0" type="conic"/>
+<element type="conic" label="sp">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="parametric"/>
+	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
+	<matrix A0="1" A1="1" A2="0" A3="0" A4="0" A5="0"/>
+</element>
+<command name="Text">
+	<input a0="pe"/>
+	<output a0="peText"/>
+</command>
+<element type="text" label="peText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="pv"/>
+	<output a0="pvText"/>
+</command>
+<element type="text" label="pvText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="pc"/>
+	<output a0="pcText"/>
+</command>
+<element type="text" label="pcText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="ps"/>
+	<output a0="psText"/>
+</command>
+<element type="text" label="psText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="s"/>
+	<output a0="sText"/>
+</command>
+<element type="text" label="sText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="cp"/>
+	<output a0="cpText"/>
+</command>
+<element type="text" label="cpText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="ee"/>
+	<output a0="eeText"/>
+</command>
+<element type="text" label="eeText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="h"/>
+	<output a0="hText"/>
+</command>
+<element type="text" label="hText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="di"/>
+	<output a0="diText"/>
+</command>
+<element type="text" label="diText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="dp"/>
+	<output a0="dpText"/>
+</command>
+<element type="text" label="dpText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="pp"/>
+	<output a0="ppText"/>
+</command>
+<element type="text" label="ppText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="pl"/>
+	<output a0="plText"/>
+</command>
+<element type="text" label="plText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="Text">
+	<input a0="sp"/>
+	<output a0="spText"/>
+</command>
+<element type="text" label="spText">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="pe"/>
+	<output a0="peTeX"/>
+</command>
+<element type="text" label="peTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="pv"/>
+	<output a0="pvTeX"/>
+</command>
+<element type="text" label="pvTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="pc"/>
+	<output a0="pcTeX"/>
+</command>
+<element type="text" label="pcTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="ps"/>
+	<output a0="psTeX"/>
+</command>
+<element type="text" label="psTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="s"/>
+	<output a0="sTeX"/>
+</command>
+<element type="text" label="sTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="cp"/>
+	<output a0="cpTeX"/>
+</command>
+<element type="text" label="cpTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="ee"/>
+	<output a0="eeTeX"/>
+</command>
+<element type="text" label="eeTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="h"/>
+	<output a0="hTeX"/>
+</command>
+<element type="text" label="hTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="di"/>
+	<output a0="diTeX"/>
+</command>
+<element type="text" label="diTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="dp"/>
+	<output a0="dpTeX"/>
+</command>
+<element type="text" label="dpTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="pp"/>
+	<output a0="ppTeX"/>
+</command>
+<element type="text" label="ppTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="pl"/>
+	<output a0="plTeX"/>
+</command>
+<element type="text" label="plTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+<command name="LaTeX">
+	<input a0="sp"/>
+	<output a0="spTeX"/>
+</command>
+<element type="text" label="spTeX">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="false" sizeM="1" size="0" style="0"/>
+</element>
+</construction>
+</geogebra>

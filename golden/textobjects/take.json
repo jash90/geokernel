@@ -1,0 +1,35 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textobjects-take-001",
+      "group": "textobjects",
+      "script": [
+        "a = 2",
+        "s = Take(\"abc\", a)",
+        "t = Take(\"abc\", a, 0)",
+        "u = Take(\"abc\", a, 3.9)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "text", "defined": true, "text": "bc" },
+          "t": { "type": "text", "defined": true, "text": "" },
+          "u": { "type": "text", "defined": true, "text": "bc" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "s": { "type": "text", "defined": false },
+          "t": { "type": "text", "defined": false },
+          "u": { "type": "text", "defined": false }
+        }
+      ]
+    }
+  ]
+}

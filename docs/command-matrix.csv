@@ -39,7 +39,7 @@ Intersect,,geometry,P0,partial,65,45,line/line; line/circle; circle/circle; line
 IntersectPath,,geometry,P1,partial,9,4,"Polygon and line, segment, ray or conic in either order; two polygons"
 IntersectRegion,,english,P2,todo,9,0,
 Distance,,geometry,P0,done,4,4,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
-Length,,geometry,P1,done,11,11,"Point, vector, segment, list, quoted text, locus sample count, conic part, function or Cartesian curve between bounds"
+Length,,geometry,P1,done,11,11,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
 Radius,,geometry,P1,done,1,1,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
 CircleArc,,geometry,P1,done,1,1,"CircularArc(centre, point, point)"
@@ -83,22 +83,22 @@ LocusEquation,,geometry,P1,todo,3,0,
 Envelope,,geometry,P1,todo,1,0,
 Volume,,3d,,out_of_scope,,,
 Difference,,geometry,P1,done,2,2,"Difference(polygon, polygon); Difference(polygon, polygon, boolean)"
-Text,,text,P2,todo,7,0,
-LaTeX,,text,P2,todo,3,0,
-LetterToUnicode,,text,P2,todo,1,0,
-TextToUnicode,,text,P2,todo,1,0,
-UnicodeToText,,text,P2,todo,1,0,
-UnicodeToLetter,,text,P2,todo,1,0,
-FractionText,,text,P2,todo,3,0,
-SurdText,,text,P2,todo,3,0,
-ScientificText,,text,P2,todo,2,0,
-TableText,,text,P2,todo,6,0,
-VerticalText,,text,P2,todo,2,0,
-RotateText,,text,P2,todo,2,0,
-Ordinal,,text,P2,todo,1,0,
-ContinuedFraction,,text,P2,todo,4,0,
-ReplaceAll,,text,P2,todo,1,0,
-Split,,text,P2,todo,1,0,
+Text,,text,P2,done,7,7,
+LaTeX,,text,P2,done,3,3,
+LetterToUnicode,,text,P2,done,1,1,
+TextToUnicode,,text,P2,done,1,1,
+UnicodeToText,,text,P2,done,1,1,
+UnicodeToLetter,,text,P2,done,1,1,
+FractionText,,text,P2,done,3,3,
+SurdText,,text,P2,partial,3,2,
+ScientificText,,text,P2,done,2,2,
+TableText,,text,P2,done,6,6,
+VerticalText,,text,P2,done,2,2,
+RotateText,,text,P2,done,2,2,
+Ordinal,,text,P2,done,1,1,
+ContinuedFraction,,text,P2,done,4,4,
+ReplaceAll,,text,P2,done,1,1,
+Split,,text,P2,done,1,1,
 If,,logical,P2,partial,2,1,"Scalar, coordinate, boolean, text, list and numeric-function branches. Other geometry branches are pending."
 CountIf,,logical,P2,done,2,2,
 IsInteger,,logical,P2,done,1,1,
@@ -176,11 +176,11 @@ Axes,,conic,P1,done,1,1,Axes(conic)
 Sort,,list,P2,partial,3,1,"Sort(list of numbers, booleans or points)"
 First,,list,P2,partial,5,2,"First(list); First(list, number of elements)"
 Last,,list,P2,partial,5,1,"Last(list); Last(list, number of elements)"
-Take,,list,P2,todo,4,0,
+Take,,list,P2,partial,4,2,
 RemoveUndefined,,list,P2,todo,1,0,
 Reverse,,list,P2,partial,3,1,Reverse(list)
 Element,,list,P2,partial,3,1,"Element(list, index)"
-IndexOf,,list,P2,todo,4,0,
+IndexOf,,list,P2,partial,4,2,
 Append,,list,P2,todo,2,0,"Append(list, object); Append(object, list)"
 Join,,list,P2,done,2,2,"Join(list, list, ...); Join(list of lists)"
 Flatten,,list,P2,todo,1,0,
@@ -436,7 +436,7 @@ Maximize,,optimization,P2,todo,2,0,
 Minimize,,optimization,P2,todo,2,0,
 ExportImage,,scripting,,out_of_scope,,,
 Curve,CurveCartesian,function,P2,partial,,,
-FormulaText,LaTeX,text,P2,todo,,,
+FormulaText,LaTeX,text,P2,done,,,
 IsDefined,Defined,logical,P2,done,,,
 ConjugateDiameter,Diameter,conic,P1,done,,,
 LinearEccentricity,Excentricity,conic,P1,done,,,

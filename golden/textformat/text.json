@@ -1,0 +1,192 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textformat-text-001",
+      "group": "textformat",
+      "script": [
+        "t = Text(Polygon((1,1),(2,1/2),4))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "1.25" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-text-002",
+      "group": "textformat",
+      "script": [
+        "t = Text(Polygon((1,1),(2,1/2),4), false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "Polygon((1, 1), (2, 1 / 2), 4)" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-text-003",
+      "group": "textformat",
+      "script": [
+        "t = Text(Polygon((1,1),(2,1/2),4), (1,1))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "1.25" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-text-004",
+      "group": "textformat",
+      "script": [
+        "t = Text(Polygon((1,1),(2,1/2),4), (1,1), false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "Polygon((1, 1), (2, 1 / 2), 4)" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-text-005",
+      "group": "textformat",
+      "script": [
+        "t = Text(Polygon((1,1),(2,1/2),4), (1,1), false, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "Polygon((1, 1), (2, 1 / 2), 4)" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-text-006",
+      "group": "textformat",
+      "script": [
+        "t = Text(Polygon((1,1),(2,1/2),4), (1,1), false, false, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "Polygon((1, 1), (2, 1 / 2), 4)" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-text-007",
+      "group": "textformat",
+      "script": [
+        "t = Text(Polygon((1,1),(2,1/2),4), (1,1), false, false, 1, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "Polygon((1, 1), (2, 1 / 2), 4)" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-text-008",
+      "group": "textformat",
+      "script": [
+        "A = (1.234, 3.456)",
+        "a = 3.1",
+        "b = a^2 / 3",
+        "t = Text(b, A, true, true, 0, -1)",
+        "u = Text(A)",
+        "tSymbol = Text(b, false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -1.245, "y": 11.115 },
+        { "action": "set_number", "label": "a", "value": 8.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.234, "y": 3.456 },
+          "a": { "type": "number", "defined": true, "value": 3.1 },
+          "b": { "type": "number", "defined": true, "value": 3.203333333333333 },
+          "t": { "type": "text", "defined": true, "text": "3.2" },
+          "u": { "type": "text", "defined": true, "text": "(1.23, 3.46)" },
+          "tSymbol": { "type": "text", "defined": true, "text": "a² / 3" }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.245, "y": 11.115 },
+          "a": { "type": "number", "defined": true, "value": 3.1 },
+          "b": { "type": "number", "defined": true, "value": 3.203333333333333 },
+          "t": { "type": "text", "defined": true, "text": "3.2" },
+          "u": { "type": "text", "defined": true, "text": "(-1.25, 11.12)" },
+          "tSymbol": { "type": "text", "defined": true, "text": "a² / 3" }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.245, "y": 11.115 },
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 21.333333333333332 },
+          "t": { "type": "text", "defined": true, "text": "21.33" },
+          "u": { "type": "text", "defined": true, "text": "(-1.25, 11.12)" },
+          "tSymbol": { "type": "text", "defined": true, "text": "a² / 3" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-text-009",
+      "group": "textformat",
+      "script": [
+        "a = 2.345",
+        "A = (1,2)",
+        "P = (a,4)",
+        "m = Text(P, A, true, true)",
+        "n = Text(P, A, false, true)",
+        "plain = Text(a, false)",
+        "fraction = Text(2/3, false)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.345 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 2.345, "y": 4.0 },
+          "m": { "type": "text", "defined": true, "text": "(2.35, 4)" },
+          "n": { "type": "text", "defined": true, "text": "(a, 4)" },
+          "plain": { "type": "text", "defined": true, "text": "2.35" },
+          "fraction": { "type": "text", "defined": true, "text": "2 / 3" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "m": { "type": "text", "defined": true, "text": "\\left(4,\\;4 \\right)" },
+          "n": { "type": "text", "defined": true, "text": "\\left(a,\\;4 \\right)" },
+          "plain": { "type": "text", "defined": true, "text": "4" },
+          "fraction": { "type": "text", "defined": true, "text": "2 / 3" }
+        }
+      ]
+    }
+  ]
+}

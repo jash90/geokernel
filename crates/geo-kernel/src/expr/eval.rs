@@ -210,13 +210,13 @@ impl Lists {
     pub(super) fn read(&self, c: &Construction, i: u32) -> Slot {
         let object = i >> OBJECT_SHIFT;
         if object == 0 {
-            return self.arena.borrow()[i as usize];
+            return self.arena.borrow()[i as usize].clone();
         }
         let id = self.objects.borrow().0[object as usize - 1];
         let Def::Expr(d) = c.def(id) else {
             unreachable!("a list object read in place has an expression");
         };
-        let mut slot = super::entry(c, d).items[(i & OFFSET) as usize];
+        let mut slot = super::entry(c, d).items[(i & OFFSET) as usize].clone();
         if slot.run().is_some() {
             slot.start |= object << OBJECT_SHIFT;
         }
@@ -560,6 +560,8 @@ pub(super) struct Ctx<'a, const M: bool> {
     pub(super) meter: Option<&'a Lists>,
     /// The variables of the `Sequence`s around the node being evaluated.
     pub(super) locals: Option<&'a Local<'a>>,
+    /// A saved template override for the text being evaluated.
+    pub(super) text_latex_override: Option<bool>,
 }
 
 impl<'a, const M: bool> Ctx<'a, M> {
@@ -571,7 +573,13 @@ impl<'a, const M: bool> Ctx<'a, M> {
             lists: None,
             meter: None,
             locals: None,
+            text_latex_override: None,
         }
+    }
+
+    pub(super) fn text_latex(&self) -> bool {
+        self.text_latex_override
+            .unwrap_or_else(|| self.e.text_latex())
     }
 }
 
@@ -610,15 +618,30 @@ pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, 
     }
 }
 
-pub(super) fn text_root(c: &Construction, e: &Entry) -> Option<String> {
+pub(super) fn text_root(c: &Construction, e: &Entry, latex: Option<bool>) -> super::TextResult {
     let meter = Lists::new(Vec::new());
     let ctx = Ctx::<true> {
         lists: Some(&meter),
         meter: Some(&meter),
+        text_latex_override: latex,
         ..Ctx::new(c, e, &Env::None)
     };
-    let value = ctx.text(e.root)?;
-    (!meter.over()).then(|| value.into_owned())
+    let text = ctx.text(e.root);
+    let presentation = match ctx.node(e.root) {
+        Node::TextCmd(op, first, count) => ctx.text_style(op, first, count),
+        _ => crate::kernel::text::TextPresentation::default(),
+    };
+    let text = text.filter(|_| !meter.over()).map(|text| {
+        let mut text = text.into_owned();
+        while text.len() > 1 && text.ends_with('\n') {
+            text.pop();
+        }
+        if !latex.unwrap_or(presentation.latex) && text.contains(r"\\n") {
+            text = text.replace(r"\\n", "\n");
+        }
+        text
+    });
+    super::TextResult { text, presentation }
 }
 
 /// Evaluates an entry whose result is a list: its elements go to `out`,
@@ -810,6 +833,7 @@ impl<const M: bool> Ctx<'_, M> {
             },
             Node::ListOp(op, l, n) => self.list_command(i, op, l, n),
             Node::Algebra(op, a, _) if !op.makes_list() => Ex::plain(self.algebra_number(op, a)),
+            Node::TextCmd(op, first, count) => Ex::plain(N(self.text_number(op, first, count))),
             Node::Algebra(..)
             | Node::FunctionObject(_)
             | Node::Text
@@ -1187,6 +1211,7 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Un(op, a) => self.list_unary(op, a),
             Node::Range(from, to, step) => self.range(from, to, step),
             Node::Algebra(op, a, b) => self.algebra_list(op, a, b),
+            Node::TextCmd(op, first, count) => self.text_list(op, first, count),
             Node::Seq(e, from, to, step, depth) => self.sequence(e, from, to, step, depth),
             Node::Filter {
                 keep: true,
@@ -1228,20 +1253,44 @@ impl<const M: bool> Ctx<'_, M> {
             };
         }
         if let Node::FunctionObject(id) = self.node(i) {
-            return Slot::function(id, self.c.value(id));
+            return Slot::object(self.c, id);
         }
         if let Node::Obj(id) = self.node(i) {
             if self.c.kind(id) == Kind::Point {
-                return Slot::point(self.c.stored_value(id));
+                return Slot::point(self.c.stored_value(id)).with_object(id);
+            }
+            if self.c.kind(id) == Kind::Angle {
+                return Slot::object(self.c, id);
             }
         }
         let mark = self.lists.map(Lists::len);
+        if self.e.tys[i as usize] == Ty::Text {
+            let object = match self.node(i) {
+                Node::Obj(id) => Some(id),
+                _ => None,
+            };
+            let text = self.text(i);
+            if let (Some(lists), Some(mark)) = (self.lists, mark) {
+                lists.truncate(mark);
+            }
+            return text.map_or_else(|| Slot::undefined(Kind::Text), |s| Slot::text(s, object));
+        }
         let x = self.full(i).val;
         if let (Some(lists), Some(mark)) = (self.lists, mark) {
             lists.truncate(mark);
         }
         match x {
-            Val::N(v) => Slot::number(v),
+            Val::N(v) => {
+                let mut slot = Slot::number(v);
+                if self.e.tys[i as usize] == Ty::Num(1) {
+                    slot.kind = Kind::Angle;
+                }
+                if let Node::Obj(id) = self.node(i) {
+                    slot.with_object(id)
+                } else {
+                    slot
+                }
+            }
             Val::V(x, y) => Slot::coords(
                 super::types::vec_kind(self.c, &self.e.nodes, &self.e.tys, i),
                 x,
@@ -1278,7 +1327,7 @@ impl<const M: bool> Ctx<'_, M> {
         let base = arena.len() as u32;
         arena.extend(items.iter().map(|s| match s.run() {
             Some((start, n)) => Slot::list(start + base, n),
-            None => *s,
+            None => s.clone(),
         }));
         Some((base, len))
     }
@@ -1312,12 +1361,12 @@ impl<const M: bool> Ctx<'_, M> {
         for k in 0..len {
             let x = left.unwrap_or_else(|| {
                 ra.map_or(Val::N(f64::NAN), |(s, _)| {
-                    slot_val(lists.read(self.c, s + k))
+                    slot_val(&lists.read(self.c, s + k))
                 })
             });
             let y = right.unwrap_or_else(|| {
                 rb.map_or(Val::N(f64::NAN), |(s, _)| {
-                    slot_val(lists.read(self.c, s + k))
+                    slot_val(&lists.read(self.c, s + k))
                 })
             });
             lists.set(start + k, combine(op, x, y));
@@ -1342,7 +1391,7 @@ impl<const M: bool> Ctx<'_, M> {
         } else {
             (b, a, true)
         };
-        let coordinate = |slot: Slot| match slot_val(slot) {
+        let coordinate = |slot: Slot| match slot_val(&slot) {
             N(v) => v,
             Val::B(b, _) => bool_number(b),
             V(..) => f64::NAN,
@@ -1376,7 +1425,7 @@ impl<const M: bool> Ctx<'_, M> {
             return None;
         }
         for k in 0..n {
-            let slot = match slot_val(lists.read(self.c, s + k)) {
+            let slot = match slot_val(&lists.read(self.c, s + k)) {
                 Val::B(b, _) if op == Un::Not => Slot::boolean(!b),
                 Val::B(b, _) => Slot::number(scalar(op, bool_number(b), false)),
                 Val::N(x) => Slot::number(scalar(op, x, false)),
@@ -1456,7 +1505,7 @@ pub(super) fn count(lists: &Lists, values: impl Fn(&mut dyn FnMut(f64) -> bool))
 }
 
 /// An element as an operand.
-pub(super) fn slot_val(s: Slot) -> Val {
+pub(super) fn slot_val(s: &Slot) -> Val {
     match (s.kind, s.shown()) {
         (_, Value::Number(v)) => Val::N(v),
         (_, Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),

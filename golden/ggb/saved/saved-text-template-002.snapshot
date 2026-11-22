@@ -1,0 +1,12 @@
+{
+  "schema": 2,
+  "id": "saved-text-template-002",
+  "script": [
+    "a = 3",
+    "t = \"value: \" + a"
+  ],
+  "objects": {
+    "a": { "type": "number", "defined": true, "value": 3.141592653589793 },
+    "t": { "type": "text", "defined": true, "text": "value: \\pi " }
+  }
+}

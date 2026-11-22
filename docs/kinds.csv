@@ -16,7 +16,7 @@ Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,no,
 PolyLine,POLYLINE,PolyLine,yes,yes,yes,yes,yes,yes,yes,no,
 List,LIST,List,yes,no,no,no,no,no,partial,no,Saved lists with supported expressions and commands
 Axis,AXIS,,no,no,no,no,no,no,no,no,the window draws the axes from the view settings
-Text,TEXT,Text,yes,no,no,no,no,yes,no,no,base conversion text is shown in the algebra view
+Text,TEXT,Text,yes,no,yes,no,no,yes,yes,no,Static and dependent texts with saved world or pixel placement. LaTeX markup is drawn as plain text.
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
 Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,no,Tracing loci and integral curves from slopes
 CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,no,Cartesian coordinates and parameter interval for Length

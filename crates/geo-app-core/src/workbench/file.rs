@@ -298,7 +298,7 @@ mod tests {
     }
 
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 37;
+    const GOLDEN_FILES: usize = 39;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]
@@ -1038,6 +1038,71 @@ mod tests {
             }
             assert_round_trip(&mut wb, "imported construction");
         }
+    }
+
+    #[test]
+    fn saved_texts_have_free_and_dependent_rows_and_follow_edits() {
+        use geo_kernel::kernel::text::TextPosition;
+
+        let mut wb = Workbench::default();
+        let mut reference = Workbench::default();
+        for (w, bytes) in [
+            (
+                &mut wb,
+                include_bytes!("../../../../golden/ggb/saved/saved-texts-001.ggb").as_slice(),
+            ),
+            (
+                &mut reference,
+                include_bytes!("../../../../golden/ggb/saved/saved-texts-002.ggb").as_slice(),
+            ),
+        ] {
+            w.load_bytes(bytes, "text.ggb").unwrap();
+            let hidden = w.construction().id("hiddenText").unwrap();
+            assert!(!w.is_visible(hidden));
+            let rows = w.rows();
+            assert!(rows.iter().find(|r| r.label == "marker").unwrap().free);
+            assert!(!rows.iter().find(|r| r.label == "readout").unwrap().free);
+        }
+        let p = wb.construction().id("P").unwrap();
+        let a = wb.construction().id("a").unwrap();
+        let c = reference.construction();
+        let Value::Point { x, y } = c.value(c.id("P").unwrap()) else {
+            panic!("expected a point");
+        };
+        let Value::Number(n) = c.value(c.id("a").unwrap()) else {
+            panic!("expected a number");
+        };
+        let readout = |w: &mut Workbench| {
+            w.rows()
+                .iter()
+                .find(|r| r.label == "readout")
+                .unwrap()
+                .value
+                .clone()
+        };
+        let before = readout(&mut wb);
+        assert!(wb.move_point(p, x, y));
+        assert!(wb.set_number(a, n));
+        assert_ne!(readout(&mut wb), before);
+        assert_eq!(readout(&mut wb), readout(&mut reference));
+        assert_round_trip(&mut wb, "saved texts");
+
+        let Value::Point { x, y } = wb.construction().value(p) else {
+            panic!("expected the point after the round trip move");
+        };
+        assert!(wb.delete(p));
+        let c = wb.construction();
+        assert!(c.id("readout").is_none());
+        assert_eq!(
+            c.text_position(c.id("marker").unwrap()),
+            Some(TextPosition::World { x, y })
+        );
+        assert!(wb.undo());
+        let c = wb.construction();
+        assert_eq!(
+            c.text_position(c.id("marker").unwrap()),
+            Some(TextPosition::Point(c.id("P").unwrap()))
+        );
     }
 
     #[test]

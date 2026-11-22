@@ -122,6 +122,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         app.drag = None;
         app.tool_press = None;
         app.label_rects.borrow_mut().clear();
+        app.text_rects.borrow_mut().clear();
         gesture.forget_target();
         // A tool's picks are labels: they outlive the rebuild unless one
         // of them went (a change from outside takes an unfinished tool use
@@ -190,17 +191,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // What the pointer is over (for highlighting and for picking).
     let pick_at = |app: &App, pos: (f64, f64)| -> Option<Id> {
         let c = app.wb.construction();
-        hit::pick(c, &t, pos, &hover_reach, app.wb.selected, |id| {
-            shown(app, id) && (move_tool || app.accepts_tool_hit(id))
-        })
+        let accept = |id| shown(app, id) && (move_tool || app.accepts_tool_hit(id));
+        let text = app.text_at(pos, app.wb.selected, accept);
+        hit::pick_with_text(c, &t, pos, &hover_reach, app.wb.selected, text, accept)
     };
     // What a press of the move tool at `pos` (in the area as it was, with
     // the transform `pt`) takes hold of.
     let target = |app: &App, pt: &ViewTransform, pos: (f64, f64)| -> Target {
         let c = app.wb.construction();
-        let Some(id) = hit::pick(c, pt, pos, &press_reach, app.wb.selected, |id| {
-            shown(app, id)
-        }) else {
+        let accept = |id| shown(app, id);
+        let text = app.text_at(pos, app.wb.selected, accept);
+        let Some(id) = hit::pick_with_text(c, pt, pos, &press_reach, app.wb.selected, text, accept)
+        else {
             return Target::Nothing;
         };
         // A side of a polygon under the pointer: the owner's rule
@@ -300,7 +302,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             let press = app
                 .snap(pt.scale())
                 .capture(pt.screen_to_world(sx, sy), (0.0, 0.0));
-            grabbed = Drag::begin(c, id, press);
+            grabbed = if c.kind(id) == Kind::Text {
+                Drag::text(c, id, (sx, sy), press)
+            } else {
+                Drag::begin(c, id, press)
+            };
             if grabbed.is_some() {
                 return Grab::Point;
             }
@@ -373,6 +379,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 app.wb.translate(&points, (dx, dy));
             }
             Step::Label { x, y } => app.wb.set_label_offset(drag.id(), (x, y)),
+            Step::Text(movement) => app.wb.move_text(drag.id(), movement),
         }
         app.drag = Some(drag);
     }
@@ -387,6 +394,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 // stroke going (unlike a rebuild under a drag).
                 app.seen_rebuilds = app.wb.rebuilds();
                 app.label_rects.borrow_mut().clear();
+                app.text_rects.borrow_mut().clear();
                 app.hovered = None;
             }
         }
@@ -420,7 +428,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     target(app, &pt, local)
                 } else {
                     let c = app.wb.construction();
-                    match hit::pick(c, &pt, local, &press_reach, None, |id| shown(app, id)) {
+                    let accept = |id| shown(app, id);
+                    let text = app.text_at(local, None, accept);
+                    match hit::pick_with_text(c, &pt, local, &press_reach, None, text, accept) {
                         Some(id) => Target::Object(id),
                         None => Target::Nothing,
                     }
@@ -480,6 +490,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             generation: app.wb.rebuilds(),
             label_offset: &|id| app.wb.label_offset(id),
             label_rects: Some(&app.label_rects),
+            text_rects: Some(&app.text_rects),
         },
     );
     preview(app, &painter, rect, &t, response.hover_pos());

@@ -1,0 +1,30 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-fractionupstream-001",
+      "group": "textnumbers",
+      "script": [
+        "ta = FractionText( 4/6 )",
+        "tb = FractionText( -4/6 )",
+        "tc = FractionText( 4/6, false )",
+        "td = FractionText( -4/6 , false )",
+        "te = FractionText( (1,1) )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "ta": { "type": "text", "defined": true, "text": " \\frac{ 2 }{ 3 } " },
+          "tb": { "type": "text", "defined": true, "text": " \\frac{ -2 }{ 3 } " },
+          "tc": { "type": "text", "defined": true, "text": " \\frac{ 2 }{ 3 } " },
+          "td": { "type": "text", "defined": true, "text": "- \\frac{ 2 }{ 3 } " },
+          "te": { "type": "text", "defined": true, "text": "{ \\left( 1,1 \\right) }" }
+        }
+      ]
+    }
+  ]
+}
