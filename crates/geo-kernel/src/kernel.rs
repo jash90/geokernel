@@ -836,6 +836,17 @@ pub struct Construction {
     /// The graphics window used to sample loci. A headless construction
     /// uses the reference window.
     locus_view: Option<[f64; 6]>,
+    /// The graphics window the view-dependent objects read (`Corner`,
+    /// `AxisStepX`, `AxisStepY`); the app keeps it current, a headless
+    /// construction uses the reference window.
+    view_state: Option<[f64; 6]>,
+    /// The step of the construction protocol: -1 before the first object,
+    /// then the index of the last object while the step follows the
+    /// construction (`Construction.getStep`).
+    step: i32,
+    /// The indices of the objects that read the construction step, so that
+    /// adding an object or `SetConstructionStep` can recompute them.
+    protocol: Vec<usize>,
     /// Line starts installed by the path mover, with their insertion order
     /// so a rollback can remove starts added to pre-existing lines. The
     /// `Option<Id>` is the locus that installed the start, so a rebuild that
@@ -1462,7 +1473,49 @@ impl Construction {
         self.labels.push(label.to_string());
         self.children.push(Vec::new());
         self.by_label.insert(label.to_string(), id);
+        // The protocol step follows the construction while it is at its
+        // end: every add moves it onto the new object (`Construction.add`
+        // of a construction without the protocol view).
+        self.step = (self.step + 1).min(self.defs.len() as i32 - 1);
+        if let Def::Measure(MeasureDef::ConstructionStep(_)) = def {
+            self.protocol.push(id.0);
+        }
+        self.update_protocol();
         Ok(id)
+    }
+
+    /// The step of the construction protocol (`Construction.getStep`).
+    pub fn step(&self) -> i32 {
+        self.step
+    }
+
+    /// `CmdSetConstructionStep`: moves the protocol step, clamped to the
+    /// construction, and recomputes the objects that read it.
+    pub fn set_construction_step(&mut self, value: f64) {
+        let mut new_step = crate::expr::math::java_round(value - 1.0) as i32;
+        let steps = self.defs.len() as i32;
+        if new_step >= steps {
+            new_step = steps - 1;
+        }
+        if new_step == self.step || new_step < -1 {
+            return;
+        }
+        self.step = new_step;
+        self.update_protocol();
+    }
+
+    /// Recomputes the objects that read the construction step and whatever
+    /// depends on them (`updateAllConstructionProtocolAlgorithms`).
+    pub(crate) fn update_protocol(&mut self) {
+        if self.protocol.is_empty() {
+            return;
+        }
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.defs.len());
+        for &i in &self.protocol {
+            dirty.insert(i);
+        }
+        self.propagate_dirty(dirty, 0);
     }
 
     /// Installs rigid constraints on existing free points after all outputs

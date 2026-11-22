@@ -104,9 +104,7 @@ fn view_corner(c: &Construction, view: Option<Count>, index: Count) -> Option<Va
     if view.is_some_and(|v| v.value(c) != 1.0) {
         return None;
     }
-    let [xmin, xmax, ymin, ymax, xs, ys] = c
-        .locus_view()
-        .unwrap_or(crate::kernel::locus::HEADLESS_VIEW);
+    let [xmin, xmax, ymin, ymax, xs, ys] = c.view();
     let (left, right, bottom, top) = (
         xmin - 1.0 / xs,
         xmax + 1.0 / xs,
@@ -182,7 +180,7 @@ impl PointDef {
         func: &str,
         args: &[&str],
     ) -> Option<Result<Self, String>> {
-        let ("Vertex", [segment, index]) = (func, args) else {
+        let ("Vertex" | "Corner", [segment, index]) = (func, args) else {
             return None;
         };
         let segment = c.id(segment).filter(|&s| c.kind(s) == Kind::Segment)?;

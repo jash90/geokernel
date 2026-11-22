@@ -189,6 +189,50 @@ impl Construction {
         self.propagate_dirty(dirty, 0);
     }
 
+    /// The graphics window the view-dependent objects read.
+    pub fn view(&self) -> [f64; 6] {
+        self.view_state
+            .or(self.locus_view)
+            .unwrap_or(HEADLESS_VIEW)
+    }
+
+    /// Sets the window the view-dependent objects read (`Corner`,
+    /// `AxisStepX`, `AxisStepY`) and recomputes them, as GeoGebra's
+    /// `euclidianViewUpdate` does on every view change. The loci are not
+    /// resampled here; they follow their own sampling window.
+    pub fn set_view(
+        &mut self,
+        xmin: f64,
+        xmax: f64,
+        ymin: f64,
+        ymax: f64,
+        xscale: f64,
+        yscale: f64,
+    ) {
+        let view = [xmin, xmax, ymin, ymax, xscale, yscale];
+        let valid = view.iter().all(|v| v.is_finite())
+            && xmax > xmin
+            && ymax > ymin
+            && xscale > 0.0
+            && yscale > 0.0;
+        if !valid || self.view_state == Some(view) {
+            return;
+        }
+        self.view_state = Some(view);
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.defs.len());
+        for (i, def) in self.defs.iter().enumerate() {
+            if matches!(
+                def,
+                Def::Point(crate::algo::point::PointDef::ViewCorner { .. })
+                    | Def::Measure(crate::algo::measure::MeasureDef::AxisStep { .. })
+            ) {
+                dirty.insert(i);
+            }
+        }
+        self.propagate_dirty(dirty, 0);
+    }
+
     fn locus_slot(&self, i: usize) -> Option<usize> {
         self.loci.binary_search_by_key(&i, |&(owner, _)| owner).ok()
     }

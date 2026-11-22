@@ -500,6 +500,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
 }
 
 fn sample_loci(app: &mut App, ui: &Ui, t: ViewTransform) {
+    // The view-dependent objects (`Corner`, `AxisStepX`) follow the view on
+    // every change, like GeoGebra's `euclidianViewUpdate`; `set_view` skips
+    // an unchanged window, so this is one comparison per frame.
+    app.wb.set_view(t);
     let c = app.wb.construction();
     if !c.has_loci() {
         return;

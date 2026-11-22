@@ -3855,12 +3855,6 @@ reason = "the kernel refuses the input: `Reflect` does not take 6 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:279"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `ConstructionStep`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2792"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Reflect` does not take 6 argument(s)"
@@ -3903,12 +3897,6 @@ reason = "the kernel refuses the input: `Reflect(ImplicitCurve(x^2 + y^2 - 1),(0
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:282"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `SetConstructionStep`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2822"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Reflect` does not take 7 argument(s)"
@@ -3928,8 +3916,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:283"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `cs`; the method's step `commands/CommandsTest.java:279` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: object `cs` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -3981,12 +3969,6 @@ reason = "the kernel refuses the input: unknown object `picT`; the method's step
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:284"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `SetConstructionStep`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2846"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Mode`"
@@ -3994,8 +3976,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:285"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `cs`; the method's step `commands/CommandsTest.java:279` fails earlier here, so the object is missing only in its wake"
+category = "incomplete-context"
+reason = "the kernel refuses the input: object `cs` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -7827,12 +7809,6 @@ reason = "the kernel refuses the input: unknown command `Axes`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:762"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `AxisStepX`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:763"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `ZoomOut`"
@@ -7840,15 +7816,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:764"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `AxisStepX`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:769"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `AxisStepY`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Number(1.0) does not match `2000` (values differ)"
+mismatches = ["b"]
 
 [[gap]]
 id = "commands/CommandsTest.java:770"
@@ -7858,9 +7828,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:771"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `AxisStepY`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Number(1.0) does not match `2000` (values differ)"
+mismatches = ["b"]
 
 [[gap]]
 id = "commands/CommandsTest.java:776"
@@ -8107,12 +8077,6 @@ id = "commands/CommandsTest.java:97"
 category = "text-formatting"
 reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `-7`"
 mismatches = ["g"]
-
-[[gap]]
-id = "commands/CommandsTest.java:978"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ConstructionStep`"
-mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:979"

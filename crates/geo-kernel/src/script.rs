@@ -122,6 +122,15 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(style) = equation::parse_style(line) {
         return style?.apply(c).map(|_| None);
     }
+    // `SetConstructionStep(n)` is a scripting command: it changes the
+    // construction's own state and returns its argument, so a script line
+    // of it creates no object (`CmdSetConstructionStep`).
+    if let Some(arg) = line
+        .strip_prefix("SetConstructionStep(")
+        .and_then(|s| s.strip_suffix(')'))
+    {
+        return set_construction_step(c, arg.trim()).map(|_| None);
+    }
     if line.starts_with('{') {
         return exec_labelled(c, line);
     }
@@ -183,9 +192,30 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     define_after_label(c, name, rhs.trim())
 }
 
+/// `SetConstructionStep(n)`: moves the construction to a step; its
+/// returned argument is a temporary in GeoGebra, so no line of it creates
+/// an object (`CmdSetConstructionStep`).
+fn set_construction_step(c: &mut Construction, arg: &str) -> Result<f64, String> {
+    let value = crate::expr::plain_number(arg)
+        .or_else(|| c.id(arg).and_then(|id| c.number(id)))
+        .ok_or_else(|| format!("`{arg}` is not a number"))?;
+    c.set_construction_step(value);
+    Ok(value)
+}
+
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    // `name = SetConstructionStep(n)` runs the script too: a scripting
+    // command's returned argument is not labelable, so even the labelled
+    // form creates no object (`CmdSetConstructionStep` via the algebra
+    // processor).
+    if let Some(arg) = rhs
+        .strip_prefix("SetConstructionStep(")
+        .and_then(|s| s.strip_suffix(')'))
+    {
+        return set_construction_step(c, arg.trim()).map(|_| None);
+    }
     if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
     {
         return result;
@@ -358,9 +388,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         let open = rhs.find('(').expect("forced forms have parentheses");
         return crate::expr::define_coordinates(c, name, &rhs[open..], form == "$vector").map(Some);
     }
-    if rhs.starts_with("Vertex") {
+    if rhs.starts_with("Vertex") || rhs.starts_with("Corner") {
         if let Some((func, args)) = split_call(rhs) {
-            if func == "Vertex" {
+            if func == "Vertex" || func == "Corner" {
                 if let Some(def) = crate::algo::point::parse_view_corner(c, &args) {
                     return c
                         .add(name, Def::Point(def?))
@@ -898,6 +928,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         "Tangent"
             | "Length"
             | "Vertex"
+            | "Corner"
             | "Point"
             | "Barycenter"
             | "Polygon"
@@ -915,7 +946,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         ("Length", [f, _, _]) if is_kind(f, Kind::Function) || is_kind(f, Kind::Curve) => {
             &[(1, Kind::Number), (2, Kind::Number)]
         }
-        ("Vertex", [s, _]) if is_kind(s, Kind::Segment) => &[(1, Kind::Number)],
+        ("Vertex" | "Corner", [s, _]) if is_kind(s, Kind::Segment) => &[(1, Kind::Number)],
         ("Point", [path, _])
             if c.id(path)
                 .is_some_and(|id| crate::algo::path::PATH.contains(&c.kind(id))) =>
@@ -1737,6 +1768,22 @@ mod tests {
         // Two points still make a plain line.
         assert!(matches!(c.def(c.id("m").unwrap()), Def::Line(..)));
         assert!(matches!(c.def(c.id("p").unwrap()), Def::Parallel { .. }));
+    }
+
+    #[test]
+    fn set_construction_step_script_and_labelled_forms() {
+        // One object exists, so every set is clamped to step 0; the labelled
+        // form also creates no object, exactly like GeoGebra's processor.
+        let mut c = load("cs = ConstructionStep()\n").unwrap();
+        assert_eq!(c.number(c.id("cs").unwrap()), Some(1.0));
+        assert!(exec(&mut c, "SetConstructionStep(2)").unwrap().is_none());
+        assert_eq!(c.number(c.id("cs").unwrap()), Some(1.0));
+        assert!(exec(&mut c, "a = SetConstructionStep(9)").unwrap().is_none());
+        assert!(c.id("a").is_none());
+        assert_eq!(c.number(c.id("cs").unwrap()), Some(1.0));
+
+        let err = load("SetConstructionStep(x)\n").err().unwrap();
+        assert!(err.message.contains("`x` is not a number"), "{}", err.message);
     }
 
     #[test]

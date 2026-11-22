@@ -1336,7 +1336,7 @@ pub(crate) fn exec(
         "Centroid" if n == 1 => single(c, name, args[0], PolygonDef::Centroid),
         "Centroid" => Err(format!("`Centroid` does not take {n} argument(s)")),
         // `Vertex(k)` of a general conic belongs to the conic readers
-        "Vertex" if !(n == 1 && kind_of(c, args[0]) == Some(Kind::Conic)) => {
+        "Vertex" | "Corner" if !(n == 1 && kind_of(c, args[0]) == Some(Kind::Conic)) => {
             vertex_line(c, name, &args)
         }
         "InteriorAngles" if n == 1 => outputs_line(c, name, args[0], Outputs::Angles(true)),

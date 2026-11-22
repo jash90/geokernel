@@ -120,6 +120,16 @@ impl Workbench {
             .set_locus_view(v.xmin, v.xmax, v.ymin, v.ymax, scale, scale);
     }
 
+    /// Publishes the current graphics view for the objects that read it
+    /// (`Corner`, `AxisStepX`, `AxisStepY`), recomputing their dependents
+    /// when the window or scale changed.
+    pub fn set_view(&mut self, view: crate::interact::ViewTransform) {
+        let v = view.view();
+        let scale = view.scale();
+        self.construction
+            .set_view(v.xmin, v.xmax, v.ymin, v.ymax, scale, scale);
+    }
+
     /// Objects exposed to the algebra view and document clients.
     pub fn object_ids(&self) -> impl Iterator<Item = Id> + '_ {
         crate::scriptlog::object_ids(&self.construction)
