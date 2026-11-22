@@ -135,7 +135,7 @@ PartialFractions,,function,,out_of_scope,,,Symbolic partial fraction decompositi
 Numerator,,function,P2,done,2,2,
 Denominator,,function,P2,done,2,2,
 ComplexRoot,,function,P2,done,1,1,"Numeric polynomial roots, returned as points with real and imaginary coordinates."
-SolveODE,,function,P2,done,7,7,"Numeric first-order, parametric and second-order systems. The symbolic forms solve a polynomial right-hand side in x, with or without an initial point; other right-hand sides use the CAS."
+SolveODE,,function,P2,partial,7,5,"Numeric first-order, parametric and second-order systems. The symbolic forms solve a polynomial right-hand side in x, with or without an initial point; other right-hand sides use the CAS."
 SlopeField,,function,P2,done,4,4,
 Iteration,,function,P2,done,3,3,
 PathParameter,,function,P2,done,1,1,PathParameter(point on a path)

@@ -3121,25 +3121,13 @@ cases = ["funcanalysis-inverted-001"]
 
 [[form]]
 command = "SolveODE"
-form = "function"
-cases = ["odesymbolic-polynomial-001", "odesymbolic-polynomial-004"]
-difference = "calculus-commands: `SolveODE(function)` and `SolveODE(function, point)` of anything that is no polynomial in `x`"
-
-[[form]]
-command = "SolveODE"
 form = "curve"
-cases = ["odesymbolic-curve-001", "odesymbolic-curve-002"]
-
-[[form]]
-command = "SolveODE"
-form = "function,point"
-cases = ["odesymbolic-polynomial-002", "odesymbolic-polynomial-010"]
-difference = "calculus-commands: `SolveODE(function)` and `SolveODE(function, point)` of anything that is no polynomial in `x`"
+cases = ["odesymbolic-curve-001", "odesymbolic-curve-002", "odesymbolic-nocas-002"]
 
 [[form]]
 command = "SolveODE"
 form = "curve,point"
-cases = ["odesymbolic-curve-002"]
+cases = ["odesymbolic-curve-002", "odesymbolic-nocas-002"]
 
 [[form]]
 command = "SolveODE"

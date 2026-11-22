@@ -20,6 +20,8 @@
     {"id": "odesymbolic-cas-003", "group": "odesymbolic", "script": ["g = SolveODE(x y)", "h = SolveODE(y, (0, 1))", "i = SolveODE(x + y, (0, 0))"], "steps": [{"action": "initial"}]},
     {"id": "odesymbolic-cas-004", "group": "odesymbolic", "script": ["f(x, y) = x", "g = SolveODE(f)", "h = SolveODE(f, (1, 1))"], "steps": [{"action": "initial"}]},
     {"id": "odesymbolic-cas-005", "group": "odesymbolic", "script": ["f(x) = If(x < 0, x, 2x)", "g = SolveODE(f)"], "steps": [{"action": "initial"}]},
-    {"id": "odesymbolic-cas-006", "group": "odesymbolic", "script": ["b = 2", "f(x) = x^b", "g = SolveODE(f)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "b", "value": -1.0}, {"action": "set_number", "label": "b", "value": 0.5}, {"action": "set_number", "label": "b", "value": 3.0}]}
+    {"id": "odesymbolic-cas-006", "group": "odesymbolic", "script": ["b = 2", "f(x) = x^b", "g = SolveODE(f)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "b", "value": -1.0}, {"action": "set_number", "label": "b", "value": 0.5}, {"action": "set_number", "label": "b", "value": 3.0}]},
+    {"id": "odesymbolic-nocas-001", "group": "odesymbolic", "script": ["a = 1", "f(x) = -x/a", "P = (1, 1)", "g = SolveODE(f)", "h = SolveODE(f, P)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 0.0}, {"action": "move", "label": "P", "x": 2.0, "y": -1.0}, {"action": "set_number", "label": "a", "value": 2.0}]},
+    {"id": "odesymbolic-nocas-002", "group": "odesymbolic", "script": ["b = 1", "c = Curve(t^2, 2t, t, 0, b)", "P = (1, 1)", "g = SolveODE(c)", "h = SolveODE(c, P)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "b", "value": -1.0}, {"action": "move", "label": "P", "x": 2.0, "y": 0.0}, {"action": "set_number", "label": "b", "value": 2.0}], "sample_curves": true}
   ]
 }

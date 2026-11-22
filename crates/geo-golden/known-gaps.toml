@@ -922,3 +922,8 @@ mismatches = ["0:M", "1:M"]
 id = "funcrest-conditional-007"
 reason = "the reference keeps a segment result and its last copied endpoints when a plain line is selected; the kernel refuses mixed geometric kinds because a segment value has no independent supporting line or retained endpoints"
 mismatches = ["0:script line 7"]
+
+[[gap]]
+id = "odesymbolic-nocas-001"
+reason = "both symbolic function forms return undefined without a symbolic solver in the reference; the kernel integrates polynomial slopes locally and returns defined functions while the slope is defined"
+mismatches = ["0:g", "0:h", "3:g", "3:h"]

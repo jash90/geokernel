@@ -138,7 +138,13 @@ case "$cmd" in
               run_golden degree
               exit
               ;;
-            cas.json | odesymbolic.json) enable_giac ;;
+            odesymbolic.json)
+              run_golden nocas
+              enable_giac
+              run_golden '!nocas'
+              exit
+              ;;
+            cas.json) enable_giac ;;
           esac
         fi
         run_golden

@@ -68,4 +68,12 @@ case("cas", "f(x, y) = x\ng = SolveODE(f)\nh = SolveODE(f, (1, 1))")
 case("cas", "f(x) = If(x < 0, x, 2x)\ng = SolveODE(f)")
 case("cas", "b = 2\nf(x) = x^b\ng = SolveODE(f)", [setn("b", -1), setn("b", 0.5), setn("b", 3)])
 
+# These cases run against the backend with symbolic evaluation disabled.
+cases.topic("nocas")
+case("nocas", "a = 1\nf(x) = -x/a\nP = (1, 1)\ng = SolveODE(f)\nh = SolveODE(f, P)",
+     [setn("a", 0), mv("P", 2, -1), setn("a", 2)])
+case("nocas", "b = 1\nc = Curve(t^2, 2t, t, 0, b)\nP = (1, 1)\ng = SolveODE(c)\nh = SolveODE(c, P)",
+     [setn("b", -1), mv("P", 2, 0), setn("b", 2)])
+cases.cases[-1]["sample_curves"] = True
+
 cases.write()
