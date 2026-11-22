@@ -480,6 +480,18 @@ impl Workbench {
                     let mutated =
                         !added && (assigns_slider || self.construction.step() != step_before);
                     if added || mutated {
+                        // A stroke keeps the points of its creation: the
+                        // journal replays them, not the smoothing in
+                        // another view.
+                        let line = first
+                            .and_then(|id| {
+                                geo_kernel::script::frozen_stroke_line(
+                                    &self.construction,
+                                    id,
+                                    &line,
+                                )
+                            })
+                            .unwrap_or(line);
                         self.log.record(&self.construction, before, &line);
                         if let Some(first) = first {
                             self.boundary_outputs.record(

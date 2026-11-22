@@ -26,5 +26,5 @@ Image,IMAGE,Image,yes,yes,yes,no,no,yes,yes,yes,Raster corners and transforms ha
 PieChart,PIECHART,PieChart,yes,yes,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius. Export: its definition needs a saved form; the colour and filling of single slices are not kept.
 InputBox,TEXTFIELD,InputBox,no,no,no,no,no,no,yes,partial,linked object retained on import. Export: the font and size and position and the length and symbolic mode and alignment and typed text are not kept.
 Button,BUTTON,Button,no,no,no,no,no,no,yes,partial,caption and inert scripts retained on import. Export: the font and size and position and the image are not kept.
-PenStroke,PENSTROKE,,no,no,no,no,no,no,no,no,
+PenStroke,PENSTROKE,PenStroke,yes,yes,yes,yes,no,yes,yes,partial,Frozen smoothed strokes with cubic pieces and subpath breaks; saved files restore the points they hold. Export: no witness for draw_arrows.
 Turtle,TURTLE,,no,no,no,no,no,no,no,no,out of 1.0 (scripting is out of scope)

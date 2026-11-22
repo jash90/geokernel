@@ -32,6 +32,7 @@ pub(super) fn kind(kind: Kind) -> &'static str {
         Kind::InputBox => "textfield",
         Kind::Image => "image",
         Kind::PieChart => "piechart",
+        Kind::PenStroke => "penstroke",
         _ => "",
     }
 }
@@ -54,6 +55,7 @@ fn traceable(kind: Kind) -> bool {
             | Kind::PolyLine
             | Kind::List
             | Kind::Locus
+            | Kind::PenStroke
             | Kind::Curve
             | Kind::ImplicitCurve
     )
@@ -75,6 +77,11 @@ impl Writer<'_> {
 
         if c.image(id).is_some() {
             self.image(id)?;
+        }
+        // Every number exactly: the reader parses each field as a double.
+        if let Some(stroke) = c.stroke(id).filter(|s| s.defined && !s.points.is_empty()) {
+            let coords = geo_kernel::algo::stroke::saved_coords(stroke);
+            self.xml.tag("strokeBezierCoords", &[("val", &coords)])?;
         }
         let style = c.drawing_style(id);
         // An object from a file writes the tags its file had. A tag the file
@@ -207,7 +214,10 @@ impl Writer<'_> {
                     if let Some(opacity) = line.opacity {
                         attrs.push(("opacity", opacity.to_string()));
                     }
-                    if let Some(arrows) = line.draw_arrow.filter(|_| object_kind == Kind::Locus) {
+                    if let Some(arrows) = line
+                        .draw_arrow
+                        .filter(|_| matches!(object_kind, Kind::Locus | Kind::PenStroke))
+                    {
                         attrs.push(("drawArrow", flag(arrows).to_owned()));
                     }
                     let attrs: Vec<_> = attrs.iter().map(|(k, v)| (*k, v.as_str())).collect();

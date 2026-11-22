@@ -1353,6 +1353,22 @@ impl Converter {
                     Err("the value is not finite".into())
                 }
             }
+            "penstroke" => match (&el.stroke_coords, el.legacy_stroke) {
+                (Some(coords), _) => {
+                    match geo_kernel::algo::stroke::parse_saved_coords(coords) {
+                        Ok(numbers) => {
+                            let data = geo_kernel::algo::stroke::StrokeData::from_triplets(&numbers);
+                            Ok(format!(
+                                "{label} = {}",
+                                geo_kernel::algo::stroke::saved_definition(&data)
+                            ))
+                        }
+                        Err(reason) => Err(reason),
+                    }
+                }
+                (None, true) => Err("the stroke has only vertices to smooth again in the reader's view (`strokeCoords`)".into()),
+                (None, false) => Ok(format!("{label} = PenStroke()")),
+            },
             "implicitpoly" => Ok(format!(
                 "$implicitCoefficients({label}, {})",
                 el.implicit_coefficients.as_deref().unwrap_or("[]")
@@ -1407,7 +1423,7 @@ fn unsupported_element(kind: &str) -> String {
     let reason = match kind {
         "audio" | "video" | "embed" => "out of scope: media playback and embedded applications",
         "implicitpoly" => "there is no implicit curve kind",
-        "penstroke" | "turtle" => "there is no corresponding stroke or turtle kind",
+        "turtle" => "there is no corresponding turtle kind",
         _ => return format!("the element type `{}` is not supported", quote(kind)),
     };
     format!("element type `{kind}`: {reason}")
@@ -1442,6 +1458,11 @@ fn expression_kind(saved_type: &str) -> Result<Kind, String> {
 
 /// Literal objects use the full precision of the saved value.
 fn has_saved_literal(el: &Element, exp: &str) -> bool {
+    if el.kind == "penstroke" {
+        // `AlgoLocusStroke` saves `PenStroke[]`; the points are in the
+        // element
+        return matches!(exp.trim(), "PenStroke[]" | "PenStroke()");
+    }
     if el.kind == "boolean" && el.value.is_some() {
         return matches!(exp.trim(), "true" | "false" | "True" | "False");
     }
@@ -1997,6 +2018,7 @@ fn kind_agrees(saved: &str, actual: Kind) -> bool {
         "polyline" => Kind::PolyLine,
         "text" => Kind::Text,
         "locus" => Kind::Locus,
+        "penstroke" => Kind::PenStroke,
         "curvecartesian" => Kind::Curve,
         "implicitpoly" => Kind::ImplicitCurve,
         _ => return true,

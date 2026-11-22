@@ -86,6 +86,11 @@ pub struct Element {
     /// `<matrix A0= ... A5=>` of a conic as written.
     pub matrix: Option<[String; 6]>,
     pub implicit_coefficients: Option<String>,
+    /// `<strokeBezierCoords val=>` of a pen stroke as written.
+    pub stroke_coords: Option<String>,
+    /// `<strokeCoords>`: the vertices of an older pen stroke, which the
+    /// reference smooths again in its view when no Bezier points came first.
+    pub legacy_stroke: bool,
     /// `<fixed val="true">`: not used, counted for a note.
     pub fixed: bool,
     /// `<auxiliary val="true">`: not used, counted for a note.
@@ -1011,6 +1016,20 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "angleStyle" if element.is_some() => {
                     element.as_mut().expect("checked above").angle_style =
                         attr(e, "val")?.and_then(|v| v.parse().ok());
+                }
+                "strokeBezierCoords"
+                    if element.as_ref().is_some_and(|el| el.kind == "penstroke") =>
+                {
+                    let el = element.as_mut().expect("checked above");
+                    // the reader replaces the points with every tag it reads
+                    if let Some(coords) = attr(e, "val")?.filter(|v| !v.is_empty()) {
+                        el.stroke_coords = Some(coords);
+                    }
+                }
+                "strokeCoords" if element.as_ref().is_some_and(|el| el.kind == "penstroke") => {
+                    if attr(e, "val")?.is_some_and(|v| !v.is_empty()) {
+                        element.as_mut().expect("checked above").legacy_stroke = true;
+                    }
                 }
                 "coefficients" if element.as_ref().is_some_and(|el| el.kind == "implicitpoly") => {
                     if attr(e, "rep")?.as_deref() == Some("array") {

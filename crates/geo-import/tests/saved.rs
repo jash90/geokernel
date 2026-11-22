@@ -214,6 +214,51 @@ fn saved_style_fixtures_import_every_object_with_a_style() {
     assert_eq!(fixtures, 12);
 }
 
+/// A file of pen strokes holds every number in five significant digits
+/// (`GeoLocusStroke.appendBezierCoords`): the importer restores exactly
+/// those numbers, which are the values GeoGebra computed when saving,
+/// rounded so, with the same segment codes and breaks.
+#[test]
+fn saved_strokes_restore_the_rounded_points_of_the_file() {
+    let (snap, imported) = fixture("saved-strokes-001");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    let rounded = |v: f64| -> f64 {
+        geo_kernel::algo::stroke::reference_number(v)
+            .parse()
+            .unwrap()
+    };
+    let mut strokes = 0;
+    for (label, expected) in &snap.objects {
+        let id = c.id(label).unwrap();
+        assert_eq!(c.kind(id), Kind::PenStroke, "{label}");
+        let stroke = c.stroke(id).unwrap();
+        match &expected.data {
+            Some(ExpectedData::Stroke(points)) if !points.is_empty() => {
+                assert!(stroke.defined, "{label}");
+                assert_eq!(points.len(), stroke.points.len(), "{label}");
+                for (i, (&(x, y, code), p)) in points.iter().zip(stroke.points.iter()).enumerate() {
+                    match x {
+                        Some(x) => {
+                            assert_eq!(p.x, rounded(x), "{label} point {i}");
+                            assert_eq!(p.y, rounded(y.unwrap()), "{label} point {i}");
+                            assert_eq!(p.segment.code(), code, "{label} point {i}");
+                        }
+                        None => assert!(!p.is_defined(), "{label} point {i}"),
+                    }
+                }
+                strokes += 1;
+            }
+            // The file has an empty value for a stroke without points, and
+            // the reader leaves an empty value unapplied: undefined, as
+            // `PenStroke()` itself.
+            _ => assert!(!c.value(id).is_defined(), "{label}"),
+        }
+    }
+    assert_eq!(strokes, 4);
+}
+
 #[test]
 fn saved_elements_rebuild_their_geometry() {
     let (snap, imported) = fixture("saved-elements-001");
@@ -574,6 +619,8 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     "saved-vertex-image-003",
                     // Its values are deliberately stale. The replay test checks the clamped values.
                     "saved-slider-bounds-001",
+                    // Its numbers are rounded in the file; checked above.
+                    "saved-strokes-001",
                 ])
                 .chain(&TEXT_FIXTURES)
                 .chain(&TEXT_EQUATION_FIXTURES)

@@ -32,6 +32,8 @@ pub use crate::style::FREE_POINT_RADIUS;
 const DEPENDENT_POINT_RADIUS: f32 = 4.0;
 /// Line thickness 5, drawn half as wide.
 pub const CURVE_WIDTH: f32 = 2.5;
+/// The chords each cubic piece of a pen stroke is drawn with.
+const STROKE_STEPS: usize = 16;
 const LABEL_FONT: f32 = 16.0;
 
 pub(crate) mod charts;
@@ -109,6 +111,10 @@ fn near_view(c: &Construction, id: Id, t: &ViewTransform, w: f64, h: f64) -> boo
         Value::Locus { .. } => c
             .locus(id)
             .and_then(|l| l.bounds())
+            .is_some_and(|[x0, x1, y0, y1]| near(&mut [(x0, y0), (x1, y1)].into_iter(), NEAR)),
+        Value::PenStroke { .. } => c
+            .stroke(id)
+            .and_then(|s| s.bounds())
             .is_some_and(|[x0, x1, y0, y1]| near(&mut [(x0, y0), (x1, y1)].into_iter(), NEAR)),
         Value::Conic { .. } => match c.conic(id) {
             Some(d) if matches!(d.ty, ConicType::Ellipse | ConicType::Circle) => {
@@ -635,6 +641,27 @@ fn paint_layer<'c>(
     }
     if c.has_loci() {
         paint_loci(painter, c, &ids, (t, origin), color, scene.generation);
+    }
+    for &id in &ids {
+        // A pen stroke: its subpaths with round ends; a lone point is the
+        // round cap of the pen. It has no label (`isLabelVisible` is false).
+        let (Value::PenStroke { .. }, Some(stroke)) = (c.value(id), c.stroke(id)) else {
+            continue;
+        };
+        for run in stroke.runs(STROKE_STEPS) {
+            let points: Vec<Pos2> = run.iter().map(|&(x, y)| p(x, y)).collect();
+            if points.iter().any(|q| !q.is_finite()) {
+                continue;
+            }
+            match points.as_slice() {
+                [at] => {
+                    painter.circle_filled(*at, CURVE_WIDTH / 2.0, color(id));
+                }
+                _ => {
+                    painter.add(Shape::line(points, curve(id)));
+                }
+            }
+        }
     }
 
     let mut has_text = false;

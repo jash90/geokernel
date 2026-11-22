@@ -497,6 +497,9 @@ impl Writer<'_> {
 
         match def {
             Def::Image(_) | Def::Boolean(_) | Def::Button | Def::Angle(_) => return Ok(()),
+            // `AlgoLocusStroke` saves an empty command; the element holds the
+            // points
+            Def::PenStroke => return self.expression(id, "PenStroke[]"),
             Def::Number(_) if c.construction_source(id).is_none() => return Ok(()),
             Def::FreePoint { .. } if c.construction_source(id).is_none() => return Ok(()),
             Def::InputBox(link) => {

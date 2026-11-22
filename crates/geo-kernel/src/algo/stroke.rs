@@ -110,6 +110,56 @@ impl StrokeData {
             })
     }
 
+    /// The subpaths as polylines, each cubic piece flattened into `steps`
+    /// chords. A subpath of one point is a run of one point; a piece with a
+    /// non-finite coordinate ends its run.
+    pub fn runs(&self, steps: usize) -> Vec<Vec<(f64, f64)>> {
+        let steps = steps.max(1);
+        let mut runs: Vec<Vec<(f64, f64)>> = Vec::new();
+        let mut run: Vec<(f64, f64)> = Vec::new();
+        let mut controls: Vec<(f64, f64)> = Vec::with_capacity(2);
+        let mut flush = |run: &mut Vec<(f64, f64)>| {
+            if !run.is_empty() {
+                runs.push(std::mem::take(run));
+            }
+        };
+        for p in self.points.iter() {
+            if !p.is_defined() || !p.y.is_finite() {
+                flush(&mut run);
+                controls.clear();
+                continue;
+            }
+            let at = (p.x, p.y);
+            match p.segment {
+                Segment::Move => {
+                    flush(&mut run);
+                    controls.clear();
+                    run.push(at);
+                }
+                Segment::Control => controls.push(at),
+                // a piece before any move draws nothing
+                _ if run.is_empty() => controls.clear(),
+                Segment::Curve if controls.len() == 2 => {
+                    let start = *run.last().expect("a run has a start");
+                    let xs = cubic(start.0, controls[0].0, controls[1].0, at.0);
+                    let ys = cubic(start.1, controls[0].1, controls[1].1, at.1);
+                    for k in 1..steps {
+                        let t = k as f64 / steps as f64;
+                        run.push((evaluate(&xs, t), evaluate(&ys, t)));
+                    }
+                    run.push(at);
+                    controls.clear();
+                }
+                Segment::Curve | Segment::Line => {
+                    run.push(at);
+                    controls.clear();
+                }
+            }
+        }
+        flush(&mut run);
+        runs
+    }
+
     /// The stroke of saved points (`x, y, code` triplets), as the reference
     /// reader restores them: a move after other points starts a new
     /// subpath, and the stroke ends with a break.
@@ -145,6 +195,120 @@ impl StrokeData {
                 }
             })
             .collect()
+    }
+}
+
+/// The largest number of points a saved stroke restores.
+pub const MAX_SAVED_POINTS: usize = 400_000;
+
+/// A number of a saved stroke as the reference reader parses it back.
+fn saved_number(v: f64) -> String {
+    if v.is_nan() {
+        "NaN".into()
+    } else if v.is_infinite() {
+        if v > 0.0 { "Infinity" } else { "-Infinity" }.into()
+    } else {
+        format!("{v:?}")
+    }
+}
+
+/// A stroke number as the reference writes it in a value string or a saved
+/// file: `0.0000E0`, five significant digits rounded half up from the
+/// exact binary value (Java's `DecimalFormat`).
+pub fn reference_number(v: f64) -> String {
+    if v.is_nan() {
+        return "NaN".into();
+    }
+    if v.is_infinite() {
+        return if v > 0.0 { "\u{221e}" } else { "-\u{221e}" }.into();
+    }
+    let sign = if v.is_sign_negative() { "-" } else { "" };
+    if v == 0.0 {
+        return format!("{sign}0.0000E0");
+    }
+    // The exact decimal expansion: a double has at most 767 significant
+    // digits.
+    let exact = format!("{:.800e}", v.abs());
+    let (mantissa, exponent) = exact.split_once('e').expect("scientific");
+    let mut exponent: i32 = exponent.parse().expect("exponent");
+    let digits: Vec<u8> = mantissa
+        .bytes()
+        .filter(u8::is_ascii_digit)
+        .map(|b| b - b'0')
+        .collect();
+    let mut kept: Vec<u8> = digits[..5].to_vec();
+    if digits[5] >= 5 {
+        let mut i = 4;
+        loop {
+            if kept[i] < 9 {
+                kept[i] += 1;
+                break;
+            }
+            kept[i] = 0;
+            if i == 0 {
+                kept.insert(0, 1);
+                kept.truncate(5);
+                exponent += 1;
+                break;
+            }
+            i -= 1;
+        }
+    }
+    let text: String = kept.iter().map(|d| char::from(b'0' + d)).collect();
+    format!("{sign}{}.{}E{exponent}", &text[..1], &text[1..])
+}
+
+/// The saved coordinates of a stroke, `x,y,code,...` without spaces: the
+/// value of the `strokeBezierCoords` tag. Every number is written exactly.
+pub fn saved_coords(data: &StrokeData) -> String {
+    data.triplets()
+        .iter()
+        .map(|&v| saved_number(v))
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+/// The numbers of a `strokeBezierCoords` value, split at commas as the
+/// reference reader does (trailing empty fields are dropped).
+pub fn parse_saved_coords(text: &str) -> Result<Vec<f64>, String> {
+    let mut fields: Vec<&str> = text.split(',').collect();
+    while fields.last().is_some_and(|f| f.is_empty()) {
+        fields.pop();
+    }
+    if fields.len() > 3 * MAX_SAVED_POINTS {
+        return Err(format!(
+            "a saved stroke holds at most {MAX_SAVED_POINTS} points"
+        ));
+    }
+    fields
+        .iter()
+        .map(|f| {
+            let f = f.trim();
+            match f {
+                "Infinity" | "+Infinity" => Ok(f64::INFINITY),
+                "-Infinity" => Ok(f64::NEG_INFINITY),
+                "NaN" | "+NaN" | "-NaN" => Ok(f64::NAN),
+                _ if f
+                    .bytes()
+                    .any(|b| b.is_ascii_alphabetic() && !matches!(b, b'e' | b'E')) =>
+                {
+                    Err(format!("`{f}` is not a saved stroke number"))
+                }
+                _ => f
+                    .parse()
+                    .map_err(|_| format!("`{f}` is not a saved stroke number")),
+            }
+        })
+        .collect()
+}
+
+/// The journal line of a stroke restored from saved coordinates: an
+/// undefined stroke is `PenStroke()`, any other one `$penStroke(...)`.
+pub fn saved_definition(data: &StrokeData) -> String {
+    if data.defined {
+        format!("$penStroke({})", saved_coords(data).replace(',', ", "))
+    } else {
+        "PenStroke()".into()
     }
 }
 
@@ -537,6 +701,17 @@ impl Construction {
                 self.strokes.remove(&id);
             })
             .map_err(|e| e.to_string())
+    }
+
+    /// `$penStroke(x, y, code, ...)`: a stroke restored from its saved
+    /// points, read as the reference reader reads `strokeBezierCoords`.
+    pub fn add_saved_stroke(&mut self, label: &str, args: &[&str]) -> Result<Id, String> {
+        let args = match args {
+            [""] => &[][..],
+            _ => args,
+        };
+        let numbers = parse_saved_coords(&args.join(","))?;
+        self.add_stroke(label, StrokeData::from_triplets(&numbers))
     }
 
     /// `PenStroke(args)`: smooths the points of the arguments in the

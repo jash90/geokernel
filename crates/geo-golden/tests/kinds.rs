@@ -16,7 +16,8 @@
 //!   image of the SVG writer (`geo_kernel::svg::render`): `yes` for every
 //!   sample, `partial` for some, `no` for none. A function whose graph has
 //!   no piece inside the view (golden cases of extreme numbers have such
-//!   functions) is not a sample, as there is nothing to draw;
+//!   functions) is not a sample, as there is nothing to draw, nor is a pen
+//!   stroke without points;
 //! * `pointer_hit`, exact: `geo_app_core::hit::hit` hits the object somewhere
 //!   on a 400 x 300 view, graded over the samples as for `svg`;
 //! * `algebra_text`, exact: per sample, the text is proper when
@@ -853,6 +854,36 @@ const SAMPLE_CASES: &[&str] = &[
     "relationreview-polygons-001",
     "relationreview-segments-001",
     "relationreview-vectors-001",
+    "stroke-breaks-001",
+    "stroke-breaks-002",
+    "stroke-breaks-003",
+    "stroke-breaks-004",
+    "stroke-breaks-005",
+    "stroke-breaks-006",
+    "stroke-frozen-001",
+    "stroke-frozen-003",
+    "stroke-literals-001",
+    "stroke-literals-002",
+    "stroke-literals-003",
+    "stroke-literals-004",
+    "stroke-literals-005",
+    "stroke-literals-006",
+    "stroke-literals-007",
+    "stroke-literals-008",
+    "stroke-numbers-001",
+    "stroke-numbers-002",
+    "stroke-numbers-003",
+    "stroke-numbers-004",
+    "stroke-numbers-005",
+    "stroke-points-002",
+    "stroke-points-003",
+    "stroke-points-004",
+    "stroke-points-005",
+    "stroke-points-006",
+    "stroke-points-007",
+    "stroke-points-008",
+    "stroke-points-009",
+    "stroke-points-010",
     "textconcat-geometry-001",
     "textconcat-geometry-002",
     "textconcat-lists-001",
@@ -1109,7 +1140,8 @@ fn svg_draws(lines: &[String]) -> bool {
 /// Whether the last line of a script made something there is to draw: a
 /// function counts only when its graph has a piece inside the view, two
 /// neighbouring x of 401 probes with finite values in it (probed
-/// independently of the plotter; an isolated defined point is not drawn).
+/// independently of the plotter; an isolated defined point is not drawn),
+/// and a pen stroke only when it has a point.
 fn has_something_to_draw(lines: &[String]) -> bool {
     let c = build(lines);
     let before: BTreeSet<Id> = build(&lines[..lines.len() - 1]).ids().collect();
@@ -1120,9 +1152,16 @@ fn has_something_to_draw(lines: &[String]) -> bool {
             .is_some_and(|y| y.is_finite() && (view.ymin..=view.ymax).contains(&y))
     };
     c.ids().filter(|id| !before.contains(id)).all(|id| {
-        !matches!(c.value(id), Value::Function)
-            || (0..400).any(|i| inside(id, i) && inside(id, i + 1))
+        stroke_has_points(&c, id)
+            && (!matches!(c.value(id), Value::Function)
+                || (0..400).any(|i| inside(id, i) && inside(id, i + 1)))
     })
+}
+
+/// Whether `id` is no pen stroke, or one with a point to draw.
+fn stroke_has_points(c: &Construction, id: Id) -> bool {
+    c.stroke(id)
+        .is_none_or(|stroke| stroke.defined_points().next().is_some())
 }
 
 /// The construction of a script and the id of `label` in it.
@@ -1328,7 +1367,12 @@ fn checked_cells_agree_with_the_code() {
             .unwrap_or_default();
         exact(
             "pointer_hit",
-            grade(objects.iter().map(|(c, id)| pointer_hits(c, *id))),
+            grade(
+                objects
+                    .iter()
+                    .filter(|(c, id)| stroke_has_points(c, *id))
+                    .map(|(c, id)| pointer_hits(c, *id)),
+            ),
         );
         let texts: Vec<u8> = objects.iter().map(|(c, id)| text_grade(c, *id)).collect();
         exact(

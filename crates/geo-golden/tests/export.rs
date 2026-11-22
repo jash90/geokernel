@@ -51,6 +51,11 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("paths-chain-001", 1),
     ("polygon-polyline-001", 0),
     ("polygon-regular-001", 0),
+    // Pen strokes: cubic pieces, breaks and a lone point.
+    ("stroke-breaks-001", 0),
+    ("stroke-literals-002", 0),
+    ("stroke-points-010", 0),
+    ("stroke-points-004", 0),
     ("textobjects-dynamic-001", 1),
     ("vector-chain-001", 0),
 ];
@@ -66,6 +71,7 @@ const SAVED_CASES: &[&str] = &[
     "saved-images-002.ggb",
     "saved-object-scripts-001.xml",
     "saved-slider-bounds-001.xml",
+    "saved-strokes-001.xml",
     "saved-texts-001.ggb",
     "saved-text-equations-001.xml",
     // Presentation properties per kind, set by the reference application.
@@ -84,6 +90,8 @@ const SAVED_CASES: &[&str] = &[
     // Dynamic colour channels, a step and a speed over objects that are
     // undefined in the saved state.
     "saved-styles-012.xml",
+    // Pen strokes with presentation properties.
+    "saved-styles-013.xml",
 ];
 
 const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
@@ -852,6 +860,10 @@ const WITNESSES: &[(&str, &[(&str, &str)])] = &[
         &[("saved-styles-004", "path"), ("saved-styles-004", "path2")],
     ),
     (
+        "PenStroke",
+        &[("saved-styles-013", "s"), ("saved-styles-013", "s2")],
+    ),
+    (
         "Curve",
         &[("saved-styles-004", "c"), ("saved-styles-004", "c2")],
     ),
@@ -972,7 +984,8 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
             &["trace", "start_style", "end_style"],
         ],
         "Vector" => &[SHARED, FLAGS, LABEL, LINE, &["trace", "head_style"]],
-        "Locus" => &[SHARED, &["fixed"], LABEL, LINE, &["trace", "draw_arrows"]],
+        // A pen stroke is a locus in the reference application.
+        "Locus" | "PenStroke" => &[SHARED, &["fixed"], LABEL, LINE, &["trace", "draw_arrows"]],
         "Segment" => &[
             SHARED,
             FLAGS,

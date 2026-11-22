@@ -810,6 +810,7 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
     if !rhs.starts_with("$saved(")
         && !rhs.starts_with("$pointOnPath(")
         && !rhs.starts_with("$slider(")
+        && !rhs.starts_with("$penStroke(")
     {
         return None;
     }
@@ -824,6 +825,12 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
                     parse_number(max)?,
                 )
                 .map_err(|e| e.to_string()),
+            ("$saved", [literal, _definition]) if literal.starts_with("$penStroke(") => {
+                match split_call(literal) {
+                    Some(("$penStroke", coords)) => c.add_saved_stroke(name, &coords),
+                    _ => Err("invalid saved stroke".into()),
+                }
+            }
             ("$saved", [literal, _definition]) => {
                 let def = if let Some(def) = parse_forced(literal) {
                     def?
@@ -834,6 +841,7 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
                 };
                 c.add(name, def).map_err(|e| e.to_string())
             }
+            ("$penStroke", coords) => c.add_saved_stroke(name, coords),
             ("$pointOnPath", [curve, parameter]) => c
                 .add_saved_curve_point(name, object(c, curve)?, parse_number(parameter)?)
                 .map_err(|e| e.to_string()),
@@ -852,6 +860,25 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
         }
     };
     Some(parse())
+}
+
+/// The journal line that keeps the points of the pen stroke `id` made by
+/// `line`: `label = $saved($penStroke(...), definition)`, so that replaying
+/// it restores the frozen points whatever the view, and the definition
+/// stays as typed. `None` for any other object or a line already saved.
+pub fn frozen_stroke_line(c: &Construction, id: Id, line: &str) -> Option<String> {
+    if c.kind(id) != Kind::PenStroke || split_comment(line).1.is_some() {
+        return None;
+    }
+    let separator = line.find([':', '='])?;
+    let (lhs, rhs) = (line[..separator].trim(), line[separator + 1..].trim());
+    if rhs.starts_with('$') {
+        return None;
+    }
+    // an undefined stroke has no points that a view could change
+    let stroke = c.stroke(id).filter(|stroke| stroke.defined)?;
+    let saved = crate::algo::stroke::saved_definition(stroke);
+    Some(format!("{lhs} = $saved({saved}, {rhs})"))
 }
 
 /// The definition text saved with an independent object's exact value.
