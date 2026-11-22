@@ -4,12 +4,13 @@ mod functional;
 mod input;
 mod solutions;
 
+use super::equation::Builder;
 use super::eval::{Ctx, Ex, Val};
-use super::{Node, Slot, Ty};
+use super::{Entry, Node, Slot, Ty};
 use crate::cas::{Poly, Quotient, Rat, Work};
-use crate::Kind;
+use crate::{Construction, Kind};
 
-pub(super) use functional::{evaluate as function_at, function, print_poly, Function};
+pub(super) use functional::{evaluate as function_at, function, print_poly, FunctionResult};
 use input::read;
 
 pub(super) const NAMES: &[&str] = &[
@@ -133,6 +134,7 @@ impl Op {
             Self::IsFactored if numeric(a) => Ty::Bool,
             Self::NextPrime | Self::PreviousPrime if a == Ty::Num(0) => Ty::Num(0),
             Self::CommonDenominator if numeric(a) && b.is_some_and(numeric) => Ty::Num(0),
+            Self::Numerator | Self::Denominator if matches!(a, Ty::Num(_)) => Ty::Num(0),
             op if op.is_function() && b.is_none() && numeric(a) => Ty::Num(0),
             _ => return Err(format!("invalid arguments to `{}`", self.name())),
         };
@@ -150,11 +152,11 @@ impl<const M: bool> Ctx<'_, M> {
                 (self.e.cas_root(), &self.e.extra)
             {
                 if root == i {
-                    return Ex::plain(N(result.value(x, y)));
+                    return Ex::plain(N(result.value(self.c, x, y)));
                 }
             }
-            let value =
-                functional::evaluate(self, op, a, b).map_or(f64::NAN, |result| result.value(x, y));
+            let value = functional::evaluate(self, op, a, b)
+                .map_or(f64::NAN, |result| result.value(self.c, x, y));
             return Ex::plain(N(value));
         }
         let allowance = super::eval::Lists::new(Vec::new());
@@ -168,9 +170,8 @@ impl<const M: bool> Ctx<'_, M> {
                 ))
             }
             Op::Degree => {
-                let value = read(self.c, self.e, a, &input::variables(), work)
-                    .and_then(|arg| arg.coefficients(work))
-                    .map_or(f64::NAN, |p| p.len().saturating_sub(1) as f64);
+                let value = polynomial_argument(self.c, self.e, a, work)
+                    .map_or(f64::NAN, |coeffs| coeffs.len().saturating_sub(1) as f64);
                 Ex::plain(N(value))
             }
             Op::IsFactored => {
@@ -194,17 +195,15 @@ impl<const M: bool> Ctx<'_, M> {
                         return self.cas_slots(entries.into_iter().map(Slot::number));
                     }
                 }
-                let mut coefficients =
-                    read(self.c, self.e, a, &input::variables(), work)?.coefficients(work)?;
-                if coefficients.is_empty() {
-                    coefficients.push(Rat::ZERO);
-                }
-                self.cas_slots(
-                    coefficients
-                        .into_iter()
-                        .rev()
-                        .map(|r| Slot::number(r.to_f64())),
-                )
+                let coefficients =
+                    if let Some(mut values) = polynomial_argument(self.c, self.e, a, work) {
+                        values.reverse();
+                        values
+                    } else {
+                        let (entry, root) = argument_tree(self.c, self.e, a)?;
+                        super::constant_literals(entry, root)
+                    };
+                self.cas_slots(coefficients.into_iter().map(Slot::number))
             }
             Op::Factors => functional::factor_list(self, a, work),
             Op::Solve { .. } => solutions::list(self, a, op, work),
@@ -221,6 +220,83 @@ impl<const M: bool> Ctx<'_, M> {
         }
         Some((start, len))
     }
+}
+
+/// Resolve a named function to its current expression, including the output
+/// of an earlier command that builds a function tree.
+fn argument_tree<'a>(c: &'a Construction, e: &'a Entry, root: u32) -> Option<(&'a Entry, u32)> {
+    let Node::FunctionObject(id) = e.nodes[root as usize] else {
+        return Some((e, root));
+    };
+    if !c.value(id).is_defined() {
+        return None;
+    }
+    let entry = match c.def(id) {
+        crate::Def::Expr(d) => super::entry(c, d),
+        crate::Def::Calculus(_) => c.calculus_record(id)?.tree.as_ref()?,
+        _ => return None,
+    };
+    let entry = match &entry.extra {
+        super::StoredExtra::Cas(result) => match result.as_ref() {
+            FunctionResult::Tree(tree) => tree,
+            _ => entry,
+        },
+        _ => entry,
+    };
+    Some((entry, entry.root))
+}
+
+fn polynomial_argument(
+    c: &Construction,
+    e: &Entry,
+    root: u32,
+    work: &mut Work<'_>,
+) -> Option<Vec<f64>> {
+    let (entry, input) = argument_tree(c, e, root)?;
+    if !matches!(entry.tys[input as usize], Ty::Num(_)) {
+        return None;
+    }
+    if let Some(values) = structural_coefficients(c, entry, input) {
+        return Some(values);
+    }
+    let values = read(c, entry, input, &input::variables(), work)?.coefficients(work)?;
+    if values.is_empty() {
+        return Some(vec![0.0]);
+    }
+    Some(values.into_iter().map(Rat::to_f64).collect())
+}
+
+/// The coefficient of every power of `x`, evaluated, with the
+/// `PolyFunction(c, validCoeffs)` shortening: the last nonzero coefficient
+/// ends the list, which keeps at least one coefficient. `None` when a
+/// coefficient cannot be evaluated.
+///
+/// The coefficient trees are evaluated with one memo over the builder's
+/// arena (see [`Builder::number_values`]): the polynomial powers share
+/// subtrees, and a plain evaluation of a tree like `(a x + b)^300` would
+/// walk each shared subtree once per reference.
+fn structural_coefficients(c: &Construction, entry: &Entry, root: u32) -> Option<Vec<f64>> {
+    let mut b = Builder::function(entry);
+    let poly = b.expand(c, root).ok()?;
+    let roots = poly.univariate_coefficients(&mut b)?;
+    let mut values = Vec::with_capacity(roots.len());
+    let mut evaluated = b
+        .number_values(c, roots.iter().copied().flatten())
+        .into_iter();
+    for root in roots {
+        values.push(match root {
+            Some(_) => evaluated.next().flatten()?,
+            None => 0.0,
+        });
+    }
+    let mut valid = values.len().min(1);
+    for (i, &v) in values.iter().enumerate() {
+        if v != 0.0 {
+            valid = i + 1;
+        }
+    }
+    values.truncate(valid);
+    Some(values)
 }
 
 fn neighboring_prime(n: f64, next: bool, work: &mut Work<'_>) -> Option<f64> {
@@ -297,7 +373,7 @@ pub(crate) fn displayed(c: &crate::Construction, id: crate::Id) -> Option<String
     };
     let entry = super::entry(c, def);
     if let super::StoredExtra::Cas(form) = &entry.extra {
-        return Some(form.to_string());
+        return form.displayed();
     }
     if def.kind() == Kind::List && matches!(entry.nodes[entry.root as usize], Node::Cas(..)) {
         return Some(display_list(c.elements(id)?));

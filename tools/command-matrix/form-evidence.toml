@@ -1932,7 +1932,7 @@ cases = ["calculus-fraction-013", "cas-projection-001"]
 [[form]]
 command = "Denominator"
 form = "number"
-cases = ["calculus-fraction-001", "cas-projection-002"]
+cases = ["calculus-fraction-001", "cas-projection-002", "cas-projection-006"]
 
 [[form]]
 command = "Derivative"
@@ -2082,7 +2082,7 @@ cases = ["calculus-fraction-013", "cas-projection-001"]
 [[form]]
 command = "Numerator"
 form = "number"
-cases = ["calculus-fraction-001", "cas-projection-002"]
+cases = ["calculus-fraction-001", "cas-projection-002", "cas-projection-006"]
 
 [[form]]
 command = "Polynomial"

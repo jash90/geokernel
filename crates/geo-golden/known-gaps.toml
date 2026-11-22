@@ -613,8 +613,8 @@ mismatches = ["0:g"]
 
 [[gap]]
 id = "calculus-degree-010"
-reason = "The reference exhausts its heap expanding the coefficient trees of (a x + b)^300 (its `power` deep-copies the shared trees, which grows without bound; at the harness's 4 GB it fails from about the 65th power on) and answers undefined. The kernel reads each shared coefficient subtree once, a memo over the builder's arena, and answers within its budget."
-mismatches = ["0:d", "1:d", "2:d", "3:d"]
+reason = "The reference exhausts its heap expanding (a x + b)^300. Its native CAS fallback returns degree zero when a is zero, but leaves the other snapshots undefined. The kernel shares the coefficient subtrees and evaluates each once, so all snapshots get a degree."
+mismatches = ["0:d", "1:d", "3:d"]
 
 # Numerical function analysis
 

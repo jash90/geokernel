@@ -560,7 +560,7 @@
               [8.0, 1.0]
             ]
           },
-          "d": { "type": "number", "defined": false }
+          "d": { "type": "number", "defined": true, "value": 0.0 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 1.0 },

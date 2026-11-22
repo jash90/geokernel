@@ -33,7 +33,7 @@ fn object(c: &Construction, id: Id) -> Option<Rat> {
 
 fn cached_function(e: &Entry) -> Option<&Quotient> {
     match &e.extra {
-        StoredExtra::Cas(form) => Some(&form.expanded),
+        StoredExtra::Cas(form) => form.quotient(),
         _ => None,
     }
 }
@@ -61,6 +61,11 @@ fn read_at(
     }
     work.spend(1)?;
     if i == e.root {
+        if let StoredExtra::Cas(form) = &e.extra {
+            if let super::FunctionResult::Tree(tree) = form.as_ref() {
+                return read_at(c, tree, tree.root, vars, work, depth + 1);
+            }
+        }
         if let Some(value) = cached_function(e) {
             return substitute(value, vars, work);
         }

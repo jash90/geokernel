@@ -1,8 +1,9 @@
 use super::input::{read, variables};
 use super::{Op, Poly, Quotient, Rat, Slot, Work};
-use crate::expr::{eval, Entry, NONE};
+use crate::expr::{eval, fraction, Entry, Ty, NONE};
 use crate::Construction;
 use std::fmt;
+use std::sync::Arc;
 
 type Product = (Rat, Vec<(Poly, u32)>);
 
@@ -66,13 +67,55 @@ impl Function {
     }
 }
 
+#[derive(Clone)]
+pub(in crate::expr) enum FunctionResult {
+    Exact(Function),
+    Tree(Arc<Entry>),
+    Number(f64),
+}
+
+impl PartialEq for FunctionResult {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Exact(a), Self::Exact(b)) => a == b,
+            (Self::Tree(a), Self::Tree(b)) => Arc::ptr_eq(a, b),
+            (Self::Number(a), Self::Number(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+impl FunctionResult {
+    pub(in crate::expr) fn value(&self, c: &Construction, x: f64, y: f64) -> f64 {
+        match self {
+            Self::Exact(result) => result.value(x, y),
+            Self::Tree(entry) => eval::sample(c, entry, x),
+            Self::Number(value) => *value,
+        }
+    }
+
+    pub(in crate::expr) fn quotient(&self) -> Option<&Quotient> {
+        match self {
+            Self::Exact(result) => Some(&result.expanded),
+            _ => None,
+        }
+    }
+
+    pub(super) fn displayed(&self) -> Option<String> {
+        match self {
+            Self::Exact(result) => Some(result.to_string()),
+            _ => None,
+        }
+    }
+}
+
 pub(in crate::expr) fn function(
     c: &Construction,
     e: &Entry,
     op: Op,
     a: u32,
     b: u32,
-) -> Option<Function> {
+) -> Option<FunctionResult> {
     evaluate(&eval::Ctx::<true>::new(c, e, &eval::Env::None), op, a, b)
 }
 
@@ -81,80 +124,49 @@ pub(in crate::expr) fn evaluate<const M: bool>(
     op: Op,
     a: u32,
     b: u32,
-) -> Option<Function> {
+) -> Option<FunctionResult> {
     let allowance = eval::Lists::new(Vec::new());
     let charge = |n| ctx.meter.unwrap_or(&allowance).charge(n as u64);
     let work = &mut Work::new(&charge);
     let vars = &variables();
-    if matches!(op, Op::Numerator | Op::Denominator)
-        && matches!(ctx.e.tys[a as usize], crate::expr::Ty::Num(_))
-        && !uses_variable(ctx.e, a, work)?
-    {
-        return Some(Function::new(super::input::number(numeric_projection(
-            ctx, a, op, work,
-        )?)));
+    if matches!(op, Op::Numerator | Op::Denominator) {
+        let denominator = op == Op::Denominator;
+        if matches!(ctx.e.tys[a as usize], Ty::Num(_)) && !uses_variable(ctx.e, a, work)? {
+            let (n, d) = fraction::number_parts(ctx, a)?;
+            return Some(FunctionResult::Number(if denominator { d } else { n }));
+        }
+        let (entry, root) = super::argument_tree(ctx.c, ctx.e, a)?;
+        if matches!(entry.tys[root as usize], Ty::Num(_))
+            && !matches!(entry.nodes[root as usize], super::Node::Cas(..))
+            && !uses_other_variable(entry, root, work)?
+        {
+            let tree = fraction::project_function(ctx.c, entry, root, denominator)?;
+            return Some(FunctionResult::Tree(Arc::new(tree)));
+        }
     }
+    if op == Op::Polynomial {
+        let (entry, root) = super::argument_tree(ctx.c, ctx.e, a)?;
+        if matches!(entry.tys[root as usize], Ty::Num(_)) {
+            if let Some(coefficients) = super::structural_coefficients(ctx.c, entry, root) {
+                let mut builder = crate::expr::equation::Builder::empty();
+                let parsed = crate::algo::calculus::poly_from_coefficients(
+                    ctx.c,
+                    &mut builder,
+                    &coefficients,
+                )?;
+                let tree = crate::expr::function_entry(ctx.c, parsed);
+                return Some(FunctionResult::Tree(Arc::new(tree)));
+            }
+        }
+    }
+
     let a = read(ctx.c, ctx.e, a, vars, work)?;
     let other = if b == NONE {
         None
     } else {
         Some(read(ctx.c, ctx.e, b, vars, work)?)
     };
-    transform(op, a, other, work)
-}
-
-fn numeric_projection<const M: bool>(
-    ctx: &eval::Ctx<'_, M>,
-    input: u32,
-    op: Op,
-    work: &mut Work<'_>,
-) -> Option<Rat> {
-    let pair = |entry: &Entry, index, work: &mut Work<'_>| {
-        let crate::expr::Node::Bin(crate::expr::Bin::Div, a, b) = entry.nodes[index as usize]
-        else {
-            return None;
-        };
-        let vars = variables();
-        let a = read(ctx.c, entry, a, &vars, work)?.scalar()?;
-        let b = read(ctx.c, entry, b, &vars, work)?.scalar()?;
-        if a.den == 1 && b.den == 1 {
-            Rat::new(a.num, b.num)
-        } else {
-            None
-        }
-    };
-    let original = if let crate::expr::Node::Obj(id) = ctx.node(input) {
-        if let Some(source) = ctx.c.construction_source(id) {
-            let parsed = crate::expr::parse::parse(ctx.c, source).ok()?;
-            let root = parsed.root;
-            pair(&Entry::new(ctx.c, parsed, false), root, work)
-        } else if let crate::Def::Expr(def) = ctx.c.def(id) {
-            let entry = crate::expr::entry(ctx.c, def);
-            pair(entry, entry.root, work)
-        } else {
-            None
-        }
-    } else {
-        pair(ctx.e, input, work)
-    };
-    if let Some(value) = original {
-        return Rat::new(
-            if op == Op::Numerator {
-                value.num
-            } else {
-                value.den
-            },
-            1,
-        );
-    }
-    let value = ctx.full_number(input);
-    if value.is_nan() {
-        return None;
-    }
-    let (n, d) =
-        crate::expr::derivative::decimal_to_fraction(value, crate::tol::STANDARD_PRECISION);
-    let projected = if op == Op::Numerator { n } else { d };
-    Rat::new(projected.round() as i128, 1)
+    transform(op, a, other, work).map(FunctionResult::Exact)
 }
 
 pub(super) fn transform(
@@ -304,18 +316,35 @@ pub(super) fn factor_list<const M: bool>(
     Some((start, len))
 }
 
+fn uses_other_variable(e: &Entry, input: u32, work: &mut Work<'_>) -> Option<bool> {
+    uses_node(e, input, work, |node| {
+        matches!(
+            node,
+            super::Node::VarY | super::Node::SystemFunction(..) | super::Node::Local(..)
+        )
+    })
+}
+
 fn uses_variable(e: &Entry, input: u32, work: &mut Work<'_>) -> Option<bool> {
+    uses_node(e, input, work, |node| {
+        matches!(
+            node,
+            super::Node::Var | super::Node::VarY | super::Node::Local(..)
+        )
+    })
+}
+
+fn uses_node(
+    e: &Entry,
+    input: u32,
+    work: &mut Work<'_>,
+    pred: impl Fn(super::Node) -> bool,
+) -> Option<bool> {
     let mut pending = vec![input];
     while let Some(i) = pending.pop() {
         work.spend(1)?;
         let node = e.nodes[i as usize];
-        if matches!(
-            node,
-            crate::expr::Node::Var
-                | crate::expr::Node::VarY
-                | crate::expr::Node::Local(..)
-                | crate::expr::Node::Apply(..)
-        ) {
+        if pred(node) {
             return Some(true);
         }
         pending.extend(crate::expr::children(&node));

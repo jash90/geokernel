@@ -124,11 +124,22 @@ case "$cmd" in
     fi
     for file in "${files[@]}"; do
       (
-        if [ "${file##*/}" = cas.json ] && [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
-          enable_giac
+        run_golden() {
+          java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+            geokernel.harness.GoldenGenerator "$file" "$repo/golden" "$commit" "$@"
+        }
+        if [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
+          case "${file##*/}" in
+            calculus.json)
+              run_golden '!degree'
+              enable_giac
+              run_golden degree
+              exit
+              ;;
+            cas.json) enable_giac ;;
+          esac
         fi
-        java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
-          geokernel.harness.GoldenGenerator "$file" "$repo/golden" "$commit"
+        run_golden
       )
     done
     ;;

@@ -31,8 +31,8 @@ public final class GoldenGenerator {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 3) {
-            System.err.println("usage: GoldenGenerator <cases.json> <golden dir> <upstream commit>");
+        if (args.length < 3 || args.length > 4) {
+            System.err.println("usage: GoldenGenerator <cases.json> <golden dir> <upstream commit> [topic or !topic]");
             System.exit(2);
         }
         Path casesFile = Path.of(args[0]);
@@ -47,6 +47,8 @@ public final class GoldenGenerator {
         Map<String, List<Object>> byFile = new TreeMap<>();
         Set<String> ids = new HashSet<>();
         Stats stats = new Stats();
+        String selector = args.length == 4 ? args[3] : "";
+        int count = 0;
         for (Object c : cases) {
             Map<?, ?> input = (Map<?, ?>) c;
             String id = (String) input.get("id");
@@ -62,6 +64,11 @@ public final class GoldenGenerator {
                 throw new IllegalArgumentException("bad case id " + id);
             }
             String topic = id.substring(prefix.length(), id.lastIndexOf('-'));
+            if (!selector.isEmpty() && (selector.startsWith("!")
+                    ? selector.substring(1).equals(topic) : !selector.equals(topic))) {
+                continue;
+            }
+            count++;
             Map<String, Object> golden;
             try {
                 golden = runCase(input, stats);
@@ -83,7 +90,7 @@ public final class GoldenGenerator {
             Files.writeString(out, Json.write(file), StandardCharsets.UTF_8);
         }
         System.out.printf("%d cases, %d files, %d snapshots, %d undefined objects recorded%n",
-                cases.size(), byFile.size(), stats.snapshots, stats.undefined);
+                count, byFile.size(), stats.snapshots, stats.undefined);
         System.out.println("continuous intersections: " + new Session().kernel().isContinuous());
     }
 

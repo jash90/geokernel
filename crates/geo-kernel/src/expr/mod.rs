@@ -658,7 +658,7 @@ enum StoredExtra {
     Decimal(Dec),
     Text(Box<TextResult>),
     Polynomial(Vec<f64>),
-    Cas(Box<cas::Function>),
+    Cas(Box<cas::FunctionResult>),
 }
 
 impl StoredExtra {
@@ -822,7 +822,7 @@ impl Entry {
         let StoredExtra::Cas(form) = &self.extra else {
             return None;
         };
-        (self.cas_root()?.0 == i).then_some(&form.expanded)
+        (self.cas_root()?.0 == i).then(|| form.quotient()).flatten()
     }
 
     fn root_ty(&self) -> Ty {
@@ -1551,7 +1551,6 @@ pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
 fn list_slots(c: &Construction, id: Id) -> Option<&[Slot]> {
     match c.def(id) {
         Def::Expr(d) => Some(&entry(c, d).items),
-        Def::Calculus(_) => c.calculus_record(id).map(|record| record.slots.as_slice()),
         Def::Chart(_) => c.chart(id).map(|data| data.slots.as_slice()),
         _ => None,
     }
@@ -1736,9 +1735,9 @@ pub(crate) fn root_of(e: &Entry) -> u32 {
 /// (`AlgoCoefficients.extractConstants`: every `MyDouble` leaf is a
 /// constant — a degree sign included — collected by the pre-order walk of
 /// `ExpressionNode.any`, which covers the tree, not the parser's arena).
-pub(crate) fn constant_literals(e: &Entry) -> Vec<f64> {
+fn constant_literals(e: &Entry, root: u32) -> Vec<f64> {
     let mut out = Vec::new();
-    let mut stack = vec![e.root];
+    let mut stack = vec![root];
     while let Some(i) = stack.pop() {
         match e.nodes[i as usize] {
             Node::Num(v) => out.push(v),
@@ -1769,16 +1768,6 @@ pub(crate) fn parsed_of(e: &Entry) -> parse::Parsed {
         vars: e.vars,
         uses_var: false,
         uses_y: false,
-    }
-}
-
-/// The current value of a tree the calculus commands built, reading the
-/// current values of its objects: what a polynomial coefficient is.
-pub(crate) fn value_of_tree(c: &Construction, parsed: &parse::Parsed) -> Option<f64> {
-    let entry = Entry::new(c, parsed.clone(), false);
-    match eval::root(c, &entry, None).0 {
-        Raw::Num(v) => Some(v),
-        _ => None,
     }
 }
 
