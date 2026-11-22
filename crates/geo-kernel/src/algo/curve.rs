@@ -206,13 +206,20 @@ fn line_coefficients(
 }
 
 fn matrix_value(matrix: Matrix, value: (f64, f64)) -> (f64, f64) {
-    let (x, y, w) = matrix.curve_coordinates(value, 1.0);
+    let (x, y, w) = matrix.curve_image_coordinates(value, 1.0);
+    if matrix.size() == 2 {
+        // a 2x2 image has no division (`GeoCurveCartesian.matrixTransform`)
+        return (x, y);
+    }
     (x / w, y / w)
 }
 
 fn matrix_first(matrix: Matrix, value: (f64, f64), first: (f64, f64)) -> (f64, f64) {
-    let (x, y, w) = matrix.curve_coordinates(value, 1.0);
-    let (dx, dy, dw) = matrix.curve_coordinates(first, 0.0);
+    let (x, y, w) = matrix.curve_image_coordinates(value, 1.0);
+    let (dx, dy, dw) = matrix.curve_image_coordinates(first, 0.0);
+    if matrix.size() == 2 {
+        return (dx, dy);
+    }
     let square = w * w;
     ((dx * w - x * dw) / square, (dy * w - y * dw) / square)
 }

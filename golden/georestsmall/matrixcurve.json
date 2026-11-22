@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -1348,6 +1348,434 @@
             ]
           },
           "l": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "georestsmall-matrixcurve-004",
+      "group": "georestsmall",
+      "script": [
+        "c = Curve(-t, -t, t, -1, 1)",
+        "d = ApplyMatrix({{1, 0}, {0, 1}}, c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [1.0, 1.0]
+              ],
+              [
+                -0.75,
+                [0.75, 0.75]
+              ],
+              [
+                -0.5,
+                [0.5, 0.5]
+              ],
+              [
+                0.0,
+                [-0.0, -0.0]
+              ],
+              [
+                0.5,
+                [-0.5, -0.5]
+              ],
+              [
+                0.75,
+                [-0.75, -0.75]
+              ],
+              [
+                1.0,
+                [-1.0, -1.0]
+              ]
+            ]
+          },
+          "d": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [1.0, 1.0]
+              ],
+              [
+                -0.75,
+                [0.75, 0.75]
+              ],
+              [
+                -0.5,
+                [0.5, 0.5]
+              ],
+              [
+                0.0,
+                [-0.0, -0.0]
+              ],
+              [
+                0.5,
+                [-0.5, -0.5]
+              ],
+              [
+                0.75,
+                [-0.75, -0.75]
+              ],
+              [
+                1.0,
+                [-1.0, -1.0]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "georestsmall-matrixcurve-005",
+      "group": "georestsmall",
+      "script": [
+        "n = 1",
+        "c = Curve(t, sqrt(t), t, -1, 1)",
+        "r = {{1, 0, 0}, {0, n, 0}, {0, 0, 1}}",
+        "d = ApplyMatrix(r, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [-1.0, null]
+              ],
+              [
+                -0.75,
+                [-0.75, null]
+              ],
+              [
+                -0.5,
+                [-0.5, null]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.5,
+                [0.5, 0.7071067811865476]
+              ],
+              [
+                0.75,
+                [0.75, 0.8660254037844386]
+              ],
+              [
+                1.0,
+                [1.0, 1.0]
+              ]
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "d": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [-1.0, null]
+              ],
+              [
+                -0.75,
+                [-0.75, null]
+              ],
+              [
+                -0.5,
+                [-0.5, null]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.5,
+                [0.5, 0.7071067811865476]
+              ],
+              [
+                0.75,
+                [0.75, 0.8660254037844386]
+              ],
+              [
+                1.0,
+                [1.0, 1.0]
+              ]
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [-1.0, null]
+              ],
+              [
+                -0.75,
+                [-0.75, null]
+              ],
+              [
+                -0.5,
+                [-0.5, null]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.5,
+                [0.5, 0.7071067811865476]
+              ],
+              [
+                0.75,
+                [0.75, 0.8660254037844386]
+              ],
+              [
+                1.0,
+                [1.0, 1.0]
+              ]
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "d": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [-1.0, 0.0]
+              ],
+              [
+                -0.75,
+                [-0.75, 0.0]
+              ],
+              [
+                -0.5,
+                [-0.5, 0.0]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.5,
+                [0.5, 0.0]
+              ],
+              [
+                0.75,
+                [0.75, 0.0]
+              ],
+              [
+                1.0,
+                [1.0, 0.0]
+              ]
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [-1.0, null]
+              ],
+              [
+                -0.75,
+                [-0.75, null]
+              ],
+              [
+                -0.5,
+                [-0.5, null]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.5,
+                [0.5, 0.7071067811865476]
+              ],
+              [
+                0.75,
+                [0.75, 0.8660254037844386]
+              ],
+              [
+                1.0,
+                [1.0, 1.0]
+              ]
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "d": {
+            "type": "curve",
+            "defined": true,
+            "start": -1.0,
+            "end": 1.0,
+            "samples_curve": [
+              [
+                -1.0,
+                [-1.0, null]
+              ],
+              [
+                -0.75,
+                [-0.75, null]
+              ],
+              [
+                -0.5,
+                [-0.5, null]
+              ],
+              [
+                0.0,
+                [0.0, 0.0]
+              ],
+              [
+                0.5,
+                [0.5, 1.4142135623730951]
+              ],
+              [
+                0.75,
+                [0.75, 1.7320508075688772]
+              ],
+              [
+                1.0,
+                [1.0, 2.0]
+              ]
+            ]
+          }
         }
       ]
     }

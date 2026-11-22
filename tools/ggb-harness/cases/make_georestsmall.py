@@ -139,5 +139,16 @@ b = x(B) > 0
 s = If(b, r, Segment(A, C))""".splitlines(), [])
 reference.case("surdcomplex", ["A = 1 + 2i", "s = SurdText(A)"], [])
 
+# A zero matrix entry drops its term from the image expression of a curve
+# (GeoCurveCartesian.matrixTransform with ExpressionNode.multiply and plus):
+# the identity keeps the signed zero of -t at t = 0, and the projective row
+# (0, 0, 1) keeps the image finite where the second coordinate is NaN.
+case("matrixcurve", """c = Curve(-t, -t, t, -1, 1)
+d = ApplyMatrix({{1, 0}, {0, 1}}, c)""", curve=True)
+case("matrixcurve", """n = 1
+c = Curve(t, sqrt(t), t, -1, 1)
+r = {{1, 0, 0}, {0, n, 0}, {0, 0, 1}}
+d = ApplyMatrix(r, c)""", [setn("n", 0), setn("n", 2)], curve=True)
+
 cases.write()
 reference.write("reference")

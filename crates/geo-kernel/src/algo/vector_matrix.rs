@@ -387,6 +387,11 @@ pub(crate) struct Matrix {
 }
 
 impl Matrix {
+    /// 2 for a 2x2 matrix, 3 for a 3x3 one.
+    pub(crate) fn size(self) -> usize {
+        self.size
+    }
+
     pub(crate) fn read(list: List<'_>) -> Option<Self> {
         let size = list.len();
         if !matches!(size, 2 | 3) {
@@ -409,21 +414,47 @@ impl Matrix {
     }
 
     /// Homogeneous image of a Cartesian point (`z = 1`) or derivative
-    /// (`z = 0`). In two dimensions the last coordinate stays equal to `z`.
-    /// A zero entry drops its term, so a coordinate that is NaN or infinite
-    /// reaches only the image coordinates whose entries read it: the image
-    /// of a curve is an expression in which `0 * v` simplifies to `0`
-    /// (`ExpressionNode.multiply`).
+    /// (`z = 0`) with plain arithmetic, as the reference maps points and
+    /// raster anchors (`GeoVec2D.multiplyMatrix`): `0 * Infinity` is NaN.
+    /// In two dimensions the last coordinate stays equal to `z`.
     pub(crate) fn curve_coordinates(self, (x, y): (f64, f64), z: f64) -> (f64, f64, f64) {
-        let term = |k: f64, v: f64| if k == 0.0 { 0.0 } else { k * v };
         let [a, b, c, d, e, f, g, h, i] = self.data;
         if self.size == 2 {
-            (term(a, x) + term(b, y), term(c, x) + term(d, y), z)
+            (a * x + b * y, c * x + d * y, z)
         } else {
             (
-                term(a, x) + term(b, y) + term(c, z),
-                term(d, x) + term(e, y) + term(f, z),
-                term(g, x) + term(h, y) + term(i, z),
+                a * x + b * y + c * z,
+                d * x + e * y + f * z,
+                g * x + h * y + i * z,
+            )
+        }
+    }
+
+    /// The image of a Cartesian curve's point (`z = 1`) or derivative
+    /// (`z = 0`). The reference builds the image as an expression
+    /// (`GeoCurveCartesian.matrixTransform`) that `ExpressionNode.multiply`
+    /// and `plus` simplify: a zero entry becomes the constant itself, an
+    /// entry 1 keeps the coordinate, and a constant zero addend is left out.
+    /// So a NaN or infinite coordinate reaches only the image coordinates
+    /// whose entries read it, and a signed zero survives an identity.
+    pub(crate) fn curve_image_coordinates(self, (x, y): (f64, f64), z: f64) -> (f64, f64, f64) {
+        let [a, b, c, d, e, f, g, h, i] = self.data;
+        let row = |k: [f64; 3], constant: bool| {
+            let sum = Term::times(x, k[0]).plus(Term::times(y, k[1]));
+            if constant {
+                // the constant column is `plus(MyDouble)`; its derivative is 0
+                sum.plus(Term::constant(k[2] * z)).value()
+            } else {
+                sum.value()
+            }
+        };
+        if self.size == 2 {
+            (row([a, b, 0.0], false), row([c, d, 0.0], false), z)
+        } else {
+            (
+                row([a, b, c], true),
+                row([d, e, f], true),
+                row([g, h, i], true),
             )
         }
     }
@@ -584,4 +615,101 @@ pub(crate) fn exec(
         c.discard_since(checkpoint);
     }
     Some(result.map(Some))
+}
+
+/// A summand of a curve image expression: a constant zero keeps its sign
+/// and is left out of a sum, like `MyDouble` 0 in `ExpressionNode.plus`.
+#[derive(Clone, Copy)]
+enum Term {
+    Zero(f64),
+    Value(f64),
+}
+
+impl Term {
+    /// `coordinate.multiply(entry)`: 0 gives the entry, 1 the coordinate.
+    fn times(coordinate: f64, entry: f64) -> Self {
+        if entry == 0.0 {
+            Term::Zero(entry)
+        } else if entry == 1.0 {
+            Term::Value(coordinate)
+        } else {
+            Term::Value(entry * coordinate)
+        }
+    }
+
+    fn constant(value: f64) -> Self {
+        if value == 0.0 {
+            Term::Zero(value)
+        } else {
+            Term::Value(value)
+        }
+    }
+
+    /// `self.plus(other)`: a constant zero on either side is left out.
+    fn plus(self, other: Self) -> Self {
+        match (self, other) {
+            (_, Term::Zero(_)) => self,
+            (Term::Zero(_), _) => other,
+            (Term::Value(p), Term::Value(q)) => Term::Value(p + q),
+        }
+    }
+
+    fn value(self) -> f64 {
+        match self {
+            Term::Zero(v) | Term::Value(v) => v,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Matrix;
+
+    /// A 2x2 matrix keeps its rows in the first four entries.
+    const IDENTITY: Matrix = Matrix {
+        data: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        size: 2,
+    };
+
+    #[test]
+    fn curve_images_drop_zero_terms_and_keep_signed_zeros() {
+        let (x, y, _) = IDENTITY.curve_image_coordinates((-0.0, -0.0), 1.0);
+        assert!(x == 0.0 && x.is_sign_negative() && y.is_sign_negative());
+        let (x, y, _) = IDENTITY.curve_image_coordinates((2.0, f64::NAN), 1.0);
+        assert!(x == 2.0 && y.is_nan());
+        let projective = Matrix {
+            data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+            size: 3,
+        };
+        let (x, y, w) = projective.curve_image_coordinates((0.5, f64::NAN), 1.0);
+        assert!(x == 0.5 && y.is_nan() && w == 1.0);
+        let (dx, _, dw) = projective.curve_image_coordinates((1.0, f64::NAN), 0.0);
+        assert!(dx == 1.0 && dw == 0.0);
+    }
+
+    /// `georestsmall-matrixcurve-004` records (-0, -0) at t = 0, and
+    /// `georestsmall-matrixcurve-005` a finite x where sqrt(t) is NaN.
+    #[test]
+    fn matrix_curves_follow_the_simplified_image_expression() {
+        let c = crate::script::load(
+            "c = Curve(-t, -t, t, -1, 1)\nd = ApplyMatrix({{1, 0}, {0, 1}}, c)\n\
+             e = Curve(t, sqrt(t), t, -1, 1)\n\
+             g = ApplyMatrix({{1, 0, 0}, {0, 0, 0}, {0, 0, 1}}, e)",
+        )
+        .unwrap();
+        let (x, y) = c.curve_sample(c.id("d").unwrap(), 0.0).unwrap();
+        assert!(x == 0.0 && x.is_sign_negative() && y.is_sign_negative());
+        assert_eq!(c.curve_sample(c.id("g").unwrap(), -0.5), Some((-0.5, 0.0)));
+    }
+
+    #[test]
+    fn points_and_rasters_multiply_every_entry() {
+        let (x, y, _) = IDENTITY.curve_coordinates((f64::INFINITY, f64::INFINITY), 1.0);
+        assert!(x.is_nan() && y.is_nan());
+        // -0 + 0 * 0 is +0 in plain arithmetic, while a curve keeps -0
+        let (x, _, _) = IDENTITY.curve_coordinates((-0.0, 0.0), 1.0);
+        assert!(x == 0.0 && x.is_sign_positive());
+        let (x, _, _) = IDENTITY.curve_image_coordinates((-0.0, 0.0), 1.0);
+        assert!(x == 0.0 && x.is_sign_negative());
+    }
 }

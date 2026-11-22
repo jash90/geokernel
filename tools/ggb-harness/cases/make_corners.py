@@ -170,4 +170,16 @@ cases.case("inequality", [
     "a: y >= x^2", "b = a(0, 0)", "P = Vertex(a)",
 ], [])
 
+# The image transform multiplies every entry, so a zero entry times an
+# infinite anchor is NaN (GeoVec2D.multiplyMatrix): the projective matrix
+# sends two anchors to infinity and the identity then leaves them undefined.
+cases.case("matrix", [
+    image_asset, pt("A", 0, 0), pt("B", 1, 0), pt("D", 0, 1),
+    image("im", f"world(false, false, point({encoded('A')}), point({encoded('B')}), point({encoded('D')}))"),
+    "u = ApplyMatrix({{1, 0, 1}, {0, 1, 1}, {1, 0, 0}}, im)",
+    "w = ApplyMatrix({{1, 0}, {0, 1}}, u)",
+    "P = Corner(u, 1)", "Q = Corner(u, 2)", "R = Corner(w, 1)", "S = Corner(w, 2)",
+    "T = Corner(w, 4)",
+], [mv("A", 1, 1), mv("D", 1, 2), mv("A", 0, 0)])
+
 cases.write()
