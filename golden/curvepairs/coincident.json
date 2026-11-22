@@ -1,0 +1,49 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "curvepairs-coincident-001",
+      "group": "curvepairs",
+      "script": [
+        "a = 2",
+        "c = Curve(t, t, t, -10, 10)",
+        "d = Curve(2s, a - 1 + 2a*s, s, -5, 5)",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+          "d": { "type": "curve", "defined": true, "start": -5.0, "end": 5.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+          "d": { "type": "curve", "defined": true, "start": -5.0, "end": 5.0 },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+          "d": { "type": "curve", "defined": true, "start": -5.0, "end": 5.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+          "d": { "type": "curve", "defined": true, "start": -5.0, "end": 5.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 }
+        }
+      ]
+    }
+  ]
+}

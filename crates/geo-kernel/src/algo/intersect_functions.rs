@@ -57,14 +57,14 @@ type Vertices = Arc<[Point]>;
 #[derive(Default)]
 pub(crate) struct FunctionRootCache {
     graphs: Mutex<HashMap<FunctionIntersection, Vec<Point>>>,
-    cartesian_lines: Mutex<HashMap<[Id; 2], super::curves::CurveRoots>>,
+    cartesian_pairs: Mutex<HashMap<[Id; 2], super::curves::CurveRoots>>,
     inequalities: Mutex<HashMap<Id, Vertices>>,
 }
 
 impl FunctionRootCache {
     pub(crate) fn clear(&mut self) {
         self.graphs.get_mut().expect("function root cache").clear();
-        self.cartesian_lines
+        self.cartesian_pairs
             .get_mut()
             .expect("curve root cache")
             .clear();
@@ -91,14 +91,14 @@ impl FunctionRootCache {
         points
     }
 
-    pub(super) fn cartesian_line<T>(
+    pub(super) fn cartesian<T>(
         &self,
         key: [Id; 2],
         solve: impl FnOnce() -> super::curves::CurveRoots,
         read: impl FnOnce(&[Option<Point>]) -> T,
     ) -> T {
         if let Some(points) = self
-            .cartesian_lines
+            .cartesian_pairs
             .lock()
             .expect("curve root cache")
             .get(&key)
@@ -107,7 +107,7 @@ impl FunctionRootCache {
         }
         let points = solve();
         let result = read(&points);
-        self.cartesian_lines
+        self.cartesian_pairs
             .lock()
             .expect("curve root cache")
             .insert(key, points);

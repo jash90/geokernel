@@ -2063,7 +2063,7 @@ fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<
     }
     if let Some((name @ "Intersect", args)) = split_call(rhs) {
         use intersect::curves::CurveIntersection;
-        if let Some(curve) = CurveIntersection::carrier_pair(c, name, &args) {
+        if let Some(curve) = CurveIntersection::unseeded_pair(c, name, &args) {
             if slots.len() > CurveIntersection::MAX_SAVED_SLOTS {
                 return Err("too many output labels for the curve intersection".into());
             }

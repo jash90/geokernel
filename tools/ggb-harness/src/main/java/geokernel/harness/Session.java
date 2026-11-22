@@ -29,6 +29,7 @@ import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
 import org.geogebra.common.kernel.MyPoint;
 import org.geogebra.common.kernel.algos.AlgoElement;
+import org.geogebra.common.kernel.algos.AlgoIntersectCurveCurve;
 import org.geogebra.common.kernel.algos.AlgoIntersectLineCurve;
 import org.geogebra.common.kernel.algos.AlgoIntersectLinePolyLine;
 import org.geogebra.common.kernel.algos.AlgoIntersectPolyLines;
@@ -281,6 +282,7 @@ final class Session {
                 growingPoints.put(parent, "");
             }
             if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLineCurve
+                    || parent instanceof AlgoIntersectCurveCurve
                     || parent instanceof AlgoIntersectLinePolyLine
                     || parent instanceof AlgoIntersectPolyLines)) {
                 growingPoints.put(parent, label.split("_", 2)[0] + "_{");

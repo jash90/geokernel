@@ -53,7 +53,7 @@ public final class GoldenGenerator {
             Map<?, ?> input = (Map<?, ?>) c;
             String id = (String) input.get("id");
             String group = (String) input.get("group");
-            if ("cas".equals(group) && !GiacOracle.enabled()) {
+            if (("cas".equals(group) || "curvepairs".equals(group)) && !GiacOracle.enabled()) {
                 throw new IllegalStateException("CAS fixtures require the native Giac oracle");
             }
             if (!ids.add(id)) {
