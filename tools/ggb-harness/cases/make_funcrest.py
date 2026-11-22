@@ -177,7 +177,8 @@ case("slowplot", "A = (0, 0)\nB = (2, 2)\nl = Line(A, B)\ng = SlowPlot(l)\n"
      "h = SlowPlot(Line(A, B), 0)\nu = g(-8)\nv = h(-8)",
      [mv("B", 0, 2), mv("B", 2, 4)])
 # The slider plays: one frame is a 300th of the interval, rounded to the
-# step 0.01. With the repeat flag it jumps back to 0 past the end, without it
+# automatic increment 0.001 of a new number while it plays (the stored step
+# 0.01 is not used). With the repeat flag it jumps back to 0 past the end, without it
 # it stops at 1; a value set by hand is where it goes on from.
 case("slowplot", "f(x) = sin(x)\ng = SlowPlot(f)\np = a + 0\nu = g(-4)\nv = g(4)",
      [anim(1), anim(1), anim(150), anim(148), anim(2), anim(1), anim(5)])

@@ -584,7 +584,9 @@ impl Workbench {
         Ok(())
     }
 
-    fn install_replay(&mut self, c: Construction, mut kept: Log) {
+    fn install_replay(&mut self, mut c: Construction, mut kept: Log) {
+        // a replay plays nothing again: the sliders keep where they were
+        c.carry_animations_from(&self.construction);
         let selected = self
             .selected
             .filter(|id| id.index() < self.construction.len())
@@ -1139,6 +1141,19 @@ impl Workbench {
     /// Whether a slider of the construction is playing.
     pub fn is_animating(&self) -> bool {
         self.construction.is_animating()
+    }
+
+    /// Whether something can be played or paused: a slider has an animation.
+    pub fn has_animation(&self) -> bool {
+        self.construction.has_animations()
+    }
+
+    /// Plays or pauses the animation, as the reference's play button does
+    /// (`AnimationManager.startAnimation` and `stopAnimation`). Pausing
+    /// keeps every slider where it is; playing goes on from there.
+    pub fn set_animation_running(&mut self, running: bool) {
+        self.construction.set_animation_running(running);
+        self.version += 1;
     }
 
     /// One animation frame of the playing sliders at `frame_rate` frames per

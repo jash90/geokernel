@@ -310,8 +310,9 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
         };
         let corners = [corner("1")?, corner("2")?];
         crate::expr::define_slow_plot(c, name, function, slider, corners)?;
-        // the slider plays through its interval in steps of 0.01 and the
-        // source graph is hidden
+        // the slider plays through its interval with the automatic
+        // increment of a new number (0.001 for this interval while it plays;
+        // 0.01 is only the stored step) and the source graph is hidden
         let mode = if repeats {
             crate::kernel::animation::AnimationMode::Increasing
         } else {

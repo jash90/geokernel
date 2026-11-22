@@ -62,6 +62,9 @@ pub struct Animation {
     position: f64,
     /// `1` or `-1`.
     direction: f64,
+    /// The value the last frame set, `NaN` after a value set by hand: a
+    /// frame's value is not journaled.
+    frame_value: f64,
 }
 
 /// The time, in seconds, the interval takes at speed 1.
@@ -89,6 +92,7 @@ impl Animation {
             } else {
                 1.0
             },
+            frame_value: f64::NAN,
         }
     }
 }
@@ -176,6 +180,48 @@ impl Construction {
         }
     }
 
+    /// Takes over the animations of `old` after a rebuild of the same
+    /// journal: every slider that animates in both keeps its state and
+    /// position, and the value its last frame set, which frames do not
+    /// journal; the timer runs as it ran. The reference rebuilds from
+    /// a file that holds the value and the playing flag.
+    pub fn carry_animations_from(&mut self, old: &Construction) {
+        for (&old_id, animation) in &old.animations {
+            let Some(id) = self.id(old.label(old_id)) else {
+                continue;
+            };
+            if !self.animations.contains_key(&id) || !matches!(self.def(id), Def::Number(_)) {
+                continue;
+            }
+            // only a value a frame set: one set by hand is in the journal,
+            // which undo and redo follow
+            if let crate::Value::Number(v) = old.value(old_id) {
+                if v == animation.frame_value {
+                    let _ = self.update_number(id, v, false);
+                }
+            }
+            self.animations.insert(id, *animation);
+        }
+        self.animation_running = old.animation_running;
+    }
+
+    /// Whether a slider plays, the timer running or paused (the reference
+    /// shows its play button then).
+    pub fn has_animations(&self) -> bool {
+        self.animations.values().any(|a| a.playing)
+    }
+
+    /// Whether the timer runs, playing sliders or not.
+    pub fn animation_running(&self) -> bool {
+        self.animation_running
+    }
+
+    /// Starts or stops the timer (`AnimationManager.startAnimation` and
+    /// `stopAnimation`); it starts only with a playing slider.
+    pub fn set_animation_running(&mut self, running: bool) {
+        self.animation_running = running && self.animations.values().any(|a| a.playing);
+    }
+
     /// Asks the application to hide `id`, as a command that hides an input
     /// does (`setEuclidianVisible(false)`); see
     /// [`Construction::take_hidden_requests`].
@@ -213,6 +259,7 @@ impl Construction {
     pub(super) fn reset_animation_position(&mut self, id: Id) {
         if let Some(a) = self.animations.get_mut(&id) {
             a.position = f64::NAN;
+            a.frame_value = f64::NAN;
         }
     }
 
@@ -245,6 +292,7 @@ impl Construction {
                 changed |= self.update_number(id, value, false).is_ok();
                 if let (Some(a), Some(position)) = (self.animations.get_mut(&id), position) {
                     a.position = position;
+                    a.frame_value = value;
                 }
             }
         }

@@ -258,6 +258,37 @@ fn slow_plot_hides_its_source_and_plays_its_slider() {
 }
 
 #[test]
+fn a_rebuild_keeps_where_the_slow_plot_slider_was() {
+    let mut w = Workbench::default();
+    w.run_line("f(x) = x").unwrap();
+    w.run_line("g = SlowPlot(f, false)").unwrap();
+    for _ in 0..400 {
+        w.animate(30.0);
+    }
+    assert!(!w.is_animating());
+    w.run_line("B = (1, 1)").unwrap();
+    let id = w.construction().id("B").unwrap();
+    assert!(w.delete(id));
+    let c = w.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(1.0));
+    assert!(!w.is_animating());
+    // a slider still playing goes on from where it was
+    w.run_line("h = SlowPlot(f)").unwrap();
+    for _ in 0..30 {
+        w.animate(30.0);
+    }
+    let b = w.construction().id("b").unwrap();
+    let before = w.construction().value(b);
+    w.run_line("C = (2, 2)").unwrap();
+    let id = w.construction().id("C").unwrap();
+    assert!(w.delete(id));
+    assert_eq!(w.construction().value(b), before);
+    assert!(w.is_animating());
+    w.set_animation_running(false);
+    assert!(!w.is_animating() && w.has_animation());
+}
+
+#[test]
 fn a_typed_stroke_keeps_its_points_through_a_rebuild_in_another_view() {
     let mut w = Workbench::default();
     // 10 pixels per unit: the stroke is subdivided less than in the 50

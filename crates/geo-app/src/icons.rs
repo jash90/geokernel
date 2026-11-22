@@ -27,6 +27,10 @@ pub enum Icon {
     Right,
     Enter,
     Shift,
+    /// Play the animation.
+    Play,
+    /// Pause the animation.
+    Pause,
 }
 
 /// A drawing context: centre, unit (pixels per icon-box unit) and stroke.
@@ -200,6 +204,11 @@ pub fn paint(painter: &Painter, icon: Icon, c: Pos2, half: f32, color: Color32) 
             for y in [-6.0, 0.0, 6.0] {
                 pen.dot(0.0, y, 1.8, color);
             }
+        }
+        Icon::Play => pen.poly(&[(-4.0, -7.0), (7.0, 0.0), (-4.0, 7.0)], true),
+        Icon::Pause => {
+            pen.line((-3.5, -6.5), (-3.5, 6.5));
+            pen.line((3.5, -6.5), (3.5, 6.5));
         }
     }
 }

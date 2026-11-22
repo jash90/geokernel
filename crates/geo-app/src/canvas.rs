@@ -1231,6 +1231,22 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
         (Icon::ZoomOut, text::label(Label::ZoomOut)),
         (Icon::Fullscreen, text::label(Label::Fullscreen)),
     ]);
+    // The play button of the reference sits in the lower left corner while
+    // a slider animates (`needToShowAnimationButton`): it pauses and plays.
+    if app.wb.has_animation() {
+        let running = app.wb.is_animating();
+        let (icon, tip) = if running {
+            (Icon::Pause, text::label(Label::PauseAnimation))
+        } else {
+            (Icon::Play, text::label(Label::PlayAnimation))
+        };
+        let center = pos2(rect.left() + 35.0, bottom);
+        if floating::round_button(ui, &mut app.overlays, "animation", center, icon, true, tip)
+            .clicked()
+        {
+            app.wb.set_animation_running(!running);
+        }
+    }
     let n = buttons.len();
     for (i, (icon, tip)) in buttons.into_iter().enumerate() {
         let center = pos2(right, bottom - 44.0 * (n - 1 - i) as f32);
