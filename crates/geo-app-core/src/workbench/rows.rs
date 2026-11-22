@@ -100,10 +100,21 @@ fn same_key(a: RowKey, b: RowKey) -> bool {
 
 fn same_row_value(c: &Construction, id: Id, row: &Row, old: RowKey, new: RowKey) -> bool {
     if matches!((old.0, new.0), (Value::Text, Value::Text)) {
-        row.value.as_deref() == c.text(id)
+        if row.free {
+            is_joined(
+                &row.head,
+                &[&row.label, " = ", c.text(id).unwrap_or_default()],
+            )
+        } else {
+            row.value.as_deref() == c.text(id)
+        }
     } else {
         same_key(old, new)
     }
+}
+
+fn is_free(c: &Construction, id: Id) -> bool {
+    c.def(id).is_free() || (c.kind(id) == Kind::Text && c.is_independent_text(id))
 }
 
 /// The number of a free number or angle, edited in place.
@@ -235,7 +246,7 @@ fn value_parts(c: &Construction, id: Id) -> (String, Option<f64>) {
 /// The row of `id` made from scratch.
 fn make_row(c: &Construction, id: Id, src: Source) -> Row {
     let label = c.label(id);
-    let free = c.def(id).is_free();
+    let free = is_free(c, id);
     let mut row = Row {
         id,
         kind: c.kind(id),
@@ -293,7 +304,7 @@ fn still_fits(
     made_from: RowKey,
     key: RowKey,
 ) -> bool {
-    let free = c.def(id).is_free();
+    let free = is_free(c, id);
     let number = free_number(c, id);
     // A free object's or number's head follows from its label and value.
     let same_head = free || number.is_some() || {

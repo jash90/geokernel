@@ -116,7 +116,7 @@ impl<const M: bool> Ctx<'_, M> {
                 return None;
             }
             let slot = lists.read(self.c, start + i);
-            let raw = slot_val(slot);
+            let raw = slot_val(&slot);
             let value = match (elem, slot.kind, raw) {
                 (Elem::Num, Kind::Number | Kind::Angle, _) => raw,
                 // The two-argument form substitutes each value directly.

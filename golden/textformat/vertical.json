@@ -1,0 +1,80 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textformat-vertical-001",
+      "group": "textformat",
+      "script": [
+        "t = VerticalText(\"sample\")"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "\\rotatebox{90.0}{ \\text{ sample }  }" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-vertical-002",
+      "group": "textformat",
+      "script": [
+        "t = VerticalText(\"sample\", (1,1))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "\\rotatebox{90.0}{ \\text{ sample }  }" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-vertical-003",
+      "group": "textformat",
+      "script": [
+        "a = 2",
+        "A = (2, 1)",
+        "P = (1 / a, y(A))",
+        "t = \"height = \" + y(A)",
+        "v = VerticalText(t, P)",
+        "u = VerticalText(FormulaText(A))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 3.0, "y": 1.234 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 1.0 },
+          "t": { "type": "text", "defined": true, "text": "height = 1" },
+          "v": { "type": "text", "defined": true, "text": "\\rotatebox{90.0}{ \\text{ height = 1 }  }" },
+          "u": { "type": "text", "defined": true, "text": "\\rotatebox{90.0}{ \\left(2,\\;1 \\right) }" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.234 },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 1.234 },
+          "t": { "type": "text", "defined": true, "text": "height = 1.23" },
+          "v": { "type": "text", "defined": true, "text": "\\rotatebox{90.0}{ \\text{ height = 1.23 }  }" },
+          "u": { "type": "text", "defined": true, "text": "\\rotatebox{90.0}{ \\left(3,\\;1.23 \\right) }" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 1.234 },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "text", "defined": true, "text": "height = 1.23" },
+          "v": { "type": "text", "defined": true, "text": "" },
+          "u": { "type": "text", "defined": true, "text": "\\rotatebox{90.0}{ \\left(3,\\;1.23 \\right) }" }
+        }
+      ]
+    }
+  ]
+}

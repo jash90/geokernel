@@ -25,12 +25,15 @@
 //! A simultaneous move is saved as one `$movePoints` directive.
 
 use geo_kernel::algo::measure::MeasureDef;
-use geo_kernel::kernel::{Construction, Def, Id};
+use geo_kernel::kernel::text::TextPosition;
+use geo_kernel::kernel::{Construction, Def, Id, Value};
+use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
 use geo_kernel::script::{
-    boundary_slot_owner, restore_boundary_labels, split_comment, BoundaryOutputs,
+    boundary_slot_owner, find_unquoted, restore_boundary_labels, split_comment, BoundaryOutputs,
 };
 use shared::Chain;
 pub use shared::Labels;
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 mod shared;
@@ -109,6 +112,7 @@ enum Op {
         ordered: bool,
     },
     MovePoints(Vec<Position<String>>),
+    TextProperties(Box<str>),
 }
 
 /// Rewrites `f: Line(A, B)` as `f = Line(A, B)` and removes a trailing `#`
@@ -121,8 +125,8 @@ pub fn normalize(input: &str) -> String {
 
 fn normalize_definition(input: &str) -> String {
     let line = input.trim();
-    let colon = line.find(':');
-    let eq = line.find('=');
+    let colon = find_unquoted(line, ':');
+    let eq = find_unquoted(line, '=');
     match (colon, eq) {
         (Some(c), None) => format!("{} = {}", line[..c].trim(), line[c + 1..].trim()),
         (Some(c), Some(e)) if c < e => format!("{}: {}", line[..c].trim(), line[c + 1..].trim()),
@@ -136,11 +140,15 @@ enum Directive<'a> {
     Set(&'a str, Setting),
     MovePoints(Vec<Position<&'a str>>),
     Visible(&'a str, bool),
+    TextProperties(TextProperties<'a>),
 }
 
 /// The directive on a normalised line, if it is one (a definition always has
 /// an `=`).
 fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
+    if let Some(props) = parse_properties(line) {
+        return Some(props.map(Directive::TextProperties));
+    }
     if line.contains('=') {
         return None;
     }
@@ -178,6 +186,47 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
         }
     };
     Some(parse().ok_or_else(|| format!("cannot read `{line}`")))
+}
+
+fn replay_text_properties<'a>(
+    c: &mut Construction,
+    line: &'a str,
+    gone: &BTreeSet<String>,
+    previous: Option<&Construction>,
+) -> Result<Option<Cow<'a, str>>, String> {
+    let mut properties = parse_properties(line).expect("a recorded text directive")?;
+    if gone.contains(properties.label) && c.id(properties.label).is_none() {
+        return Ok(None);
+    }
+    let anchor = match properties.overrides.position {
+        Some(TextPosition::Point(label) | TextPosition::ScreenPoint(label)) => Some(label),
+        _ => None,
+    };
+    let detached = anchor.filter(|&label| gone.contains(label) && c.id(label).is_none());
+    if let Some(label) = detached {
+        let saved = previous.and_then(|prior| prior.id(label).map(|id| prior.value(id)));
+        properties.overrides.position = Some(match saved {
+            Some(Value::Point { x, y })
+                if matches!(
+                    properties.overrides.position,
+                    Some(TextPosition::ScreenPoint(_))
+                ) =>
+            {
+                TextPosition::Screen {
+                    x: f64::from(x as i32),
+                    y: f64::from(y as i32),
+                }
+            }
+            Some(Value::Point { x, y }) => TextPosition::World { x, y },
+            _ => TextPosition::Origin,
+        });
+    }
+    properties.apply(c)?;
+    Ok(Some(if detached.is_some() {
+        Cow::Owned(properties.to_string())
+    } else {
+        Cow::Borrowed(line)
+    }))
 }
 
 fn replay_move_points(
@@ -333,7 +382,7 @@ impl Log {
     fn entries(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items().into_iter().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } | Op::MovePoints(_) => None,
+            Op::Set { .. } | Op::MovePoints(_) | Op::TextProperties(_) => None,
         })
     }
 
@@ -341,7 +390,7 @@ impl Log {
     pub(crate) fn entries_rev(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items_rev().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } | Op::MovePoints(_) => None,
+            Op::Set { .. } | Op::MovePoints(_) | Op::TextProperties(_) => None,
         })
     }
 
@@ -507,7 +556,7 @@ impl Log {
             Op::Define(e) if grouped => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Define(e) => e.labels != labels,
             Op::Set { label, .. } => !labels.contains(label),
-            Op::MovePoints(_) => true,
+            Op::MovePoints(_) | Op::TextProperties(_) => true,
         });
         self.removed.extend(labels);
         true
@@ -518,6 +567,14 @@ impl Log {
     /// it uses an object that was removed (or dropped itself), otherwise the
     /// whole rebuild fails and the caller keeps its previous state.
     pub fn rebuild(&self) -> Result<(Construction, Log), String> {
+        self.rebuild_with_text_anchors(None)
+    }
+
+    /// When a placed text loses its anchor, keep the last location.
+    pub(crate) fn rebuild_with_text_anchors(
+        &self,
+        previous: Option<&Construction>,
+    ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
@@ -603,6 +660,19 @@ impl Log {
                         }
                     }
                 }
+                Op::TextProperties(line) => {
+                    let replayed = replay_text_properties(&mut c, line, &gone, previous)?;
+                    if matches!(replayed, Some(Cow::Borrowed(_))) {
+                        if let Some(n) = &mut same {
+                            *n = i + 1;
+                            continue;
+                        }
+                    }
+                    diverge(&mut kept, &mut same);
+                    if let Some(line) = replayed {
+                        kept.ops.push(Op::TextProperties(line.into()));
+                    }
+                }
             }
         }
         if let Some(n) = same {
@@ -635,7 +705,10 @@ impl Log {
     /// `rebuild` as it was before the journal shared its storage: every
     /// kept line recorded anew. The oracle of the tests of `rebuild`.
     #[cfg(test)]
-    pub(crate) fn rebuild_reference(&self) -> Result<(Construction, Log), String> {
+    pub(crate) fn rebuild_reference(
+        &self,
+        previous: &Construction,
+    ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
@@ -685,6 +758,12 @@ impl Log {
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;
                     kept.record_move_points(&c, &positions);
+                }
+                Op::TextProperties(line) => {
+                    if let Some(line) = replay_text_properties(&mut c, line, &gone, Some(previous))?
+                    {
+                        kept.ops.push(Op::TextProperties(line.into()));
+                    }
                 }
             }
         }
@@ -788,6 +867,7 @@ impl Log {
                     }
                     writeln!(out, ")")
                 }
+                Op::TextProperties(line) => writeln!(out, "{line}"),
             };
         }
         for label in &self.hidden {
@@ -817,6 +897,11 @@ impl Log {
                 } else {
                     self.hidden.insert(label.to_owned());
                 }
+                return Ok(Vec::new());
+            }
+            Directive::TextProperties(props) => {
+                props.apply(c)?;
+                self.ops.push(Op::TextProperties(props.to_string().into()));
                 return Ok(Vec::new());
             }
         };

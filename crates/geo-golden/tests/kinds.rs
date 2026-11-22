@@ -379,12 +379,15 @@ fn draw_needle(kind: &str) -> String {
     }
 }
 
-fn xml_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
+fn construction_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
     for e in std::fs::read_dir(dir).unwrap_or_else(|e| panic!("{}: {e}", dir.display())) {
         let p = e.unwrap().path();
         if p.is_dir() {
-            xml_files(&p, out);
-        } else if p.extension().is_some_and(|x| x == "xml") {
+            construction_files(&p, out);
+        } else if p
+            .extension()
+            .is_some_and(|x| x == "xml" || x == "ggb" && !p.with_extension("xml").exists())
+        {
             out.push(p);
         }
     }
@@ -393,7 +396,7 @@ fn xml_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
 /// Kinds of the objects the importer makes from the files of `golden/ggb`.
 fn imported_kinds() -> BTreeSet<String> {
     let mut files = Vec::new();
-    xml_files(&repo_root().join("golden/ggb"), &mut files);
+    construction_files(&repo_root().join("golden/ggb"), &mut files);
     assert!(!files.is_empty(), "no files in golden/ggb");
     let mut kinds = BTreeSet::new();
     for f in files {

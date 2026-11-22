@@ -1,0 +1,311 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textformat-formula-001",
+      "group": "textformat",
+      "script": [
+        "t = FormulaText(Polygon((1,1),(2,1/2),4))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "1.25" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-formula-002",
+      "group": "textformat",
+      "script": [
+        "t = FormulaText(Polygon((1,1),(2,1/2),4), false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "Polygon\\left(\\left(1,\\;1 \\right), \\left(2,\\;\\frac{1}{2} \\right), 4 \\right)" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-formula-003",
+      "group": "textformat",
+      "script": [
+        "t = FormulaText(Polygon((1,1),(2,1/2),4), false, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "Polygon\\left(\\left(1,\\;1 \\right), \\left(2,\\;\\frac{1}{2} \\right), 4 \\right)" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-formula-004",
+      "group": "textformat",
+      "script": [
+        "a = 2",
+        "b = a^2 / 3",
+        "t = FormulaText(b)",
+        "u = FormulaText(b, false, true)",
+        "w = LaTeX(b, true, true)",
+        "A = (3.14159, -2.5)",
+        "p = FormulaText(A)",
+        "q = FormulaText((1, 2), false, true)",
+        "c = 30°",
+        "s = FormulaText(c, true, true)",
+        "v = FormulaText(A, true, true)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "A", "x": 1.5, "y": -2.75 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.3333333333333333 },
+          "t": { "type": "text", "defined": true, "text": "1.33" },
+          "u": { "type": "text", "defined": true, "text": "b\\, = \\,\\frac{a^{2}}{3}" },
+          "w": { "type": "text", "defined": true, "text": "b\\, = \\,1.33" },
+          "A": { "type": "point", "defined": true, "x": 3.14159, "y": -2.5 },
+          "p": { "type": "text", "defined": true, "text": "\\left(3.14,\\;-2.5 \\right)" },
+          "q": { "type": "text", "defined": true, "text": "\\left(1,\\;2 \\right)" },
+          "c": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "s": { "type": "text", "defined": true, "text": "c\\, = \\,30°" },
+          "v": { "type": "text", "defined": true, "text": "A\\, = \\,\\left(3.14,\\;-2.5 \\right)" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 5.333333333333333 },
+          "t": { "type": "text", "defined": true, "text": "5.33" },
+          "u": { "type": "text", "defined": true, "text": "b\\, = \\,\\frac{a^{2}}{3}" },
+          "w": { "type": "text", "defined": true, "text": "b\\, = \\,5.33" },
+          "A": { "type": "point", "defined": true, "x": 3.14159, "y": -2.5 },
+          "p": { "type": "text", "defined": true, "text": "\\left(3.14,\\;-2.5 \\right)" },
+          "q": { "type": "text", "defined": true, "text": "\\left(1,\\;2 \\right)" },
+          "c": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "s": { "type": "text", "defined": true, "text": "c\\, = \\,30°" },
+          "v": { "type": "text", "defined": true, "text": "A\\, = \\,\\left(3.14,\\;-2.5 \\right)" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 5.333333333333333 },
+          "t": { "type": "text", "defined": true, "text": "5.33" },
+          "u": { "type": "text", "defined": true, "text": "b\\, = \\,\\frac{a^{2}}{3}" },
+          "w": { "type": "text", "defined": true, "text": "b\\, = \\,5.33" },
+          "A": { "type": "point", "defined": true, "x": 1.5, "y": -2.75 },
+          "p": { "type": "text", "defined": true, "text": "\\left(1.5,\\;-2.75 \\right)" },
+          "q": { "type": "text", "defined": true, "text": "\\left(1,\\;2 \\right)" },
+          "c": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "s": { "type": "text", "defined": true, "text": "c\\, = \\,30°" },
+          "v": { "type": "text", "defined": true, "text": "A\\, = \\,\\left(1.5,\\;-2.75 \\right)" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-formula-005",
+      "group": "textformat",
+      "script": [
+        "a = 1",
+        "b = 1 / a",
+        "c = sqrt(a)",
+        "m = Text(c)",
+        "n = FormulaText(c)",
+        "t = FormulaText(b, true, true)",
+        "u = FormulaText(c, false, true)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "text", "defined": true, "text": "1" },
+          "n": { "type": "text", "defined": true, "text": "1" },
+          "t": { "type": "text", "defined": true, "text": "b\\, = \\,1" },
+          "u": { "type": "text", "defined": true, "text": "c\\, = \\,\\sqrt{a}" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "text", "defined": true, "text": "0" },
+          "n": { "type": "text", "defined": true, "text": "0" },
+          "t": { "type": "text", "defined": true, "text": "b\\, = \\,\\infty" },
+          "u": { "type": "text", "defined": true, "text": "c\\, = \\,\\sqrt{a}" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "number", "defined": false },
+          "m": { "type": "text", "defined": false },
+          "n": { "type": "text", "defined": true, "text": "?" },
+          "t": { "type": "text", "defined": true, "text": "b\\, = \\,-1" },
+          "u": { "type": "text", "defined": true, "text": "c\\, = \\,\\sqrt{a}" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-formula-006",
+      "group": "textformat",
+      "script": [
+        "A = (1.23, 2.4)",
+        "B = (3.12, 4.32)",
+        "line = Line(A, B)",
+        "c = Circle(A, B)",
+        "s = Segment(A, B)",
+        "L = {A, 3}",
+        "f(x) = x^2 - 3 x + 4",
+        "t = Text(line)",
+        "u = Text(c)",
+        "v = Text(s)",
+        "w = FormulaText(line, true, true)",
+        "tCircle = FormulaText(c, true, true)",
+        "tFunction = FormulaText(f, true, true)",
+        "tList = FormulaText(L)",
+        "tLine = Text(line, false)",
+        "tDef = FormulaText(c, false, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.23, "y": 2.4 },
+          "B": { "type": "point", "defined": true, "x": 3.12, "y": 4.32 },
+          "line": { "type": "line", "defined": true, "a": -1.9200000000000004, "b": 1.8900000000000001, "c": -2.1743999999999994 },
+          "c": { "type": "circle", "defined": true, "cx": 1.23, "cy": 2.4, "r": 2.694160351575236 },
+          "s": { "type": "segment", "defined": true, "x1": 1.23, "y1": 2.4, "x2": 3.12, "y2": 4.32 },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.23, "y": 2.4 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 92.0],
+              [-4.0, 32.0],
+              [-2.0, 14.0],
+              [-1.0, 8.0],
+              [-0.5, 5.75],
+              [0.0, 4.0],
+              [0.5, 2.75],
+              [1.0, 2.0],
+              [2.0, 2.0],
+              [4.0, 8.0],
+              [8.0, 44.0]
+            ]
+          },
+          "t": { "type": "text", "defined": true, "text": "-1.92x + 1.89y = 2.17" },
+          "u": { "type": "text", "defined": true, "text": "(x - 1.23)² + (y - 2.4)² = 7.26" },
+          "v": { "type": "text", "defined": true, "text": "2.69" },
+          "w": { "type": "text", "defined": true, "text": "line\\mathpunct{:}\\,-1.92x + 1.89y\\, = \\,2.17" },
+          "tCircle": { "type": "text", "defined": true, "text": "c\\mathpunct{:}\\,(x - 1.23)^{2} + (y - 2.4)^{2} = 7.26" },
+          "tFunction": { "type": "text", "defined": true, "text": "f\\left(x \\right)\\, = \\,x^{2} - 3 \\; x + 4" },
+          "tList": { "type": "text", "defined": true, "text": "\\left\\{\\left(1.23,\\;2.4 \\right),\\;3\\right\\}" },
+          "tLine": { "type": "text", "defined": true, "text": "Line(A, B)" },
+          "tDef": { "type": "text", "defined": true, "text": "c\\mathpunct{:}\\,Circle\\left(A, B \\right)" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-formula-007",
+      "group": "textformat",
+      "script": [
+        "a = 2 + 3",
+        "b = 1 / 3",
+        "t = Text(a, false)",
+        "u = FormulaText(b, false, true)",
+        "q = FormulaText(\"50%\")",
+        "r = FormulaText(q, true, true)",
+        "s = FormulaText({\"sample\", (1,2)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "t": { "type": "text", "defined": true, "text": "2 + 3" },
+          "u": { "type": "text", "defined": true, "text": "b\\, = \\,\\frac{1}{3}" },
+          "q": { "type": "text", "defined": true, "text": "50\\%" },
+          "r": { "type": "text", "defined": true, "text": "q \\, = \\,“50\\%”" },
+          "s": { "type": "text", "defined": true, "text": "\\left\\{\\text{“sample”},\\;\\left(1,\\;2 \\right)\\right\\}" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-formula-008",
+      "group": "textformat",
+      "script": [
+        "A = (0,0)",
+        "B = (2,4)",
+        "C = (0,3)",
+        "k = Line(A,B)",
+        "l = Line(A,C)",
+        "g = Ray(A,B)",
+        "h = Conic(1,2,-5,0,0,0)",
+        "t = Text(k)",
+        "u = Text(l)",
+        "v = Text(g)",
+        "w = Text(h)",
+        "ta = FormulaText(k)",
+        "tb = FormulaText(l)",
+        "tc = FormulaText(g)",
+        "td = FormulaText(h)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "k": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 0.0 },
+          "g": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "h": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 2.0, -5.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.23606797749979, 1.5811388300841898],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "t": { "type": "text", "defined": true, "text": "-2x + y = 0" },
+          "u": { "type": "text", "defined": true, "text": "x = 0" },
+          "v": { "type": "text", "defined": true, "text": "-2x + y = 0" },
+          "w": { "type": "text", "defined": true, "text": "x² + 2y² = 5" },
+          "ta": { "type": "text", "defined": true, "text": "-2x + y\\, = \\,0" },
+          "tb": { "type": "text", "defined": true, "text": "x\\, = \\,0" },
+          "tc": { "type": "text", "defined": true, "text": "-2x + y\\, = \\,0" },
+          "td": { "type": "text", "defined": true, "text": "x^{2} + 2y^{2}\\, = \\,5" }
+        }
+      ]
+    }
+  ]
+}

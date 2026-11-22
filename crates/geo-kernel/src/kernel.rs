@@ -35,6 +35,7 @@ pub mod angle;
 mod axis;
 #[path = "algo/locus.rs"]
 pub mod locus;
+pub mod text;
 
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use self::locus::{LocusData, LocusDef};
@@ -725,6 +726,9 @@ pub struct Construction {
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
+    text_presentations: HashMap<Id, text::TextOverrides>,
+    /// Original expressions whose structure is lost when bound to a value.
+    construction_sources: HashMap<Id, String>,
     /// The stored lists of parents, one after the other (see [`IdList`]).
     lists: Vec<Id>,
     /// For each family of generated labels (see [`Construction::label_hint`]),
@@ -1128,6 +1132,8 @@ impl Construction {
     /// at or before it and stays valid, and the generation does not change.
     pub(crate) fn discard_since(&mut self, at: Checkpoint) {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
+        self.discard_text_presentations(at.len);
+        self.construction_sources.retain(|id, _| id.0 < at.len);
         self.frozen_line_starts
             .retain(|_, &mut (_, _, order)| order < at.frozen_line_starts);
         while self.defs.len() > at.len {
@@ -1472,6 +1478,7 @@ impl Construction {
         if same(old.0, x) && same(old.1, y) {
             return Ok(0);
         }
+        self.construction_sources.remove(&id);
         self.defs[id.0] = def;
         self.values[id.0] = new;
         Ok(self.propagate(id))
@@ -1502,6 +1509,7 @@ impl Construction {
             if old_x.to_bits() == x.to_bits() && old_y.to_bits() == y.to_bits() {
                 continue;
             }
+            self.construction_sources.remove(&id);
             self.defs[id.0] = Def::FreePoint { x, y };
             self.values[id.0] = Value::Point { x, y };
             first = first.min(id.0);
@@ -1572,6 +1580,7 @@ impl Construction {
         // A changed number loses its exact decimal (`GeoNumeric.setValue`),
         // which changes what reads it even when the value stays.
         let had_decimal = expr::forget_decimal(self, id);
+        let had_source = self.construction_sources.remove(&id).is_some();
         // Bit equality: `0` to `-0` is a change (`1/a` flips its sign).
         let old = match def {
             Def::Number(old)
@@ -1582,7 +1591,11 @@ impl Construction {
             }) => old,
             _ => unreachable!("the definition is a free scalar"),
         };
-        if !had_decimal && old.to_bits() == v.to_bits() && self.values[id.0].is_defined() {
+        if !had_decimal
+            && !had_source
+            && old.to_bits() == v.to_bits()
+            && self.values[id.0].is_defined()
+        {
             return Ok(0);
         }
         self.defs[id.0] = new_def;
@@ -1977,6 +1990,21 @@ impl Construction {
     }
 
     /// The current contents of a text object.
+    pub fn is_independent_text(&self, id: Id) -> bool {
+        self.defs
+            .get(id.0)
+            .is_some_and(|def| def.kind() == Kind::Text)
+            && expr::is_independent_text(self, id)
+    }
+
+    pub(crate) fn construction_source(&self, id: Id) -> Option<&str> {
+        self.construction_sources.get(&id).map(String::as_str)
+    }
+
+    pub(crate) fn remember_construction_source(&mut self, id: Id, source: &str) {
+        self.construction_sources.insert(id, source.to_owned());
+    }
+
     pub fn text(&self, id: Id) -> Option<&str> {
         expr::text_value(self, id)
     }

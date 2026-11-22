@@ -32,6 +32,8 @@ const DEPENDENT_POINT_RADIUS: f32 = 4.0;
 pub const CURVE_WIDTH: f32 = 2.5;
 const LABEL_FONT: f32 = 16.0;
 
+mod text;
+
 /// What the picture needs besides the construction.
 pub struct Scene<'a> {
     pub visible: &'a dyn Fn(Id) -> bool,
@@ -508,8 +510,10 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             Align2::CENTER_CENTER,
         ));
     }
+    let mut has_text = false;
     for &id in &ids {
-        if let Value::Point { x, y } = c.value(id) {
+        let value = c.value(id);
+        if let Value::Point { x, y } = value {
             if !(x.is_finite() && y.is_finite()) {
                 continue;
             }
@@ -527,7 +531,13 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
                 color(id),
                 Align2::LEFT_BOTTOM,
             ));
+        } else if value == Value::Text {
+            has_text = true;
         }
+    }
+    if has_text {
+        let texts = ids.iter().copied().filter(|&id| c.value(id) == Value::Text);
+        text::paint(painter, rect, c, t, texts, color, scene.generation);
     }
     let font = FontId::proportional(LABEL_FONT);
     let mut rects = scene.label_rects.map(|r| {
@@ -832,6 +842,146 @@ mod tests {
         let base = shapes("A = (1, 0)\nB = (0, 0)\nC = (1, 1)\n");
         let with = shapes("A = (1, 0)\nB = (0, 0)\nC = (1, 1)\nα = Angle(A, B, C)\n");
         assert!(with >= base + 3, "{with} vs {base}");
+    }
+
+    #[test]
+    fn a_text_object_draws_its_value_on_the_canvas() {
+        let base = shapes("A = (1, 0)");
+        assert_eq!(shapes("A = (1, 0)\nt = \"Canvas text\""), base + 1);
+    }
+
+    #[test]
+    fn a_thousand_texts_reuse_visible_layouts_through_pan_and_an_edit() {
+        use crate::workbench::Workbench;
+        use std::fmt::Write;
+
+        let mut script = String::from("n = 1\n");
+        for i in 0..1000 {
+            let suffix = if i == 0 { " + n" } else { "" };
+            let x = if i < 500 { 0 } else { 200 };
+            writeln!(script, "t{i} = \"Canvas {i}\"{suffix}").unwrap();
+            writeln!(
+                script,
+                "$textProperties(t{i}, -, -, -, -, -, world, {x}, 0)"
+            )
+            .unwrap();
+        }
+        let mut wb = Workbench::from_script(&script).unwrap();
+        let ctx = Context::default();
+        let draw = |wb: &Workbench, camera: Camera| {
+            let t = camera.transform(800.0, 600.0);
+            let mut output = ctx.run_ui(Default::default(), |ui| {
+                let rect = Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0));
+                let scene = Scene {
+                    visible: &|id| wb.is_visible(id),
+                    ghost: &|_| false,
+                    selected: None,
+                    hovered: None,
+                    palette: wb.palette(),
+                    cull: true,
+                    generation: wb.rebuilds(),
+                    label_offset: &|_| None,
+                    label_rects: None,
+                };
+                paint(ui.painter(), rect, wb.construction(), &t, &scene);
+            });
+            output.textures_delta.clear();
+            output
+                .shapes
+                .iter()
+                .filter(|shape| matches!(shape.shape, Shape::Text(_)))
+                .count()
+        };
+        let layouts = text::layouts_built();
+        assert_eq!(draw(&wb, Camera::STANDARD), 500);
+        assert_eq!(text::layouts_built() - layouts, 500);
+        let pan = Camera {
+            cx: 1.0,
+            ..Camera::STANDARD
+        };
+        assert_eq!(draw(&wb, pan), 500);
+        assert_eq!(text::layouts_built() - layouts, 500);
+        assert!(wb.set_number(wb.construction().id("n").unwrap(), 2.0));
+        assert_eq!(draw(&wb, pan), 500);
+        assert_eq!(text::layouts_built() - layouts, 501);
+    }
+
+    #[test]
+    fn imported_texts_keep_their_placement_on_pan_and_edits() {
+        use crate::workbench::Workbench;
+
+        fn text_shapes(wb: &Workbench, cam: Camera) -> HashMap<String, Pos2> {
+            let ctx = Context::default();
+            let t = cam.transform(800.0, 600.0);
+            let mut output = ctx.run_ui(Default::default(), |ui| {
+                let rect = Rect::from_min_size(Pos2::new(30.0, 40.0), vec2(800.0, 600.0));
+                let scene = Scene {
+                    visible: &|id| wb.is_visible(id),
+                    ghost: &|_| false,
+                    selected: None,
+                    hovered: None,
+                    palette: wb.palette(),
+                    cull: true,
+                    generation: wb.rebuilds(),
+                    label_offset: &|_| None,
+                    label_rects: None,
+                };
+                paint(ui.painter(), rect, wb.construction(), &t, &scene);
+            });
+            output.textures_delta.clear();
+            output
+                .shapes
+                .into_iter()
+                .filter_map(|shape| {
+                    let Shape::Text(text) = shape.shape else {
+                        return None;
+                    };
+                    let row = text.galley.rows.first()?;
+                    let baseline = row.pos.y + row.glyphs.first()?.pos.y;
+                    let at = text.pos + vec2(0.0, baseline);
+                    Some((text.galley.text().to_owned(), at))
+                })
+                .collect()
+        }
+
+        let mut wb = Workbench::default();
+        let fixture = include_bytes!("../../../golden/ggb/saved/saved-texts-001.ggb");
+        wb.load_bytes(fixture, "text.ggb").unwrap();
+        let text = |wb: &Workbench, name| {
+            let c = wb.construction();
+            c.text(c.id(name).unwrap()).unwrap().to_owned()
+        };
+        let caption = text(&wb, "caption");
+        let note = text(&wb, "note");
+        let marker = text(&wb, "marker");
+        let hidden = text(&wb, "hiddenText");
+        let readout = text(&wb, "readout");
+        let first = text_shapes(&wb, Camera::STANDARD);
+        let pan = text_shapes(
+            &wb,
+            Camera {
+                cx: 1.0,
+                ..Camera::STANDARD
+            },
+        );
+        assert_eq!(first[&caption], Pos2::new(81.0, 113.0));
+        assert_eq!(first[&caption], pan[&caption]);
+        assert_eq!(first[&note], Pos2::new(280.0, 240.0));
+        assert_eq!(first[&note] - pan[&note], vec2(50.0, 0.0));
+        assert_eq!(first[&marker] - pan[&marker], vec2(50.0, 0.0));
+        assert!(!first.contains_key(&hidden));
+        assert!(first.contains_key(&readout));
+
+        let p = wb.construction().id("P").unwrap();
+        let a = wb.construction().id("a").unwrap();
+        assert!(wb.move_point(p, 2.0, 1.0));
+        assert!(wb.set_number(a, 8.5));
+        let after = text_shapes(&wb, Camera::STANDARD);
+        assert_eq!(after[&marker], Pos2::new(530.0, 290.0));
+        assert_eq!(after[&caption], first[&caption]);
+        assert_eq!(after[&note], first[&note]);
+        assert!(!after.contains_key(&readout));
+        assert!(after.contains_key(&text(&wb, "readout")));
     }
 
     #[test]

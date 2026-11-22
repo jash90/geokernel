@@ -157,7 +157,10 @@ gives.
 `golden/t-pairs/` holds the input/expected pairs of GeoGebra's own kernel
 tests (`CommandsTest`, `ArithmeticTest`, `RedefineTest`, ...), and
 `verified.jsonl` records what GeoGebra actually returned for every step when
-`tools/ggb-harness/harness.sh tpairs` replayed the methods. The Rust runner
+`tools/ggb-harness/harness.sh tpairs` replayed the methods. To refresh
+records of one snapshot type at the same upstream commit, pass the type as an
+argument, for example `tools/ggb-harness/harness.sh tpairs text`.
+The Rust runner
 `crates/geo-golden/tests/tpairs.rs` replays the same steps on `geo-kernel`
 and compares the values and the strings against that file. Steps the kernel
 cannot pass yet are listed in `crates/geo-golden/t-pairs-gaps.toml`.
@@ -226,13 +229,14 @@ python3 tools/ggb-harness/saved/make_saved.py   # rewrite saved/saved.json
 
 `SavedExporter` runs the raw GeoGebra input lines of `saved/saved.json` through the
 algebra processor (so `P = Intersect(f, k)` gives both points), applies the
-`move` steps, and then writes, with nothing in between, the construction file
-(`golden/ggb/saved/<id>.xml`) and what GeoGebra computes in that state
+`move` and other edit steps, then writes the construction file
+(`golden/ggb/saved/<id>.xml` or `<id>.ggb` when `archive` is true) and what GeoGebra computes in that state
 (`<id>.snapshot`, golden field format, not read by the golden loader). A case
 may set `angle_unit` (`degree` or `radiant`). `crates/geo-import/tests/saved.rs`
 imports each file and compares it with its snapshot: this covers, for exactly the states the cases reach, that the
 n-th output slot of a saved `Intersect` or `Tangent` is the n-th object of the
-kernel after points were moved, and that angles do not depend on the angle unit.
+kernel after points were moved, that angles do not depend on the angle unit,
+and that imported texts match before and after a point move and a number edit.
 
 ### Reading files back
 

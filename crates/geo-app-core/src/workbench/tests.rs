@@ -1,5 +1,17 @@
 use super::*;
 
+#[test]
+fn typed_text_preserves_punctuation_and_does_not_require_a_label() {
+    let mut wb = Workbench::from_script("P = (3, 4)").unwrap();
+    wb.run_line(r#""P = " + P"#).unwrap();
+    wb.run_line(r#""Heading: value #1""#).unwrap();
+    wb.run_line(r#"alias: "x = y""#).unwrap();
+    let c = wb.construction();
+    let texts: Vec<_> = c.ids().filter_map(|id| c.text(id)).collect();
+    assert_eq!(texts, ["P = (3, 4)", "Heading: value #1", "x = y"]);
+    assert_eq!(c.text(c.id("alias").unwrap()), Some("x = y"));
+}
+
 fn triangle() -> Workbench {
     Workbench::from_script(include_str!("../../../../examples/triangle.geo")).unwrap()
 }

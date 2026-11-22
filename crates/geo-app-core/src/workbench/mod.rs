@@ -11,7 +11,7 @@ use crate::style::{Palette, Sides};
 use crate::undo::Undo;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
-use geo_kernel::script::BoundaryOutputs;
+use geo_kernel::script::{find_unquoted, BoundaryOutputs};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
@@ -154,12 +154,12 @@ impl Workbench {
                 None => log.clone(),
             };
             return if self.unshared {
-                log.rebuild_reference()
+                log.rebuild_reference(&self.construction)
             } else {
-                log.rebuild()
+                log.rebuild_with_text_anchors(Some(&self.construction))
             };
         }
-        log.rebuild()
+        log.rebuild_with_text_anchors(Some(&self.construction))
     }
 
     /// See the field of the same name.
@@ -266,7 +266,7 @@ impl Workbench {
     /// `(1, 2)`. The label class follows the kind of the result, found by
     /// running the line on a scratch copy.
     fn with_label(&self, line: String) -> String {
-        if line.is_empty() || line.contains('=') {
+        if line.is_empty() || find_unquoted(&line, '=').is_some() {
             return line;
         }
         let kind = self.log.rebuild().ok().and_then(|(mut scratch, _)| {

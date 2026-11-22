@@ -360,7 +360,7 @@ fn literals_names_and_commands_follow_the_input_bar() {
     for bad in [
         "b = 1e3",
         "b = 1.2.3",
-        "b = 1..2",
+        "b = 1..",
         "x = 5",
         "y = a",
         "pi = 3",
@@ -369,6 +369,8 @@ fn literals_names_and_commands_follow_the_input_bar() {
         assert!(exec(&mut c, bad).is_err(), "{bad}");
     }
     assert!(exec(&mut c, "sin(x) = x").is_err());
+    exec(&mut c, "r_{range} = 1..2").unwrap();
+    assert_eq!(c.value(c.id("r_{range}").unwrap()), Value::List { len: 2 });
     // the old forms keep working, and `+5` and `inf` go through expressions
     for (line, label, def) in [
         ("r = 3", "r", Some(Def::Number(3.0))),
@@ -523,7 +525,7 @@ fn unsupported_syntax_is_an_error_and_leaves_nothing_behind() {
         "b = A < 3",
         "b = \u{ac}a",
         "b = a && true",
-        "b = 1..2",
+        "b = 2 ** ..",
         "b = random()",
         "b = \u{663}",
         "b = 2\u{966}",
@@ -683,6 +685,7 @@ pub(super) fn flat(c: &Construction, id: crate::kernel::Id) -> Option<String> {
                     out.push_str(&format!("v({x}, {y})"));
                 }
                 super::Element::Value(_, Value::Bool(b)) => out.push_str(&format!("{b}")),
+                super::Element::Text(s) => out.push_str(s),
                 super::Element::Value(kind, _) => out.push_str(&format!("?{kind}")),
             }
         }

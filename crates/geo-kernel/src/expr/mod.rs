@@ -100,6 +100,7 @@ impl IntersectionWork {
 mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
+use commands::text::TextOp;
 use list::Slot;
 pub use list::{Element, List};
 pub(crate) mod math;
@@ -162,6 +163,7 @@ pub(crate) enum Node {
     Bin(Bin, u32, u32),
     Algebra(AlgebraOp, u32, u32),
     Text,
+    TextCmd(TextOp, u32, u32),
     Relation {
         objects: [Id; 4],
         count: u8,
@@ -531,7 +533,7 @@ enum StoredExtra {
     None,
     Double,
     Decimal(Dec),
-    Text(String),
+    Text(Box<TextResult>),
     Polynomial(Vec<f64>),
 }
 
@@ -553,6 +555,12 @@ impl From<Option<eval::Exact>> for StoredExtra {
             Some(eval::Exact::Dec(d)) => Self::Decimal(d),
         }
     }
+}
+
+#[derive(Clone, PartialEq)]
+struct TextResult {
+    text: Option<String>,
+    presentation: crate::kernel::text::TextPresentation,
 }
 
 #[derive(Clone)]
@@ -627,9 +635,13 @@ impl Entry {
 
     fn text(&self) -> Option<&str> {
         match &self.extra {
-            StoredExtra::Text(text) => Some(text),
+            StoredExtra::Text(result) => result.text.as_deref(),
             _ => None,
         }
+    }
+
+    fn text_latex(&self) -> bool {
+        matches!(&self.extra, StoredExtra::Text(result) if result.presentation.latex)
     }
 
     fn polynomial(&self) -> Option<&[f64]> {
@@ -737,7 +749,9 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         } => fixed[..2].copy_from_slice(&[list, condition]),
         Node::Defined(a) => fixed[0] = a,
         Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
-        Node::List(first, len) => run = first..first.saturating_add(len),
+        Node::List(first, len) | Node::TextCmd(_, first, len) => {
+            run = first..first.saturating_add(len)
+        }
         _ => {}
     }
     fixed.into_iter().filter(|&c| c != NONE).chain(run)
@@ -792,7 +806,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(c);
             shift(d);
         }
-        Node::List(first, _) => shift(first),
+        Node::List(first, _) | Node::TextCmd(_, first, _) => shift(first),
         _ => {}
     }
 }
@@ -802,6 +816,7 @@ fn is_list_node(node: &Node) -> bool {
     matches!(
         node,
         Node::List(..)
+            | Node::TextCmd(..)
             | Node::Item(_)
             | Node::ItemObject(_)
             | Node::ListOp(..)
@@ -1130,8 +1145,14 @@ pub(crate) fn update(c: &mut Construction, d: ExprDef) -> (Value, bool) {
     if d.kind == Kind::Text {
         let result = eval::text_root(c, entry(c, d));
         let e = &mut c.exprs.entries[d.index as usize];
-        let changed = result.as_deref() != e.text();
-        e.extra = result.map_or(StoredExtra::None, StoredExtra::Text);
+        let old = match &e.extra {
+            StoredExtra::Text(old) => Some(old.as_ref()),
+            _ => None,
+        };
+        let changed = Some(&result) != old;
+        if changed {
+            e.extra = StoredExtra::Text(Box::new(result));
+        }
         return (
             if e.text().is_some() {
                 Value::Text
@@ -1272,7 +1293,7 @@ pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
         };
     }
     if d.kind == Kind::Text {
-        return if eval::text_root(c, entry(c, d)).is_some() {
+        return if eval::text_root(c, entry(c, d)).text.is_some() {
             Value::Text
         } else {
             Value::Undefined
@@ -1348,6 +1369,27 @@ pub(crate) fn function_signature(c: &Construction, id: Id) -> Option<FunctionSig
 
 pub(crate) use commands::relation::{define_relation, relation_reports};
 
+pub(crate) fn is_independent_text(c: &Construction, id: Id) -> bool {
+    commands::text::is_independent(c, id)
+}
+
+pub(crate) fn text_presentation(
+    c: &Construction,
+    id: Id,
+) -> Option<crate::kernel::text::TextPresentation> {
+    let Def::Expr(def) = c.def(id) else {
+        return None;
+    };
+    match &entry(c, def).extra {
+        StoredExtra::Text(result) => Some(result.presentation),
+        _ => None,
+    }
+}
+
+pub(crate) fn accepts_text_argument(c: &Construction, source: &str) -> bool {
+    parse::parse_argument(c, source).is_ok()
+}
+
 pub(crate) fn text_value(c: &Construction, id: Id) -> Option<&str> {
     let Def::Expr(d) = c.def(id) else {
         return None;
@@ -1398,7 +1440,7 @@ pub(crate) fn argument_object(c: &mut Construction, text: &str, label: &str, kin
     };
     let kind = match (kind, parsed.tys[parsed.root as usize]) {
         (Kind::Number, Ty::Num(1)) => Kind::Angle,
-        (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) => kind,
+        (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) | (Kind::Point, Ty::Vec) => kind,
         _ => return false,
     };
     !parsed.uses_var && add(c, label, parsed, kind).is_ok()
@@ -1453,7 +1495,7 @@ pub(crate) fn define(
         Ty::Vec => Kind::Point,
         Ty::Bool => Kind::Boolean,
         Ty::List(_) => Kind::List,
-        Ty::Object => return Err("an object can only be used here as a list element".into()),
+        Ty::Object => return Err("this object cannot be assigned as an expression".into()),
         Ty::Text => Kind::Text,
         Ty::Function => return Err("a function needs an argument".into()),
     };

@@ -37,13 +37,15 @@ def topic(name):
     rng.seed(f"saved-{name}", version=2)
 
 
-def case(name, script, steps, unit=None, hidden=None):
+def case(name, script, steps, unit=None, hidden=None, archive=False):
     counters[name] = counters.get(name, 0) + 1
     entry = {"id": f"saved-{name}-{counters[name]:03d}"}
     if unit:
         entry["angle_unit"] = unit
     if hidden:
         entry["hidden"] = hidden
+    if archive:
+        entry["archive"] = True
     entry["script"] = script
     entry["steps"] = steps
     cases.append(entry)
@@ -216,6 +218,30 @@ case("review", ["n = 400", "ang = (n + 30)°", "acute = (n - 10)°",
 case("coordinates", ["a = 2", "b = 3", "P = $point(a, b)",
                      "Q = $point(1/2, 3)", "v = $vector(a, b)",
                      "w = $vector(1/2, 3)"], [])
+
+texts = [
+    'marker = "Anchor label"',
+    "P = (1.235, -2.246)", "a = 4.1256", "theta = 30.1256°",
+    'caption = "Fixed panel #1 & notes"',
+    'note = "Survey note\nsecond line"',
+    'readout = "a = " + a + "; P = " + P + "; θ = " + theta',
+    r'formula = "\frac{1}{2}\\\frac{3}{4}"',
+    "turned = VerticalText(formula)",
+    'hiddenText = "Hidden label"',
+    'atPoint = Text("Placed by command", P, true, false, 0, 1)',
+]
+text_placement = [
+    {"action": "text_screen", "label": "caption", "x": 51, "y": 73},
+    {"action": "text_world", "label": "note", "x": -3, "y": 2},
+    {"action": "text_anchor", "label": "marker", "point": "P"},
+    {"action": "text_world", "label": "readout", "x": -1, "y": 3},
+    {"action": "text_font", "label": "formula", "latex": True, "serif": True,
+     "size": 1.4, "style": 3},
+]
+case("texts", texts, text_placement, hidden=["hiddenText"], archive=True)
+case("texts", texts, text_placement + [mv("P", 3.456, 2.468),
+     {"action": "set_number", "label": "a", "value": 8.5678}],
+     hidden=["hiddenText"], archive=True)
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
