@@ -16,6 +16,7 @@
 
 use geo_golden::forms::{self, CommandForms, Evidence};
 use geo_golden::model::Case;
+use geo_golden::model::Step;
 use geo_golden::table::Table;
 use geo_golden::{gaps, model, repo_root};
 use geo_kernel::Kind;
@@ -77,6 +78,27 @@ fn kinds_of(case: &Case) -> BTreeMap<String, Kind> {
         .iter()
         .map(|(l, e)| (l.clone(), e.kind))
         .collect()
+}
+
+fn case_lines(case: &Case) -> impl Iterator<Item = &String> {
+    case.script
+        .iter()
+        .chain(case.steps.iter().filter_map(|step| match step {
+            Step::Reject { line } => Some(line),
+            _ => None,
+        }))
+}
+
+fn case_uses_form(
+    case: &Case,
+    names: &BTreeMap<String, String>,
+    command: &str,
+    form: &str,
+) -> bool {
+    let kinds = kinds_of(case);
+    case_lines(case).any(|line| {
+        forms::script_uses_form(std::slice::from_ref(line), &kinds, names, command, form)
+    })
 }
 
 #[test]
@@ -215,7 +237,9 @@ fn every_evidence_row_is_backed() {
             };
             if gaps.contains_key(id) {
                 errors.push(format!("{what}: `{id}` is a known gap"));
-            } else if !forms::script_calls(&case.script, &names, &e.command) {
+            } else if !case_lines(case)
+                .any(|line| forms::script_calls(std::slice::from_ref(line), &names, &e.command))
+            {
                 errors.push(format!("{what}: `{id}` does not use the command"));
             } else if let Some(required) = required {
                 let suffix = e.form.strip_prefix("any,").unwrap();
@@ -227,13 +251,7 @@ fn every_evidence_row_is_backed() {
                     errors.push(format!("{what}: `{id}` has no defined image in this form"));
                 }
                 covered.extend(kinds);
-            } else if !forms::script_uses_form(
-                &case.script,
-                &kinds_of(case),
-                &names,
-                &e.command,
-                &e.form,
-            ) {
+            } else if !case_uses_form(case, &names, &e.command, &e.form) {
                 errors.push(format!("{what}: `{id}` does not call it in this form"));
             }
         }
@@ -313,7 +331,7 @@ fn print_form_candidates() {
             let ids: Vec<&String> = cases
                 .values()
                 .filter(|c| !gaps.contains_key(&c.id))
-                .filter(|c| forms::script_uses_form(&c.script, &kinds_of(c), &names, command, form))
+                .filter(|c| case_uses_form(c, &names, command, form))
                 .map(|c| &c.id)
                 .take(3)
                 .collect();

@@ -49,7 +49,8 @@ names the command with the form's tokens in backticks, such as
 `` `Mod(function, function)` `` or `` `AxisStepX()` ``.
 `crates/geo-golden/tests/command_forms.rs` checks that each cited case exists,
 has no known gap, and calls the command by its name or an alias with matching
-arguments. The test reads each argument's kind from the case's first snapshot
+arguments. A recorded rejection can provide evidence for a refused form.
+The test reads each argument's kind from the case's first snapshot
 or the literal argument. A wildcard form requires
 a disposition, with the exception of transformation forms whose cases cover
 all supported core geometry kinds. Cases can document supported inputs

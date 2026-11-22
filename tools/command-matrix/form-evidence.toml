@@ -1489,11 +1489,6 @@ form = "function,function,point"
 cases = ["intersections-functions-003", "intersections-functions-006", "intersectfunctions-pair-005"]
 
 [[form]]
-command = "Intersect"
-form = "function,function,number,number"
-cases = ["intersections-interval-001", "intersectfunctions-interval-001", "intersectfunctions-interval-002"]
-
-[[form]]
 command = "Arc"
 form = "conic,point,point"
 cases = ["geomextras-conicparts-001", "geomclosure-openarc-001", "geomclosure-openarc-002"]
@@ -1942,7 +1937,7 @@ cases = ["calculus-derivative-001"]
 [[form]]
 command = "Derivative"
 form = "function,number"
-cases = ["calculus-derivative-002"]
+cases = ["calculus-derivative-002", "funcrest-derivative-001"]
 
 [[form]]
 command = "Derivative"
@@ -1957,13 +1952,8 @@ difference = "calculus-commands: The variable forms `Derivative(function, any)`,
 
 [[form]]
 command = "Derivative"
-form = "curve"
-cases = ["calculus-curvederivative-001", "calculus-curvederivative-002", "calculus-curvederivative-003", "calculus-curvederivative-009", "calculus-curvederivative-010", "calculus-curvederivative-019", "calculus-curvederivative-021", "calculus-curvederivative-023"]
-
-[[form]]
-command = "Derivative"
 form = "curve,number"
-cases = ["calculus-curvederivative-001", "calculus-curvederivative-004", "calculus-curvederivative-005", "calculus-curvederivative-025"]
+cases = ["calculus-curvederivative-001", "calculus-curvederivative-004", "calculus-curvederivative-005", "calculus-curvederivative-025", "funcrest-derivative-002"]
 
 [[form]]
 command = "Derivative"
@@ -1975,11 +1965,6 @@ command = "Derivative"
 form = "curve,any,number"
 cases = ["calculus-curvederivative-013"]
 difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(curve, any)`, `Derivative(function, any, number)`, `Derivative(curve, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
-
-[[form]]
-command = "NDerivative"
-form = "curve"
-cases = ["calculus-curvederivative-001", "calculus-curvederivative-018", "calculus-curvederivative-022"]
 
 [[form]]
 command = "NDerivative"
@@ -1999,7 +1984,7 @@ cases = ["calculus-curvederivative-012"]
 [[form]]
 command = "NDerivative"
 form = "curve,function"
-difference = "calculus-commands: `NDerivative(function, function)`, `NDerivative(curve, function)` and `Derivative(function, function)`"
+cases = ["calculus-curvederivative-020"]
 
 [[form]]
 command = "NDerivative"
@@ -2009,7 +1994,7 @@ cases = ["calculus-curvederivative-011"]
 [[form]]
 command = "NDerivative"
 form = "function,function"
-difference = "calculus-commands: `NDerivative(function, function)`, `NDerivative(curve, function)` and `Derivative(function, function)`"
+cases = ["calculus-curvederivative-015"]
 
 [[form]]
 command = "Integral"
@@ -2099,7 +2084,7 @@ cases = ["calculus-derivative-001"]
 [[form]]
 command = "NDerivative"
 form = "function,number"
-cases = ["calculus-derivative-003"]
+cases = ["calculus-derivative-003", "funcrest-derivative-001"]
 
 [[form]]
 command = "NIntegral"
@@ -2476,12 +2461,7 @@ cases = ["financial-npr-001", "financial-npr-002", "financial-npr-003"]
 [[form]]
 command = "Maximize"
 form = "number,number"
-cases = ["misc-optimize-001", "misc-optimize-004", "misc-optimize-006"]
-
-[[form]]
-command = "Minimize"
-form = "number,number"
-cases = ["misc-optimize-001", "misc-optimize-003", "misc-optimize-005"]
+cases = ["misc-optimize-001", "misc-optimize-004", "misc-optimize-006", "misc-optimize-011", "misc-optimize-012"]
 
 # statistics
 
@@ -3088,11 +3068,6 @@ cases = ["funcanalysis-curveedge-012"]
 command = "ParametricDerivative"
 form = "curve"
 cases = ["funcanalysis-curveedge-005", "funcanalysis-curveupstream-003"]
-
-[[form]]
-command = "Spline"
-form = "list"
-cases = ["funcanalysis-splineupstream-001", "funcanalysis-curveedge-007", "funcanalysis-curveedge-010"]
 
 [[form]]
 command = "Spline"
@@ -3809,7 +3784,7 @@ cases = ["implicit-conic-010"]
 [[form]]
 command = "Normalize"
 form = "list"
-cases = ["funcrest-normalize-001", "funcrest-normalize-003", "funcrest-normalize-005"]
+cases = ["funcrest-normalize-001", "funcrest-normalize-003", "funcrest-normalize-004", "funcrest-normalize-005", "funcrest-normalize-006", "funcrest-normalize-008", "funcrest-normalize-009"]
 
 [[form]]
 command = "Normalize"
@@ -3827,9 +3802,54 @@ form = "function"
 cases = ["funcrest-vertexform-001", "funcrest-vertexform-004", "funcrest-vertexform-005"]
 
 [[form]]
+command = "IsVertexForm"
+form = "number"
+cases = ["funcrest-vertexform-006"]
+
+[[form]]
+command = "IsVertexForm"
+form = "angle"
+cases = ["funcrest-vertexform-008"]
+
+[[form]]
+command = "IsVertexForm"
+form = "line"
+cases = ["funcrest-vertexform-006"]
+
+[[form]]
+command = "IsVertexForm"
+form = "segment"
+cases = ["funcrest-vertexform-008"]
+
+[[form]]
+command = "IsVertexForm"
+form = "ray"
+cases = ["funcrest-vertexform-008"]
+
+[[form]]
+command = "IsVertexForm"
+form = "conic"
+cases = ["funcrest-vertexform-007"]
+
+[[form]]
+command = "IsVertexForm"
+form = "circle"
+cases = ["funcrest-vertexform-007"]
+
+[[form]]
+command = "IsVertexForm"
+form = "arc"
+cases = ["funcrest-vertexform-008"]
+
+[[form]]
+command = "IsVertexForm"
+form = "sector"
+cases = ["funcrest-vertexform-008"]
+
+[[form]]
 command = "Sum"
 form = "vector,..."
-difference = "list-commands: `Sum(vector, ...)`"
+cases = ["misc-sum-010"]
 
 [[form]]
 command = "SetConstructionStep"

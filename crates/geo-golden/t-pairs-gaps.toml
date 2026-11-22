@@ -1408,8 +1408,8 @@ mismatches = ["cv"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1245"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(2`; the method's step `commands/CommandsTest.java:1243` fails earlier here, so the object is missing only in its wake"
+category = "redefine"
+reason = "the kernel refuses the input: object `\u0000arg4` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -2752,21 +2752,21 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2600"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Line` does not take 3 argument(s)"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `x+y=17`"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2601"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Line` does not take 4 argument(s)"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no GeoGebra-style text yet; GeoGebra prints `0.5x + y = 1.5`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2602"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Line` does not take 4 argument(s)"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["tpairs_probe_2602_0"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2603"
@@ -6646,15 +6646,15 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:896"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `(1`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoConic` of kind circle has no GeoGebra-style text yet; GeoGebra prints `(x - 1)² + (y - 1)² = 1764`"
+mismatches = ["c"]
 
 [[gap]]
 id = "commands/CommandsTest.java:897"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Circle` does not take 4 argument(s)"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoConic` of kind circle has no GeoGebra-style text yet; GeoGebra prints `(x - 1)² + (y - 1)² = 1.2500000000000002`"
+mismatches = ["d"]
 
 [[gap]]
 id = "commands/CommandsTest.java:898"
@@ -6922,9 +6922,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:82"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Derivative`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(6 * x)`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:83"
@@ -6940,9 +6940,9 @@ mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:85"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Derivative`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(6 * x)`"
+mismatches = ["p"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:90"
