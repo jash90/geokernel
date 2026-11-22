@@ -1490,16 +1490,24 @@ pub(crate) fn root_of(e: &Entry) -> u32 {
 
 /// The number literals of a tree, in tree order
 /// (`AlgoCoefficients.extractConstants`: every `MyDouble` leaf is a
-/// constant, the CAS-less fallback of `Coefficients`).
+/// constant — a degree sign included — collected by the pre-order walk of
+/// `ExpressionNode.any`, which covers the tree, not the parser's arena).
 pub(crate) fn constant_literals(e: &Entry) -> Vec<f64> {
-    e.nodes
-        .iter()
-        .filter_map(|n| match n {
-            Node::Num(v) => Some(*v),
-            Node::MinusOne => Some(-1.0),
-            _ => None,
-        })
-        .collect()
+    let mut out = Vec::new();
+    let mut stack = vec![e.root];
+    while let Some(i) = stack.pop() {
+        match e.nodes[i as usize] {
+            Node::Num(v) => out.push(v),
+            Node::MinusOne => out.push(-1.0),
+            Node::Degree => out.push(math::PI_180),
+            ref node => {
+                let mut kids: Vec<u32> = children(node).filter(|&k| k != NONE).collect();
+                kids.reverse();
+                stack.extend(kids);
+            }
+        }
+    }
+    out
 }
 
 /// The parsed tree of an entry again, for the copy an order-zero

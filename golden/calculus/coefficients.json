@@ -421,6 +421,146 @@
           "d": { "type": "number", "defined": true, "value": 2.0 }
         }
       ]
+    },
+    {
+      "id": "calculus-coefficients-009",
+      "group": "calculus",
+      "script": [
+        "f(x) = sin(x) + (-2)",
+        "c = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -2.989358246623382],
+              [-4.0, -1.2431975046920718],
+              [-2.0, -2.909297426825682],
+              [-1.0, -2.8414709848078967],
+              [-0.5, -2.479425538604203],
+              [0.0, -2.0],
+              [0.5, -1.520574461395797],
+              [1.0, -1.1585290151921035],
+              [2.0, -1.0907025731743183],
+              [4.0, -2.7568024953079284],
+              [8.0, -1.010641753376618]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-coefficients-010",
+      "group": "calculus",
+      "script": [
+        "a = 3",
+        "f(x) = x^a",
+        "c = Coefficients(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.5 },
+        { "action": "set_number", "label": "a", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.17677669529663687],
+              [1.0, 1.0],
+              [2.0, 5.65685424949238],
+              [4.0, 32.0],
+              [8.0, 181.01933598375615]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

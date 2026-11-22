@@ -51,7 +51,7 @@
 use super::{Group, Parents};
 use crate::expr::derivative::decimal_to_fraction;
 use crate::expr::equation::{Builder, Poly};
-use crate::expr::{self, Bin, Element, Entry, IfMode, Node, Parsed, Un, NONE};
+use crate::expr::{self, Bin, Element, Entry, IfMode, Node, Parsed, Raw, Un, NONE};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
 
@@ -78,6 +78,12 @@ const PIXELS_PER_UNIT: f64 = 50.0;
 /// whose base is no plain variable makes the derivative keep the tree
 /// (`Function.getDerivative` refuses the polynomial expansion).
 const MAX_EXPAND_DEGREE: f64 = 10.0;
+
+/// How many nodes one tree of the no-CAS rules may hold: a product rule
+/// roughly triples the tree per pass, so a high derivative order would
+/// grow it without end while the work budget is only checked between the
+/// passes (`rule_derivative`). Past it the derivative is undefined.
+const MAX_RULE_NODES: usize = 4_000_000;
 
 /// Which Riemann sum `Sum` computes (`AlgoFunctionAreaSums.SumType`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -449,22 +455,23 @@ fn sum_value(c: &Construction, d: &CalculusDef) -> Option<Value> {
     };
     let (function, a_id, b_id, n_id) = (gid(function), gid(a_id), gid(b_id), gid(n_id));
     let divider = divider.map(gid);
-    // every input must be defined; `RectangleSum` also needs its divider
-    let mut ids = vec![function, a_id, b_id, n_id];
+    // every input must be defined and `RectangleSum` needs its divider
+    let mut ids = vec![a_id, b_id, n_id];
     if let Some(divider) = divider {
-        if !c.value(divider).is_defined() {
-            return None;
-        }
         ids.push(divider);
     }
-    if !ids.iter().all(|&id| c.value(id).is_defined()) {
+    if !c.value(function).is_defined() || !ids.iter().all(|&id| sum_input(c, id).is_some()) {
         return None;
     }
-    let (ad, bd, ints) = (number(c, a_id), number(c, b_id), number(c, n_id));
-    let dd = divider.map(|d| number(c, d));
-    if !(ad.is_finite() && bd.is_finite() && ints.is_finite()) {
-        return None;
-    }
+    let (ad, bd, ints) = (
+        sum_input(c, a_id)?,
+        sum_input(c, b_id)?,
+        sum_input(c, n_id)?,
+    );
+    let dd = match divider {
+        Some(d) => Some(sum_input(c, d)?),
+        None => None,
+    };
     let f = |x: f64| c.function_value(function, x).unwrap_or(f64::NAN);
     let mut budget = Budget::new();
     let rectangle = sum == Sum::Rectangle;
@@ -516,10 +523,32 @@ fn sum_value(c: &Construction, d: &CalculusDef) -> Option<Value> {
             total
         }
     };
-    if budget.over() || !total.is_finite() || !is_defined {
+    // `sum.setValue(totalArea * STEP)`: an infinite total is the defined
+    // infinite number of GeoGebra, which this kernel has no object value
+    // for, and a NaN one leaves the sum undefined
+    let result = total * step;
+    if budget.over() || !result.is_finite() || !is_defined {
         return None;
     }
-    Some(Value::Number(total * step))
+    Some(Value::Number(result))
+}
+
+/// The number an input of a Riemann sum holds. `GeoNumeric.isDefined` is
+/// `!isNaN`, so a number of infinite value (`n = 1/0`) is a defined input
+/// even though the kernel's object value of it is undefined; `None` when
+/// the input is no number at all.
+fn sum_input(c: &Construction, id: Id) -> Option<f64> {
+    match c.def(id) {
+        Def::Expr(d) => match expr::raw(c, d) {
+            Raw::Num(v) => (!v.is_nan()).then_some(v),
+            _ => None,
+        },
+        Def::Number(v) | Def::Angle(v) => Some(v),
+        _ => match c.value(id) {
+            Value::Number(v) => Some(v),
+            _ => None,
+        },
+    }
 }
 
 /// The lower or upper sum over every rectangle: subsampling inside the
@@ -852,6 +881,29 @@ fn definite_integral(c: &Construction, d: &CalculusDef) -> Option<Value> {
         && !conditional
         && !div_by_var
         && !numeric;
+    // the exact value of a polynomial antiderivative at the bounds; an
+    // infinite value is the defined infinite number of GeoGebra, which
+    // this kernel has no object value for, and a NaN one leaves the
+    // number undefined (`GeoNumeric.isDefined` is `!isNaN`)
+    let exact = |anti: &Parsed| -> Option<Value> {
+        let value = tree_at(c, anti, upper) - tree_at(c, anti, lower);
+        value.is_finite().then_some(Value::Number(value))
+    };
+    // the numeric path: a conditional function is split at the intervals
+    // of its branches (`computeConditional`), everything else is the
+    // adaptive Gauss quadrature
+    let adaptive = || -> Option<Value> {
+        let budget = Budget::new();
+        let value = if conditional {
+            conditional_integral(c, entry, lower, upper)
+        } else {
+            gauss_integral(&f, lower, upper)
+        };
+        if budget.over() || !value.is_finite() {
+            return None;
+        }
+        Some(Value::Number(value))
+    };
     if helper {
         if let Some(antiderivative) = polynomial_antiderivative(c, entry) {
             if !includes_non_continuous_integral(c, &entry.nodes, entry.root)
@@ -861,22 +913,27 @@ fn definite_integral(c: &Construction, d: &CalculusDef) -> Option<Value> {
                 if value.is_finite() {
                     return Some(Value::Number(value));
                 }
+                // GeoGebra keeps an infinite value as a defined number,
+                // which this kernel has no object value for; only a NaN
+                // one falls through to the numerical section, as
+                // `AlgoIntegralDefinite.compute` does when `n` stays
+                // undefined
+                if !value.is_nan() {
+                    return None;
+                }
+            } else {
+                // `computeSpecial` asks the CAS for the improper integral
+                // and `standardIntegral` answers without it
+                return adaptive();
             }
         }
     }
-    // the numeric path: a conditional function is split at the intervals
-    // of its branches (`computeConditional`), everything else is the
-    // adaptive Gauss quadrature
-    let budget = Budget::new();
-    let value = if conditional {
-        conditional_integral(c, entry, lower, upper)
-    } else {
-        gauss_integral(&f, lower, upper)
-    };
-    if budget.over() || !value.is_finite() {
-        return None;
+    // the numerical section: the exact polynomial integral
+    // (`getNumericPolynomialIntegral`) also answers `NIntegral`
+    if let Some(antiderivative) = polynomial_antiderivative(c, entry) {
+        return exact(&antiderivative);
     }
-    Some(Value::Number(value))
+    adaptive()
 }
 
 /// `AlgoIntegralFunctions.compute`: the difference of two definite
@@ -1473,7 +1530,7 @@ fn coefficient_values(c: &Construction, b: &mut Builder, poly: &Poly) -> Option<
     for root in roots {
         let value = match root {
             Some(root) => b
-                .finish(c, root)
+                .finish_reachable(c, root)
                 .ok()
                 .and_then(|parsed| expr::value_of_tree(c, &parsed)),
             None => Some(0.0),
@@ -1545,7 +1602,7 @@ fn poly_function_tree(c: &Construction, b: &mut Builder, roots: &[Option<u32>]) 
     for root in roots {
         let value = match root {
             Some(root) => b
-                .finish(c, *root)
+                .finish_reachable(c, *root)
                 .ok()
                 .and_then(|parsed| expr::value_of_tree(c, &parsed)),
             None => Some(0.0),
@@ -1653,20 +1710,20 @@ fn integrate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> u32 
 
 /// `linearIntegral`: `op(arg)` scaled by `i`, divided (or, for the divide
 /// coefficient, multiplied) by the linear coefficient of `arg`.
-fn linear_integral(b: &mut Builder, arg: u32, i: f64, op: Un) -> u32 {
+fn linear_integral(c: &Construction, b: &mut Builder, arg: u32, i: f64, op: Un) -> u32 {
     if b.node(arg) == Node::Var {
         let f = b.push(Node::Un(op, arg));
         let k = b.push(Node::Num(i));
         return b.push(Node::Bin(Bin::Mul, f, k));
     }
-    if let Some(coeff) = linear_coefficient(b, arg) {
+    if let Some(coeff) = linear_coefficient(c, b, arg) {
         let f = b.push(Node::Un(op, arg));
         let k = b.push(Node::Num(i));
         let scaled = b.push(Node::Bin(Bin::Mul, f, k));
         let d = b.push(Node::Num(coeff));
         return b.push(Node::Bin(Bin::Div, scaled, d));
     }
-    if let Some(coeff) = linear_coefficient_div(b, arg) {
+    if let Some(coeff) = linear_coefficient_div(c, b, arg) {
         let f = b.push(Node::Un(op, arg));
         let d = b.push(Node::Num(coeff));
         let scaled = b.push(Node::Bin(Bin::Mul, f, d));
@@ -1680,13 +1737,19 @@ fn linear_integral(b: &mut Builder, arg: u32, i: f64, op: Un) -> u32 {
 /// `coth`: `inner` builds the logarithm's argument, the result is divided
 /// (or multiplied, for the divide coefficient) by the coefficient scaled
 /// with `sign`.
-fn ln_rule(b: &mut Builder, arg: u32, sign: f64, inner: impl Fn(&mut Builder, u32) -> u32) -> u32 {
-    if let Some(coeff) = linear_coefficient(b, arg) {
+fn ln_rule(
+    c: &Construction,
+    b: &mut Builder,
+    arg: u32,
+    sign: f64,
+    inner: impl Fn(&mut Builder, u32) -> u32,
+) -> u32 {
+    if let Some(coeff) = linear_coefficient(c, b, arg) {
         let tree = inner(b, arg);
         let d = b.push(Node::Num(sign * coeff));
         return b.push(Node::Bin(Bin::Div, tree, d));
     }
-    if let Some(coeff) = linear_coefficient_div(b, arg) {
+    if let Some(coeff) = linear_coefficient_div(c, b, arg) {
         let tree = inner(b, arg);
         let m = b.push(Node::Num(sign * coeff));
         return b.push(Node::Bin(Bin::Mul, tree, m));
@@ -1704,54 +1767,54 @@ fn log_body(b: &mut Builder, i: u32) -> u32 {
 /// `ExpressionNode.integral` of a unary operation. `i` is the node itself,
 /// for the rules that reuse it.
 fn integrate_unary(c: &Construction, b: &mut Builder, op: Un, arg: u32, i: u32, depth: u32) -> u32 {
-    let _ = (c, depth);
+    let _ = depth;
     match op {
-        Un::Sin => linear_integral(b, arg, -1.0, Un::Cos),
-        Un::Cos => linear_integral(b, arg, 1.0, Un::Sin),
-        Un::Exp => linear_integral(b, arg, 1.0, Un::Exp),
-        Un::Sinh => linear_integral(b, arg, 1.0, Un::Cosh),
-        Un::Cosh => linear_integral(b, arg, 1.0, Un::Sinh),
-        Un::Tan => ln_rule(b, arg, 1.0, |b, arg| {
+        Un::Sin => linear_integral(c, b, arg, -1.0, Un::Cos),
+        Un::Cos => linear_integral(c, b, arg, 1.0, Un::Sin),
+        Un::Exp => linear_integral(c, b, arg, 1.0, Un::Exp),
+        Un::Sinh => linear_integral(c, b, arg, 1.0, Un::Cosh),
+        Un::Cosh => linear_integral(c, b, arg, 1.0, Un::Sinh),
+        Un::Tan => ln_rule(c, b, arg, 1.0, |b, arg| {
             let sec = b.push(Node::Un(Un::Sec, arg));
             b.push(Node::Un(Un::Abs, sec))
         }),
-        Un::Sec => ln_rule(b, arg, 1.0, |b, arg| {
+        Un::Sec => ln_rule(c, b, arg, 1.0, |b, arg| {
             let sec = b.push(Node::Un(Un::Sec, arg));
             let tan = b.push(Node::Un(Un::Tan, arg));
             let sum = b.push(Node::Bin(Bin::Add, sec, tan));
             b.push(Node::Un(Un::Abs, sum))
         }),
-        Un::Csc => ln_rule(b, arg, -1.0, |b, arg| {
+        Un::Csc => ln_rule(c, b, arg, -1.0, |b, arg| {
             let csc = b.push(Node::Un(Un::Csc, arg));
             let cot = b.push(Node::Un(Un::Cot, arg));
             let sum = b.push(Node::Bin(Bin::Add, csc, cot));
             b.push(Node::Un(Un::Abs, sum))
         }),
-        Un::Cot => ln_rule(b, arg, 1.0, |b, arg| {
+        Un::Cot => ln_rule(c, b, arg, 1.0, |b, arg| {
             let sin = b.push(Node::Un(Un::Sin, arg));
             b.push(Node::Un(Un::Abs, sin))
         }),
-        Un::Tanh => ln_rule(b, arg, 1.0, |b, arg| {
+        Un::Tanh => ln_rule(c, b, arg, 1.0, |b, arg| {
             let cosh = b.push(Node::Un(Un::Cosh, arg));
             b.push(Node::Un(Un::Abs, cosh))
         }),
-        Un::Csch => ln_rule(b, arg, -1.0, |b, arg| {
+        Un::Csch => ln_rule(c, b, arg, -1.0, |b, arg| {
             let csch = b.push(Node::Un(Un::Csch, arg));
             let coth = b.push(Node::Un(Un::Coth, arg));
             let sum = b.push(Node::Bin(Bin::Add, csch, coth));
             b.push(Node::Un(Un::Abs, sum))
         }),
-        Un::Coth => ln_rule(b, arg, 1.0, |b, arg| {
+        Un::Coth => ln_rule(c, b, arg, 1.0, |b, arg| {
             let sinh = b.push(Node::Un(Un::Sinh, arg));
             b.push(Node::Un(Un::Abs, sinh))
         }),
         Un::Sech => {
-            if let Some(coeff) = linear_coefficient(b, arg) {
+            if let Some(coeff) = linear_coefficient(c, b, arg) {
                 let exp = b.push(Node::Un(Un::Exp, arg));
                 let atan = b.push(Node::Un(Un::Atan, exp));
                 let d = b.push(Node::Num(coeff / 2.0));
                 b.push(Node::Bin(Bin::Div, atan, d))
-            } else if let Some(coeff) = linear_coefficient_div(b, arg) {
+            } else if let Some(coeff) = linear_coefficient_div(c, b, arg) {
                 let exp = b.push(Node::Un(Un::Exp, arg));
                 let atan = b.push(Node::Un(Un::Atan, exp));
                 let m = b.push(Node::Num(2.0 * coeff));
@@ -1766,11 +1829,11 @@ fn integrate_unary(c: &Construction, b: &mut Builder, op: Un, arg: u32, i: u32, 
                 Un::Log10 => 10.0_f64.ln(),
                 _ => 2.0_f64.ln(),
             };
-            if let Some(coeff) = linear_coefficient(b, arg) {
+            if let Some(coeff) = linear_coefficient(c, b, arg) {
                 let body = log_body(b, arg);
                 let d = b.push(Node::Num(base_ln * coeff));
                 b.push(Node::Bin(Bin::Div, body, d))
-            } else if let Some(coeff) = linear_coefficient_div(b, arg) {
+            } else if let Some(coeff) = linear_coefficient_div(c, b, arg) {
                 let body = log_body(b, arg);
                 let m = b.push(Node::Num(coeff));
                 let scaled = b.push(Node::Bin(Bin::Mul, body, m));
@@ -1784,8 +1847,8 @@ fn integrate_unary(c: &Construction, b: &mut Builder, op: Un, arg: u32, i: u32, 
                 b.push(Node::Num(f64::NAN))
             }
         }
-        Un::Sqrt => root_rule(b, arg, Un::Sqrt, 3.0, 2.0),
-        Un::Cbrt => root_rule(b, arg, Un::Cbrt, 4.0, 3.0),
+        Un::Sqrt => root_rule(c, b, arg, Un::Sqrt, 3.0, 2.0),
+        Un::Cbrt => root_rule(c, b, arg, Un::Cbrt, 4.0, 3.0),
         // XCOORD and YCOORD integrate to this times x
         Un::X | Un::Y => {
             let var = b.push(Node::Var);
@@ -1797,13 +1860,13 @@ fn integrate_unary(c: &Construction, b: &mut Builder, op: Un, arg: u32, i: u32, 
 
 /// The `sqrt`/`cbrt` rules: `root(u) u` divided by `coeff n/d` (or
 /// multiplied by `coeff d/n` for the divide coefficient).
-fn root_rule(b: &mut Builder, arg: u32, root: Un, n: f64, d: f64) -> u32 {
-    if let Some(coeff) = linear_coefficient(b, arg) {
+fn root_rule(c: &Construction, b: &mut Builder, arg: u32, root: Un, n: f64, d: f64) -> u32 {
+    if let Some(coeff) = linear_coefficient(c, b, arg) {
         let r = b.push(Node::Un(root, arg));
         let product = b.push(Node::Bin(Bin::Mul, r, arg));
         let divisor = b.push(Node::Num(coeff * n / d));
         b.push(Node::Bin(Bin::Div, product, divisor))
-    } else if let Some(coeff) = linear_coefficient_div(b, arg) {
+    } else if let Some(coeff) = linear_coefficient_div(c, b, arg) {
         let r = b.push(Node::Un(root, arg));
         let product = b.push(Node::Bin(Bin::Mul, r, arg));
         let factor = b.push(Node::Num(coeff * d / n));
@@ -1833,10 +1896,10 @@ fn integrate_binary(
         }
         Bin::Mul => {
             // a constant factor comes out, on the right of the product
-            if !b.contains_var(d) && b.constant_value(d).is_some() {
+            if !b.contains_var(d) && b.number_value(c, d).is_some() {
                 let left = integrate_node(c, b, a, depth + 1);
                 b.push(Node::Bin(Bin::Mul, left, d))
-            } else if !b.contains_var(a) && b.constant_value(a).is_some() {
+            } else if !b.contains_var(a) && b.number_value(c, a).is_some() {
                 let right = integrate_node(c, b, d, depth + 1);
                 b.push(Node::Bin(Bin::Mul, right, a))
             } else {
@@ -1844,10 +1907,10 @@ fn integrate_binary(
             }
         }
         Bin::Div => {
-            if !b.contains_var(d) && b.constant_value(d).is_some() {
+            if !b.contains_var(d) && b.number_value(c, d).is_some() {
                 let left = integrate_node(c, b, a, depth + 1);
                 b.push(Node::Bin(Bin::Div, left, d))
-            } else if !b.contains_var(a) && b.constant_value(a).is_some() && b.node(d) == Node::Var
+            } else if !b.contains_var(a) && b.number_value(c, a).is_some() && b.node(d) == Node::Var
             {
                 // 4/x integrates to ln(x) times the constant
                 let ln = b.push(Node::Un(Un::Ln, d));
@@ -1859,7 +1922,7 @@ fn integrate_binary(
         Bin::Pow => {
             // x^c
             if b.node(a) == Node::Var && !b.contains_var(d) {
-                return match b.constant_value(d).filter(|v| v.is_finite()) {
+                return match b.number_value(c, d).filter(|v| v.is_finite()) {
                     Some(index) => {
                         if is_zero(index + 1.0) {
                             // x^-1 integrates to ln(x)
@@ -1877,7 +1940,7 @@ fn integrate_binary(
             // c^x (the chain stops here: any other exponent is unhandled)
             if !b.contains_var(a) {
                 if b.node(d) == Node::Var {
-                    return match b.constant_value(a).filter(|v| v.is_finite()) {
+                    return match b.number_value(c, a).filter(|v| v.is_finite()) {
                         Some(base) => {
                             if is_equal(base, 1.0, crate::tol::STANDARD_PRECISION) {
                                 b.push(Node::Var)
@@ -1896,8 +1959,8 @@ fn integrate_binary(
             }
             // u^c with u linear in x
             if !b.contains_var(d) {
-                if let Some(index) = b.constant_value(d).filter(|v| v.is_finite()) {
-                    if let Some(coeff) = linear_coefficient(b, a) {
+                if let Some(index) = b.number_value(c, d).filter(|v| v.is_finite()) {
+                    if let Some(coeff) = linear_coefficient(c, b, a) {
                         if is_equal(index, -1.0, crate::tol::STANDARD_PRECISION) {
                             // u^-1 integrates to ln|u| / coeff
                             let abs = b.push(Node::Un(Un::Abs, a));
@@ -1910,7 +1973,7 @@ fn integrate_binary(
                         let divisor = b.push(Node::Num(coeff * (index + 1.0)));
                         return b.push(Node::Bin(Bin::Div, power, divisor));
                     }
-                    if let Some(coeff) = linear_coefficient_div(b, a) {
+                    if let Some(coeff) = linear_coefficient_div(c, b, a) {
                         if is_equal(index, -1.0, crate::tol::STANDARD_PRECISION) {
                             let abs = b.push(Node::Un(Un::Abs, a));
                             let ln = b.push(Node::Un(Un::Ln, abs));
@@ -1933,7 +1996,7 @@ fn integrate_binary(
 /// `getLinearCoefficient`: the coefficient of the variable in `3x + 1` and
 /// its variants, `None` where GeoGebra returns `NaN` (not linear). The value
 /// can still be infinite, exactly like the Java.
-fn linear_coefficient(b: &Builder, i: u32) -> Option<f64> {
+fn linear_coefficient(c: &Construction, b: &Builder, i: u32) -> Option<f64> {
     if b.node(i) == Node::Var {
         return Some(1.0);
     }
@@ -1941,10 +2004,10 @@ fn linear_coefficient(b: &Builder, i: u32) -> Option<f64> {
     let mut factor = 1.0;
     // strip a "+ 1" (or "- 1") constant off a sum
     if let Node::Bin(op @ (Bin::Add | Bin::Sub), l, r) = b.node(i) {
-        if !b.contains_var(l) && b.constant_value(l).is_some() {
+        if !b.contains_var(l) && b.number_value(c, l).is_some() {
             ev = r;
             factor = if matches!(op, Bin::Sub) { -1.0 } else { 1.0 };
-        } else if !b.contains_var(r) && b.constant_value(r).is_some() {
+        } else if !b.contains_var(r) && b.number_value(c, r).is_some() {
             ev = l;
         }
     }
@@ -1953,12 +2016,12 @@ fn linear_coefficient(b: &Builder, i: u32) -> Option<f64> {
     }
     if let Node::Bin(Bin::Mul, l, r) = b.node(ev) {
         if b.node(l) == Node::Var && !b.contains_var(r) {
-            if let Some(v) = b.constant_value(r) {
+            if let Some(v) = b.number_value(c, r) {
                 return Some(v * factor);
             }
         }
         if b.node(r) == Node::Var && !b.contains_var(l) {
-            if let Some(v) = b.constant_value(l) {
+            if let Some(v) = b.number_value(c, l) {
                 return Some(v * factor);
             }
         }
@@ -1969,20 +2032,20 @@ fn linear_coefficient(b: &Builder, i: u32) -> Option<f64> {
 /// `getLinearCoefficientDiv`: the coefficient of the variable in `x / 3 + 1`
 /// and its variants, `None` where GeoGebra returns `NaN`. Note the inverted
 /// sign convention of the stripped constant, kept from the Java.
-fn linear_coefficient_div(b: &Builder, i: u32) -> Option<f64> {
+fn linear_coefficient_div(c: &Construction, b: &Builder, i: u32) -> Option<f64> {
     let mut ev = i;
     let mut factor = 1.0;
     if let Node::Bin(op @ (Bin::Add | Bin::Sub), l, r) = b.node(i) {
-        if !b.contains_var(l) && b.constant_value(l).is_some() {
+        if !b.contains_var(l) && b.number_value(c, l).is_some() {
             ev = r;
             factor = if matches!(op, Bin::Add) { 1.0 } else { -1.0 };
-        } else if !b.contains_var(r) && b.constant_value(r).is_some() {
+        } else if !b.contains_var(r) && b.number_value(c, r).is_some() {
             ev = l;
         }
     }
     if let Node::Bin(Bin::Div, l, r) = b.node(ev) {
         if b.node(l) == Node::Var && !b.contains_var(r) {
-            if let Some(v) = b.constant_value(r) {
+            if let Some(v) = b.number_value(c, r) {
                 return Some(v * factor);
             }
         }
@@ -2015,7 +2078,14 @@ fn rule_derivative(c: &Construction, entry: &Entry, order: u32) -> Option<Parsed
             return None;
         }
         let mut b = Builder::function(source);
+        // one pass stops at the budget while it builds, not only before:
+        // a product rule roughly triples the tree per pass, and the last
+        // pass would otherwise build millions of nodes first
+        b.abort_at = budget.end;
         let root = differentiate_node(c, &mut b, source.root, 0);
+        if budget.over() {
+            return None;
+        }
         parsed = Some(b.finish(c, root).ok()?);
     }
     parsed
@@ -2024,7 +2094,10 @@ fn rule_derivative(c: &Construction, entry: &Entry, order: u32) -> Option<Parsed
 /// One step of `Derivative.get` for the subtree at `i`, a node of the
 /// derivative in the builder's arena.
 fn differentiate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> u32 {
-    if depth > crate::expr::MAX_DEPTH {
+    if depth > crate::expr::MAX_DEPTH
+        || expr::work_done() > b.abort_at
+        || b.nodes.len() > MAX_RULE_NODES
+    {
         return b.push(Node::Num(f64::NAN));
     }
     expr::charge(1);
@@ -2287,7 +2360,9 @@ fn differentiate_binary(
     let nan = |b: &mut Builder| b.push(Node::Num(f64::NAN));
     let du = |b: &mut Builder| differentiate_node(c, b, u, depth + 1);
     let dv = |b: &mut Builder| differentiate_node(c, b, v, depth + 1);
-    let is_number = |b: &Builder, i: u32| !b.contains_var(i) && b.constant_value(i).is_some();
+    // `isNumberValue() && !contains(fv)`: a number object counts as a
+    // number, with its current value
+    let is_number = |b: &Builder, i: u32| !b.contains_var(i) && b.number_value(c, i).is_some();
     match op {
         Bin::Add => {
             let l = du(b);
@@ -2379,25 +2454,26 @@ fn quotient(b: &mut Builder, d_u: u32, d_v: u32, u: u32, v: u32) -> u32 {
 
 /// `Derivative.derivativePower`: the derivative of `u^v`.
 fn derivative_power(c: &Construction, b: &mut Builder, u: u32, v: u32, depth: u32) -> u32 {
-    if !b.contains_var(v) && b.constant_value(v).is_some() {
-        let exponent = b.constant_value(v).unwrap();
-        // x^0 derives to 0
-        if is_zero(exponent) {
-            return b.push(Node::Num(0.0));
-        }
-        // a literal exponent takes the special paths
-        if is_literal(b, v) {
-            if let Some(t) = derivative_constant_power(c, b, u, v, exponent, depth) {
-                return t;
+    if !b.contains_var(v) {
+        if let Some(exponent) = b.number_value(c, v) {
+            // x^0 derives to 0
+            if is_zero(exponent) {
+                return b.push(Node::Num(0.0));
             }
+            // a literal exponent takes the special paths
+            if is_literal(b, v) {
+                if let Some(t) = derivative_constant_power(c, b, u, v, exponent, depth) {
+                    return t;
+                }
+            }
+            // u^(v-1) u' v
+            let one = b.push(Node::Num(1.0));
+            let em1 = b.push(Node::Bin(Bin::Sub, v, one));
+            let power = b.push(Node::Bin(Bin::Pow, u, em1));
+            let d = differentiate_node(c, b, u, depth + 1);
+            let product = b.push(Node::Bin(Bin::Mul, power, d));
+            return b.push(Node::Bin(Bin::Mul, product, v));
         }
-        // u^(v-1) u' v
-        let one = b.push(Node::Num(1.0));
-        let em1 = b.push(Node::Bin(Bin::Sub, v, one));
-        let power = b.push(Node::Bin(Bin::Pow, u, em1));
-        let d = differentiate_node(c, b, u, depth + 1);
-        let product = b.push(Node::Bin(Bin::Mul, power, d));
-        return b.push(Node::Bin(Bin::Mul, product, v));
     }
     // u^v (v' ln u + v u'/u)
     let d_v = differentiate_node(c, b, v, depth + 1);
@@ -2964,15 +3040,18 @@ fn build_record(c: &Construction, d: &CalculusDef) -> Option<Entry> {
             if order == 0 {
                 return Some(expr::function_entry(c, expr::parsed_of(entry)));
             }
-            // the polynomial path first, unless a high power says the rule
-            // tree is cheaper (`Function.getDerivative`)
-            let factor = has_high_power(c, entry);
-            if !factor {
-                if let Some(p) = polynomial_derivative(c, entry, order) {
-                    return Some(expr::function_entry(c, p));
+            // `Function.getDerivative`: the factor check runs only inside
+            // the polynomial branch, so a non-polynomial never routes
+            // around it; without the CAS such a derivative is undefined
+            // and only `NDerivative` (and the factor path, which returns
+            // `getDerivativeNoCAS`) walks the rules
+            if let Some(p) = polynomial_derivative(c, entry, order) {
+                if has_high_power(c, entry) {
+                    rule_derivative(c, entry, order).map(|p| expr::function_entry(c, p))
+                } else {
+                    Some(expr::function_entry(c, p))
                 }
-            }
-            if numeric || factor {
+            } else if numeric {
                 rule_derivative(c, entry, order).map(|p| expr::function_entry(c, p))
             } else {
                 // the CAS answers; without it the derivative is undefined
@@ -3009,24 +3088,38 @@ fn build_record(c: &Construction, d: &CalculusDef) -> Option<Entry> {
 
 /// `Function.getDerivative`'s factor check: any power whose base is not a
 /// leaf and whose exponent is over `MAX_EXPAND_DEGREE` routes around the
-/// polynomial expansion.
+/// polynomial expansion. The walk covers the tree (`ExpressionNode.any`),
+/// not the parser's arena, and reads each exponent with the objects' current
+/// values (`evaluateDouble`, which charges the work meter per node).
 fn has_high_power(c: &Construction, entry: &Entry) -> bool {
     let nodes = expr::nodes_of(entry);
-    let b = Builder::function(entry);
-    nodes.iter().any(|node| match node {
-        Node::Bin(Bin::Pow, base, exponent) => {
+    let mut stack = vec![entry.root];
+    let mut seen = vec![false; nodes.len()];
+    while let Some(i) = stack.pop() {
+        if seen[i as usize] {
+            continue;
+        }
+        seen[i as usize] = true;
+        expr::charge(1);
+        let node = nodes[i as usize];
+        if let Node::Bin(Bin::Pow, base, exponent) = node {
             let leaf = matches!(
-                nodes[*base as usize],
+                nodes[base as usize],
                 Node::Num(_) | Node::Var | Node::MinusOne | Node::Degree | Node::Obj(_)
             );
-            !leaf
-                && b.finish(c, *exponent)
-                    .ok()
-                    .and_then(|parsed| expr::value_of_tree(c, &parsed))
-                    .is_some_and(|v| v > MAX_EXPAND_DEGREE)
+            // `isMaxExpandDegreeReached`: a NaN exponent is not over the
+            // degree, as in Java's comparison
+            if !leaf && expr::sample_subtree(c, entry, exponent, 0.0) > MAX_EXPAND_DEGREE {
+                return true;
+            }
         }
-        _ => false,
-    })
+        let mut kids: Vec<u32> = crate::expr::children(&node)
+            .filter(|&k| k != crate::expr::NONE)
+            .collect();
+        kids.reverse();
+        stack.extend(kids);
+    }
+    false
 }
 
 /// `AlgoCoefficients.compute`: the expansion's coefficients, highest

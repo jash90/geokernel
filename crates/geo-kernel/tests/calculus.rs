@@ -481,3 +481,193 @@ fn polynomial_through_points() {
     assert_eq!(c.function_value(g, 1.0), Some(1.0));
     assert_eq!(c.function_value(g, 3.0), Some(3.0));
 }
+
+/// `Function.getDerivative` checks its factor only inside the polynomial
+/// branch, so the derivative of a non-polynomial with a high power needs
+/// the CAS and stays undefined, while `NDerivative` keeps the rule tree
+/// (`calculus-derivative-022` to `-025`).
+#[test]
+fn derivative_of_a_high_power_of_a_non_polynomial() {
+    for script in [
+        "f(x) = sin(x)^11",
+        "f(x) = (x + sin(x))^12",
+        "f(x) = (1/x + 1)^11",
+    ] {
+        let c = load(&format!("{script}\ng = Derivative(f)"));
+        assert!(!defined(&c, "g"), "{script}");
+    }
+    let c = load("f(x) = sin(x)^11\nh = NDerivative(f)");
+    let h = c.id("h").unwrap();
+    // 11 cos(x) sin(x)^10
+    assert!((c.function_value(h, 1.0).unwrap() - 1.057_842_376_392_636_1).abs() < 1e-9);
+    // a polynomial base with a high power routes around the expansion:
+    // the rule tree 11 (2x + 3)^10 * 2
+    let c = load("f(x) = (2x + 3)^11\ng = Derivative(f)");
+    let g = c.id("g").unwrap();
+    assert_eq!(c.function_value(g, -2.0), Some(22.0));
+    assert_eq!(c.function_value(g, -1.0), Some(22.0));
+}
+
+/// An object exponent expands with its truncated `(int)` power while its
+/// value is a whole number not below zero, and the variable degree makes
+/// the result no polynomial otherwise (`calculus-degree-008`,
+/// `calculus-derivative-026`, `calculus-integral-019`,
+/// `calculus-coefficients-010`, `calculus-polynomial-016`).
+#[test]
+fn an_object_exponent_expands_with_its_value() {
+    let mut c = load("a = 3\nf(x) = x^a\nd = Degree(f)\ng = Derivative(f)\nc = Coefficients(f)");
+    assert_eq!(num(&c, "d"), 3.0);
+    assert_eq!(c.function_value(c.id("g").unwrap(), 2.0), Some(12.0));
+    // a value within the integer tolerance of one below truncates
+    set_number(&mut c, "a", 2.999_999_999_9);
+    assert_eq!(num(&c, "d"), 2.0);
+    set_number(&mut c, "a", 4.0);
+    assert_eq!(num(&c, "d"), 4.0);
+    // a fractional value is no polynomial: Degree, Derivative (without
+    // the CAS) and the expansion are undefined, the coefficients fall
+    // back to the (empty) literal list, NDerivative walks the rules and
+    // the definite integrals are numeric
+    set_number(&mut c, "a", 2.5);
+    assert!(!defined(&c, "d"));
+    assert!(!defined(&c, "g"));
+    assert_eq!(c.elements(c.id("c").unwrap()).unwrap().len(), 0);
+    let c = load("a = 2.5\nf(x) = x^a\nd = Degree(f)\ng = Polynomial(f)");
+    assert!(!defined(&c, "d"));
+    assert!(!defined(&c, "g"));
+    let c = load("a = 2.5\nf(x) = x^a\nd = Integral(f, 0, 2)\ne = NIntegral(f, 0, 2)");
+    assert!((num(&c, "d") - 3.232_488_142_777_426_4).abs() < 1e-9);
+    assert!((num(&c, "e") - 3.232_488_142_777_426_4).abs() < 1e-9);
+    let c = load("a = 3\nf(x) = x^a\nd = Integral(f, 0, 2)\ne = NIntegral(f, 0, 2)");
+    assert_eq!(num(&c, "d"), 4.0);
+    assert_eq!(num(&c, "e"), 4.0);
+    let c = load("a = 3\nf(x) = x^a\ng = Polynomial(f)");
+    assert_eq!(c.function_value(c.id("g").unwrap(), 2.0), Some(8.0));
+}
+
+/// A number object counts as a number in the no-CAS rules
+/// (`isNumberValue`), so a constant factor or divisor comes out instead
+/// of falling into the product or quotient rule
+/// (`calculus-derivative-027`, `calculus-derivative-028`,
+/// `calculus-integral-020`).
+#[test]
+fn object_constants_are_numbers_in_the_rules() {
+    let c = load("a = 2\nf(x) = a*ln(x)\ng = NDerivative(f)");
+    let g = c.id("g").unwrap();
+    // (1/x) a: defined wherever the rule tree is, also at negative x
+    assert_eq!(c.function_value(g, -8.0), Some(-0.25));
+    assert_eq!(c.function_value(g, 0.5), Some(4.0));
+    let c = load("a = 2\nf(x) = ln(x)/a\ng = NDerivative(f)");
+    let g = c.id("g").unwrap();
+    assert_eq!(c.function_value(g, -8.0), Some(-0.062_5));
+    assert_eq!(c.function_value(g, 0.5), Some(1.0));
+    // an object exponent: x^(a-1) * a, so at -1 with a = 3 it is 3
+    let c = load("a = 3\nf(x) = x^a\ng = NDerivative(f)");
+    assert_eq!(c.function_value(c.id("g").unwrap(), -1.0), Some(3.0));
+    // the rule integral moves a constant factor out as well
+    let c = load("a = 2\nf(x) = a*ln(x)\ng = NIntegral(f)");
+    let g = c.id("g").unwrap();
+    assert_eq!(c.function_value(g, 1.0), Some(-2.0));
+    assert!((c.function_value(g, 0.5).unwrap() - -1.693_147_180_559_945_4).abs() < 1e-12);
+}
+
+/// `AlgoCoefficients.extractConstants` walks the tree, not the parser's
+/// arena: the literals of what the function wrote (`calculus-coefficients-009`).
+#[test]
+fn coefficients_of_a_non_polynomial_walk_the_tree() {
+    let c = load("f(x) = sin(x) + (-2)\nc = Coefficients(f)");
+    let elements: Vec<f64> = c
+        .elements(c.id("c").unwrap())
+        .unwrap()
+        .iter()
+        .map(|item| match item {
+            geo_kernel::expr::Element::Value(_, geo_kernel::Value::Number(v)) => v,
+            _ => f64::NAN,
+        })
+        .collect();
+    assert_eq!(elements, vec![-2.0]);
+}
+
+/// `AlgoIntegralDefinite.compute`: the numerical section integrates a
+/// polynomial exactly (`getNumericPolynomialIntegral`) for `NIntegral`
+/// too (`calculus-integral-018`). The adaptive quadrature the numeric
+/// command used to run instead drifts past the tolerance from about the
+/// 12th power and gives up past the 16th.
+#[test]
+fn nintegral_of_a_polynomial_is_exact() {
+    let c = load("f(x) = x^12\nd = NIntegral(f, 0, 5)\ne = Integral(f, 0, 5)");
+    let exact = 5.0_f64.powi(13) / 13.0;
+    assert!((num(&c, "d") - exact).abs() < 1e-9, "{}", num(&c, "d"));
+    assert!(
+        (num(&c, "e") - 93_900_240.384_615_39).abs() < 1e-6,
+        "{}",
+        num(&c, "e")
+    );
+    // past the 16th power the quadrature used to answer nothing at all
+    let c = load("f(x) = x^16\nd = NIntegral(f, 0, 5)");
+    let exact = 5.0_f64.powi(17) / 17.0;
+    assert!(
+        (num(&c, "d") - exact).abs() < 1e-9 * exact.abs(),
+        "{}",
+        num(&c, "d")
+    );
+}
+
+/// `AlgoFunctionAreaSums`: a subdivision count over `MAX_RECTANGLES`
+/// clamps to it — an infinite `n` is a defined `GeoNumeric` (`isDefined`
+/// is `!isNaN`) — and an infinite bound makes the total infinite, which
+/// the kernel has no object value for (`calculus-sums-012`,
+/// `calculus-sums-013`).
+#[test]
+fn sums_read_an_infinite_subdivision_count_and_bound() {
+    let c = load("f(x) = 1\nb = 1/0\nd = LeftSum(f, 0, b, 4)\nu = UpperSum(f, 0, b, 4)");
+    assert!(!defined(&c, "d"));
+    assert!(!defined(&c, "u"));
+    let c = load("f(x) = 1\nn = 1/0\nd = LeftSum(f, 0, 2, n)\ne = LeftSum(f, 2, 0, n)");
+    assert_eq!(num(&c, "d"), 2.0);
+    assert_eq!(num(&c, "e"), -2.0);
+}
+
+/// The loops that finish one subtree per exponent or coefficient stay
+/// inside the work budget and bounded memory: a sum of thousands of
+/// powers, a degree-300 polynomial of slider coefficients, and a high
+/// derivative order all answer (the last as undefined, past the budget).
+#[test]
+fn polynomial_work_stays_inside_the_budget() {
+    // a sum of 3000 (x + 1)^2 terms, parenthesised into a balanced tree
+    // so the line stays inside the parser's depth bound: the degree check
+    // finishes each of the 3000 exponents without cloning the whole arena
+    // per one
+    let balanced = |terms: &[&str]| -> String {
+        fn join(terms: &[&str]) -> String {
+            match terms {
+                [one] => (*one).into(),
+                _ => {
+                    let half = terms.len() / 2;
+                    format!("({} + {})", join(&terms[..half]), join(&terms[half..]))
+                }
+            }
+        }
+        join(terms)
+    };
+    let terms: Vec<&str> = vec!["(x + 1)^2"; 3000];
+    let script = format!(
+        "f(x) = {}\nd = Degree(f)\ng = NDerivative(f)",
+        balanced(&terms)
+    );
+    let c = load(&script);
+    assert_eq!(num(&c, "d"), 2.0);
+    assert_eq!(c.function_value(c.id("g").unwrap(), 3.0), Some(24000.0));
+    // (a x + b)^300: `Polynomial.apply` allows the exponent (the degree
+    // bound is 300), but the expansion of unmergeable coefficient trees
+    // stops at the term cap of the builder (`MAX_TERMS`, a bound GeoGebra
+    // does not have), in bounded time and memory
+    let t = std::time::Instant::now();
+    let c = load("a = 1\nb = 1\nf(x) = (a x + b)^300\nd = Degree(f)\ng = Derivative(f)");
+    assert!(!defined(&c, "d"));
+    assert!(!defined(&c, "g"));
+    assert!(t.elapsed().as_secs() < 20, "{}s", t.elapsed().as_secs());
+    // the 25th rule derivative of a product triples its tree per pass;
+    // the work budget stops it instead of the memory growing without end
+    let c = load("f(x) = x*sin(x)*cos(x)\nh = NDerivative(f, 25)");
+    assert!(!defined(&c, "h"));
+}

@@ -930,6 +930,175 @@
           "v": { "type": "number", "defined": true, "value": 0.42292469272818944 }
         }
       ]
+    },
+    {
+      "id": "calculus-integral-018",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^12",
+        "d = NIntegral(f, 0, 5)",
+        "e = Integral(f, 0, 5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 6.8719476736E10],
+              [-4.0, 1.6777216E7],
+              [-2.0, 4096.0],
+              [-1.0, 1.0],
+              [-0.5, 2.44140625E-4],
+              [0.0, 0.0],
+              [0.5, 2.44140625E-4],
+              [1.0, 1.0],
+              [2.0, 4096.0],
+              [4.0, 1.6777216E7],
+              [8.0, 6.8719476736E10]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 9.390024038461536E7 },
+          "e": { "type": "number", "defined": true, "value": 9.390024038461539E7 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-integral-019",
+      "group": "calculus",
+      "script": [
+        "a = 3",
+        "f(x) = x^a",
+        "d = Integral(f, 0, 2)",
+        "e = NIntegral(f, 0, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.5 },
+        { "action": "set_number", "label": "a", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.0 },
+          "e": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.17677669529663687],
+              [1.0, 1.0],
+              [2.0, 5.65685424949238],
+              [4.0, 32.0],
+              [8.0, 181.01933598375615]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.2324881427774264 },
+          "e": { "type": "number", "defined": true, "value": 3.2324881427774264 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.0 },
+          "e": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-integral-020",
+      "group": "calculus",
+      "script": [
+        "a = 2",
+        "f(x) = a*ln(x)",
+        "g = NIntegral(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, -1.3862943611198906],
+              [1.0, 0.0],
+              [2.0, 1.3862943611198906],
+              [4.0, 2.772588722239781],
+              [8.0, 4.1588830833596715]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, -1.6931471805599454],
+              [1.0, -2.0],
+              [2.0, -1.2274112777602189],
+              [4.0, 3.0903548889591246],
+              [8.0, 17.271064666877372]
+            ]
+          }
+        }
+      ]
     }
   ]
 }

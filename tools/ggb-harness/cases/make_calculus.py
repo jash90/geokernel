@@ -58,6 +58,22 @@ case("derivative", ["f(x) = x^2", "g(x) = f(f(x))", "h = NDerivative(g)"], [])
 case("derivative", ["f(x) = x^3", "g = Derivative(f, x, 2)", "h = Derivative(f, x)"], [])
 
 # -------------------------------------------------------------- integrals
+# a high power of a base that is no plain leaf: `Function.getDerivative`
+# checks the factor only inside its polynomial branch, so a non-polynomial
+# with such a power stays undefined without the CAS while `NDerivative`
+# keeps the rule tree
+case("derivative", ["f(x) = sin(x)^11", "g = Derivative(f)", "h = NDerivative(f)"], [])
+case("derivative", ["f(x) = (x + sin(x))^12", "g = Derivative(f)", "h = NDerivative(f)"], [])
+case("derivative", ["f(x) = (1/x + 1)^11", "g = Derivative(f)", "h = NDerivative(f)"], [])
+# a polynomial base with a high power routes around the expansion
+case("derivative", ["f(x) = (2x + 3)^11", "g = Derivative(f)", "h = NDerivative(f)"], [])
+# an object exponent: `Polynomial.apply` expands with the truncated power
+# while its value is a whole number
+case("derivative", nums(a=3) + ["f(x) = x^a", "g = Derivative(f)", "h = NDerivative(f)"],
+     [setn("a", 4), setn("a", 2.5), setn("a", 2), setn("a", 3)])
+# an object constant counts as a number in the rules (`isNumberValue`)
+case("derivative", nums(a=2) + ["f(x) = a*ln(x)", "g = NDerivative(f)"], [])
+case("derivative", nums(a=2) + ["f(x) = ln(x)/a", "g = NDerivative(f)"], [])
 topic("integral")
 case("integral", ["f(x) = sin(x)", "g = Integral(f)", "h = NIntegral(f)"], [])
 case("integral", ["f(x) = x^2", "g = Integral(f)", "h = Integral(f, 0, 4)",
@@ -84,6 +100,14 @@ case("integral", ["f(x) = sin(x)", "g(x) = x^2", "d = NIntegral(f, 1, 5, 10)",
                   "v = IntegralBetween(f, 0, 2, 10)"], [])
 
 # ---------------------------------------------------- piecewise integrals
+# the definite number of a polynomial is the exact polynomial integral
+# (`getNumericPolynomialIntegral`) for `NIntegral` too
+case("integral", ["f(x) = x^12", "d = NIntegral(f, 0, 5)", "e = Integral(f, 0, 5)"], [])
+# an object exponent in the definite integral
+case("integral", nums(a=3) + ["f(x) = x^a", "d = Integral(f, 0, 2)", "e = NIntegral(f, 0, 2)"],
+     [setn("a", 2.5), setn("a", 3)])
+# an object constant in the rule integral
+case("integral", nums(a=2) + ["f(x) = a*ln(x)", "g = NIntegral(f)"], [])
 topic("piecewise")
 case("piecewise", ["f(x) = If(x < 1, x, 2x)", "d = Integral(f, 0, 4)"], [])
 case("piecewise", ["f(x) = If(x > 2, 1, 2)", "d = Integral(f, 0, 2.01)"], [])
@@ -149,6 +173,13 @@ case("sums", ["f(x) = If(x > 1, sqrt(x - 1), 0)", "d = LowerSum(f, 0, 2, 4)",
               "l = LeftSum(f, 0, 2, 4)", "t = TrapezoidalSum(f, 0, 2, 4)"], [])
 
 # ------------------------------------------------- degree and coefficients
+# an infinite bound or subdivision count: `n` over `MAX_RECTANGLES` clamps
+# to it and an infinite total stays a defined number (`GeoNumeric.isDefined`
+# is `!isNaN`)
+case("sums", ["f(x) = 1", "b = 1/0", "d = LeftSum(f, 0, b, 4)", "u = UpperSum(f, 0, b, 4)"],
+     [])
+case("sums", ["f(x) = 1", "n = 1/0", "d = LeftSum(f, 0, 2, n)", "e = LeftSum(f, 2, 0, n)"],
+     [])
 topic("degree")
 case("degree", ["f(x) = x^2", "d = Degree(f)"], [])
 case("degree", ["f(x) = sin(x)", "d = Degree(f)"], [])
@@ -159,6 +190,14 @@ case("degree", ["f(x) = x^4 / 12 + x^2", "d = Degree(f)"], [])
 case("degree", nums(a=2) + ["f(x) = a x^3 + x", "d = Degree(f)"],
      [setn("a", 0), setn("a", 1), setn("a", 2)])
 
+# an object exponent: the degree follows its whole-number value and is
+# undefined otherwise (`Equation.isPolynomial` of the variable degree); a
+# value within the integer tolerance of one below expands with the
+# truncated `(int)` power
+case("degree", nums(a=3) + ["f(x) = x^a", "d = Degree(f)"],
+     [setn("a", 4), setn("a", 2.5), setn("a", 1),
+      {"action": "set_number", "label": "a", "value": 2.9999999999},
+      setn("a", 3)])
 topic("coefficients")
 case("coefficients", ["f(x) = x^2", "c = Coefficients(f)"], [])
 case("coefficients", ["f(x) = sin(x)", "c = Coefficients(f)"], [])
@@ -171,6 +210,13 @@ case("coefficients", nums(a=1) + ["f(x) = a*x^2 + 3", "c = Coefficients(f)", "d 
      [setn("a", 0), setn("a", 0.5), setn("a", 1)])
 
 # ------------------------------------------------------ numerator, denominator
+# a non-polynomial answers the literals of the tree it wrote
+# (`extractConstants` walks the tree, not the parser's arena)
+case("coefficients", ["f(x) = sin(x) + (-2)", "c = Coefficients(f)"], [])
+# an object exponent: whole numbers expand, others fall back to the
+# literals of the tree
+case("coefficients", nums(a=3) + ["f(x) = x^a", "c = Coefficients(f)"],
+     [setn("a", 2.5), setn("a", 3)])
 topic("fraction")
 case("fraction", ["a = 3/6", "n = Numerator(a)", "d = Denominator(a)"], [])
 case("fraction", ["a = 5/(-8)", "n = Numerator(a)", "d = Denominator(a)"], [])
@@ -208,4 +254,7 @@ case("polynomial", ["g = Polynomial({(1, 2), (2, 5)})"], [])
 case("polynomial", ["l = {(1, 2)}", "g = Polynomial(l)"], [])
 case("polynomial", ["P = (1, 2)", "Q = (2, 5)", "g = Polynomial(P, Q, Q)"], [])
 
+# an object exponent: the expansion follows its whole-number value
+case("polynomial", nums(a=3) + ["f(x) = x^a", "g = Polynomial(f)"],
+     [setn("a", 2.5), setn("a", 3)])
 cases.write()
