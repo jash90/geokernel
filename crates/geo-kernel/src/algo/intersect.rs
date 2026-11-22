@@ -52,7 +52,7 @@ pub(crate) mod common_tangents;
 #[path = "intersect_conics.rs"]
 pub(super) mod conics;
 pub(crate) use conics::polynomial_roots;
-pub(super) use conics::{bracketed_root, complex_roots, graph_roots};
+pub(super) use conics::{bracketed_root, complex_roots, graph_roots, polynomial_analysis_roots};
 #[path = "intersect_function_roots.rs"]
 pub(super) mod function_roots;
 #[path = "intersect_functions.rs"]

@@ -20,6 +20,7 @@ pub struct Case {
     pub id: String,
     pub group: String,
     pub script: Vec<String>,
+    pub view: Option<[f64; 6]>,
     pub steps: Vec<Step>,
     pub snapshots: Vec<BTreeMap<String, Expected>>,
     /// Generator of the file this case came from. Filled by the loader.
@@ -792,6 +793,17 @@ pub fn parse_file(text: &str, source: &str) -> Result<File, String> {
 fn validate_case(case: &Case) -> Result<(), String> {
     if case.id.is_empty() {
         return Err("empty id".into());
+    }
+    if let Some(view) = case.view {
+        let [xmin, xmax, ymin, ymax, xscale, yscale] = view;
+        if !view.iter().all(|v| v.is_finite())
+            || xmin >= xmax
+            || ymin >= ymax
+            || xscale <= 0.0
+            || yscale <= 0.0
+        {
+            return Err("invalid sampling view".into());
+        }
     }
     if case.steps.first() != Some(&Step::Initial) {
         return Err("the first step must be `initial`".into());

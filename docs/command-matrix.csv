@@ -112,7 +112,7 @@ TurningPoint,,function,P2,done,1,1,
 Polynomial,,function,P2,todo,3,0,
 Function,,function,P2,partial,4,2,Domain restrictions with an optional local variable. Empty and freehand functions are pending.
 Extremum,,function,P2,done,2,2,Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.
-RemovableDiscontinuity,,function,P2,done,1,1,
+RemovableDiscontinuity,,function,P2,todo,1,0,Numeric hole detection is implemented. Defined results are unverified against a full CAS.
 CurveCartesian,,function,P2,done,3,3,
 ParametricDerivative,,function,P2,done,1,1,
 Derivative,,function,P2,todo,8,0,
@@ -139,7 +139,7 @@ SolveODE,,function,P2,partial,7,3,"Numeric first-order, parametric and second-or
 SlopeField,,function,P2,done,4,4,
 Iteration,,function,P2,done,3,3,
 PathParameter,,function,P2,done,1,1,PathParameter(point on a path)
-Asymptote,,function,P2,partial,3,2,"Conics, rational graphs and simple exp, atan or log of an affine argument. General function limits and implicit polynomials are pending."
+Asymptote,,function,P2,partial,3,1,"Conic output is verified. Numeric rational and affine exp, atan or log output is unverified against a full CAS. Implicit polynomials are pending."
 CurvatureVector,,function,P2,done,3,3,
 Curvature,,function,P2,done,3,3,
 OsculatingCircle,,function,P2,done,3,3,

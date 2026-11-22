@@ -118,6 +118,7 @@ final class Session {
     private final boolean trackPointListGrowth;
     private final boolean trackRootGrowth;
     private final Map<AlgoElement, String> growingPoints = new LinkedHashMap<>();
+    private double[] locusView = LOCUS_VIEW;
 
     Session() {
         this(false, false, false);
@@ -136,6 +137,16 @@ final class Session {
 
     Kernel kernel() {
         return kernel;
+    }
+
+    void setView(double[] view) {
+        if (!Arrays.stream(view).allMatch(Double::isFinite)
+                || view[0] >= view[1] || view[2] >= view[3] || view[4] <= 0 || view[5] <= 0) {
+            throw new IllegalArgumentException("invalid sampling view");
+        }
+        app.getEuclidianView1().setCoordSystem(-view[0] * view[4], view[3] * view[5], view[4], view[5]);
+        kernel.setEuclidianViewBounds(1, view[0], view[1], view[2], view[3], view[4], view[5]);
+        locusView = view;
     }
 
     /** Checks that GeoGebra reports an error and creates no output. */
@@ -363,14 +374,13 @@ final class Session {
     }
 
     /**
-     * Checks that a locus is sampled in {@link #LOCUS_VIEW}: only the first
-     * graphics view is shown (no second graphics view and no 3D view), and the construction is not continuous (a
-     * continuous one samples a path more than once).
+     * Checks the requested sampling window, which defaults to {@link #LOCUS_VIEW}.
+     * The harness uses one graphics view and a noncontinuous construction.
      */
     private void checkLocusView() {
         double[] view = {kernel.getXmin(0), kernel.getXmax(0), kernel.getYmin(0),
                 kernel.getYmax(0), kernel.getXscale(0), kernel.getYscale(0)};
-        if (!Arrays.equals(view, LOCUS_VIEW) || !app.showView(App.VIEW_EUCLIDIAN)
+        if (!Arrays.equals(view, locusView) || !app.showView(App.VIEW_EUCLIDIAN)
                 || app.hasEuclidianView2(1)
                 || app.isEuclidianView3Dinited() || kernel.isContinuous()) {
             throw new IllegalStateException("a locus is sampled in an unexpected view: "

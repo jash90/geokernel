@@ -2243,18 +2243,6 @@ form = "function"
 cases = ["funcanalysis-inverted-001"]
 
 [[form]]
-command = "Asymptote"
-form = "function"
-cases = ["funcanalysis-asymptote-003"]
-difference = "numerical-function-analysis: `Asymptote(function)`"
-
-[[form]]
-command = "RemovableDiscontinuity"
-form = "function"
-cases = ["funcanalysis-discontinuity-003", "funcanalysis-discontinuity-007", "funcanalysis-discontinuity-008"]
-difference = "numerical-function-analysis: `RemovableDiscontinuity(function)`"
-
-[[form]]
 command = "SolveODE"
 form = "function,number,number,number,number"
 cases = ["funcanalysis-forms-020"]

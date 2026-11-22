@@ -55,6 +55,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | `id` | string | Unique within the whole `golden/` tree. |
 | `group` | string | Command group, equal to the directory name. |
 | `script` | array of string | GeoGebra input-bar lines with English command names, run in order. Every line has the form `label = definition` or, for an equation, `label: lhs = rhs`, so every object has an explicit label. |
+| `view` (optional) | array of six numbers | Initial sampling window, in the order xmin, xmax, ymin, ymax, x scale, y scale. Scales are in pixels per world unit. |
 | `steps` | array of Step | The first step is always `initial`. |
 | `snapshots` | array of Snapshot | Same length as `steps`. `snapshots[i]` is the state after `steps[i]`. |
 

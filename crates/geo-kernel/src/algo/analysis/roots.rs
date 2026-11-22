@@ -4,6 +4,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoExtremumMulti.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoRootsPolynomial.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoComplexRootsPolynomial.java
+//   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -11,7 +12,7 @@ use super::{Point, RootInput};
 use crate::algo::intersect::{
     bracketed_root, complex_roots,
     function_roots::{defined_interval, interval_roots, newton, root_near},
-    graph_roots,
+    graph_roots, polynomial_analysis_roots,
 };
 use crate::expr::{brent_minimum, IntersectionWork};
 use crate::kernel::locus::HEADLESS_VIEW;
@@ -40,7 +41,7 @@ pub(super) fn solve(c: &Construction, input: RootInput) -> Vec<Point> {
         pair.map_or((view[0], view[1]), |(a, b)| (number(c, a), number(c, b)))
     };
     let real_points = |roots: Vec<f64>| roots.into_iter().map(|x| (x, 0.0)).collect();
-    let scan_roots = |(a, b)| interval_roots(&f, a, b, || work.exhausted());
+    let scan_roots = |(a, b)| interval_roots(&f, a, b, view[4], || work.exhausted());
     let points = match mode {
         Mode::Seed(seed) => real_points(
             c.number(Id(seed as usize))
@@ -53,7 +54,7 @@ pub(super) fn solve(c: &Construction, input: RootInput) -> Vec<Point> {
                 .into_iter()
                 .collect(),
         ),
-        Mode::Roots(Some(pair)) => real_points(scan_roots(bounds(Some(pair)))),
+        Mode::Roots(pair) => real_points(scan_roots(bounds(pair))),
         Mode::Extremum(Some(pair)) => {
             let (a, b) = bounds(Some(pair));
             extrema(&f, a, b, view[4], &work)
@@ -80,7 +81,7 @@ pub(super) fn solve(c: &Construction, input: RootInput) -> Vec<Point> {
             }
             roots
         }
-        Mode::Polynomial | Mode::Roots(None) | Mode::Extremum(None) | Mode::TurningPoint => {
+        Mode::Polynomial | Mode::Extremum(None) | Mode::TurningPoint => {
             let order = match mode {
                 Mode::Extremum(_) => 1,
                 Mode::TurningPoint => 2,
@@ -89,19 +90,24 @@ pub(super) fn solve(c: &Construction, input: RootInput) -> Vec<Point> {
             if let Some(polynomials) = work.analysis_polynomials(c, function, order) {
                 let mut roots: Vec<_> = polynomials
                     .iter()
-                    .flat_map(|poly| graph_roots(poly, &|n| work.charge(n)))
+                    .flat_map(|poly| polynomial_analysis_roots(poly, &|n| work.charge(n)))
                     .collect();
                 roots.sort_by(f64::total_cmp);
                 roots.dedup_by(|a, b| (*a - *b).abs() < STANDARD_PRECISION);
                 roots
                     .into_iter()
-                    .filter(|&x| order == 0 || polynomials.iter().any(|p| changes_sign(p, x)))
+                    .filter(|&x| {
+                        order == 0
+                            || polynomials
+                                .iter()
+                                .any(|p| work.charge(2 * p.len() as u64) && changes_sign(p, x))
+                    })
                     .map(|x| {
                         let y = f(x);
                         (x, if order == 0 && y.is_finite() { 0.0 } else { y })
                     })
                     .collect()
-            } else if work.analysis_is_conditional(c, function) {
+            } else if work.analysis_is_restricted(c, function) {
                 Vec::new()
             } else {
                 let (a, b) = bounds(None);
@@ -138,9 +144,7 @@ fn single_root(
         let (l, r) = defined_interval(f, a, b)?;
         solve(l, r)
     })?;
-    let refined = (a < root && root < b)
-        .then(|| newton(f, derivative, root))
-        .flatten()
+    let refined = newton(f, derivative, root)
         .filter(|&x| f(x).abs() < f(root).abs())
         .unwrap_or(root);
     (f(refined).abs() < MIN_PRECISION).then_some(refined)
@@ -182,8 +186,11 @@ fn extrema(
                 let signed = |x| if increasing { -f(x) } else { f(x) };
                 if let Some(x) = brent_minimum(lo, hi, 3e-8, signed, |n| !work.charge(n)) {
                     if gradient_changes_sign(f, x, lo, hi) {
-                        let rounded = (x * 1e7).round() / 1e7;
-                        let x = if (x - rounded).abs() < 1e-8 && signed(rounded) <= signed(x) {
+                        let decimals = x * 1e5;
+                        let nearest = (decimals + 0.5).floor();
+                        let rounded = nearest / 1e5;
+                        let x = if (decimals - nearest).abs() < 0.1 && signed(rounded) <= signed(x)
+                        {
                             rounded
                         } else {
                             x

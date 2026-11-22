@@ -160,6 +160,18 @@
     {"id": "funcanalysis-forms-022", "group": "funcanalysis", "script": ["b(x) = 0", "c(x) = 1", "f(x) = 0", "s = SolveODE(b,c,f,0,1,1,1,0.25)"], "steps": [{"action": "initial"}]},
     {"id": "funcanalysis-forms-023", "group": "funcanalysis", "script": ["g(x, y) = sqrt(x^2+y^2)", "c = Spline({(0,0),(1,1),(3,0)},3,g)"], "steps": [{"action": "initial"}], "sample_curves": true},
     {"id": "funcanalysis-nsode-002", "group": "funcanalysis", "script": ["f(t, u, v) = v", "g(t, u, v) = -u", "s = NSolveODE({f,g},0,{1,0},0.2)"], "steps": [{"action": "initial"}]},
-    {"id": "funcanalysis-nsode-003", "group": "funcanalysis", "script": ["f(t, u) = -1000*u", "s = NSolveODE({f},0,{1},0.05)"], "steps": [{"action": "initial"}]}
+    {"id": "funcanalysis-nsode-003", "group": "funcanalysis", "script": ["f(t, u) = -1000*u", "s = NSolveODE({f},0,{1},0.05)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-reviewroots-001", "group": "funcanalysis", "script": ["R = Roots(sin(60x),0,10)"], "steps": [{"action": "initial"}], "view": [-4, 4, -3, 3, 100, 100]},
+    {"id": "funcanalysis-reviewroots-002", "group": "funcanalysis", "script": ["R = Roots(sin(60x))"], "steps": [{"action": "initial"}], "view": [-4, 4, -3, 3, 100, 100]},
+    {"id": "funcanalysis-reviewroots-003", "group": "funcanalysis", "script": ["f(x) = If(x<0,x+1,x-1)", "R = Root(f)", "S = Roots(f)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-reviewroots-004", "group": "funcanalysis", "script": ["f(x) = If(x<0,x^2-2*x,-x^2+2*x)", "E = Extremum(f)", "T = TurningPoint(f)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-reviewroots-005", "group": "funcanalysis", "script": ["R = Extremum((x-30)^26)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-reviewroots-006", "group": "funcanalysis", "script": ["R = Roots(x^80+x-1)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-reviewroots-007", "group": "funcanalysis", "script": ["R = Root(0.00000000001*(x+0.00001),0,1)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-reviewroots-008", "group": "funcanalysis", "script": ["R = Root(0.00000001*(x^2+1),0)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-reviewroots-009", "group": "funcanalysis", "script": ["R = Root(x^64+x)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-reviewiteration-001", "group": "funcanalysis", "script": ["n = 2", "R = Iteration(x+1,1,n)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "n", "value": 2000000.0}]},
+    {"id": "funcanalysis-reviewode-001", "group": "funcanalysis", "script": ["s = SolveODE(y,10000000000000000,1,10000000000000002,0.25)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-reviewode-002", "group": "funcanalysis", "script": ["a = 1", "f(t,u,v) = a*v", "g(t,u,v) = -u", "s = NSolveODE({f,g},0,{1,0},0.1)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 2.0}]}
   ]
 }

@@ -1,7 +1,10 @@
 //! Classical RK4 and the Dormand–Prince 5(4) embedded pair.
 //!
-//! The integrators use the published Runge–Kutta formulas and are checked
-//! against reference traces, including the integration times and endpoints.
+//! The classical formula and adaptive step selection follow Hairer, Nørsett
+//! and Wanner, *Solving Ordinary Differential Equations I*, chapter II
+//! (https://doi.org/10.1007/978-3-540-78862-1). The embedded pair is from
+//! Dormand and Prince, *A family of embedded Runge-Kutta formulae* (1980),
+//! table 2 (https://doi.org/10.1016/0771-050X(80)90013-3).
 
 use super::{LocusPoint, MAX_ODE_POINTS, MAX_SYSTEM_SIZE};
 use crate::expr::IntersectionWork;
@@ -22,11 +25,8 @@ pub(super) fn classical<const N: usize>(
     let mut t = start;
     let mut points = vec![point(t, state, false)];
     for _ in 1..MAX_ODE_POINTS {
-        if t == end {
-            return Some(points);
-        }
-        if !work.charge(4 * N as u64) {
-            return None;
+        if t == end || !work.charge(4 * N as u64) {
+            break;
         }
         let next = if h > 0.0 {
             (t + h).min(end)
@@ -34,7 +34,7 @@ pub(super) fn classical<const N: usize>(
             (t + h).max(end)
         };
         if next == t {
-            return None;
+            break;
         }
         let h = if next == end { next - t } else { h };
         let k1 = rhs(t, state);
@@ -47,13 +47,16 @@ pub(super) fn classical<const N: usize>(
             std::array::from_fn(|i| state[i] + h * (0.5 * k2[i])),
         );
         let k4 = rhs(t + h, std::array::from_fn(|i| state[i] + h * k3[i]));
+        if work.exhausted() {
+            break;
+        }
         for i in 0..N {
             state[i] += h * (k1[i] / 6.0 + k2[i] / 3.0 + k3[i] / 3.0 + k4[i] / 6.0);
         }
         t = next;
         points.push(point(t, state, true));
     }
-    None
+    Some(points)
 }
 
 const MIN_STEP: f64 = 0.001;
@@ -104,9 +107,8 @@ pub(super) fn adaptive(
     end: f64,
     initial: &[f64],
     rhs: impl Fn(f64, &[f64], &mut [f64]),
-    slot: usize,
     work: &IntersectionWork,
-) -> Option<Vec<LocusPoint>> {
+) -> Option<Vec<Vec<LocusPoint>>> {
     let n = initial.len();
     if start == end || initial.iter().any(|y| !y.is_finite()) {
         return None;
@@ -119,11 +121,16 @@ pub(super) fn adaptive(
     let direction = (end - start).signum();
     let mut trial = [0.0; MAX_SYSTEM_SIZE];
     let mut h = initial_step(t, direction, &state[..n], &stages[0][..n], &rhs);
-    let mut points = vec![LocusPoint {
-        x: t,
-        y: state[slot],
-        line_to: false,
-    }];
+    let mut traces: Vec<_> = initial
+        .iter()
+        .map(|&y| {
+            vec![LocusPoint {
+                x: t,
+                y,
+                line_to: false,
+            }]
+        })
+        .collect();
     for _ in 1..MAX_ODE_POINTS {
         if !work.charge((7 * n) as u64) {
             return None;
@@ -166,13 +173,15 @@ pub(super) fn adaptive(
             state[..n].copy_from_slice(&trial[..n]);
             stages[0] = stages[6];
             t = next;
-            points.push(LocusPoint {
-                x: t,
-                y: state[slot],
-                line_to: true,
-            });
+            for (trace, &y) in traces.iter_mut().zip(&state) {
+                trace.push(LocusPoint {
+                    x: t,
+                    y,
+                    line_to: true,
+                });
+            }
             if last {
-                return Some(points);
+                return Some(traces);
             }
         } else if proposed < MIN_STEP {
             return None;

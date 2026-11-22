@@ -62,7 +62,8 @@ EXCLUDED_FUNCTION = {
 }
 
 FORM_NOTES = {
-    "Asymptote": "Conics, rational graphs and simple exp, atan or log of an affine argument. General function limits and implicit polynomials are pending.",
+    "Asymptote": "Conic output is verified. Numeric rational and affine exp, atan or log output is unverified against a full CAS. Implicit polynomials are pending.",
+    "RemovableDiscontinuity": "Numeric hole detection is implemented. Defined results are unverified against a full CAS.",
     "Factors": "Function factorization uses the CAS. The numeric list of prime/exponent points is a separate form.",
     "Root": "Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending.",
     "Roots": "Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.",

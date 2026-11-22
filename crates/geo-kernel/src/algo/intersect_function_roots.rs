@@ -2,6 +2,7 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoRoots.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoRootNewton.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoGeoPointsFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/roots/RealRootUtil.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/DoubleUtil.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
@@ -9,6 +10,13 @@
 
 use super::conics::bracketed_root;
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
+
+#[cfg(test)]
+#[test]
+fn newton_can_take_more_than_fifty_steps() {
+    let root = newton(&|x| x.powi(10), |x| 10.0 * x.powi(9), 0.1).unwrap();
+    assert!(root.abs() < 1e-5);
+}
 
 pub(in crate::algo) fn root_near(
     f: &impl Fn(f64) -> f64,
@@ -42,13 +50,13 @@ pub(in crate::algo) fn newton(
     derivative: impl Fn(f64) -> f64,
     mut x: f64,
 ) -> Option<f64> {
-    for _ in 0..50 {
+    for _ in 0..100 {
         let next = x - f(x) / derivative(x);
+        if !next.is_finite() {
+            return None;
+        }
         if (next - x).abs() <= 1e-6 {
             return Some(next);
-        }
-        if !next.is_finite() {
-            return Some(x);
         }
         x = next;
     }
@@ -126,11 +134,12 @@ pub(super) fn check_root(x: f64, f: &impl Fn(f64) -> f64) -> Option<f64> {
 }
 
 /// AlgoRoots uses one sample per five view pixels. Double the density if
-/// crossings fill the grid. The headless view uses 50 pixels per unit.
+/// crossings fill the grid.
 pub(in crate::algo) fn interval_roots(
     f: &impl Fn(f64) -> f64,
     a: f64,
     b: f64,
+    scale: f64,
     exhausted: impl Fn() -> bool,
 ) -> Vec<f64> {
     const MAX_SAMPLES: usize = 400;
@@ -146,7 +155,9 @@ pub(in crate::algo) fn interval_roots(
             Vec::new()
         };
     }
-    let mut samples = (width * 10.0).round().clamp(50.0, MAX_SAMPLES as f64) as usize;
+    let mut samples = (width * scale / 5.0)
+        .round()
+        .clamp(50.0, MAX_SAMPLES as f64) as usize;
     loop {
         let roots = scan(f, left, width / samples as f64, samples, &exhausted);
         if roots.len() < samples / 2 || samples * 2 >= MAX_SAMPLES {

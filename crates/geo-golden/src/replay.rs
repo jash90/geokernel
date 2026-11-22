@@ -47,6 +47,9 @@ fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch
 pub fn replay(case: &Case) -> CaseOutcome {
     let mut out = CaseOutcome::default();
     let mut c = Construction::new();
+    if let Some([xmin, xmax, ymin, ymax, xscale, yscale]) = case.view {
+        c.set_locus_view(xmin, xmax, ymin, ymax, xscale, yscale);
+    }
     let mut boundary_outputs = script::BoundaryOutputs::default();
     for (i, line) in case.script.iter().enumerate() {
         let before = c.len();

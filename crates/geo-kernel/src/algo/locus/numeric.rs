@@ -38,6 +38,28 @@ fn id(index: u32) -> Id {
     Id(index as usize)
 }
 
+#[cfg(test)]
+#[test]
+fn system_outputs_share_integration_after_an_edit() {
+    use crate::{expr::work_done, script};
+
+    let inputs = "a = 1\nf(t,u,v) = a*v\ng(t,u,v) = -u\nl = {f,g}\nb = 0\ni = {1,0}\ne = 0.1";
+    let mut one = script::load(inputs).unwrap();
+    let args = ["l", "b", "i", "e"].map(|name| one.id(name).unwrap().0 as u32);
+    let def = NumericLocus::System { args, slot: 0 };
+    one.add("s", crate::Def::Locus(super::LocusDef::Numeric(def)))
+        .unwrap();
+    let mut both = script::load(inputs).unwrap();
+    script::exec(&mut both, "s = NSolveODE(l,b,i,e)").unwrap();
+
+    let update_work = |c: &mut Construction| {
+        let before = work_done();
+        c.set_number(c.id("a").unwrap(), 2.0).unwrap();
+        work_done() - before
+    };
+    assert_eq!(update_work(&mut both), update_work(&mut one));
+}
+
 impl NumericLocus {
     pub(crate) fn inputs(self) -> impl Iterator<Item = Id> {
         let mut indices = [0; 8];
@@ -132,6 +154,11 @@ impl NumericLocus {
     }
 
     pub(super) fn record(self, c: &Construction) -> LocusData {
+        if let Self::System { args, slot } = self {
+            return c.analysis.ode_system(args, usize::from(slot), || {
+                Self::solve_system(c, args).unwrap_or_default()
+            });
+        }
         if let Self::Slope {
             function,
             options,
@@ -158,7 +185,7 @@ impl NumericLocus {
         let function = |arg| FunctionFraction::new(c, id(arg));
         let point = |x, y, line_to| LocusPoint { x, y, line_to };
         match self {
-            Self::Slope { .. } => unreachable!(),
+            Self::Slope { .. } | Self::System { .. } => unreachable!(),
             Self::First([f, x, y, end, h]) => {
                 let (x, y, end, h) = (number(x)?, number(y)?, number(end)?, number(h)?);
                 let f = function(f)?;
@@ -232,33 +259,31 @@ impl NumericLocus {
                     &work,
                 )
             }
-            Self::System { args, slot } => {
-                let len = Self::system_size(c, args)?;
-                let slot = usize::from(slot);
-                if slot >= len {
-                    return None;
-                }
-                let functions = c.elements(id(args[0]))?;
-                let initial = c.elements(id(args[2]))?;
-                let functions: Vec<_> = (0..len)
-                    .map(|i| functions.object(i))
-                    .collect::<Option<_>>()?;
-                let initial: Vec<_> = (0..len)
-                    .map(|i| initial.numeric_cell(i))
-                    .collect::<Option<_>>()?;
-                adaptive(
-                    number(args[1])?,
-                    number(args[3])?,
-                    &initial,
-                    |t, ys, out| {
-                        for (function, value) in functions.iter().zip(out.iter_mut()) {
-                            *value = work.sample_system(c, *function, t, ys);
-                        }
-                    },
-                    slot,
-                    &work,
-                )
-            }
         }
+    }
+
+    fn solve_system(c: &Construction, [f, start, y, end]: [u32; 4]) -> Option<Vec<LocusData>> {
+        let len = Self::system_size(c, [f, start, y, end])?;
+        let functions = c.elements(id(f))?;
+        let initial = c.elements(id(y))?;
+        let functions: Vec<_> = (0..len)
+            .map(|i| functions.object(i))
+            .collect::<Option<_>>()?;
+        let initial: Vec<_> = (0..len)
+            .map(|i| initial.numeric_cell(i))
+            .collect::<Option<_>>()?;
+        let work = IntersectionWork::new();
+        let traces = adaptive(
+            c.number(id(start))?,
+            c.number(id(end))?,
+            &initial,
+            |t, ys, out| {
+                for (function, value) in functions.iter().zip(out.iter_mut()) {
+                    *value = work.sample_system(c, *function, t, ys);
+                }
+            },
+            &work,
+        )?;
+        Some(traces.into_iter().map(locus_from_points).collect())
     }
 }

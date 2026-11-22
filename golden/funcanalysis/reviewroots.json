@@ -1,0 +1,453 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-reviewroots-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(sin(60x),0,10)"
+      ],
+      "view": [
+        -4,
+        4,
+        -3,
+        3,
+        100,
+        100
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.05235987822525524, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 0.10471976173583222, "y": 0.0 },
+          "R_{4}": { "type": "point", "defined": true, "x": 0.15707964391155124, "y": 0.0 },
+          "R_{5}": { "type": "point", "defined": true, "x": 0.2094395156769091, "y": 0.0 },
+          "R_{6}": { "type": "point", "defined": true, "x": 0.26179938792038954, "y": 0.0 },
+          "R_{7}": { "type": "point", "defined": true, "x": 0.3141592640604245, "y": 0.0 },
+          "R_{8}": { "type": "point", "defined": true, "x": 0.36651913422610305, "y": 0.0 },
+          "R_{9}": { "type": "point", "defined": true, "x": 0.4188790099722472, "y": 0.0 },
+          "R_{10}": { "type": "point", "defined": true, "x": 0.4712388945106129, "y": 0.0 },
+          "R_{11}": { "type": "point", "defined": true, "x": 0.5759585236580532, "y": 0.0 },
+          "R_{12}": { "type": "point", "defined": true, "x": 0.628318533065494, "y": 0.0 },
+          "R_{13}": { "type": "point", "defined": true, "x": 0.680678417818681, "y": 0.0 },
+          "R_{14}": { "type": "point", "defined": true, "x": 0.733038295732643, "y": 0.0 },
+          "R_{15}": { "type": "point", "defined": true, "x": 0.7853981657487452, "y": 0.0 },
+          "R_{16}": { "type": "point", "defined": true, "x": 0.8377580409506896, "y": 0.0 },
+          "R_{17}": { "type": "point", "defined": true, "x": 0.8901179146014844, "y": 0.0 },
+          "R_{18}": { "type": "point", "defined": true, "x": 0.9424777852171743, "y": 0.0 },
+          "R_{19}": { "type": "point", "defined": true, "x": 0.9948376655762972, "y": 0.0 },
+          "R_{20}": { "type": "point", "defined": true, "x": 1.0471975499098936, "y": 0.0 },
+          "R_{21}": { "type": "point", "defined": true, "x": 1.0995574417060103, "y": 0.0 },
+          "R_{22}": { "type": "point", "defined": true, "x": 1.1519173267932559, "y": 0.0 },
+          "R_{23}": { "type": "point", "defined": true, "x": 1.2042771890151382, "y": 0.0 },
+          "R_{24}": { "type": "point", "defined": true, "x": 1.2566370725880893, "y": 0.0 },
+          "R_{25}": { "type": "point", "defined": true, "x": 1.3089969459941726, "y": 0.0 },
+          "R_{26}": { "type": "point", "defined": true, "x": 1.361356817035206, "y": 0.0 },
+          "R_{27}": { "type": "point", "defined": true, "x": 1.4137166935466356, "y": 0.0 },
+          "R_{28}": { "type": "point", "defined": true, "x": 1.4660765644229783, "y": 0.0 },
+          "R_{29}": { "type": "point", "defined": true, "x": 1.5184364381396966, "y": 0.0 },
+          "R_{30}": { "type": "point", "defined": true, "x": 1.570796321896081, "y": 0.0 },
+          "R_{31}": { "type": "point", "defined": true, "x": 1.6231560801373293, "y": 0.0 },
+          "R_{32}": { "type": "point", "defined": true, "x": 1.67551606141398, "y": 0.0 },
+          "R_{33}": { "type": "point", "defined": true, "x": 1.7278759608899383, "y": 0.0 },
+          "R_{34}": { "type": "point", "defined": true, "x": 1.7802358453228397, "y": 0.0 },
+          "R_{35}": { "type": "point", "defined": true, "x": 1.8325957253496044, "y": 0.0 },
+          "R_{36}": { "type": "point", "defined": true, "x": 1.8849555958292703, "y": 0.0 },
+          "R_{37}": { "type": "point", "defined": true, "x": 1.937315469716147, "y": 0.0 },
+          "R_{38}": { "type": "point", "defined": true, "x": 1.9896753447190485, "y": 0.0 },
+          "R_{39}": { "type": "point", "defined": true, "x": 2.042035214769346, "y": 0.0 },
+          "R_{40}": { "type": "point", "defined": true, "x": 2.0943950930432464, "y": 0.0 },
+          "R_{41}": { "type": "point", "defined": true, "x": 2.1467549777784933, "y": 0.0 },
+          "R_{42}": { "type": "point", "defined": true, "x": 2.199114959751565, "y": 0.0 },
+          "R_{43}": { "type": "point", "defined": true, "x": 2.303834616376963, "y": 0.0 },
+          "R_{44}": { "type": "point", "defined": true, "x": 2.356194500824632, "y": 0.0 },
+          "R_{45}": { "type": "point", "defined": true, "x": 2.408554376218966, "y": 0.0 },
+          "R_{46}": { "type": "point", "defined": true, "x": 2.4609142464662965, "y": 0.0 },
+          "R_{47}": { "type": "point", "defined": true, "x": 2.513274122710703, "y": 0.0 },
+          "R_{48}": { "type": "point", "defined": true, "x": 2.5656339947340134, "y": 0.0 },
+          "R_{49}": { "type": "point", "defined": true, "x": 2.617993866741207, "y": 0.0 },
+          "R_{50}": { "type": "point", "defined": true, "x": 2.67035374918149, "y": 0.0 },
+          "R_{51}": { "type": "point", "defined": true, "x": 2.722713632524393, "y": 0.0 },
+          "R_{52}": { "type": "point", "defined": true, "x": 2.7750735106113997, "y": 0.0 },
+          "R_{53}": { "type": "point", "defined": true, "x": 2.8274333889816243, "y": 0.0 },
+          "R_{54}": { "type": "point", "defined": true, "x": 2.879793272652264, "y": 0.0 },
+          "R_{55}": { "type": "point", "defined": true, "x": 2.9321531545517416, "y": 0.0 },
+          "R_{56}": { "type": "point", "defined": true, "x": 2.984513026088925, "y": 0.0 },
+          "R_{57}": { "type": "point", "defined": true, "x": 3.036872898558355, "y": 0.0 },
+          "R_{58}": { "type": "point", "defined": true, "x": 3.089232774578117, "y": 0.0 },
+          "R_{59}": { "type": "point", "defined": true, "x": 3.1415926446777878, "y": 0.0 },
+          "R_{60}": { "type": "point", "defined": true, "x": 3.1939525207795874, "y": 0.0 },
+          "R_{61}": { "type": "point", "defined": true, "x": 3.2463124053928545, "y": 0.0 },
+          "R_{62}": { "type": "point", "defined": true, "x": 3.3510320027084237, "y": 0.0 },
+          "R_{63}": { "type": "point", "defined": true, "x": 3.403392043916421, "y": 0.0 },
+          "R_{64}": { "type": "point", "defined": true, "x": 3.455751928672646, "y": 0.0 },
+          "R_{65}": { "type": "point", "defined": true, "x": 3.5081118062251333, "y": 0.0 },
+          "R_{66}": { "type": "point", "defined": true, "x": 3.560471676224117, "y": 0.0 },
+          "R_{67}": { "type": "point", "defined": true, "x": 3.6128315516144713, "y": 0.0 },
+          "R_{68}": { "type": "point", "defined": true, "x": 3.6651914250277473, "y": 0.0 },
+          "R_{69}": { "type": "point", "defined": true, "x": 3.7175512957957224, "y": 0.0 },
+          "R_{70}": { "type": "point", "defined": true, "x": 3.769911176479722, "y": 0.0 },
+          "R_{71}": { "type": "point", "defined": true, "x": 3.822271060702285, "y": 0.0 },
+          "R_{72}": { "type": "point", "defined": true, "x": 3.874630946946864, "y": 0.0 },
+          "R_{73}": { "type": "point", "defined": true, "x": 3.9269908173210526, "y": 0.0 },
+          "R_{74}": { "type": "point", "defined": true, "x": 3.97935069992868, "y": 0.0 },
+          "R_{75}": { "type": "point", "defined": true, "x": 4.0317105833036475, "y": 0.0 },
+          "R_{76}": { "type": "point", "defined": true, "x": 4.08407045640876, "y": 0.0 },
+          "R_{77}": { "type": "point", "defined": true, "x": 4.136430327625913, "y": 0.0 },
+          "R_{78}": { "type": "point", "defined": true, "x": 4.188790204119452, "y": 0.0 },
+          "R_{79}": { "type": "point", "defined": true, "x": 4.241150074843295, "y": 0.0 },
+          "R_{80}": { "type": "point", "defined": true, "x": 4.293509948879545, "y": 0.0 },
+          "R_{81}": { "type": "point", "defined": true, "x": 4.34586983280449, "y": 0.0 },
+          "R_{82}": { "type": "point", "defined": true, "x": 4.450589562073984, "y": 0.0 },
+          "R_{83}": { "type": "point", "defined": true, "x": 4.502949471697232, "y": 0.0 },
+          "R_{84}": { "type": "point", "defined": true, "x": 4.555309356217133, "y": 0.0 },
+          "R_{85}": { "type": "point", "defined": true, "x": 4.607669235904853, "y": 0.0 },
+          "R_{86}": { "type": "point", "defined": true, "x": 4.660029106265027, "y": 0.0 },
+          "R_{87}": { "type": "point", "defined": true, "x": 4.712388980385228, "y": 0.0 },
+          "R_{88}": { "type": "point", "defined": true, "x": 4.764748855179624, "y": 0.0 },
+          "R_{89}": { "type": "point", "defined": true, "x": 4.817108725281238, "y": 0.0 },
+          "R_{90}": { "type": "point", "defined": true, "x": 4.869468603912653, "y": 0.0 },
+          "R_{91}": { "type": "point", "defined": true, "x": 4.921828488615377, "y": 0.0 },
+          "R_{92}": { "type": "point", "defined": true, "x": 4.974188447224611, "y": 0.0 },
+          "R_{93}": { "type": "point", "defined": true, "x": 5.078908127269511, "y": 0.0 },
+          "R_{94}": { "type": "point", "defined": true, "x": 5.131268011610715, "y": 0.0 },
+          "R_{95}": { "type": "point", "defined": true, "x": 5.183627886657962, "y": 0.0 },
+          "R_{96}": { "type": "point", "defined": true, "x": 5.235987757002153, "y": 0.0 },
+          "R_{97}": { "type": "point", "defined": true, "x": 5.288347633334467, "y": 0.0 },
+          "R_{98}": { "type": "point", "defined": true, "x": 5.340707505144444, "y": 0.0 },
+          "R_{99}": { "type": "point", "defined": true, "x": 5.393067377406557, "y": 0.0 },
+          "R_{100}": { "type": "point", "defined": true, "x": 5.445427260099146, "y": 0.0 },
+          "R_{101}": { "type": "point", "defined": true, "x": 5.497787143267527, "y": 0.0 },
+          "R_{102}": { "type": "point", "defined": true, "x": 5.550147020865416, "y": 0.0 },
+          "R_{103}": { "type": "point", "defined": true, "x": 5.6025068997449, "y": 0.0 },
+          "R_{104}": { "type": "point", "defined": true, "x": 5.654866783567243, "y": 0.0 },
+          "R_{105}": { "type": "point", "defined": true, "x": 5.707226665179418, "y": 0.0 },
+          "R_{106}": { "type": "point", "defined": true, "x": 5.759586536502628, "y": 0.0 },
+          "R_{107}": { "type": "point", "defined": true, "x": 5.811946409202686, "y": 0.0 },
+          "R_{108}": { "type": "point", "defined": true, "x": 5.864306285086929, "y": 0.0 },
+          "R_{109}": { "type": "point", "defined": true, "x": 5.916666155136616, "y": 0.0 },
+          "R_{110}": { "type": "point", "defined": true, "x": 5.9690260315970285, "y": 0.0 },
+          "R_{111}": { "type": "point", "defined": true, "x": 6.021385916269425, "y": 0.0 },
+          "R_{112}": { "type": "point", "defined": true, "x": 6.178465554774094, "y": 0.0 },
+          "R_{113}": { "type": "point", "defined": true, "x": 6.230825439518182, "y": 0.0 },
+          "R_{114}": { "type": "point", "defined": true, "x": 6.283185316708551, "y": 0.0 },
+          "R_{115}": { "type": "point", "defined": true, "x": 6.335545186707395, "y": 0.0 },
+          "R_{116}": { "type": "point", "defined": true, "x": 6.387905062274437, "y": 0.0 },
+          "R_{117}": { "type": "point", "defined": true, "x": 6.440264935450048, "y": 0.0 },
+          "R_{118}": { "type": "point", "defined": true, "x": 6.49262480638625, "y": 0.0 },
+          "R_{119}": { "type": "point", "defined": true, "x": 6.544984687386875, "y": 0.0 },
+          "R_{120}": { "type": "point", "defined": true, "x": 6.597344571487287, "y": 0.0 },
+          "R_{121}": { "type": "point", "defined": true, "x": 6.649704453964383, "y": 0.0 },
+          "R_{122}": { "type": "point", "defined": true, "x": 6.702064328045978, "y": 0.0 },
+          "R_{123}": { "type": "point", "defined": true, "x": 6.754424210844039, "y": 0.0 },
+          "R_{124}": { "type": "point", "defined": true, "x": 6.806784094006843, "y": 0.0 },
+          "R_{125}": { "type": "point", "defined": true, "x": 6.859143966821392, "y": 0.0 },
+          "R_{126}": { "type": "point", "defined": true, "x": 6.911503838225279, "y": 0.0 },
+          "R_{127}": { "type": "point", "defined": true, "x": 6.96386371468313, "y": 0.0 },
+          "R_{128}": { "type": "point", "defined": true, "x": 7.016223585267378, "y": 0.0 },
+          "R_{129}": { "type": "point", "defined": true, "x": 7.068583459631262, "y": 0.0 },
+          "R_{130}": { "type": "point", "defined": true, "x": 7.120943343709615, "y": 0.0 },
+          "R_{131}": { "type": "point", "defined": true, "x": 7.225663059940637, "y": 0.0 },
+          "R_{132}": { "type": "point", "defined": true, "x": 7.278022982511976, "y": 0.0 },
+          "R_{133}": { "type": "point", "defined": true, "x": 7.330382867106038, "y": 0.0 },
+          "R_{134}": { "type": "point", "defined": true, "x": 7.382742746448841, "y": 0.0 },
+          "R_{135}": { "type": "point", "defined": true, "x": 7.435102616706275, "y": 0.0 },
+          "R_{136}": { "type": "point", "defined": true, "x": 7.539822365633371, "y": 0.0 },
+          "R_{137}": { "type": "point", "defined": true, "x": 7.592182235803408, "y": 0.0 },
+          "R_{138}": { "type": "point", "defined": true, "x": 7.644542114789037, "y": 0.0 },
+          "R_{139}": { "type": "point", "defined": true, "x": 7.696901999445024, "y": 0.0 },
+          "R_{140}": { "type": "point", "defined": true, "x": 7.749261938456786, "y": 0.0 },
+          "R_{141}": { "type": "point", "defined": true, "x": 7.853981638166645, "y": 0.0 },
+          "R_{142}": { "type": "point", "defined": true, "x": 7.906341522385697, "y": 0.0 },
+          "R_{143}": { "type": "point", "defined": true, "x": 7.958701397091441, "y": 0.0 },
+          "R_{144}": { "type": "point", "defined": true, "x": 8.011061267547213, "y": 0.0 },
+          "R_{145}": { "type": "point", "defined": true, "x": 8.063421143950494, "y": 0.0 },
+          "R_{146}": { "type": "point", "defined": true, "x": 8.115781015554987, "y": 0.0 },
+          "R_{147}": { "type": "point", "defined": true, "x": 8.168140888084487, "y": 0.0 },
+          "R_{148}": { "type": "point", "defined": true, "x": 8.220500771016585, "y": 0.0 },
+          "R_{149}": { "type": "point", "defined": true, "x": 8.272860654004377, "y": 0.0 },
+          "R_{150}": { "type": "point", "defined": true, "x": 8.325220530405465, "y": 0.0 },
+          "R_{151}": { "type": "point", "defined": true, "x": 8.377580410515241, "y": 0.0 },
+          "R_{152}": { "type": "point", "defined": true, "x": 8.429940294480204, "y": 0.0 },
+          "R_{153}": { "type": "point", "defined": true, "x": 8.482300175794666, "y": 0.0 },
+          "R_{154}": { "type": "point", "defined": true, "x": 8.534660046918603, "y": 0.0 },
+          "R_{155}": { "type": "point", "defined": true, "x": 8.587019919852827, "y": 0.0 },
+          "R_{156}": { "type": "point", "defined": true, "x": 8.63937979558705, "y": 0.0 },
+          "R_{157}": { "type": "point", "defined": true, "x": 8.691739665603095, "y": 0.0 },
+          "R_{158}": { "type": "point", "defined": true, "x": 8.74409954242419, "y": 0.0 },
+          "R_{159}": { "type": "point", "defined": true, "x": 8.796459427140014, "y": 0.0 },
+          "R_{160}": { "type": "point", "defined": true, "x": 8.953539065638289, "y": 0.0 },
+          "R_{161}": { "type": "point", "defined": true, "x": 9.00589895035484, "y": 0.0 },
+          "R_{162}": { "type": "point", "defined": true, "x": 9.058258827183346, "y": 0.0 },
+          "R_{163}": { "type": "point", "defined": true, "x": 9.110618697198875, "y": 0.0 },
+          "R_{164}": { "type": "point", "defined": true, "x": 9.162978572929875, "y": 0.0 },
+          "R_{165}": { "type": "point", "defined": true, "x": 9.21533844586893, "y": 0.0 },
+          "R_{166}": { "type": "point", "defined": true, "x": 9.267698316988938, "y": 0.0 },
+          "R_{167}": { "type": "point", "defined": true, "x": 9.320058198297192, "y": 0.0 },
+          "R_{168}": { "type": "point", "defined": true, "x": 9.372418082264979, "y": 0.0 },
+          "R_{169}": { "type": "point", "defined": true, "x": 9.42477796241003, "y": 0.0 },
+          "R_{170}": { "type": "point", "defined": true, "x": 9.477137838776668, "y": 0.0 },
+          "R_{171}": { "type": "point", "defined": true, "x": 9.5294977217607, "y": 0.0 },
+          "R_{172}": { "type": "point", "defined": true, "x": 9.58185760469757, "y": 0.0 },
+          "R_{173}": { "type": "point", "defined": true, "x": 9.63421747723268, "y": 0.0 },
+          "R_{174}": { "type": "point", "defined": true, "x": 9.686577348833048, "y": 0.0 },
+          "R_{175}": { "type": "point", "defined": true, "x": 9.738937225237605, "y": 0.0 },
+          "R_{176}": { "type": "point", "defined": true, "x": 9.791297095695814, "y": 0.0 },
+          "R_{177}": { "type": "point", "defined": true, "x": 9.843656970394623, "y": 0.0 },
+          "R_{178}": { "type": "point", "defined": true, "x": 9.896016854611004, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-reviewroots-002",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(sin(60x))"
+      ],
+      "view": [
+        -4,
+        4,
+        -3,
+        3,
+        100,
+        100
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": -3.979350773669129, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": -3.874630941921397, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": -3.71755146881631, "y": 0.0 },
+          "R_{4}": { "type": "point", "defined": true, "x": -3.612831549803518, "y": 0.0 },
+          "R_{5}": { "type": "point", "defined": true, "x": -3.508111718860243, "y": 0.0 },
+          "R_{6}": { "type": "point", "defined": true, "x": -3.3510321177872875, "y": 0.0 },
+          "R_{7}": { "type": "point", "defined": true, "x": -3.298672376577876, "y": 0.0 },
+          "R_{8}": { "type": "point", "defined": true, "x": -3.1415927577921976, "y": 0.0 },
+          "R_{9}": { "type": "point", "defined": true, "x": -3.0368729099474963, "y": 0.0 },
+          "R_{10}": { "type": "point", "defined": true, "x": -2.879793368206109, "y": 0.0 },
+          "R_{11}": { "type": "point", "defined": true, "x": -2.775073510649841, "y": 0.0 },
+          "R_{12}": { "type": "point", "defined": true, "x": -2.670353671218503, "y": 0.0 },
+          "R_{13}": { "type": "point", "defined": true, "x": -2.5132741020780958, "y": 0.0 },
+          "R_{14}": { "type": "point", "defined": true, "x": -2.4609143880733435, "y": 0.0 },
+          "R_{15}": { "type": "point", "defined": true, "x": -2.408554238790989, "y": 0.0 },
+          "R_{16}": { "type": "point", "defined": true, "x": -2.3561944287588816, "y": 0.0 },
+          "R_{17}": { "type": "point", "defined": true, "x": -2.3038347646467785, "y": 0.0 },
+          "R_{18}": { "type": "point", "defined": true, "x": -2.2514746164365715, "y": 0.0 },
+          "R_{19}": { "type": "point", "defined": true, "x": -2.199114887709604, "y": 0.0 },
+          "R_{20}": { "type": "point", "defined": true, "x": -2.0420353025580233, "y": 0.0 },
+          "R_{21}": { "type": "point", "defined": true, "x": -1.9373154700395534, "y": 0.0 },
+          "R_{22}": { "type": "point", "defined": true, "x": -1.8325955910401304, "y": 0.0 },
+          "R_{23}": { "type": "point", "defined": true, "x": -1.6755160753369573, "y": 0.0 },
+          "R_{24}": { "type": "point", "defined": true, "x": -1.5707962364448733, "y": 0.0 },
+          "R_{25}": { "type": "point", "defined": true, "x": -1.4137166224183848, "y": 0.0 },
+          "R_{26}": { "type": "point", "defined": true, "x": -1.3613568772474287, "y": 0.0 },
+          "R_{27}": { "type": "point", "defined": true, "x": -1.2042772675531992, "y": 0.0 },
+          "R_{28}": { "type": "point", "defined": true, "x": -1.0995574329806759, "y": 0.0 },
+          "R_{29}": { "type": "point", "defined": true, "x": -0.9424779373509676, "y": 0.0 },
+          "R_{30}": { "type": "point", "defined": true, "x": -0.8377580400817155, "y": 0.0 },
+          "R_{31}": { "type": "point", "defined": true, "x": -0.7330382093433749, "y": 0.0 },
+          "R_{32}": { "type": "point", "defined": true, "x": -0.5759586155354938, "y": 0.0 },
+          "R_{33}": { "type": "point", "defined": true, "x": -0.5235988795491074, "y": 0.0 },
+          "R_{34}": { "type": "point", "defined": true, "x": -0.4188791597174732, "y": 0.0 },
+          "R_{35}": { "type": "point", "defined": true, "x": -0.3665192586327084, "y": 0.0 },
+          "R_{36}": { "type": "point", "defined": true, "x": -0.31415910536381175, "y": 0.0 },
+          "R_{37}": { "type": "point", "defined": true, "x": -0.2617994035080529, "y": 0.0 },
+          "R_{38}": { "type": "point", "defined": true, "x": -0.1047198471227792, "y": 0.0 },
+          "R_{39}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{40}": { "type": "point", "defined": true, "x": 0.10471984712277918, "y": 0.0 },
+          "R_{41}": { "type": "point", "defined": true, "x": 0.2617994035080529, "y": 0.0 },
+          "R_{42}": { "type": "point", "defined": true, "x": 0.31415910536381175, "y": 0.0 },
+          "R_{43}": { "type": "point", "defined": true, "x": 0.3665192586327084, "y": 0.0 },
+          "R_{44}": { "type": "point", "defined": true, "x": 0.4188791597174732, "y": 0.0 },
+          "R_{45}": { "type": "point", "defined": true, "x": 0.5235988795491074, "y": 0.0 },
+          "R_{46}": { "type": "point", "defined": true, "x": 0.5759586155354938, "y": 0.0 },
+          "R_{47}": { "type": "point", "defined": true, "x": 0.733038209343375, "y": 0.0 },
+          "R_{48}": { "type": "point", "defined": true, "x": 0.8377580400817155, "y": 0.0 },
+          "R_{49}": { "type": "point", "defined": true, "x": 0.9424779373509676, "y": 0.0 },
+          "R_{50}": { "type": "point", "defined": true, "x": 1.0995574329806759, "y": 0.0 },
+          "R_{51}": { "type": "point", "defined": true, "x": 1.2042772675531992, "y": 0.0 },
+          "R_{52}": { "type": "point", "defined": true, "x": 1.3613568772474287, "y": 0.0 },
+          "R_{53}": { "type": "point", "defined": true, "x": 1.4137166224183848, "y": 0.0 },
+          "R_{54}": { "type": "point", "defined": true, "x": 1.5707962364448733, "y": 0.0 },
+          "R_{55}": { "type": "point", "defined": true, "x": 1.6755160753369573, "y": 0.0 },
+          "R_{56}": { "type": "point", "defined": true, "x": 1.8325955910401301, "y": 0.0 },
+          "R_{57}": { "type": "point", "defined": true, "x": 1.9373154700395534, "y": 0.0 },
+          "R_{58}": { "type": "point", "defined": true, "x": 2.0420353025580233, "y": 0.0 },
+          "R_{59}": { "type": "point", "defined": true, "x": 2.199114887709604, "y": 0.0 },
+          "R_{60}": { "type": "point", "defined": true, "x": 2.2514746164365715, "y": 0.0 },
+          "R_{61}": { "type": "point", "defined": true, "x": 2.3038347646467785, "y": 0.0 },
+          "R_{62}": { "type": "point", "defined": true, "x": 2.3561944287588816, "y": 0.0 },
+          "R_{63}": { "type": "point", "defined": true, "x": 2.408554238790989, "y": 0.0 },
+          "R_{64}": { "type": "point", "defined": true, "x": 2.4609143880733435, "y": 0.0 },
+          "R_{65}": { "type": "point", "defined": true, "x": 2.5132741020780958, "y": 0.0 },
+          "R_{66}": { "type": "point", "defined": true, "x": 2.670353671218503, "y": 0.0 },
+          "R_{67}": { "type": "point", "defined": true, "x": 2.775073510649841, "y": 0.0 },
+          "R_{68}": { "type": "point", "defined": true, "x": 2.879793368206109, "y": 0.0 },
+          "R_{69}": { "type": "point", "defined": true, "x": 3.0368729099474963, "y": 0.0 },
+          "R_{70}": { "type": "point", "defined": true, "x": 3.1415927577921976, "y": 0.0 },
+          "R_{71}": { "type": "point", "defined": true, "x": 3.298672376577876, "y": 0.0 },
+          "R_{72}": { "type": "point", "defined": true, "x": 3.3510321177872875, "y": 0.0 },
+          "R_{73}": { "type": "point", "defined": true, "x": 3.508111718860243, "y": 0.0 },
+          "R_{74}": { "type": "point", "defined": true, "x": 3.612831549803518, "y": 0.0 },
+          "R_{75}": { "type": "point", "defined": true, "x": 3.71755146881631, "y": 0.0 },
+          "R_{76}": { "type": "point", "defined": true, "x": 3.874630941921397, "y": 0.0 },
+          "R_{77}": { "type": "point", "defined": true, "x": 3.979350773669129, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-reviewroots-003",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = If(x<0,x+1,x-1)",
+        "R = Root(f)",
+        "S = Roots(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, -1.0],
+              [0.5, -0.5],
+              [1.0, 0.0],
+              [2.0, 1.0],
+              [4.0, 3.0],
+              [8.0, 7.0]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "S_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-reviewroots-004",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = If(x<0,x^2-2*x,-x^2+2*x)",
+        "E = Extremum(f)",
+        "T = TurningPoint(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 80.0],
+              [-4.0, 24.0],
+              [-2.0, 8.0],
+              [-1.0, 3.0],
+              [-0.5, 1.25],
+              [0.0, 0.0],
+              [0.5, 0.75],
+              [1.0, 1.0],
+              [2.0, 0.0],
+              [4.0, -8.0],
+              [8.0, -48.0]
+            ]
+          },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "T": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-reviewroots-005",
+      "group": "funcanalysis",
+      "script": [
+        "R = Extremum((x-30)^26)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-reviewroots-006",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(x^80+x-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.9604324501931912, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-reviewroots-007",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(0.00000000001*(x+0.00001),0,1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": -1.0E-5, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-reviewroots-008",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(0.00000001*(x^2+1),0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-reviewroots-009",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^64+x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

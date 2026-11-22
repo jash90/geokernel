@@ -265,6 +265,9 @@ fn brent(coefficients: &[f64], left: f64, right: f64) -> Option<f64> {
     )
 }
 
+/// Brent, *Algorithms for Minimization without Derivatives* (1973), chapter 4.
+/// Use inverse interpolation only when the bracket and the recent step lengths
+/// allow sufficient progress. Otherwise bisect.
 pub(in crate::algo) fn bracketed_root(
     f: &impl Fn(f64) -> f64,
     left: f64,
@@ -275,82 +278,96 @@ pub(in crate::algo) fn bracketed_root(
     if !(left < middle && middle < right) {
         return None;
     }
-    let fm = f(middle);
-    if fm.abs() <= ROOT_VALUE_ACCURACY {
-        return Some(middle);
+    let sample = |x| RootSample { x, y: f(x) };
+    let seed = sample(middle);
+    if seed.y.abs() <= ROOT_VALUE_ACCURACY {
+        return Some(seed.x);
     }
-    let fl = f(left);
-    if fl.abs() <= ROOT_VALUE_ACCURACY {
-        return Some(left);
+    let lower = sample(left);
+    if lower.y.abs() <= ROOT_VALUE_ACCURACY {
+        return Some(lower.x);
     }
-    let (mut a, mut fa, mut b, mut fb) = if fl.is_finite() && fm.is_finite() && fl * fm < 0.0 {
-        (left, fl, middle, fm)
+    let (mut best, mut other) = if seed.brackets(lower) {
+        (seed, lower)
     } else {
-        let fr = f(right);
-        if fr.abs() <= ROOT_VALUE_ACCURACY {
-            return Some(right);
+        let upper = sample(right);
+        if upper.y.abs() <= ROOT_VALUE_ACCURACY {
+            return Some(upper.x);
         }
-        if fm * fr >= 0.0 || !fm.is_finite() || !fr.is_finite() {
+        if !seed.brackets(upper) {
             return None;
         }
-        (middle, fm, right, fr)
+        (upper, seed)
     };
-    let (mut c, mut fc) = (a, fa);
-    let mut step = b - a;
-    let mut previous_step = step;
+    let mut prior = other;
+    let mut last_step = best.x - other.x;
+    let mut progress = last_step.abs();
     for _ in 0..ROOT_ITERATIONS {
-        if fc.abs() < fb.abs() {
-            (a, b, c) = (b, c, b);
-            (fa, fb, fc) = (fb, fc, fb);
+        if other.y.abs() < best.y.abs() {
+            prior = best;
+            std::mem::swap(&mut best, &mut other);
         }
-        let accuracy = 2.0 * ROOT_RELATIVE_ACCURACY * b.abs() + absolute_accuracy;
-        let half = 0.5 * (c - b);
-        if half.abs() <= accuracy || fb.abs() <= f64::from_bits(1) {
-            return Some(b);
+        let tolerance = absolute_accuracy + 2.0 * ROOT_RELATIVE_ACCURACY * best.x.abs();
+        let bisection = 0.5 * (other.x - best.x);
+        if bisection.abs() <= tolerance || best.y.abs() <= f64::from_bits(1) {
+            return Some(best.x);
         }
-        if previous_step.abs() < accuracy || fa.abs() <= fb.abs() {
-            step = half;
-            previous_step = step;
+        let interpolation = if progress >= tolerance && best.y.abs() < prior.y.abs() {
+            let step = best.interpolation(prior, other, bisection);
+            let bound = (1.5 * bisection.abs() - 0.5 * tolerance).min(0.5 * progress);
+            (step.signum() == bisection.signum() && step.abs() < bound).then_some(step)
         } else {
-            let ratio = fb / fa;
-            let (mut p, mut q) = if a == c {
-                (2.0 * half * ratio, 1.0 - ratio)
-            } else {
-                let q = fa / fc;
-                let r = fb / fc;
-                (
-                    ratio * (2.0 * half * q * (q - r) - (b - a) * (r - 1.0)),
-                    (q - 1.0) * (r - 1.0) * (ratio - 1.0),
-                )
-            };
-            if p > 0.0 {
-                q = -q;
-            } else {
-                p = -p;
-            }
-            let old_step = previous_step;
-            previous_step = step;
-            if p >= 1.5 * half * q - (accuracy * q).abs() / 2.0 || p >= (0.5 * old_step * q).abs() {
-                step = half;
-                previous_step = step;
-            } else {
-                step = p / q;
-            }
-        }
-        (a, fa) = (b, fb);
-        b += if step.abs() > accuracy {
-            step
-        } else {
-            accuracy.copysign(half)
+            None
         };
-        fb = f(b);
-        if (fb > 0.0) == (fc > 0.0) {
-            (c, fc) = (a, fa);
-            step = b - a;
-            previous_step = step;
+        progress = interpolation.map_or(bisection.abs(), |_| last_step.abs());
+        last_step = interpolation.unwrap_or(bisection);
+
+        prior = best;
+        let step = last_step.abs().max(tolerance).copysign(last_step);
+        best = sample(best.x + step);
+        if !best.y.is_finite() {
+            return None;
+        }
+        if best.y == 0.0 {
+            return Some(best.x);
+        }
+        if !best.brackets(other) {
+            other = prior;
+            last_step = best.x - other.x;
+            progress = last_step.abs();
         }
     }
     None
+}
+
+#[derive(Clone, Copy)]
+struct RootSample {
+    x: f64,
+    y: f64,
+}
+
+impl RootSample {
+    fn brackets(self, other: Self) -> bool {
+        self.y.is_finite()
+            && other.y.is_finite()
+            && self.y.is_sign_positive() != other.y.is_sign_positive()
+    }
+
+    fn interpolation(self, prior: Self, other: Self, half_width: f64) -> f64 {
+        let ratio = self.y / prior.y;
+        if prior.x == other.x {
+            return -(2.0 * half_width * ratio) / (1.0 - ratio);
+        }
+        // Evaluate the inverse quadratic interpolant at zero as a displacement
+        // from the best sample, using ratios of function values.
+        let prior_ratio = prior.y / other.y;
+        let best_ratio = self.y / other.y;
+        let numerator = ratio
+            * (2.0 * half_width * prior_ratio * (prior_ratio - best_ratio)
+                - (self.x - prior.x) * (best_ratio - 1.0));
+        let denominator = (prior_ratio - 1.0) * (best_ratio - 1.0) * (ratio - 1.0);
+        -numerator / denominator
+    }
 }
 
 /// `EquationSolver.laguerreAll` tests the sorted real parts of all four
@@ -453,6 +470,21 @@ pub(in crate::algo) fn graph_roots(
     coefficients: &[f64],
     charge: &impl Fn(u64) -> bool,
 ) -> Vec<f64> {
+    graph_roots_with_limit(coefficients, charge, None)
+}
+
+pub(in crate::algo) fn polynomial_analysis_roots(
+    coefficients: &[f64],
+    charge: &impl Fn(u64) -> bool,
+) -> Vec<f64> {
+    graph_roots_with_limit(coefficients, charge, Some(100))
+}
+
+fn graph_roots_with_limit(
+    coefficients: &[f64],
+    charge: &impl Fn(u64) -> bool,
+    evaluation_limit: Option<usize>,
+) -> Vec<f64> {
     if !charge(coefficients.len() as u64) || coefficients.iter().any(|a| !a.is_finite()) {
         return Vec::new();
     }
@@ -475,7 +507,7 @@ pub(in crate::algo) fn graph_roots(
             .iter()
             .map(|&a| Complex(a, 0.0))
             .collect();
-        let mut remaining = 1000;
+        let mut remaining = evaluation_limit.unwrap_or(1000);
         let mut results = Vec::with_capacity(degree);
         if shift > 0 {
             results.push(0.0);
@@ -485,6 +517,11 @@ pub(in crate::algo) fn graph_roots(
                 return Vec::new();
             }
             let Some(root) = laguerre(&working[..=degree], &mut remaining, -1.0, charge) else {
+                if evaluation_limit.is_some() {
+                    // The polynomial command discards an incomplete deflation.
+                    // Exact zero roots are removed before calling Laguerre.
+                    results.truncate(usize::from(shift != 0));
+                }
                 break;
             };
             results.push(root.0);

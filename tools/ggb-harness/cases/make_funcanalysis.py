@@ -6,8 +6,10 @@ from caselib import Cases, mv, setn
 cases = Cases("funcanalysis")
 
 
-def case(topic, script, steps=()):
+def case(topic, script, steps=(), *, view=None):
     cases.case(topic, script.splitlines(), list(steps))
+    if view is not None:
+        cases.cases[-1]["view"] = view
     if any(command in script for command in ("Curve(", "Spline(", "ParametricDerivative(")):
         cases.cases[-1]["sample_curves"] = True
 
@@ -180,5 +182,21 @@ for script in (
     case("forms", script)
 case("nsode", "f(t, u, v) = v\ng(t, u, v) = -u\ns = NSolveODE({f,g},0,{1,0},0.2)")
 case("nsode", "f(t, u) = -1000*u\ns = NSolveODE({f},0,{1},0.05)")
+
+# Review regressions. Use an 800-by-600 view at 100 pixels per world unit.
+view = [-4, 4, -3, 3, 100, 100]
+case("reviewroots", "R = Roots(sin(60x),0,10)", view=view)
+case("reviewroots", "R = Roots(sin(60x))", view=view)
+case("reviewroots", "f(x) = If(x<0,x+1,x-1)\nR = Root(f)\nS = Roots(f)")
+case("reviewroots", "f(x) = If(x<0,x^2-2*x,-x^2+2*x)\nE = Extremum(f)\nT = TurningPoint(f)")
+case("reviewroots", "R = Extremum((x-30)^26)")
+case("reviewroots", "R = Roots(x^80+x-1)")
+case("reviewroots", "R = Root(0.00000000001*(x+0.00001),0,1)")
+case("reviewroots", "R = Root(0.00000001*(x^2+1),0)")
+case("reviewroots", "R = Root(x^64+x)")
+case("reviewiteration", "n = 2\nR = Iteration(x+1,1,n)", [setn("n", 2000000)])
+case("reviewode", "s = SolveODE(y,10000000000000000,1,10000000000000002,0.25)")
+case("reviewode", "a = 1\nf(t,u,v) = a*v\ng(t,u,v) = -u\ns = NSolveODE({f,g},0,{1,0},0.1)",
+     [setn("a", 2)])
 
 cases.write()

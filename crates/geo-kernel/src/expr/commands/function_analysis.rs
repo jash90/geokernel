@@ -229,7 +229,9 @@ impl<const M: bool> Ctx<'_, M> {
         initial: u32,
         count: u32,
     ) -> Option<(u32, u32)> {
-        let count = self.iteration_count(count)?;
+        let count = self
+            .iteration_count(count)
+            .filter(|&n| u64::from(n) < MAX_ELEMENTS)?;
         let lists = self.lists?;
         let start = lists.reserve(count.checked_add(1)?)?;
         self.iterate(mode, formula, initial, count, Some(start))?;
@@ -242,9 +244,7 @@ impl<const M: bool> Ctx<'_, M> {
             return None;
         }
         let n = crate::expr::math::java_round(n) as i32;
-        u32::try_from(n)
-            .ok()
-            .filter(|&n| u64::from(n) < MAX_ELEMENTS)
+        u32::try_from(n).ok()
     }
 
     pub(crate) fn iteration_value(

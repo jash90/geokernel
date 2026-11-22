@@ -6,6 +6,7 @@ mod roots;
 mod spline;
 
 use super::{Group, Parents, NUMBER, POINT};
+use crate::kernel::locus::LocusData;
 use crate::{Construction, Def, Error, Id, Kind, Value};
 use std::{
     collections::HashMap,
@@ -47,17 +48,39 @@ pub enum AnalysisDef {
 
 type Point = (f64, f64);
 
-/// Separate output slots share a solve until the construction propagates.
+/// Separate output slots share a solve in the current propagation pass.
+/// The construction clears these entries before updates or rollback.
 #[derive(Default)]
 pub(crate) struct AnalysisCache {
     roots: Mutex<HashMap<RootInput, Vec<Point>>>,
     splines: Mutex<HashMap<SplineInput, Option<Arc<Spline>>>>,
+    ode_systems: Mutex<HashMap<[u32; 4], Vec<LocusData>>>,
 }
 
 impl AnalysisCache {
     pub(crate) fn clear(&mut self) {
         self.roots.get_mut().expect("root cache").clear();
         self.splines.get_mut().expect("spline cache").clear();
+        self.ode_systems
+            .get_mut()
+            .expect("ODE system cache")
+            .clear();
+    }
+
+    pub(crate) fn ode_system(
+        &self,
+        args: [u32; 4],
+        slot: usize,
+        solve: impl FnOnce() -> Vec<LocusData>,
+    ) -> LocusData {
+        self.ode_systems
+            .lock()
+            .expect("ODE system cache")
+            .entry(args)
+            .or_insert_with(solve)
+            .get(slot)
+            .cloned()
+            .unwrap_or_default()
     }
 
     fn roots<T>(&self, c: &Construction, input: RootInput, read: impl FnOnce(&[Point]) -> T) -> T {
