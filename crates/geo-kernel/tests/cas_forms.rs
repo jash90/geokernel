@@ -152,3 +152,68 @@ fn solving_stays_within_its_budget() {
     assert!(c.elements(id(&c, "r")).is_none());
     assert!(c.elements(id(&c, "s")).is_none());
 }
+
+fn curve_point(c: &Construction, label: &str, t: f64) -> Option<(f64, f64)> {
+    c.curve_point(id(c, label), t)
+}
+
+#[test]
+fn a_rewritten_curve_keeps_its_points_and_loses_removable_poles() {
+    let c = build(&[
+        "k = Curve((t^2-1)/(t-1), sin(t), t, 0, 2)",
+        "e = Expand(k)",
+        "f = Factor(k)",
+        "i = IFactor(k)",
+    ]);
+    assert_eq!(curve_point(&c, "k", 1.0), None);
+    for label in ["e", "f", "i"] {
+        assert_eq!(curve_point(&c, label, 1.0), Some((2.0, 1.0_f64.sin())));
+        assert_eq!(curve_point(&c, label, 0.5), Some((1.5, 0.5_f64.sin())));
+        assert_eq!(c.value(id(&c, label)), c.value(id(&c, "k")));
+    }
+}
+
+#[test]
+fn a_rewritten_curve_follows_its_source() {
+    let mut c = build(&[
+        "a = 2",
+        "k = Curve(a*t^2, cos(a*t), t, 0, a)",
+        "e = Expand(k)",
+    ]);
+    assert_eq!(curve_point(&c, "e", 1.0), Some((2.0, 2.0_f64.cos())));
+    // An interval that ends before it starts: undefined with its source.
+    c.set_number(id(&c, "a"), -1.0).unwrap();
+    assert_eq!(c.value(id(&c, "e")), Value::Undefined);
+    assert_eq!(curve_point(&c, "e", 0.0), None);
+    c.set_number(id(&c, "a"), 3.0).unwrap();
+    assert_eq!(curve_point(&c, "e", 1.0), Some((3.0, 3.0_f64.cos())));
+    assert_eq!(
+        c.value(id(&c, "e")),
+        Value::Curve {
+            start: 0.0,
+            end: 3.0
+        }
+    );
+}
+
+#[test]
+fn objects_that_are_no_expression_are_refused() {
+    let mut c = build(&[
+        "g: x+y=1",
+        "k: x^2+y^2=4",
+        "l = {1, 2}",
+        "A = (0, 0)",
+        "B = (1, 2)",
+        "C = (3, 1)",
+        "s = Spline({A, B, C})",
+    ]);
+    for command in ["Expand", "Factor", "IFactor"] {
+        for argument in ["g", "k", "l", "A", "{1, 2}", "x+y=1"] {
+            rejected(&mut c, &format!("r = {command}({argument})"));
+        }
+        // A spline has no coordinate functions to rewrite.
+        let error = rejected(&mut c, &format!("r = {command}(s)"));
+        assert!(error.contains("coordinate functions"), "{error}");
+        rejected(&mut c, &format!("r = {command}(s, 2)"));
+    }
+}

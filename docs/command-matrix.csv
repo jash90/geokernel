@@ -5,8 +5,8 @@ Min,,algebra,P2,done,5,5,"Min(number, number); Min(list)"
 Max,,algebra,P2,done,5,5,"Max(number, number); Max(list)"
 LCM,,algebra,P2,done,2,2,"LCM(number, number)"
 GCD,,algebra,P2,done,2,2,"GCD(number, number)"
-Expand,,algebra,P2,partial,6,1,Polynomial and rational functions are in scope for the 1.0 CAS.
-Factor,,algebra,P2,partial,6,1,Exact polynomial and rational functions are in scope for the 1.0 CAS.
+Expand,,algebra,P2,partial,6,5,Polynomial and rational functions are in scope for the 1.0 CAS.
+Factor,,algebra,P2,partial,6,5,Exact polynomial and rational functions are in scope for the 1.0 CAS.
 Simplify,,algebra,P2,partial,8,2,Polynomial and rational functions and number inputs are in scope for the 1.0 CAS.
 PrimeFactors,,algebra,P2,done,1,1,
 CompleteSquare,,algebra,P2,done,1,1,"Quadratic polynomials, including quadratic polynomials in a power of x."
@@ -510,7 +510,7 @@ Reflect,Mirror,transformation,P1,done,,,
 Assume,,cas,,out_of_scope,,,
 CFactor,,cas,,out_of_scope,,,
 CIFactor,,cas,,out_of_scope,,,
-IFactor,,algebra,P2,partial,6,1,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms."
+IFactor,,algebra,P2,partial,6,5,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms."
 IntegralSymbolic,,cas,,out_of_scope,,,
 CommonDenominator,,algebra,P2,done,2,2,Number pairs and rational-function pairs.
 Cross,,algebra,P2,done,5,5,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)

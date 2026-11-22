@@ -1375,6 +1375,12 @@ final class Session {
             case "IntersectRegion":
             case "IntersectionPaths":
                 return "polygon";
+            case "Expand":
+            case "Factor":
+            case "IFactor":
+            case "Simplify":
+                // The CAS commands rewrite the coordinates of a curve.
+                return first instanceof GeoCurveCartesian ? "curve" : null;
             default:
                 // a mathematical function such as `sqrt(a)` or `x(A)`
                 return null;

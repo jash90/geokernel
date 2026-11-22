@@ -160,13 +160,25 @@ pub(in crate::expr) fn evaluate<const M: bool>(
         }
     }
 
-    let a = read(ctx.c, ctx.e, a, vars, work)?;
-    let other = if b == NONE {
-        None
-    } else {
-        Some(read(ctx.c, ctx.e, b, vars, work)?)
-    };
-    transform(op, a, other, work).map(FunctionResult::Exact)
+    let exact = (|| {
+        let source = read(ctx.c, ctx.e, a, vars, work)?;
+        let other = if b == NONE {
+            None
+        } else {
+            Some(read(ctx.c, ctx.e, b, vars, work)?)
+        };
+        transform(op, source, other, work)
+    })();
+    if exact.is_none()
+        && ctx.e.curve_parameter.is_some()
+        && matches!(op, Op::Expand | Op::Factor | Op::IFactor | Op::Simplify)
+    {
+        // `AlgoCasBaseSingleArgument.applyCasCommand`: a coordinate of a
+        // curve the command cannot rewrite keeps the input.
+        let (entry, root) = super::argument_tree(ctx.c, ctx.e, a)?;
+        return (root == entry.root).then(|| FunctionResult::Tree(Arc::new(entry.clone())));
+    }
+    exact.map(FunctionResult::Exact)
 }
 
 pub(super) fn transform(

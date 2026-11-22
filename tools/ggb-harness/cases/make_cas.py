@@ -292,4 +292,47 @@ c.case("conic", ["A = (1, 2)", "k = Circle(A, 3)", "r1 = Solutions(k)", "r2 = So
 c.case("conic", ["k: x^2=4", "r1 = NSolutions(k, x=1)", "r2 = NSolve(k, x=-1)", "r3 = Solve(k, x=1)",
                  "r4 = Solutions(k, x=1)"], [])
 c.case("conic", ["k: x^2+y^2=4", "r1 = Solutions(k, x=1)", "r2 = NSolve(k, y=1)"], [])
+
+
+def curve_case(script, steps=()):
+    """A case whose curves are recorded with sample points."""
+    c.case("curve", script, list(steps))
+    c.cases[-1]["sample_curves"] = True
+
+
+def reject(line):
+    return {"action": "reject", "line": line}
+
+
+# Expand, Factor and IFactor rewrite a curve coordinate by coordinate.
+REWRITES = ("Expand", "Factor", "IFactor")
+for command in REWRITES:
+    curve_case(["k = Curve((t+1)^2, t^2-1, t, 0, 2)", f"result = {command}(k)"])
+# A rational coordinate loses its removable pole, and keeps a real one.
+curve_case(["k = Curve((t^2-1)/(t-1), t, t, 0, 2)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["k = Curve(1/t, t, t, -1, 1)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["k = Curve((t^2-4)/(t+2), 1/(t-1), t, -3, 3)"]
+           + results(f"{command}(k)" for command in REWRITES))
+# Coordinates the polynomial commands cannot rewrite stay as they are.
+curve_case(["k = Curve(cos(t), sin(t), t, 0, 3)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["k = Curve(t^2-2, sqrt(t), t, 0, 4)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["k = Curve(t^2-2, t^4-4, t, -2, 2)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["f(x) = x^2", "k = Curve(f(t)+1, t*f(t), t, 0, 2)"]
+           + results(f"{command}(k)" for command in REWRITES))
+# The result follows the numbers of the curve, also through an empty
+# interval and back.
+curve_case(["a = 2", "k = Curve(a*t^2, (t+a)^2, t, 0, a)"]
+           + results(f"{command}(k)" for command in REWRITES),
+           [setn("a", 3), setn("a", -1), setn("a", 0), setn("a", 1)])
+curve_case(["a = 1", "k = Curve((t^2-a^2)/(t-a), t, t, 0, 2)", "r1 = Expand(k)", "r2 = Factor(k)"],
+           [setn("a", 0.5), setn("a", 3), setn("a", 0)])
+curve_case(["k = Curve(t^2, t, t, 0, 2)", "r1 = Expand(k)", "r2 = Factor(r1)", "r3 = IFactor(r2)"])
+curve_case(["k = Curve(t^2, t, t, 2, 0)"] + results(f"{command}(k)" for command in REWRITES))
+
+# The reference refuses a line, a conic and a list.
+for command in REWRITES:
+    c.case("rejected", ["g: x+y=1", "k: x^2+y^2=4", "l = {1, 2}", "A = (0, 1)", "B = (1, 0)",
+                        "s = Segment(A, B)"],
+           [reject(f"r = {command}({argument})") for argument in
+            ["g", "k", "l", "s", "x+y=1", "x^2+y^2=4", "{1, 2}", "{x^2-1, (x+1)^2}"]])
 c.write()

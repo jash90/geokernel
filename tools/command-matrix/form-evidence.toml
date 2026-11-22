@@ -3484,3 +3484,63 @@ command = "NSolutions"
 form = "conic,any"
 cases = ["cas-conic-008"]
 difference = "polynomial-cas: `Solutions(conic, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`"
+
+[[form]]
+command = "Expand"
+form = "curve"
+cases = ["cas-curve-001"]
+
+[[form]]
+command = "Expand"
+form = "list"
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Expand"
+form = "line"
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Expand"
+form = "conic"
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Factor"
+form = "curve"
+cases = ["cas-curve-002"]
+
+[[form]]
+command = "Factor"
+form = "list"
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Factor"
+form = "line"
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Factor"
+form = "conic"
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "IFactor"
+form = "curve"
+cases = ["cas-curve-003"]
+
+[[form]]
+command = "IFactor"
+form = "list"
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "IFactor"
+form = "line"
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "IFactor"
+form = "conic"
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
