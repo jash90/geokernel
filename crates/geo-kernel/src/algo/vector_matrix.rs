@@ -30,7 +30,7 @@ thread_local! {
 fn row(element: Element<'_>) -> Option<List<'_>> {
     match element {
         Element::List(row) => Some(row),
-        Element::Value(..) => None,
+        Element::Value(..) | Element::Text(_) => None,
     }
 }
 

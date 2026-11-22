@@ -62,6 +62,18 @@ fn line(g: [f64; 3]) -> (f64, f64, f64) {
     (g[0], g[1], g[2])
 }
 
+/// The point a line of a degenerate conic measures its parameter from:
+/// `setStartPointsForLines`, which resets the line's start point and takes
+/// `GeoLine.getPointOnLine` — an axis point, `-z/x` on the x-axis when `x`
+/// is the larger coefficient, else `-z/y` on the y-axis.
+fn axis_start([x, y, z]: [f64; 3]) -> (f64, f64, f64) {
+    if x.abs() > y.abs() {
+        (-z / x, 0.0, 1.0)
+    } else {
+        (0.0, -z / y, 1.0)
+    }
+}
+
 /// `GeoConicND.pointChanged`, which is `pointChangedUnlimited` for a full
 /// conic.
 pub(crate) fn point_changed(d: &ConicData, p: &mut PathState) {
@@ -76,7 +88,7 @@ pub(crate) fn point_changed(d: &ConicData, p: &mut PathState) {
             let first =
                 distance_hom(d.lines[0], p.coords()) <= distance_hom(d.lines[1], p.coords());
             let g = if first { d.lines[0] } else { d.lines[1] };
-            line_point_changed(line(g), None, p);
+            line_point_changed(line(g), Some(axis_start(g)), p);
             // the line parameter in (-1, 1), or in (1, 3) for the second line
             let t = inverse_inf_function(p.parameter());
             p.set_t(t);
@@ -84,7 +96,9 @@ pub(crate) fn point_changed(d: &ConicData, p: &mut PathState) {
                 p.set_t(p.parameter() + 2.0);
             }
         }
-        ConicType::DoubleLine => line_point_changed(line(d.lines[0]), None, p),
+        ConicType::DoubleLine => {
+            line_point_changed(line(d.lines[0]), Some(axis_start(d.lines[0])), p)
+        }
         ConicType::Circle => {
             rw_to_ev(d, p);
             let (x, y, z) = p.coords();
@@ -137,10 +151,13 @@ pub(crate) fn path_changed(d: &ConicData, p: &mut PathState) {
             // from (-1, 1) to the line parameter in (-inf, inf)
             let t = p.parameter();
             p.set_t(t / (1.0 - t.abs()));
-            line_path_changed(line(d.lines[usize::from(second)]), None, p);
+            let g = d.lines[usize::from(second)];
+            line_path_changed(line(g), Some(axis_start(g)), p);
             p.set_t(param);
         }
-        ConicType::DoubleLine => line_path_changed(line(d.lines[0]), None, p),
+        ConicType::DoubleLine => {
+            line_path_changed(line(d.lines[0]), Some(axis_start(d.lines[0])), p)
+        }
         ConicType::Circle => {
             let t = p.parameter();
             let [ha, hb] = d.half_axes;

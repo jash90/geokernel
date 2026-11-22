@@ -20,15 +20,29 @@
 //! sides of a polygon, the outputs of `Tangent`): `p = Polygon(A, B, C)
 //! # labels: p, a_1, b, c`. The list is a comment, so the text stays a
 //! plain script; `load_tolerant` checks it.
+//!
+//! One kind of entry is not the journal of any script line: the start
+//! point a locus froze on a line, written where the entry of the locus was
+//! when the locus was deleted (`Op::Freeze`). It keeps the start over
+//! every later rebuild, and a script does not save it.
+//!
 //! A crossing revealed by a move is saved as a slot definition after that
 //! move. Its exact label and its origin survive further moves and replay.
 //! A simultaneous move is saved as one `$movePoints` directive.
 
 use geo_kernel::algo::measure::MeasureDef;
-use geo_kernel::kernel::{Construction, Def, Id};
-use geo_kernel::script::{boundary_slot_owner, restore_boundary_labels, BoundaryOutputs};
+use geo_kernel::kernel::control::{decode_text, encode_text, visibility_boolean};
+use geo_kernel::kernel::text::TextPosition;
+use geo_kernel::kernel::{Construction, Def, EquationForm, Id, Value};
+use geo_kernel::script::equation::{parse_style, Style as EquationStyle};
+use geo_kernel::script::saved::{self, mark_inline_arguments, Property, INLINE_ARGUMENTS};
+use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
+use geo_kernel::script::{
+    boundary_slot_owner, find_unquoted, restore_boundary_labels, split_comment, BoundaryOutputs,
+};
 use shared::Chain;
 pub use shared::Labels;
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 mod shared;
@@ -39,12 +53,22 @@ pub const DIRECTIVES: [&str; 3] = ["SetCoords", "SetValue", "SetVisibleInView"];
 /// Starts the list of labels after a definition in a snapshot.
 const LABELS: &str = "# labels: ";
 const MOVE_POINTS: &str = "$movePoints";
+const ANGLE_STYLE: &str = "$angleStyle";
+const SHOW_OBJECT: &str = "$showObject";
+
+fn snapshot_labels(comment: &str) -> Option<&str> {
+    if saved::inline_argument_positions(comment).is_some() {
+        comment.split_once(LABELS).map(|(_, labels)| labels)
+    } else {
+        comment.strip_prefix(LABELS)
+    }
+}
 
 fn has_recorded_growth(src: &str) -> bool {
     src.lines().any(|line| {
-        line.split('#')
-            .next()
-            .and_then(|line| line.split_once('='))
+        split_comment(line)
+            .0
+            .split_once('=')
             .and_then(|(_, rhs)| boundary_slot_owner(rhs.trim()))
             .is_some()
     })
@@ -63,10 +87,12 @@ impl Entry {
     /// line keeps its `:` (`a: 2x + 3y = 6`), so its definition is the
     /// whole equation.
     pub fn rhs(&self) -> &str {
-        self.line
+        let body = split_comment(&self.line).0;
+        let rhs = body
             .find([':', '='])
-            .and_then(|i| self.line.get(i + 1..))
-            .map_or("", str::trim)
+            .and_then(|i| body.get(i + 1..))
+            .map_or("", str::trim);
+        geo_kernel::script::saved_definition(rhs).unwrap_or(rhs)
     }
 
     fn replay(&self, c: &mut Construction) -> Result<Option<Id>, String> {
@@ -90,6 +116,8 @@ pub(crate) struct GrownOutputs<'a> {
 pub enum Setting {
     Point(f64, f64),
     Number(f64),
+    Boolean(bool),
+    AngleStyle(geo_kernel::kernel::angle::AngleStyle),
 }
 
 type Position<L> = (L, f64, f64);
@@ -102,7 +130,26 @@ enum Op {
         to: Setting,
         ordered: bool,
     },
+    /// The start point a locus froze on a line without one, written where
+    /// the entry of the locus was when the locus was deleted
+    /// ([`Log::keep_frozen_start`]): a replay installs it before the
+    /// operations that follow, exactly where the locus froze it, so every
+    /// later rebuild reproduces the points bit for bit. GeoGebra keeps such
+    /// a start for the rest of the session (it installed the point on the
+    /// line itself); this entry is what carries it over the rebuilds. A
+    /// script does not save it (see `write_script`).
+    Freeze {
+        label: String,
+        x: f64,
+        y: f64,
+    },
     MovePoints(Vec<Position<String>>),
+    TextProperties(Box<str>),
+    SavedProperty(Box<Property>),
+    EquationStyle {
+        label: String,
+        form: EquationForm,
+    },
 }
 
 /// Rewrites `f: Line(A, B)` as `f = Line(A, B)` and removes a trailing `#`
@@ -110,9 +157,23 @@ enum Op {
 /// before any `=`; an equation (`f: 2x + 3y = 6`, whose `=` is part of the
 /// definition) keeps its `:`, which the script of the kernel reads.
 pub fn normalize(input: &str) -> String {
-    let line = input.split('#').next().unwrap_or("").trim();
-    let colon = line.find(':');
-    let eq = line.find('=');
+    let (body, comment) = split_comment(input);
+    normalize_saved_definition(body, comment)
+}
+
+fn normalize_saved_definition(body: &str, comment: Option<&str>) -> String {
+    let mut line = normalize_definition(body);
+    if let Some(positions) = comment.and_then(saved::inline_argument_positions) {
+        use std::fmt::Write as _;
+        let _ = write!(line, " {INLINE_ARGUMENTS}{positions}");
+    }
+    line
+}
+
+fn normalize_definition(input: &str) -> String {
+    let line = input.trim();
+    let colon = find_unquoted(line, ':');
+    let eq = find_unquoted(line, '=');
     match (colon, eq) {
         (Some(c), None) => format!("{} = {}", line[..c].trim(), line[c + 1..].trim()),
         (Some(c), Some(e)) if c < e => format!("{}: {}", line[..c].trim(), line[c + 1..].trim()),
@@ -126,17 +187,30 @@ enum Directive<'a> {
     Set(&'a str, Setting),
     MovePoints(Vec<Position<&'a str>>),
     Visible(&'a str, bool),
+    Condition(&'a str, &'a str),
+    TextProperties(TextProperties<'a>),
+    SavedProperty(Property),
+    EquationStyle(EquationStyle<'a>),
 }
 
 /// The directive on a normalised line, if it is one (a definition always has
 /// an `=`).
 fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
+    if let Some(property) = saved::parse(line) {
+        return Some(property.map(Directive::SavedProperty));
+    }
+    if let Some(props) = parse_properties(line) {
+        return Some(props.map(Directive::TextProperties));
+    }
+    if let Some(style) = parse_style(line) {
+        return Some(style.map(Directive::EquationStyle));
+    }
     if line.contains('=') {
         return None;
     }
     let (name, rest) = line.split_once('(')?;
     let name = name.trim();
-    if name != MOVE_POINTS && !DIRECTIVES.contains(&name) {
+    if !matches!(name, MOVE_POINTS | ANGLE_STYLE | SHOW_OBJECT) && !DIRECTIVES.contains(&name) {
         return None;
     }
     let parse = || -> Option<Directive<'_>> {
@@ -154,7 +228,20 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
                     .collect::<Option<Vec<_>>>()
                     .map(Directive::MovePoints)
             }
-            ("SetValue", [l, v]) => Some(Directive::Set(l, Setting::Number(num(v)?))),
+            ("SetValue", [l, v]) => Some(Directive::Set(
+                l,
+                match v.parse::<bool>() {
+                    Ok(value) => Setting::Boolean(value),
+                    Err(_) => Setting::Number(num(v)?),
+                },
+            )),
+            (SHOW_OBJECT, [target, boolean]) => Some(Directive::Condition(target, boolean)),
+            (ANGLE_STYLE, [l, style]) => Some(Directive::Set(
+                l,
+                Setting::AngleStyle(geo_kernel::kernel::angle::AngleStyle::from_xml(
+                    style.parse().ok()?,
+                )),
+            )),
             ("SetVisibleInView", [l, "1", shown]) => {
                 Some(Directive::Visible(l, shown.parse().ok()?))
             }
@@ -162,6 +249,47 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
         }
     };
     Some(parse().ok_or_else(|| format!("cannot read `{line}`")))
+}
+
+fn replay_text_properties<'a>(
+    c: &mut Construction,
+    line: &'a str,
+    gone: &BTreeSet<String>,
+    previous: Option<&Construction>,
+) -> Result<Option<Cow<'a, str>>, String> {
+    let mut properties = parse_properties(line).expect("a recorded text directive")?;
+    if gone.contains(properties.label) && c.id(properties.label).is_none() {
+        return Ok(None);
+    }
+    let anchor = match properties.overrides.position {
+        Some(TextPosition::Point(label) | TextPosition::ScreenPoint(label)) => Some(label),
+        _ => None,
+    };
+    let detached = anchor.filter(|&label| gone.contains(label) && c.id(label).is_none());
+    if let Some(label) = detached {
+        let saved = previous.and_then(|prior| prior.id(label).map(|id| prior.value(id)));
+        properties.overrides.position = Some(match saved {
+            Some(Value::Point { x, y })
+                if matches!(
+                    properties.overrides.position,
+                    Some(TextPosition::ScreenPoint(_))
+                ) =>
+            {
+                TextPosition::Screen {
+                    x: f64::from(x as i32),
+                    y: f64::from(y as i32),
+                }
+            }
+            Some(Value::Point { x, y }) => TextPosition::World { x, y },
+            _ => TextPosition::Origin,
+        });
+    }
+    properties.apply(c)?;
+    Ok(Some(if detached.is_some() {
+        Cow::Owned(properties.to_string())
+    } else {
+        Cow::Borrowed(line)
+    }))
 }
 
 fn replay_move_points(
@@ -230,7 +358,9 @@ pub fn check_names(line: &str) -> Result<(), String> {
 
 /// The identifiers of a script line.
 fn tokens(line: &str) -> impl Iterator<Item = &str> {
-    line.split(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '{' | '}' | '\'')))
+    split_comment(line)
+        .0
+        .split(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '{' | '}' | '\'')))
         .filter(|t| !t.is_empty())
 }
 
@@ -308,16 +438,51 @@ pub struct Log {
     ops: Chain<Op>,
     /// Labels hidden in the drawing (part of the state that undo restores).
     pub hidden: Labels,
+    conditions: BTreeMap<String, VisibilityCondition>,
     /// Labels removed by `remove` since the last rebuild: lines that use them
     /// are dropped by the rebuild on purpose.
     removed: BTreeSet<String>,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+struct VisibilityCondition {
+    source: String,
+    boolean: String,
+}
+
 impl Log {
+    pub(crate) fn condition(&self, label: &str) -> Option<&str> {
+        self.conditions
+            .get(label)
+            .map(|condition| condition.boolean.as_str())
+    }
+
+    pub(crate) fn set_condition(
+        &mut self,
+        c: &mut Construction,
+        target: &str,
+        source: &str,
+    ) -> Result<(), String> {
+        if c.id(target).is_none() {
+            return Err(format!("`{target}` is missing"));
+        }
+        if self.conditions.contains_key(target) {
+            return Err(format!("`{target}` already has a visibility condition"));
+        }
+        let id = visibility_boolean(c, target, source)?;
+        self.conditions.insert(
+            target.to_owned(),
+            VisibilityCondition {
+                source: source.to_owned(),
+                boolean: c.label(id).to_owned(),
+            },
+        );
+        Ok(())
+    }
     fn entries(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items().into_iter().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } | Op::MovePoints(_) => None,
+            _ => None,
         })
     }
 
@@ -325,7 +490,7 @@ impl Log {
     pub(crate) fn entries_rev(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items_rev().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } | Op::MovePoints(_) => None,
+            _ => None,
         })
     }
 
@@ -340,7 +505,7 @@ impl Log {
         if !labels.is_empty() {
             self.ops.push(Op::Define(Entry {
                 labels,
-                line: line.to_owned(),
+                line: mark_inline_arguments(line.to_owned()),
             }));
         }
     }
@@ -381,6 +546,29 @@ impl Log {
                 .map(|&(id, x, y)| (c.label(id).to_owned(), x, y))
                 .collect();
             self.ops.push(Op::MovePoints(points));
+        }
+    }
+
+    pub(crate) fn record_text_properties(&mut self, props: TextProperties<'_>) {
+        let op = Op::TextProperties(props.to_string().into());
+        // Coalesce successive changes to the same text properties, as
+        // during a drag. A different property still needs its own edit.
+        let replaces = match self.ops.last() {
+            Some(Op::TextProperties(previous)) => parse_properties(previous)
+                .and_then(Result::ok)
+                .is_some_and(|old| {
+                    old.label == props.label
+                        && old.overrides.position.is_some() == props.overrides.position.is_some()
+                        && old.overrides.offset.is_some() == props.overrides.offset.is_some()
+                        && old.overrides.latex.is_some() == props.overrides.latex.is_some()
+                        && old.overrides.font.is_some() == props.overrides.font.is_some()
+                }),
+            _ => false,
+        };
+        if replaces {
+            self.ops.replace_last(op);
+        } else {
+            self.ops.push(op);
         }
     }
 
@@ -470,7 +658,8 @@ impl Log {
 
     /// Removes the line that created `label` (and with it every object the
     /// line created) and the moves of those objects. Returns whether there
-    /// was such a line. Lines that use a removed object go on the next rebuild.
+    /// was such a line. Lines that use a removed object go on the next
+    /// rebuild, which also drops the start points those lines froze.
     pub fn remove(&mut self, label: &str) -> bool {
         let Some(entry) = self.entries().find(|e| e.labels.iter().any(|l| l == label)) else {
             return false;
@@ -490,18 +679,63 @@ impl Log {
         self.ops.retain(|op| match op {
             Op::Define(e) if grouped => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Define(e) => e.labels != labels,
-            Op::Set { label, .. } => !labels.contains(label),
-            Op::MovePoints(_) => true,
+            Op::Set { label, .. } | Op::EquationStyle { label, .. } => !labels.contains(label),
+            Op::SavedProperty(property) => !labels.iter().any(|label| label == property.label()),
+            Op::Freeze { .. } | Op::MovePoints(_) | Op::TextProperties(_) => true,
         });
         self.removed.extend(labels);
         true
     }
 
+    /// Writes the start point a deleted locus froze on `line` into the
+    /// journal at `at`, where the entry of the locus was. A replay installs
+    /// it before the operations that follow — exactly where the locus
+    /// froze it, so moves recorded before it replay from the live foot of
+    /// the line and moves after it from the frozen start — and every later
+    /// rebuild (further deletions, the undo and redo of them) reproduces
+    /// the points bit for bit. GeoGebra keeps such a start when the locus
+    /// that installed it is deleted, because it lives on the line; this
+    /// entry is what makes it survive the rebuilds.
+    pub(crate) fn keep_frozen_start(&mut self, at: usize, line: &str, x: f64, y: f64) {
+        self.ops.insert(
+            at,
+            Op::Freeze {
+                label: line.to_owned(),
+                x,
+                y,
+            },
+        );
+    }
+
+    /// The journal position of the entry that created `label`, with every
+    /// label that entry made: the position a rebuild has to place at what
+    /// that entry froze, before the operations that follow it.
+    pub(crate) fn define_entry(&self, label: &str) -> Option<(usize, &[String])> {
+        let ops = self.ops.items();
+        let at = ops
+            .iter()
+            .position(|op| matches!(op, Op::Define(e) if e.labels.iter().any(|l| l == label)))?;
+        match &ops[at] {
+            Op::Define(e) => Some((at, &e.labels[..])),
+            _ => None,
+        }
+    }
+
     /// Replays the journal on a fresh construction. Every line must create
     /// the labels it created before; a line that fails is dropped only when
     /// it uses an object that was removed (or dropped itself), otherwise the
-    /// whole rebuild fails and the caller keeps its previous state.
+    /// whole rebuild fails and the caller keeps its previous state. The
+    /// start points a deleted locus froze (`Op::Freeze`) are installed
+    /// where their entries are, before the operations that follow them.
     pub fn rebuild(&self) -> Result<(Construction, Log), String> {
+        self.rebuild_with_text_anchors(None)
+    }
+
+    /// When a placed text loses its anchor, keep the last location.
+    pub(crate) fn rebuild_with_text_anchors(
+        &self,
+        previous: Option<&Construction>,
+    ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
@@ -554,6 +788,8 @@ impl Log {
                     let result = match *to {
                         Setting::Point(x, y) => c.move_point(id, x, y),
                         Setting::Number(v) => c.set_number(id, v),
+                        Setting::Boolean(v) => c.set_boolean(id, v),
+                        Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     // A set right after a set of the same object is merged
@@ -586,12 +822,76 @@ impl Log {
                         }
                     }
                 }
+                Op::TextProperties(line) => {
+                    let replayed = replay_text_properties(&mut c, line, &gone, previous)?;
+                    if matches!(replayed, Some(Cow::Borrowed(_))) {
+                        if let Some(n) = &mut same {
+                            *n = i + 1;
+                            continue;
+                        }
+                    }
+                    diverge(&mut kept, &mut same);
+                    if let Some(line) = replayed {
+                        kept.ops.push(Op::TextProperties(line.into()));
+                    }
+                }
+                Op::SavedProperty(property) => {
+                    if !gone.contains(property.label()) && property.apply(&mut c).is_ok() {
+                        match &mut same {
+                            Some(n) => *n = i + 1,
+                            None => kept.ops.push((*op).clone()),
+                        }
+                    } else {
+                        diverge(&mut kept, &mut same);
+                        if !gone.contains(property.label()) {
+                            if let Some(property) = property.as_ref().clone().restore(&mut c).0 {
+                                kept.ops.push(Op::SavedProperty(Box::new(property)));
+                            }
+                        }
+                    }
+                }
+                Op::EquationStyle { label, form } => {
+                    if gone.contains(label) && c.id(label).is_none() {
+                        diverge(&mut kept, &mut same);
+                        continue;
+                    }
+                    EquationStyle {
+                        label,
+                        form: form.clone(),
+                    }
+                    .apply(&mut c)?;
+                    match &mut same {
+                        Some(n) => *n = i + 1,
+                        None => kept.ops.push((*op).clone()),
+                    }
+                }
+                Op::Freeze { label, x, y } => {
+                    if c.set_frozen_line_start(label, *x, *y) {
+                        // What `keep_frozen_start` wrote is the entry itself.
+                        match &mut same {
+                            Some(n) => *n = i + 1,
+                            None => kept.ops.push(Op::Freeze {
+                                label: label.clone(),
+                                x: *x,
+                                y: *y,
+                            }),
+                        }
+                    } else if c.id(label).is_some() || gone.contains(label) {
+                        // The line was deleted, with everything that used
+                        // it, or no longer takes a frozen start: the entry
+                        // goes with it.
+                        diverge(&mut kept, &mut same);
+                    } else {
+                        return Err(format!("`{label}` is missing"));
+                    }
+                }
             }
         }
         if let Some(n) = same {
             kept.ops = self.ops.prefix(n);
         }
         kept.hidden = self.hidden.clone();
+        self.replay_conditions(&mut c, &mut kept);
         Ok((c, kept))
     }
 
@@ -611,6 +911,7 @@ impl Log {
         Log {
             ops,
             hidden,
+            conditions: self.conditions.clone(),
             removed: self.removed.clone(),
         }
     }
@@ -618,7 +919,10 @@ impl Log {
     /// `rebuild` as it was before the journal shared its storage: every
     /// kept line recorded anew. The oracle of the tests of `rebuild`.
     #[cfg(test)]
-    pub(crate) fn rebuild_reference(&self) -> Result<(Construction, Log), String> {
+    pub(crate) fn rebuild_reference(
+        &self,
+        previous: &Construction,
+    ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
@@ -656,6 +960,8 @@ impl Log {
                     let result = match *to {
                         Setting::Point(x, y) => c.move_point(id, x, y),
                         Setting::Number(v) => c.set_number(id, v),
+                        Setting::Boolean(v) => c.set_boolean(id, v),
+                        Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     kept.push_set(
@@ -668,9 +974,44 @@ impl Log {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;
                     kept.record_move_points(&c, &positions);
                 }
+                Op::TextProperties(line) => {
+                    if let Some(line) = replay_text_properties(&mut c, line, &gone, Some(previous))?
+                    {
+                        kept.ops.push(Op::TextProperties(line.into()));
+                    }
+                }
+                Op::SavedProperty(property) => {
+                    if !gone.contains(property.label()) {
+                        if let Some(property) = property.as_ref().clone().restore(&mut c).0 {
+                            kept.ops.push(Op::SavedProperty(Box::new(property)));
+                        }
+                    }
+                }
+                Op::EquationStyle { label, form } => {
+                    if !gone.contains(label) || c.id(label).is_some() {
+                        EquationStyle {
+                            label,
+                            form: form.clone(),
+                        }
+                        .apply(&mut c)?;
+                        kept.ops.push(op.clone());
+                    }
+                }
+                Op::Freeze { label, x, y } => {
+                    if c.set_frozen_line_start(label, *x, *y) {
+                        kept.ops.push(Op::Freeze {
+                            label: label.clone(),
+                            x: *x,
+                            y: *y,
+                        });
+                    } else if c.id(label).is_none() && !gone.contains(label) {
+                        return Err(format!("`{label}` is missing"));
+                    }
+                }
             }
         }
         kept.hidden = self.hidden.clone();
+        self.replay_conditions(&mut c, &mut kept);
         Ok((c, kept))
     }
 
@@ -705,6 +1046,7 @@ impl Log {
         Log {
             ops,
             hidden: self.hidden.clone(),
+            conditions: self.conditions.clone(),
             removed: self.removed.clone(),
         }
     }
@@ -755,6 +1097,21 @@ impl Log {
                     to: Setting::Number(v),
                     ..
                 } => writeln!(out, "SetValue({label}, {v})"),
+                // A file does not save the start a locus froze (GeoGebra
+                // does not either): after a reload the line has no start
+                // until the next locus computation installs a fresh one,
+                // on the line as it is then.
+                Op::Freeze { .. } => Ok(()),
+                Op::Set {
+                    label,
+                    to: Setting::Boolean(v),
+                    ..
+                } => writeln!(out, "SetValue({label}, {v})"),
+                Op::Set {
+                    label,
+                    to: Setting::AngleStyle(style),
+                    ..
+                } => writeln!(out, "{ANGLE_STYLE}({label}, {})", style.xml_code()),
                 Op::MovePoints(points) => {
                     let _ = write!(out, "{MOVE_POINTS}(");
                     for (i, (label, x, y)) in points.iter().enumerate() {
@@ -765,12 +1122,38 @@ impl Log {
                     }
                     writeln!(out, ")")
                 }
+                Op::TextProperties(line) => writeln!(out, "{line}"),
+                Op::SavedProperty(property) => writeln!(out, "{property}"),
+                Op::EquationStyle { label, form } => {
+                    writeln!(
+                        out,
+                        "{}",
+                        EquationStyle {
+                            label,
+                            form: form.clone()
+                        }
+                    )
+                }
             };
         }
         for label in &self.hidden {
             let _ = writeln!(out, "SetVisibleInView({label}, 1, false)");
         }
+        for (target, condition) in &self.conditions {
+            let _ = writeln!(
+                out,
+                "{SHOW_OBJECT}({target}, {})",
+                encode_text(&condition.source)
+            );
+        }
         out
+    }
+
+    fn replay_conditions(&self, c: &mut Construction, kept: &mut Log) {
+        for (target, condition) in &self.conditions {
+            // A deleted object can be a target or be read by a condition.
+            let _ = kept.set_condition(c, target, &condition.source);
+        }
     }
 
     /// Applies a directive line to `c` and records it.
@@ -796,13 +1179,40 @@ impl Log {
                 }
                 return Ok(Vec::new());
             }
+            Directive::Condition(target, condition) => {
+                self.set_condition(c, target, &decode_text(condition)?)?;
+                return Ok(Vec::new());
+            }
+            Directive::SavedProperty(property) => {
+                property.apply(c)?;
+                self.ops.push(Op::SavedProperty(Box::new(property)));
+                return Ok(Vec::new());
+            }
+            Directive::TextProperties(props) => {
+                props.apply(c)?;
+                self.ops.push(Op::TextProperties(props.to_string().into()));
+                return Ok(Vec::new());
+            }
+            Directive::EquationStyle(style) => {
+                let label = style.label.to_owned();
+                let form = style.form.clone();
+                style.apply(c)?;
+                self.ops.push(Op::EquationStyle { label, form });
+                return Ok(Vec::new());
+            }
         };
         let result = match to {
             Setting::Point(x, y) => c.move_point(id, x, y),
             Setting::Number(v) => c.set_number(id, v),
+            Setting::Boolean(v) => c.set_boolean(id, v),
+            Setting::AngleStyle(style) => c.set_angle_style(id, style),
         };
         result.map_err(|e| format!("`{label}`: {e}"))?;
-        self.record_update(c, label, to);
+        if matches!(to, Setting::AngleStyle(_)) {
+            self.push_set(label, to, true);
+        } else {
+            self.record_update(c, label, to);
+        }
         Ok(vec![id])
     }
 
@@ -828,11 +1238,9 @@ impl Log {
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
         for (i, raw) in src.lines().enumerate() {
-            let (body, listed) = match raw.split_once(LABELS) {
-                Some((body, list)) => (body, Some(list)),
-                None => (raw, None),
-            };
-            let line = normalize(body);
+            let (body, comment) = split_comment(raw);
+            let listed = comment.and_then(snapshot_labels);
+            let line = normalize_saved_definition(body, comment);
             if line.is_empty() {
                 continue;
             }
@@ -930,7 +1338,8 @@ impl Log {
         let mut groups = BoundaryOutputs::default();
         let grow = !has_recorded_growth(src);
         for (i, raw) in src.lines().enumerate() {
-            let line = normalize(raw);
+            let (body, comment) = split_comment(raw);
+            let line = normalize_saved_definition(body, comment);
             if line.is_empty() {
                 continue;
             }
@@ -944,9 +1353,9 @@ impl Log {
             }
             check_names(&line).map_err(at)?;
             let before = c.len();
-            let labels = raw
-                .split_once(LABELS)
-                .map(|(_, labels)| labels.split(',').map(str::trim).collect::<Vec<_>>());
+            let labels = comment
+                .and_then(snapshot_labels)
+                .map(|labels| labels.split(',').map(str::trim).collect::<Vec<_>>());
             let first = labels
                 .as_ref()
                 .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))

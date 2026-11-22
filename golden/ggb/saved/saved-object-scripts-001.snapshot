@@ -1,0 +1,14 @@
+{
+  "schema": 2,
+  "id": "saved-object-scripts-001",
+  "script": [
+    "A = (1, 2)",
+    "check = false",
+    "a = 2"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+    "check": { "type": "boolean", "defined": true, "value": false },
+    "a": { "type": "number", "defined": true, "value": 2.0 }
+  }
+}

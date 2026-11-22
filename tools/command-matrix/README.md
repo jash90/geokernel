@@ -60,8 +60,10 @@ alongside a disposition. To list candidate cases for new rows:
 ## Status and priority rules
 
 0. The commands in `OUT_OF_SCOPE_COMMANDS` (`var`, `cov`, `Polyhedron`,
-   `CornerThreeD`, `Evaluate`, `Stadium`, `TableToChart`): status
-   `out_of_scope`, priority empty, whatever their group.
+   `CornerThreeD`, `Evaluate`, `Stadium`, `TableToChart`) and `EXCLUDED_ALGEBRA`
+   have status `out_of_scope` and an empty priority, regardless of their group.
+   `EXCLUDED_ALGEBRA` records the reason for each exclusion in the matrix's
+   `notes` column. `forms.csv` contains the signatures of in-scope commands.
 1. Groups `3d`, `spreadsheet`, `probability`, `cas`, `scripting`,
    `statistics`: status `out_of_scope`, priority empty.
 2. Hand-listed exceptions the kernel already covers in part: `notes` lists

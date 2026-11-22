@@ -201,6 +201,7 @@ fn feed(c: &Construction, id: Id, out: &mut dyn FnMut(u64)) {
             }
             None => out(15),
         },
+        Value::Text => feed_text(c.text(id).unwrap_or_default(), out),
         v => feed_value(&v, out),
     }
 }
@@ -210,12 +211,22 @@ fn feed_list(list: geo_kernel::expr::List<'_>, out: &mut dyn FnMut(u64)) {
     for e in list.iter() {
         match e {
             Element::Value(_, v) => feed_value(&v, out),
+            Element::Text(text) => feed_text(text, out),
             Element::List(inner) => {
                 out(16 + ((inner.len() as u64) << 8));
                 feed_list(inner, out);
                 out(17);
             }
         }
+    }
+}
+
+fn feed_text(text: &str, out: &mut dyn FnMut(u64)) {
+    out(21 + ((text.len() as u64) << 8));
+    for chunk in text.as_bytes().chunks(8) {
+        let mut bytes = [0; 8];
+        bytes[..chunk.len()].copy_from_slice(chunk);
+        out(u64::from_le_bytes(bytes));
     }
 }
 

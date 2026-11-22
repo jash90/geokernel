@@ -105,12 +105,8 @@ fn function_context<'a, const M: bool>(
         return None;
     };
     Some(Ctx {
-        c,
-        e: expr::entry(c, def),
-        env,
-        lists: None,
         meter,
-        locals: None,
+        ..Ctx::new(c, expr::entry(c, def), env)
     })
 }
 
@@ -267,6 +263,27 @@ impl IntersectionWork {
         let ctx = self.context(c, id, &Env::None)?;
         let result = fraction(&ctx, ctx.e.root, self, expr::parse::MAX_DEPTH)?;
         (!self.exhausted()).then(|| result.into_parts())
+    }
+
+    pub(in crate::expr::commands) fn polynomial_at(
+        &self,
+        ctx: &Ctx<'_, true>,
+        node: u32,
+    ) -> Option<Vec<f64>> {
+        let f = fraction(ctx, node, self, expr::parse::MAX_DEPTH)?;
+        let &[scale] = f.denominator.as_slice() else {
+            return None;
+        };
+        if scale == 0.0 || !scale.is_finite() || self.exhausted() {
+            return None;
+        }
+        let mut coefficients = f.numerator;
+        (self.charge(coefficients.len() as u64)
+            && coefficients.iter_mut().all(|coefficient| {
+                *coefficient /= scale;
+                coefficient.is_finite()
+            }))
+        .then_some(coefficients)
     }
 
     pub(crate) fn constant(&self, c: &Construction, id: Id) -> Option<f64> {
@@ -426,7 +443,18 @@ fn fraction(ctx: &Ctx<'_, true>, i: u32, work: &IntersectionWork, depth: u32) ->
         Node::Apply(f, arg) => {
             let arg = fraction(ctx, arg, work, depth)?;
             let applied = work.context(ctx.c, f, &Env::None)?;
-            let callee = fraction(&applied, applied.e.root, work, depth)?;
+            let callee = if let Some(coefficients) = applied.e.polynomial() {
+                if !work.charge(coefficients.len() as u64) {
+                    return None;
+                }
+                Fraction::polynomial(if coefficients.is_empty() {
+                    vec![0.0]
+                } else {
+                    coefficients.to_vec()
+                })
+            } else {
+                fraction(&applied, applied.e.root, work, depth)?
+            };
             Fraction::compose(&callee.numerator, &arg, work)?
                 .divide(Fraction::compose(&callee.denominator, &arg, work)?, work)
         }

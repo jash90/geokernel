@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-scientificupstream-001",
+      "group": "textnumbers",
+      "script": [
+        "ta = ScientificText(ℯ,5)",
+        "tb = ScientificText(0.002)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "ta": { "type": "text", "defined": true, "text": "2.7183 \\times 10^{0}" },
+          "tb": { "type": "text", "defined": true, "text": "2 \\times 10^{-3}" }
+        }
+      ]
+    }
+  ]
+}

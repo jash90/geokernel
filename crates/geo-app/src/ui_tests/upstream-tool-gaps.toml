@@ -18,11 +18,6 @@ category = "behaviour"
 reason = "upstream clicks empty space to make the point to reflect and again on the line; the window's reflect-at-line tool ignores a click on empty space"
 
 [[gap]]
-id = "deleteTool"
-category = "app-bug"
-reason = "upstream builds the lines a: x = 1 and b: y = -1, clicks their intersection twice and checks a: x = 1 after the first click and an empty construction after the second; the window's delete tool removes the first line but its paint then panics on the pointer's stale hovered id (draw.rs builds the curve layer for hovered and selected ids without checking the id still exists; being fixed in draw.rs/canvas.rs), so neither checkpoint is reached"
-
-[[gap]]
 id = "rotateByAngleToolMultiplePointsToExistingPoint"
 category = "selection"
 reason = "upstream drag-selects two points in a box, then rotates both by 180deg around an existing point; the window has no box selection, so only one point rotates"

@@ -156,7 +156,7 @@ pub(super) fn list_value<const M: bool>(
         | ListOp::Prepend
         | ListOp::Join => Val::N(f64::NAN),
         ListOp::Index | ListOp::Element => match (ctx.pick(op, l, n), ctx.e.tys[i as usize]) {
-            (Some(slot), _) => slot_val(slot),
+            (Some(slot), _) => slot_val(&slot),
             (None, Ty::Vec) => Val::V(f64::NAN, f64::NAN),
             (None, Ty::Bool) => Val::B(false, true),
             (None, _) => Val::N(f64::NAN),
@@ -188,7 +188,7 @@ impl Parser<'_> {
         };
         self.expect(&Tok::LParen, "(")?;
         let depth = self.locals.len() as u32;
-        self.locals.push(variable);
+        self.locals.push((variable, Elem::Num));
         let expression = self.expression();
         self.locals.pop();
         let expression = expression?;
@@ -210,21 +210,7 @@ impl Parser<'_> {
     /// The variable of a `Sequence` with four or five arguments, found
     /// before its expression is parsed; `None` with fewer arguments.
     fn sequence_variable(&self) -> Result<Option<String>, String> {
-        let mut depth = 0usize;
-        let mut commas = Vec::new();
-        for (j, t) in self.toks.iter().enumerate().skip(self.pos) {
-            match t.tok {
-                Tok::LParen | Tok::LBrace => depth += 1,
-                Tok::RParen | Tok::RBrace => {
-                    depth = depth.saturating_sub(1);
-                    if depth == 0 {
-                        break;
-                    }
-                }
-                Tok::Comma if depth == 1 => commas.push(j),
-                _ => {}
-            }
-        }
+        let commas = self.argument_commas();
         if commas.len() < 3 {
             return Ok(None);
         }
@@ -373,7 +359,8 @@ impl<const M: bool> Ctx<'_, M> {
             }
             let local = Local {
                 depth,
-                value: v,
+                value: Val::N(v),
+                run: None,
                 up: self.locals,
             };
             let slot = Ctx {
@@ -446,11 +433,11 @@ impl<const M: bool> Ctx<'_, M> {
                 } else {
                     s + len - count
                 };
-                if !matches!(
+                if matches!(
                     self.e.tys[l as usize],
-                    Ty::List(Elem::Num | Elem::Bool | Elem::Empty)
+                    Ty::List(Elem::Vec | Elem::Object | Elem::Any)
                 ) {
-                    // AlgoFirst and AlgoLast copy each selected object.
+                    // AlgoFirst and AlgoLast copy graph points and segments.
                     let start = lists.reserve(count)?;
                     if !lists.charge(u64::from(count)) {
                         return None;

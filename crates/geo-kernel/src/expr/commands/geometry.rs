@@ -17,7 +17,7 @@
 mod conic_coefficients;
 #[path = "../../algo/conic_interval.rs"]
 mod conic_interval;
-mod function_roots;
+pub(super) mod function_roots;
 
 use crate::algo::intersect::Hint;
 use crate::algo::vector::{matrix, VectorDef};
@@ -53,6 +53,18 @@ pub(super) const NAMES: &[&str] = &[
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
     match text {
         "Length" => p.list_command(length),
+        "Distance" => p.list_command(|p, args, _| {
+            let &[a, b] = args else { return Ok(None) };
+            if [a, b]
+                .iter()
+                .any(|&i| matches!(p.node(i), Node::Local(_, Elem::Vec)))
+                && [a, b].iter().all(|&i| p.is_point_or_vector(i))
+            {
+                let difference = p.push(Node::Bin(Bin::Sub, a, b));
+                return Ok(Some(Node::Un(Un::Abs, difference)));
+            }
+            Ok(None)
+        }),
         "Cross" => p.list_command(cross),
         "Dot" => p.list_command(dot),
         "Determinant" => p.list_command(|_, args, lists| {
@@ -235,8 +247,8 @@ fn identity(p: &mut Parser, n: u32) -> u32 {
     let size = p.push(Node::If(IfMode::Algo, rounded_up, below, floor));
     let nonempty = p.push(Node::Bin(Bin::GreaterEqual, size, one));
     let depth = p.locals.len() as u32;
-    let i = p.push(Node::Local(depth));
-    let j = p.push(Node::Local(depth + 1));
+    let i = p.push(Node::Local(depth, Elem::Num));
+    let j = p.push(Node::Local(depth + 1, Elem::Num));
     let on_diagonal = p.push(Node::Bin(Bin::Equal, i, j));
     let entry = p.push(Node::If(IfMode::Algo, on_diagonal, one, zero));
     let row = p.push(Node::Seq(entry, one, size, NONE, depth + 1));
@@ -473,9 +485,9 @@ fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option
         return None;
     }
     let product = |i, j| {
-        let x = slot_val(lists.read(ctx.c, a + i));
-        let y = slot_val(lists.read(ctx.c, b + j));
-        slot_val(combine(Bin::Mul, x, y))
+        let x = slot_val(&lists.read(ctx.c, a + i));
+        let y = slot_val(&lists.read(ctx.c, b + j));
+        slot_val(&combine(Bin::Mul, x, y))
     };
     let component = |i, j| combine(Bin::Sub, product(i, j), product(j, i));
     let start = lists.reserve(3)?;

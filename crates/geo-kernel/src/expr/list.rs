@@ -3,20 +3,26 @@
 //! A list keeps its elements in its expression's entry, flattened: the
 //! top-level elements come first, and an element that is itself a list
 //! names the run of slots, further on in the same buffer, that holds its
-//! elements. The object's [`Value::List`] only carries the length, so values
-//! stay `Copy` and of fixed size; [`List`] reads the elements.
+//! elements. The object's [`Value::List`] only carries the length. The
+//! slots can own text, and [`List`] reads the elements from the buffer.
 
 use crate::kernel::{Construction, Id, Kind, Value};
+use std::sync::Arc;
+
+// The largest two ids belong to the axes. Ordinary ids index vectors.
+const NO_OBJECT: Id = Id(usize::MAX - 2);
 
 /// One element of a list: its kind (also when it is undefined), its value,
 /// and for a nested list where its elements start.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Slot {
     pub(crate) kind: Kind,
     pub(crate) value: Value,
     pub(crate) start: u32,
     /// A named geometric object whose equality uses its construction data.
-    object: Option<Id>,
+    object: Id,
+    equation_revision: u64,
+    text: Option<Arc<String>>,
 }
 
 impl Slot {
@@ -25,7 +31,9 @@ impl Slot {
             kind,
             value: Value::Undefined,
             start: 0,
-            object: None,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
         }
     }
 
@@ -37,7 +45,9 @@ impl Slot {
                 kind: Kind::Number,
                 value: Value::Number(v),
                 start: 0,
-                object: None,
+                object: NO_OBJECT,
+                equation_revision: 0,
+                text: None,
             }
         } else {
             // Non-list slots can keep the sign of infinity in the run
@@ -70,7 +80,9 @@ impl Slot {
             kind,
             value,
             start: 0,
-            object: None,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
         }
     }
 
@@ -83,25 +95,44 @@ impl Slot {
             kind: Kind::Point,
             value,
             start: 0,
-            object: None,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
         }
     }
 
-    pub(super) fn named_point(value: Value, id: Id) -> Self {
-        Self {
-            object: Some(id),
-            ..Self::point(value)
+    pub(crate) fn text(value: impl Into<String>, object: Option<Id>) -> Slot {
+        Slot {
+            kind: Kind::Text,
+            value: Value::Text,
+            start: 0,
+            object: object.unwrap_or(NO_OBJECT),
+            equation_revision: 0,
+            text: Some(Arc::new(value.into())),
         }
+    }
+
+    pub(crate) fn text_value(&self) -> Option<&str> {
+        self.text.as_deref().map(String::as_str)
+    }
+
+    pub(crate) fn object_id(&self) -> Option<Id> {
+        (self.object != NO_OBJECT).then_some(self.object)
+    }
+
+    pub(crate) fn with_object(mut self, object: Id) -> Slot {
+        self.object = object;
+        self
     }
 
     pub(super) fn detach_graph_object(mut self) -> Self {
         if matches!(self.kind, Kind::Point | Kind::Segment) {
-            self.object = None;
+            self.object = NO_OBJECT;
         }
         self
     }
 
-    pub(crate) fn shown(self) -> Value {
+    pub(crate) fn shown(&self) -> Value {
         self.value.cartesian()
     }
 
@@ -110,7 +141,9 @@ impl Slot {
             kind: Kind::Boolean,
             value: Value::Bool(b),
             start: 0,
-            object: None,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
         }
     }
 
@@ -120,16 +153,27 @@ impl Slot {
             kind: Kind::List,
             value: Value::List { len },
             start,
-            object: None,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
         }
     }
 
     pub(super) fn object(c: &Construction, id: Id) -> Self {
+        let kind = c.kind(id);
+        let equation_revision = match kind {
+            Kind::Line | Kind::Ray | Kind::Circle | Kind::Conic => c
+                .equation_display_revision(id)
+                .map_or(0, |rev| rev.wrapping_add(1)),
+            _ => 0,
+        };
         Self {
-            kind: c.kind(id),
+            kind,
             value: c.value(id),
             start: 0,
-            object: Some(id),
+            object: id,
+            equation_revision,
+            text: None,
         }
     }
 
@@ -143,14 +187,23 @@ impl Slot {
 
     /// Bit equality, so that a change from `0` to `-0` is seen.
     fn same(&self, other: &Slot) -> bool {
-        if self.object != other.object {
+        if self.text != other.text
+            || self.object != other.object
+            || self.equation_revision != other.equation_revision
+        {
             return false;
         }
-        if self.object.is_some() && self.kind != Kind::Point {
-            // An undefined line can retain coefficients used by equality.
-            return self.object == other.object
-                && self.value == other.value
-                && (self.kind != Kind::Line || self.value.is_defined());
+        if self.object != NO_OBJECT
+            && (self.value != other.value
+                || self.kind == Kind::Line && !self.value.is_defined()
+                || matches!(
+                    self.kind,
+                    Kind::Conic | Kind::Curve | Kind::Function | Kind::FunctionNVar
+                ))
+        {
+            // An undefined line retains coefficients used by equality. Functions,
+            // curves, and conics can change data held outside their value.
+            return false;
         }
         let bits = |v: &Value| -> [u64; 3] {
             match *v {
@@ -183,7 +236,20 @@ impl Slot {
 
 /// Named geometric objects supported as entries in a literal list.
 pub(super) fn object_kind(kind: Kind) -> bool {
-    matches!(kind, Kind::Segment | Kind::Line | Kind::Circle)
+    matches!(
+        kind,
+        Kind::Arc
+            | Kind::Circle
+            | Kind::Conic
+            | Kind::Curve
+            | Kind::Line
+            | Kind::Locus
+            | Kind::Polygon
+            | Kind::PolyLine
+            | Kind::Ray
+            | Kind::Sector
+            | Kind::Segment
+    )
 }
 
 /// Parents whose changes can alter an undefined named line's equality.
@@ -233,6 +299,8 @@ pub enum Element<'a> {
     /// A non-list element and its kind; an undefined element is
     /// [`Value::Undefined`].
     Value(Kind, Value),
+    /// The exact contents of a defined text.
+    Text(&'a str),
     /// A defined list.
     List(List<'a>),
 }
@@ -315,21 +383,23 @@ impl<'a> List<'a> {
         if k >= self.len() {
             return None;
         }
-        let slot = self.slots[self.start as usize + k];
+        let slot = &self.slots[self.start as usize + k];
         Some(match slot.run() {
             Some((start, len)) => Element::List(List {
                 slots: self.slots,
                 start,
                 len,
             }),
-            None => Element::Value(slot.kind, slot.shown()),
+            None => slot
+                .text_value()
+                .map_or_else(|| Element::Value(slot.kind, slot.shown()), Element::Text),
         })
     }
 
     /// The original object when the element is a named geometry object.
     pub(crate) fn object(&self, k: usize) -> Option<Id> {
         (k < self.len())
-            .then(|| self.slots[self.start as usize + k].object)
+            .then(|| self.slots[self.start as usize + k].object_id())
             .flatten()
     }
 
@@ -338,8 +408,19 @@ impl<'a> List<'a> {
         if k >= self.len() {
             return None;
         }
-        let slot = self.slots[self.start as usize + k];
+        let slot = &self.slots[self.start as usize + k];
         (slot.kind == Kind::Point).then_some(slot.value)
+    }
+
+    /// The construction object supplying the function at this list position.
+    pub fn function_at(&self, k: usize) -> Option<Id> {
+        if k >= self.len() {
+            return None;
+        }
+        let slot = &self.slots[self.start as usize + k];
+        (slot.kind == Kind::Function)
+            .then(|| slot.object_id())
+            .flatten()
     }
 
     /// The raw numeric field read by GgbMat, including NaN and infinity.
@@ -347,7 +428,7 @@ impl<'a> List<'a> {
         if k >= self.len() {
             return None;
         }
-        let slot = self.slots[self.start as usize + k];
+        let slot = &self.slots[self.start as usize + k];
         match (slot.kind, slot.value, slot.start) {
             (_, Value::Number(v), _) => Some(v),
             (Kind::Number, Value::Undefined, 1) => Some(f64::INFINITY),

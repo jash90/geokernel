@@ -29,6 +29,25 @@ pub enum AngleStyle {
 }
 
 impl AngleStyle {
+    /// GeoGebra's angle style code in a saved element.
+    pub const fn from_xml(code: i32) -> Self {
+        match code {
+            1 => Self::NotReflex,
+            2 => Self::Reflex,
+            3 => Self::Unbounded,
+            _ => Self::Anticlockwise,
+        }
+    }
+
+    pub const fn xml_code(self) -> i32 {
+        match self {
+            Self::Anticlockwise => 0,
+            Self::NotReflex => 1,
+            Self::Reflex => 2,
+            Self::Unbounded => 3,
+        }
+    }
+
     pub const fn interval(self) -> (f64, f64) {
         match self {
             Self::Anticlockwise => (0.0, TAU),
@@ -38,7 +57,7 @@ impl AngleStyle {
         }
     }
 
-    pub(crate) fn value(self, raw: f64) -> f64 {
+    pub fn value(self, raw: f64) -> f64 {
         if self == Self::Unbounded {
             return raw;
         }

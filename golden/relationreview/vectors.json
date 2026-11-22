@@ -1,0 +1,122 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "relationreview-vectors-001",
+      "group": "relationreview",
+      "script": [
+        "A = (2,3)",
+        "B = (102,3)",
+        "C = (0,0)",
+        "D = (100,0)",
+        "P = (52,3.000000005)",
+        "v = Vector(A,B)",
+        "w = Vector(C,D)",
+        "m = Relation(v,w)",
+        "n = Relation(P,v)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 50.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": 52.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 102.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 52.0, "y": 3.000000005 },
+          "v": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "AreEqual=true"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 102.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 50.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 52.0, "y": 3.000000005 },
+          "v": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 50.0, "y": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "AreEqual=false"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 102.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 52.0, "y": 3.000000005 },
+          "v": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 1.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "AreEqual=false"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 102.0, "y": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 52.0, "y": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 1.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "AreEqual=false"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=false"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

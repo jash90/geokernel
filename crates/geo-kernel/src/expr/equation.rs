@@ -9,6 +9,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/main/settings/config/equationforms/DefaultEquationBehaviour.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -62,7 +63,9 @@ use super::parse;
 use super::{children, eval, math, shift_children, types, Bin, Entry, Lit, Node, Raw, Ty, NONE};
 use crate::algo;
 use crate::algo::conic_nd::ConicData;
-use crate::kernel::{Construction, Def, EquationDef, EquationRecord, Error, Id, Kind, Value};
+use crate::kernel::{
+    Construction, Def, EquationDef, EquationForm, EquationRecord, Error, Id, Kind, Value,
+};
 use crate::tol::STANDARD_PRECISION;
 
 /// `Polynomial.MAX_ALLOWED_DEGREE`: the largest exponent of a polynomial
@@ -92,6 +95,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         }
     }
     // one arena for both sides: the right side's nodes follow the left's
+    let sides = [lhs.clone(), rhs.clone()];
     let offset = lhs.nodes.len() as u32;
     let mut nodes = lhs.nodes;
     for mut node in rhs.nodes {
@@ -137,7 +141,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
     match poly.degree() {
         0 | 1 => {
             let coeffs = coefficients(c, &mut builder, &poly, &[(1, 0), (0, 1), (0, 0)])?;
-            add(c, name, false, coeffs).map_err(|e| e.to_string())
+            add(c, name, false, coeffs, sides).map_err(|e| e.to_string())
         }
         2 => {
             let coeffs = coefficients(
@@ -146,7 +150,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
                 &poly,
                 &[(2, 0), (1, 1), (0, 2), (1, 0), (0, 1), (0, 0)],
             )?;
-            add(c, name, true, coeffs).map_err(|e| e.to_string())
+            add(c, name, true, coeffs, sides).map_err(|e| e.to_string())
         }
         _ => function_or_refuse(
             c,
@@ -216,7 +220,7 @@ fn coefficients(
 
 /// Splits `lhs = rhs` at the one `=` between them: the top-level `=` that
 /// is not part of `==`, `!=`, `<=` or `>=` and sits outside every bracket.
-fn split_equation(text: &str) -> Result<(&str, &str), String> {
+pub(crate) fn split_equation(text: &str) -> Result<(&str, &str), String> {
     let bytes = text.as_bytes();
     let mut depth = 0i32;
     let mut split = None;
@@ -790,6 +794,7 @@ fn add(
     name: &str,
     conic: bool,
     coeffs: Vec<parse::Parsed>,
+    sides: [parse::Parsed; 2],
 ) -> Result<Id, Error> {
     let first_entry = c.exprs.entries.len();
     let mut indices = Vec::with_capacity(coeffs.len());
@@ -799,11 +804,26 @@ fn add(
         c.exprs.entries.push(entry);
         indices.push(index);
     }
+    let sides = sides.map(|parsed| {
+        let index = c.exprs.entries.len() as u32;
+        let entry = Entry::new(c, parsed, true);
+        c.exprs.entries.push(entry);
+        index
+    });
     let index = c.equations.len() as u32;
-    c.equations
-        .push((c.len(), EquationRecord { coeffs: indices }));
+    c.equations.push((
+        c.len(),
+        EquationRecord {
+            coeffs: indices,
+            sides,
+        },
+    ));
     match c.add(name, Def::Equation(EquationDef { conic, index })) {
-        Ok(id) => Ok(id),
+        Ok(id) => {
+            // Classic's algebra-input form keeps the sides of the typed equation.
+            c.set_equation_form(id, EquationForm::User)?;
+            Ok(id)
+        }
         Err(e) => {
             c.equations.pop();
             c.exprs.entries.truncate(first_entry);
@@ -831,6 +851,7 @@ pub(crate) fn check(c: &Construction, d: EquationDef) -> Result<(), Error> {
     if record
         .coeffs
         .iter()
+        .chain(&record.sides)
         .any(|&e| e as usize >= c.exprs.entries.len())
     {
         return Err(Error::UnknownObject);
@@ -838,10 +859,13 @@ pub(crate) fn check(c: &Construction, d: EquationDef) -> Result<(), Error> {
     Ok(())
 }
 
-/// The objects the equation reads: the parents of its coefficients.
+/// The objects the equation reads: both its coefficients and its typed sides.
 pub(crate) fn parents(c: &Construction, d: EquationDef) -> Vec<Id> {
     let mut out = Vec::new();
-    for &e in entries(c, d) {
+    let Some((_, record)) = c.equations.get(d.index as usize) else {
+        return out;
+    };
+    for &e in record.coeffs.iter().chain(&record.sides) {
         for &p in &c.exprs.entries[e as usize].parents {
             if !out.contains(&p) {
                 out.push(p);
@@ -849,6 +873,116 @@ pub(crate) fn parents(c: &Construction, d: EquationDef) -> Vec<Id> {
         }
     }
     out
+}
+
+/// The original side of a user equation, with its free coordinate variables.
+pub(super) fn side_entry(c: &Construction, equation: Id, left: bool) -> Option<&Entry> {
+    let Def::Equation(def) = c.def(equation) else {
+        return None;
+    };
+    let (_, record) = c.equations.get(def.index as usize)?;
+    c.exprs
+        .entries
+        .get(record.sides[usize::from(!left)] as usize)
+}
+
+pub(super) fn side_parents(c: &Construction, equation: Id, left: bool) -> &[Id] {
+    side_entry(c, equation, left).map_or(&[], |entry| &entry.parents)
+}
+
+/// Evaluate a side object at a pair of coordinates.
+pub(crate) fn side_value(c: &Construction, id: Id, x: f64, y: f64) -> Option<f64> {
+    let meter = eval::Lists::new(Vec::new());
+    sample_side(c, id, x, y, &meter)
+}
+
+pub(super) fn sample_side(
+    c: &Construction,
+    id: Id,
+    x: f64,
+    y: f64,
+    meter: &eval::Lists,
+) -> Option<f64> {
+    let (Def::Expr(def), Value::FunctionNVar) = (c.def(id), c.value(id)) else {
+        return None;
+    };
+    let e = super::entry(c, def);
+    let Node::Side(equation, left) = e.nodes[e.root as usize] else {
+        return None;
+    };
+    if let Some(entry) = side_entry(c, equation, left) {
+        if !meter.charge(1) {
+            return None;
+        }
+        let env = eval::Env::Pair(x, y);
+        let ctx = eval::Ctx::<true> {
+            meter: Some(meter),
+            ..eval::Ctx::new(c, entry, &env)
+        };
+        return Some(ctx.fast(entry.root));
+    }
+    let (lhs, rhs) = match c.value(equation) {
+        Value::Line { a: 0.0, b, c } => (y, -c / b),
+        Value::Line { a, b: 0.0, c } => (x, -c / a),
+        Value::Line { a, b, c } => {
+            let g = crate::equation::equation_scale(&[a, b, c]);
+            (a / g * x + b / g * y, -c / g)
+        }
+        Value::Circle { cx, cy, r } => ((x - cx).powi(2) + (y - cy).powi(2), r * r),
+        Value::Conic { .. } => {
+            let [a, b, constant, h, u, v] = c.conic(equation)?.matrix;
+            let coefficients = [a, 2.0 * h, b, 2.0 * u, 2.0 * v, constant];
+            let g = crate::equation::equation_scale(&coefficients);
+            let lhs = coefficients[..5]
+                .iter()
+                .zip([x * x, x * y, y * y, x, y])
+                .filter(|(coefficient, _)| coefficient.abs() >= STANDARD_PRECISION)
+                .map(|(coefficient, term)| coefficient / g * term)
+                .sum();
+            (lhs, -constant / g)
+        }
+        _ => return None,
+    };
+    Some(if left { lhs } else { rhs })
+}
+
+pub(crate) fn define_side(
+    c: &mut Construction,
+    label: &str,
+    input: &str,
+) -> Option<Result<Id, String>> {
+    if !input.starts_with("LeftSide") && !input.starts_with("RightSide") {
+        return None;
+    }
+    let (command, args) = crate::script::split_call(input)?;
+    if !matches!(command, "LeftSide" | "RightSide") {
+        return None;
+    }
+    let &[arg] = args.as_slice() else {
+        return Some(Err(format!("`{command}` takes one equation")));
+    };
+    let start = c.checkpoint();
+    let result = (|| {
+        let equation = if let Some(id) = c.id(arg) {
+            id
+        } else if split_equation(arg).is_ok() {
+            let hidden = format!("\0equation{}", c.len());
+            define(c, &hidden, arg)?
+        } else {
+            return Err(format!("expected a line or conic, got `{arg}`"));
+        };
+        if !matches!(c.kind(equation), Kind::Line | Kind::Circle | Kind::Conic) {
+            return Err(format!("expected a line or conic, got `{arg}`"));
+        }
+        let node = Node::Side(equation, command == "LeftSide");
+        let parsed = super::reparse(c, Kind::FunctionNVar, &[node], &[Lit::default()], 0)
+            .ok_or("cannot build an equation side")?;
+        super::add(c, label, parsed, Kind::FunctionNVar)
+    })();
+    if result.is_err() {
+        c.discard_since(start);
+    }
+    Some(result)
 }
 
 /// Evaluates the coefficients and stores their results in their entries;
@@ -863,7 +997,7 @@ fn evaluate_all(c: &mut Construction, d: EquationDef) -> (Vec<f64>, bool) {
         let entry = &mut c.exprs.entries[index as usize];
         changed |= !entry.raw.same(raw);
         entry.raw = raw;
-        entry.dec = None;
+        entry.extra = super::StoredExtra::None;
         values.push(v);
     }
     (values, changed)

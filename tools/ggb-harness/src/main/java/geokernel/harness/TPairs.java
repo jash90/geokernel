@@ -42,7 +42,9 @@ import com.himamis.retex.renderer.share.platform.FactoryProvider;
  * writes what GeoGebra actually returns for every step to
  * `golden/t-pairs/verified.jsonl`.
  *
- * <p>Usage: {@code TPairs <scripts.jsonl> <verified.jsonl> <upstream commit>}.
+ * <p>Usage: {@code TPairs <scripts.jsonl> <verified.jsonl> <upstream commit> [type]}.
+ * A type argument refreshes only steps that now record an object of that type
+ * (including list elements), preserving the other records at the same commit.
  *
  * <p>Each method runs in a fresh app set up the way its test class sets
  * it up (see {@link Profile}); its `t`, `tRound` and `add` steps run in
@@ -114,14 +116,17 @@ public final class TPairs {
     private static final String PREVIEW = "commands/CmdImplicitSurfaceTest.java";
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 3) {
-            System.err.println("usage: TPairs <scripts.jsonl> <verified.jsonl> <upstream commit>");
+        if (args.length != 3 && args.length != 4) {
+            System.err.println("usage: TPairs <scripts.jsonl> <verified.jsonl> <upstream commit> [type]");
             System.exit(2);
         }
         String commit = args[2];
         if (!commit.matches("[0-9a-f]{40}")) {
             throw new IllegalArgumentException("not a full commit hash: " + commit);
         }
+        Path output = Path.of(args[1]);
+        String type = args.length == 4 ? args[3] : null;
+        Map<Object, String> previous = type == null ? Map.of() : previousRecords(output, commit);
         UtilFactory.setPrototypeIfNull(new UtilFactoryCommon());
         List<String> out = new ArrayList<>();
         Map<String, Object> header = new LinkedHashMap<>();
@@ -137,16 +142,48 @@ public final class TPairs {
             }
             Map<?, ?> method = (Map<?, ?>) Json.parse(line);
             for (Map<String, Object> record : runMethod(method)) {
-                out.add(Json.writeLine(record));
+                if (type == null || includesType(record.get("outputs"), type)) {
+                    out.add(Json.writeLine(record));
+                } else {
+                    String existing = previous.get(record.get("id"));
+                    if (existing == null) {
+                        throw new IllegalArgumentException("missing prior record " + record.get("id"));
+                    }
+                    out.add(existing);
+                }
                 steps++;
                 if (Boolean.FALSE.equals(record.get("matches_expected"))) {
                     differ++;
                 }
             }
         }
-        Files.write(Path.of(args[1]), out, StandardCharsets.UTF_8);
+        Files.write(output, out, StandardCharsets.UTF_8);
         System.out.printf("%d steps recorded, %d differ from the upstream expected strings%n",
                 steps, differ);
+    }
+
+    private static Map<Object, String> previousRecords(Path output, String commit) throws IOException {
+        List<String> lines = Files.readAllLines(output, StandardCharsets.UTF_8);
+        if (lines.isEmpty() || !commit.equals(((Map<?, ?>) Json.parse(lines.get(0))).get("upstream_commit"))) {
+            throw new IllegalArgumentException("the prior records need the same upstream commit");
+        }
+        Map<Object, String> records = new LinkedHashMap<>();
+        for (String line : lines.subList(1, lines.size())) {
+            records.put(((Map<?, ?>) Json.parse(line)).get("id"), line);
+        }
+        return records;
+    }
+
+    private static boolean includesType(Object value, String type) {
+        if (value instanceof List<?> items) {
+            return items.stream().anyMatch(item -> includesType(item, type));
+        }
+        if (value instanceof Map<?, ?> object) {
+            return type.equals(object.get("type"))
+                    || includesType(object.get("object"), type)
+                    || includesType(object.get("elements"), type);
+        }
+        return false;
     }
 
     private static List<Map<String, Object>> runMethod(Map<?, ?> method) {

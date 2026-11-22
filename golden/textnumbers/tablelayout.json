@@ -1,0 +1,94 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-tablelayout-001",
+      "group": "textnumbers",
+      "script": [
+        "a = 2.375",
+        "q = \"label with space\"",
+        "l = {{1, a, q}, {3, 4}}",
+        "ta = TableText(l, \"cr|_()\")",
+        "tb = TableText({2,3,5,7,11}, 2)",
+        "tc = TableText({1,2}, {4,5})",
+        "td = TableText(l, \"|/_-[]\")",
+        "te = TableText(l, \"v\")",
+        "tf = TableText({1,2}, {3,4}, {5,6})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.234 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.375 },
+          "q": { "type": "text", "defined": true, "text": "label with space" },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.375 },
+                  { "type": "text", "defined": true, "text": "label with space" }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "ta": { "type": "text", "defined": true, "text": "{\\left(\\begin{array}{|c|r|c|}\\hline 1&\\textcolor{#1C1C1F}{2.38}&\\textcolor{#1C1C1F}{\\text{label with space}} \\\\ \\hline 3&4& \\\\ \\hline \\end{array}\\right)}" },
+          "tb": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}2&3 \\\\ 5&7 \\\\ 11& \\\\ \\end{array}}" },
+          "tc": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}1&2 \\\\ 4&5 \\\\ \\end{array}}" },
+          "td": { "type": "text", "defined": true, "text": "{\\left[\\begin{array}{|lll|}\\hline 1&\\textcolor{#1C1C1F}{2.38}&\\textcolor{#1C1C1F}{\\text{label with space}} \\\\ 3&4& \\\\ \\hline \\end{array}\\right]}" },
+          "te": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}1&3 \\\\ \\textcolor{#1C1C1F}{2.38}&4 \\\\ \\textcolor{#1C1C1F}{\\text{label with space}}& \\\\ \\end{array}}" },
+          "tf": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}1&2 \\\\ 3&4 \\\\ 5&6 \\\\ \\end{array}}" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.234 },
+          "q": { "type": "text", "defined": true, "text": "label with space" },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": -1.234 },
+                  { "type": "text", "defined": true, "text": "label with space" }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "ta": { "type": "text", "defined": true, "text": "{\\left(\\begin{array}{|c|r|c|}\\hline 1&\\textcolor{#1C1C1F}{-1.23}&\\textcolor{#1C1C1F}{\\text{label with space}} \\\\ \\hline 3&4& \\\\ \\hline \\end{array}\\right)}" },
+          "tb": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}2&3 \\\\ 5&7 \\\\ 11& \\\\ \\end{array}}" },
+          "tc": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}1&2 \\\\ 4&5 \\\\ \\end{array}}" },
+          "td": { "type": "text", "defined": true, "text": "{\\left[\\begin{array}{|lll|}\\hline 1&\\textcolor{#1C1C1F}{-1.23}&\\textcolor{#1C1C1F}{\\text{label with space}} \\\\ 3&4& \\\\ \\hline \\end{array}\\right]}" },
+          "te": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}1&3 \\\\ \\textcolor{#1C1C1F}{-1.23}&4 \\\\ \\textcolor{#1C1C1F}{\\text{label with space}}& \\\\ \\end{array}}" },
+          "tf": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}1&2 \\\\ 3&4 \\\\ 5&6 \\\\ \\end{array}}" }
+        }
+      ]
+    }
+  ]
+}

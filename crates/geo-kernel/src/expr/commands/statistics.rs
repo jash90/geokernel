@@ -128,7 +128,7 @@ impl<const M: bool> Ctx<'_, M> {
             return undefined;
         }
         for k in 0..size {
-            match slot_val(lists.read(self.c, start + k)) {
+            match slot_val(&lists.read(self.c, start + k)) {
                 Val::V(a, b) => {
                     x += a;
                     y += b;

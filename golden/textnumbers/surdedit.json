@@ -1,0 +1,50 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-surdedit-001",
+      "group": "textnumbers",
+      "script": [
+        "a = 2",
+        "ta = SurdText(sqrt(a))",
+        "tb = SurdText((sqrt(5)+1)/2)",
+        "tc = SurdText(0.235)",
+        "td = SurdText(1.23456789012345)",
+        "te = SurdText(1/0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 8.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "ta": { "type": "text", "defined": true, "text": "\\sqrt{2}" },
+          "tb": { "type": "text", "defined": true, "text": "\\frac{1 + \\sqrt{5}}{2}" },
+          "tc": { "type": "text", "defined": true, "text": "\\frac{47}{200}" },
+          "td": { "type": "text", "defined": true, "text": "1.23456789012345" },
+          "te": { "type": "text", "defined": true, "text": "∞" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "ta": { "type": "text", "defined": true, "text": "2 \\; \\sqrt{2}" },
+          "tb": { "type": "text", "defined": true, "text": "\\frac{1 + \\sqrt{5}}{2}" },
+          "tc": { "type": "text", "defined": true, "text": "\\frac{47}{200}" },
+          "td": { "type": "text", "defined": true, "text": "1.23456789012345" },
+          "te": { "type": "text", "defined": true, "text": "∞" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "ta": { "type": "text", "defined": true, "text": "?" },
+          "tb": { "type": "text", "defined": true, "text": "\\frac{1 + \\sqrt{5}}{2}" },
+          "tc": { "type": "text", "defined": true, "text": "\\frac{47}{200}" },
+          "td": { "type": "text", "defined": true, "text": "1.23456789012345" },
+          "te": { "type": "text", "defined": true, "text": "∞" }
+        }
+      ]
+    }
+  ]
+}

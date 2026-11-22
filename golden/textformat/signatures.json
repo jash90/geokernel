@@ -1,0 +1,78 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textformat-signatures-001",
+      "group": "textformat",
+      "script": [
+        "a = 2",
+        "P = (1, 2)",
+        "plain = Text(a)",
+        "symbolic = Text(a, false)",
+        "anchored = Text(a, P)",
+        "anchoredSymbolic = Text(a, P, false)",
+        "tex = Text(a, P, true, true)",
+        "aligned = Text(a, P, true, true, 0)",
+        "alignedBoth = Text(a, P, true, true, 0, 1)",
+        "formula = FormulaText(a)",
+        "formulaSymbolic = FormulaText(a, false)",
+        "formulaNamed = FormulaText(a, true, true)",
+        "rotated = RotateText(\"sample\", 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.346 },
+        { "action": "move", "label": "P", "x": 3.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "plain": { "type": "text", "defined": true, "text": "2" },
+          "symbolic": { "type": "text", "defined": true, "text": "2" },
+          "anchored": { "type": "text", "defined": true, "text": "2" },
+          "anchoredSymbolic": { "type": "text", "defined": true, "text": "2" },
+          "tex": { "type": "text", "defined": true, "text": "2" },
+          "aligned": { "type": "text", "defined": true, "text": "2" },
+          "alignedBoth": { "type": "text", "defined": true, "text": "2" },
+          "formula": { "type": "text", "defined": true, "text": "2" },
+          "formulaSymbolic": { "type": "text", "defined": true, "text": "2" },
+          "formulaNamed": { "type": "text", "defined": true, "text": "a\\, = \\,2" },
+          "rotated": { "type": "text", "defined": true, "text": "\\rotatebox{57.29577951308232}{ \\text{ sample }  }" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.346 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "plain": { "type": "text", "defined": true, "text": "2.35" },
+          "symbolic": { "type": "text", "defined": true, "text": "2.35" },
+          "anchored": { "type": "text", "defined": true, "text": "2.35" },
+          "anchoredSymbolic": { "type": "text", "defined": true, "text": "2.35" },
+          "tex": { "type": "text", "defined": true, "text": "2.35" },
+          "aligned": { "type": "text", "defined": true, "text": "2.35" },
+          "alignedBoth": { "type": "text", "defined": true, "text": "2.35" },
+          "formula": { "type": "text", "defined": true, "text": "2.35" },
+          "formulaSymbolic": { "type": "text", "defined": true, "text": "2.35" },
+          "formulaNamed": { "type": "text", "defined": true, "text": "a\\, = \\,2.35" },
+          "rotated": { "type": "text", "defined": true, "text": "\\rotatebox{57.29577951308232}{ \\text{ sample }  }" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.346 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "plain": { "type": "text", "defined": true, "text": "2.35" },
+          "symbolic": { "type": "text", "defined": true, "text": "2.35" },
+          "anchored": { "type": "text", "defined": true, "text": "2.35" },
+          "anchoredSymbolic": { "type": "text", "defined": true, "text": "2.35" },
+          "tex": { "type": "text", "defined": true, "text": "2.35" },
+          "aligned": { "type": "text", "defined": true, "text": "2.35" },
+          "alignedBoth": { "type": "text", "defined": true, "text": "2.35" },
+          "formula": { "type": "text", "defined": true, "text": "2.35" },
+          "formulaSymbolic": { "type": "text", "defined": true, "text": "2.35" },
+          "formulaNamed": { "type": "text", "defined": true, "text": "a\\, = \\,2.35" },
+          "rotated": { "type": "text", "defined": true, "text": "\\rotatebox{57.29577951308232}{ \\text{ sample }  }" }
+        }
+      ]
+    }
+  ]
+}

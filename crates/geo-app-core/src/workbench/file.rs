@@ -24,7 +24,12 @@ impl Workbench {
             let imported = geo_import::import(bytes).map_err(|e| format!("{name}: {e}"))?;
             let notice = import_notice(&imported);
             return self
-                .load_imported(&imported.script.join("\n"), &imported.hidden, notice)
+                .load_imported_with_conditions(
+                    &imported.script.join("\n"),
+                    &imported.hidden,
+                    &imported.conditions,
+                    notice,
+                )
                 .map_err(|e| format!("{name}: {e}"));
         }
         let src = std::str::from_utf8(bytes).map_err(|e| format!("{name}: {e}"))?;
@@ -108,6 +113,25 @@ pub fn import_notice(imported: &geo_import::Imported) -> Option<String> {
         .count();
     let direct = imported.skipped.len() - dependents;
     let mut parts = Vec::new();
+    if !imported.mismatched.is_empty() {
+        let labels = imported
+            .mismatched
+            .iter()
+            .take(QUOTED)
+            .map(|m| geo_import::convert::quote(&m.label))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let more = imported.mismatched.len().saturating_sub(QUOTED);
+        let extra = if more > 0 {
+            format!(" i {more} więcej")
+        } else {
+            String::new()
+        };
+        parts.push(format!(
+            "Wartości różne od zapisanych w pliku: {} ({labels}{extra})",
+            imported.mismatched.len()
+        ));
+    }
     if direct > 0 {
         parts.push(format!(
             "Pominięte obiekty: {direct} (jądro ich nie obsługuje)"
@@ -115,12 +139,6 @@ pub fn import_notice(imported: &geo_import::Imported) -> Option<String> {
     }
     if dependents > 0 {
         parts.push(format!("zależne od nich: {dependents}"));
-    }
-    if !imported.mismatched.is_empty() {
-        parts.push(format!(
-            "wartości różne od zapisanych w pliku: {}",
-            imported.mismatched.len()
-        ));
     }
     if parts.is_empty() && imported.notes.is_empty() {
         return None;
@@ -137,6 +155,176 @@ pub fn import_notice(imported: &geo_import::Imported) -> Option<String> {
 mod tests {
     use super::*;
     use geo_kernel::kernel::{Construction, Kind, Value};
+
+    #[test]
+    fn saved_controls_and_conditions_survive_restoring_a_snapshot() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-controls-002.xml"),
+            "controls.xml",
+        )
+        .unwrap();
+        for (label, kind) in [
+            ("run", "button"),
+            ("field", "input box"),
+            ("empty", "input box"),
+        ] {
+            let c = wb.construction();
+            assert_eq!(c.kind(c.id(label).unwrap()).to_string(), kind);
+        }
+        for label in ["A", "s"] {
+            assert!(!wb.is_visible(wb.construction().id(label).unwrap()));
+        }
+        let a = wb.construction().id("a").unwrap();
+        assert_eq!(wb.construction().slider_interval(a), Some((0.0, 8.0)));
+        let check = wb.construction().id("check").unwrap();
+        let run = wb.construction().id("run").unwrap();
+        let field = wb.construction().id("field").unwrap();
+        assert_eq!(
+            wb.construction().def(field),
+            geo_kernel::Def::InputBox(Some(a))
+        );
+        let button = wb.construction().control(run).unwrap();
+        assert_eq!(button.caption, "Apply");
+        assert_eq!(button.scripts[0].text, "SetValue(a, 7)\nSetValue(a, 6)");
+        assert_eq!(wb.construction().value(a), Value::Number(3.0));
+        assert!(wb.set_boolean(check, true));
+        let visible = |wb: &Workbench, label| wb.is_visible(wb.construction().id(label).unwrap());
+        assert!(visible(&wb, "A"));
+        assert!(visible(&wb, "s"));
+        assert!(wb.undo());
+        assert!(!visible(&wb, "A"));
+        assert!(wb.redo());
+        assert!(visible(&wb, "s"));
+        assert!(visible(&wb, "B"));
+        assert!(wb.set_number(wb.construction().id("a").unwrap(), 1.0));
+        assert!(!visible(&wb, "B"));
+        assert_round_trip(&mut wb, "imported controls");
+    }
+
+    #[test]
+    fn review_inline_definition_is_visible_and_replayable() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-inline-001.xml"),
+            "inline.xml",
+        )
+        .unwrap();
+        let check = |wb: &mut Workbench| {
+            let row = wb.rows().iter().find(|row| row.label == "s").unwrap();
+            assert_eq!(row.head, "s = Segment(A, A + (2, 0))");
+            assert_eq!(wb.definition("s"), Some("Segment(A, A + (2, 0))"));
+        };
+        check(&mut wb);
+        let snapshot = wb.snapshot_text();
+        assert!(snapshot.contains("s = Segment(A, A + (2, 0))"));
+        assert!(!snapshot.contains("$arg("));
+        wb.load_script(&snapshot).unwrap();
+        check(&mut wb);
+        wb.run_line("definition = Text(s, false)").unwrap();
+        let c = wb.construction();
+        assert_eq!(
+            c.text(c.id("definition").unwrap()),
+            Some("Segment(A, A + (2, 0))")
+        );
+        let svg = geo_kernel::svg::render(c, geo_kernel::svg::View::fit(c), 800, 600);
+        assert!(svg.contains("Segment(A, A + (2, 0))"));
+    }
+
+    #[test]
+    fn review_saved_slider_bounds_use_later_objects_and_survive_replay() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-slider-bounds-001.xml"),
+            "slider-bounds.xml",
+        )
+        .unwrap();
+        let id = |wb: &Workbench, label| wb.construction().id(label).unwrap();
+        let value = |wb: &Workbench, label| wb.construction().value(id(wb, label));
+        assert_eq!(value(&wb, "n"), Value::Number(5.0));
+        assert_eq!(value(&wb, "m"), Value::Number(1.0));
+        assert_eq!(value(&wb, "q"), Value::Number(10.0));
+        assert!(wb
+            .notice
+            .as_deref()
+            .unwrap_or("")
+            .contains("slider `k` bounds: maximum"));
+        assert!(wb.set_number(id(&wb, "k"), -4.0));
+        assert_eq!(value(&wb, "k"), Value::Number(-3.0));
+        assert!(wb.set_number(id(&wb, "a"), 4.0));
+        assert!(wb.set_number(id(&wb, "n"), 99.0));
+        assert_eq!(value(&wb, "n"), Value::Number(7.0));
+        assert!(wb.set_number(id(&wb, "m"), -99.0));
+        assert_eq!(value(&wb, "m"), Value::Number(3.0));
+        assert_round_trip(&mut wb, "saved slider bounds");
+        assert!(wb.set_number(id(&wb, "n"), -50.0));
+        assert_eq!(value(&wb, "n"), Value::Number(-50.0));
+        assert!(wb.set_number(id(&wb, "m"), 50.0));
+        assert_eq!(value(&wb, "m"), Value::Number(50.0));
+
+        let mut c = Construction::new();
+        let slider = c.add_saved_slider("n", 9.0, 0.0, 5.0).unwrap();
+        assert_eq!(c.value(slider), Value::Number(5.0));
+    }
+
+    #[test]
+    fn review_point_scripts_survive_without_running() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-object-scripts-001.xml"),
+            "object-scripts.xml",
+        )
+        .unwrap();
+        assert!(wb
+            .notice
+            .as_deref()
+            .unwrap_or("")
+            .contains("scripts are not executed"));
+        let snapshot = wb.snapshot_text();
+        for source in [
+            "SetValue(a, 7)",
+            "SetValue(a, 8)",
+            r#"ggbApplet.setValue("a", 9);"#,
+            r#"ggbApplet.setValue("a", 10);"#,
+        ] {
+            assert!(snapshot.contains(&geo_kernel::kernel::control::encode_text(source)));
+        }
+        assert_round_trip(&mut wb, "inert point scripts");
+        let c = wb.construction();
+        let scripts: Vec<_> = c
+            .object_scripts("A")
+            .iter()
+            .map(|script| (script.language.as_str(), script.event.as_str()))
+            .collect();
+        assert_eq!(
+            scripts,
+            [
+                ("ggbscript", "click"),
+                ("ggbscript", "update"),
+                ("javascript", "dragEnd"),
+                ("javascript", "change")
+            ]
+        );
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Number(2.0));
+    }
+
+    #[test]
+    fn inline_inputs_stay_anonymous_through_edits_and_replay() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-inline-001.xml"),
+            "inline.xml",
+        )
+        .unwrap();
+        assert_eq!(wb.object_ids().count(), 13);
+        let point = wb.construction().id("A").unwrap();
+        assert!(wb.move_point(point, 4.0, 1.0));
+        assert_round_trip(&mut wb, "inline command inputs");
+        assert!(wb.undo());
+        assert_eq!(wb.object_ids().count(), 13);
+        assert!(wb.redo());
+        assert_eq!(wb.object_ids().count(), 13);
+    }
 
     /// Everything a reader of the document can see: each object's label,
     /// kind, value and visibility.
@@ -216,7 +404,7 @@ mod tests {
     }
 
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 37;
+    const GOLDEN_FILES: usize = 39;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]
@@ -931,6 +1119,112 @@ mod tests {
     }
 
     #[test]
+    fn imported_path_coordinates_and_angle_styles_survive_a_workbench_snapshot() {
+        let cases = [
+            include_bytes!("../../../../golden/ggb/saved/saved-paths-001.xml").as_slice(),
+            include_bytes!("../../../../golden/ggb/saved/saved-review-001.xml").as_slice(),
+        ];
+        for xml in cases {
+            let mut wb = Workbench::default();
+            wb.load_bytes(xml, "construction.xml").unwrap();
+            assert!(!wb
+                .notice
+                .as_deref()
+                .unwrap_or_default()
+                .starts_with("Wartości różne od zapisanych w pliku"));
+            let c = wb.construction();
+            if let Some(angle) = c.id("reflex") {
+                assert_eq!(
+                    c.angle_style(angle),
+                    Some(geo_kernel::kernel::angle::AngleStyle::Reflex)
+                );
+                assert_eq!(wb.log.rhs_of("A"), Some("(sqrt(2), 1)"));
+            } else {
+                assert!(c.path_state(c.id("F").unwrap()).is_some());
+            }
+            assert_round_trip(&mut wb, "imported construction");
+        }
+    }
+
+    #[test]
+    fn saved_texts_have_free_and_dependent_rows_and_follow_edits() {
+        use geo_kernel::kernel::text::TextPosition;
+
+        let mut wb = Workbench::default();
+        let mut reference = Workbench::default();
+        for (w, bytes) in [
+            (
+                &mut wb,
+                include_bytes!("../../../../golden/ggb/saved/saved-texts-001.ggb").as_slice(),
+            ),
+            (
+                &mut reference,
+                include_bytes!("../../../../golden/ggb/saved/saved-texts-002.ggb").as_slice(),
+            ),
+        ] {
+            w.load_bytes(bytes, "text.ggb").unwrap();
+            let hidden = w.construction().id("hiddenText").unwrap();
+            assert!(!w.is_visible(hidden));
+            let rows = w.rows();
+            assert!(rows.iter().find(|r| r.label == "marker").unwrap().free);
+            assert!(!rows.iter().find(|r| r.label == "readout").unwrap().free);
+        }
+        let p = wb.construction().id("P").unwrap();
+        let a = wb.construction().id("a").unwrap();
+        let c = reference.construction();
+        let Value::Point { x, y } = c.value(c.id("P").unwrap()) else {
+            panic!("expected a point");
+        };
+        let Value::Number(n) = c.value(c.id("a").unwrap()) else {
+            panic!("expected a number");
+        };
+        let readout = |w: &mut Workbench| {
+            w.rows()
+                .iter()
+                .find(|r| r.label == "readout")
+                .unwrap()
+                .value
+                .clone()
+        };
+        let before = readout(&mut wb);
+        assert!(wb.move_point(p, x, y));
+        assert!(wb.set_number(a, n));
+        assert_ne!(readout(&mut wb), before);
+        assert_eq!(readout(&mut wb), readout(&mut reference));
+        assert_round_trip(&mut wb, "saved texts");
+
+        let Value::Point { x, y } = wb.construction().value(p) else {
+            panic!("expected the point after the round trip move");
+        };
+        assert!(wb.delete(p));
+        let c = wb.construction();
+        assert!(c.id("readout").is_none());
+        assert_eq!(
+            c.text_position(c.id("marker").unwrap()),
+            Some(TextPosition::World { x, y })
+        );
+        assert!(wb.undo());
+        let c = wb.construction();
+        assert_eq!(
+            c.text_position(c.id("marker").unwrap()),
+            Some(TextPosition::Point(c.id("P").unwrap()))
+        );
+    }
+
+    #[test]
+    fn a_saved_value_mismatch_is_named_first_in_the_file_notice() {
+        let mut wb = Workbench::default();
+        let xml = include_bytes!("../../../../golden/ggb/saved/saved-doubletangent-001.xml");
+        wb.load_bytes(xml, "construction.xml").unwrap();
+        assert!(wb
+            .notice
+            .as_deref()
+            .unwrap()
+            .starts_with("Wartości różne od zapisanych w pliku: 1 (P_{2})"));
+        assert!(wb.construction().id("P_{2}").is_some());
+    }
+
+    #[test]
     fn the_notice_counts_skipped_dependents_mismatches_and_notes() {
         use geo_import::{Imported, Mismatch, Skipped};
         let skipped = |label: &str, reason: &str| Skipped {
@@ -957,8 +1251,8 @@ mod tests {
         };
         assert_eq!(
             import_notice(&imported).unwrap(),
-            "Pominięte obiekty: 1 (jądro ich nie obsługuje), zależne od nich: 2, \
-             wartości różne od zapisanych w pliku: 1, wczytane linie: 7. Uwagi: continuity"
+            "Wartości różne od zapisanych w pliku: 1 (d), Pominięte obiekty: 1 (jądro ich nie obsługuje), \
+             zależne od nich: 2, wczytane linie: 7. Uwagi: continuity"
         );
     }
 }

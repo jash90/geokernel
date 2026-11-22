@@ -134,6 +134,7 @@ fn tokens_of(k: Kind) -> &'static [&'static str] {
         Kind::List => &["list"],
         Kind::Function => &["function"],
         Kind::Curve => &["curve"],
+        Kind::Text => &["text"],
         Kind::Locus => &["locus"],
         _ => &[],
     }
@@ -160,7 +161,7 @@ fn token_matches(token: &str, kind: Kind) -> bool {
         ),
         "region" => matches!(
             kind,
-            Kind::Arc | Kind::Circle | Kind::Conic | Kind::Polygon | Kind::Sector
+            Kind::Arc | Kind::Circle | Kind::Conic | Kind::Polygon | Kind::Sector | Kind::Function
         ),
         _ => tokens_of(kind).contains(&token),
     }
@@ -267,6 +268,9 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     if let Some(&k) = labels.get(a) {
         return Some(k);
     }
+    if a.starts_with('"') && a.ends_with('"') {
+        return Some(Kind::Text);
+    }
     if a == "true" || a == "false" {
         return Some(Kind::Boolean);
     }
@@ -316,9 +320,9 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
 /// The right-hand sides of a script, without comments.
 fn definitions(script: &[String]) -> impl Iterator<Item = &str> {
     script.iter().filter_map(|l| {
-        l.split('#')
-            .next()
-            .and_then(|l| l.split_once('='))
+        geo_kernel::script::split_comment(l)
+            .0
+            .split_once('=')
             .map(|(_, rhs)| rhs)
     })
 }
@@ -339,11 +343,25 @@ pub fn script_uses_form(
                 if matches!(form, "inequality" | "interval") {
                     return matches!(args.as_slice(), [arg] if inline_inequality(arg));
                 }
-                if form == "text" {
-                    return matches!(args.as_slice(), [arg] if arg.len() >= 2
-                        && arg.starts_with('"') && arg.ends_with('"'));
+                let mut kinds: Vec<Option<Kind>> =
+                    args.iter().map(|a| arg_kind(a, labels)).collect();
+                if matches!(command, "If" | "CountIf" | "KeepIf") {
+                    match (args.as_slice(), kinds.as_mut_slice()) {
+                        ([test, ..], [first, ..]) if inline_inequality(test) => {
+                            *first = Some(Kind::Function);
+                        }
+                        ([test, variable, _], [first, binding, _])
+                            if matches!(command, "CountIf" | "KeepIf")
+                                && variable.chars().all(is_ident_char)
+                                && test.contains(['<', '>', '≤', '≥', '=']) =>
+                        {
+                            *first = Some(Kind::Boolean);
+                            // Only the name of the bound local matters for this form.
+                            *binding = Some(Kind::Number);
+                        }
+                        _ => {}
+                    }
                 }
-                let kinds: Vec<Option<Kind>> = args.iter().map(|a| arg_kind(a, labels)).collect();
                 // Length's conic overload measures the arc of a conic part.
                 if command == "Length"
                     && form == "conic"

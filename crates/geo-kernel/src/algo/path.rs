@@ -6,6 +6,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPointOnPath.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDispatcher.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoClosestPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDistancePointObject.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoPathParameter.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdPoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoJoinPoints.java
@@ -21,6 +22,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAxes.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoRay.java
@@ -54,7 +56,9 @@ use crate::tol::STANDARD_PRECISION;
 /// `PathMover.OPEN_BORDER_OFFSET`.
 const OPEN_BORDER_OFFSET: f64 = 1e-5;
 
-/// The kinds of objects a point can be put on.
+/// The kinds of objects a point can be put on. A conic is a path in
+/// GeoGebra whatever its type (`GeoConicND` implements `Path`; the behaviour
+/// per type is [`super::conic_path`]).
 pub(crate) const PATH: &[Kind] = &[
     Kind::Line,
     Kind::Segment,
@@ -109,6 +113,7 @@ pub struct PathState {
     temp_t: f64,
     temp_ty: i32,
     region: RegionState,
+    function_bounds: Option<[f64; 2]>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -163,7 +168,22 @@ impl PathState {
             temp_t: f64::NAN,
             temp_ty: -1,
             region: RegionState::Boundary,
+            function_bounds: None,
         }
+    }
+
+    /// Restore the coordinates before any dependent is constructed.
+    pub(crate) fn saved(
+        c: &Construction,
+        path: Id,
+        x: f64,
+        y: f64,
+        bounds: Option<[f64; 2]>,
+    ) -> Self {
+        let mut state = Self::new();
+        state.function_bounds = bounds;
+        state.set_coords(&geom(c, path), x, y);
+        state
     }
 
     /// The raw path parameter, in the range of the path (not normalised).
@@ -189,6 +209,7 @@ impl PathState {
             && b(self.temp_t, o.temp_t)
             && self.temp_ty == o.temp_ty
             && self.region.same(o.region)
+            && self.function_bounds == o.function_bounds
     }
 
     /// Whether every field is a number or NaN that the state can hold:
@@ -438,6 +459,10 @@ pub(crate) enum Geom<'a> {
     },
     /// An arc or sector (`GeoConicPart`) with its record.
     Arc(ArcData),
+    Function {
+        c: &'a Construction,
+        id: Id,
+    },
 }
 
 /// A `GeoSegment`: its line through the start and end point
@@ -546,6 +571,14 @@ pub(crate) fn line_point_changed(
     };
 }
 
+/// Project a finite point onto the carrier and read the limited path's parameter.
+pub(super) fn line_parameter_at(g: (f64, f64, f64), start: (f64, f64), point: (f64, f64)) -> f64 {
+    let mut state = PathState::new();
+    state.set_coords_2d(point.0, point.1, 1.0);
+    line_point_changed(g, Some((start.0, start.1, 1.0)), &mut state);
+    state.parameter()
+}
+
 /// `GeoLine.pathChanged(Coords, PathParameter)`.
 pub(crate) fn line_path_changed(
     (x, y, z): (f64, f64, f64),
@@ -588,6 +621,9 @@ impl Geom<'_> {
         match self {
             Geom::Undefined => false,
             Geom::Arc(a) => a.defined,
+            // a conic that is undefined still carries its record, which a
+            // move of a point on it projects onto (`Geom::Conic` below)
+            Geom::Conic(d) => d.defined,
             _ => true,
         }
     }
@@ -603,6 +639,12 @@ impl Geom<'_> {
             Geom::Polygon { n, .. } => (0.0, *n as f64),
             Geom::PolyLine { n, .. } => (0.0, *n as f64 - 1.0),
             Geom::Arc(a) => a.range(),
+            Geom::Function { c, .. } => {
+                let [min, max, ..] = c
+                    .locus_view()
+                    .unwrap_or(crate::kernel::locus::HEADLESS_VIEW);
+                (min, max)
+            }
         }
     }
 
@@ -627,12 +669,27 @@ impl Geom<'_> {
             &Geom::Polygon { c, id, n } => polygonal_point_changed(c, id, n, true, p),
             &Geom::PolyLine { c, id, n } => polygonal_point_changed(c, id, n, false, p),
             Geom::Arc(a) => a.point_changed(p),
+            Geom::Function { c, id } => {
+                let (x, y) = (p.x / p.z, p.y / p.z);
+                let at_x = c.function_value(*id, x).unwrap_or(f64::NAN);
+                // A saved point is already on the graph up to rounding.
+                // A drag off a polynomial graph uses the nearest point.
+                p.t = if (at_x - y).abs() <= 4.0 * f64::EPSILON * at_x.abs().max(1.0) {
+                    x
+                } else {
+                    closest_function_x(c, *id, x, y).unwrap_or(x)
+                };
+                self.path_changed(p);
+            }
         }
     }
 
     /// `Path.pathChanged`: puts the point at its parameter.
     pub(crate) fn path_changed(&self, p: &mut PathState) {
         match self {
+            Geom::Function { c, id } => {
+                p.set_coords_2d(p.t, c.function_value(*id, p.t).unwrap_or(f64::NAN), 1.0);
+            }
             Geom::Undefined => p.set_coords_2d(f64::NAN, f64::NAN, f64::NAN),
             Geom::Line { g, start } => line_path_changed(*g, *start, p),
             Geom::Ray { g, start } => {
@@ -680,6 +737,44 @@ impl Geom<'_> {
             Geom::Arc(a) => a.path_changed(p),
         }
     }
+}
+
+/// `AlgoDistancePointObject.closestValPoly`: minimize the squared distance
+/// by solving `(t - x) + (f(t) - y) f'(t) = 0`.
+fn closest_function_x(c: &Construction, id: Id, x: f64, y: f64) -> Option<f64> {
+    let work = crate::expr::IntersectionWork::new();
+    let (mut coefficients, denominator) = work.fraction(c, id)?;
+    let &[scale] = denominator.as_slice() else {
+        return None;
+    };
+    if scale == 0.0 || !work.charge((coefficients.len() * coefficients.len()) as u64) {
+        return None;
+    }
+    for coefficient in &mut coefficients {
+        *coefficient /= scale;
+    }
+    let mut stationary = vec![0.0; 2 * coefficients.len().saturating_sub(1).max(1)];
+    stationary[0] = -x;
+    stationary[1] = 1.0;
+    for (degree, &coefficient) in coefficients.iter().enumerate().skip(1) {
+        let derivative = degree as f64 * coefficient;
+        stationary[degree - 1] -= y * derivative;
+        for (i, &value) in coefficients.iter().enumerate() {
+            stationary[degree - 1 + i] += derivative * value;
+        }
+    }
+    let roots = super::intersect::conics::graph_roots(&stationary, &|units| work.charge(units));
+    let mut closest = None;
+    let mut best = f64::INFINITY;
+    for t in roots {
+        let value = coefficients.iter().rev().fold(0.0, |v, &a| v * t + a);
+        let distance = (x - t).powi(2) + (y - value).powi(2);
+        if distance + STANDARD_PRECISION < best {
+            best = distance;
+            closest = Some(t);
+        }
+    }
+    closest
 }
 
 /// Vertex `i` of a polygon or polyline whose vertices are all defined.
@@ -791,24 +886,25 @@ fn defined_line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
         Def::ConicPart(d @ ConicPartDef::TangentLine { conic, .. }) => {
             hom(super::conic_parts::tangent_point_on(c, d, conic).flatten())
         }
-        // `AlgoAxes`: the midpoint of the conic
-        Def::ConicPart(ConicPartDef::Axis { conic, .. }) => {
-            hom(c.conic(conic).map(|d| (d.midpoint[0], d.midpoint[1])))
-        }
+        // `AlgoAxes` and `AlgoAsymptote`: the midpoint of the conic
+        Def::ConicPart(
+            ConicPartDef::Axis { conic, .. } | ConicPartDef::Asymptote { conic, .. },
+        ) => hom(c.conic(conic).map(|d| (d.midpoint[0], d.midpoint[1]))),
         _ => return None,
     })
 }
 
 fn line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
     defined_line_start(c, line).or_else(|| {
-        let &(x, y, _) = c.frozen_line_starts.get(&line)?;
+        let &(x, y, _, _) = c.frozen_line_starts.get(&line)?;
         Some((x, y, 1.0))
     })
 }
 
 /// `GeoLine.PathMoverLine.init` installs the foot from the origin once,
 /// on the actual line. Later moves of the line leave this point in place.
-pub(crate) fn freeze_line_start(c: &mut Construction, path: Id) {
+/// `owner` is the locus whose computation installed it.
+pub(crate) fn freeze_line_start(c: &mut Construction, path: Id, owner: Id) {
     if let Geom::Line {
         g: (a, b, z),
         start: None,
@@ -817,7 +913,51 @@ pub(crate) fn freeze_line_start(c: &mut Construction, path: Id) {
         let norm = a * a + b * b;
         let order = c.frozen_line_starts.len();
         c.frozen_line_starts
-            .insert(path, (-z * a / norm, -z * b / norm, order));
+            .insert(path, (-z * a / norm, -z * b / norm, order, Some(owner)));
+    }
+}
+
+impl Construction {
+    /// The start points a locus froze on lines without one, as
+    /// `(label, x, y, owner)` in the order they were frozen: the state of the
+    /// lines that a rebuild can carry over (GeoGebra keeps the installed
+    /// start when the locus is deleted). `owner` is the label of the locus
+    /// that installed it, so a rebuild that drops that locus entry knows
+    /// which starts it has to place itself.
+    pub fn frozen_line_starts(&self) -> Vec<(String, f64, f64, String)> {
+        let mut starts: Vec<(usize, String, f64, f64, String)> = self
+            .frozen_line_starts
+            .iter()
+            .map(|(&id, &(x, y, order, owner))| {
+                let owner = owner
+                    .filter(|&o| o.index() < self.len())
+                    .map(|o| self.label(o).to_owned())
+                    .unwrap_or_default();
+                (order, self.label(id).to_owned(), x, y, owner)
+            })
+            .collect();
+        starts.sort_by_key(|&(order, ..)| order);
+        starts
+            .into_iter()
+            .map(|(_, label, x, y, owner)| (label, x, y, owner))
+            .collect()
+    }
+
+    /// Freezes `(x, y)` as the start point of the line `label`, when it is a
+    /// line that no algorithm gave a start point: [`Self::frozen_line_starts`]
+    /// read it back bit for bit (without an owner: the entry that froze it
+    /// is gone when a rebuild installs one). Returns whether it was
+    /// installed.
+    pub fn set_frozen_line_start(&mut self, label: &str, x: f64, y: f64) -> bool {
+        let Some(id) = self.id(label) else {
+            return false;
+        };
+        if self.kind(id) != Kind::Line || defined_line_start(self, id).is_some() {
+            return false;
+        }
+        let order = self.frozen_line_starts.len();
+        self.frozen_line_starts.insert(id, (x, y, order, None));
+        true
     }
 }
 
@@ -827,6 +967,18 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
     // it to place the point (see `Geom::is_defined`)
     if let Some(a) = c.arc(path) {
         return Geom::Arc(a);
+    }
+    // a general conic keeps the parts of its last defined state when its
+    // classification fails (`classifyConic` returns before it rewrites
+    // them), so a point moved on an undefined one is still projected onto
+    // that record (`GeoPoint.setCoords` asks `pointChanged` whatever the
+    // path's state); only the update of a point on it sees it undefined
+    // (`AlgoPointOnPath` checks `isDefined`, [`Geom::is_defined`])
+    if c.kind(path) == Kind::Conic {
+        if let Some(d) = c.conic(path) {
+            return Geom::Conic(d);
+        }
+        return Geom::Undefined;
     }
     let value = c.value(path);
     if !value.is_defined() {
@@ -846,7 +998,7 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
             start: (x, y),
         },
         (_, Value::Segment { x1, y1, x2, y2 }) => Geom::Segment(Seg::new((x1, y1), (x2, y2))),
-        (Kind::Circle | Kind::Conic, _) => match c.conic(path) {
+        (Kind::Circle, _) => match c.conic(path) {
             Some(d) if d.defined => Geom::Conic(d),
             _ => Geom::Undefined,
         },
@@ -858,6 +1010,11 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
             Some(n) => Geom::PolyLine { c, id: path, n },
             None => Geom::Undefined,
         },
+        (Kind::Function, Value::Function)
+            if crate::expr::function_signature(c, path).is_some_and(|sig| !sig.boolean) =>
+        {
+            Geom::Function { c, id: path }
+        }
         _ => Geom::Undefined,
     }
 }
@@ -1042,7 +1199,9 @@ fn path_parameter(c: &Construction, point: Id) -> Option<Value> {
     if !st.is_defined() || st.value().is_none() {
         return None;
     }
-    let (min, max) = geom(c, path).range();
+    let (min, max) = st
+        .function_bounds
+        .map_or_else(|| geom(c, path).range(), |[a, b]| (a, b));
     Some(Value::Number(to_normalized(st.t, min, max)))
 }
 
@@ -1133,7 +1292,9 @@ impl Group for PathDef {
                 c.expect(start, POINT)?;
                 length.check(c)
             }
-            PathDef::On { path } => c.expect(path, PATH),
+            PathDef::On { path } => c
+                .expect(path, &[Kind::Function])
+                .or_else(|_| c.expect(path, PATH)),
             PathDef::OnParam { path, param } => {
                 c.expect(path, PATH)?;
                 c.expect(param, NUMBER)
@@ -1191,7 +1352,7 @@ impl Group for PathDef {
     }
 }
 
-const REGIONS: &[Kind] = &[
+pub(super) const REGIONS: &[Kind] = &[
     Kind::Polygon,
     Kind::Circle,
     Kind::Conic,

@@ -194,41 +194,6 @@ impl Construction {
         self.propagate_dirty(dirty, 0);
     }
 
-    /// The interval of a free number made by `Slider(min, max)`; `None`
-    /// for any other object.
-    pub fn slider_interval(&self, id: Id) -> Option<(f64, f64)> {
-        match self.defs.get(id.0)? {
-            Def::Number(_) => self
-                .sliders
-                .binary_search_by_key(&id.0, |&(owner, _, _)| owner)
-                .ok()
-                .map(|slot| (self.sliders[slot].1, self.sliders[slot].2)),
-            _ => None,
-        }
-    }
-
-    /// Adds a slider, `Slider(min, max)` (`CmdSlider`): a free number with an
-    /// interval, which `Locus(Q, slider)` runs through and which
-    /// [`Construction::set_number`] keeps its value in. A new number is 0,
-    /// put in the interval (`GeoNumeric.setIntervalMin` and `Max`).
-    pub fn add_slider(&mut self, label: &str, min: f64, max: f64) -> Result<Id, Error> {
-        if !(min.is_finite() && max.is_finite()) {
-            return Err(Error::NotFinite);
-        }
-        let reversed = min > max;
-        let value = if reversed {
-            0.0
-        } else {
-            0.0_f64.clamp(min, max)
-        };
-        let id = self.add(label, Def::Number(value))?;
-        self.sliders.push((id.0, min, max));
-        if reversed {
-            self.values[id.0] = Value::Undefined;
-        }
-        Ok(id)
-    }
-
     pub(super) fn store_locus(&mut self, id: Id, data: LocusData) -> Value {
         let value = data.value();
         self.loci.push((id.0, data));
@@ -494,17 +459,18 @@ fn recompute(c: &mut Construction, i: usize) {
     }
 }
 
-/// The points of a locus for the current construction.
-pub(crate) fn record(c: &mut Construction, d: LocusDef) -> LocusData {
+/// The points of a locus for the current construction. `owner` is the locus
+/// object being computed: a line whose start it freezes remembers it, so a
+/// rebuild that drops this entry knows what it has to place itself.
+pub(crate) fn record(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData {
     match d {
-        LocusDef::Path { point, mover } => record_path(c, point, mover),
+        LocusDef::Path { point, mover } => record_path(c, point, mover, owner),
         LocusDef::Slider { point, slider } => record_slider(c, point, slider),
         LocusDef::Ode { point, source } => record_ode(c, point, source),
         LocusDef::SlopeField(source) => record_slope_field(c, source),
     }
 }
 
-/// `AlgoLocusND.compute` for `Locus(Q, P)`.
 // AlgoIntegralODE uses classical Runge-Kutta with step 0.02 and integrates
 // the numerator and denominator in both time directions for 20 units.
 fn record_ode(c: &Construction, point: Id, source: Id) -> LocusData {
@@ -591,7 +557,8 @@ fn record_slope_field(c: &Construction, source: Id) -> LocusData {
     locus_from_points(points)
 }
 
-fn record_path(c: &mut Construction, q: Id, p: Id) -> LocusData {
+/// `AlgoLocusND.compute` for `Locus(Q, P)`.
+fn record_path(c: &mut Construction, q: Id, p: Id, owner: Id) -> LocusData {
     let (Def::Path(def), Some(path), Some(state)) = (c.def(p), path_of(c, p), c.path_state(p))
     else {
         return LocusData::default();
@@ -625,7 +592,7 @@ fn record_path(c: &mut Construction, q: Id, p: Id) -> LocusData {
     } else {
         st.set_t(min);
     }
-    path::freeze_line_start(c, path);
+    path::freeze_line_start(c, path, owner);
     let copy = PathCopy { id: p, path, st };
     let mover = Mover::new(copy.st.parameter(), min, max, closed, false);
     let data = sample(c, q, &chain, copy, mover, false);

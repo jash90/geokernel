@@ -165,7 +165,20 @@ impl Walker<'_> {
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..)
-            | Node::Local(_) => f64::NAN,
+            | Node::Local(..)
+            | Node::Apply2(..)
+            | Node::Side(..)
+            | Node::Relation { .. }
+            | Node::Text
+            | Node::TextCmd(..)
+            | Node::Base { .. }
+            | Node::FunctionObject(_)
+            | Node::Extremum(..)
+            | Node::PolynomialPart(..)
+            | Node::Algebra(..)
+            | Node::ObjectDefined(_)
+            | Node::Defined(_)
+            | Node::Filter { .. } => f64::NAN,
         })
     }
 
@@ -351,7 +364,7 @@ impl Walker<'_> {
                 return None;
             }
             match self.node(i) {
-                Node::Var | Node::VarY | Node::Local(_) => return Some(true),
+                Node::Var | Node::VarY | Node::Local(..) => return Some(true),
                 node => stack.extend(children(&node)),
             }
         }

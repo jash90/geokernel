@@ -1,0 +1,45 @@
+{
+  "schema": 2,
+  "id": "saved-text-equations-002",
+  "script": [
+    "a = 2",
+    "l: y = a x + 1",
+    "p: y = a x^2 - x + 1",
+    "A = (0, 1)",
+    "B = (1, 3)",
+    "e = Line(A, B)",
+    "g = Line(A, B)",
+    "r = Line(A, B)",
+    "lText = Text(l)",
+    "pTex = FormulaText(p)",
+    "eText = Text(e)",
+    "gText = Text(g)",
+    "rText = Text(r)"
+  ],
+  "objects": {
+    "a": { "type": "number", "defined": true, "value": -3.0 },
+    "l": { "type": "line", "defined": true, "a": 3.0, "b": 1.0, "c": -1.0 },
+    "p": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "parabola",
+      "matrix": [3.0, 0.0, -1.0, 0.0, 0.5, 0.5],
+      "vertex": [-0.16666666666666666, 1.0833333333333333],
+      "p": 0.16666666666666666,
+      "eigenvectors": [
+        [-0.0, -1.0],
+        [-1.0, 0.0]
+      ]
+    },
+    "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+    "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+    "e": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": -1.0 },
+    "g": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": -1.0 },
+    "r": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": -1.0 },
+    "lText": { "type": "text", "defined": true, "text": "y = -3 x + 1" },
+    "pTex": { "type": "text", "defined": true, "text": "y\\, = \\,-3 \\; x^{2} - x + 1" },
+    "eText": { "type": "text", "defined": true, "text": "y = 2x + 1" },
+    "gText": { "type": "text", "defined": true, "text": "-2x + y - 1 = 0" },
+    "rText": { "type": "text", "defined": true, "text": "X = (0, 1) + u (1, 2)" }
+  }
+}

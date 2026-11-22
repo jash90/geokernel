@@ -110,6 +110,8 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Ray => &[Kind::Ray],
         Kind::Boolean => &[Kind::Boolean],
         Kind::Function => &[Kind::Function],
+        Kind::Text => &[Kind::Text],
+        Kind::FunctionNVar => &[Kind::FunctionNVar],
         Kind::Polygon => &[Kind::Polygon],
         Kind::PolyLine => &[Kind::PolyLine],
         Kind::List => &[Kind::List],
@@ -118,6 +120,7 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
         Kind::Curve => &[Kind::Curve],
+        Kind::Button | Kind::InputBox => &[],
     }
 }
 
@@ -468,12 +471,16 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         | Value::Number(_)
         | Value::Bool(_)
         | Value::Function
+        | Value::Text
+        | Value::FunctionNVar
         | Value::List { .. }
         | Value::Conic { .. }
         | Value::Arc { .. }
         | Value::Sector { .. }
         | Value::Locus { .. }
         | Value::Curve { .. }
+        | Value::Button
+        | Value::InputBox
         | Value::Undefined => return None,
     })
 }

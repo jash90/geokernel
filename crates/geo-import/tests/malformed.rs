@@ -266,7 +266,7 @@ fn skipped_objects_carry_their_dependents() {
         + "<command name=\"NoSuchCommand\"><input a0=\"A\" a1=\"B\"/><output a0=\"f\"/></command>"
         + &line("g", "A", "f")
         + &line("h", "g", "B")
-        + "<command name=\"Circle\"><input a0=\"A\" a1=\"(1, 2)\"/><output a0=\"k\"/></command>"
+        + "<command name=\"Circle\"><input a0=\"A\" a1=\"(MISSING, 2)\"/><output a0=\"k\"/></command>"
         + "<command name=\"Circle\"><input a0=\"A\" a1=\"B\"/><output a0=\"c\"/></command>"
         + "<expression label=\"e\" exp=\"A + B\"/><element type=\"numeric\" label=\"e\"><value val=\"1\"/></element>"
         + "<command name=\"Segment\"><input a0=\"A\" a1=\"e\"/><output a0=\"s\"/></command>";
@@ -285,7 +285,9 @@ fn skipped_objects_carry_their_dependents() {
     assert!(r.skipped[2]
         .reason
         .contains("depends on the skipped object `g`"));
-    assert!(r.skipped[3].reason.contains("expression"));
+    assert!(r.skipped[3]
+        .reason
+        .contains("cannot evaluate command input"));
     assert!(r.skipped[4].reason.contains("expression"));
     assert_eq!(r.skipped[4].kind, "numeric");
     assert!(r.skipped[5]

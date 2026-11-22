@@ -50,7 +50,7 @@ pub(crate) mod boundary;
 #[path = "intersect_common_tangents.rs"]
 pub(crate) mod common_tangents;
 #[path = "intersect_conics.rs"]
-mod conics;
+pub(super) mod conics;
 pub(crate) use conics::polynomial_roots;
 #[path = "intersect_function_roots.rs"]
 mod function_roots;
@@ -869,7 +869,7 @@ pub(crate) fn normalized_coefficients(g: [f64; 3]) -> [f64; 3] {
 }
 
 /// `GeoLine.isOnFullLine` for a finite point.
-fn on_full_line(g: [f64; 3], (x, y): (f64, f64), eps: f64) -> bool {
+pub(super) fn on_full_line(g: [f64; 3], (x, y): (f64, f64), eps: f64) -> bool {
     let simple_length = g[0].abs() + g[1].abs();
     (g[0] * x + g[1] * y + g[2]).abs() < eps * simple_length
 }

@@ -1463,8 +1463,7 @@ cases = ["geomclosure-pointlength-001", "geomextras-lengthpoint-001"]
 [[form]]
 command = "Length"
 form = "text"
-cases = ["geomclosure-textlength-001"]
-difference = "geometry-command-arguments: `Length(text)`"
+cases = ["geomclosure-textlength-001", "textobjects-dynamic-001", "textobjects-unicode-002"]
 
 [[form]]
 command = "Locus"
@@ -1624,6 +1623,428 @@ cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-002", "matrixdi
 command = "Dilate"
 form = "list,number,point"
 cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-003"]
+
+[[form]]
+command = "Mod"
+form = "function,function"
+cases = ["algebralogic-polynomial-001", "algebralogic-polynomial-002"]
+
+[[form]]
+command = "Div"
+form = "function,function"
+cases = ["algebralogic-polynomial-001", "algebralogic-polynomial-002"]
+
+[[form]]
+command = "Division"
+form = "function,function"
+cases = ["algebralogic-polynomial-001", "algebralogic-polynomial-002"]
+
+[[form]]
+command = "Division"
+form = "number,number"
+cases = ["algebralogic-integer-004", "algebralogic-integer-011", "algebralogic-integer-013", "algebralogic-integer-015", "algebralogic-integer-016"]
+
+[[form]]
+command = "GCD"
+form = "list"
+cases = ["algebralogic-integer-001", "algebralogic-integer-022", "algebralogic-integer-023", "algebralogic-integer-026"]
+
+[[form]]
+command = "LCM"
+form = "list"
+cases = ["algebralogic-integer-002", "algebralogic-integer-022", "algebralogic-integer-023", "algebralogic-integer-027"]
+
+[[form]]
+command = "PrimeFactors"
+form = "number"
+cases = ["algebralogic-integer-003", "algebralogic-integer-028"]
+
+[[form]]
+command = "Divisors"
+form = "number"
+cases = ["algebralogic-integer-005", "algebralogic-integer-028"]
+
+[[form]]
+command = "DivisorsList"
+form = "number"
+cases = ["algebralogic-integer-006", "algebralogic-integer-028"]
+
+[[form]]
+command = "DivisorsSum"
+form = "number"
+cases = ["algebralogic-integer-007", "algebralogic-integer-028", "algebraedge-integer-001", "algebraedge-integer-002"]
+
+[[form]]
+command = "IsPrime"
+form = "number"
+cases = ["algebralogic-integer-008", "algebralogic-integer-028"]
+
+[[form]]
+command = "IsInteger"
+form = "number"
+cases = ["algebralogic-logic-008", "algebralogic-integer-028"]
+
+[[form]]
+command = "CommonDenominator"
+form = "number,number"
+cases = ["algebralogic-integer-009", "algebralogic-integer-029"]
+
+[[form]]
+command = "Min"
+form = "interval"
+cases = ["algebralogic-extrema-003", "algebralogic-extrema-006"]
+
+[[form]]
+command = "Max"
+form = "interval"
+cases = ["algebralogic-extrema-006"]
+
+[[form]]
+command = "Min"
+form = "list,list"
+cases = ["algebralogic-extrema-004", "algebralogic-extrema-009", "algebralogic-extrema-012"]
+
+[[form]]
+command = "Max"
+form = "list,list"
+cases = ["algebralogic-extrema-005", "algebralogic-extrema-009", "algebralogic-extrema-012"]
+
+[[form]]
+command = "Min"
+form = "function,number,number"
+cases = [
+    "algebralogic-extrema-006", "algebralogic-extrema-013",
+    "algebraedge-minimum-001", "algebraedge-minimum-002", "algebraedge-minimum-003",
+    "algebraedge-minimum-004", "algebraedge-minimum-005", "algebraedge-minimum-006",
+]
+
+[[form]]
+command = "Max"
+form = "function,number,number"
+cases = [
+    "algebralogic-extrema-006", "algebralogic-extrema-013",
+    "algebraedge-maximum-001", "algebraedge-maximum-002", "algebraedge-maximum-003",
+    "algebraedge-maximum-004", "algebraedge-maximum-005", "algebraedge-maximum-006",
+]
+
+[[form]]
+command = "CountIf"
+form = "function,list"
+cases = ["algebralogic-logic-001", "algebralogic-logic-011", "algebralogic-logic-015"]
+
+[[form]]
+command = "CountIf"
+form = "any,any,list"
+cases = ["algebralogic-logic-002", "algebralogic-logic-013"]
+
+[[form]]
+command = "KeepIf"
+form = "function,list"
+cases = ["algebralogic-logic-003", "algebralogic-logic-012", "algebralogic-logic-015"]
+
+[[form]]
+command = "KeepIf"
+form = "boolean,any,list"
+cases = ["algebralogic-logic-004", "algebralogic-logic-016"]
+
+[[form]]
+command = "Defined"
+form = "any"
+cases = ["algebralogic-logic-013", "algebralogic-logic-014"]
+
+[[form]]
+command = "If"
+form = "function,any,..."
+cases = ["algebralogic-logic-015"]
+
+[[form]]
+command = "ToBase"
+form = "number,number"
+cases = ["algebralogic-base-001", "algebralogic-base-003", "algebraedge-base-001"]
+
+[[form]]
+command = "FromBase"
+form = "text,number"
+cases = ["algebralogic-base-002", "algebralogic-base-003", "algebralogic-base-004", "algebralogic-base-007"]
+
+[[form]]
+command = "LeftSide"
+form = "line"
+cases = ["algebralogic-sides-002", "algebralogic-sides-003", "algebralogic-sides-005", "algebrareviewshared-sides-001"]
+
+[[form]]
+command = "RightSide"
+form = "line"
+cases = ["algebralogic-sides-002", "algebralogic-sides-003", "algebralogic-sides-005", "algebrareviewshared-sides-001"]
+
+[[form]]
+command = "LeftSide"
+form = "conic"
+cases = ["algebralogic-sides-001", "algebralogic-sides-006"]
+
+[[form]]
+command = "RightSide"
+form = "conic"
+cases = ["algebralogic-sides-001", "algebralogic-sides-006"]
+
+[[form]]
+command = "Dot"
+form = "any,any"
+cases = ["algebralogic-products-001", "algebralogic-products-002", "algebralogic-products-003", "algebralogic-products-004", "algebralogic-products-007"]
+
+[[form]]
+command = "Cross"
+form = "list,list"
+cases = ["algebralogic-products-005", "algebralogic-products-006", "algebralogic-products-007"]
+
+[[form]]
+command = "IsInRegion"
+form = "point,region"
+cases = ["algebralogic-logic-013", "algebralogic-logic-019", "algebralogic-logic-020", "algebralogic-logic-021", "algebralogic-logic-023", "algebralogic-logic-024"]
+
+[[form]]
+command = "Relation"
+form = "any,any"
+cases = [
+    "algebralogic-relation-001", "algebralogic-relation-002", "algebralogic-relation-004", "algebralogic-relation-005", "algebralogic-relation-006",
+    "relationreview-paths-001", "relationreview-paths-002", "relationreview-segments-001", "relationreview-vectors-001", "relationreview-polygons-001", "relationreview-arcs-001",
+    "relationreview-conics-001", "relationreview-conics-002", "relationreview-asymptotes-001",
+]
+
+[[form]]
+command = "Relation"
+form = "list"
+cases = ["algebralogic-relation-001", "algebralogic-relation-002", "algebralogic-relation-003"]
+
+[[form]]
+command = "Asymptote"
+form = "conic"
+cases = ["relationreview-asymptotes-001"]
+
+[[form]]
+command = "Text"
+form = "any"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean,boolean,number"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean,boolean,number,number"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "LaTeX"
+form = "any"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `LaTeX(any)`, `LaTeX(any, boolean)`, `LaTeX(any, boolean, boolean)`"
+
+[[form]]
+command = "LaTeX"
+form = "any,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `LaTeX(any)`, `LaTeX(any, boolean)`, `LaTeX(any, boolean, boolean)`"
+
+[[form]]
+command = "LaTeX"
+form = "any,boolean,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `LaTeX(any)`, `LaTeX(any, boolean)`, `LaTeX(any, boolean, boolean)`"
+
+[[form]]
+command = "LetterToUnicode"
+form = "text"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "TextToUnicode"
+form = "text"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "UnicodeToText"
+form = "list"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "UnicodeToLetter"
+form = "number"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "Ordinal"
+form = "number"
+cases = ["textnumbers-ordinalupstream-001"]
+
+[[form]]
+command = "FractionText"
+form = "number"
+cases = ["textnumbers-fractionupstream-001"]
+
+[[form]]
+command = "FractionText"
+form = "point"
+cases = ["textnumbers-fractionupstream-001"]
+
+[[form]]
+command = "FractionText"
+form = "number,boolean"
+cases = ["textnumbers-fractionupstream-001"]
+
+[[form]]
+command = "ScientificText"
+form = "number"
+cases = ["textnumbers-scientificupstream-001"]
+
+[[form]]
+command = "ScientificText"
+form = "number,number"
+cases = ["textnumbers-scientificedit-001"]
+
+[[form]]
+command = "SurdText"
+form = "number"
+cases = ["textnumbers-surdupstream-001"]
+
+[[form]]
+command = "SurdText"
+form = "number,list"
+cases = ["textnumbers-surdupstream-001"]
+
+[[form]]
+command = "TableText"
+form = "list"
+cases = ["textnumbers-tableshapes-001"]
+
+[[form]]
+command = "TableText"
+form = "list,text"
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "TableText"
+form = "list,list"
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "TableText"
+form = "list,number"
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "TableText"
+form = "list,text,number"
+cases = ["textnumbers-tableupstream-001"]
+
+[[form]]
+command = "TableText"
+form = "list,list,..."
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "VerticalText"
+form = "text"
+cases = ["textformat-vertical-001"]
+
+[[form]]
+command = "VerticalText"
+form = "text,point"
+cases = ["textformat-vertical-002"]
+
+[[form]]
+command = "RotateText"
+form = "text,number"
+cases = ["textformat-signatures-001"]
+
+[[form]]
+command = "RotateText"
+form = "text,number,point"
+cases = ["textformat-rotate-002"]
+
+[[form]]
+command = "ReplaceAll"
+form = "text,text,text"
+cases = ["textobjects-replace-001"]
+
+[[form]]
+command = "Split"
+form = "text,list"
+cases = ["textobjects-split-001"]
+
+[[form]]
+command = "IndexOf"
+form = "text,text"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "IndexOf"
+form = "text,text,number"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "Take"
+form = "text,number"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "Take"
+form = "text,number,number"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number,boolean"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number,number"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number,number,boolean"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "CurveCartesian"
+form = "number,number,number,number,number"
+cases = ["importgaps-curve-001"]
 
 [[form]]
 command = "ConvexHull"

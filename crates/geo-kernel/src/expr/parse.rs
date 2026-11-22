@@ -26,7 +26,7 @@ use super::lex::{split_bars, tokens, Tok, Token};
 use super::math::{self, PI_180};
 use super::names::{binary_builtin, builtin_name, unary_builtin};
 use super::types::check;
-use super::{Bin, ListOp, Lit, Node, Ty, Un, NONE};
+use super::{Bin, Elem, ListOp, Lit, Node, Ty, Un, NONE};
 use crate::algo::{intersect, vector};
 use crate::kernel::{Construction, Id, Kind};
 use std::f64::consts::{E, PI};
@@ -44,6 +44,7 @@ const PI_DECIMAL: &str = "3.1415926535897932385";
 const E_DECIMAL: &str = "2.7182818284590452353";
 
 /// A parsed and type-checked expression.
+#[derive(Clone)]
 pub(crate) struct Parsed {
     pub(crate) nodes: Vec<Node>,
     /// What GeoGebra's number object of each constant is (see [`Lit`]).
@@ -186,7 +187,7 @@ pub(super) struct Parser<'a> {
     nesting: u32,
     parents: Vec<Id>,
     inputs: Vec<Id>,
-    uses_var: bool,
+    pub(super) uses_var: bool,
     uses_y: bool,
     /// Whether `y` reads as the second variable of an equation, not as the
     /// coordinate function (see [`parse_equation`]).
@@ -197,7 +198,7 @@ pub(super) struct Parser<'a> {
     /// single-letter variables (see [`parse_in`]).
     split_names: bool,
     /// The variables of the `Sequence`s being parsed, outermost first.
-    pub(super) locals: Vec<String>,
+    pub(super) locals: Vec<(String, Elem)>,
 }
 
 impl Parser<'_> {
@@ -233,10 +234,7 @@ impl Parser<'_> {
     /// A constant that is a `MySpecialDouble` in GeoGebra, with its decimal.
     fn push_special(&mut self, v: f64, dec: Option<Dec>) -> u32 {
         let i = self.push(Node::Num(v));
-        self.lits[i as usize] = Lit {
-            special: true,
-            dec: dec.filter(|_| v.is_finite()),
-        };
+        self.lits[i as usize] = Lit::Special(dec.filter(|_| v.is_finite()));
         i
     }
 
@@ -244,7 +242,7 @@ impl Parser<'_> {
         self.nodes[i as usize]
     }
 
-    fn read(&mut self, id: Id, input: bool) {
+    pub(super) fn read(&mut self, id: Id, input: bool) {
         if !self.parents.contains(&id) {
             self.parents.push(id);
         }
@@ -295,7 +293,7 @@ impl Parser<'_> {
     /// sum with the next, and the comparisons are joined left to right by
     /// `AND_INTERVAL`, a conjunction.
     fn comparison(&mut self) -> Result<u32, String> {
-        let mut left = self.sum()?;
+        let mut left = self.range()?;
         let mut joined: Option<u32> = None;
         loop {
             let op = match self.peek() {
@@ -308,7 +306,7 @@ impl Parser<'_> {
                 _ => break,
             };
             self.pos += 1;
-            let right = self.sum()?;
+            let right = self.range()?;
             let link = self.push(Node::Bin(op, left, right));
             joined = Some(match joined {
                 None => link,
@@ -317,6 +315,16 @@ impl Parser<'_> {
             left = right;
         }
         Ok(joined.unwrap_or(left))
+    }
+
+    /// The ellipsis creates a list from the two bounds.
+    fn range(&mut self) -> Result<u32, String> {
+        let mut left = self.sum()?;
+        while self.eat(&Tok::Range) {
+            let right = self.sum()?;
+            left = self.push(Node::Range(left, right, NONE));
+        }
+        Ok(left)
     }
 
     /// sum = product (('+' | '-') product)*
@@ -528,8 +536,8 @@ impl Parser<'_> {
         match self.node(e) {
             Node::Num(v) => {
                 let lit = &self.lits[e as usize];
-                if lit.special && self.bare[e as usize] {
-                    let dec = lit.dec.as_ref().map(Dec::negated);
+                if lit.special() && self.bare[e as usize] {
+                    let dec = lit.decimal().map(Dec::negated);
                     let n = self.push_special(-v, dec);
                     self.bare[n as usize] = true;
                     n
@@ -641,6 +649,11 @@ impl Parser<'_> {
         };
         self.pos += 1;
         match token.tok {
+            Tok::Text(text) => {
+                let id = self.push(Node::Text);
+                self.lits[id as usize] = Lit::Text(text.into());
+                Ok(id)
+            }
             Tok::Num(v) => {
                 // `MySpecialDouble.toDecimal`: the literal as written
                 let dec = Dec::parse(&self.src[token.start..token.end]);
@@ -728,12 +741,16 @@ impl Parser<'_> {
     /// or a command (`Parser.functionOrCommand`, `FunctionParser`).
     fn name(&mut self, text: &str, call: bool) -> Result<u32, String> {
         // the variable of a `Sequence` hides an object of the same name
-        if let Some(depth) = self.locals.iter().rposition(|l| l == text) {
-            let local = self.push(Node::Local(depth as u32));
+        if let Some(depth) = self.locals.iter().rposition(|(name, _)| name == text) {
+            let local = self.push(Node::Local(depth as u32, self.locals[depth].1));
             if !call {
                 return Ok(local);
             }
             let arg = self.element()?;
+            if matches!(text, "x" | "y") && self.is_point_or_vector(arg) {
+                let coordinate = if text == "x" { Un::X } else { Un::Y };
+                return Ok(self.push(Node::Un(coordinate, arg)));
+            }
             return Ok(self.push(Node::Bin(Bin::Mul, local, arg)));
         }
         if self.parameter == Some(text) {
@@ -811,10 +828,22 @@ impl Parser<'_> {
             };
         }
         if let Some(id) = self.c.id(text) {
+            if self.equation && matches!(self.c.def(id), crate::Def::XAxis | crate::Def::YAxis) {
+                return Err("a line cannot be used in an expression".into());
+            }
             self.read(id, true);
+            if self.c.kind(id) == Kind::FunctionNVar {
+                if !call {
+                    return Ok(self.push(Node::FunctionObject(id)));
+                }
+                return match self.arguments()?[..] {
+                    [a, b] => Ok(self.push(Node::Apply2(id, a, b))),
+                    _ => Err(format!("the function `{text}` takes two arguments")),
+                };
+            }
             if self.c.kind(id) == Kind::Function {
                 if !call {
-                    return Err(format!("the function `{text}` needs an argument"));
+                    return Ok(self.push(Node::FunctionObject(id)));
                 }
                 return match self.arguments()?[..] {
                     [a] => Ok(self.push(Node::Apply(id, a))),
@@ -897,6 +926,79 @@ impl Parser<'_> {
         Err(format!("unknown object `{text}`"))
     }
 
+    /// Top-level comma positions in the upcoming call.
+    pub(super) fn argument_commas(&self) -> Vec<usize> {
+        let mut depth = 0usize;
+        let mut commas = Vec::new();
+        for (j, t) in self.toks.iter().enumerate().skip(self.pos) {
+            match t.tok {
+                Tok::LParen | Tok::LBrace => depth += 1,
+                Tok::RParen | Tok::RBrace => {
+                    depth = depth.saturating_sub(1);
+                    if depth == 0 {
+                        break;
+                    }
+                }
+                Tok::Comma if depth == 1 => commas.push(j),
+                _ => {}
+            }
+        }
+        commas
+    }
+
+    pub(super) fn name_at(&self, i: usize) -> Option<&str> {
+        match &self.toks.get(i)?.tok {
+            Tok::Name { text, call: false } => Some(text),
+            _ => None,
+        }
+    }
+
+    pub(super) fn object_at(&self, i: usize) -> Option<Id> {
+        let name = self.name_at(i)?;
+        if self.locals.iter().any(|(local, _)| local == name) {
+            return None;
+        }
+        self.c.id(name)
+    }
+
+    pub(super) fn kind_at(&self, i: usize, kind: Kind) -> Option<Id> {
+        self.object_at(i).filter(|&id| self.c.kind(id) == kind)
+    }
+
+    pub(super) fn list_element_type(&self, i: u32) -> Option<Elem> {
+        match check(self.c, &self.nodes, i).ok()?.0[i as usize] {
+            Ty::List(elem) => Some(elem),
+            _ => None,
+        }
+    }
+
+    pub(super) fn list_template_type(&self, i: u32) -> Option<Elem> {
+        let ty = self.list_element_type(i)?;
+        if ty != Elem::Any {
+            return Some(ty);
+        }
+        match self.node(i) {
+            Node::List(first, len) if len > 0 => {
+                let (types, ..) = check(self.c, &self.nodes, first).ok()?;
+                Some(super::types::elem_of(types[first as usize]))
+            }
+            Node::Obj(id) => {
+                let element = self.c.elements(id)?.get(0)?;
+                Some(match element {
+                    super::Element::List(_) => Elem::List,
+                    super::Element::Text(_) => Elem::Text,
+                    super::Element::Value(kind, _) => match kind {
+                        Kind::Point | Kind::Vector => Elem::Vec,
+                        Kind::Boolean => Elem::Bool,
+                        Kind::Number | Kind::Angle => Elem::Num,
+                        _ => return None,
+                    },
+                })
+            }
+            _ => None,
+        }
+    }
+
     /// A command of a list (of anything else it is the command of the
     /// script parser of the same name): `form` makes its node from the
     /// arguments and whether each is a list, `None` when they are not what
@@ -954,6 +1056,10 @@ impl Parser<'_> {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::List(_)))
     }
 
+    pub(super) fn is_text(&self, i: u32) -> bool {
+        matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if tys[i as usize] == Ty::Text)
+    }
+
     pub(super) fn uses_function_variable(&self, i: u32) -> bool {
         matches!(self.node(i), Node::Apply(_, arg) if matches!(self.node(arg), Node::Var))
             || check(self.c, &self.nodes, i).is_ok_and(|(_, _, _, vars)| vars[i as usize] != 0)
@@ -1006,32 +1112,32 @@ impl Parser<'_> {
         self.parse_arguments(false)
     }
 
-    fn parse_arguments(&mut self, takes_function: bool) -> Result<Vec<u32>, String> {
+    pub(super) fn parse_arguments(&mut self, takes_function: bool) -> Result<Vec<u32>, String> {
         self.expect(&Tok::LParen, "(")?;
-        let f = self.toks.get(self.pos).and_then(|token| {
-            if takes_function && matches!(token.tok, Tok::Name { call: false, .. }) {
-                return self
-                    .c
-                    .id(&self.src[token.start..token.end])
-                    .filter(|&id| self.c.kind(id) == Kind::Function);
-            }
-            None
-        });
-        let first = if let Some(f) = f {
-            self.pos += 1;
-            self.read(f, true);
-            self.uses_var = true;
-            let x = self.push(Node::Var);
-            self.push(Node::Apply(f, x))
-        } else {
-            self.expression()?
-        };
-        let mut args = vec![first];
+        let mut args = vec![self.argument(takes_function)?];
         while self.eat(&Tok::Comma) {
-            args.push(self.expression()?);
+            args.push(self.argument(takes_function)?);
         }
         self.expect(&Tok::RParen, ")")?;
         Ok(args)
+    }
+
+    fn argument(&mut self, takes_function: bool) -> Result<u32, String> {
+        if takes_function
+            && matches!(
+                self.toks.get(self.pos + 1).map(|t| &t.tok),
+                Some(Tok::Comma | Tok::RParen)
+            )
+        {
+            if let Some(f) = self.kind_at(self.pos, Kind::Function) {
+                self.pos += 1;
+                self.read(f, true);
+                self.uses_var = true;
+                let x = self.push(Node::Var);
+                return Ok(self.push(Node::Apply(f, x)));
+            }
+        }
+        self.expression()
     }
 
     /// A command call such as `Distance(A, B)`, read by the script parser.

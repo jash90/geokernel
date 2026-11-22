@@ -35,9 +35,8 @@
 //!   line is accepted as soon as the kernel runs it;
 //! * a new type of free element (a polygon, a text): one arm in
 //!   `convert::Converter::free_object`;
-//! * an expression (`<expression exp="a + b">` or an argument such as
-//!   `2 * r`): `convert::expression_line` for objects and
-//!   `convert::pass_argument` for arguments; both return `None` today.
+//! * an expression (`<expression exp="a + b">`):
+//!   `convert::expression_line` adapts saved syntax for the kernel parser.
 
 pub mod archive;
 pub mod convert;
@@ -55,13 +54,15 @@ pub struct Imported {
     pub skipped: Vec<Skipped>,
     /// Labels of imported objects that the file hides (`<show object="false">`).
     pub hidden: Vec<String>,
+    /// Object labels and the boolean labels that govern their visibility.
+    pub conditions: Vec<(String, String)>,
     /// The kernel settings of the file.
     pub settings: Settings,
     /// Things worth telling the user that are not an object (for example that
     /// the file was saved with continuity on).
     pub notes: Vec<String>,
-    /// Objects the kernel computed differently from the value saved in the
-    /// file (relative tolerance `1e-9`). The object stays in the script.
+    /// Objects whose kind or value disagrees with the file (relative
+    /// tolerance `1e-9`). The object stays in the script.
     pub mismatched: Vec<Mismatch>,
 }
 

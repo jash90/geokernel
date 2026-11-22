@@ -1,0 +1,301 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "relationreview-paths-001",
+      "group": "relationreview",
+      "script": [
+        "A = (0,0)",
+        "B = (100,0)",
+        "P = (50,0.000000005)",
+        "g = Line(A,B)",
+        "s = Segment(A,B)",
+        "r = Ray(A,B)",
+        "v = Vector(A,B)",
+        "ml = Relation(P,g)",
+        "ms = Relation(P,s)",
+        "mr = Relation(r,P)",
+        "mv = Relation(v,P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 100.0000005, "y": 0.0 },
+        { "action": "move", "label": "P", "x": -5.0E-7, "y": 0.0 },
+        { "action": "move", "label": "P", "x": -2.0E-6, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 101.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 50.0, "y": 5.0E-9 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "ml": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "ms": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "mr": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "mv": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 100.0000005, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "ml": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "ms": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "mr": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "mv": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -5.0E-7, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "ml": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "ms": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "mr": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "mv": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0E-6, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "ml": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "ms": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=false"
+            ]
+          },
+          "mr": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=false"
+            ]
+          },
+          "mv": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=false"
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 101.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 100.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 100.0, "c": 0.0 },
+          "v": { "type": "vector", "defined": true, "x": 100.0, "y": 0.0 },
+          "ml": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "ms": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=false"
+            ]
+          },
+          "mr": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "mv": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=false"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "relationreview-paths-002",
+      "group": "relationreview",
+      "script": [
+        "A = (0,0)",
+        "B = (4,0)",
+        "Q = (0,0)",
+        "s = Segment(A,B)",
+        "P = Point(s)",
+        "m = Relation(P,s)",
+        "n = Relation(Q,s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=false"
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "IsOnPath=true"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
