@@ -20,6 +20,12 @@ fn centre(h: &Harness<'_, App>) -> (f64, f64) {
     t.screen_to_world(0.5 * w, 0.5 * h)
 }
 
+/// The world point at the top left corner of the drawing area: it stands
+/// still while a drag moves an object and not the view.
+fn top_left(h: &Harness<'_, App>) -> (f64, f64) {
+    h.state().view.unwrap().1.screen_to_world(0.0, 0.0)
+}
+
 /// Where the world point `(x, y)` is drawn now (harness coordinates).
 fn on_screen(h: &Harness<'_, App>, x: f64, y: f64) -> Pos2 {
     let (rect, t) = h.state().view.unwrap();
