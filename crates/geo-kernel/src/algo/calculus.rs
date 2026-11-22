@@ -3643,10 +3643,26 @@ fn derivative_discards_a_tree_that_exceeds_the_depth_limit() {
     let mut b = Builder::empty();
     let x = b.push(Node::Var);
     let condition = b.push(Node::Bool(false));
+    // nested through the payloads: each level is one step deeper
     let mut root = x;
     for _ in 0..=expr::MAX_DEPTH {
-        root = b.push(Node::If(IfMode::List, condition, x, root));
+        root = b.push(Node::If(IfMode::List, condition, root, x));
     }
     let entry = expr::function_entry(&c, b.finish(&c, root).unwrap());
     assert!(rule_derivative(&c, &entry, 1).is_none());
+}
+
+#[test]
+fn derivative_walks_a_long_condition_list_at_one_depth() {
+    // the pieces of one `IF_LIST` are siblings (a 600-piece spline)
+    let c = Construction::new();
+    let mut b = Builder::empty();
+    let x = b.push(Node::Var);
+    let condition = b.push(Node::Bool(false));
+    let mut root = x;
+    for _ in 0..600 {
+        root = b.push(Node::If(IfMode::List, condition, x, root));
+    }
+    let entry = expr::function_entry(&c, b.finish(&c, root).unwrap());
+    assert!(rule_derivative(&c, &entry, 1).is_some());
 }
