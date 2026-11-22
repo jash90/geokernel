@@ -62,4 +62,24 @@ cases.case("inequality", [
     "P = Corner(q)",
 ], [])
 
+# CommandsTest.cmdVertex combines linear, quadratic and cubic borders.
+cases.case("vertex", [
+    num("h", 2),
+    "q(x,y) = x > y && x > 0 && x^2 + y^2 < h && 4x > y^3 && 4y > x^3",
+    "P = Vertex(q)",
+], [setn("h", 0), setn("h", 3), setn("h", 2)])
+cases.case("vertex", [
+    num("h", 2), "P = Vertex(x > 0 && y > 0 && x + y < h)",
+], [setn("h", -1), setn("h", 3)])
+cases.case("text", [
+    pt("A", -1, 2), num("n", 4), 't = Text("Corner", A)', "P = Vertex(t, n)",
+], [setn("n", 0), mv("A", 2, 3), setn("n", 2)])
+cases.case("checkbox", [
+    "b = true", num("n", 1), "P = Vertex(b, n)",
+], [setn("n", 3), setn("n", 5), setn("n", 2)])
+cases.case("vertex", [
+    "q(x,y) = x > 0 && y > 0 && x + y < 2 && y > sin(x) - 10",
+    "P = Vertex(q)",
+], [])
+
 cases.write()

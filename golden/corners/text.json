@@ -51,6 +51,48 @@
           "P": { "type": "point", "defined": true, "x": -2.06, "y": 3.82 }
         }
       ]
+    },
+    {
+      "id": "corners-text-002",
+      "group": "corners",
+      "script": [
+        "A = (-1, 2)",
+        "n = 4",
+        "t = Text(\"Corner\", A)",
+        "P = Vertex(t, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 3.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "t": { "type": "text", "defined": true, "text": "Corner" },
+          "P": { "type": "point", "defined": true, "x": -1.06, "y": 2.3000000000000003 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "Corner" },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "Corner" },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "text", "defined": true, "text": "Corner" },
+          "P": { "type": "point", "defined": true, "x": 2.78, "y": 2.8200000000000003 }
+        }
+      ]
     }
   ]
 }

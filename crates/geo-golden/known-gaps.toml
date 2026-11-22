@@ -801,3 +801,18 @@ mismatches = ["0:P", "1:P", "2:P", "4:P"]
 id = "corners-inequality-002"
 reason = "A sinusoidal border prevents polynomial expansion of the full inequality tree. The reference can still return the three vertices from pairs of linear borders."
 mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}"]
+
+[[gap]]
+id = "corners-text-002"
+reason = "A text corner reads the drawable's font metrics and anchor bounds. The kernel has no drawable bounds."
+mismatches = ["0:P", "3:P"]
+
+[[gap]]
+id = "corners-checkbox-001"
+reason = "A Boolean corner reads the checkbox drawable. This headless drawable reports a zero-size rectangle at the pixel origin, and the kernel has no checkbox bounds."
+mismatches = ["0:P", "1:P", "3:P"]
+
+[[gap]]
+id = "corners-vertex-003"
+reason = "The bounded polynomial solver cannot expand the sinusoidal border. The reference can still use it as a filter for crossings of the three linear borders."
+mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}"]
