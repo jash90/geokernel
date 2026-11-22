@@ -176,21 +176,6 @@ mismatches = ["0:D", "0:E", "0:F", "3:D", "3:E", "3:F"]
 # lists
 
 [[gap]]
-id = "lists-index-017"
-reason = "an index past the end of a list of lists: GeoGebra gives its template element, a list holding one undefined number (so `Length` is 1); the kernel gives an undefined list"
-mismatches = ["2:c", "2:m"]
-
-[[gap]]
-id = "lists-objects-025"
-reason = "an index past the end of a list object of lists: GeoGebra gives its template element, a list holding one undefined number; the kernel gives an undefined list (as lists-index-017)"
-mismatches = ["2:p", "3:p", "4:p"]
-
-[[gap]]
-id = "lists-objects-026"
-reason = "`Length` of an index past the end of a list object of lists: 1 for GeoGebra's template element, undefined in the kernel (as lists-index-017)"
-mismatches = ["2:c", "3:c", "4:c"]
-
-[[gap]]
 id = "lists-if-014"
 reason = "arithmetic on `If(a > 0, l)` with a false condition: GeoGebra's undefined helper list keeps the elements of the branch it last copied, each set undefined, and the sum is a defined list of undefined numbers; the kernel gives an undefined list"
 mismatches = ["1:p", "6:p"]
@@ -949,3 +934,33 @@ mismatches = ["0:b"]
 id = "tpairfixes-fnundef-030"
 reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `1 ?` after dropping the factor 1; the kernel asks whether the function is defined"
 mismatches = ["0:b"]
+
+[[gap]]
+id = "calculus-sums-012"
+reason = "The two rectangle sums of a constant function over an infinite interval return positive infinity in the reference. The kernel requires finite interval endpoints."
+mismatches = ["0:d", "0:u"]
+
+[[gap]]
+id = "georestsmall-ifgeometry-003"
+reason = "The selected circle has an infinite radius, which Radius returns as positive infinity in the reference. The kernel represents that circle as undefined and Radius is undefined."
+mismatches = ["1:d"]
+
+[[gap]]
+id = "infinity-legacy-010"
+reason = "The rectangle sums return positive infinity for a constant function over an infinite interval. The kernel requires finite interval endpoints."
+mismatches = ["0:d", "0:u"]
+
+[[gap]]
+id = "infinity-legacy-075"
+reason = "Radius of the selected circle with an infinite radius is positive infinity in the reference. The kernel represents the circle as undefined."
+mismatches = ["1:d"]
+
+[[gap]]
+id = "infinity-legacy-113"
+reason = "RemoveUndefined in the reference retains projective points with infinite coordinates. The kernel drops those points from the list."
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "infinity-legacy-114"
+reason = "RemoveUndefined in the reference retains projective points with infinite coordinates. The kernel drops those points from the list."
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]

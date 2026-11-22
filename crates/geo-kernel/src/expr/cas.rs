@@ -13,17 +13,6 @@ use crate::{Construction, Kind};
 pub(super) use functional::{evaluate as function_at, function, print_poly, FunctionResult};
 use input::read;
 
-pub(super) fn scalar(c: &Construction, entry: &Entry, root: u32) -> Option<Rat> {
-    read(
-        c,
-        entry,
-        root,
-        &input::variables(),
-        &mut Work::new(&|_| true),
-    )?
-    .scalar()
-}
-
 pub(super) const NAMES: &[&str] = &[
     "Expand",
     "Factor",

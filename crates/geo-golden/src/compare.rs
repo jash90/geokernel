@@ -352,11 +352,6 @@ pub fn compare_sampled(
     }
     let data = match (&expected.data, actual) {
         (None, Value::Undefined) => return Ok(Sign::NotApplicable),
-        // Schema 1 and 2 record a number that is infinite in GeoGebra as
-        // undefined; such a record cannot refuse the kernel's infinity.
-        (None, Value::Number(v)) if expected.legacy_infinite_number && v.is_infinite() => {
-            return Ok(Sign::NotApplicable)
-        }
         (None, _) => return Err("expected undefined, kernel has a value".into()),
         (Some(_), Value::Undefined) => return Err("expected a value, kernel is undefined".into()),
         (Some(d), _) => d,
@@ -756,7 +751,6 @@ mod tests {
     fn num(v: f64) -> Expected {
         Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Number,
             data: Some(ExpectedData::Number(v)),
         }
@@ -765,7 +759,6 @@ mod tests {
     fn line(a: f64, b: f64, c: f64) -> Expected {
         Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Line,
             data: Some(ExpectedData::Line { a, b, c }),
         }
@@ -797,32 +790,25 @@ mod tests {
         assert!(n(1e308, inf).is_err());
         assert!(n(0.0, -inf).is_err());
         assert!(compare(&num(inf), Kind::Number, &Value::Undefined).is_err());
-        // an undefined number of schema 3 refuses an infinite one; one of
-        // the older schemas, which wrote both the same way, cannot
-        let undefined = |legacy| Expected {
+        let undefined = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: legacy,
             kind: Kind::Number,
             data: None,
         };
-        assert!(compare(&undefined(false), Kind::Number, &Value::Number(inf)).is_err());
-        assert!(compare(&undefined(true), Kind::Number, &Value::Number(inf)).is_ok());
-        assert!(compare(&undefined(true), Kind::Number, &Value::Number(-inf)).is_ok());
-        assert!(compare(&undefined(true), Kind::Number, &Value::Number(1.0)).is_err());
-        assert!(compare(&undefined(true), Kind::Number, &Value::Undefined).is_ok());
+        assert!(compare(&undefined, Kind::Number, &Value::Number(inf)).is_err());
+        assert!(compare(&undefined, Kind::Number, &Value::Number(-inf)).is_err());
+        assert!(compare(&undefined, Kind::Number, &Value::Undefined).is_ok());
     }
 
     #[test]
     fn undefined_must_match_in_both_directions() {
         let undefined = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Point,
             data: None,
         };
         let defined = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Point,
             data: Some(ExpectedData::Point { x: 1.0, y: 2.0 }),
         };
@@ -835,7 +821,6 @@ mod tests {
     fn boolean(b: bool) -> Expected {
         Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Boolean,
             data: Some(ExpectedData::Bool(b)),
         }
@@ -854,7 +839,6 @@ mod tests {
     fn a_boolean_defined_on_one_side_only_fails() {
         let undefined = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Boolean,
             data: None,
         };
@@ -882,7 +866,6 @@ mod tests {
     fn type_mismatch_fails_even_when_undefined() {
         let e = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Point,
             data: None,
         };
@@ -935,7 +918,6 @@ mod tests {
         // Rays count too.
         let e = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Ray,
             data: Some(ExpectedData::Ray {
                 x: 1.0,
@@ -968,7 +950,6 @@ mod tests {
         samples[0] = None;
         let e = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Function,
             data: Some(ExpectedData::Function { samples }),
         };
@@ -998,7 +979,6 @@ mod tests {
     fn vectors_are_compared_by_coordinates() {
         let e = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Vector,
             data: Some(ExpectedData::Vector { x: 3.0, y: -0.0 }),
         };
@@ -1007,7 +987,6 @@ mod tests {
         assert!(compare(&e, Kind::Point, &Value::Point { x: 3.0, y: 0.0 }).is_err());
         let undefined = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Vector,
             data: None,
         };
@@ -1019,7 +998,6 @@ mod tests {
         // From (1, 2) towards (4, 6): raw coefficients (-4, 3, -2).
         let e = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Ray,
             data: Some(ExpectedData::Ray {
                 x: 1.0,
@@ -1060,7 +1038,6 @@ mod tests {
     fn segments_are_compared_in_order() {
         let e = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Segment,
             data: Some(ExpectedData::Segment {
                 x1: 0.0,
@@ -1089,7 +1066,6 @@ mod tests {
     fn polygons_compare_areas_and_vertices_in_order() {
         let e = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Polygon,
             data: Some(ExpectedData::Polygon {
                 vertices: vec![(0.0, 0.0), (4.0, 0.0), (0.0, 3.0)],
@@ -1115,7 +1091,6 @@ mod tests {
     fn polylines_compare_holes() {
         let e = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::PolyLine,
             data: Some(ExpectedData::PolyLine {
                 vertices: vec![Some((0.0, 0.0)), None, Some((3.0, 4.0))],
@@ -1143,7 +1118,6 @@ mod tests {
     fn conic(conic_type: &str, matrix: [f64; 6], parts: ConicParts) -> Expected {
         Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Conic,
             data: Some(ExpectedData::Conic {
                 conic_type: conic_type.into(),
@@ -1330,7 +1304,6 @@ mod tests {
         assert!(r.is_err(), "{r:?}");
         let none = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Conic,
             data: None,
         };
@@ -1347,7 +1320,6 @@ mod tests {
         let d = c.conic(id).unwrap();
         let expected = |matrix: [f64; 6]| Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Conic,
             data: Some(ExpectedData::Conic {
                 conic_type: "parabola".into(),
@@ -1389,7 +1361,6 @@ mod tests {
         // an undefined expectation against a defined conic
         let undefined = Expected {
             legacy_angle_number: false,
-            legacy_infinite_number: false,
             kind: Kind::Conic,
             data: None,
         };

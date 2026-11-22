@@ -94,7 +94,6 @@ impl Format {
                 &Self::label(ctx.c.label(id), self.latex),
                 &[term(a, 0)?, term(b, 0)?],
             ),
-            Node::Inverse(a) if self.xml => self.command("NInvert", &[term(a, 0)?]),
             Node::If(_, cond, a, b) => {
                 let mut args = vec![term(cond, 0)?, term(a, 0)?];
                 if b != NONE {
@@ -152,10 +151,6 @@ impl Format {
             Bin::Mul if matches!(ctx.node(b), Node::Degree) => {
                 (8, format!("{}{}", term(a, 8)?, term(b, 0)?))
             }
-            Bin::Mul if self.xml && matches!(ctx.node(a), Node::MinusOne) => {
-                (8, format!("(-{})", term(b, 6)?))
-            }
-            Bin::Mul if self.xml => (8, format!("({} * {})", term(a, 5)?, term(b, 6)?)),
             Bin::Mul if matches!(ctx.node(a), Node::MinusOne) => (6, format!("-{}", term(b, 6)?)),
             Bin::Div if self.latex => (8, format!(r"\frac{{{}}}{{{}}}", term(a, 0)?, term(b, 0)?)),
             Bin::Pow => {
@@ -163,10 +158,6 @@ impl Format {
                 let exponent = term(b, 0)?;
                 let power = if self.latex {
                     format!("^{{{exponent}}}")
-                } else if self.xml {
-                    format!("^({exponent})")
-                } else if self.algebra && matches!(ctx.node(b), Node::Var | Node::VarY) {
-                    format!("^{exponent}")
                 } else if let Some(digits) = superscript(&exponent) {
                     digits
                 } else {
@@ -211,7 +202,7 @@ impl Format {
                     Node::Obj(id) => ctx.c.value(id) == crate::Value::Number(0.0),
                     _ => false,
                 };
-                if substitute && !self.xml {
+                if substitute {
                     if zero(b) || self.simplify_coefficients && right == "0" {
                         return term(a, outer);
                     }
@@ -230,31 +221,6 @@ impl Format {
                 (4, format!("{left}{sign}{term}"))
             }
             Bin::Div => (5, format!("{} / {}", term(a, 6)?, term(b, 6)?)),
-            Bin::And if self.xml => {
-                let comparison = |i| match ctx.node(i) {
-                    Node::Bin(
-                        op @ (Bin::Less | Bin::LessEqual | Bin::Greater | Bin::GreaterEqual),
-                        l,
-                        r,
-                    ) => Some((op, l, r)),
-                    _ => None,
-                };
-                let text = match (comparison(a), comparison(b)) {
-                    (Some((first, l, m)), Some((second, n, r)))
-                        if matches!(first, Bin::Less | Bin::LessEqual)
-                            == matches!(second, Bin::Less | Bin::LessEqual)
-                            && term(m, 4)? == term(n, 4)? =>
-                    {
-                        let right = term(r, 4)?;
-                        let sign = comparison_sign(second);
-                        let left = term(l, 4)?;
-                        let first = comparison_sign(first);
-                        format!("{left}{first}{}{sign}{right}", term(m, 4)?)
-                    }
-                    _ => format!("{} ∧ {}", term(a, 2)?, term(b, 2)?),
-                };
-                (2, text)
-            }
             Bin::Less
             | Bin::Greater
             | Bin::LessEqual

@@ -1,7 +1,8 @@
 //! An infinite number is a defined value, so every command that takes a
 //! number can be handed one. This runs every form of
 //! `tools/command-matrix/forms.csv` with `Infinity` and `-Infinity` in each
-//! number position and checks that the kernel answers in bounded time:
+//! number position and with flat and nested lists containing infinity in
+//! each list position. The kernel must answer in bounded time:
 //! a refusal or an undefined result is fine, a loop that follows the count
 //! to infinity is not.
 
@@ -18,8 +19,11 @@ const BASE: &str = "A = (1, 2)\n\
     B = (4, 3)\n\
     C = (2, 5)\n\
     n = 3\n\
-    p = 1 / 0\n\
-    q = -1 / 0\n\
+    positive = {1 / 0, 2, 3}\n\
+    negative = {-1 / 0, 2, 3}\n\
+    matrix = {{1, 1 / 0}, {-1 / 0, 2}}\n\
+    p = positive(1)\n\
+    q = negative(1)\n\
     l = {1, 2, 3}\n\
     f(x) = x^2\n\
     k = Circle(A, 2)\n\
@@ -78,38 +82,42 @@ fn an_infinite_number_argument_ends_in_bounded_time() {
             else {
                 continue;
             };
-            // each number position alone, then all of them together
-            let positions: Vec<usize> = (0..tokens.len())
-                .filter(|&i| matches!(tokens[i], "number" | "any"))
-                .collect();
-            let mut variants: Vec<Vec<usize>> = positions.iter().map(|&i| vec![i]).collect();
-            if positions.len() > 1 {
-                variants.push(positions.clone());
-            }
-            for infinite in ["p", "q"] {
-                for variant in &variants {
-                    let args: Vec<&str> = labels
-                        .iter()
-                        .enumerate()
-                        .map(|(i, label)| {
-                            if variant.contains(&i) {
-                                infinite
-                            } else {
-                                label
-                            }
-                        })
-                        .collect();
-                    let line = format!("out = {command}({})", args.join(", "));
-                    let mut c = load(BASE).expect("the base construction loads");
-                    let start = Instant::now();
-                    // the answer does not matter here, only that there is one
-                    ran += usize::from(exec(&mut c, &line).is_ok());
-                    let took = start.elapsed();
-                    assert!(took < BOUND, "`{line}` took {took:?}");
-                    if took > slowest.0 {
-                        slowest = (took, line);
+            for (kind, arguments) in [
+                ("number", &["p", "q"][..]),
+                ("list", &["positive", "negative", "matrix"][..]),
+            ] {
+                let positions: Vec<_> = (0..tokens.len())
+                    .filter(|&i| matches!(tokens[i], "any") || tokens[i] == kind)
+                    .collect();
+                let mut variants: Vec<Vec<_>> = positions.iter().map(|&i| vec![i]).collect();
+                if positions.len() > 1 {
+                    variants.push(positions);
+                }
+                for &infinite in arguments {
+                    for variant in &variants {
+                        let args: Vec<&str> = labels
+                            .iter()
+                            .enumerate()
+                            .map(|(i, label)| {
+                                if variant.contains(&i) {
+                                    infinite
+                                } else {
+                                    label
+                                }
+                            })
+                            .collect();
+                        let line = format!("out = {command}({})", args.join(", "));
+                        let mut c = load(BASE).expect("the base construction loads");
+                        let start = Instant::now();
+                        // the answer does not matter here, only that there is one
+                        ran += usize::from(exec(&mut c, &line).is_ok());
+                        let took = start.elapsed();
+                        assert!(took < BOUND, "`{line}` took {took:?}");
+                        if took > slowest.0 {
+                            slowest = (took, line);
+                        }
+                        calls += 1;
                     }
-                    calls += 1;
                 }
             }
         }

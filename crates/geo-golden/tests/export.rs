@@ -143,7 +143,7 @@ fn corpus() -> Vec<(String, Workbench, Option<FileView>)> {
                     wb.set_number(id, *value);
                 }
                 Step::Redefine { line } => wb.run_line(line).unwrap(),
-                Step::Reject { .. } => panic!("{name}: unexpected rejection step"),
+                Step::Reject { .. } | Step::Delete { .. } => panic!("{name}: unexpected step"),
             }
         }
         let c = wb.construction();

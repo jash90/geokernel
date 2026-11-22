@@ -62,7 +62,7 @@ fn kernel_agrees_with_the_verified_t_pairs() {
         let mut root: Option<String> = None;
         for pair in &method.steps {
             let out = tpairs::run_pair(&mut c, pair, root.as_deref());
-            if out.category.is_some() && root.is_none() {
+            if root.is_none() && out.blocks_later_steps() {
                 root = Some(out.id.clone());
             }
             let labels: BTreeMap<String, ()> = out

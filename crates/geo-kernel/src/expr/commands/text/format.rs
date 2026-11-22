@@ -186,9 +186,6 @@ fn escape_percent(value: String) -> String {
 #[derive(Clone, Copy)]
 struct Format {
     latex: bool,
-    xml: bool,
-    algebra: bool,
-    object_depth: u8,
     simplify_coefficients: bool,
 }
 
@@ -209,17 +206,7 @@ impl Format {
     fn new(latex: bool) -> Self {
         Self {
             latex,
-            xml: false,
-            algebra: false,
-            object_depth: 0,
             simplify_coefficients: false,
-        }
-    }
-
-    fn xml() -> Self {
-        Self {
-            xml: true,
-            ..Self::new(false)
         }
     }
 
@@ -237,11 +224,7 @@ impl Format {
     }
 
     fn command(self, name: &str, args: &[String]) -> String {
-        if self.xml && matches!(name, "If" | "NIntegral" | "NInvert") {
-            format!("{name}[{}]", args.join(", "))
-        } else {
-            format!("{name}{}", self.parenthesize(args.join(", ")))
-        }
+        format!("{name}{}", self.parenthesize(args.join(", ")))
     }
 
     fn label(label: &str, latex: bool) -> String {
@@ -254,10 +237,6 @@ impl Format {
 
     fn number(self, x: f64) -> String {
         match x {
-            _ if self.xml && x.is_finite() => (x + 0.0).to_string(),
-            _ if self.xml && x.is_nan() => "NaN".into(),
-            _ if self.xml && x > 0.0 => "Infinity".into(),
-            _ if self.xml => "-Infinity".into(),
             f64::INFINITY if self.latex => r"\infty".into(),
             f64::NEG_INFINITY if self.latex => r"-\infty".into(),
             _ => format_number_with_template(x, self.latex),

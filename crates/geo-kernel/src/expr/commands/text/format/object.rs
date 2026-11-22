@@ -8,11 +8,10 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::Format;
-use crate::algo::analysis::{AnalysisDef, CurvatureKind};
 use crate::algo::measure::MeasureDef;
 use crate::equation;
 use crate::expr::eval::{Ctx, Env, Lists};
-use crate::expr::{self, Entry, Node, Un};
+use crate::expr::{self, Entry, Node};
 use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, EquationForm, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
@@ -21,173 +20,6 @@ impl Construction {
     /// A line, ray or conic equation in the object's current display form.
     pub fn formatted_equation(&self, id: Id) -> Option<String> {
         Format::new(false).equation::<false>(self, id, None)
-    }
-
-    /// A function, equation, or Cartesian curve in the XML expression syntax.
-    pub fn xml_value_string(&self, id: Id) -> Option<String> {
-        let format = Format::xml();
-        let meter = Lists::new(Vec::new());
-        format.xml_object_string(self, id, &meter)
-    }
-
-    /// A value displayed with the edit template's decimal precision.
-    pub fn edit_value_string(&self, id: Id) -> Option<String> {
-        if let Some(conic) = osculating_circle(self, id) {
-            return Some(equation::conic_equation(&conic, &|value| {
-                fixed_decimal(value, 5)
-            }));
-        }
-        self.xml_value_string(id)
-    }
-
-    /// Renders a polynomial stored as an inline list element.
-    pub fn xml_inline_polynomial(&self, source: &str) -> Option<String> {
-        let parsed = expr::parse::parse(self, source).ok()?;
-        let entry = Entry::new(self, parsed, false);
-        let meter = Lists::new(Vec::new());
-        Format::xml().entry_value::<true>(self, &entry, Some(&meter), false)
-    }
-
-    /// Displays a number or function in the symbolic algebra template.
-    pub fn symbolic_value_string(&self, id: Id, source: &str, decimals: usize) -> Option<String> {
-        if let (Kind::Function, Def::Expr(def)) = (self.kind(id), self.def(id)) {
-            let meter = Lists::new(Vec::new());
-            let format = Format {
-                algebra: true,
-                ..Format::new(false)
-            };
-            return format.entry_value::<true>(self, expr::entry(self, def), Some(&meter), false);
-        }
-        let value = match (self.kind(id), self.value(id)) {
-            (Kind::Number, Value::Number(value)) => value,
-            (Kind::Number, Value::Undefined) => return Some("?".into()),
-            _ => return None,
-        };
-        let parsed = expr::parse::parse(self, source).ok();
-        if let Some(parsed) = parsed {
-            let entry = Entry::new(self, parsed, false);
-            if let Node::Un(Un::Sqrt, input) = entry.nodes[entry.root as usize] {
-                if let Some(surd) = simplified_surd(expr::cas::scalar(self, &entry, input)) {
-                    return Some(surd);
-                }
-            } else if let Some(fraction) = expr::cas::scalar(self, &entry, entry.root) {
-                const MAX_PART: i128 = 1_000_000_000_000_000;
-                if (2..MAX_PART).contains(&fraction.den)
-                    && fraction.num.abs() < MAX_PART
-                    && (fraction.to_f64() - value).abs() <= value.abs() * f64::EPSILON
-                {
-                    return Some(format!("{} / {}", fraction.num, fraction.den));
-                }
-            }
-        }
-        if !value.is_finite() || decimals == 2 {
-            return Some(super::super::format_number(value));
-        }
-        Some(fixed_decimal(value, decimals.clamp(1, 15)))
-    }
-}
-
-fn fixed_decimal(value: f64, decimals: usize) -> String {
-    let fixed = format!("{value:.decimals$}");
-    let fixed = fixed.trim_end_matches('0').trim_end_matches('.');
-    if fixed == "-0" { "0" } else { fixed }.into()
-}
-
-fn osculating_circle(c: &Construction, id: Id) -> Option<crate::algo::conic_nd::ConicData> {
-    if matches!(
-        c.def(id),
-        Def::Analysis(AnalysisDef::Curvature {
-            output: CurvatureKind::Circle,
-            ..
-        })
-    ) {
-        return c.conic(id);
-    }
-    None
-}
-
-fn simplified_surd(fraction: Option<crate::cas::Rat>) -> Option<String> {
-    let fraction = fraction.filter(|r| r.den == 1)?;
-    let radicand = u32::try_from(fraction.num).ok()?;
-    if !(2..i32::MAX as u32).contains(&radicand) {
-        return None;
-    }
-    let factor = (2..=radicand.isqrt())
-        .rev()
-        .find(|&factor| radicand.is_multiple_of(factor * factor))?;
-    let rest = radicand / (factor * factor);
-    Some(if rest == 1 {
-        factor.to_string()
-    } else {
-        format!("{factor}\u{221a}({rest})")
-    })
-}
-
-impl Format {
-    fn xml_object_string(mut self, c: &Construction, id: Id, meter: &Lists) -> Option<String> {
-        if self.object_depth == 64 {
-            return None;
-        }
-        self.object_depth += 1;
-        if let Some(conic) = osculating_circle(c, id) {
-            return Some(equation::conic_equation(&conic, &|value| {
-                self.number(value)
-            }));
-        }
-        let expression = |entry| self.entry_value::<true>(c, entry, Some(meter), true);
-        match c.def(id) {
-            Def::Expr(def) if matches!(def.kind(), Kind::Function | Kind::FunctionNVar) => {
-                let entry = expr::entry(c, def);
-                if let Some(coefficients) = entry.polynomial() {
-                    return Some(xml_polynomial(coefficients));
-                }
-                expression(entry)
-            }
-            Def::Calculus(crate::algo::calculus::CalculusDef::IndefiniteIntegral {
-                function,
-                numeric: true,
-            }) => {
-                let source = self.xml_object_string(c, Id(function as usize), meter)?;
-                Some(self.command("NIntegral", &[source]))
-            }
-            Def::Calculus(_) if c.kind(id) == Kind::Function => {
-                expression(c.calculus_record(id)?.tree.as_ref()?)
-            }
-            Def::Chart(_) if c.kind(id) == Kind::Function => {
-                let vertices = &c.chart(id)?.vertices;
-                if vertices.len() > 16_384 {
-                    return None;
-                }
-                let values = |axis| {
-                    let coordinates: Vec<_> = vertices
-                        .iter()
-                        .map(|&(x, y)| self.number(if axis == 0 { x } else { y }))
-                        .collect();
-                    coordinates.join(", ")
-                };
-                Some(format!(
-                    "DataFunction[{{{}}}, {{{}}},x]",
-                    values(0),
-                    values(1)
-                ))
-            }
-            Def::Measure(MeasureDef::CartesianCurve { coordinates, .. }) => {
-                let mut coordinates = coordinates
-                    .map(|index| {
-                        let Def::Expr(def) = c.def(Id(index as usize)) else {
-                            return None;
-                        };
-                        expression(expr::entry(c, def))
-                    })
-                    .into_iter();
-                Some(format!(
-                    "({}, {})",
-                    coordinates.next()??,
-                    coordinates.next()??
-                ))
-            }
-            _ => self.equation::<true>(c, id, Some(meter)),
-        }
     }
 }
 
@@ -252,52 +84,8 @@ impl Construction {
     }
 }
 
-fn xml_polynomial(coefficients: &[f64]) -> String {
-    let mut out = String::new();
-    let format = Format::xml();
-    for (degree, &coefficient) in coefficients.iter().enumerate().rev() {
-        if coefficient == 0.0 {
-            continue;
-        }
-        let magnitude = coefficient.abs();
-        let variable = match degree {
-            0 => String::new(),
-            1 => "x".into(),
-            _ => format!("x^({degree})"),
-        };
-        let term = match (degree, magnitude) {
-            (0, _) => format.number(magnitude),
-            (_, 1.0) => variable,
-            _ => format!("({} * {variable})", format.number(magnitude)),
-        };
-        if out.is_empty() {
-            if coefficient < 0.0 {
-                out.push('-');
-            }
-        } else {
-            out.push_str(if coefficient < 0.0 { " - " } else { " + " });
-        }
-        out.push_str(&term);
-    }
-    if out.is_empty() {
-        "0".into()
-    } else {
-        out
-    }
-}
-
 impl Format {
-    pub(super) fn object_value<const M: bool>(
-        mut self,
-        ctx: &Ctx<'_, M>,
-        id: Id,
-    ) -> Option<String> {
-        if self.xml {
-            if self.object_depth == 64 {
-                return None;
-            }
-            self.object_depth += 1;
-        }
+    pub(super) fn object_value<const M: bool>(self, ctx: &Ctx<'_, M>, id: Id) -> Option<String> {
         let value = ctx.c.value(id);
         if !value.is_defined() {
             return Some(self.shown(ctx.c.kind(id), value));
