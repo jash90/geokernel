@@ -348,24 +348,20 @@ fn wilkinson_products_stay_correct_to_the_last_double_bit() {
 }
 
 #[test]
-fn a_guided_root_follows_the_damped_newton_iteration() {
+fn a_guided_root_follows_the_newton_iteration() {
     let rats = |values: &[i128]| -> Vec<Rat> { values.iter().map(|&v| rational(v, 1)).collect() };
     let guided = |coefficients: &[i128], start: f64| {
         super::guided_root(&rats(coefficients), start, &mut Work::new(&|_| true))
     };
     let near = |got: Option<f64>, want: f64| {
-        let got = got.expect("a root");
+        let got = got.unwrap_or_else(|| panic!("no root near {want}"));
         assert!((got - want).abs() < 1e-9, "{got} is not {want}");
     };
-    // x^3 - x, the start values recorded in golden/cas/hint.json: a full
-    // step from 0.57 overshoots to the far side, a halved one stays near 0.
+    // x^3 - x, start values recorded in golden/cas/hint.json.
     let cubic = [0, -1, 0, 1];
     for (start, root) in [
         (0.4, 0.0),
         (0.5, -1.0),
-        (0.6, 1.0),
-        (0.57, 0.0),
-        (0.58, 1.0),
         (2.0, 1.0),
         (-0.45, 0.0),
         (100.0, 1.0),
@@ -377,10 +373,8 @@ fn a_guided_root_follows_the_damped_newton_iteration() {
     // x^5 - 3x + 1
     let quintic = [1, -3, 0, 0, 0, 1];
     near(guided(&quintic, 0.0), 0.334_734_141_943_4);
-    near(guided(&quintic, 0.9), 1.214_648_042_698);
-    near(guided(&quintic, -2.658), -1.388_791_984_407);
-    // A double root is approached at a linear rate and still reached.
-    near(guided(&[0, 0, 1], 1.0), 0.0);
+    near(guided(&quintic, 1.5), 1.214_648_042_698);
+    assert_eq!(guided(&quintic, 0.9), None);
     // No real root, a vanishing derivative, a constant, a start that is no
     // number: undefined.
     assert_eq!(guided(&[1, 0, 1], 1.0), None);
@@ -388,6 +382,33 @@ fn a_guided_root_follows_the_damped_newton_iteration() {
     assert_eq!(guided(&[5], 1.0), None);
     assert_eq!(guided(&[-3, 0, 1], f64::NAN), None);
     assert_eq!(guided(&[-3, 0, 1], f64::INFINITY), None);
+}
+
+#[test]
+fn a_guided_root_gives_up_where_the_iteration_is_not_plain() {
+    let rats = |values: &[i128]| -> Vec<Rat> { values.iter().map(|&v| rational(v, 1)).collect() };
+    let guided = |coefficients: &[i128], start: f64| {
+        super::guided_root(&rats(coefficients), start, &mut Work::new(&|_| true))
+    };
+    // x^2 - 3 from -0.001: the first step lands at 1500 and needs ten
+    // halvings to lower the residual.
+    assert_eq!(guided(&[-3, 0, 1], -0.001), None);
+    assert!(guided(&[-3, 0, 1], -1.0).is_some());
+    // A double root is approached at a linear rate, where the reference
+    // stops at its own tolerance.
+    assert_eq!(guided(&[0, 0, 1], 1.0), None);
+    assert_eq!(guided(&[-4, -7, -2, 1], -2.752), None);
+    // The simple root of the same polynomial is still answered.
+    assert_eq!(guided(&[-4, -7, -2, 1], 5.0), Some(4.0));
+    // Too far away for the step budget, and a start whose square overflows.
+    assert_eq!(guided(&[-2, 0, 1], 1e30), None);
+    assert_eq!(guided(&[-2, 0, 1], 1e300), None);
+    // x^3 - x from 0.57: the full step overshoots to -14.6 and only the
+    // fourth halving lowers the residual. From 0.6 it is the fourth too.
+    assert_eq!(guided(&[0, -1, 0, 1], 0.57), None);
+    assert_eq!(guided(&[0, -1, 0, 1], 0.6), None);
+    // x^3 - 2x + 2 cycles between 0 and 1.
+    assert_eq!(guided(&[2, -2, 0, 1], 0.0), None);
 }
 
 #[test]
@@ -399,7 +420,7 @@ fn a_guided_root_stops_when_the_budget_is_spent() {
         spent.get() <= 4
     };
     assert_eq!(
-        super::guided_root(&coefficients, 1e300, &mut Work::new(&charge)),
+        super::guided_root(&coefficients, 5.0, &mut Work::new(&charge)),
         None
     );
 }

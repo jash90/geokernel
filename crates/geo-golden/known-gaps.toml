@@ -746,6 +746,96 @@ reason = "GeoGebra's CAS solves sin(x) = 0 symbolically as n pi and PlotSolve sh
 mismatches = ["0:result"]
 
 [[gap]]
+id = "cas-hint-018"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From 0.6, 0.57 and 0.58 the first Newton step of x^3 - x overshoots and lowers the residual only after four or more halvings. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r3", "0:r4", "0:r5"]
+
+[[gap]]
+id = "cas-hint-019"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From -1 and 0.9 the first Newton step of x^5 - 3x + 1 overshoots and needs more than one halving. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-hint-020"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From 1.6 the first Newton step of x^4 - 5x^2 + 4 overshoots to 7.45 and needs more than one halving. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r3"]
+
+[[gap]]
+id = "cas-hint-022"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). x^2 has the double root 0, which Newton's method approaches at a linear rate; GeoGebra stops at 4.5e-13. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-hint-023"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). With a = 0 the function is x^2 with the double root 0, which Newton's method approaches at a linear rate; GeoGebra stops at 4.5e-13. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["3:r1"]
+
+[[gap]]
+id = "cas-start-007"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From -0.01, 0, 1e-17, 1e30 and 1e300 the iteration for x^2 - 2 needs many halvings, has no slope, or needs more steps than the budget. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
+
+[[gap]]
+id = "cas-start-008"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From these start values near 0 or far away the iteration for x^2 - 3 needs eleven or more halvings or more steps than the budget. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6"]
+
+[[gap]]
+id = "cas-start-009"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). Newton's method for x^3 - 2x + 2 cycles between 0 and 1 and overshoots from -1 and 0.5; GeoGebra still finds the one real root. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-start-010"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). x^3 + 1 has no slope at the start value 0; GeoGebra still finds the one real root. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-start-011"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). Newton's method for x^5 - x + 3 from 0 and 1 overshoots and needs more than one halving; GeoGebra still finds the one real root. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-start-012"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). x^4 - x^2 - 1 has no slope at 0, and from 0.1 and -0.1 the first step needs two halvings. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-start-013"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From 0.193392 the iteration for x^4 + 5x^3 + 2x^2 - 4x + 2 creeps along a local minimum of the residual with repeated halvings. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-start-014"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From -1 the first Newton step of x^4 + x^3 - 4x^2 - 5x + 5 needs two halvings. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-start-015"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From -2.752 Newton's method approaches the double root -1 of (x + 1)^2 (x - 4) at a linear rate; GeoGebra answers the simple root 4. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-start-016"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). Newton's method approaches the triple root 3 of (x - 3)^3 at a linear rate; GeoGebra stops at 3.000000000004. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-start-017"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). Newton's method approaches the double root 0 of x^2 at a linear rate; GeoGebra stops at 4.5e-13. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-start-018"
+reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From 100000 Newton's method for this quintic needs more than 48 steps. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-start-019"
+reason = "The numeric solver of GeoGebra's CAS is not bound to polynomials and answers 4 for sqrt(x) - 2 from the start values 1 and -1. The bounded polynomial CAS reads polynomials and rational functions only, so the kernel answers an undefined list for an equation with a square root."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
 id = "cas-curve-008"
 reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS. A coordinate that is no rational function keeps its input in the kernel only where it is defined for every parameter (sums and products of numbers, the parameter and the sine, cosine or exponential of such terms), because anywhere else the CAS may cancel a pole or widen a domain: Simplify turns sqrt(t)^2 into t, defined for negative t (cas-curve-020). sqrt(t) is no such coordinate, so the kernel answers an undefined curve where GeoGebra keeps sqrt(t)."
 mismatches = ["0:r1", "0:r2", "0:r3"]

@@ -76,22 +76,37 @@ pub(crate) fn real_roots(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Ro
     Some(Roots::Finite(roots))
 }
 
-/// Most Newton steps of one guided solve.
-const GUIDED_STEPS: usize = 128;
-/// Most halvings of one Newton step.
-const GUIDED_HALVINGS: usize = 40;
+/// Most Newton steps of one guided solve. The reference still follows the
+/// iteration after 59 steps and leaves it from 60 on.
+const GUIDED_STEPS: usize = 48;
+/// Most halvings of one Newton step. With two the reference already goes
+/// its own way.
+const GUIDED_HALVINGS: usize = 1;
 
-/// One real root reached from `start` by Newton's method with step halving:
-/// a step is shortened until the residual shrinks
-/// ([Dennis and Schnabel, Numerical Methods for Unconstrained Optimization
-/// and Nonlinear Equations, section 6.3](https://doi.org/10.1137/1.9781611971200)).
-/// `None` when the derivative vanishes on the way, when no shortened step
-/// lowers the residual, or when the budget runs out.
+/// The real root the numeric solver answers for the start value `start`
+/// (`fsolve(equation, variable = start)`), or `None` where that root is not
+/// determined.
+///
+/// Newton's method runs from the start value, and a step that does not
+/// lower the residual is halved once ([Dennis and Schnabel, Numerical
+/// Methods for Unconstrained Optimization and Nonlinear Equations, section
+/// 6.3](https://doi.org/10.1137/1.9781611971200)). The answer is the
+/// isolated root the iteration ends on, when that root is simple.
+///
+/// Everything else is `None`: the reference then searches on in a way the
+/// start value does not explain (golden/cas/start.json), so a vanishing
+/// derivative, a step that needs more halving, a slow approach to a
+/// multiple root or a start too far away have no answer here.
 pub(crate) fn guided_root(coefficients: &[Rat], start: f64, work: &mut Work<'_>) -> Option<f64> {
-    let coefficients: Vec<f64> = trim(coefficients).iter().map(|c| c.to_f64()).collect();
-    if coefficients.len() < 2 || !start.is_finite() {
+    let exact = trim(coefficients);
+    if exact.len() < 2 || !start.is_finite() {
         return None;
     }
+    let Roots::Finite(roots) = real_roots(exact, work)? else {
+        return None;
+    };
+    let roots: Vec<f64> = roots.into_iter().map(Root::value).collect();
+    let coefficients: Vec<f64> = exact.iter().map(|c| c.to_f64()).collect();
     let evaluate = |x: f64| {
         coefficients
             .iter()
@@ -104,31 +119,55 @@ pub(crate) fn guided_root(coefficients: &[Rat], start: f64, work: &mut Work<'_>)
     let (mut value, mut slope) = evaluate(x);
     for _ in 0..GUIDED_STEPS {
         work.spend(coefficients.len())?;
-        if value == 0.0 {
-            return Some(x);
-        }
-        if slope == 0.0 || !slope.is_finite() || !value.is_finite() {
+        if !value.is_finite() || !slope.is_finite() {
             return None;
         }
-        let step = value / slope;
+        let step = if value == 0.0 { 0.0 } else { value / slope };
         if step.abs() <= 1e-13 * x.abs().max(1.0) {
-            return Some(x - step);
+            return simple_root(exact, &roots, x - step, work);
         }
-        let mut scale = 1.0;
+        if !step.is_finite() {
+            return None;
+        }
         let mut accepted = None;
-        for _ in 0..=GUIDED_HALVINGS {
+        for halvings in 0..=GUIDED_HALVINGS {
             work.spend(coefficients.len())?;
-            let candidate = x - scale * step;
+            let candidate = x - step / f64::from(1 << halvings);
             let (v, s) = evaluate(candidate);
             if v.abs() < value.abs() {
                 accepted = Some((candidate, v, s));
                 break;
             }
-            scale *= 0.5;
         }
         (x, value, slope) = accepted?;
     }
     None
+}
+
+/// The isolated root next to where the iteration ended, unless it is a
+/// multiple root: the reference stops short of those at its own tolerance.
+fn simple_root(exact: &[Rat], roots: &[f64], end: f64, work: &mut Work<'_>) -> Option<f64> {
+    let nearest = |roots: &[f64]| {
+        roots
+            .iter()
+            .copied()
+            .min_by(|a, b| (a - end).abs().total_cmp(&(b - end).abs()))
+    };
+    let root = nearest(roots)?;
+    let slope = factor::derivative(exact, work)?;
+    let common = factor::gcd(exact, &slope, work)?;
+    if common.len() > 1 {
+        let Roots::Finite(multiple) = real_roots(&common, work)? else {
+            return None;
+        };
+        let multiple: Vec<f64> = multiple.into_iter().map(Root::value).collect();
+        if let Some(other) = nearest(&multiple) {
+            if (other - root).abs() <= 1e-9 * root.abs().max(1.0) {
+                return None;
+            }
+        }
+    }
+    Some(root)
 }
 
 fn solve_square_free(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Vec<Root>> {

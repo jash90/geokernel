@@ -416,6 +416,41 @@ c.case("plot", ["f(x) = sin(x)", "result = PlotSolve(f)"], [])
 # the kernel cannot hold inside a list.
 c.case("conic", ["k: y=x^2+x", "result = Solve(k, y)"], [])
 
+# The numeric solver from a start value: Newton's method where every step
+# lowers the residual, at most halved once, and ends on a simple root.
+c.case("start", ["f(x) = x^2-2"] + results(
+    f"NSolutions(f, x={start})" for start in ["1", "-1", "0.5", "-3", "100"]), [])
+c.case("start", ["f(x) = x^3-2x+2"] + results(
+    f"NSolutions(f, x={start})" for start in ["-2", "-1.5", "-5"]), [])
+c.case("start", ["f(x) = x^4-x^2-1"] + results(
+    f"NSolutions(f, x={start})" for start in ["1", "-1", "2", "-3", "0.9"]), [])
+c.case("start", ["f(x) = (x+1)^2*(x-4)"] + results(
+    f"NSolutions(f, x={start})" for start in ["5", "4.5", "3.5"]), [])
+c.case("start", ["f(x) = x^2-3", "r1 = NSolve(f, x=2)", "r2 = Solutions(f, x=-2)",
+                 "r3 = Solve(f, x=2)", "r4 = NSolutions(f, x=1000)"], [])
+c.case("start", ["a = 2", "f(x) = x^2-a", "result = NSolutions(f, x=a)"],
+       [setn("a", 9), setn("a", 0.25), setn("a", -1), setn("a", 3)])
+# Where the iteration stalls, cycles, needs shorter steps or runs out of
+# steps the solver searches on in a way the start value does not explain.
+for function, starts in [
+    ("x^2-2", ["-0.01", "0", "10^(-17)", "10^300", "10^30"]),
+    ("x^2-3", ["10^(-17)", "10^300", "-0.0003", "-0.00029", "-0.0001", "0.00001"]),
+    ("x^3-2x+2", ["-1", "0", "1", "0.5"]),
+    ("x^3+1", ["0"]),
+    ("x^5-x+3", ["0", "1"]),
+    ("x^4-x^2-1", ["0", "0.1", "-0.1"]),
+    ("x^4+5x^3+2x^2-4x+2", ["0.193392"]),
+    ("x^4+x^3-4x^2-5x+5", ["-1"]),
+    ("(x+1)^2*(x-4)", ["-2.752"]),
+    ("(x-3)^3", ["-1.292"]),
+    ("x^2", ["1"]),
+    ("x^5+x^4-6x^3-5x^2+4", ["100000"]),
+]:
+    c.case("start", [f"f(x) = {function}"] + results(
+        f"NSolutions(f, x={start})" for start in starts), [])
+# The solver is not bound to polynomials.
+c.case("start", ["f(x) = sqrt(x)-2", "r1 = NSolutions(f, x=1)", "r2 = NSolutions(f, x=-1)"], [])
+
 # A text holding an equals sign is a text, not an equation.
 c.case("text", ['r1 = Simplify("α=β")', 'r2 = Simplify("a=b")', 'r3 = Simplify("x+-1x=2")',
                 'r4 = Simplify("a,b=c")', 'r5 = Simplify("(a=b")'], [])

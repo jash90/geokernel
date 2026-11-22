@@ -205,10 +205,18 @@ fn hints_that_are_no_variable_or_value_are_refused() {
 
 #[test]
 fn solving_stays_within_its_budget() {
-    // A start far away halves its way in; a degree past the bound and a
-    // third variable are undefined, not slow.
-    let c = build(&["f(x) = x^3-x", "r = NSolutions(f, x=1000000000000)"]);
+    // A start nearby follows the iteration, one too far away for the step
+    // budget is undefined; a degree past the bound and a third variable are
+    // undefined, not slow.
+    let c = build(&[
+        "f(x) = x^3-x",
+        "r = NSolutions(f, x=1000)",
+        "s = NSolutions(f, x=1000000000000)",
+        "t = NSolutions(f, x=10^300)",
+    ]);
     assert_eq!(numbers(&c, "r").unwrap(), [1.0]);
+    assert!(numbers(&c, "s").is_none());
+    assert!(numbers(&c, "t").is_none());
     let c = build(&["r = Solutions(x^3+y^3=1, x)", "s = Solutions(x+y+z=1, x)"]);
     assert!(c.elements(id(&c, "r")).is_none());
     assert!(c.elements(id(&c, "s")).is_none());
