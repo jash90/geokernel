@@ -753,6 +753,23 @@ struct PathCopy {
     st: PathState,
 }
 
+pub(crate) fn sample_path_point(
+    c: &mut Construction,
+    id: Id,
+    path: Id,
+    state: PathState,
+    parameter: f64,
+) -> Value {
+    let mut point = PathCopy {
+        id,
+        path,
+        st: state,
+    };
+    point.calc(c, parameter);
+    point.apply(c);
+    c.value(id)
+}
+
 impl Moving for PathCopy {
     fn key(&self) -> f64 {
         self.st.parameter()

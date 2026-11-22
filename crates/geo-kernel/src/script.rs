@@ -436,7 +436,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     if let Some(("SlowPlot", args)) = split_call(rhs) {
         return slow_plot(c, name, &args);
     }
-    // `name = Maximize(expr, number)` and `Minimize`: the dependent value
+    // `name = Maximize(expr, independent)` and `Minimize`: the dependent value
     // may be an inline arithmetic expression, which becomes a hidden
     // expression object, as GeoGebra's argument resolver makes a temporary
     // number of it (`CmdMaximize`/`CmdMinimize`).
@@ -462,12 +462,10 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             }
         };
         let result = (|| {
-            let independent = object(c, args[1])?;
-            let def = OptimizeDef {
-                dependent,
-                independent,
-                maximize: func == "Maximize",
-            };
+            let independent = object(c, args[1])
+                .or_else(|_| analysis::argument(c, args[1], Kind::Point))
+                .or_else(|_| analysis::argument(c, args[1], Kind::Number))?;
+            let def = OptimizeDef::new(c, dependent, independent, func == "Maximize");
             c.add(name, Def::Optimize(def))
                 .map(Some)
                 .map_err(|e| e.to_string())

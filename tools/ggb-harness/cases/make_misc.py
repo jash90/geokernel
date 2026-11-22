@@ -195,6 +195,22 @@ cases.case("view", [
     "gx = AxisStepX()", "gy = AxisStepY()",
 ], [])
 
+# Optimize a live point on a bounded path.
+cases.case("maximizepoint", [
+    "C = (3, 4)", "c = Circle(C, 5)", "P = Point(c)", "a = y(P)", "M = Maximize(a, P)",
+], [mv("P", 8, 4), mv("P", -2, 4)])
+cases.case("maximizepoint", [
+    "A = (0, 0)", "B = (10, 0)", "s = Segment(A, B)", "P = Point(s)",
+    "n = 3", "f = If(n != 0, -(x(P) - n)^2)", "M = Maximize(f, P)", "w = x(P)",
+], [setn("n", 0), setn("n", 7), mv("B", 14, 0)])
+cases.case("maximizepoint", [
+    "P = (0, 0)", "a = x(P)", "M = Maximize(a, P)",
+], [mv("P", 4, 3)])
+cases.case("maximizepoint", [
+    "c = Curve(t, t^2, t, -4, 4)", "P = Point(c, 0.75)",
+    "M = Maximize(-(x(P) - 1)^2, P)", "w = x(P)",
+], [])
+
 # The remaining Sum forms.
 cases.case("sum", [
     "l = {1, 10, 0.5}", "a = Sum(l, l)", "b = Sum(l)", "c = Sum(l, 2)",
