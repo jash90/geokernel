@@ -568,6 +568,8 @@ const SAMPLE_CASES: &[&str] = &[
     "geomformsreview-shapes-001",
     "importgaps-curve-001",
     "implicit-asymptotes-006",
+    "implicit-barycentric-001",
+    "implicit-barycentric-002",
     "implicit-conic-005",
     "implicit-conic-010",
     "implicit-constructors-012",

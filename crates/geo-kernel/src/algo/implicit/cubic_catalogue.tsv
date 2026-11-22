@@ -1,7 +1,7 @@
 # Licensed under the EUPL 1.2.
 # Index, symmetry, vertex coefficient, mixed coefficient, central coefficient.
 # Spaces separate signed monomials. Factors include side powers a2 through c20,
-# doubled-area factor S (four times the area), r3 = sqrt(3), and cA3/cB3/cC3
+# area factor S (four times the area), r3 = sqrt(3), and cA3/cB3/cC3
 # for the cosines of the opposite angles divided by three.
 -438	-	0	-S*a10*c2 +6*S*a8*c4 +6*S*a8*c2*b2 -8*S*a6*c6 +4*S*a6*c4*b2 +S*a6*c2*b4 +4*S*a4*c8 -11*S*a4*c6*b2 -2*S*a4*c4*b4 +S*a4*c2*b6 -3*S*a2*c10 -14*S*a2*c8*b2 +13*S*a2*c6*b4 +10*S*a2*c4*b6 -6*S*a2*c2*b8 +2*S*c12 +9*S*c10*b2 -38*S*c8*b4 +40*S*c6*b6 -12*S*c4*b8 -S*c2*b10 +a12*c2*r3 -3*a10*c4*r3 +a10*c2*b2*r3 +4*a8*c6*r3 -14*a8*c4*b2*r3 -5*a8*c2*b4*r3 -6*a6*c8*r3 +15*a6*c6*b2*r3 +3*a6*c4*b4*r3 +2*a6*c2*b6*r3 +9*a4*c10*r3 -3*a4*c8*b2*r3 -3*a4*c4*b6*r3 -a4*c2*b8*r3 -7*a2*c12*r3 +12*a2*c10*b2*r3 +15*a2*c8*b4*r3 -27*a2*c6*b6*r3 +2*a2*c4*b8*r3 +5*a2*c2*b10*r3 +2*c14*r3 -11*c12*b2*r3 +15*c10*b4*r3 +4*c8*b6*r3 -22*c6*b8*r3 +15*c4*b10*r3 -3*c2*b12*r3	0
 -424	-	0	2*b2*c2 -c2*S	0

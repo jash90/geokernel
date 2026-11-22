@@ -230,6 +230,9 @@ for indices in ((1, 2, 3, 4, 10, 42, 42.9), (29, 30, 31, 129, -129, -400, 400),
                [setn("n", n) for n in rest] + [setn("n", first), mv("R", 1.5, 0.5),
                                               mv("R", 1, 3), mv("P", -2, 1)])
 cases.case("cubics", ["c = Cubic((1,1), (2,1/2), (3,1/3), 42)"], [])
+cases.case("cubics", ["P = (0, 0)", "Q = (1, 0)", "R = (0.2, 0.8)", "n = 12",
+                      "c = Cubic(P, Q, R, n)"],
+           [setn("n", 15), setn("n", 587), setn("n", 12)])
 
 cases.case(
     "trianglecurve", ["A = (0, 0)", "B = (4, 0)", "C = (0, 2)", "h = 2",

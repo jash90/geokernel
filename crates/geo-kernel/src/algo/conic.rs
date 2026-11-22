@@ -48,7 +48,7 @@ const CIRCLE_OR_SEGMENT: &[Kind] = &[Kind::Circle, Kind::Segment];
 
 /// GeoGebra's `MyMath.length(x, y)`, used where GeoGebra measures the
 /// distance of two `GeoPoint`s: it scales by the larger component.
-fn ggb_length(x: f64, y: f64) -> f64 {
+pub(super) fn scaled_length(x: f64, y: f64) -> f64 {
     let (ax, ay) = (x.abs(), y.abs());
     if ax == 0.0 {
         ay
@@ -129,9 +129,9 @@ pub(crate) fn circumcircle(
     let (acx, acy) = (cx - ax, cy - ay);
     let (bcx, bcy) = (cx - bx, cy - by);
 
-    let len_ab = ggb_length(abx, aby);
-    let len_ac = ggb_length(acx, acy);
-    let len_bc = ggb_length(bcx, bcy);
+    let len_ab = scaled_length(abx, aby);
+    let len_ac = scaled_length(acx, acy);
+    let len_bc = scaled_length(bcx, bcy);
 
     // The two bisectors with the largest intersection angle.
     let det0 = (abx * acy - aby * acx).abs() / (len_ab * len_ac);
@@ -181,7 +181,7 @@ pub(crate) fn circumcircle(
     }
     let (mx, my) = if z == 1.0 { (x, y) } else { (x / z, y / z) };
 
-    let r = snap_radius(ggb_length(ax - mx, ay - my));
+    let r = snap_radius(scaled_length(ax - mx, ay - my));
     Circumcircle::Circle { cx: mx, cy: my, r }
 }
 
@@ -286,7 +286,7 @@ impl Group for ConicDef {
                     Value::Segment { x1, y1, x2, y2 } => Some(Value::Circle {
                         cx,
                         cy,
-                        r: snap_radius(ggb_length(x2 - x1, y2 - y1)),
+                        r: snap_radius(scaled_length(x2 - x1, y2 - y1)),
                     }),
                     _ => None,
                 }

@@ -3,7 +3,7 @@
 use std::f64::consts::TAU;
 use std::sync::OnceLock;
 
-use crate::expr::equation::implicit::Coefficients;
+use crate::algo::conic::scaled_length;
 use crate::{Construction, Id, Kind};
 
 /// Each coordinate is stored as [constant, x coefficient, y coefficient].
@@ -34,7 +34,15 @@ pub(crate) fn argument(c: &mut Construction, text: &str, kind: Kind) -> Result<I
     Err(format!("expected {kind:?}, got `{text}`"))
 }
 
-pub(crate) fn cubic(c: &Construction, [a, b, d, n]: [Id; 4]) -> Option<Coefficients> {
+pub(crate) struct Cubic {
+    pub(crate) coordinates: [[f64; 3]; 3],
+    /// For each pair of consecutive coordinates p and q, the weights
+    /// of p³, p²q and q²p.
+    pub(crate) cyclic: [[f64; 3]; 3],
+    pub(crate) central: f64,
+}
+
+pub(crate) fn cubic(c: &Construction, [a, b, d, n]: [Id; 4]) -> Option<Cubic> {
     let points = [c.point(a)?, c.point(b)?, c.point(d)?];
     let barycentric = coordinates(points)?;
     let index = c.number(n)? as i32;
@@ -42,51 +50,30 @@ pub(crate) fn cubic(c: &Construction, [a, b, d, n]: [Id; 4]) -> Option<Coefficie
     let distance = |i: usize, j: usize| {
         let (x, y) = points[i];
         let (u, v) = points[j];
-        (x - u).hypot(y - v)
+        scaled_length(x - u, y - v)
     };
     let sides = [distance(1, 2), distance(2, 0), distance(0, 1)];
-    let mut result = [[0.0; 4]; 4];
-    for i in 0..3 {
+    let mut cyclic = [[0.0; 3]; 3];
+    let mut central = 0.0;
+    for (i, weights) in cyclic.iter_mut().enumerate() {
         let j = (i + 1) % 3;
         let k = (i + 2) % 3;
         let (a, b, c) = (sides[i], sides[j], sides[k]);
-        let [vertex, mixed, central] = entry.coefficients([a, b, c])?;
+        let [vertex, mixed, product] = entry.coefficients([a, b, c])?;
         let [_, swapped, _] = entry.coefficients([b, a, c])?;
-        let (p, q) = (barycentric[i], barycentric[j]);
-        add_term(&mut result, [p, p, p], -vertex);
-        add_term(&mut result, [p, p, q], -mixed);
-        add_term(&mut result, [q, q, p], -entry.symmetry * swapped);
+        *weights = [vertex, mixed, entry.symmetry * swapped];
         if i == 0 {
-            add_term(&mut result, barycentric, -central);
+            central = product;
         }
     }
-    Some(result.into_iter().map(Vec::from).collect())
+    Some(Cubic {
+        coordinates: barycentric,
+        cyclic,
+        central,
+    })
 }
 
-fn add_term(result: &mut [[f64; 4]; 4], factors: [[f64; 3]; 3], coefficient: f64) {
-    let mut product = [[0.0; 4]; 4];
-    product[0][0] = coefficient;
-    for (degree, [constant, x, y]) in factors.into_iter().enumerate() {
-        let mut next = [[0.0; 4]; 4];
-        for i in 0..=degree {
-            for j in 0..=degree - i {
-                let value = product[i][j];
-                next[i][j] += value * constant;
-                next[i + 1][j] += value * x;
-                next[i][j + 1] += value * y;
-            }
-        }
-        product = next;
-    }
-    for (dest, src) in result
-        .iter_mut()
-        .flatten()
-        .zip(product.into_iter().flatten())
-    {
-        *dest += src;
-    }
-}
-
+#[derive(Clone, Copy)]
 struct CatalogueEntry {
     index: i32,
     symmetry: f64,
@@ -122,10 +109,11 @@ impl CatalogueEntry {
                 })
                 .collect()
         });
-        let entry = &table[table
-            .binary_search_by_key(&index, |entry| entry.index)
-            .ok()?];
-        Some(Self { ..*entry })
+        Some(
+            table[table
+                .binary_search_by_key(&index, |entry| entry.index)
+                .ok()?],
+        )
     }
 
     fn coefficients(&self, [a, b, c]: [f64; 3]) -> Option<[f64; 3]> {
@@ -185,7 +173,7 @@ impl CatalogueEntry {
                 let sign = if term.starts_with('-') { -1.0 } else { 1.0 };
                 let mut factors = term.trim_start_matches(['+', '-']).split('*');
                 let mut value = sign;
-                for symbol in factors.by_ref().take(8) {
+                for symbol in factors.by_ref().take(9) {
                     value *= factor(symbol)?;
                 }
                 if factors.next().is_some() {

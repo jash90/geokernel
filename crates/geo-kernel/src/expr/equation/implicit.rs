@@ -1,6 +1,6 @@
 // Licensed under the EUPL 1.2.
 
-use super::{build_normal, Builder, Entry, NotPolynomial};
+use super::{build_normal, Builder, Entry, NotPolynomial, Poly};
 use crate::algo::implicit::{barycentric, locus_equation};
 use crate::algo::{conic_nd::ConicData, general_conic};
 use crate::expr::{eval, parse, shift_children, Bin, Elem, Element, Lit, Node, Raw, Ty};
@@ -218,6 +218,58 @@ fn normal(
         };
         builder.expand(c, root)?
     };
+    matrix(c, &mut builder, poly)
+}
+
+fn cubic_matrix(c: &Construction, cubic: barycentric::Cubic) -> Option<Coefficients> {
+    let mut builder = Builder::empty();
+    builder.max_degree = 3;
+    let x = builder.push(Node::Var);
+    let y = builder.push(Node::VarY);
+    let zero = builder.push(Node::Num(0.0));
+    let two = builder.push(Node::Num(2.0));
+    let three = builder.push(Node::Num(3.0));
+    let coordinates = cubic.coordinates.map(|[constant, dx, dy]| {
+        let dx = builder.push(Node::Num(dx));
+        let dy = builder.push(Node::Num(dy));
+        let constant = builder.push(Node::Num(constant));
+        let y = builder.push(Node::Bin(Bin::Mul, dy, y));
+        let x = builder.push(Node::Bin(Bin::Mul, dx, x));
+        let linear = builder.push(Node::Bin(Bin::Add, y, x));
+        builder.push(Node::Bin(Bin::Add, linear, constant))
+    });
+    let squares = coordinates.map(|coordinate| builder.push(Node::Bin(Bin::Pow, coordinate, two)));
+    let monomial = |builder: &mut Builder, coefficient, factors: &[u32]| {
+        let coefficient = builder.push(Node::Num(coefficient));
+        factors.iter().fold(coefficient, |product, &factor| {
+            builder.push(Node::Bin(Bin::Mul, product, factor))
+        })
+    };
+    let mut sum = zero;
+    for (p, [vertex, mixed, swapped]) in cubic.cyclic.into_iter().enumerate() {
+        let q = (p + 1) % 3;
+        let cube = builder.push(Node::Bin(Bin::Pow, coordinates[p], three));
+        for term in [
+            monomial(&mut builder, vertex, &[cube]),
+            monomial(&mut builder, mixed, &[squares[p], coordinates[q]]),
+            monomial(&mut builder, swapped, &[squares[q], coordinates[p]]),
+        ] {
+            sum = builder.push(Node::Bin(Bin::Add, sum, term));
+        }
+        if p == 0 {
+            let term = monomial(&mut builder, cubic.central, &coordinates);
+            sum = builder.push(Node::Bin(Bin::Add, sum, term));
+        }
+    }
+    let polynomial = build_normal(c, &mut builder, zero, sum).ok()?;
+    Some(matrix(c, &mut builder, polynomial).ok()?.1)
+}
+
+fn matrix(
+    c: &Construction,
+    builder: &mut Builder,
+    poly: Poly,
+) -> Result<(u32, Coefficients), NotPolynomial> {
     let degree = poly.degree();
     if degree > MAX_DEGREE {
         return Err(NotPolynomial::ImplicitCurve);
@@ -240,7 +292,7 @@ fn normal(
             *slot = values
                 .next()
                 .flatten()
-                .or_else(|| coefficient_value(c, &builder, root))
+                .or_else(|| coefficient_value(c, builder, root))
                 .unwrap_or(f64::NAN);
         }
     }
@@ -359,7 +411,9 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
             (Kind::ImplicitCurve, coefficients)
         }
         Source::Cubic(inputs) => {
-            let Some(coefficients) = barycentric::cubic(c, inputs) else {
+            let Some(coefficients) =
+                barycentric::cubic(c, inputs).and_then(|cubic| cubic_matrix(c, cubic))
+            else {
                 return Value::Undefined;
             };
             (Kind::ImplicitCurve, coefficients)
