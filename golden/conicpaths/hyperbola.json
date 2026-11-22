@@ -1,0 +1,1415 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "conicpaths-hyperbola-001",
+      "group": "conicpaths",
+      "script": [
+        "F = (-3.5, -4.62)",
+        "G = (3.49, 1.96)",
+        "R = (1.66, 1.77)",
+        "k = Hyperbola(F, G, R)",
+        "P = Point(k)",
+        "t = PathParameter(P)",
+        "u = 0.735",
+        "U = Point(k, u)",
+        "w = PathParameter(U)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 0.07, "y": -7.14 },
+        { "action": "move", "label": "R", "x": 1.67, "y": -1.83 },
+        { "action": "move", "label": "P", "x": -2.5, "y": 3.75 },
+        { "action": "move", "label": "F", "x": -1.29, "y": -1.44 },
+        { "action": "set_number", "label": "u", "value": 0.75 },
+        { "action": "move", "label": "P", "x": 4.23, "y": 2.54 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.5, "y": -4.62 },
+          "G": { "type": "point", "defined": true, "x": 3.49, "y": 1.96 },
+          "R": { "type": "point", "defined": true, "x": 1.66, "y": 1.77 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-32.95812769390487, -10.703327693904864, 2072.0379993337206, -183.9768, -244.85393463846952, -15.155309832893437],
+            "midpoint": [-0.004999999999999819, -1.33],
+            "half_axes": [3.186713356913506, 3.5894265532072187],
+            "eigenvectors": [
+              [0.7281388265521356, 0.6854296822193209],
+              [-0.6854296822193209, 0.7281388265521356]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.9267337939741527, "y": 1.335213448577044 },
+          "t": { "type": "number", "defined": true, "value": 0.2864967498125733 },
+          "u": { "type": "number", "defined": true, "value": 0.735 },
+          "U": { "type": "point", "defined": true, "x": -2.1729511507310693, "y": -3.685657942069962 },
+          "w": { "type": "number", "defined": true, "value": 0.735 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.5, "y": -4.62 },
+          "G": { "type": "point", "defined": true, "x": 3.49, "y": 1.96 },
+          "R": { "type": "point", "defined": true, "x": 1.66, "y": 1.77 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-32.95812769390487, -10.703327693904864, 2072.0379993337206, -183.9768, -244.85393463846952, -15.155309832893437],
+            "midpoint": [-0.004999999999999819, -1.33],
+            "half_axes": [3.186713356913506, 3.5894265532072187],
+            "eigenvectors": [
+              [0.7281388265521356, 0.6854296822193209],
+              [-0.6854296822193209, 0.7281388265521356]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -0.7763261088191448, "y": -7.295080673660009 },
+          "t": { "type": "number", "defined": true, "value": 0.6298656632923183 },
+          "u": { "type": "number", "defined": true, "value": 0.735 },
+          "U": { "type": "point", "defined": true, "x": -2.1729511507310693, "y": -3.685657942069962 },
+          "w": { "type": "number", "defined": true, "value": 0.735 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.5, "y": -4.62 },
+          "G": { "type": "point", "defined": true, "x": 3.49, "y": 1.96 },
+          "R": { "type": "point", "defined": true, "x": 1.67, "y": -1.83 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-184.2790063676196, -162.02420636761957, -39.693418226783876, -183.9768, -245.61053903183807, -216.41207846893403],
+            "midpoint": [-0.005000000000000871, -1.3299999999999983],
+            "half_axes": [0.8352167994142453, 4.72668360459807],
+            "eigenvectors": [
+              [0.7281388265521356, 0.6854296822193208],
+              [-0.6854296822193208, 0.7281388265521356]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.550695289114455, "y": -5.823105616554008 },
+          "t": { "type": "number", "defined": true, "value": 0.6298656632923183 },
+          "u": { "type": "number", "defined": true, "value": 0.735 },
+          "U": { "type": "point", "defined": true, "x": -0.4074562974955697, "y": -2.1234800208527234 },
+          "w": { "type": "number", "defined": true, "value": 0.735 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.5, "y": -4.62 },
+          "G": { "type": "point", "defined": true, "x": 3.49, "y": 1.96 },
+          "R": { "type": "point", "defined": true, "x": 1.67, "y": -1.83 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-184.2790063676196, -162.02420636761957, -39.693418226783876, -183.9768, -245.61053903183807, -216.41207846893403],
+            "midpoint": [-0.005000000000000871, -1.3299999999999983],
+            "half_axes": [0.8352167994142453, 4.72668360459807],
+            "eigenvectors": [
+              [0.7281388265521356, 0.6854296822193208],
+              [-0.6854296822193208, 0.7281388265521356]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -2.818901783133993, "y": 3.521188991274216 },
+          "t": { "type": "number", "defined": true, "value": 0.37418759724393774 },
+          "u": { "type": "number", "defined": true, "value": 0.735 },
+          "U": { "type": "point", "defined": true, "x": -0.4074562974955697, "y": -2.1234800208527234 },
+          "w": { "type": "number", "defined": true, "value": 0.735 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -1.29, "y": -1.44 },
+          "G": { "type": "point", "defined": true, "x": 3.49, "y": 1.96 },
+          "R": { "type": "point", "defined": true, "x": 1.67, "y": -1.83 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-85.45208676902661, -40.298486769026596, -94.40263644906662, -65.008, 110.89937544592928, 81.98640655994693],
+            "midpoint": [1.1, 0.2599999999999991],
+            "half_axes": [0.6093804861790678, 2.868929316498431],
+            "eigenvectors": [
+              [0.8148837501194366, 0.5796244247711475],
+              [-0.5796244247711475, 0.8148837501194366]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -0.062486137547104414, "y": 3.500794750294018 },
+          "t": { "type": "number", "defined": true, "value": 0.37418759724393774 },
+          "u": { "type": "number", "defined": true, "value": 0.735 },
+          "U": { "type": "point", "defined": true, "x": 0.708628557954974, "y": -0.24325702052314135 },
+          "w": { "type": "number", "defined": true, "value": 0.735 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -1.29, "y": -1.44 },
+          "G": { "type": "point", "defined": true, "x": 3.49, "y": 1.96 },
+          "R": { "type": "point", "defined": true, "x": 1.67, "y": -1.83 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-85.45208676902661, -40.298486769026596, -94.40263644906662, -65.008, 110.89937544592928, 81.98640655994693],
+            "midpoint": [1.1, 0.2599999999999991],
+            "half_axes": [0.6093804861790678, 2.868929316498431],
+            "eigenvectors": [
+              [0.8148837501194366, 0.5796244247711475],
+              [-0.5796244247711475, 0.8148837501194366]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -0.062486137547104414, "y": 3.500794750294018 },
+          "t": { "type": "number", "defined": true, "value": 0.37418759724393774 },
+          "u": { "type": "number", "defined": true, "value": 0.75 },
+          "U": { "type": "point", "defined": true, "x": 0.6034257441727958, "y": -0.09321181376830528 },
+          "w": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -1.29, "y": -1.44 },
+          "G": { "type": "point", "defined": true, "x": 3.49, "y": 1.96 },
+          "R": { "type": "point", "defined": true, "x": 1.67, "y": -1.83 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-85.45208676902661, -40.298486769026596, -94.40263644906662, -65.008, 110.89937544592928, 81.98640655994693],
+            "midpoint": [1.1, 0.2599999999999991],
+            "half_axes": [0.6093804861790678, 2.868929316498431],
+            "eigenvectors": [
+              [0.8148837501194366, 0.5796244247711475],
+              [-0.5796244247711475, 0.8148837501194366]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.5632718067082563, "y": 0.6602432175109683 },
+          "t": { "type": "number", "defined": true, "value": 0.2549225279233342 },
+          "u": { "type": "number", "defined": true, "value": 0.75 },
+          "U": { "type": "point", "defined": true, "x": 0.6034257441727958, "y": -0.09321181376830528 },
+          "w": { "type": "number", "defined": true, "value": 0.75 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-hyperbola-002",
+      "group": "conicpaths",
+      "script": [
+        "F = (-3.33, -3.58)",
+        "G = (1.82, 2.78)",
+        "R = (-1.91, 2.3)",
+        "k = Hyperbola(F, G, R)",
+        "P = Point(k)",
+        "t = PathParameter(P)",
+        "u = 0.517",
+        "U = Point(k, u)",
+        "w = PathParameter(U)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": -1.96, "y": -6.22 },
+        { "action": "move", "label": "R", "x": 1.58, "y": 0.35 },
+        { "action": "move", "label": "P", "x": 5.21, "y": 3.08 },
+        { "action": "move", "label": "F", "x": -2.74, "y": -3.36 },
+        { "action": "set_number", "label": "u", "value": 0.494 },
+        { "action": "move", "label": "P", "x": 4.54, "y": -1.07 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -3.33, "y": -3.58 },
+          "G": { "type": "point", "defined": true, "x": 1.82, "y": 2.78 },
+          "R": { "type": "point", "defined": true, "x": -1.91, "y": 2.3 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-85.14518866541061, -140.85358866541057, 173.05655532475083, -131.016, -116.69101744238502, -155.25851546616423],
+            "midpoint": [-0.7549999999999999, -0.4],
+            "half_axes": [1.1441375391148731, 3.928609714846738],
+            "eigenvectors": [
+              [0.6293036787397439, 0.7771594945213147],
+              [-0.7771594945213147, 0.6293036787397439]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.22108053447837217, "y": 0.28689406551948093 },
+          "t": { "type": "number", "defined": true, "value": 0.23084803563497971 },
+          "u": { "type": "number", "defined": true, "value": 0.517 },
+          "U": { "type": "point", "defined": true, "x": 1045443.947783247, "y": -1506218.2479227525 },
+          "w": { "type": "number", "defined": true, "value": 0.517 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.33, "y": -3.58 },
+          "G": { "type": "point", "defined": true, "x": 1.82, "y": 2.78 },
+          "R": { "type": "point", "defined": true, "x": -1.91, "y": 2.3 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-85.14518866541061, -140.85358866541057, 173.05655532475083, -131.016, -116.69101744238502, -155.25851546616423],
+            "midpoint": [-0.7549999999999999, -0.4],
+            "half_axes": [1.1441375391148731, 3.928609714846738],
+            "eigenvectors": [
+              [0.6293036787397439, 0.7771594945213147],
+              [-0.7771594945213147, 0.6293036787397439]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.9668111465598208, "y": -3.7530958580609366 },
+          "t": { "type": "number", "defined": true, "value": 0.6394919730373332 },
+          "u": { "type": "number", "defined": true, "value": 0.517 },
+          "U": { "type": "point", "defined": true, "x": 1045443.947783247, "y": -1506218.2479227525 },
+          "w": { "type": "number", "defined": true, "value": 0.517 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.33, "y": -3.58 },
+          "G": { "type": "point", "defined": true, "x": 1.82, "y": 2.78 },
+          "R": { "type": "point", "defined": true, "x": 1.58, "y": 0.35 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-46.88330025196311, -102.59170025196306, 649.9366838415492, -131.016, -87.80329169023216, -139.95376010078522],
+            "midpoint": [-0.7549999999999997, -0.40000000000000013],
+            "half_axes": [1.9236472478737643, 3.6114548682972205],
+            "eigenvectors": [
+              [0.6293036787397438, 0.7771594945213146],
+              [-0.7771594945213146, 0.6293036787397438]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.09776373868473631, "y": -4.383973831438647 },
+          "t": { "type": "number", "defined": true, "value": 0.6394919730373332 },
+          "u": { "type": "number", "defined": true, "value": 0.517 },
+          "U": { "type": "point", "defined": true, "x": 715193.6627438961, "y": -1688237.2840920868 },
+          "w": { "type": "number", "defined": true, "value": 0.517 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -3.33, "y": -3.58 },
+          "G": { "type": "point", "defined": true, "x": 1.82, "y": 2.78 },
+          "R": { "type": "point", "defined": true, "x": 1.58, "y": 0.35 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-46.88330025196311, -102.59170025196306, 649.9366838415492, -131.016, -87.80329169023216, -139.95376010078522],
+            "midpoint": [-0.7549999999999997, -0.40000000000000013],
+            "half_axes": [1.9236472478737643, 3.6114548682972205],
+            "eigenvectors": [
+              [0.6293036787397438, 0.7771594945213146],
+              [-0.7771594945213146, 0.6293036787397438]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.019452511131608, "y": -0.641804880448902 },
+          "t": { "type": "number", "defined": true, "value": 0.12955267326551634 },
+          "u": { "type": "number", "defined": true, "value": 0.517 },
+          "U": { "type": "point", "defined": true, "x": 715193.6627438961, "y": -1688237.2840920868 },
+          "w": { "type": "number", "defined": true, "value": 0.517 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.74, "y": -3.36 },
+          "G": { "type": "point", "defined": true, "x": 1.82, "y": 2.78 },
+          "R": { "type": "point", "defined": true, "x": 1.58, "y": 0.35 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-40.85666859493993, -108.48066859493989, 459.25209441766583, -111.9936, -51.27221155367238, -82.97644989253257],
+            "midpoint": [-0.4600000000000001, -0.29000000000000015],
+            "half_axes": [1.626302005414817, 3.4609885563497236],
+            "eigenvectors": [
+              [0.5962277043774752, 0.8028153738766878],
+              [-0.8028153738766878, 0.5962277043774752]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.9316030269438764, "y": -0.5853571590396954 },
+          "t": { "type": "number", "defined": true, "value": 0.12955267326551634 },
+          "u": { "type": "number", "defined": true, "value": 0.517 },
+          "U": { "type": "point", "defined": true, "x": 810532.8735481128, "y": -1509664.6255571265 },
+          "w": { "type": "number", "defined": true, "value": 0.517 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.74, "y": -3.36 },
+          "G": { "type": "point", "defined": true, "x": 1.82, "y": 2.78 },
+          "R": { "type": "point", "defined": true, "x": 1.58, "y": 0.35 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-40.85666859493993, -108.48066859493989, 459.25209441766583, -111.9936, -51.27221155367238, -82.97644989253257],
+            "midpoint": [-0.4600000000000001, -0.29000000000000015],
+            "half_axes": [1.626302005414817, 3.4609885563497236],
+            "eigenvectors": [
+              [0.5962277043774752, 0.8028153738766878],
+              [-0.8028153738766878, 0.5962277043774752]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.9316030269438764, "y": -0.5853571590396954 },
+          "t": { "type": "number", "defined": true, "value": 0.12955267326551634 },
+          "u": { "type": "number", "defined": true, "value": 0.494 },
+          "U": { "type": "point", "defined": true, "x": -4.1465865564940646E17, "y": 7.723252800995063E17 },
+          "w": { "type": "number", "defined": true, "value": 0.494 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.74, "y": -3.36 },
+          "G": { "type": "point", "defined": true, "x": 1.82, "y": 2.78 },
+          "R": { "type": "point", "defined": true, "x": 1.58, "y": 0.35 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-40.85666859493993, -108.48066859493989, 459.25209441766583, -111.9936, -51.27221155367238, -82.97644989253257],
+            "midpoint": [-0.4600000000000001, -0.29000000000000015],
+            "half_axes": [1.626302005414817, 3.4609885563497236],
+            "eigenvectors": [
+              [0.5962277043774752, 0.8028153738766878],
+              [-0.8028153738766878, 0.5962277043774752]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.620543786565391, "y": -0.795657175790817 },
+          "t": { "type": "number", "defined": true, "value": 0.12151843545884461 },
+          "u": { "type": "number", "defined": true, "value": 0.494 },
+          "U": { "type": "point", "defined": true, "x": -4.1465865564940646E17, "y": 7.723252800995063E17 },
+          "w": { "type": "number", "defined": true, "value": 0.494 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-hyperbola-003",
+      "group": "conicpaths",
+      "script": [
+        "F = (-1.85, -2.07)",
+        "G = (1.79, 4.79)",
+        "R = (2.86, 2.07)",
+        "k = Hyperbola(F, G, R)",
+        "P = Point(k)",
+        "t = PathParameter(P)",
+        "u = 0.201",
+        "U = Point(k, u)",
+        "w = PathParameter(U)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": -1.87, "y": 3.59 },
+        { "action": "move", "label": "R", "x": -2.04, "y": 1.31 },
+        { "action": "move", "label": "P", "x": 5.83, "y": 4.41 },
+        { "action": "move", "label": "F", "x": -4.01, "y": -4.47 },
+        { "action": "set_number", "label": "u", "value": 0.876 },
+        { "action": "move", "label": "P", "x": 1.59, "y": -6.16 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -1.85, "y": -2.07 },
+          "G": { "type": "point", "defined": true, "x": 1.79, "y": 4.79 },
+          "R": { "type": "point", "defined": true, "x": 2.86, "y": 2.07 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-8.162820144523291, -143.40282014452325, 293.26529772648666, -99.88159999999999, 135.5940913956643, 192.03138739655165],
+            "midpoint": [-0.02999999999999938, 1.3599999999999999],
+            "half_axes": [1.6739843908971475, 3.503580491302105],
+            "eigenvectors": [
+              [0.46871580689935044, 0.8833490206949295],
+              [-0.8833490206949295, 0.46871580689935044]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -0.2781403007436819, "y": -0.4329314985890158 },
+          "t": { "type": "number", "defined": true, "value": 0.7125158455460746 },
+          "u": { "type": "number", "defined": true, "value": 0.201 },
+          "U": { "type": "point", "defined": true, "x": 1.5400229166852415, "y": 2.4785595229893804 },
+          "w": { "type": "number", "defined": true, "value": 0.201 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -1.85, "y": -2.07 },
+          "G": { "type": "point", "defined": true, "x": 1.79, "y": 4.79 },
+          "R": { "type": "point", "defined": true, "x": 2.86, "y": 2.07 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-8.162820144523291, -143.40282014452325, 293.26529772648666, -99.88159999999999, 135.5940913956643, 192.03138739655165],
+            "midpoint": [-0.02999999999999938, 1.3599999999999999],
+            "half_axes": [1.6739843908971475, 3.503580491302105],
+            "eigenvectors": [
+              [0.46871580689935044, 0.8833490206949295],
+              [-0.8833490206949295, 0.46871580689935044]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -1.2133542668198651, "y": 4.290753622857148 },
+          "t": { "type": "number", "defined": true, "value": 0.348007272738569 },
+          "u": { "type": "number", "defined": true, "value": 0.201 },
+          "U": { "type": "point", "defined": true, "x": 1.5400229166852415, "y": 2.4785595229893804 },
+          "w": { "type": "number", "defined": true, "value": 0.201 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -1.85, "y": -2.07 },
+          "G": { "type": "point", "defined": true, "x": 1.79, "y": 4.79 },
+          "R": { "type": "point", "defined": true, "x": -2.04, "y": 1.31 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-40.18864427146331, -175.42864427146327, -133.47773673252524, -99.88159999999999, 134.63331667185608, 235.58650820919007],
+            "midpoint": [-0.029999999999999204, 1.3599999999999985],
+            "half_axes": [0.8947679772061259, 3.778450776041211],
+            "eigenvectors": [
+              [0.46871580689935044, 0.8833490206949295],
+              [-0.8833490206949295, 0.46871580689935044]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -1.8248248742209678, "y": 3.5432621880193405 },
+          "t": { "type": "number", "defined": true, "value": 0.348007272738569 },
+          "u": { "type": "number", "defined": true, "value": 0.201 },
+          "U": { "type": "point", "defined": true, "x": 1.2236649531195958, "y": 1.7379650020477446 },
+          "w": { "type": "number", "defined": true, "value": 0.201 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -1.85, "y": -2.07 },
+          "G": { "type": "point", "defined": true, "x": 1.79, "y": 4.79 },
+          "R": { "type": "point", "defined": true, "x": -2.04, "y": 1.31 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-40.18864427146331, -175.42864427146327, -133.47773673252524, -99.88159999999999, 134.63331667185608, 235.58650820919007],
+            "midpoint": [-0.029999999999999204, 1.3599999999999985],
+            "half_axes": [0.8947679772061259, 3.778450776041211],
+            "eigenvectors": [
+              [0.46871580689935044, 0.8833490206949295],
+              [-0.8833490206949295, 0.46871580689935044]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.578440445321766, "y": 0.48593726998388154 },
+          "t": { "type": "number", "defined": true, "value": 0.12457264359742692 },
+          "u": { "type": "number", "defined": true, "value": 0.201 },
+          "U": { "type": "point", "defined": true, "x": 1.2236649531195958, "y": 1.7379650020477446 },
+          "w": { "type": "number", "defined": true, "value": 0.201 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -4.01, "y": -4.47 },
+          "G": { "type": "point", "defined": true, "x": 1.79, "y": 4.79 },
+          "R": { "type": "point", "defined": true, "x": -2.04, "y": 1.31 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-131.08830270580575, -339.51870270580577, 8.968859185587462, -214.832, -111.1348960034443, -184.14052756707096],
+            "midpoint": [-1.1100000000000039, 0.16000000000000178],
+            "half_axes": [0.46581228073886277, 5.443337112389141],
+            "eigenvectors": [
+              [0.5308213505811613, 0.8474837424795783],
+              [-0.8474837424795783, 0.5308213505811613]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.743885726498907, "y": -2.6539875637519357 },
+          "t": { "type": "number", "defined": true, "value": 0.12457264359742692 },
+          "u": { "type": "number", "defined": true, "value": 0.201 },
+          "U": { "type": "point", "defined": true, "x": 0.2804152633096977, "y": -0.14483146612992046 },
+          "w": { "type": "number", "defined": true, "value": 0.201 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -4.01, "y": -4.47 },
+          "G": { "type": "point", "defined": true, "x": 1.79, "y": 4.79 },
+          "R": { "type": "point", "defined": true, "x": -2.04, "y": 1.31 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-131.08830270580575, -339.51870270580577, 8.968859185587462, -214.832, -111.1348960034443, -184.14052756707096],
+            "midpoint": [-1.1100000000000039, 0.16000000000000178],
+            "half_axes": [0.46581228073886277, 5.443337112389141],
+            "eigenvectors": [
+              [0.5308213505811613, 0.8474837424795783],
+              [-0.8474837424795783, 0.5308213505811613]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.743885726498907, "y": -2.6539875637519357 },
+          "t": { "type": "number", "defined": true, "value": 0.12457264359742692 },
+          "u": { "type": "number", "defined": true, "value": 0.876 },
+          "U": { "type": "point", "defined": true, "x": -7.0331746884988515, "y": 3.011309437444102 },
+          "w": { "type": "number", "defined": true, "value": 0.876 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -4.01, "y": -4.47 },
+          "G": { "type": "point", "defined": true, "x": 1.79, "y": 4.79 },
+          "R": { "type": "point", "defined": true, "x": -2.04, "y": 1.31 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-131.08830270580575, -339.51870270580577, 8.968859185587462, -214.832, -111.1348960034443, -184.14052756707096],
+            "midpoint": [-1.1100000000000039, 0.16000000000000178],
+            "half_axes": [0.46581228073886277, 5.443337112389141],
+            "eigenvectors": [
+              [0.5308213505811613, 0.8474837424795783],
+              [-0.8474837424795783, 0.5308213505811613]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.4814376444353368, "y": -3.5224102245914706 },
+          "t": { "type": "number", "defined": true, "value": 0.6293520844522352 },
+          "u": { "type": "number", "defined": true, "value": 0.876 },
+          "U": { "type": "point", "defined": true, "x": -7.0331746884988515, "y": 3.011309437444102 },
+          "w": { "type": "number", "defined": true, "value": 0.876 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-hyperbola-004",
+      "group": "conicpaths",
+      "script": [
+        "F = (-2, 0)",
+        "G = (2, 0)",
+        "R = (3, 1.5)",
+        "k = Hyperbola(F, G, R)",
+        "P = Point(k)",
+        "t = PathParameter(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": -3.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": -3.0, "y": -1.0 },
+        { "action": "move", "label": "P", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 1.0E-6, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "P", "x": 4.0, "y": -2.0 },
+        { "action": "move", "label": "P", "x": 1000.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": -1000.0, "y": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.70868880836164, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -2.755654540807578, "y": 1.315136510572251 },
+          "t": { "type": "number", "defined": true, "value": 0.8784693717258658 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -2.755654540807578, "y": -1.315136510572251 },
+          "t": { "type": "number", "defined": true, "value": 0.6215306282741342 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.70868880836164, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.70868880836164, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.907072127027958, "y": 2.137380400113633 },
+          "t": { "type": "number", "defined": true, "value": 0.39872586482045946 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.907072127027958, "y": -2.137380400113633 },
+          "t": { "type": "number", "defined": true, "value": 0.10127413517954056 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 730.3483711620453, "y": 444.27787231024524 },
+          "t": { "type": "number", "defined": true, "value": 0.4677458524092639 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -730.3483711620453, "y": -444.27787231024524 },
+          "t": { "type": "number", "defined": true, "value": 0.5322541475907361 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-hyperbola-005",
+      "group": "conicpaths",
+      "script": [
+        "F = (-2, 0)",
+        "G = (2, 0)",
+        "R = (3, 1.5)",
+        "k = Hyperbola(F, G, R)",
+        "P = Point(k)",
+        "t = PathParameter(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "G", "x": -3.0, "y": 1.0 },
+        { "action": "move", "label": "F", "x": 3.0, "y": -1.0 },
+        { "action": "move", "label": "P", "x": -4.0, "y": 2.0 },
+        { "action": "move", "label": "R", "x": -3.0, "y": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.70868880836164, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.907072127027958, "y": 2.137380400113633 },
+          "t": { "type": "number", "defined": true, "value": 0.39872586482045946 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-1.4358765172543955, -1.4358765172543955, -18.462056197953732, 4.0, -5.589691293135989, 10.717938258627198],
+            "midpoint": [-2.5, 0.4999999999999999],
+            "half_axes": [0.40032201747043644, 0.5828741565109916],
+            "eigenvectors": [
+              [-0.7071067811865475, 0.7071067811865475],
+              [-0.7071067811865475, -0.7071067811865475]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -3.9947918402860365, "y": 0.2997405708039407 },
+          "t": { "type": "number", "defined": true, "value": 0.39872586482045946 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "G": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-94.41594578792295, 33.58405421207705, 342.17939011413324, 48.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.7603986446980737, 2.626974802266893],
+            "eigenvectors": [
+              [-0.9486832980505138, 0.31622776601683794],
+              [-0.31622776601683794, -0.9486832980505138]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -5.526985899536641, "y": -3.8518054982694627 },
+          "t": { "type": "number", "defined": true, "value": 0.39872586482045946 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "G": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-94.41594578792295, 33.58405421207705, 342.17939011413324, 48.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.7603986446980737, 2.626974802266893],
+            "eigenvectors": [
+              [-0.9486832980505138, 0.31622776601683794],
+              [-0.31622776601683794, -0.9486832980505138]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -1.4497256652594948, "y": 1.9575147392672279 },
+          "t": { "type": "number", "defined": true, "value": 0.16556208851612242 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "G": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [0.0, 128.0, 144.0, 48.0, -0.0, -0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [3.0, 1.0],
+            "eigenvectors": [
+              [0.9486832980505138, -0.31622776601683794],
+              [0.31622776601683794, 0.9486832980505138]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.055920844079681, "y": -1.57984583596788 },
+          "t": { "type": "number", "defined": true, "value": 0.16556208851612242 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-hyperbola-006",
+      "group": "conicpaths",
+      "script": [
+        "F = (-2, 0)",
+        "G = (2, 0)",
+        "R = (3, 1.5)",
+        "k = Hyperbola(F, G, R)",
+        "P = Point(k)",
+        "t = PathParameter(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "R", "x": 0.5, "y": 0.0 },
+        { "action": "move", "label": "R", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 7.0, "y": 7.0 },
+        { "action": "move", "label": "R", "x": 0.5, "y": 2.0 },
+        { "action": "move", "label": "P", "x": -4.0, "y": 2.0 },
+        { "action": "move", "label": "R", "x": 3.0, "y": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.70868880836164, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.907072127027958, "y": 2.137380400113633 },
+          "t": { "type": "number", "defined": true, "value": 0.39872586482045946 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-60.0, 4.0, 15.0, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [0.5, 1.9364916731037085],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.1432954051985091, "y": 3.9820680246852067 },
+          "t": { "type": "number", "defined": true, "value": 0.39872586482045946 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-48.0, 16.0, 48.0, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.0, 1.7320508075688772],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.2865908103970183, "y": 3.561669917689773 },
+          "t": { "type": "number", "defined": true, "value": 0.39872586482045946 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-48.0, 16.0, 48.0, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.0, 1.7320508075688772],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.8477132623446915, "y": 8.215897493380613 },
+          "t": { "type": "number", "defined": true, "value": 0.4233326910387974 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.5, "y": 2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-62.031242374328485, 1.9687576256715127, 7.632780090896068, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [0.35078105935821213, 1.9689978792257574],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.700485993630126, "y": 9.339844229574856 },
+          "t": { "type": "number", "defined": true, "value": 0.4233326910387974 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.5, "y": 2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-62.031242374328485, 1.9687576256715127, 7.632780090896068, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [0.35078105935821213, 1.9689978792257574],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -0.564045605057016, "y": 2.4793500713682137 },
+          "t": { "type": "number", "defined": true, "value": 0.878246171871205 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 1.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-17.286120898874845, 46.71387910112516, 50.468860112342014, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.70868880836164, 1.0394145256728315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -2.7475212445330377, "y": 1.308824405347475 },
+          "t": { "type": "number", "defined": true, "value": 0.878246171871205 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-hyperbola-007",
+      "group": "conicpaths",
+      "script": [
+        "F = (-2, 0)",
+        "G = (2, 0)",
+        "s = 3",
+        "k = Hyperbola(F, G, s)",
+        "P = Point(k)",
+        "t = PathParameter(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 4.0, "y": 2.0 },
+        { "action": "set_number", "label": "s", "value": 4.0 },
+        { "action": "move", "label": "P", "x": 7.0, "y": 7.0 },
+        { "action": "set_number", "label": "s", "value": 4.0000001 },
+        { "action": "set_number", "label": "s", "value": 4.0 },
+        { "action": "set_number", "label": "s", "value": 1.0 },
+        { "action": "move", "label": "P", "x": -4.0, "y": -2.0 },
+        { "action": "move", "label": "G", "x": 0.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [80.0, 144.0, -720.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.8369701987210297E-16, "y": 2.23606797749979 },
+          "t": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [80.0, 144.0, -720.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.6524618191181197, "y": 1.0446813172022567 },
+          "t": { "type": "number", "defined": true, "value": 0.5773678222519906 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [192.0, 256.0, -3072.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 3.4641016151377544],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.53661575882416, "y": 1.6184133374473468 },
+          "t": { "type": "number", "defined": true, "value": 0.5773678222519906 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [192.0, 256.0, -3072.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 3.4641016151377544],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.8780068841807305, "y": 2.4057862084890758 },
+          "t": { "type": "number", "defined": true, "value": 0.6221851196793023 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 4.0000001 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [192.0000128000002, 256.0000128000002, -3072.000358400016, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0000001, 3.4641017306078083],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.878006956130903, "y": 2.4057862886819494 },
+          "t": { "type": "number", "defined": true, "value": 0.6221851196793023 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [192.0, 256.0, -3072.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [4.0, 3.4641016151377544],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.8780068841807305, "y": 2.4057862084890758 },
+          "t": { "type": "number", "defined": true, "value": 0.6221851196793023 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-48.0, 16.0, 48.0, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.0, 1.7320508075688772],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.9360810986114618, "y": 2.8714508634489455 },
+          "t": { "type": "number", "defined": true, "value": 0.3903144051442408 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-48.0, 16.0, 48.0, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.0, 1.7320508075688772],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -2.0000000000000004, "y": -3.0000000000000013 },
+          "t": { "type": "number", "defined": true, "value": 0.607900104845156 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [0.0, 0.0, 48.0, -16.0, 16.0, -16.0],
+            "midpoint": [-1.0, 1.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [0.7071067811865475, 0.7071067811865475],
+              [-0.7071067811865475, 0.7071067811865475]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -1.189468690981506, "y": -1.6389584337646839 },
+          "t": { "type": "number", "defined": true, "value": 0.607900104845156 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-hyperbola-008",
+      "group": "conicpaths",
+      "script": [
+        "F = (-2, 0)",
+        "G = (2, 0)",
+        "s = 3",
+        "k = Hyperbola(F, G, s)",
+        "u = 0.1",
+        "U = Point(k, u)",
+        "w = PathParameter(U)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "u", "value": 0.75 },
+        { "action": "set_number", "label": "u", "value": 0.5 },
+        { "action": "set_number", "label": "u", "value": 0.5001 },
+        { "action": "set_number", "label": "u", "value": 0.9 },
+        { "action": "set_number", "label": "u", "value": 0.0 },
+        { "action": "set_number", "label": "u", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [80.0, 144.0, -720.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 0.1 },
+          "U": { "type": "point", "defined": true, "x": -2.427050983124842, "y": -1.3143277802978344 },
+          "w": { "type": "number", "defined": true, "value": 0.1 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [80.0, 144.0, -720.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 0.75 },
+          "U": { "type": "point", "defined": true, "x": 1.8369701987210297E-16, "y": 2.23606797749979 },
+          "w": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [80.0, 144.0, -720.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 0.5 },
+          "U": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [80.0, 144.0, -720.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 0.5001 },
+          "U": { "type": "point", "defined": true, "x": 2.999999407823755, "y": 0.0014049628537656004 },
+          "w": { "type": "number", "defined": true, "value": 0.5001 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [80.0, 144.0, -720.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 0.9 },
+          "U": { "type": "point", "defined": true, "x": -2.427050983124842, "y": 1.3143277802978344 },
+          "w": { "type": "number", "defined": true, "value": 0.9 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [80.0, 144.0, -720.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 0.0 },
+          "U": { "type": "point", "defined": true, "x": -3.0, "y": -2.7383934913210134E-16 },
+          "w": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [80.0, 144.0, -720.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.23606797749979],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "u": { "type": "number", "defined": true, "value": 1.0 },
+          "U": { "type": "point", "defined": true, "x": -3.0, "y": 2.7383934913210134E-16 },
+          "w": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -516,11 +516,31 @@ impl Workbench {
     fn delete_label(&mut self, label: &str) -> bool {
         let snapshot = self.copy(&self.log);
         let mut next = self.copy(&snapshot);
+        // Where the entry about to go was, so the start points it froze on
+        // the lines that stay are written at the same place again (GeoGebra
+        // installed them on the lines themselves and keeps them when the
+        // locus goes).
+        let Some((at, made)) = next.define_entry(label) else {
+            return false;
+        };
+        let made: Vec<String> = made.to_vec();
         if !next.remove(label) {
             return false;
         }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the
         // whole stroke is one undo step.
+        // Only the starts the deleted entry froze are written into the
+        // journal: every locus that stays freezes its start again as its
+        // own line replays. What is written survives every later rebuild
+        // (further deletions, the undo and redo of them), exactly as the
+        // construction being replaced had.
+        let mut placed = 0;
+        for (line, x, y, owner) in self.construction.frozen_line_starts() {
+            if made.iter().any(|m| m == &owner) {
+                next.keep_frozen_start(at + placed, &line, x, y);
+                placed += 1;
+            }
+        }
         let gesture = self.gesture.take();
         let restored = self.restore(next);
         self.gesture = gesture;
