@@ -109,31 +109,31 @@ IsInRegion,,logical,P2,done,1,1,
 Root,,function,P2,done,4,4,"Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending."
 Roots,,function,P2,done,2,2,Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.
 TurningPoint,,function,P2,done,1,1,
-Polynomial,,function,P2,todo,3,0,
+Polynomial,,function,P2,done,3,3,
 Function,,function,P2,partial,4,2,Domain restrictions with an optional local variable. Empty and freehand functions are pending.
 Extremum,,function,P2,done,2,2,Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.
 RemovableDiscontinuity,,function,P2,todo,1,0,Numeric hole detection is implemented. Defined results are unverified against a full CAS.
 CurveCartesian,,function,P2,done,3,3,
 ParametricDerivative,,function,P2,done,1,1,
-Derivative,,function,P2,todo,8,0,
-NDerivative,,function,P2,todo,9,0,
-Integral,,function,P2,todo,7,0,
-IntegralBetween,,function,P2,todo,7,0,
-LowerSum,,function,P2,todo,1,0,
-LeftSum,,function,P2,todo,1,0,
-RectangleSum,,function,P2,todo,1,0,
+Derivative,,function,P2,partial,8,4,
+NDerivative,,function,P2,partial,9,2,
+Integral,,function,P2,done,7,7,
+IntegralBetween,,function,P2,done,7,7,
+LowerSum,,function,P2,done,1,1,
+LeftSum,,function,P2,done,1,1,
+RectangleSum,,function,P2,done,1,1,
 TaylorSeries,,function,,out_of_scope,,,A symbolic Taylor polynomial uses the CAS.
-UpperSum,,function,P2,todo,1,0,
-TrapezoidalSum,,function,P2,todo,1,0,
+UpperSum,,function,P2,done,1,1,
+TrapezoidalSum,,function,P2,done,1,1,
 Limit,,function,,out_of_scope,,,"Symbolic limits, including variable and infinite endpoints, use the CAS."
 LimitBelow,,function,,out_of_scope,,,Symbolic one-sided limits use the CAS.
 LimitAbove,,function,,out_of_scope,,,Symbolic one-sided limits use the CAS.
 Factors,,function,P2,todo,2,0,Function factorization uses the CAS. The numeric list of prime/exponent points is a separate form.
-Degree,,function,P2,todo,1,0,
-Coefficients,,function,P2,todo,2,0,
+Degree,,function,P2,done,1,1,
+Coefficients,,function,P2,partial,2,1,
 PartialFractions,,function,,out_of_scope,,,Symbolic partial fraction decomposition uses the CAS.
-Numerator,,function,P2,todo,2,0,
-Denominator,,function,P2,todo,2,0,
+Numerator,,function,P2,done,2,2,
+Denominator,,function,P2,done,2,2,
 ComplexRoot,,function,P2,done,1,1,"Numeric polynomial roots, returned as points with real and imaginary coordinates."
 SolveODE,,function,P2,partial,7,3,"Numeric first-order, parametric and second-order systems. Symbolic function and curve forms, with or without an initial point, use the CAS."
 SlopeField,,function,P2,done,4,4,
@@ -521,7 +521,7 @@ Eliminate,,cas,,out_of_scope,,,
 GroebnerLex,,cas,,out_of_scope,,,
 GroebnerDegRevLex,,cas,,out_of_scope,,,
 GroebnerLexDeg,,cas,,out_of_scope,,,
-NIntegral,,function,P2,todo,6,0,
+NIntegral,,function,P2,done,6,6,
 NInvert,,function,P2,done,1,1,
 NSolve,,algebra,,out_of_scope,,,AlgoSolve delegates to the CAS even for numeric equations and initial guesses.
 NSolutions,,algebra,,out_of_scope,,,AlgoSolve delegates to the CAS even for numeric equations and initial guesses.

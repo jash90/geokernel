@@ -1,0 +1,673 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "calculus-polynomial-001",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2",
+        "g = Polynomial(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-002",
+      "group": "calculus",
+      "script": [
+        "f(x) = sin(x)",
+        "g = Polynomial(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "g": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-003",
+      "group": "calculus",
+      "script": [
+        "f(x) = (2x + 3)^3",
+        "g = Polynomial(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -2197.0],
+              [-4.0, -125.0],
+              [-2.0, -1.0],
+              [-1.0, 1.0],
+              [-0.5, 8.0],
+              [0.0, 27.0],
+              [0.5, 64.0],
+              [1.0, 125.0],
+              [2.0, 343.0],
+              [4.0, 1331.0],
+              [8.0, 6859.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -2197.0],
+              [-4.0, -125.0],
+              [-2.0, -1.0],
+              [-1.0, 1.0],
+              [-0.5, 8.0],
+              [0.0, 27.0],
+              [0.5, 64.0],
+              [1.0, 125.0],
+              [2.0, 343.0],
+              [4.0, 1331.0],
+              [8.0, 6859.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-004",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^3/6 + x^2/4 + 3",
+        "g = Polynomial(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -66.33333333333333],
+              [-4.0, -3.666666666666666],
+              [-2.0, 2.666666666666667],
+              [-1.0, 3.0833333333333335],
+              [-0.5, 3.0416666666666665],
+              [0.0, 3.0],
+              [0.5, 3.0833333333333335],
+              [1.0, 3.4166666666666665],
+              [2.0, 5.333333333333333],
+              [4.0, 17.666666666666664],
+              [8.0, 104.33333333333333]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -66.33333333333333],
+              [-4.0, -3.666666666666666],
+              [-2.0, 2.666666666666667],
+              [-1.0, 3.0833333333333335],
+              [-0.5, 3.0416666666666665],
+              [0.0, 3.0],
+              [0.5, 3.0833333333333335],
+              [1.0, 3.4166666666666665],
+              [2.0, 5.333333333333333],
+              [4.0, 17.666666666666664],
+              [8.0, 104.33333333333333]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-005",
+      "group": "calculus",
+      "script": [
+        "g = Polynomial(x^2 + 2x)",
+        "h = Polynomial(sin(x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 48.0],
+              [-4.0, 8.0],
+              [-2.0, 0.0],
+              [-1.0, -1.0],
+              [-0.5, -0.75],
+              [0.0, 0.0],
+              [0.5, 1.25],
+              [1.0, 3.0],
+              [2.0, 8.0],
+              [4.0, 24.0],
+              [8.0, 80.0]
+            ]
+          },
+          "h": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-006",
+      "group": "calculus",
+      "script": [
+        "P = (1, 2)",
+        "Q = (2, 5)",
+        "R = (3, 10)",
+        "g = Polynomial(P, Q, R)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 10.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-007",
+      "group": "calculus",
+      "script": [
+        "P = (1, 2)",
+        "Q = (2, 5)",
+        "g = Polynomial(P, Q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -25.0],
+              [-4.0, -13.0],
+              [-2.0, -7.0],
+              [-1.0, -4.0],
+              [-0.5, -2.5],
+              [0.0, -1.0],
+              [0.5, 0.5],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 11.0],
+              [8.0, 23.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-008",
+      "group": "calculus",
+      "script": [
+        "P = (1, 2)",
+        "Q = (2, 5)",
+        "R = (1, 7)",
+        "g = Polynomial(P, Q, R)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 7.0 },
+          "g": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-009",
+      "group": "calculus",
+      "script": [
+        "P = (1, 2)",
+        "Q = (1, 2)",
+        "R = (3, 10)",
+        "g = Polynomial(P, Q, R)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 10.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -34.0],
+              [-4.0, -18.0],
+              [-2.0, -10.0],
+              [-1.0, -6.0],
+              [-0.5, -4.0],
+              [0.0, -2.0],
+              [0.5, 0.0],
+              [1.0, 2.0],
+              [2.0, 6.0],
+              [4.0, 14.0],
+              [8.0, 30.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-010",
+      "group": "calculus",
+      "script": [
+        "l = {(1, 2), (2, 5)}",
+        "g = Polynomial(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 5.0 }
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -25.0],
+              [-4.0, -13.0],
+              [-2.0, -7.0],
+              [-1.0, -4.0],
+              [-0.5, -2.5],
+              [0.0, -1.0],
+              [0.5, 0.5],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 11.0],
+              [8.0, 23.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-011",
+      "group": "calculus",
+      "script": [
+        "l = {(1, 1), (-1, 1), (0, 0)}",
+        "g = Polynomial(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-012",
+      "group": "calculus",
+      "script": [
+        "l = {(0, 0), (1, 1), (2, 4), (3, 9)}",
+        "g = Polynomial(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 9.0 }
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-013",
+      "group": "calculus",
+      "script": [
+        "g = Polynomial({(1, 2), (2, 5)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -25.0],
+              [-4.0, -13.0],
+              [-2.0, -7.0],
+              [-1.0, -4.0],
+              [-0.5, -2.5],
+              [0.0, -1.0],
+              [0.5, 0.5],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 11.0],
+              [8.0, 23.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-014",
+      "group": "calculus",
+      "script": [
+        "l = {(1, 2)}",
+        "g = Polynomial(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+            ]
+          },
+          "g": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-015",
+      "group": "calculus",
+      "script": [
+        "P = (1, 2)",
+        "Q = (2, 5)",
+        "g = Polynomial(P, Q, Q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -25.0],
+              [-4.0, -13.0],
+              [-2.0, -7.0],
+              [-1.0, -4.0],
+              [-0.5, -2.5],
+              [0.0, -1.0],
+              [0.5, 0.5],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 11.0],
+              [8.0, 23.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "calculus-polynomial-016",
+      "group": "calculus",
+      "script": [
+        "a = 3",
+        "f(x) = x^a",
+        "g = Polynomial(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.5 },
+        { "action": "set_number", "label": "a", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.17677669529663687],
+              [1.0, 1.0],
+              [2.0, 5.65685424949238],
+              [4.0, 32.0],
+              [8.0, 181.01933598375615]
+            ]
+          },
+          "g": { "type": "function", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
