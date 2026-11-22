@@ -16,7 +16,7 @@ Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,partial,
 PolyLine,POLYLINE,PolyLine,yes,yes,yes,yes,yes,yes,yes,partial,
 List,LIST,List,yes,no,no,no,no,no,partial,partial,Saved lists with supported expressions and commands
 Axis,AXIS,,no,no,no,no,no,no,no,no,the window draws the axes from the view settings
-Text,TEXT,Text,yes,no,yes,no,no,yes,yes,partial,Static and dependent texts with saved world or pixel placement. LaTeX markup is drawn as plain text.
+Text,TEXT,Text,yes,yes,yes,no,no,yes,yes,partial,Static and dependent texts with saved world or pixel placement and LaTeX typesetting. An empty text draws nothing.
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
 Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,partial,Tracing loci and integral curves from slopes. Discrete geometry commands also produce loci.
 CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,partial,Cartesian coordinates and parameter interval for Length

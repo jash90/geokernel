@@ -2,11 +2,21 @@
 
 use crate::algo::conic_nd::ConicType;
 use crate::algo::vector::start;
+use crate::kernel::text::TextPosition;
 use crate::kernel::{Construction, Id, Kind, Value};
 use std::collections::HashMap;
+use std::fmt::Write;
 
 mod extras;
-use std::fmt::Write;
+
+/// The colour the drawing gives a text object (the app palette's curve
+/// colour, which the canvas paints texts with); point labels keep the
+/// group's own.
+const TEXT_COLOR: geo_latex::Color = [0x1c, 0x1c, 0x1f];
+
+fn hex([r, g, b]: geo_latex::Color) -> String {
+    format!("#{r:02x}{g:02x}{b:02x}")
+}
 
 /// The rectangle of the plane that is drawn.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -18,19 +28,29 @@ pub struct View {
 }
 
 impl View {
-    /// A view fitted to points and bounded shapes, with a margin.
+    /// A view fitted to points and bounded shapes, with a margin. A text
+    /// does not take part: one parked at a huge coordinate would swallow
+    /// the drawing; only a construction of texts alone is fitted to them.
     pub fn fit(c: &Construction) -> View {
-        let mut v = View {
+        let empty = || View {
             xmin: f64::INFINITY,
             ymin: f64::INFINITY,
             xmax: f64::NEG_INFINITY,
             ymax: f64::NEG_INFINITY,
         };
+        let mut v = empty();
+        let mut texts = empty();
         let mut grow = |x: f64, y: f64| {
             v.xmin = v.xmin.min(x);
             v.ymin = v.ymin.min(y);
             v.xmax = v.xmax.max(x);
             v.ymax = v.ymax.max(y);
+        };
+        let mut grow_text = |x: f64, y: f64| {
+            texts.xmin = texts.xmin.min(x);
+            texts.ymin = texts.ymin.min(y);
+            texts.xmax = texts.xmax.max(x);
+            texts.ymax = texts.ymax.max(y);
         };
         for id in c.ids().filter(|&id| !c.label(id).starts_with('\0')) {
             if let Some([xmin, ymin, xmax, ymax]) = c.chart(id).and_then(|chart| chart.bounds()) {
@@ -96,9 +116,17 @@ impl View {
                         }
                     }
                 }
+                Value::Text => {
+                    if let Some(TextPosition::World { x, y }) = c.text_position(id) {
+                        if x.is_finite() && y.is_finite() {
+                            grow_text(x, y);
+                        }
+                    }
+                }
                 _ => {}
             }
         }
+        let v = if v.xmin.is_finite() { v } else { texts };
         if !v.xmin.is_finite() {
             return View {
                 xmin: -5.0,
@@ -233,6 +261,7 @@ fn render_geometry(
     let mut segments = String::new();
     let mut circles = String::new();
     let mut points = String::new();
+    let mut texts = String::new();
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
@@ -446,8 +475,73 @@ fn render_geometry(
                 };
                 write_locus(&locus.points, &mut segments, |x, y| (sx(x), sy(y)));
             }
+            Value::Text => {
+                let Some((source, style)) = c
+                    .text(id)
+                    .filter(|text| !text.is_empty())
+                    .zip(c.text_presentation(id))
+                else {
+                    continue;
+                };
+                let Some((x, y)) = style.pixel_anchor(c, |x, y| (sx(x), sy(y))) else {
+                    continue;
+                };
+                let size = style.drawing_size(16.0);
+                if style.latex {
+                    let formula = geo_latex::layout(
+                        source,
+                        size,
+                        geo_latex::Style::Display,
+                        geo_latex::Face {
+                            bold: style.bold,
+                            italic: style.italic,
+                            monospace: false,
+                        },
+                    );
+                    let [x, y] =
+                        style.aligned_top_left([x as f32, y as f32], formula.size(), 0.0, 0.0);
+                    geo_latex::write_svg(
+                        &mut texts,
+                        &formula,
+                        f64::from(x),
+                        f64::from(y),
+                        TEXT_COLOR,
+                    );
+                } else {
+                    // The plain text's width comes from the same font
+                    // metrics the formula renderer uses, not a per-character
+                    // estimate, so both kinds of text place alike.
+                    let face = geo_latex::Face {
+                        bold: style.bold,
+                        italic: style.italic,
+                        monospace: false,
+                    };
+                    let lines = geo_latex::plain_lines(source, size, face);
+                    let width = lines
+                        .iter()
+                        .map(|(width, ..)| *width)
+                        .fold(0.0_f32, f32::max);
+                    let line_height = size * 1.2;
+                    let [x, y] = style.aligned_top_left(
+                        [x as f32, y as f32],
+                        [width, line_height * lines.len() as f32],
+                        line_height,
+                        0.0,
+                    );
+                    let font_style = if style.italic { "italic" } else { "normal" };
+                    let weight = if style.bold { "bold" } else { "normal" };
+                    for (row, line) in source.lines().enumerate() {
+                        let y = y + row as f32 * line_height;
+                        let _ = writeln!(
+                            texts,
+                            r#"<text x="{x:.2}" y="{y:.2}" font-size="{size:.2}" font-style="{font_style}" font-weight="{weight}" fill="{}" xml:space="preserve">{}</text>"#,
+                            hex(TEXT_COLOR),
+                            escape(line)
+                        );
+                    }
+                }
+            }
             Value::Number(_)
-            | Value::Text
             | Value::FunctionNVar
             | Value::Bool(_)
             | Value::List { .. }
@@ -492,6 +586,7 @@ fn render_geometry(
         r##"<g font-family="sans-serif" font-size="14" fill="#202124">"##
     );
     out.push_str(&points);
+    out.push_str(&texts);
     let _ = writeln!(out, "</g>");
 }
 
@@ -500,6 +595,13 @@ fn escape(s: &str) -> String {
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
+        .replace(
+            |ch: char| {
+                ch < ' ' && !matches!(ch, '\t' | '\r' | '\n')
+                    || matches!(ch, '\u{fffe}' | '\u{ffff}')
+            },
+            "\u{fffd}",
+        )
 }
 
 /// The pieces of a locus into `out` (the segments group): every run of

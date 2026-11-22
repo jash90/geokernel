@@ -17,6 +17,7 @@ mod geom;
 mod grid;
 mod icons;
 mod keyboard;
+mod latex;
 mod theme;
 mod tool_icons;
 mod toolbar;
