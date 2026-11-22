@@ -857,3 +857,31 @@ fn a_style_expression_the_kernel_cannot_evaluate_is_reported() {
         r.notes
     );
 }
+
+/// The reference's reader sets a slider's expression endpoints while it
+/// reads the slider, so an optimizer saved after it searches at once; a
+/// recorded reload gives `m = 3`, and `m = 2` after `w = 1`.
+#[test]
+fn an_optimizer_over_a_slider_with_expression_endpoints_searches_after_import() {
+    use geo_kernel::{script, Value};
+
+    let imported = ok(
+        r#"<element type="numeric" label="b"><value val="6"/></element>
+           <element type="numeric" label="a"><value val="2"/><slider min="0" max="b"/></element>
+           <element type="numeric" label="w"><value val="2"/></element>
+           <expression label="f" exp="(a - w - 1)^2"/>
+           <element type="numeric" label="f"><value val="1"/></element>
+           <command name="Minimize"><input a0="f" a1="a"/><output a0="m"/></command>
+           <element type="numeric" label="m"><value val="3"/></element>"#,
+    );
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    let mut c = script::load(&imported.script.join("\n")).unwrap();
+    let m = |c: &geo_kernel::Construction| match c.value(c.id("m").unwrap()) {
+        Value::Number(v) => v,
+        other => panic!("the optimizer is {other:?}"),
+    };
+    assert!((m(&c) - 3.0).abs() < 1e-6, "{}", m(&c));
+    let w = c.id("w").unwrap();
+    c.set_number(w, 1.0).unwrap();
+    assert!((m(&c) - 2.0).abs() < 1e-6, "{}", m(&c));
+}

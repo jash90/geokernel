@@ -210,6 +210,12 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
     if chain.len() as u64 > crate::expr::MAX_EVALUATION_WORK / 106 {
         return Value::Undefined;
     }
+    if on_path.is_none() {
+        // `Optimizer.setValue` goes through `GeoNumeric.setValue`, which
+        // drops an exact decimal of the number for good; the trials must
+        // not read it.
+        crate::expr::forget_decimal(c, independent);
+    }
     let mut ids = chain.clone();
     ids.push(independent.0);
     let saved = crate::kernel::locus::Saved::of(c, &ids);
@@ -435,9 +441,8 @@ mod bound_tests {
         let checkpoint = c.checkpoint();
         script::exec(&mut c, "m = Minimize(f, a)").unwrap();
         let near = |v: Option<f64>| v.is_some_and(|v| (v - 3.0).abs() < 1e-6);
-        // defined at creation (its value there is not compared: the search
-        // after restoring bounds is a separate matter)
-        assert!(m(&c).is_some());
+        // the trials do not read the exact decimal of `a = 0`
+        assert!(near(m(&c)), "{:?}", m(&c));
         c.set_number(b, -1.0).unwrap();
         c.set_number(w, 3.0).unwrap();
         assert_eq!(m(&c), None);

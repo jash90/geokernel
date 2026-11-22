@@ -184,7 +184,7 @@ PARTIAL = {
     "Sequence": "Sequence(end); Sequence(start, end); Sequence(start, end, step); "
                 "Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)",
     "Reverse": "Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)",
-    "First": "Lists, text and loci. The freehand function point reader remains open.",
+    "First": "Lists, text, loci and freehand functions (First(function, number)).",
     "Last": "Last(list); Last(list, number of elements)",
     "Sort": "Sort(list of numbers, booleans or points); Sort(value list, key list); "
             "Sort(point, point, ...)",

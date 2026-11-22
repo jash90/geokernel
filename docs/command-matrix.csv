@@ -174,7 +174,7 @@ Excentricity,,conic,P1,done,1,1,Excentricity(conic)
 Eccentricity,,conic,P1,done,1,1,Eccentricity(conic)
 Axes,,conic,P1,done,1,1,Axes(conic)
 Sort,,list,P2,done,3,3,"Sort(list of numbers, booleans or points); Sort(value list, key list); Sort(point, point, ...)"
-First,,list,P2,done,6,6,"Lists, text and loci. The freehand function point reader remains open."
+First,,list,P2,done,6,6,"Lists, text, loci and freehand functions (First(function, number))."
 Last,,list,P2,done,5,5,"Last(list); Last(list, number of elements)"
 Take,,list,P2,done,4,4,"Take(list, from[, to])"
 RemoveUndefined,,list,P2,done,1,1,RemoveUndefined(list)

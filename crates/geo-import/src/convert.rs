@@ -126,6 +126,7 @@ pub(crate) fn convert_with_assets(
                         .collect::<Option<Vec<_>>>()
                 });
                 c.element(el, points.as_deref(), doc.gui_font_size.unwrap_or(12.0))?;
+                c.restore_slider_early(el);
             }
         }
     }
@@ -134,7 +135,9 @@ pub(crate) fn convert_with_assets(
         c.image(el, archive, &mut assets)?;
     }
     for el in elements.values() {
-        c.restore_slider(el);
+        if !c.early_bounds.contains(&el.label) {
+            c.restore_slider(el);
+        }
         c.retain_scripts(el);
     }
     for (&label, element) in &elements {
@@ -407,6 +410,9 @@ struct Converter {
     /// `<expression>` texts waiting for their element.
     expressions: BTreeMap<String, String>,
     function_path_bounds: Option<[f64; 2]>,
+    /// Sliders whose expression endpoints were restored right after their
+    /// element, before the objects that read them.
+    early_bounds: BTreeSet<String>,
 }
 
 /// One script line and the labels it has to create.
@@ -1049,6 +1055,42 @@ impl Converter {
             // Without a `<show>` tag the object stays visible in the editor.
             if el.shown == Some(false) {
                 self.out.hidden.push(el.label.clone());
+            }
+        }
+    }
+
+    /// The reference's reader sets a slider's endpoints while it reads the
+    /// slider's element, so an object that reads the slider later (an
+    /// optimizer checking its bounds) already sees them. Expression
+    /// endpoints whose objects exist at this point are restored now; the
+    /// others wait for the end of the file.
+    fn restore_slider_early(&mut self, el: &Element) {
+        let Some([Some(min), Some(max)]) = &el.slider else {
+            return;
+        };
+        if el.kind != "numeric" || literal_slider_bounds(el).is_some() {
+            return;
+        }
+        let (Ok(min), Ok(max)) = (expression_line(min), expression_line(max)) else {
+            return;
+        };
+        if self.kernel.id(&el.label).is_none() {
+            return;
+        }
+        let property = Property::SliderBounds {
+            label: el.label.clone(),
+            bounds: [Some(min), Some(max)],
+        };
+        let checkpoint = self.kernel.checkpoint();
+        let (restored, errors) = property.restore(&mut self.kernel);
+        match restored {
+            Some(property) if errors.is_empty() => {
+                self.out.script.push(property.to_string());
+                self.early_bounds.insert(el.label.clone());
+            }
+            _ => {
+                // an endpoint object comes later in the file
+                let _ = self.kernel.rollback(checkpoint);
             }
         }
     }
