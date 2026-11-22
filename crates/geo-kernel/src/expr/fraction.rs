@@ -21,6 +21,7 @@ pub(crate) struct FunctionFraction<'a> {
     denominator: Option<u32>,
     budget: Lists,
     system: bool,
+    symbolic: Option<&'a crate::cas::Quotient>,
 }
 
 impl<'a> FunctionFraction<'a> {
@@ -32,8 +33,10 @@ impl<'a> FunctionFraction<'a> {
         let (root, system) = match (construction.value(id), source.nodes[source.root as usize]) {
             (Value::Function, _) => (source.root, false),
             (Value::FunctionNVar, Node::SystemFunction(2, root)) => (root, true),
+            (Value::FunctionNVar, Node::Cas(..)) => (source.root, false),
             _ => return None,
         };
+        let symbolic = source.cas_quotient(root);
         let mut tree = Cow::Borrowed(source);
         let (numerator, denominator) = match source.nodes[root as usize] {
             Node::Bin(Bin::Mul | Bin::Div | Bin::Pow, ..) => {
@@ -48,11 +51,15 @@ impl<'a> FunctionFraction<'a> {
             denominator,
             budget: Lists::new(Vec::new()),
             system,
+            symbolic,
         })
     }
 
     /// Whether the denominator depends on a coordinate.
     pub(crate) fn has_nonconstant_denominator(&self) -> bool {
+        if let Some(rational) = self.symbolic {
+            return rational.denominator.scalar().is_none();
+        }
         let Some(denominator) = self.denominator else {
             return false;
         };
@@ -76,6 +83,19 @@ impl<'a> FunctionFraction<'a> {
 
     /// The numerator and denominator at the given point.
     pub(crate) fn evaluate(&self, x: f64, y: f64) -> (f64, f64) {
+        if let Some(rational) = self.symbolic {
+            let variables = [x, y, f64::NAN];
+            if !self
+                .budget
+                .charge((rational.numerator.0.len() + rational.denominator.0.len()) as u64)
+            {
+                return (f64::NAN, f64::NAN);
+            }
+            return (
+                rational.numerator.value(variables),
+                rational.denominator.value(variables),
+            );
+        }
         let env = if self.tree.function_of_y {
             Env::Value(y)
         } else {

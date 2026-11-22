@@ -88,6 +88,9 @@ impl Walker<'_> {
             return None;
         }
         let depth = depth.checked_sub(1)?;
+        if let Some(rational) = self.ctx.e.cas_quotient(i) {
+            return rational.slope(self.x, |n| self.budget.charge(n));
+        }
         Some(match self.node(i) {
             Node::Num(_) | Node::MinusOne | Node::Degree | Node::Obj(_) | Node::VarY => 0.0,
             Node::Bool(_) => 0.0,
@@ -178,6 +181,8 @@ impl Walker<'_> {
             | Node::RootList(..)
             | Node::FunctionAsymptotes(..)
             | Node::Iteration { .. }
+            | Node::Cas(..)
+            | Node::CasVariable(_)
             | Node::PolynomialPart(..)
             | Node::Algebra(..)
             | Node::ObjectDefined(_)

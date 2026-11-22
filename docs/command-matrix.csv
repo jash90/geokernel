@@ -5,11 +5,11 @@ Min,,algebra,P2,done,5,5,"Min(number, number); Min(list)"
 Max,,algebra,P2,done,5,5,"Max(number, number); Max(list)"
 LCM,,algebra,P2,done,2,2,"LCM(number, number)"
 GCD,,algebra,P2,done,2,2,"GCD(number, number)"
-Expand,,algebra,,out_of_scope,,,Symbolic expansion is outside numeric algebra.
-Factor,,algebra,,out_of_scope,,,Symbolic factorization uses the CAS.
-Simplify,,algebra,,out_of_scope,,,"Function, list, curve and implicit forms use the CAS. Text formatting is outside numeric algebra."
+Expand,,algebra,P2,partial,6,1,Polynomial and rational functions are in scope for the 1.0 CAS.
+Factor,,algebra,P2,partial,6,1,Exact polynomial and rational functions are in scope for the 1.0 CAS.
+Simplify,,algebra,P2,partial,8,2,Polynomial and rational functions and number inputs are in scope for the 1.0 CAS.
 PrimeFactors,,algebra,P2,done,1,1,
-CompleteSquare,,algebra,,out_of_scope,,,Symbolic completion of the square is outside numeric algebra.
+CompleteSquare,,algebra,P2,done,1,1,"Quadratic polynomials, including quadratic polynomials in a power of x."
 ToBase,,algebra,P2,done,1,1,
 FromBase,,algebra,P2,done,1,1,
 Division,,algebra,P2,done,2,2,
@@ -18,10 +18,10 @@ DivisorsList,,algebra,P2,done,1,1,
 DivisorsSum,,algebra,P2,done,1,1,
 IsPrime,,algebra,P2,done,1,1,
 LeftSide,,algebra,P2,partial,3,2,Lines and conics. The implicit-curve form needs an implicit curve object.
-NextPrime,,algebra,,out_of_scope,,,AlgoNextPreviousPrime obtains the value from the CAS.
+NextPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of the numeric object.
 RightSide,,algebra,P2,partial,3,2,Lines and conics. The implicit-curve form needs an implicit curve object.
-PreviousPrime,,algebra,,out_of_scope,,,AlgoNextPreviousPrime obtains the value from the CAS.
-IsFactored,,algebra,,out_of_scope,,,Inspects symbolic polynomial structure and is outside numeric algebra.
+PreviousPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of the numeric object.
+IsFactored,,algebra,P2,done,2,2,Number and univariate polynomial inputs with the reference degree limit.
 Line,,geometry,P0,done,5,5,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
 Ray,,geometry,P1,done,2,2,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
@@ -109,10 +109,10 @@ IsInRegion,,logical,P2,done,1,1,
 Root,,function,P2,done,4,4,"Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending."
 Roots,,function,P2,done,2,2,Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.
 TurningPoint,,function,P2,done,1,1,
-Polynomial,,function,P2,todo,3,0,
+Polynomial,,function,P2,partial,3,1,
 Function,,function,P2,partial,4,2,Domain restrictions with an optional local variable. Empty and freehand functions are pending.
 Extremum,,function,P2,done,2,2,Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.
-RemovableDiscontinuity,,function,P2,todo,1,0,Numeric hole detection is implemented. Defined results are unverified against a full CAS.
+RemovableDiscontinuity,,function,P2,done,1,1,Rational holes have reference evidence. Other expressions use a bounded numerical estimate.
 CurveCartesian,,function,P2,done,3,3,
 ParametricDerivative,,function,P2,done,1,1,
 Derivative,,function,P2,todo,8,0,
@@ -128,18 +128,18 @@ TrapezoidalSum,,function,P2,todo,1,0,
 Limit,,function,,out_of_scope,,,"Symbolic limits, including variable and infinite endpoints, use the CAS."
 LimitBelow,,function,,out_of_scope,,,Symbolic one-sided limits use the CAS.
 LimitAbove,,function,,out_of_scope,,,Symbolic one-sided limits use the CAS.
-Factors,,function,P2,todo,2,0,Function factorization uses the CAS. The numeric list of prime/exponent points is a separate form.
-Degree,,function,P2,todo,1,0,
-Coefficients,,function,P2,todo,2,0,
+Factors,,function,P2,done,2,2,"Polynomial factors or integer prime factors, each paired with its exponent."
+Degree,,function,P2,done,1,1,
+Coefficients,,function,P2,done,2,2,
 PartialFractions,,function,,out_of_scope,,,Symbolic partial fraction decomposition uses the CAS.
-Numerator,,function,P2,todo,2,0,
-Denominator,,function,P2,todo,2,0,
+Numerator,,function,P2,done,2,2,
+Denominator,,function,P2,done,2,2,
 ComplexRoot,,function,P2,done,1,1,"Numeric polynomial roots, returned as points with real and imaginary coordinates."
 SolveODE,,function,P2,partial,7,3,"Numeric first-order, parametric and second-order systems. Symbolic function and curve forms, with or without an initial point, use the CAS."
 SlopeField,,function,P2,done,4,4,
 Iteration,,function,P2,done,3,3,
 PathParameter,,function,P2,done,1,1,PathParameter(point on a path)
-Asymptote,,function,P2,partial,3,1,"Conic output is verified. Numeric rational and affine exp, atan or log output is unverified against a full CAS. Implicit polynomials are pending."
+Asymptote,,function,P2,partial,3,2,Conics and rational functions have reference evidence. Implicit polynomials are pending.
 CurvatureVector,,function,P2,done,3,3,
 Curvature,,function,P2,done,3,3,
 OsculatingCircle,,function,P2,done,3,3,
@@ -510,9 +510,9 @@ Reflect,Mirror,transformation,P1,done,,,
 Assume,,cas,,out_of_scope,,,
 CFactor,,cas,,out_of_scope,,,
 CIFactor,,cas,,out_of_scope,,,
-IFactor,,algebra,,out_of_scope,,,Symbolic integer-coefficient factorization uses the CAS.
+IFactor,,algebra,P2,partial,6,1,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms."
 IntegralSymbolic,,cas,,out_of_scope,,,
-CommonDenominator,,algebra,P2,partial,2,1,Number pairs. The function pair delegates to the CAS (AlgoPolynomialCD).
+CommonDenominator,,algebra,P2,done,2,2,Number pairs and rational-function pairs.
 Cross,,algebra,P2,done,5,5,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)
 CSolutions,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
 CSolve,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
@@ -523,14 +523,14 @@ GroebnerDegRevLex,,cas,,out_of_scope,,,
 GroebnerLexDeg,,cas,,out_of_scope,,,
 NIntegral,,function,P2,todo,6,0,
 NInvert,,function,P2,done,1,1,
-NSolve,,algebra,,out_of_scope,,,AlgoSolve delegates to the CAS even for numeric equations and initial guesses.
-NSolutions,,algebra,,out_of_scope,,,AlgoSolve delegates to the CAS even for numeric equations and initial guesses.
+NSolve,,algebra,P2,partial,10,4,Bounded real polynomial equations and systems with optional variable binding.
+NSolutions,,algebra,P2,partial,10,4,Bounded real polynomial equations and systems with optional variable binding.
 Numeric,,cas,,out_of_scope,,,
 Evaluate,,english,,out_of_scope,,,
 MixedNumber,,cas,,out_of_scope,,,
 Rationalize,,cas,,out_of_scope,,,
-Solutions,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
-Solve,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
+Solutions,,algebra,P2,partial,10,4,Real polynomial equations and small systems are in scope for the 1.0 CAS.
+Solve,,algebra,P2,partial,10,4,Real polynomial equations and small systems are in scope for the 1.0 CAS.
 PlotSolve,,function,P2,todo,5,0,
 SolveCubic,,cas,,out_of_scope,,,
 SolveQuartic,,cas,,out_of_scope,,,

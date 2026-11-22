@@ -155,7 +155,10 @@ fn positive_integer(x: f64) -> Option<u64> {
     (n >= 1 && n <= LARGEST_INTEGER as i64).then_some(n as u64)
 }
 
-fn factor(mut n: u64, stop: impl Fn(u64) -> bool) -> Option<Vec<(u64, u32)>> {
+pub(in crate::expr) fn factor(
+    mut n: u64,
+    mut stop: impl FnMut(u64) -> bool,
+) -> Option<Vec<(u64, u32)>> {
     let mut factors = Vec::new();
     let mut d = 2;
     while d <= n / d {
@@ -173,7 +176,7 @@ fn factor(mut n: u64, stop: impl Fn(u64) -> bool) -> Option<Vec<(u64, u32)>> {
         if exponent != 0 {
             factors.push((d, exponent));
         }
-        if (d == 2 || exponent != 0) && prime(n, &stop)? {
+        if (d == 2 || exponent != 0) && prime(n, &mut stop)? {
             break;
         }
         d += if d == 2 { 1 } else { 2 };
@@ -186,7 +189,7 @@ fn factor(mut n: u64, stop: impl Fn(u64) -> bool) -> Option<Vec<(u64, u32)>> {
 
 /// These Miller–Rabin witnesses determine primality throughout the supported
 /// range (and for all unsigned 64-bit integers).
-fn prime(n: u64, stop: impl Fn(u64) -> bool) -> Option<bool> {
+pub(in crate::expr) fn prime(n: u64, mut stop: impl FnMut(u64) -> bool) -> Option<bool> {
     if n < 4 || n.is_multiple_of(2) {
         return Some(n == 2 || n == 3);
     }

@@ -258,3 +258,15 @@ nCr,english,1,"number,number"
 nPr,english,1,"number,number"
 CASLoaded,geogebra,1,()
 IsVertexForm,function,1,function
+Expand,algebra,6,function | list | line | conic | implicit | curve
+Factor,algebra,6,function | list | line | conic | implicit | curve
+IFactor,algebra,6,function | list | line | conic | implicit | curve
+Simplify,algebra,8,function | list | line | conic | implicit | curve | number | text
+CompleteSquare,algebra,1,function
+IsFactored,algebra,2,function | number
+NextPrime,algebra,1,number
+PreviousPrime,algebra,1,number
+Solve,algebra,10,"function | line | conic | implicit | list | function,any | line,any | conic,any | implicit,any | list,any"
+Solutions,algebra,10,"function | line | conic | implicit | list | function,any | line,any | conic,any | implicit,any | list,any"
+NSolve,algebra,10,"function | line | conic | implicit | list | function,any | line,any | conic,any | implicit,any | list,any"
+NSolutions,algebra,10,"function | line | conic | implicit | list | function,any | line,any | conic,any | implicit,any | list,any"

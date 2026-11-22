@@ -166,6 +166,28 @@ Each of these is a switch of `OwnerRules` (`crates/geo-app-core/src/app.rs`); th
 | Traveling salesman with an undefined site on update | The tour heuristic can throw while reading the missing site. | The locus is undefined until the sites are defined again. | A partial tour would be misleading. Both reject a missing site at creation, as recorded in `discrete-tour-009`. |
 | Discrete graph work limit | Work depends on list size, geometry and the tour's improvement steps. | A graph is undefined when its computation exhausts the kernel's work budget. | Moving a site or growing a list recomputes the graph and must finish within a bounded amount of work. |
 
+## Polynomial CAS
+
+| Area | GeoGebra | geokernel | Reason |
+| --- | --- | --- | --- |
+| `Expand(function)`, `Simplify(function)`, `Simplify(number)`, `Factor(function)` | Giac chooses the form of the expansion, cancellation and factorization. | Stores exact rational coefficients. Expansion uses descending lexicographic monomials. Simplification cancels a polynomial GCD and uses a monic denominator. Factor displays primitive factors and a separate scalar. | Factor order, signs, rational presentation and the representation of a cancelled pole can differ. Golden snapshots compare sampled values and Rust tests check exact reconstruction. |
+| `IFactor(function)` | Factors over extensions of the rationals, including irrational factors. | Factors over the rationals and displays additional exact factors for real quadratics and negative-constant pure powers of degree a power of two. | Splitting other factors over algebraic extensions needs a general algebraic-number field. The remaining factors keep their exact rational form. |
+| `CompleteSquare(function)`, `IsFactored(function)`, `IsFactored(number)` | Checks and rewrites the structure of the input. | Completes a square for a quadratic in a single positive integer power of x. Checks the input factors of univariate polynomials through degree 5. | The displayed square and factored expressions can differ in order and signs. Factored-form recognition is limited to rational polynomial syntax. |
+| `Solve(list, any)` | Accepts a variable binding or other CAS argument and can return parameterized assignment expressions. | Accepts a variable name or list of up to three distinct names with a bounded polynomial system. Renders linear assignments in two dimensions. | The result representation is limited to numeric values, 2D lines and affine functions of one parameter. |
+| `Solutions(list, any)` | Can return general parameterized solutions to polynomial systems. | Accepts a variable name or list of up to three distinct names. Returns isolated real tuples, one-parameter affine families, and unions of affine families from a product equation. | Nonlinear positive-dimensional families and multiple free parameters require a general symbolic parameter representation. |
+| `NSolve(list, any)` | Supports optional numeric guesses and wider classes of equations. | Accepts a variable name or list of up to three distinct names and finds the real roots of bounded polynomial systems. | Roots are isolated without an initial guess. Numeric initial guesses and transcendental equations remain outside this implementation. |
+| `NSolutions(list, any)` | Supports optional numeric guesses and wider classes of equations. | Accepts a variable name or list of up to three distinct names and returns the real values of bounded polynomial systems. | Roots are isolated without an initial guess. Numeric initial guesses and transcendental equations remain outside this implementation. |
+| Solve result form | Giac orders the solutions and chooses exact formulas or numerical roots. | Real roots are kept as exact rationals and supported radicals where available. Other roots are isolated numerically. The native golden runner sorts solution multisets and preserves tuple coordinate order. | Expression syntax, order and rounding of displayed roots can differ. The golden tolerance remains 1e-9. Complex solution commands are outside this lane. |
+| Other symbolic argument types | Giac supports algebraic commands on a wider set of objects, and Simplify also handles text. | Polynomial and rational input forms work on functions. The remaining object forms of Expand, Factor, IFactor and Simplify stay in the command inventory. | General implicit curves, curve and list simplification, arbitrary symbolic text and transcendental manipulations require separate object or expression support. |
+| CAS arithmetic and work limits | Precision and time depend on the CAS backend and application settings. | Coefficients are reduced signed 128-bit fractions. Expansion uses total degree 64 and 512 nonzero monomials. Univariate factorization stops above degree 16. Multivariate factorization uses at most three variables, encoded degree 24 and 4,096 recombination candidates per split. Univariate root isolation stops above degree 32. Small systems are limited to three variables, eight equations, 24 basis elements, total degree 16, 256 terms per basis element and 256 real tuples. Prime neighbors require an input and result in the exact integer range of a double. | Checked arithmetic, the kernel expression meter and a per-command allowance of 500,000 work units bound recomputation. An operation past its bound is undefined. The rational cancellation path can still remove shared monomials if the multivariate factor search runs out of its search range. |
+
+The factorization uses [Yun's square-free decomposition](https://doi.org/10.1145/800205.806320),
+modular Berlekamp factorization and [Zassenhaus's Hensel lifting](https://doi.org/10.1016/0022-314X(69)90047-X). Multivariate
+factors are reconstructed using mixed-radix Kronecker substitution and checked
+by exact sparse division. The small-system path uses [Buchberger's algorithm](https://doi.org/10.1016/j.jsc.2005.09.007)
+for lexicographic Gröbner elimination and bounded real back-substitution. No arbitrary-precision crate
+is needed within the stated bounds.
+
 ## Numerical function analysis
 
 | Area | GeoGebra | geokernel | Reason |
@@ -175,17 +197,15 @@ Each of these is a switch of `OwnerRules` (`crates/geo-app-core/src/app.rs`); th
 | `Function(function, any, number, number)` | A standalone bound variable names the restricted function's local argument. | Accepts an identifier as the bound variable, with inclusive endpoints. | The argument is a binding and must be a valid name. The empty and freehand forms are outside the restriction implementation. |
 | `Iteration(function, any, ...)`, `IterationList(function, any, ...)` | Local variables can carry arbitrary objects and may use symbolic substitution. | Local recurrences support numeric, point and boolean values with homogeneous seeds. The standard one- and two-variable numeric forms are also supported. | Both commands share the expression work budget. `IterationList` also has the list element limit of 2²⁰, including the initial value. |
 | `Asymptote(conic)` | Computes conic asymptotes without CAS. | Computes conic asymptotes. | The Java harness verifies the hyperbola case in `relationreview-asymptotes-001`. |
-| `Asymptote(function)` | Uses CAS limits and solves for poles. | Finds poles and horizontal or oblique limits of rational functions and of exp, atan or log with affine arguments. | Defined function asymptotes are unverified against a CAS-enabled reference. General CAS limits and implicit polynomials are outside the numeric solver. |
-| `RemovableDiscontinuity(function)` | Solves denominators and takes limits with CAS. | Finds rational holes by polynomial multiplicity. For other expressions with a polynomial denominator, it estimates a two-sided limit at each denominator root. | Defined holes are unverified against a CAS-enabled reference. |
+| `Asymptote(function)` | Uses CAS limits and solves for poles. | Finds poles and horizontal or oblique limits of rational functions and of exp, atan or log with affine arguments. | The rational case is checked in `cas-delegated-001`. General symbolic limits and implicit polynomials remain outside the numeric solver. |
+| `RemovableDiscontinuity(function)` | Solves denominators and takes limits with CAS. | Finds rational holes by polynomial multiplicity. For other expressions with a polynomial denominator, it estimates a two-sided limit at each denominator root. | The finite rational hole is checked in `cas-delegated-002`. Other expressions keep the bounded numerical path. |
 | `NSolveODE(list, number, list, number)` | Uses Dormand–Prince 5(4) and records the accepted steps. | Integrates once per input set and recomputation, sharing accepted states across output slots. Supports up to 16 coupled states and 99,999 trials after the initial state. The outputs are undefined if the solve runs out of trials or work before reaching the end. | The limit bounds memory and work. With `y'(t,y) = 1`, the Java harness records 200,002 points for `NSolveODE({y'},0,{1},2000)`, including the initial point and the endpoint at time 2000. The kernel returns an undefined locus for this input. |
 | Numeric `SolveODE` | Uses classical RK4. A failure during integration leaves a defined locus containing the points already recorded. | Keeps the initial point and any completed steps when integration stops. The kernel caps the trace at 100,000 points and also stops on work-budget exhaustion. | Invalid inputs such as a zero step still give an undefined locus. |
 
-The headless reference harness configures `CASFactoryDummy`. It records
-empty asymptote lists for the polynomial and undefined holes for the
-no-hole examples. Those outcomes verify the headless configuration only.
-The function asymptotes and finite holes listed in the fixture gaps have
-no CAS-enabled oracle values. The dummy CAS also leaves the sine curvature
-vector undefined in the harness. The kernel evaluates it numerically.
+The historical numerical analysis group still uses the dummy CAS. The
+native CAS group verifies rational asymptotes and finite holes separately.
+The dummy backend leaves the sine curvature vector undefined in the
+historical group. The kernel evaluates it numerically.
 
 `Roots` samples both explicit intervals and the active sampling window,
 even for polynomials. It uses the construction's horizontal view scale and

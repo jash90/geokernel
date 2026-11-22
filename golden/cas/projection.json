@@ -1,0 +1,227 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-projection-001",
+      "group": "cas",
+      "script": [
+        "f(x) = (x^2-1)/(x-1)",
+        "p = Numerator(f)",
+        "q = Denominator(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, -0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, null],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "p": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 63.0],
+              [-4.0, 15.0],
+              [-2.0, 3.0],
+              [-1.0, 0.0],
+              [-0.5, -0.75],
+              [0.0, -1.0],
+              [0.5, -0.75],
+              [1.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 15.0],
+              [8.0, 63.0]
+            ]
+          },
+          "q": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -9.0],
+              [-4.0, -5.0],
+              [-2.0, -3.0],
+              [-1.0, -2.0],
+              [-0.5, -1.5],
+              [0.0, -1.0],
+              [0.5, -0.5],
+              [1.0, 0.0],
+              [2.0, 1.0],
+              [4.0, 3.0],
+              [8.0, 7.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-projection-002",
+      "group": "cas",
+      "script": [
+        "a = 15/9",
+        "p = Numerator(a)",
+        "q = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.6666666666666667 },
+          "p": { "type": "number", "defined": true, "value": 5.0 },
+          "q": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-projection-003",
+      "group": "cas",
+      "script": [
+        "f(x) = (x-2)*(x+1)",
+        "p = Polynomial(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 70.0],
+              [-4.0, 18.0],
+              [-2.0, 4.0],
+              [-1.0, -0.0],
+              [-0.5, -1.25],
+              [0.0, -2.0],
+              [0.5, -2.25],
+              [1.0, -2.0],
+              [2.0, 0.0],
+              [4.0, 10.0],
+              [8.0, 54.0]
+            ]
+          },
+          "p": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 70.0],
+              [-4.0, 18.0],
+              [-2.0, 4.0],
+              [-1.0, 0.0],
+              [-0.5, -1.25],
+              [0.0, -2.0],
+              [0.5, -2.25],
+              [1.0, -2.0],
+              [2.0, 0.0],
+              [4.0, 10.0],
+              [8.0, 54.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-projection-004",
+      "group": "cas",
+      "script": [
+        "f(x) = 0.125/(1+0*x)",
+        "p = Numerator(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.125],
+              [-4.0, 0.125],
+              [-2.0, 0.125],
+              [-1.0, 0.125],
+              [-0.5, 0.125],
+              [0.0, 0.125],
+              [0.5, 0.125],
+              [1.0, 0.125],
+              [2.0, 0.125],
+              [4.0, 0.125],
+              [8.0, 0.125]
+            ]
+          },
+          "p": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.125],
+              [-4.0, 0.125],
+              [-2.0, 0.125],
+              [-1.0, 0.125],
+              [-0.5, 0.125],
+              [0.0, 0.125],
+              [0.5, 0.125],
+              [1.0, 0.125],
+              [2.0, 0.125],
+              [4.0, 0.125],
+              [8.0, 0.125]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-projection-005",
+      "group": "cas",
+      "script": [
+        "p = Numerator(123456/789012)",
+        "q = Denominator(123456/789012)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": 10288.0 },
+          "q": { "type": "number", "defined": true, "value": 65751.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-projection-006",
+      "group": "cas",
+      "script": [
+        "a = 123456/789012",
+        "p = Numerator(a)",
+        "q = Denominator(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.1564691031315113 },
+          "p": { "type": "number", "defined": true, "value": 10288.0 },
+          "q": { "type": "number", "defined": true, "value": 65751.0 }
+        }
+      ]
+    }
+  ]
+}

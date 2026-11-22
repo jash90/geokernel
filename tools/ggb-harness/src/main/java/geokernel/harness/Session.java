@@ -113,6 +113,7 @@ final class Session {
      * `circle`.
      */
     private final Set<GeoElement> namedMultivariate = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<GeoElement> solutionSets = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
     private final boolean trackBoundaryGrowth;
     private final boolean trackPointListGrowth;
@@ -339,7 +340,13 @@ final class Session {
             }
             expected = type;
         }
-        if (functionLine && "function_nvar".equals(expected)) {
+        boolean nativeCas = GiacOracle.enabled();
+        if (nativeCas && geo instanceof GeoList && definition.matches("(N?Solve|N?Solutions)\\(.*")) {
+            solutionSets.add(geo);
+        }
+        if (functionLine && "function_nvar".equals(expected)
+                || nativeCas && geo instanceof GeoFunctionNVar f && f.getFunctionVariables().length > 1
+                        && definition.matches("(Expand|Factor|IFactor|Simplify|Numerator|Denominator)\\(.*")) {
             namedMultivariate.add(geo);
         }
         String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : schemaType(geo);
@@ -595,7 +602,8 @@ final class Session {
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             GeoElement geo = e.getValue();
-            Map<String, Object> object = describe(geo, schemaType(geo));
+            Map<String, Object> object = solutionSets.contains(geo) && geo instanceof GeoList list
+                    ? describeSolutions(list) : describe(geo, schemaType(geo));
             if (sampleCurves && geo instanceof GeoCurveCartesian curve && curve.isDefined()) {
                 List<Object> samples = new ArrayList<>();
                 double start = curve.getMinParameter();
@@ -1282,6 +1290,88 @@ final class Session {
                 // a mathematical function such as `sqrt(a)` or `x(A)`
                 return null;
         }
+    }
+
+    private static Map<String, Object> describeSolutions(GeoList list) {
+        Map<String, Object> result = describe(list, "list");
+        if (!list.isDefined()) {
+            return result;
+        }
+        List<GeoElement> ordered = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            ordered.add(list.get(i));
+        }
+        ordered.sort(Session::compareSolution);
+        List<Object> elements = new ArrayList<>();
+        for (GeoElement e : ordered) {
+            // For a system in a single variable Solve nests all assignments
+            // in one list. Sort that multiset without reordering tuple axes.
+            if (e instanceof GeoList row && sameCoordinateAssignments(row)) {
+                elements.add(describeSolutions(row));
+            } else {
+                elements.add(describe(e, typeOf(e)));
+            }
+        }
+        result.put("elements", elements);
+        return result;
+    }
+
+    private static boolean sameCoordinateAssignments(GeoList list) {
+        if (list.size() < 2 || !(list.get(0) instanceof GeoLine first)) {
+            return false;
+        }
+        boolean vertical = first.getY() == 0 && first.getX() != 0;
+        boolean horizontal = first.getX() == 0 && first.getY() != 0;
+        if (!vertical && !horizontal) {
+            return false;
+        }
+        for (int i = 0; i < list.size(); i++) {
+            if (!(list.get(i) instanceof GeoLine line) || !line.isDefined()
+                    || vertical && (line.getY() != 0 || line.getX() == 0)
+                    || horizontal && (line.getX() != 0 || line.getY() == 0)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static int compareSolution(GeoElement a, GeoElement b) {
+        if (a instanceof GeoList as && b instanceof GeoList bs) {
+            for (int i = 0; i < Math.min(as.size(), bs.size()); i++) {
+                int cmp = compareSolution(as.get(i), bs.get(i));
+                if (cmp != 0) {
+                    return cmp;
+                }
+            }
+            return Integer.compare(as.size(), bs.size());
+        }
+        int rank = Boolean.compare(a instanceof GeoFunction, b instanceof GeoFunction);
+        if (rank != 0) {
+            return rank;
+        }
+        int coordinate = Double.compare(solutionCoordinate(a, 0), solutionCoordinate(b, 0));
+        if (coordinate == 0 && a instanceof GeoFunction && b instanceof GeoFunction) {
+            return Double.compare(solutionCoordinate(a, 1), solutionCoordinate(b, 1));
+        }
+        return coordinate;
+    }
+
+    private static double solutionCoordinate(GeoElement element, int sample) {
+        if (element instanceof GeoFunction function) {
+            return function.value(SAMPLES[sample]);
+        }
+        if (element instanceof GeoNumeric n) {
+            return n.getDouble();
+        }
+        if (element instanceof GeoLine line && line.isDefined()) {
+            if (line.getY() == 0) {
+                return -line.getZ() / line.getX();
+            }
+            if (line.getX() == 0) {
+                return -line.getZ() / line.getY();
+            }
+        }
+        return Double.NaN;
     }
 
     static Map<String, Object> describe(GeoElement geo, String type) {

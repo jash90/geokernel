@@ -54,6 +54,7 @@ pub(crate) enum Tok {
     Implies,
     /// `==`, `≟`.
     Equal,
+    Assign,
     /// `!=`, `≠`, `<>`.
     NotEqual,
     Less,
@@ -219,6 +220,7 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
                 '\u{22bb}' | '\u{2295}' => Tok::Xor,
                 '\u{2192}' => Tok::Implies,
                 '\u{225f}' => Tok::Equal,
+                '=' => Tok::Assign,
                 '\u{2260}' => Tok::NotEqual,
                 '<' => Tok::Less,
                 '>' => Tok::Greater,

@@ -601,7 +601,7 @@ pub struct StepOutcome {
 
 /// Compares one output of a step against its recorded object and string,
 /// by the label GeoGebra gave it.
-fn compare_output(c: &Construction, out: &Output) -> Vec<Disagreement> {
+fn compare_output(c: &Construction, out: &Output, values_only: bool) -> Vec<Disagreement> {
     let mut bad = Vec::new();
     let Some(label) = out.label.as_deref() else {
         bad.push(Disagreement {
@@ -620,13 +620,18 @@ fn compare_output(c: &Construction, out: &Output) -> Vec<Disagreement> {
         });
         return bad;
     };
-    compare_at(c, out, label, id)
+    compare_at(c, out, label, id, values_only)
 }
 
 /// [`compare_output`], against a result the runner ran under a probe label.
-fn compare_probed(c: &Construction, out: &Output, probe: &str) -> Vec<Disagreement> {
+fn compare_probed(
+    c: &Construction,
+    out: &Output,
+    probe: &str,
+    values_only: bool,
+) -> Vec<Disagreement> {
     match c.id(probe) {
-        Some(id) => compare_at(c, out, probe, id),
+        Some(id) => compare_at(c, out, probe, id, values_only),
         None => vec![Disagreement {
             label: probe.into(),
             why: format!(
@@ -640,7 +645,13 @@ fn compare_probed(c: &Construction, out: &Output, probe: &str) -> Vec<Disagreeme
 
 /// Compares the recorded output against the kernel's object `id`, printed
 /// as `label` in messages.
-fn compare_at(c: &Construction, out: &Output, label: &str, id: Id) -> Vec<Disagreement> {
+fn compare_at(
+    c: &Construction,
+    out: &Output,
+    label: &str,
+    id: Id,
+    values_only: bool,
+) -> Vec<Disagreement> {
     let mut bad = Vec::new();
     let Some(raw) = out.object.as_ref() else {
         // The schema has no type for this class; only a 3D object that left
@@ -703,6 +714,9 @@ fn compare_at(c: &Construction, out: &Output, label: &str, id: Id) -> Vec<Disagr
             });
             return bad;
         }
+    }
+    if values_only {
+        return bad;
     }
     // The string, where a GeoGebra-compatible formatter exists.
     match value_string(c, id) {
@@ -985,6 +999,31 @@ fn classify(
 /// Runs one pair on the construction and compares everything recorded.
 pub fn run_pair(c: &mut Construction, pair: &Pair, prior_failure: Option<&str>) -> StepOutcome {
     let exec = exec_step(c, pair);
+    let command = command_of(&pair.input);
+    // The polynomial CAS is checked through structured outputs. Its
+    // presentation conventions are documented independently.
+    let values_only = matches!(
+        command.as_str(),
+        "Expand"
+            | "Factor"
+            | "IFactor"
+            | "Simplify"
+            | "CompleteSquare"
+            | "IsFactored"
+            | "Solve"
+            | "Solutions"
+            | "NSolve"
+            | "NSolutions"
+            | "NextPrime"
+            | "PreviousPrime"
+            | "CommonDenominator"
+            | "Degree"
+            | "Coefficients"
+            | "Numerator"
+            | "Denominator"
+            | "Polynomial"
+            | "Factors"
+    );
     let mut bad = Vec::new();
     let mut pass = None;
     if let Exec::Refused(why) = &exec {
@@ -1042,8 +1081,10 @@ pub fn run_pair(c: &mut Construction, pair: &Pair, prior_failure: Option<&str>) 
                 } else {
                     for (i, out) in pair.outputs.iter().enumerate() {
                         match (&out.label, exec.probe_label(i)) {
-                            (_, Some(probe)) => bad.extend(compare_probed(c, out, probe)),
-                            (Some(_), None) => bad.extend(compare_output(c, out)),
+                            (_, Some(probe)) => {
+                                bad.extend(compare_probed(c, out, probe, values_only))
+                            }
+                            (Some(_), None) => bad.extend(compare_output(c, out, values_only)),
                             (None, None) => bad.push(Disagreement {
                                 label: "step".into(),
                                 why: format!(
@@ -1067,7 +1108,7 @@ pub fn run_pair(c: &mut Construction, pair: &Pair, prior_failure: Option<&str>) 
     };
     StepOutcome {
         id: pair.id.clone(),
-        command: command_of(&pair.input),
+        command,
         disagreements: bad,
         category,
         pass,

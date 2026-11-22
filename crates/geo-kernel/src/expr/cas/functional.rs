@@ -1,0 +1,499 @@
+use super::input::{read, variables};
+use super::{Op, Poly, Quotient, Rat, Slot, Work};
+use crate::expr::{eval, Entry, NONE};
+use crate::Construction;
+use std::fmt;
+
+type Product = (Rat, Vec<(Poly, u32)>);
+
+#[derive(Clone, Debug, PartialEq)]
+enum Form {
+    Expanded,
+    Product {
+        numerator: Product,
+        denominator: Product,
+        real_display: Option<String>,
+    },
+    Square {
+        a: Rat,
+        shift: Rat,
+        offset: Rat,
+        power: usize,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(in crate::expr) struct Function {
+    pub(in crate::expr) expanded: Quotient,
+    form: Form,
+}
+
+impl Function {
+    fn new(expanded: Quotient) -> Self {
+        Self {
+            expanded,
+            form: Form::Expanded,
+        }
+    }
+
+    pub(in crate::expr) fn value(&self, x: f64, y: f64) -> f64 {
+        match &self.form {
+            Form::Expanded => self.expanded.value(x, y),
+            Form::Product {
+                numerator,
+                denominator,
+                ..
+            } => {
+                let value = |(scalar, factors): &Product| {
+                    factors
+                        .iter()
+                        .fold(scalar.to_f64(), |value, (factor, multiplicity)| {
+                            value * factor.value([x, y, f64::NAN]).powi(*multiplicity as i32)
+                        })
+                };
+                value(numerator) / value(denominator)
+            }
+            Form::Square {
+                a,
+                shift,
+                offset,
+                power,
+            } => {
+                let term = x.powi(*power as i32) + shift.to_f64();
+                a.to_f64() * (term * term) + offset.to_f64()
+            }
+        }
+    }
+}
+
+pub(in crate::expr) fn function(
+    c: &Construction,
+    e: &Entry,
+    op: Op,
+    a: u32,
+    b: u32,
+) -> Option<Function> {
+    evaluate(&eval::Ctx::<true>::new(c, e, &eval::Env::None), op, a, b)
+}
+
+pub(in crate::expr) fn evaluate<const M: bool>(
+    ctx: &eval::Ctx<'_, M>,
+    op: Op,
+    a: u32,
+    b: u32,
+) -> Option<Function> {
+    let allowance = eval::Lists::new(Vec::new());
+    let charge = |n| ctx.meter.unwrap_or(&allowance).charge(n as u64);
+    let work = &mut Work::new(&charge);
+    let vars = &variables();
+    if matches!(op, Op::Numerator | Op::Denominator)
+        && matches!(ctx.e.tys[a as usize], crate::expr::Ty::Num(_))
+        && !uses_variable(ctx.e, a, work)?
+    {
+        return Some(Function::new(super::input::number(numeric_projection(
+            ctx, a, op, work,
+        )?)));
+    }
+    let a = read(ctx.c, ctx.e, a, vars, work)?;
+    let other = if b == NONE {
+        None
+    } else {
+        Some(read(ctx.c, ctx.e, b, vars, work)?)
+    };
+    transform(op, a, other, work)
+}
+
+fn numeric_projection<const M: bool>(
+    ctx: &eval::Ctx<'_, M>,
+    input: u32,
+    op: Op,
+    work: &mut Work<'_>,
+) -> Option<Rat> {
+    let pair = |entry: &Entry, index, work: &mut Work<'_>| {
+        let crate::expr::Node::Bin(crate::expr::Bin::Div, a, b) = entry.nodes[index as usize]
+        else {
+            return None;
+        };
+        let vars = variables();
+        let a = read(ctx.c, entry, a, &vars, work)?.scalar()?;
+        let b = read(ctx.c, entry, b, &vars, work)?.scalar()?;
+        if a.den == 1 && b.den == 1 {
+            Rat::new(a.num, b.num)
+        } else {
+            None
+        }
+    };
+    let original = if let crate::expr::Node::Obj(id) = ctx.node(input) {
+        if let Some(source) = ctx.c.construction_source(id) {
+            let parsed = crate::expr::parse::parse(ctx.c, source).ok()?;
+            let root = parsed.root;
+            pair(&Entry::new(ctx.c, parsed, false), root, work)
+        } else if let crate::Def::Expr(def) = ctx.c.def(id) {
+            let entry = crate::expr::entry(ctx.c, def);
+            pair(entry, entry.root, work)
+        } else {
+            None
+        }
+    } else {
+        pair(ctx.e, input, work)
+    };
+    if let Some(value) = original {
+        return Rat::new(
+            if op == Op::Numerator {
+                value.num
+            } else {
+                value.den
+            },
+            1,
+        );
+    }
+    let value = ctx.full_number(input);
+    if value.is_nan() {
+        return None;
+    }
+    let (n, d) =
+        crate::expr::derivative::decimal_to_fraction(value, crate::tol::STANDARD_PRECISION);
+    let projected = if op == Op::Numerator { n } else { d };
+    Rat::new(projected.round() as i128, 1)
+}
+
+pub(super) fn transform(
+    op: Op,
+    polynomial: Quotient,
+    other: Option<Quotient>,
+    work: &mut Work<'_>,
+) -> Option<Function> {
+    let result = match op {
+        Op::Numerator | Op::Denominator => {
+            let projected = if op == Op::Numerator {
+                polynomial.numerator
+            } else {
+                polynomial.denominator
+            };
+            Function::new(Quotient::polynomial(projected))
+        }
+        Op::Expand | Op::Simplify => Function::new(polynomial.normalized(work)?),
+        Op::Polynomial => Function::new(Quotient::polynomial(Poly::dense(
+            &polynomial.coefficients(work)?,
+        ))),
+        Op::Factor | Op::IFactor => {
+            let expanded = polynomial.normalized(work)?;
+            let numerator = product(&expanded.numerator, work)?;
+            let denominator = product(&expanded.denominator, work)?;
+            let real_display = if op == Op::IFactor {
+                let n = print_real_product(&numerator, work);
+                if expanded.denominator.scalar() == Some(Rat::ONE) {
+                    Some(n)
+                } else {
+                    Some(format!(
+                        "({n})/({})",
+                        print_real_product(&denominator, work)
+                    ))
+                }
+            } else {
+                None
+            };
+            Function {
+                expanded,
+                form: Form::Product {
+                    numerator,
+                    denominator,
+                    real_display,
+                },
+            }
+        }
+        Op::CompleteSquare => {
+            let coefficients = polynomial.clone().coefficients(work)?;
+            let degree = coefficients.len().checked_sub(1)?;
+            let power = degree / 2;
+            if degree == 0
+                || degree % 2 != 0
+                || coefficients
+                    .iter()
+                    .enumerate()
+                    .any(|(i, &c)| i != 0 && i != power && i != degree && c != Rat::ZERO)
+            {
+                return None;
+            }
+            let a = coefficients[degree];
+            let b = coefficients[power];
+            let c = coefficients[0];
+            let shift = b.div(a.mul(Rat::new(2, 1)?)?)?;
+            let offset = c.sub(a.mul(shift.mul(shift)?)?)?;
+            Function {
+                expanded: polynomial.normalized(work)?,
+                form: Form::Square {
+                    a,
+                    shift,
+                    offset,
+                    power,
+                },
+            }
+        }
+        Op::CommonDenominator => {
+            let a = polynomial
+                .normalized(work)?
+                .integral_parts(work)?
+                .denominator;
+            let b = other?.normalized(work)?.integral_parts(work)?.denominator;
+            Function::new(Quotient::polynomial(a.common_multiple(&b, work)?))
+        }
+        _ => return None,
+    };
+    Some(result)
+}
+
+fn product(input: &Poly, work: &mut Work<'_>) -> Option<Product> {
+    let (mut scalar, factors) = crate::cas::factor_poly(input, work)?;
+    let mut parts = Vec::with_capacity(factors.len());
+    for (factor, exponent) in factors {
+        let (content, primitive) = factor.primitive(work)?;
+        for _ in 0..exponent {
+            scalar = scalar.mul(content)?;
+        }
+        parts.push((primitive, exponent));
+    }
+    // This does not rely on the modular factor ordering.
+    parts.sort_by(|(a, _), (b, _)| {
+        let degree = |p: &Poly| p.0.last_key_value().map_or(0, |(power, _)| power[0]);
+        degree(a)
+            .cmp(&degree(b))
+            .then_with(|| a.value([0.0; 3]).total_cmp(&b.value([0.0; 3])))
+    });
+    Some((scalar, parts))
+}
+
+pub(super) fn factor_list<const M: bool>(
+    ctx: &eval::Ctx<'_, M>,
+    input: u32,
+    work: &mut Work<'_>,
+) -> Option<(u32, u32)> {
+    let polynomial = read(ctx.c, ctx.e, input, &variables(), work)?;
+    let numeric = !matches!(ctx.e.tys[input as usize], crate::expr::Ty::Function)
+        && !uses_variable(ctx.e, input, work)?;
+    let pairs = if let Some(n) = polynomial.scalar().filter(|_| numeric) {
+        if n.den != 1 || !(1..=1 << 53).contains(&n.num) {
+            return None;
+        }
+        let charge = |n| work.spend(n as usize).is_none();
+        crate::expr::commands::integer_factors(n.num as u64, charge)?
+            .into_iter()
+            .map(|(v, exponent)| (Slot::number(v as f64), exponent))
+            .collect::<Vec<_>>()
+    } else {
+        let expanded = polynomial.normalized(work)?;
+        if expanded.denominator.scalar() != Some(Rat::ONE) {
+            return None;
+        }
+        let (scalar, mut parts) = product(&expanded.numerator, work)?;
+        if scalar != Rat::ONE || parts.is_empty() {
+            parts.insert(0, (Poly::constant(scalar), 1));
+        }
+        parts
+            .into_iter()
+            .map(|(factor, exponent)| (Slot::polynomial(factor), exponent))
+            .collect()
+    };
+    let lists = ctx.lists?;
+    let len = pairs.len().try_into().ok()?;
+    let start = lists.reserve(len)?;
+    for (i, (factor, exponent)) in pairs.into_iter().enumerate() {
+        let row = ctx.cas_slots([factor, Slot::number(f64::from(exponent))].into_iter())?;
+        lists.set(start + i as u32, Slot::list(row.0, row.1));
+    }
+    Some((start, len))
+}
+
+fn uses_variable(e: &Entry, input: u32, work: &mut Work<'_>) -> Option<bool> {
+    let mut pending = vec![input];
+    while let Some(i) = pending.pop() {
+        work.spend(1)?;
+        let node = e.nodes[i as usize];
+        if matches!(
+            node,
+            crate::expr::Node::Var
+                | crate::expr::Node::VarY
+                | crate::expr::Node::Local(..)
+                | crate::expr::Node::Apply(..)
+        ) {
+            return Some(true);
+        }
+        pending.extend(crate::expr::children(&node));
+    }
+    Some(false)
+}
+
+pub(super) fn print_value(value: Rat) -> String {
+    if value.den == 1 {
+        value.num.to_string()
+    } else {
+        format!("{}/{}", value.num, value.den)
+    }
+}
+
+pub(in crate::expr) fn print_poly(p: &Poly) -> String {
+    if p.0.is_empty() {
+        return "0".into();
+    }
+    let mut text = String::new();
+    for (powers, &coefficient) in p.0.iter().rev() {
+        let magnitude = Rat {
+            num: coefficient.num.abs(),
+            den: coefficient.den,
+        };
+        if text.is_empty() {
+            if coefficient.num < 0 {
+                text.push('-');
+            }
+        } else {
+            text.push_str(if coefficient.num < 0 { " - " } else { " + " });
+        }
+        let has_variables = powers.iter().any(|&power| power != 0);
+        if !has_variables || magnitude != Rat::ONE {
+            text.push_str(&print_value(magnitude));
+            if has_variables {
+                text.push('*');
+            }
+        }
+        let mut separator = false;
+        for (variable, &power) in ["x", "y", "z"].iter().zip(powers) {
+            if power == 0 {
+                continue;
+            }
+            if separator {
+                text.push('*');
+            }
+            text.push_str(variable);
+            if power > 1 {
+                text.push('^');
+                text.push_str(&power.to_string());
+            }
+            separator = true;
+        }
+    }
+    text
+}
+
+fn print_product((scalar, parts): &Product) -> String {
+    let mut factors = Vec::new();
+    if *scalar != Rat::ONE || parts.is_empty() {
+        factors.push(print_value(*scalar));
+    }
+    for (factor, exponent) in parts {
+        let factor = print_poly(factor);
+        factors.push(if *exponent == 1 {
+            format!("({factor})")
+        } else {
+            format!("({factor})^{exponent}")
+        });
+    }
+    factors.join("*")
+}
+
+fn print_real_product((scalar, parts): &Product, work: &mut Work<'_>) -> String {
+    let mut factors = Vec::new();
+    if *scalar != Rat::ONE || parts.is_empty() {
+        factors.push(print_value(*scalar));
+    }
+    for (factor, exponent) in parts {
+        let factor = radical_factors(factor, work).unwrap_or_else(|| print_poly(factor));
+        factors.push(if *exponent == 1 {
+            format!("({factor})")
+        } else {
+            format!("({factor})^{exponent}")
+        });
+    }
+    factors.join("*")
+}
+
+fn radical_factors(factor: &Poly, work: &mut Work<'_>) -> Option<String> {
+    let coefficients = factor.coefficients()?;
+    let degree = coefficients.len().checked_sub(1)?;
+    let lead = coefficients[degree];
+    if degree == 2 {
+        let crate::cas::Roots::Finite(roots) = crate::cas::real_roots(&coefficients, work)? else {
+            return None;
+        };
+        if roots.len() != 2 {
+            return None;
+        }
+        let a = super::solutions::exact(roots[0])?;
+        let b = super::solutions::exact(roots[1])?;
+        return Some(format!("{}*(x - ({a}))*(x - ({b}))", print_value(lead)));
+    }
+    if degree > 2
+        && degree.is_power_of_two()
+        && coefficients[0].num < 0
+        && coefficients[1..degree].iter().all(|&c| c == Rat::ZERO)
+    {
+        let constant = print_value(coefficients[0].neg()?.div(lead)?);
+        let mut power = degree;
+        let mut factors = vec![print_value(lead)];
+        while power > 1 {
+            let exponent = degree / (power / 2);
+            let root = format!("({constant})^(1/{exponent})");
+            power /= 2;
+            if power == 1 {
+                factors.push(format!("(x + {root})"));
+                factors.push(format!("(x - {root})"));
+            } else {
+                factors.push(format!("(x^{power} + {root})"));
+            }
+        }
+        return Some(factors.join("*"));
+    }
+    None
+}
+
+impl fmt::Display for Function {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let quotient = |f: &mut fmt::Formatter<'_>, numerator, denominator, is_one| {
+            if is_one {
+                write!(f, "{numerator}")
+            } else {
+                write!(f, "({numerator})/({denominator})")
+            }
+        };
+        match &self.form {
+            Form::Expanded => quotient(
+                f,
+                print_poly(&self.expanded.numerator),
+                print_poly(&self.expanded.denominator),
+                self.expanded.denominator.scalar() == Some(Rat::ONE),
+            ),
+            Form::Product {
+                real_display: Some(text),
+                ..
+            } => f.write_str(text),
+            Form::Product {
+                numerator,
+                denominator,
+                ..
+            } => quotient(
+                f,
+                print_product(numerator),
+                print_product(denominator),
+                self.expanded.denominator.scalar() == Some(Rat::ONE),
+            ),
+            Form::Square {
+                a,
+                shift,
+                offset,
+                power,
+            } => {
+                let variable = if *power == 1 {
+                    "x".into()
+                } else {
+                    format!("x^{power}")
+                };
+                write!(
+                    f,
+                    "{}*({variable} + {})^2 + {}",
+                    print_value(*a),
+                    print_value(*shift),
+                    print_value(*offset)
+                )
+            }
+        }
+    }
+}

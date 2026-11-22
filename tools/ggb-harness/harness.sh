@@ -123,8 +123,13 @@ case "$cmd" in
       files=("$here"/cases/*.json "$here"/cases/reference/*.json)
     fi
     for file in "${files[@]}"; do
-      java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
-        geokernel.harness.GoldenGenerator "$file" "$repo/golden" "$commit"
+      (
+        if [ "${file##*/}" = cas.json ] && [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
+          enable_giac
+        fi
+        java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+          geokernel.harness.GoldenGenerator "$file" "$repo/golden" "$commit"
+      )
     done
     ;;
   chain)
@@ -135,8 +140,13 @@ case "$cmd" in
     sample="${1:-1}"
     zipstep="${2:-50}"
     for file in "$here"/cases/*.json; do
-      java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
-        geokernel.harness.GgbExporter "$file" "$repo/golden/ggb" "$sample" "$zipstep"
+      (
+        if [ "${file##*/}" = cas.json ] && [ "${GGB_HARNESS_CAS:-0}" != 1 ]; then
+          enable_giac
+        fi
+        java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
+          geokernel.harness.GgbExporter "$file" "$repo/golden/ggb" "$sample" "$zipstep"
+      )
     done
     ;;
   saved)

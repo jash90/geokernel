@@ -345,7 +345,7 @@ fn saved_expressions_match_geogebra_before_and_after_edits() {
     let mut live: Option<Construction> = None;
     for (stage, file) in EXPRESSION_FIXTURES.into_iter().enumerate() {
         let expected_skips = BTreeMap::from([
-            ("bad", "NextPrime"),
+            ("bad", "Limit"),
             ("lost", "depends on the skipped object `bad`"),
             ("multi", "function with multiple variables"),
         ]);

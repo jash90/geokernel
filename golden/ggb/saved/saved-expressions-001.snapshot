@@ -18,7 +18,7 @@
     "j_{xy}(x) = f(x) + 1",
     "d = j_{xy}(y(A))",
     "ang = (v_{0x} + 30)°",
-    "bad = x(A) + NextPrime(v_{0x})",
+    "bad = x(A) + Limit(x^2, v_{0x})",
     "lost = bad + 1",
     "multi(x, y) = x + y",
     "control = Checkbox()",

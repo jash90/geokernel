@@ -12,6 +12,7 @@
 //!   and the window alike.
 
 pub mod algo;
+mod cas;
 pub mod equation;
 pub mod expr;
 pub mod kernel;

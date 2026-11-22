@@ -21,12 +21,6 @@ reason = "the kernel refuses the input: unknown command `Extremum`"
 mismatches = ["step"]
 
 [[gap]]
-id = "algos/AlgoNumeratorDenominatorFunTest.java:26"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:100"
 category = "error-behaviour"
 reason = "the kernel refuses the input: unknown object `log_{2}2`"
@@ -1299,12 +1293,6 @@ reason = "the kernel refuses the input: unknown command `Coefficients`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1182"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Coefficients`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1183"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Coefficients`"
@@ -1312,15 +1300,15 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1184"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Coefficients`"
+category = "unsupported-form"
+reason = "the kernel refuses the input: `Fit({(0,0),(1,1),(2,4)},{x^2,sin(x),x})`: a command inside a command is not supported"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1185"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Coefficients`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Undefined does not match `{7, 3}` (expected a value, kernel is undefined)"
+mismatches = ["l5"]
 
 [[gap]]
 id = "commands/CommandsTest.java:119"
@@ -1357,18 +1345,6 @@ id = "commands/CommandsTest.java:120"
 category = "text-formatting"
 reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `1`"
 mismatches = ["f_1"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1202"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `CompleteSquare`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1203"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `CompleteSquare`"
-mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1208"
@@ -1486,9 +1462,9 @@ mismatches = ["q_1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1281"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `CommonDenominator`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Function does not match `NaN` (value at x = -8 differs: kernel has Some(63.0))"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1286"
@@ -1527,24 +1503,6 @@ reason = "the kernel refuses the input: unknown command `IsDefined`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1307"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Degree`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1308"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Degree`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1309"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Degree`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1314"
 category = "unsupported-type"
 reason = "class `GeoLocus` has no schema object (unsupported-type); string `DelauneyTriangulation[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
@@ -1563,147 +1521,15 @@ reason = "the kernel refuses the input: unknown command `Delete`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1332"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1333"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1334"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1335"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1336"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1337"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1338"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1339"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:134"
 category = "unsupported-type"
 reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `x + y`"
 mismatches = ["s"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1340"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1341"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1342"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1343"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1344"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1345"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1346"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1347"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1348"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1349"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:135"
 category = "unsupported-form"
 reason = "the kernel refuses the input: `s(1,2)*x` is not a valid object name"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1350"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1351"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1352"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1353"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
 mismatches = ["step"]
 
 [[gap]]
@@ -1720,8 +1546,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1364"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `-2x + 3y + 1 = 0`"
 mismatches = ["step"]
 
 [[gap]]
@@ -1804,8 +1630,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1431"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `y=-3x-6`; the method's step `commands/CommandsTest.java:1429` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -2055,28 +1881,16 @@ reason = "the kernel refuses the input: unknown command `Integral`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1642"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `Factor`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1643"
 category = "cas"
 reason = "the kernel refuses the input: unknown command `Factor`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1648"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Factors`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1649"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Factors`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "List { len: 1 } does not match `?` (expected undefined, kernel has a value)"
+mismatches = ["m2"]
 
 [[gap]]
 id = "commands/CommandsTest.java:165"
@@ -2266,8 +2080,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1784"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Coefficients`"
+category = "unsupported-form"
+reason = "the kernel refuses the input: `FitPoly( Function({0,4,0,1,4,9,16}),1 )`: a command inside a command is not supported"
 mismatches = ["step"]
 
 [[gap]]
@@ -2368,8 +2182,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:183"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `X`"
 mismatches = ["step"]
 
 [[gap]]
@@ -2386,8 +2200,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:184"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `X`; the method's step `commands/CommandsTest.java:183` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -2583,12 +2397,6 @@ reason = "the kernel refuses the input: `Hyperbola` does not take 8 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2058"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IFactor`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2059"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `IFactor`"
@@ -2680,8 +2488,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2147"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `x^2+y^2=25`; the method's step `commands/CommandsTest.java:2138` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -2955,30 +2763,6 @@ reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style 
 mismatches = ["t"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2408"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2409"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2410"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2411"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2412"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `IsFactored`"
@@ -2991,193 +2775,7 @@ reason = "the kernel refuses the input: unknown command `IsFactored`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2414"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2415"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2416"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2417"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2418"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2419"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2420"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2421"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2422"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2423"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2424"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2425"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2426"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2427"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2428"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2429"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2430"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2431"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2432"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2433"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2434"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2435"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2436"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2437"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2438"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2439"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2440"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2441"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2442"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2443"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2444"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2445"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `IsFactored`"
 mismatches = ["step"]
@@ -3195,18 +2793,6 @@ reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style 
 mismatches = ["redef2"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2452"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2453"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2454"
 category = "redefine"
 reason = "the kernel refuses the input: object `redef1` already exists"
@@ -3220,20 +2806,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2456"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `check1`; the method's step `commands/CommandsTest.java:2450` fails earlier here, so the object is missing only in its wake"
+category = "redefine"
+reason = "the kernel refuses the input: object `check1` already exists"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2457"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `check2`; the method's step `commands/CommandsTest.java:2450` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2462"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
+category = "redefine"
+reason = "the kernel refuses the input: object `check2` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -3243,19 +2823,7 @@ reason = "Function does not match `?` (expected undefined, kernel has a value)"
 mismatches = ["f"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2464"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2465"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsFactored`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2466"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `IsFactored`"
 mismatches = ["step"]
@@ -3688,8 +3256,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2711"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `ptPath`; the method's step `commands/CommandsTest.java:2709` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -3784,8 +3352,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2764"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `ptPath`; the method's step `commands/CommandsTest.java:2762` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -4041,106 +3609,10 @@ reason = "the kernel refuses the input: unknown command `Normalize`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2974"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2975"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2976"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2977"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2978"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2979"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2980"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2981"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2982"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2983"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2984"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2985"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2986"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2987"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2988"
 category = "text-formatting"
 reason = "string `1.6666666666666667`, GeoGebra prints `1.66666666666667`"
 mismatches = ["frac"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2989"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2990"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2991"
@@ -4149,82 +3621,10 @@ reason = "string `-1.6666666666666667`, GeoGebra prints `-1.66666666666667`"
 mismatches = ["frac2"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2992"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2993"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2994"
 category = "text-formatting"
 reason = "string `1.6666666666666667`, GeoGebra prints `1.66666666666667`"
 mismatches = ["frac3"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2995"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2996"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2997"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2998"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2999"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3000"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3001"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3002"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3003"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3004"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3020"
@@ -4414,8 +3814,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3143"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `3x = 4y`"
 mismatches = ["step"]
 
 [[gap]]
@@ -4426,8 +3826,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3147"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `2x+2y+z=1`; the method's step `commands/CommandsTest.java:3143` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -4833,30 +4233,6 @@ reason = "the kernel refuses the input: unknown object `(1,1)`; the method's ste
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3348"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3349"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3350"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3351"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3352"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Polynomial`"
@@ -4870,33 +4246,33 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3358"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `x^(2) + (2 * (x * y)) + (2 * y^(2))`"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3359"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `x + y - 1`"
+mismatches = ["b"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3360"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `x - y + 1`"
+mismatches = ["c"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3361"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `x - y + 1`"
+mismatches = ["d"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3362"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `(-x) + y - 1`"
+mismatches = ["e"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3363"
@@ -4906,21 +4282,21 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3364"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `-1`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3365"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `?`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3366"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `(x^(2) * y^(2)) + x^(3) + (x^(2) * y) + y^(3) + (x * y) + 1`"
+mismatches = ["i"]
 
 [[gap]]
 id = "commands/CommandsTest.java:340"
@@ -6982,8 +6358,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4738"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `3x = 4y`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6994,14 +6370,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4742"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `2x+2y+z=1`; the method's step `commands/CommandsTest.java:4738` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4747"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `=`"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `3x = 4y`"
 mismatches = ["step"]
 
 [[gap]]
@@ -7324,8 +6700,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4956"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Degree`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `f`; the method's step `commands/CommandsTest.java:4955` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -8122,27 +7498,27 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:154"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `NSolve`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "List { len: 3 } does not match `?` (expected undefined, kernel has a value)"
+mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:160"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `NSolutions`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "List { len: 3 } does not match `?` (expected undefined, kernel has a value)"
+mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:166"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `Solutions`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "List { len: 3 } does not match `?` (expected undefined, kernel has a value)"
+mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:172"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `Solve`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "List { len: 3 } does not match `?` (expected undefined, kernel has a value)"
+mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:178"
@@ -8223,18 +7599,6 @@ reason = "the kernel refuses the input: unknown command `Envelope`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsUsingMockedCasTest.java:50"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `Expand`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsUsingMockedCasTest.java:56"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `Simplify`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:57"
 category = "cas"
 reason = "the kernel refuses the input: unknown command `Simplify`"
@@ -8242,15 +7606,15 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:63"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `NextPrime`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Number(5.0) does not match `NaN` (expected undefined, kernel has a value)"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:69"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `PreviousPrime`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Number(3.0) does not match `NaN` (expected undefined, kernel has a value)"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:75"

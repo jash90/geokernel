@@ -49,6 +49,9 @@ public final class GoldenGenerator {
             Map<?, ?> input = (Map<?, ?>) c;
             String id = (String) input.get("id");
             String group = (String) input.get("group");
+            if ("cas".equals(group) && !GiacOracle.enabled()) {
+                throw new IllegalStateException("CAS fixtures require the native Giac oracle");
+            }
             if (!ids.add(id)) {
                 throw new IllegalArgumentException("duplicate case id " + id);
             }

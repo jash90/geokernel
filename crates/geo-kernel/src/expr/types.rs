@@ -50,7 +50,7 @@ pub(crate) fn check(
             continue;
         }
         let (ty, d, k, v) = match *node {
-            Node::Num(_) | Node::MinusOne => (Ty::Num(0), 1, 1, 0),
+            Node::Num(_) | Node::MinusOne | Node::CasVariable(_) => (Ty::Num(0), 1, 1, 0),
             Node::Bool(_) => (Ty::Bool, 1, 1, 0),
             Node::Text | Node::Relation { .. } => (Ty::Text, 1, 1, 0),
             Node::TextCmd(op, first, count) => {
@@ -243,6 +243,32 @@ pub(crate) fn check(
                         .saturating_add(cost[a])
                         .saturating_add(cost[n]),
                     0,
+                )
+            }
+            Node::Cas(op, a, b) => {
+                let a = a as usize;
+                let b = (b != NONE).then_some(b as usize);
+                let ty = op.result_type(tys[a], b.map(|i| tys[i]))?;
+                let vars = if op.is_function() {
+                    vars[a]
+                        .saturating_add(b.map_or(0, |i| vars[i]))
+                        .max(u64::from(
+                            tys[a] == Ty::Function || b.is_some_and(|i| tys[i] == Ty::Function),
+                        ))
+                } else if matches!(
+                    op,
+                    super::cas::Op::NextPrime | super::cas::Op::PreviousPrime
+                ) {
+                    vars[a]
+                } else {
+                    0
+                };
+                (
+                    ty,
+                    1 + depth[a].max(b.map_or(0, |i| depth[i])),
+                    1u64.saturating_add(cost[a])
+                        .saturating_add(b.map_or(0, |i| cost[i])),
+                    vars,
                 )
             }
             Node::PolynomialPart(_, a, b) => {
