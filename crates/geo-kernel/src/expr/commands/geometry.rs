@@ -25,7 +25,7 @@ use crate::expr::eval::{combine, number_of, slot_val, Ctx, Val};
 use crate::expr::list::Slot;
 use crate::expr::parse::{list_form, Parser};
 use crate::expr::{self, Bin, Elem, Entry, IfMode, ListOp, Node, Raw, Ty, Un, NONE};
-use crate::kernel::{Construction, Def, Id, Kind};
+use crate::kernel::{Construction, Def, Id, Kind, Value};
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &[
@@ -518,7 +518,8 @@ impl Construction {
         };
         let index = u32::try_from(self.exprs.entries.len())
             .map_err(|_| "too many expression arguments".to_string())?;
-        self.exprs.entries.push(Entry::new(parsed, false));
+        let entry = Entry::new(self, parsed, false);
+        self.exprs.entries.push(entry);
         Ok((index, kind))
     }
 
