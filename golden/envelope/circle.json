@@ -493,6 +493,103 @@
           }
         }
       ]
+    },
+    {
+      "id": "envelope-circle-006",
+      "group": "envelope",
+      "script": [
+        "A = (-3, 0)",
+        "B = (3, 0)",
+        "g = Line(A, B)",
+        "P = Point(g)",
+        "F = (0, 0)",
+        "k = Circle(P, F)",
+        "c = Envelope(k, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "F", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "F", "x": 0.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [16.0, 0.0, -8.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [8.0, 0.0, 2.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ + 2x² y² + 8x² + y⁴ - 8y² = -16",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [16.0, 0.0, -8.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [8.0, 0.0, 2.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ + 2x² y² + 8x² + y⁴ - 8y² = -16",
+            "input_form": false
+          }
+        }
+      ]
     }
   ]
 }

@@ -57,6 +57,12 @@ for fixed, edits in (
 cases.case("boolean", ["O = (0, 0)", "A = (3, 0)", "k = Circle(O, A)", "P = Point(k)",
                       "d = Distance(P, O)", "r = Distance(P, A)", "b = d == r",
                       "c = LocusEquation(b, P)"], [mv("A", 4, 0), mv("A", 0, 4)])
+cases.case("midpoint", line + ["C = (0, 1)", "D = (3, 2)", "h = Line(C, D)", "F = Point(h)",
+                               "M = Midpoint(P, F)", "c = LocusEquation(M, P)"],
+           [mv("F", 0.12345, 1.1), mv("D", 0, 2), mv("D", 3, 2)])
+cases.case("boolean", ["O = (0, 0)", "A = (3, 0)", "P = (2, 1)", "d = Distance(P, O)",
+                      "r = Distance(A, O)", "b = d == r", "q = d == r",
+                      "c = LocusEquation(b, P)"], [mv("P", 3, 0), mv("A", 2, 0), mv("A", 3, 0)])
 cases.case("nondegenerate", line[:3] + ["P = Point(g, 0.75)", "C = (1, 3)", "h = Line(A, P)",
                                       "k = Circle(C, P)", "M = Intersect(h, k, 1)",
                                       "c = LocusEquation(M, P)"],

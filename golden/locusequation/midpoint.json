@@ -316,6 +316,110 @@
           }
         }
       ]
+    },
+    {
+      "id": "locusequation-midpoint-006",
+      "group": "locusequation",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "g = Line(A, B)",
+        "P = Point(g)",
+        "C = (0, 1)",
+        "D = (3, 2)",
+        "h = Line(C, D)",
+        "F = Point(h)",
+        "M = Midpoint(P, F)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 0.12345, "y": 1.1 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "D", "x": 3.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -3.0 },
+          "F": { "type": "point", "defined": true, "x": -0.3, "y": 0.8999999999999999 },
+          "M": { "type": "point", "defined": true, "x": -0.15, "y": 0.44999999999999996 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-9.0, 20.0]
+            ],
+            "equation": "20y = 9",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -3.0 },
+          "F": { "type": "point", "defined": true, "x": 0.14110500000000004, "y": 1.047035 },
+          "M": { "type": "point", "defined": true, "x": 0.07055250000000002, "y": 0.5235175 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-31411.0, 60000.0]
+            ],
+            "equation": "60000y = 31411",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 1.047035 },
+          "M": { "type": "point", "defined": true, "x": 0.0, "y": 0.5235175 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1047.0, 2000.0]
+            ],
+            "equation": "2000y = 1047",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -3.0 },
+          "F": { "type": "point", "defined": true, "x": 0.14110500000000004, "y": 1.047035 },
+          "M": { "type": "point", "defined": true, "x": 0.07055250000000002, "y": 0.5235175 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-31411.0, 60000.0]
+            ],
+            "equation": "60000y = 31411",
+            "input_form": false
+          }
+        }
+      ]
     }
   ]
 }

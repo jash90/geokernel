@@ -21,4 +21,7 @@ cases.case("circle", ["A = (-3, 0)", "B = (3, 0)", "F = (1, 2)", "g = Line(A, B)
 cases.case("circle", ["A = (-3, 0)", "B = (3, 0)", "g = Line(A, B)", "P = Point(g)",
                       "r = Slider(0, 5, 1)", "k = Circle(P, r)", "c = Envelope(k, P)"],
            [setn("r", 2), setn("r", 0), setn("r", 3)])
+cases.case("circle", ["A = (-3, 0)", "B = (3, 0)", "g = Line(A, B)", "P = Point(g)",
+                      "F = (0, 0)", "k = Circle(P, F)", "c = Envelope(k, P)"],
+           [mv("F", 0, 2), mv("F", 0, 0), mv("F", 0, -2)])
 cases.write()
