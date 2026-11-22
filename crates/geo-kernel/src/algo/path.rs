@@ -1191,7 +1191,7 @@ impl Group for PathDef {
     }
 }
 
-const REGIONS: &[Kind] = &[
+pub(super) const REGIONS: &[Kind] = &[
     Kind::Polygon,
     Kind::Circle,
     Kind::Conic,

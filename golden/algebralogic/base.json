@@ -1,0 +1,300 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "algebralogic-base-001",
+      "group": "algebralogic",
+      "script": [
+        "s = ToBase(1000000,2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "text", "defined": true, "text": "11110100001001000000" }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-002",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\"FFA23\",16)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1047075.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-003",
+      "group": "algebralogic",
+      "script": [
+        "a = 3",
+        "b = 16",
+        "s = ToBase(a,b)",
+        "n = FromBase(s,b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -42.0 },
+        { "action": "set_number", "label": "a", "value": -2.75 },
+        { "action": "set_number", "label": "a", "value": 12.5 },
+        { "action": "set_number", "label": "a", "value": 1.99999999 },
+        { "action": "set_number", "label": "a", "value": 1.0E30 },
+        { "action": "set_number", "label": "b", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 2.7 },
+        { "action": "set_number", "label": "b", "value": 36.0 },
+        { "action": "set_number", "label": "b", "value": 37.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 16.0 },
+          "s": { "type": "text", "defined": true, "text": "3" },
+          "n": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 16.0 },
+          "s": { "type": "text", "defined": true, "text": "0" },
+          "n": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -42.0 },
+          "b": { "type": "number", "defined": true, "value": 16.0 },
+          "s": { "type": "text", "defined": true, "text": "-2A" },
+          "n": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.75 },
+          "b": { "type": "number", "defined": true, "value": 16.0 },
+          "s": { "type": "text", "defined": true, "text": "-2.40" },
+          "n": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 12.5 },
+          "b": { "type": "number", "defined": true, "value": 16.0 },
+          "s": { "type": "text", "defined": true, "text": "C.80" },
+          "n": { "type": "number", "defined": true, "value": 12.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.99999999 },
+          "b": { "type": "number", "defined": true, "value": 16.0 },
+          "s": { "type": "text", "defined": true, "text": "2" },
+          "n": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E30 },
+          "b": { "type": "number", "defined": true, "value": 16.0 },
+          "s": { "type": "text", "defined": true, "text": "7FFFFFFFFFFFFFFF" },
+          "n": { "type": "number", "defined": true, "value": 9.223372036854776E18 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E30 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "s": { "type": "text", "defined": true, "text": "111111111111111111111111111111111111111111111111111111111111111" },
+          "n": { "type": "number", "defined": true, "value": 9.223372036854776E18 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E30 },
+          "b": { "type": "number", "defined": true, "value": 2.7 },
+          "s": { "type": "text", "defined": true, "text": "111111111111111111111111111111111111111111111111111111111111111" },
+          "n": { "type": "number", "defined": true, "value": 9.223372036854776E18 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E30 },
+          "b": { "type": "number", "defined": true, "value": 36.0 },
+          "s": { "type": "text", "defined": true, "text": "1Y2P0IJ32E8E7" },
+          "n": { "type": "number", "defined": true, "value": 9.223372036854776E18 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E30 },
+          "b": { "type": "number", "defined": true, "value": 37.0 },
+          "s": { "type": "text", "defined": false },
+          "n": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E30 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "s": { "type": "text", "defined": false },
+          "n": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-004",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\"ff.8\",16)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 255.5 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-005",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\"\",2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-006",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\".\",2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-007",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\"1.1.1\",2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-008",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\"-1\",10)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-009",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\"Z\",35)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-010",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\"1?1\",16)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-011",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\"Z\",36)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 35.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-012",
+      "group": "algebralogic",
+      "script": [
+        "n = FromBase(\"AA\",16.9)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 170.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-013",
+      "group": "algebralogic",
+      "script": [
+        "s = ToBase(?,16)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "text", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-base-014",
+      "group": "algebralogic",
+      "script": [
+        "s = ToBase(19,?)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": { "type": "text", "defined": false }
+        }
+      ]
+    }
+  ]
+}

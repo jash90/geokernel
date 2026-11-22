@@ -855,3 +855,35 @@ fn automatic_intersection_follows_its_root_through_journal_replay() {
     assert!(problems.is_empty(), "{problems:?}");
     check(&reloaded, 4.0);
 }
+
+#[test]
+fn base_and_relation_text_rows_update_and_survive_undo() {
+    let mut w = Workbench::default();
+    for input in [
+        "a = 15",
+        "b = 15",
+        "s = ToBase(a, 16)",
+        "r = Relation(a, b)",
+    ] {
+        w.run_line(input).unwrap();
+    }
+    let text = |w: &mut Workbench, name: &str| {
+        w.rows()
+            .iter()
+            .find(|row| row.label == name)
+            .unwrap()
+            .value
+            .clone()
+            .unwrap()
+    };
+    assert_eq!(text(&mut w, "s"), "F");
+    let equal = text(&mut w, "r");
+    assert!(equal.contains("equal"));
+    let id = w.construction().id("a").unwrap();
+    assert!(w.set_number(id, 16.0));
+    assert_eq!(text(&mut w, "s"), "10");
+    assert_ne!(text(&mut w, "r"), equal);
+    assert!(w.undo());
+    assert_eq!(text(&mut w, "s"), "F");
+    assert_eq!(text(&mut w, "r"), equal);
+}

@@ -15,7 +15,9 @@ import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
+import org.geogebra.common.kernel.RelationNumerical;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.advanced.AlgoLeftRightSide;
 import org.geogebra.common.kernel.algos.AlgoConicPartCircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
@@ -36,6 +38,7 @@ import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
+import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoLocus;
@@ -101,6 +104,7 @@ final class Session {
      * on to the objects themselves instead of looking labels up.
      */
     private final Map<String, GeoElement> objects = new LinkedHashMap<>();
+    private final Map<String, List<GeoElement>> relations = new LinkedHashMap<>();
     /**
      * The scripted objects recorded as general conics (type `conic`): those
      * made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, and the images
@@ -186,6 +190,28 @@ final class Session {
                 : transformed != null ? transformed : expectedType(label, definition);
         if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
             throw new IllegalArgumentException("label used twice: " + label);
+        }
+        if (definition.startsWith("Relation(")) {
+            List<String> args = arguments(definition);
+            if (args.size() == 1 && args.get(0).startsWith("{")) {
+                String list = args.get(0);
+                args = arguments("Relation(" + list.substring(1, list.length() - 1) + ")");
+            }
+            List<GeoElement> items = new ArrayList<>();
+            for (String arg : args) {
+                GeoElement geo = kernel.lookupLabel(arg);
+                if (geo == null) {
+                    throw new IllegalArgumentException("unknown relation input: " + arg);
+                }
+                items.add(geo);
+            }
+            if (items.size() < 2 || items.size() > 4) {
+                throw new IllegalArgumentException("a relation needs two to four inputs");
+            }
+            // Relation is a dialog command and creates no output object.
+            // Record the numerical reports directly, without localized text.
+            relations.put(label, items);
+            return null;
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new CommandErrorHandler(line, false), false, null);
@@ -533,6 +559,22 @@ final class Session {
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             snap.put(e.getKey(), describe(e.getValue(), schemaType(e.getValue())));
         }
+        for (Map.Entry<String, List<GeoElement>> e : relations.entrySet()) {
+            List<GeoElement> args = e.getValue();
+            GeoElement third = args.size() >= 3 ? args.get(2) : null;
+            GeoElement fourth = args.size() == 4 ? args.get(3) : null;
+            List<String> facts = new ArrayList<>();
+            for (RelationNumerical.Report report
+                    : new RelationNumerical(kernel).relation(args.get(0), args.get(1), third, fourth)) {
+                facts.add(report.symbolicCheck + "=" + report.boolResult);
+            }
+            facts.sort(String::compareTo);
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("type", "relation");
+            result.put("defined", true);
+            result.put("reports", facts);
+            snap.put(e.getKey(), result);
+        }
         return snap;
     }
 
@@ -573,6 +615,8 @@ final class Session {
             case "number":
             case "angle":
             case "function":
+            case "function_nvar":
+            case "text":
             case "boolean":
             case "list":
                 return actual;
@@ -677,7 +721,8 @@ final class Session {
 
     /** The schema type of a scripted object, including two-variable slopes. */
     private String schemaType(GeoElement geo) {
-        if (geo instanceof GeoFunctionNVar) {
+        if (geo instanceof GeoFunctionNVar
+                && !(geo.getParentAlgorithm() instanceof AlgoLeftRightSide)) {
             return "function";
         }
         return conics.contains(geo) ? "conic" : typeOf(geo);
@@ -731,6 +776,12 @@ final class Session {
         }
         if (geo instanceof GeoCurveCartesian) {
             return "curve";
+        }
+        if (geo instanceof GeoFunctionNVar) {
+            return "function_nvar";
+        }
+        if (geo instanceof GeoText) {
+            return "text";
         }
         if (geo instanceof GeoLocus) {
             return "locus";
@@ -1160,6 +1211,20 @@ final class Session {
             }
             return obj;
         }
+        if (type.equals("function_nvar")) {
+            GeoFunctionNVar f = (GeoFunctionNVar) geo;
+            obj.put("defined", f.isDefined());
+            if (f.isDefined()) {
+                List<Object> samples = new ArrayList<>();
+                for (double x : SAMPLES) {
+                    double y = 1 - 2 * x;
+                    double v = f.evaluate(x, y);
+                    samples.add(Arrays.asList(x, y, Double.isFinite(v) ? (Object) v : null));
+                }
+                obj.put("samples_xy", samples);
+            }
+            return obj;
+        }
         Map<String, Object> fields = geo.isDefined() ? fields(geo, type) : null;
         if (fields != null && fields.values().stream().allMatch(Session::finite)) {
             obj.put("defined", true);
@@ -1257,6 +1322,9 @@ final class Session {
             case "arc":
             case "sector":
                 return arcFields((GeoConicPart) geo);
+            case "text":
+                f.put("text", ((GeoText) geo).getTextString());
+                return f;
             case "angle":
             case "number":
                 f.put("value", ((GeoNumeric) geo).getDouble());

@@ -529,3 +529,9 @@ mismatches = ["1:step"]
 id = "matrixdilate-dilatelist-006"
 reason = "Dilate reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
 mismatches = ["1:step"]
+
+
+[[gap]]
+id = "algebralogic-logic-022"
+reason = "GeoFunction.isInRegion reads the separately stored GeoPoint x2D coordinate. The headless move updates the homogeneous coordinates and does not refresh x2D. The kernel evaluates the inequality at the point's current Cartesian coordinates."
+mismatches = ["1:b"]

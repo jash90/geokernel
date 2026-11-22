@@ -163,6 +163,10 @@ pub enum ExpectedData {
     Function {
         samples: Vec<Option<f64>>,
     },
+    Text(String),
+    Relation(Vec<String>),
+    /// Two-coordinate values of an equation side.
+    FunctionNVar(Vec<(f64, f64, Option<f64>)>),
     /// Vertices in order, area (never negative) and signed area (positive
     /// counter-clockwise).
     Polygon {
@@ -396,6 +400,7 @@ struct RawObject {
     defined: bool,
     /// Only for a function: `[x, y]` pairs, `y` null where not finite.
     samples: Option<Vec<(f64, Option<f64>)>>,
+    samples_xy: Option<Vec<(f64, f64, Option<f64>)>>,
     #[serde(flatten)]
     fields: BTreeMap<String, serde_json::Value>,
 }
@@ -487,6 +492,9 @@ impl TryFrom<RawObject> for Expected {
             "ray" => (Kind::Ray, &["x", "y", "a", "b", "c"]),
             "boolean" => (Kind::Boolean, &["value"]),
             "function" => (Kind::Function, &[]),
+            "function_nvar" => (Kind::FunctionNVar, &[]),
+            "text" => (Kind::Text, &["text"]),
+            "relation" => (Kind::Text, &["reports"]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
             "polyline" => (Kind::PolyLine, &["vertices", "length"]),
             "list" => (Kind::List, &["elements"]),
@@ -503,6 +511,9 @@ impl TryFrom<RawObject> for Expected {
                 raw.ty
             ));
         }
+        if raw.samples_xy.is_some() && (kind != Kind::FunctionNVar || !raw.defined) {
+            return Err("only a defined two-variable function carries samples_xy".into());
+        }
         if !raw.defined {
             if !raw.fields.is_empty() {
                 return Err(format!("undefined {} carries numeric fields", raw.ty));
@@ -518,6 +529,24 @@ impl TryFrom<RawObject> for Expected {
                 legacy_angle_number: false,
                 kind,
                 data: Some(function_samples(&raw)?),
+            });
+        }
+        if kind == Kind::FunctionNVar {
+            let samples = raw
+                .samples_xy
+                .ok_or("defined two-variable function needs samples_xy")?;
+            if !raw.fields.is_empty()
+                || samples.len() != SAMPLE_XS.len()
+                || samples.iter().zip(SAMPLE_XS).any(|(&(x, y, v), want_x)| {
+                    x != want_x || y != 1.0 - 2.0 * want_x || v.is_some_and(|v| !v.is_finite())
+                })
+            {
+                return Err("unexpected two-variable function samples".into());
+            }
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::FunctionNVar(samples)),
+                legacy_angle_number: false,
             });
         }
         if kind == Kind::Conic {
@@ -541,6 +570,25 @@ impl TryFrom<RawObject> for Expected {
                 "defined {} must carry exactly {names:?}, got {got:?}",
                 raw.ty
             ));
+        }
+        if raw.ty == "relation" {
+            let reports = serde_json::from_value(raw.fields["reports"].clone())
+                .map_err(|e| format!("invalid relation reports: {e}"))?;
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::Relation(reports)),
+                legacy_angle_number: false,
+            });
+        }
+        if kind == Kind::Text {
+            let text = raw.fields["text"]
+                .as_str()
+                .ok_or("a text's content must be a string")?;
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::Text(text.to_owned())),
+                legacy_angle_number: false,
+            });
         }
         if kind == Kind::Boolean {
             return match raw.fields["value"].as_bool() {

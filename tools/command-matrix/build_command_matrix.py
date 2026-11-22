@@ -32,6 +32,30 @@ OUT_OF_SCOPE_GROUPS = {"3d", "spreadsheet", "probability", "cas", "scripting", "
 # TableToChart).
 OUT_OF_SCOPE_COMMANDS = {"var", "cov", "Polyhedron", "CornerThreeD", "Evaluate", "Stadium",
                          "TableToChart"}
+EXCLUDED_ALGEBRA = {
+    "Expand": "Symbolic expansion is outside numeric algebra.",
+    "Factor": "Symbolic factorization uses the CAS.",
+    "Simplify": "Function, list, curve and implicit forms use the CAS. Text formatting is outside numeric algebra.",
+    "CompleteSquare": "Symbolic completion of the square is outside numeric algebra.",
+    "IsFactored": "Inspects symbolic polynomial structure and is outside numeric algebra.",
+    "IFactor": "Symbolic integer-coefficient factorization uses the CAS.",
+    "Solve": "All algebra-input forms delegate to the CAS.",
+    "CSolve": "All algebra-input forms delegate to the CAS.",
+    "Solutions": "All algebra-input forms delegate to the CAS.",
+    "CSolutions": "All algebra-input forms delegate to the CAS.",
+    "NSolve": "AlgoSolve delegates to the CAS even for numeric equations and initial guesses.",
+    "NSolutions": "AlgoSolve delegates to the CAS even for numeric equations and initial guesses.",
+    "NextPrime": "AlgoNextPreviousPrime obtains the value from the CAS.",
+    "PreviousPrime": "AlgoNextPreviousPrime obtains the value from the CAS.",
+}
+
+FORM_NOTES = {
+    "CommonDenominator": "Number pairs. The function pair delegates to the CAS (AlgoPolynomialCD).",
+    "LeftSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
+    "RightSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
+    "If": "Scalar, coordinate, boolean, text, list and numeric-function branches. Other geometry branches are pending.",
+    "Relation": "Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.",
+}
 P1_GROUPS = {"geometry", "conic", "transformation"}
 # Groups the rule knows how to place. Anything else becomes todo/P2 and is reported.
 KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
@@ -257,6 +281,8 @@ def resolve_aliases(aliases, names):
 
 def classify(group, command, alias_of):
     """Return (priority, status, notes) for a real command; aliases copy their target."""
+    if command in EXCLUDED_ALGEBRA:
+        return "", "out_of_scope", EXCLUDED_ALGEBRA[command]
     if command in OUT_OF_SCOPE_COMMANDS:
         return "", "out_of_scope", ""
     if command in PARTIAL and not alias_of:
@@ -307,7 +333,7 @@ def build_rows(commands_java, constants_java, forms=None, done=None):
             else:
                 status = "todo"
             total, got = str(n_forms), str(n_done)
-        rows[name] = (group, priority, status, total, got, notes)
+        rows[name] = (group, priority, status, total, got, FORM_NOTES.get(name, notes))
     out = []
     for name, _ in entries:
         target = aliases.get(name, "")

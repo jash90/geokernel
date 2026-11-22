@@ -1,0 +1,1435 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "algebralogic-logic-001",
+      "group": "algebralogic",
+      "script": [
+        "n = CountIf(x>3,{1,2,3,4,5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-002",
+      "group": "algebralogic",
+      "script": [
+        "n = CountIf(A>3,A,{1,2,3,4,5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-003",
+      "group": "algebralogic",
+      "script": [
+        "l = KeepIf(x>3,{1,2,3,4,5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-004",
+      "group": "algebralogic",
+      "script": [
+        "l = KeepIf(A>3,A,{1,2,3,4,5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-005",
+      "group": "algebralogic",
+      "script": [
+        "l = KeepIf(Distance(A,(0,0))>4,A,{(1,1)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-006",
+      "group": "algebralogic",
+      "script": [
+        "P = If(false,(1,1),(2,1/2))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-007",
+      "group": "algebralogic",
+      "script": [
+        "P = If(false,(3,1/3))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-008",
+      "group": "algebralogic",
+      "script": [
+        "b = IsInteger(42)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-009",
+      "group": "algebralogic",
+      "script": [
+        "b = IsInRegion((0,0),Circle((1,1),2))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-010",
+      "group": "algebralogic",
+      "script": [
+        "b = IsInRegion((0,0),Circle((1,1),1))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-011",
+      "group": "algebralogic",
+      "script": [
+        "n = CountIf(x>3,{})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-012",
+      "group": "algebralogic",
+      "script": [
+        "l = KeepIf(x>3,{})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-013",
+      "group": "algebralogic",
+      "script": [
+        "P = (0,0)",
+        "O = (0,0)",
+        "c = Circle(O,2)",
+        "b = IsInRegion(P,c)",
+        "Q = If(b,P,(5,5))",
+        "R = If(b,P)",
+        "d = IsDefined(R)",
+        "f(x) = If(x>x(P),x^2)",
+        "n = f(1)",
+        "l = KeepIf(x>x(P),{0,1,2,?})",
+        "k = CountIf(t>x(P),t,{0,1,2,?})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": -1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "k": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "n": { "type": "number", "defined": false },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "k": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "Q": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 },
+          "R": { "type": "point", "defined": false },
+          "d": { "type": "boolean", "defined": true, "value": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "n": { "type": "number", "defined": false },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "k": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "Q": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "k": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-014",
+      "group": "algebralogic",
+      "script": [
+        "b = IsDefined(1/0)",
+        "d = IsDefined(?)",
+        "e = IsDefined({?})",
+        "f(x) = x^2",
+        "k = IsDefined(f)",
+        "n = IsInteger(?)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": false },
+          "e": { "type": "boolean", "defined": true, "value": true },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "k": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-015",
+      "group": "algebralogic",
+      "script": [
+        "a = 2",
+        "test(x) = x>a",
+        "f(x) = x^2",
+        "g(x) = x+1",
+        "h(x) = If(test,f,g)",
+        "j(x) = If(a>0,f,g)",
+        "n = h(2)",
+        "k = j(2)",
+        "l = KeepIf(test,{1,2,3,4})",
+        "m = CountIf(test,{1,2,3,4})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "test": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "j": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "number", "defined": true, "value": 4.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "test": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "j": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "m": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "test": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 1.0]
+            ]
+          },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, 2.0],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 64.0]
+            ]
+          },
+          "j": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "number", "defined": true, "value": 4.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "m": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-016",
+      "group": "algebralogic",
+      "script": [
+        "a = 1",
+        "l = If(a>0,{1,2,3})",
+        "n = CountIf(x>1,l)",
+        "m = CountIf(t>1,t,l)",
+        "k = KeepIf(x>1,l)",
+        "j = KeepIf(t>1,t,l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "j": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "l": { "type": "list", "defined": false },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "k": { "type": "list", "defined": false },
+          "j": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "j": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-017",
+      "group": "algebralogic",
+      "script": [
+        "l = KeepIf(x<3,{1,2,(4,4)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-018",
+      "group": "algebralogic",
+      "script": [
+        "l = KeepIf(x(A)<3,A,{(1,1),(4,4),5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-019",
+      "group": "algebralogic",
+      "script": [
+        "A = (0,0)",
+        "B = (2,0)",
+        "C = (0,2)",
+        "P = (1,1)",
+        "p = Polygon(A,B,C)",
+        "inside = IsInRegion(P,p)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 2.0, "y": 2.0 },
+        { "action": "move", "label": "P", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": -1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 0.0, "y2": 0.0 },
+          "inside": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 0.0, "y2": 0.0 },
+          "inside": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 0.0, "y2": 0.0 },
+          "inside": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": 0.0, "y2": 0.0 },
+          "inside": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-020",
+      "group": "algebralogic",
+      "script": [
+        "A = (0,0)",
+        "P = (1,0)",
+        "d = 1",
+        "c = Circle(A,d)",
+        "b = IsInRegion(P,c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "d", "value": 0.0 },
+        { "action": "set_number", "label": "d", "value": -1.0 },
+        { "action": "move", "label": "P", "x": 0.0, "y": 0.0 },
+        { "action": "set_number", "label": "d", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "circle", "defined": false },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "c": { "type": "circle", "defined": false },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-021",
+      "group": "algebralogic",
+      "script": [
+        "P = (1,1)",
+        "c: x^2+y^2=1",
+        "b = IsInRegion(P,c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-022",
+      "group": "algebralogic",
+      "script": [
+        "P = (0,0)",
+        "a = 1",
+        "f(x) = x<a",
+        "b = IsInRegion(P,f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 1.0, "y": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-023",
+      "group": "algebralogic",
+      "script": [
+        "P = (0,0)",
+        "a = 1",
+        "f(x) = x<a",
+        "inside = IsInRegion(P,f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "inside": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "inside": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "inside": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-logic-024",
+      "group": "algebralogic",
+      "script": [
+        "O = (0,0)",
+        "A = (2,0)",
+        "B = (0,2)",
+        "P = (1,1)",
+        "arc = CircleArc(O,A,B)",
+        "sector = CircleSector(O,A,B)",
+        "r = IsInRegion(P,arc)",
+        "s = IsInRegion(P,sector)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 0.5, "y": 0.5 },
+        { "action": "move", "label": "P", "x": 1.2, "y": 1.2 },
+        { "action": "move", "label": "P", "x": -0.5, "y": -0.5 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "arc": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 3.141592653589793,
+            "area": 1.1415926535897931,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "sector": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 3.141592653589793,
+            "area": 3.141592653589793,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r": { "type": "boolean", "defined": true, "value": true },
+          "s": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 0.5 },
+          "arc": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 3.141592653589793,
+            "area": 1.1415926535897931,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "sector": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 3.141592653589793,
+            "area": 3.141592653589793,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r": { "type": "boolean", "defined": true, "value": false },
+          "s": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 1.2, "y": 1.2 },
+          "arc": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 3.141592653589793,
+            "area": 1.1415926535897931,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "sector": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 3.141592653589793,
+            "area": 3.141592653589793,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r": { "type": "boolean", "defined": true, "value": true },
+          "s": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "P": { "type": "point", "defined": true, "x": -0.5, "y": -0.5 },
+          "arc": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 3.141592653589793,
+            "area": 1.1415926535897931,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "sector": {
+            "type": "sector",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 3.141592653589793,
+            "area": 3.141592653589793,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r": { "type": "boolean", "defined": true, "value": false },
+          "s": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}
