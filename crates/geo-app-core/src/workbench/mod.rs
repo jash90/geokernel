@@ -146,17 +146,22 @@ impl Workbench {
 
     /// Publishes the current graphics view for the objects that read it
     /// (`Corner`, `AxisStepX`, `AxisStepY`), recomputing their dependents
-    /// when the window or scale changed.
+    /// when the window or scale changed. A changed view bumps the version,
+    /// so the algebra rows of the view-dependent objects (and of whatever
+    /// reads them) are formatted anew on the next refresh, both after a
+    /// pan or zoom and after a rebuild restored the view.
     pub fn set_view(&mut self, view: crate::interact::ViewTransform) {
         let v = view.view();
-        self.construction.set_view(
+        if self.construction.set_view(
             v.xmin,
             v.xmax,
             v.ymin,
             v.ymax,
             view.xscale(),
             view.yscale(),
-        );
+        ) {
+            self.version += 1;
+        }
     }
 
     /// Objects exposed to the algebra view and document clients.

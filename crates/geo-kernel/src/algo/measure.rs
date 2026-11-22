@@ -315,11 +315,12 @@ fn parse_construction_step(
 /// when both scales agree.
 fn axis_grid_step(view: [f64; 6], y: bool) -> f64 {
     let [_xmin, _xmax, _ymin, _ymax, xscale, yscale] = view;
-    let x = numbering_step(xscale);
-    if y && is_equal(xscale, yscale) {
-        x
-    } else {
+    // each axis has its own grid distance, from its own scale
+    // (`getGridDistances`)
+    if y {
         numbering_step(yscale)
+    } else {
+        numbering_step(xscale)
     }
 }
 

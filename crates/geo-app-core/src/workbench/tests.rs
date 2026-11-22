@@ -76,6 +76,44 @@ fn a_group_with_a_failing_line_is_rolled_back_whole() {
 }
 
 #[test]
+fn a_view_change_refreshes_the_rows_of_view_dependent_objects() {
+    let mut w = Workbench::default();
+    w.run_line("p = Corner(3)").unwrap();
+    w.run_line("g = AxisStepX()").unwrap();
+    w.run_line("q = p + (g, 0)").unwrap();
+    let mut head = |w: &mut Workbench, label: &str| {
+        w.rows()
+            .iter()
+            .find(|r| r.label == label)
+            .map(|r| r.value.clone().unwrap_or_default())
+            .unwrap_or_default()
+    };
+    let first = head(&mut w, "g");
+    let v = w.version();
+    // the same view changes nothing
+    // a pan moves the corner and the grid step with it
+    let pan = crate::interact::ViewTransform::new(
+        geo_kernel::svg::View {
+            xmin: 100.0,
+            ymin: 200.0,
+            xmax: 118.0,
+            ymax: 212.0,
+        },
+        800.0,
+        600.0,
+    );
+    w.set_view(pan);
+    assert!(w.version() > v);
+    // publishing the same view again changes nothing
+    let v = w.version();
+    w.set_view(pan);
+    assert_eq!(w.version(), v);
+    let second = head(&mut w, "g");
+    assert_ne!(first, second, "the axis step row keeps its old value");
+    assert_eq!(head(&mut w, "p"), "(118.02, 212.02)");
+}
+
+#[test]
 fn comment_line_is_ok_and_not_a_change() {
     let mut w = triangle();
     let v = w.version();

@@ -230,15 +230,18 @@ impl Construction {
         ymax: f64,
         xscale: f64,
         yscale: f64,
-    ) {
+    ) -> bool {
         let view = [xmin, xmax, ymin, ymax, xscale, yscale];
         let valid = view.iter().all(|v| v.is_finite())
             && xmax > xmin
             && ymax > ymin
             && xscale > 0.0
             && yscale > 0.0;
-        if !valid || self.view_state == Some(view) {
-            return;
+        // a construction that read no view yet read the reference window,
+        // so publishing exactly that changes nothing
+        let current = self.view_state.unwrap_or(HEADLESS_VIEW);
+        if !valid || current == view {
+            return false;
         }
         self.view_state = Some(view);
         let mut dirty = std::mem::take(&mut self.dirty);
@@ -253,6 +256,7 @@ impl Construction {
             }
         }
         self.propagate_dirty(dirty, 0);
+        true
     }
 
     pub(super) fn store_locus(&mut self, id: Id, data: LocusData) -> Value {
