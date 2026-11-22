@@ -248,7 +248,8 @@ pub fn state(h: &Headless, verbose: bool) -> Json {
         let (ox, oy) = t.world_to_screen(0.0, 0.0);
         json!({
             "rect": rect(r),
-            "scale": t.scale(),
+            "scale": t.xscale(),
+            "yscale": t.yscale(),
             // The window position of the world origin (GeoGebra's xZero,
             // yZero, plus the area's offset in the window).
             "origin": [r.min.x as f64 + ox, r.min.y as f64 + oy],
@@ -256,7 +257,7 @@ pub fn state(h: &Headless, verbose: bool) -> Json {
     });
     let camera = app
         .camera
-        .map(|c| json!({"cx": c.cx, "cy": c.cy, "scale": c.scale}));
+        .map(|c| json!({"cx": c.cx, "cy": c.cy, "scale": c.xscale, "yscale": c.yscale}));
     let (w, hgt) = h.size();
     let (undo_depth, redo_depth) = app.wb.undo_depth();
     let mut s = json!({
@@ -301,7 +302,9 @@ pub fn state(h: &Headless, verbose: bool) -> Json {
         let hovered = label_of(h, app.hovered);
         // The grid step new and dragged free points are captured to, or
         // null while capturing is off.
-        let snap = app.view.map(|(_, t)| app.snap(t.scale()).step());
+        let snap = app
+            .view
+            .map(|(_, t)| app.snap(t.xscale(), t.yscale()).step());
         let decor = json!({
             "axes": app.decor.axes,
             "grid": app.decor.grid,
@@ -521,7 +524,7 @@ impl Snapshot {
                 .map(|p| p.label().to_owned())
                 .collect(),
             asking: app.tool.asking().is_some(),
-            camera: app.camera.map(|c| (c.cx, c.cy, c.scale)),
+            camera: app.camera.map(|c| (c.cx, c.cy, c.xscale)),
             selected: label_of(h, app.wb.selected),
             undo: {
                 let (u, r) = app.wb.undo_depth();

@@ -140,7 +140,8 @@ fn render_axes_out_of_view() {
             app.camera = Some(crate::view::Camera {
                 cx: 60.0,
                 cy: 40.0,
-                scale: 25.0,
+                xscale: 25.0,
+                yscale: 25.0,
             });
         },
     );
@@ -241,7 +242,7 @@ fn render_function_graphs_and_their_poles() {
             // Another branch may cross the pole's column; only a join is wrong.
             let crossed = graphs.iter().any(|f| {
                 (-24..=24).any(|k| {
-                    let x = pole + k as f64 / (4.0 * t.scale());
+                    let x = pole + k as f64 / (4.0 * t.xscale());
                     let (cx, cy) = px(x, f(x));
                     (cx - sx as f64).abs() < 6.0 && (cy - y as f64).abs() < 4.0
                 })

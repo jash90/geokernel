@@ -10,6 +10,7 @@ use crate::scriptlog::{exec_definition, normalize, Log, Setting};
 use crate::snap::check_decimal_fraction;
 use crate::style::{Palette, Sides};
 use crate::undo::Undo;
+use crate::view::Camera;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
 use geo_kernel::kernel::text::{TextOverrides, TextPosition};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
@@ -56,6 +57,18 @@ struct ToolUse {
     changed: bool,
 }
 
+/// One undo state: the journal, and with it the camera of the drawing
+/// before the change — the reference app's undo state carries the view
+/// settings next to the construction (`AppState`, spec F3), so undoing a
+/// step also puts the view back. A `view_only` step changed no object:
+/// the journal it holds is the document's very one and is not replayed.
+#[derive(Clone, Debug)]
+struct UndoState {
+    log: Log,
+    camera: Option<Camera>,
+    view_only: bool,
+}
+
 #[derive(Default)]
 pub struct Workbench {
     construction: Construction,
@@ -67,9 +80,15 @@ pub struct Workbench {
     rebuilds: u64,
     pub selected: Option<Id>,
     pub history: History,
-    undo: Undo<Log>,
+    undo: Undo<UndoState>,
     gesture: Option<Gesture>,
     tool_use: Option<ToolUse>,
+    /// The camera of the drawing, as the window last reported it for the
+    /// undo steps (see `set_camera`).
+    camera: Option<Camera>,
+    /// The camera an undo or redo step restored, for the window to take
+    /// over (see `take_restored_view`).
+    restored_view: Option<Camera>,
     /// A problem to tell the user (for example a failed rebuild).
     pub notice: Option<String>,
     /// The labels moved away from their place, by object label: the offset
@@ -115,9 +134,14 @@ impl Workbench {
 
     pub fn set_locus_view(&mut self, view: crate::interact::ViewTransform) {
         let v = view.view();
-        let scale = view.scale();
-        self.construction
-            .set_locus_view(v.xmin, v.xmax, v.ymin, v.ymax, scale, scale);
+        self.construction.set_locus_view(
+            v.xmin,
+            v.xmax,
+            v.ymin,
+            v.ymax,
+            view.xscale(),
+            view.yscale(),
+        );
     }
 
     /// Objects exposed to the algebra view and document clients.
@@ -146,6 +170,16 @@ impl Workbench {
             return log.deep_copy();
         }
         log.clone()
+    }
+
+    /// The undo state of a journal snapshot: the journal and the camera
+    /// as it was when the change began.
+    fn state(&self, log: Log) -> UndoState {
+        UndoState {
+            log,
+            camera: self.camera,
+            view_only: false,
+        }
     }
 
     /// `log` replayed (see `Log::rebuild`).
@@ -177,7 +211,7 @@ impl Workbench {
     #[cfg(test)]
     pub(crate) fn history_entries(&self) -> (usize, usize) {
         let logs: Vec<&Log> = std::iter::once(&self.log)
-            .chain(self.undo.states())
+            .chain(self.undo.states().map(|s| &s.log))
             .chain(self.gesture.as_ref().map(|g| &g.snapshot))
             .chain(self.tool_use.as_ref().map(|t| &t.snapshot))
             .collect();
@@ -226,6 +260,8 @@ impl Workbench {
         self.undo.clear();
         self.gesture = None;
         self.tool_use = None;
+        self.camera = None;
+        self.restored_view = None;
         self.notice = None;
         self.version += 1;
         self.rebuilds += 1;
@@ -365,7 +401,7 @@ impl Workbench {
     pub fn end_tool_use(&mut self) {
         if let Some(t) = self.tool_use.take() {
             if t.changed {
-                self.undo.record(t.snapshot);
+                self.undo.record(self.state(t.snapshot));
             }
         }
     }
@@ -440,7 +476,10 @@ impl Workbench {
                 if changed {
                     match &mut self.tool_use {
                         Some(t) if in_tool => t.changed = true,
-                        _ => self.undo.record(snapshot),
+                        _ => {
+                            let state = self.state(snapshot);
+                            self.undo.record(state);
+                        }
                     }
                     self.version += 1;
                 }
@@ -588,15 +627,34 @@ impl Workbench {
         if self.tool_use.is_some() {
             return self.cancel_tool_use();
         }
-        let Some(prev) = self.undo.undo(self.copy(&self.log)) else {
+        let mut current = self.state(self.copy(&self.log));
+        // A view-only step holds the very journal the document has, so the
+        // state kept for redo is view-only too: it never replays either.
+        current.view_only = self.undo.undo_is_view_only(|s| s.view_only);
+        let Some(prev) = self.undo.undo(current) else {
             return false;
         };
-        if self.restore(self.copy(&prev)).is_err() {
-            // Put the stacks back as they were.
+        if self.step_back(prev.clone()).is_err() {
+            // Put the stacks back exactly as they were: the step taken
+            // above goes back as the redo state it was taken for.
             self.undo.redo(prev);
             return false;
         }
         true
+    }
+
+    /// Goes to the state `next` of a step: the journal is replayed — a
+    /// `view_only` step changed no object and holds the very journal the
+    /// document has, so it needs none — and the camera it names is handed
+    /// to the window. On error the document stays as it was.
+    fn step_back(&mut self, next: UndoState) -> Result<(), String> {
+        if next.view_only {
+            self.notice = None;
+        } else {
+            self.restore(next.log)?;
+        }
+        self.restored_view = next.camera.filter(|c| Some(*c) != self.camera);
+        Ok(())
     }
 
     /// Steps forward; a tool use in progress is cancelled first (its pending
@@ -606,10 +664,15 @@ impl Workbench {
             return false;
         }
         self.cancel_tool_use();
-        let Some(next) = self.undo.redo(self.copy(&self.log)) else {
+        let mut current = self.state(self.copy(&self.log));
+        // As in `undo`: the way back over a view-only step is view-only.
+        current.view_only = self.undo.redo_is_view_only(|s| s.view_only);
+        let Some(next) = self.undo.redo(current) else {
             return false;
         };
-        if self.restore(self.copy(&next)).is_err() {
+        if self.step_back(next.clone()).is_err() {
+            // Put the stacks back exactly as they were: the redo step
+            // taken above goes back where it came from.
             self.undo.undo(next);
             return false;
         }
@@ -643,6 +706,46 @@ impl Workbench {
         }
     }
 
+    /// Whether a drag's gesture is open (its moves become its one undo
+    /// step). A drag that a pinch suspends and that then goes on opens a
+    /// new one.
+    pub fn gesture_open(&self) -> bool {
+        self.gesture.is_some()
+    }
+
+    /// The camera of the drawing, as the window reports it every frame, so
+    /// that every undo step carries the view it began from (the reference
+    /// app's undo state holds the view settings, spec F3).
+    pub fn set_camera(&mut self, camera: Camera) {
+        self.camera = Some(camera);
+    }
+
+    /// The camera as the window last reported it.
+    pub fn camera(&self) -> Option<Camera> {
+        self.camera
+    }
+
+    /// Records one undo step for a view change that changed no object: the
+    /// journal stays as it is and the step brings the camera `before` back
+    /// (`OwnerRules::view_changes_are_steps`; the reference app stores view
+    /// changes lazily, spec F3). A view that ended where it began is no
+    /// step. A run of them never evicts a construction step
+    /// (`Undo::record_view`).
+    pub fn record_view_step(&mut self, before: Camera) {
+        if self.camera.is_some_and(|now| now != before) {
+            let mut state = self.state(self.copy(&self.log));
+            state.camera = Some(before);
+            state.view_only = true;
+            self.undo.record_view(state, |s| s.view_only);
+        }
+    }
+
+    /// The camera that an undo or redo step restored, once: the window
+    /// takes it over as the view it draws.
+    pub fn take_restored_view(&mut self) -> Option<Camera> {
+        self.restored_view.take()
+    }
+
     /// Abandons the drag in progress and restores the state before it.
     pub fn cancel_gesture(&mut self) {
         let Some(g) = self.gesture.take() else {
@@ -674,14 +777,15 @@ impl Workbench {
         match &self.gesture {
             Some(g) if !g.committed => {
                 let snapshot = self.copy(&g.snapshot);
-                self.undo.record(snapshot);
+                let state = self.state(snapshot);
+                self.undo.record(state);
                 if let Some(g) = &mut self.gesture {
                     g.committed = true;
                 }
             }
             Some(_) => {}
             None => {
-                let before = before(self);
+                let before = self.state(before(self));
                 self.undo.record(before);
             }
         }
@@ -729,7 +833,7 @@ impl Workbench {
         let _ = self.outside_tool_use(|w| {
             // An object the open tool use placed went with it.
             if w.construction.id(&label).is_some() {
-                w.undo.record(w.copy(&w.log));
+                w.undo.record(w.state(w.copy(&w.log)));
                 if !w.log.hidden.remove(&label) {
                     w.log.hidden.insert(label);
                 }

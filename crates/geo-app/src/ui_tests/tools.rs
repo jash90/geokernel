@@ -314,14 +314,14 @@ fn the_direct_tools_act_on_one_click() {
     click(&mut h, world(-6.0, -3.0));
     let a = h.state().wb.construction().id("A").unwrap();
     assert!(!h.state().wb.is_visible(a));
-    let scale = h.state().camera.unwrap().scale;
+    let scale = h.state().camera.unwrap().xscale;
     h.state_mut().select_tool(Tool::ZoomIn);
     click(&mut h, world(5.0, 5.0));
-    let zoomed = h.state().camera.unwrap().scale;
+    let zoomed = h.state().camera.unwrap().xscale;
     assert!(zoomed > scale);
     h.state_mut().select_tool(Tool::ZoomOut);
     click(&mut h, world(1.0, 1.0));
-    assert!(h.state().camera.unwrap().scale < zoomed);
+    assert!(h.state().camera.unwrap().xscale < zoomed);
 }
 
 #[test]

@@ -14,6 +14,7 @@ use crate::labelpos;
 use crate::shape;
 use crate::style;
 use crate::theme;
+use eframe::egui::emath::TSTransform;
 use eframe::egui::epaint::{CircleShape, PathShape, TessellationOptions, Tessellator};
 use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
 use geo_app_core::geom;
@@ -221,7 +222,7 @@ fn paint_layer<'c>(
     let v = t.view();
     let (vw, vh) = (v.xmax - v.xmin, v.ymax - v.ymin);
     let (mx, my) = (0.5 * (v.xmin + v.xmax), 0.5 * (v.ymin + v.ymax));
-    let reach = (w / t.scale()).hypot(h / t.scale()).max(vw.hypot(vh));
+    let reach = (w / t.xscale()).hypot(h / t.yscale()).max(vw.hypot(vh));
 
     let layered = layer != 0 || c.drawing_layers().nth(1).is_some();
     let has_charts = charts.is_some();
@@ -338,7 +339,9 @@ fn paint_layer<'c>(
 
     // Angles first: their sectors lie under the lines.
     for (id, angle) in angles {
-        let radius = angle.radius(t.scale()) as f32;
+        // With the scales apart the sector keeps one radius, the
+        // geometric mean of the scales (exact whenever they are equal).
+        let radius = angle.radius((t.xscale() * t.yscale()).sqrt()) as f32;
         if radius <= 0.0 {
             continue;
         }
@@ -487,7 +490,14 @@ fn paint_layer<'c>(
                 continue;
             };
             if !drawn.mesh.is_empty() {
-                painter.add(Shape::Mesh(drawn.mesh.clone()));
+                let idx = painter.add(Shape::Mesh(drawn.mesh.clone()));
+                if drawn.mesh_transform != TSTransform::IDENTITY {
+                    painter.ctx().graphics_mut(|layers| {
+                        layers.entry(painter.layer_id()).mutate_shape(idx, |shape| {
+                            shape.transform_after_tessellation = drawn.mesh_transform;
+                        });
+                    });
+                }
             }
             if let Some(at) = drawn.point {
                 point_shape(painter, at, color(id), DEPENDENT_POINT_RADIUS);
@@ -670,16 +680,45 @@ fn paint_circle(
     let (w, h) = (rect.width() as f64, rect.height() as f64);
     let origin = rect.min;
     let in_rect = |s: (f64, f64)| s.0 >= 0.0 && s.0 <= w && s.1 >= 0.0 && s.1 <= h;
-    let radius = r * t.scale();
-    if !(radius.is_finite() && cx.is_finite() && cy.is_finite()) {
+    // With the scales apart the circle is an ellipse of its own radius on
+    // each axis (`DrawConic` draws it as an ellipse).
+    let (rx, ry) = (r * t.xscale(), r * t.yscale());
+    if !(rx.is_finite() && ry.is_finite() && cx.is_finite() && cy.is_finite()) {
         return;
     }
     let (sx, sy) = t.world_to_screen(cx, cy);
-    if radius > arc::ARC_RADIUS {
-        // Too big for the painter: draw the part near the area.
-        let Some(pts) = arc::visible_arc(sx, sy, radius, w, h) else {
+    if rx > arc::ARC_RADIUS || ry > arc::ARC_RADIUS {
+        // Too big for the painter: draw the part near the area. The arc
+        // test runs in the space where the ellipse is a circle of its
+        // larger radius, with the smaller axis stretched onto it, so what
+        // it finds visible is the ellipse's own arc.
+        let (radius, k, vertical) = if rx >= ry {
+            (rx, rx / ry, false)
+        } else {
+            (ry, ry / rx, true)
+        };
+        // The circle's centre: the axis that is stretched moves with it.
+        let (stretch, w2, h2) = if vertical {
+            (sx * k, w * k, h)
+        } else {
+            (sy * k, w, h * k)
+        };
+        let (ccx, ccy) = if vertical {
+            (stretch, sy)
+        } else {
+            (sx, stretch)
+        };
+        let back = |(x, y): (f64, f64)| {
+            if vertical {
+                (x / k, y)
+            } else {
+                (x, y / k)
+            }
+        };
+        let Some(pts) = arc::visible_arc(ccx, ccy, radius, w2, h2) else {
             return;
         };
+        let pts: Vec<(f64, f64)> = pts.iter().map(|&p| back(p)).collect();
         let points: Vec<Pos2> = pts
             .iter()
             .map(|&(x, y)| origin + vec2(x as f32, y as f32))
@@ -691,19 +730,21 @@ fn paint_circle(
             .filter(|&&(x, y)| x > 14.0 && x < w - 14.0 && y > 14.0 && y < h - 14.0)
             .max_by(|a, b| (a.0 - a.1).total_cmp(&(b.0 - b.1)));
         if let Some(&(x, y)) = best {
-            let (ux, uy) = ((x - sx) / radius, (y - sy) / radius);
-            label((x + 12.0 * ux, y + 12.0 * uy));
+            let (ux, uy) = ((x - sx) / rx, (y - sy) / ry);
+            let n = (ux * ux + uy * uy).sqrt().max(1e-9);
+            label((x + 12.0 * ux / n, y + 12.0 * uy / n));
         }
         return;
     }
-    painter.circle_stroke(origin + vec2(sx as f32, sy as f32), radius as f32, stroke);
+    painter.add(Shape::Ellipse(eframe::egui::epaint::EllipseShape::stroke(
+        origin + vec2(sx as f32, sy as f32),
+        vec2(rx as f32, ry as f32),
+        stroke,
+    )));
     // Prefer the upper right of the circle, then the other diagonals.
     for deg in [-45.0f64, -135.0, 45.0, 135.0] {
         let a = deg.to_radians();
-        let pos = (
-            sx + (radius + 12.0) * a.cos(),
-            sy + (radius + 12.0) * a.sin(),
-        );
+        let pos = (sx + (rx + 12.0) * a.cos(), sy + (ry + 12.0) * a.sin());
         if in_rect(pos) {
             label(pos);
             break;
