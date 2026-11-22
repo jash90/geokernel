@@ -1,0 +1,32 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-rootlistupstream-001",
+      "group": "funcanalysis",
+      "script": [
+        "r = RootList({1,2,3,4,5})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,281 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-rootedge-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^2+1,-2,2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-002",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^2,-2,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-003",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x^2,0.2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 7.629394531249999E-7, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-004",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root((x-2)*(x-3),2,4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-005",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x-3,-5,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-006",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(x-3,3,-5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-007",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(1/x,-3,2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-008",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(sqrt(x)-1,-1,4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-009",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(ln(x),0.2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.9999999999999722, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-010",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root(sin(pi*x),1.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-011",
+      "group": "funcanalysis",
+      "script": [
+        "R = Root((x+2)*(x-1)*(x-4),-4,5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": -2.000000000000001, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-012",
+      "group": "funcanalysis",
+      "script": [
+        "a = 1",
+        "f(x) = x-a",
+        "R = Root(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -9.0],
+              [-4.0, -5.0],
+              [-2.0, -3.0],
+              [-1.0, -2.0],
+              [-0.5, -1.5],
+              [0.0, -1.0],
+              [0.5, -0.5],
+              [1.0, 0.0],
+              [2.0, 1.0],
+              [4.0, 3.0],
+              [8.0, 7.0]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -6.0],
+              [-4.0, -2.0],
+              [-2.0, 0.0],
+              [-1.0, 1.0],
+              [-0.5, 1.5],
+              [0.0, 2.0],
+              [0.5, 2.5],
+              [1.0, 3.0],
+              [2.0, 4.0],
+              [4.0, 6.0],
+              [8.0, 10.0]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootedge-013",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = (x+1)*(x-2)",
+        "g(x) = -x+2",
+        "R = Root(f,g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 70.0],
+              [-4.0, 18.0],
+              [-2.0, 4.0],
+              [-1.0, -0.0],
+              [-0.5, -1.25],
+              [0.0, -2.0],
+              [0.5, -2.25],
+              [1.0, -2.0],
+              [2.0, 0.0],
+              [4.0, 10.0],
+              [8.0, 54.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 10.0],
+              [-4.0, 6.0],
+              [-2.0, 4.0],
+              [-1.0, 3.0],
+              [-0.5, 2.5],
+              [0.0, 2.0],
+              [0.5, 1.5],
+              [1.0, 1.0],
+              [2.0, 0.0],
+              [4.0, -2.0],
+              [8.0, -6.0]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -16,6 +16,8 @@
 //!
 //! [`Def`]: crate::kernel::Def
 
+pub(crate) mod analysis;
+
 pub mod arc;
 pub mod basic;
 pub mod calculus;

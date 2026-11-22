@@ -17,7 +17,9 @@ fn crisp(v: f64) -> f32 {
 pub fn paint(painter: &Painter, rect: Rect, t: &ViewTransform, decor: Decor, numbering_px: f64) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
     let v = t.view();
-    let steps = ticks::grid_steps(t.scale(), numbering_px);
+    // Each axis takes its own steps (`setAxesIntervals` per axis, spec D1).
+    let steps_x = ticks::grid_steps(t.xscale(), numbering_px);
+    let steps_y = ticks::grid_steps(t.yscale(), numbering_px);
     let at = |sx: f64, sy: f64| -> Pos2 { rect.min + vec2(sx as f32, sy as f32) };
     let vline = |sx: f64, stroke: Stroke| {
         let x = crisp(sx);
@@ -34,19 +36,19 @@ pub fn paint(painter: &Painter, rect: Rect, t: &ViewTransform, decor: Decor, num
         );
     };
     if decor.grid {
-        let (minor, stroke) = (steps.minor, Stroke::new(1.0, theme::GRID_MINOR));
-        for i in ticks::multiples(v.xmin, v.xmax, minor) {
-            vline(t.world_to_screen(i as f64 * minor, 0.0).0, stroke);
+        let stroke = Stroke::new(1.0, theme::GRID_MINOR);
+        for i in ticks::multiples(v.xmin, v.xmax, steps_x.minor) {
+            vline(t.world_to_screen(i as f64 * steps_x.minor, 0.0).0, stroke);
         }
-        for i in ticks::multiples(v.ymin, v.ymax, minor) {
-            hline(t.world_to_screen(0.0, i as f64 * minor).1, stroke);
+        for i in ticks::multiples(v.ymin, v.ymax, steps_y.minor) {
+            hline(t.world_to_screen(0.0, i as f64 * steps_y.minor).1, stroke);
         }
         let stroke = Stroke::new(1.0, theme::GRID_MAJOR);
-        for i in ticks::multiples(v.xmin, v.xmax, steps.major) {
-            vline(t.world_to_screen(i as f64 * steps.major, 0.0).0, stroke);
+        for i in ticks::multiples(v.xmin, v.xmax, steps_x.major) {
+            vline(t.world_to_screen(i as f64 * steps_x.major, 0.0).0, stroke);
         }
-        for i in ticks::multiples(v.ymin, v.ymax, steps.major) {
-            hline(t.world_to_screen(0.0, i as f64 * steps.major).1, stroke);
+        for i in ticks::multiples(v.ymin, v.ymax, steps_y.major) {
+            hline(t.world_to_screen(0.0, i as f64 * steps_y.major).1, stroke);
         }
     }
     if !decor.axes {
@@ -74,12 +76,12 @@ pub fn paint(painter: &Painter, rect: Rect, t: &ViewTransform, decor: Decor, num
     };
 
     // Numbers along the x axis, under it; at the edge when the axis is out of view.
-    for i in ticks::multiples(v.xmin, v.xmax, steps.major) {
+    for i in ticks::multiples(v.xmin, v.xmax, steps_x.major) {
         if i == 0 {
             continue;
         }
-        let g = galley_of(ticks::caption(i, steps.major));
-        let sx = t.world_to_screen(i as f64 * steps.major, 0.0).0;
+        let g = galley_of(ticks::caption(i, steps_x.major));
+        let sx = t.world_to_screen(i as f64 * steps_x.major, 0.0).0;
         let top = (ay + 4.0).clamp(2.0, (h - g.size().y as f64 - 2.0).max(2.0));
         let pos = at(sx, top) - vec2(g.size().x / 2.0, 0.0);
         if inside(Rect::from_min_size(pos, g.size())) {
@@ -87,12 +89,12 @@ pub fn paint(painter: &Painter, rect: Rect, t: &ViewTransform, decor: Decor, num
         }
     }
     // Numbers along the y axis, left of it.
-    for i in ticks::multiples(v.ymin, v.ymax, steps.major) {
+    for i in ticks::multiples(v.ymin, v.ymax, steps_y.major) {
         if i == 0 {
             continue;
         }
-        let g = galley_of(ticks::caption(i, steps.major));
-        let sy = t.world_to_screen(0.0, i as f64 * steps.major).1;
+        let g = galley_of(ticks::caption(i, steps_y.major));
+        let sy = t.world_to_screen(0.0, i as f64 * steps_y.major).1;
         let right = (ax - 6.0).clamp(
             g.size().x as f64 + 4.0,
             (w - 4.0).max(g.size().x as f64 + 4.0),

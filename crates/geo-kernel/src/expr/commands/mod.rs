@@ -9,7 +9,8 @@
 
 mod algebra;
 
-pub(crate) use algebra::polynomial;
+pub(crate) use algebra::{extrema::brent_minimum, polynomial};
+pub(super) mod function_analysis;
 mod geometry;
 mod list;
 mod logical;
@@ -27,6 +28,7 @@ use super::{Bin, Elem, ListOp, Node, Ty};
 pub(super) fn is_command(name: &str) -> bool {
     [
         algebra::NAMES,
+        function_analysis::NAMES,
         logical::NAMES,
         list::NAMES,
         statistics::NAMES,
@@ -41,6 +43,9 @@ pub(super) fn is_command(name: &str) -> bool {
 /// or `None`, with nothing read, when no group takes it (the two-number
 /// commands and the commands of the script parser are tried next).
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    if let Some(node) = function_analysis::parse(p, text)? {
+        return Ok(Some(node));
+    }
     if let Some(node) = text::parse(p, text)? {
         return Ok(Some(node));
     }

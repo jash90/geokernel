@@ -161,6 +161,10 @@ impl Walker<'_> {
             | Node::Base { .. }
             | Node::FunctionObject(_)
             | Node::Extremum(..)
+            | Node::SystemFunction(..)
+            | Node::RootList(..)
+            | Node::FunctionAsymptotes(..)
+            | Node::Iteration { .. }
             | Node::PolynomialPart(..)
             | Node::Algebra(..)
             | Node::ObjectDefined(_)

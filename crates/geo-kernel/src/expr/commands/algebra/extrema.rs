@@ -17,7 +17,7 @@ impl<const M: bool> Ctx<'_, M> {
             .fast(f)
         };
         let signed = |x| if minimum { sample(x) } else { -sample(x) };
-        let result = brent(a, b, signed, |n| self.stop(n));
+        let result = brent_minimum(a, b, 5e-8, signed, |n| self.stop(n));
         result.map_or(Val::V(f64::NAN, f64::NAN), |x| Val::V(x, sample(x)))
     }
 }
@@ -25,9 +25,10 @@ impl<const M: bool> Ctx<'_, M> {
 /// Brent minimization with a golden-section step whenever interpolation
 /// falls outside the bracket or would make insufficient progress. The
 /// bracket updates and trial limit follow `ExtremumFinder.findMinimum`.
-fn brent(
+pub(crate) fn brent_minimum(
     mut a: f64,
     mut b: f64,
+    tolerance: f64,
     f: impl Fn(f64) -> f64,
     stop: impl Fn(u64) -> bool,
 ) -> Option<f64> {
@@ -45,7 +46,7 @@ fn brent(
             return None;
         }
         let midpoint = (a + b) * 0.5;
-        let tol = 1.2e-16_f64.sqrt() * x.abs() + 5.0e-8 / 3.0;
+        let tol = 1.2e-16_f64.sqrt() * x.abs() + tolerance / 3.0;
         let twice = 2.0 * tol;
         if (x - midpoint).abs() <= twice - (b - a) * 0.5 {
             return Some(x);

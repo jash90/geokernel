@@ -114,16 +114,11 @@ IntegralBetween,function,7,"function | function,number | function,number,number 
 LowerSum,function,1,"function,number,number,number"
 LeftSum,function,1,"function,number,number,number"
 RectangleSum,function,1,"function,number,number,number,number"
-TaylorSeries,function,1,"function,number,number"
 UpperSum,function,1,"function,number,number,number"
 TrapezoidalSum,function,1,"function,number,number,number"
-Limit,function,2,"function,number | function,any,number"
-LimitBelow,function,1,"function,number"
-LimitAbove,function,1,"function,number"
 Factors,function,2,function | number
 Degree,function,1,function
 Coefficients,function,2,function | conic
-PartialFractions,function,1,function
 Numerator,function,2,function | number
 Denominator,function,2,function | number
 ComplexRoot,function,1,function
@@ -138,7 +133,6 @@ OsculatingCircle,function,3,"point,conic | point,function | point,curve"
 IterationList,function,3,"function,number,number | function,list,number | function,any,..."
 RootList,function,3,"list | number,number,... | point,point,..."
 ImplicitCurve,function,3,"list | function | point,point,point,point,point,..."
-ImplicitDerivative,function,1,function
 NSolveODE,function,1,"list,number,list,number"
 Spline,function,4,"list | list,number | list,number,function | point,point,..."
 BezierCurve,function,1,"point,point,point,point"
@@ -260,9 +254,6 @@ PlotSolve,function,5,list | function | line | conic | implicit
 ToComplex,geogebra,4,list | number | point | vector
 ToPolar,geogebra,4,list | number | point | vector
 ToPoint,geogebra,4,list | number | point | vector
-TrigExpand,function,4,"function | curve | function,function | curve,function"
-TrigSimplify,function,4,function | list | curve | implicit
-TrigCombine,function,4,"function | curve | function,function | curve,function"
 nCr,english,1,"number,number"
 nPr,english,1,"number,number"
 CASLoaded,geogebra,1,()

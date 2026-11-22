@@ -1133,11 +1133,6 @@ pub(super) fn side_parents(c: &Construction, equation: Id, left: bool) -> &[Id] 
 }
 
 /// Evaluate a side object at a pair of coordinates.
-pub(crate) fn side_value(c: &Construction, id: Id, x: f64, y: f64) -> Option<f64> {
-    let meter = eval::Lists::new(Vec::new());
-    sample_side(c, id, x, y, &meter)
-}
-
 pub(super) fn sample_side(
     c: &Construction,
     id: Id,

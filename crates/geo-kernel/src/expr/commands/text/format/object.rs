@@ -66,6 +66,7 @@ impl Format {
                     LocusDef::Path { point, mover } => ("Locus", [Some(point), Some(mover)]),
                     LocusDef::Slider { point, slider } => ("Locus", [Some(point), Some(slider)]),
                     LocusDef::Ode { point, source } => ("Locus", [Some(source), Some(point)]),
+                    LocusDef::Numeric(_) => return Some(self.shown(ctx.c.kind(id), value)),
                     LocusDef::SlopeField(source) => ("SlopeField", [Some(source), None]),
                 };
                 let args = objects

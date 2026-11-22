@@ -70,6 +70,7 @@
 //! it in `commands/mod.rs`.
 
 mod commands;
+pub(crate) use commands::brent_minimum;
 mod decimal;
 pub(crate) mod derivative;
 /// Equations in `x` and `y` as lines and conics (see the module docs).
@@ -92,8 +93,66 @@ impl IntersectionWork {
         self.0.charge(units)
     }
 
+    pub(crate) fn sample_system(&self, c: &Construction, id: Id, t: f64, state: &[f64]) -> f64 {
+        if !self.charge(1) {
+            return f64::NAN;
+        }
+        sample_system(c, id, t, state, &self.0)
+    }
+
     pub(crate) fn exhausted(&self) -> bool {
         self.0.over()
+    }
+}
+
+fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::Lists) -> f64 {
+    let Def::Expr(d) = c.def(id) else {
+        return f64::NAN;
+    };
+    let function = entry(c, d);
+    let env = eval::Env::Pair(t, state.first().copied().unwrap_or(0.0));
+    let ctx = eval::Ctx::<true> {
+        meter: Some(meter),
+        ..eval::Ctx::new(c, function, &env)
+    };
+    match (c.value(id), ctx.node(function.root)) {
+        (Value::FunctionNVar, Node::SystemFunction(arity, f)) => {
+            let mut args = [0.0; 16];
+            let n = usize::from(arity.saturating_sub(1));
+            if n == 0 || n > args.len() {
+                return f64::NAN;
+            }
+            let supplied = state.len().min(n);
+            args[..supplied].copy_from_slice(&state[..supplied]);
+            let time = eval::Local {
+                depth: 0,
+                value: eval::Val::N(t),
+                run: None,
+                up: None,
+            };
+            eval::system_locals(
+                &eval::Ctx {
+                    locals: Some(&time),
+                    ..ctx
+                },
+                f,
+                1,
+                &args[..n],
+            )
+        }
+        (Value::Function, _) => {
+            if function.function_of_y {
+                let env = eval::Env::Value(state.first().copied().unwrap_or(f64::NAN));
+                eval::Ctx { env: &env, ..ctx }.fast(function.root)
+            } else {
+                ctx.fast(function.root)
+            }
+        }
+        (Value::FunctionNVar, _) => {
+            equation::sample_side(c, id, t, state.first().copied().unwrap_or(0.0), meter)
+                .unwrap_or(f64::NAN)
+        }
+        _ => f64::NAN,
     }
 }
 
@@ -177,10 +236,20 @@ pub(crate) enum Node {
     },
     /// A numerical extremum on a bounded interval. The function's x is local.
     Extremum(bool, u32, u32, u32),
+    RootList(u32),
+    FunctionAsymptotes(u32),
+    Iteration {
+        mode: IterationMode,
+        collect: bool,
+        formula: u32,
+        initial: u32,
+        count: u32,
+    },
     /// Quotient or remainder of two polynomial functions of the same x.
     PolynomialPart(bool, u32, u32),
     /// Reference to a function as a list element.
     FunctionObject(Id),
+    SystemFunction(u8, u32),
     /// A function object applied to an argument.
     Apply(Id, u32),
     Apply2(Id, u32, u32),
@@ -228,6 +297,13 @@ pub(crate) enum Node {
     },
     Defined(u32),
     ObjectDefined(Id),
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum IterationMode {
+    Unary,
+    Indexed,
+    Local { first: u32, count: u32 },
 }
 
 /// Numeric commands with a scalar or list result.
@@ -751,7 +827,18 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         Node::Filter {
             list, condition, ..
         } => fixed[..2].copy_from_slice(&[list, condition]),
-        Node::Defined(a) => fixed[0] = a,
+        Node::Defined(a)
+        | Node::RootList(a)
+        | Node::FunctionAsymptotes(a)
+        | Node::SystemFunction(_, a) => fixed[0] = a,
+        Node::Iteration {
+            formula,
+            initial,
+            count,
+            ..
+        } => {
+            fixed[..3].copy_from_slice(&[formula, initial, count]);
+        }
         Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
         Node::List(first, len) | Node::TextCmd(_, first, len) => {
             run = first..first.saturating_add(len)
@@ -803,7 +890,20 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(list);
             shift(condition);
         }
-        Node::Defined(a) => shift(a),
+        Node::Defined(a)
+        | Node::RootList(a)
+        | Node::FunctionAsymptotes(a)
+        | Node::SystemFunction(_, a) => shift(a),
+        Node::Iteration {
+            formula,
+            initial,
+            count,
+            ..
+        } => {
+            shift(formula);
+            shift(initial);
+            shift(count);
+        }
         Node::Seq(a, b, c, d, _) => {
             shift(a);
             shift(b);
@@ -830,6 +930,9 @@ fn is_list_node(node: &Node) -> bool {
             | Node::Filter { .. }
             | Node::Algebra(..)
             | Node::Extremum(..)
+            | Node::RootList(..)
+            | Node::FunctionAsymptotes(..)
+            | Node::Iteration { .. }
             | Node::Base { .. }
             | Node::Apply2(..)
     )
@@ -1286,12 +1389,16 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
 pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
     if d.kind == Kind::FunctionNVar {
         let e = entry(c, d);
-        return if let Node::Side(eq, _) = e.nodes[e.root as usize] {
-            if c.value(eq).is_defined() {
-                Value::FunctionNVar
-            } else {
-                Value::Undefined
+        let defined = match e.nodes[e.root as usize] {
+            Node::Side(eq, _) => c.value(eq).is_defined(),
+            Node::SystemFunction(_, root) => {
+                inputs_defined(c, e)
+                    && !matches!(e.nodes[root as usize], Node::Num(v) if v.is_nan())
             }
+            _ => false,
+        };
+        return if defined {
+            Value::FunctionNVar
         } else {
             Value::Undefined
         };
@@ -1816,6 +1923,16 @@ pub(crate) fn define_function(
         parse::parse(c, rhs)?
     };
     function(c, name, parsed, of_y)
+}
+
+pub(crate) fn define_system_function(
+    c: &mut Construction,
+    label: &str,
+    rhs: &str,
+    parameters: &[&str],
+) -> Result<Id, String> {
+    let parsed = parse::parse_system(c, rhs, parameters)?;
+    add(c, label, parsed, Kind::FunctionNVar)
 }
 
 pub(crate) fn define_parametric_coordinate(

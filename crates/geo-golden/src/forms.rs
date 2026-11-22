@@ -132,7 +132,7 @@ fn tokens_of(k: Kind) -> &'static [&'static str] {
         Kind::Polygon => &["polygon"],
         Kind::PolyLine => &["polyline"],
         Kind::List => &["list"],
-        Kind::Function => &["function"],
+        Kind::Function | Kind::FunctionNVar => &["function"],
         Kind::Curve => &["curve"],
         Kind::Text => &["text"],
         Kind::Locus => &["locus"],
@@ -360,6 +360,19 @@ pub fn script_uses_form(
                             *binding = Some(Kind::Number);
                         }
                         _ => {}
+                    }
+                }
+                let binding = match (command, args.len()) {
+                    ("CurveCartesian", 4) | ("Function", 4) => Some(1),
+                    ("CurveCartesian", 5) => Some(2),
+                    _ => None,
+                };
+                if let Some(i) = binding {
+                    let mut chars = args[i].chars();
+                    if chars.next().is_some_and(|c| c.is_alphabetic() || c == '_')
+                        && chars.all(is_ident_char)
+                    {
+                        kinds[i] = Some(Kind::Number);
                     }
                 }
                 // Length's conic overload measures the arc of a conic part.

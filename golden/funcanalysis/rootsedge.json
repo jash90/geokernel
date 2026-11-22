@@ -1,0 +1,151 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-rootsedge-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(x^2,-1,1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsedge-002",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(x^2+1,-2,2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsedge-003",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(x*(x-1),0,1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsedge-004",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(1/x,-2,2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsedge-005",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(sqrt(x)-1,-2,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsedge-006",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(sin(x),4,-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 3.141592653612576, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsedge-007",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(x-1,1,1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsedge-008",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = sin(x)",
+        "R = Roots(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": -3.141592653612576, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 3.141592653612576, "y": 0.0 },
+          "R_{4}": { "type": "point", "defined": true, "x": 6.28318530725133, "y": 0.0 },
+          "R_{5}": { "type": "point", "defined": true, "x": 9.424778007025832, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

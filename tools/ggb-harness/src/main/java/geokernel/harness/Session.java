@@ -72,7 +72,8 @@ import org.geogebra.common.util.StringUtil;
 final class Session {
 
     private static final Pattern LINE =
-            Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?)(\\([xy]\\))? = (.+)$");
+            Pattern.compile("^([A-Za-z][A-Za-z0-9']*(?:_\\{[A-Za-z0-9]+\\})?)"
+                    + "(\\([A-Za-z][A-Za-z0-9]*(?:, *[A-Za-z][A-Za-z0-9]*)*\\))? = (.+)$");
     /** `label: lhs = rhs`, an equation line (its `=` belongs to the definition). */
     private static final Pattern EQUATION =
             Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
@@ -111,11 +112,13 @@ final class Session {
      * of such objects under a transformation. Every other `GeoConic` is a
      * `circle`.
      */
+    private final Set<GeoElement> namedMultivariate = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
     private final boolean trackBoundaryGrowth;
     private final boolean trackPointListGrowth;
     private final boolean trackRootGrowth;
     private final Map<AlgoElement, String> growingPoints = new LinkedHashMap<>();
+    private double[] locusView = LOCUS_VIEW;
 
     Session() {
         this(false, false, false);
@@ -134,6 +137,16 @@ final class Session {
 
     Kernel kernel() {
         return kernel;
+    }
+
+    void setView(double[] view) {
+        if (!Arrays.stream(view).allMatch(Double::isFinite)
+                || view[0] >= view[1] || view[2] >= view[3] || view[4] <= 0 || view[5] <= 0) {
+            throw new IllegalArgumentException("invalid sampling view");
+        }
+        app.getEuclidianView1().setCoordSystem(-view[0] * view[4], view[3] * view[5], view[4], view[5]);
+        kernel.setEuclidianViewBounds(1, view[0], view[1], view[2], view[3], view[4], view[5]);
+        locusView = view;
     }
 
     /** Checks that GeoGebra reports an error and creates no output. */
@@ -186,7 +199,7 @@ final class Session {
             }
         }
         String transformed = functionLine ? null : transformedType(definition);
-        String expected = functionLine ? "function"
+        String expected = functionLine ? (m.group(2).contains(",") ? "function_nvar" : "function")
                 : transformed != null ? transformed : expectedType(label, definition);
         if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
             throw new IllegalArgumentException("label used twice: " + label);
@@ -260,6 +273,21 @@ final class Session {
                 && !label.equals(out[0].getLabelSimple())))) {
             return runMulti(line, expected, out);
         }
+        if (out != null && out.length > 0 && isAnalysisPointCommand(definition)
+                && (out.length > 1 || (out[0].isLabelSet()
+                && !label.equals(out[0].getLabelSimple()))
+                || (!out[0].isLabelSet() && !out[0].isDefined()))) {
+            if (Arrays.stream(out).noneMatch(GeoElementND::isLabelSet)) {
+                GeoElement first = out[0].toGeoElement();
+                objects.put(label, first);
+                return first;
+            }
+            return runMulti(line, "point", out);
+        }
+        if (out != null && out.length > 1 && definition.startsWith("NSolveODE(")) {
+            checkLocusView();
+            return runMulti(line, "locus", out);
+        }
         if (out != null && out.length > 1 && definition.startsWith("Point(")) {
             return runMulti(line, expected, out);
         }
@@ -310,6 +338,9 @@ final class Session {
             }
             expected = type;
         }
+        if (functionLine && "function_nvar".equals(expected)) {
+            namedMultivariate.add(geo);
+        }
         String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : schemaType(geo);
         if (expression && !equationLine) {
             expected = expressionType(label, actual, line);
@@ -327,7 +358,9 @@ final class Session {
                                 || definition.startsWith("Slider("))
                         || expected.equals("angle") && definition.startsWith("Angle(")
                                 && definition.endsWith("°)");
-        if (free != geo.isIndependent()) {
+        // Restrictions with literal bounds can be independent conditional
+        // functions; live bounds can keep the same operation dependent.
+        if (!definition.startsWith("Function(") && free != geo.isIndependent()) {
             throw new IllegalStateException("unexpected dependency state for: " + line);
         }
         if (actual.equals("locus")) {
@@ -341,14 +374,13 @@ final class Session {
     }
 
     /**
-     * Checks that a locus is sampled in {@link #LOCUS_VIEW}: only the first
-     * graphics view is shown (no second graphics view and no 3D view), and the construction is not continuous (a
-     * continuous one samples a path more than once).
+     * Checks the requested sampling window, which defaults to {@link #LOCUS_VIEW}.
+     * The harness uses one graphics view and a noncontinuous construction.
      */
     private void checkLocusView() {
         double[] view = {kernel.getXmin(0), kernel.getXmax(0), kernel.getYmin(0),
                 kernel.getYmax(0), kernel.getXscale(0), kernel.getYscale(0)};
-        if (!Arrays.equals(view, LOCUS_VIEW) || !app.showView(App.VIEW_EUCLIDIAN)
+        if (!Arrays.equals(view, locusView) || !app.showView(App.VIEW_EUCLIDIAN)
                 || app.hasEuclidianView2(1)
                 || app.isEuclidianView3Dinited() || kernel.isContinuous()) {
             throw new IllegalStateException("a locus is sampled in an unexpected view: "
@@ -554,10 +586,30 @@ final class Session {
 
     /** Records every scripted object, in script order. */
     Map<String, Object> snapshot() {
+        return snapshot(false);
+    }
+
+    Map<String, Object> snapshot(boolean sampleCurves) {
         recordGrowingPoints();
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
-            snap.put(e.getKey(), describe(e.getValue(), schemaType(e.getValue())));
+            GeoElement geo = e.getValue();
+            Map<String, Object> object = describe(geo, schemaType(geo));
+            if (sampleCurves && geo instanceof GeoCurveCartesian curve && curve.isDefined()) {
+                List<Object> samples = new ArrayList<>();
+                double start = curve.getMinParameter();
+                double end = curve.getMaxParameter();
+                for (double fraction : new double[] {0, 0.125, 0.25, 0.5, 0.75, 0.875, 1}) {
+                    double t = start + (end - start) * fraction;
+                    double[] xy = new double[2];
+                    curve.evaluateCurve(t, xy);
+                    Object point = Double.isFinite(xy[0]) && Double.isFinite(xy[1])
+                            ? pair(xy[0], xy[1]) : null;
+                    samples.add(Arrays.asList(t, point));
+                }
+                object.put("samples_curve", samples);
+            }
+            snap.put(e.getKey(), object);
         }
         for (Map.Entry<String, List<GeoElement>> e : relations.entrySet()) {
             List<GeoElement> args = e.getValue();
@@ -742,7 +794,7 @@ final class Session {
     /** The schema type of a scripted object, including two-variable slopes. */
     private String schemaType(GeoElement geo) {
         if (geo instanceof GeoFunctionNVar
-                && !(geo.getParentAlgorithm() instanceof AlgoLeftRightSide)) {
+                && !(geo.getParentAlgorithm() instanceof AlgoLeftRightSide) && !namedMultivariate.contains(geo)) {
             return "function";
         }
         return conics.contains(geo) ? "conic" : typeOf(geo);
@@ -1022,6 +1074,13 @@ final class Session {
         }
     }
 
+    private static boolean isAnalysisPointCommand(String definition) {
+        return definition.startsWith("Root(") || definition.startsWith("Roots(")
+                || definition.startsWith("Extremum(") || definition.startsWith("TurningPoint(")
+                || definition.startsWith("ComplexRoot(")
+                || definition.startsWith("RemovableDiscontinuity(");
+    }
+
     /**
      * Whether the definition creates one object per vertex of a polygon or
      * polyline: `Vertex(p)`, `InteriorAngles(p)` and `Angle(p)` (one argument
@@ -1099,8 +1158,9 @@ final class Session {
             case "MinorAxis":
             case "SecondAxis":
             case "Directrix":
-            case "Asymptote":
                 return "line";
+            case "Asymptote":
+                return first instanceof GeoFunction ? "list" : "line";
             case "Segment":
                 return "segment";
             case "ConvexHull":
@@ -1113,9 +1173,24 @@ final class Session {
             case "Voronoi":
             case "Locus":
             case "SlopeField":
+            case "SolveODE":
+            case "NSolveODE":
                 return "locus";
             case "Curve":
+            case "CurveCartesian":
+            case "Spline":
+            case "BezierCurve":
+            case "ParametricDerivative":
                 return "curve";
+            case "OsculatingCircle":
+                return "circle";
+            case "Curvature":
+                return "number";
+            case "CurvatureVector":
+                return "vector";
+            case "Function":
+            case "NInvert":
+                return "function";
             case "Slider":
                 return "number";
             case "Intersect":
@@ -1126,6 +1201,12 @@ final class Session {
             case "Focus":
             case "Point":
             case "PointIn":
+            case "Root":
+            case "Roots":
+            case "ComplexRoot":
+            case "Extremum":
+            case "TurningPoint":
+            case "RemovableDiscontinuity":
             case "TriangleCenter":
             case "Barycenter":
                 return "point";
@@ -1248,7 +1329,10 @@ final class Session {
                 List<Object> samples = new ArrayList<>();
                 for (double x : SAMPLES) {
                     double y = 1 - 2 * x;
-                    double v = f.evaluate(x, y);
+                    double[] argument = new double[f.getFunctionVariables().length];
+                    argument[0] = x;
+                    argument[1] = y;
+                    double v = f.evaluate(argument);
                     samples.add(Arrays.asList(x, y, Double.isFinite(v) ? (Object) v : null));
                 }
                 obj.put("samples_xy", samples);

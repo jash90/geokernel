@@ -689,7 +689,7 @@ fn compare_at(c: &Construction, out: &Output, label: &str, id: Id) -> Vec<Disagr
                 .err()
         } else if kind == Kind::List {
             compare_list(c, &expected, kind, c.elements(id)).err()
-        } else if matches!(kind, Kind::Text | Kind::FunctionNVar) {
+        } else if matches!(kind, Kind::Text | Kind::FunctionNVar | Kind::Curve) {
             compare_extra(c, id, &expected).err()
         } else {
             let vertices: Vec<_> = c.vertices(id).collect();

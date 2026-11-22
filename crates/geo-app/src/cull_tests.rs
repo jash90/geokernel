@@ -163,7 +163,12 @@ fn picture_with(
 }
 
 fn fitted(wb: &Workbench) -> Camera {
-    Camera::fit(view::content_bounds(wb.construction()), W as f64, H as f64)
+    Camera::fit(
+        view::content_bounds(wb.construction()),
+        W as f64,
+        H as f64,
+        view::ScaleLimits::OURS,
+    )
 }
 
 #[test]
@@ -179,7 +184,7 @@ fn culling_never_changes_the_picture_of_a_random_view() {
         // one), about a random spot, then moved by up to two areas.
         let zoom = [0.05, 0.3, 1.0, 3.0, 12.0, 60.0][case % 6] * rng.range(0.7, 1.4);
         let (sx, sy) = (rng.range(0.0, W as f64), rng.range(0.0, H as f64));
-        cam.zoom_at(zoom, sx, sy, W as f64, H as f64);
+        cam.zoom_at(zoom, sx, sy, W as f64, H as f64, view::ScaleLimits::OURS);
         cam.pan_pixels(
             rng.range(-2.0, 2.0) * W as f64,
             rng.range(-2.0, 2.0) * H as f64,
@@ -269,6 +274,7 @@ fn culling_draws_objects_with_overflowing_coordinates_as_without() {
             rng.range(0.0, H as f64),
             W as f64,
             H as f64,
+            view::ScaleLimits::OURS,
         );
         cam.pan_pixels(
             rng.range(-2.0, 2.0) * W as f64,
@@ -295,7 +301,14 @@ fn a_zoomed_in_view_of_a_large_construction_paints_only_what_is_in_it() {
     let shapes = |cells: usize, zoom: f64, bounded_only: bool| {
         let wb = Workbench::from_script(&scene(cells)).unwrap();
         let mut cam = fitted(&wb);
-        cam.zoom_at(zoom, W as f64 / 2.0, H as f64 / 2.0, W as f64, H as f64);
+        cam.zoom_at(
+            zoom,
+            W as f64 / 2.0,
+            H as f64 / 2.0,
+            W as f64,
+            H as f64,
+            view::ScaleLimits::OURS,
+        );
         let t = cam.transform(W as f64, H as f64);
         picture(&Context::default(), &wb, &t, true, bounded_only).1
     };

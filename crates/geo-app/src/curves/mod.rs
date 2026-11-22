@@ -23,15 +23,17 @@
 //!   the others are drawn from their kept meshes moved and scaled (within
 //!   [`MAX_STALE_SCALE`]; a curve seen for the first time is not drawn
 //!   yet), and the next frames are asked for until none is left;
-//! - a kept mesh is moved or scaled by copying only its runs of triangles
-//!   that reach the area (see [`placed_runs`]), never tessellated again
-//!   unless epaint laid it out otherwise;
+//! - a translated mesh is shared with the painter, which positions it
+//!   with a transform. A scaled mesh copies only the runs of triangles
+//!   that reach the area (see [`placed_runs`]), tessellating again only
+//!   when the stroke layout requires it;
 //! - a curve whose drawing lies outside the area costs only that test, and
 //!   a view whose pixels the coordinates cannot tell apart draws nothing.
 
 mod key;
 mod parts;
 
+use eframe::egui::emath::TSTransform;
 use eframe::egui::epaint::{PathShape, Tessellator};
 use eframe::egui::{vec2, Color32, Context, Mesh, Painter, Pos2, Rect, Stroke, Vec2};
 use geo_kernel::kernel::{Construction, Id, Value};
@@ -48,9 +50,9 @@ use std::sync::{Arc, Mutex};
 /// [`FUNCTION_COST`]; an edited curve is always plotted at once.
 pub const REPLOTS_PER_FRAME: usize = 24;
 
-/// [`REPLOTS_PER_FRAME`] for a frame of a pan, which also moves every kept
-/// mesh: the curves due again are still drawn whole for a while (they are
-/// within the margin), and once the view stops the full cap plots them.
+/// [`REPLOTS_PER_FRAME`] for a frame of a pan: the curves due again are
+/// still drawn whole for a while (they are within the margin), and once
+/// the view stops the full cap plots them.
 pub const REPLOTS_PER_PAN_FRAME: usize = 12;
 
 /// What plotting a function counts against [`REPLOTS_PER_FRAME`].
@@ -89,7 +91,7 @@ pub fn curves_uncovered() -> u64 {
     UNCOVERED.with(Cell::get)
 }
 
-/// Vertices this thread has copied to move or scale kept meshes so far.
+/// Vertices this thread has copied to scale kept meshes so far.
 #[cfg(test)]
 pub fn curves_moved_vertices() -> u64 {
     MOVED.with(Cell::get)
@@ -209,12 +211,12 @@ fn stroke_mesh(
 }
 
 /// Where a kept mesh goes: a point `p` of it to `origin + scale * (p -
-/// from)`. A scaled stroke keeps its width (see [`placed_runs`]).
+/// from)`, per axis. A scaled stroke keeps its width (see [`placed_runs`]).
 #[derive(Clone, Copy)]
 struct Placing {
     from: Pos2,
     origin: Pos2,
-    scale: f32,
+    scale: Vec2,
 }
 
 impl Placing {
@@ -236,12 +238,12 @@ impl Placing {
 /// the stroke of the placed polyline (a uniform scale keeps every
 /// direction, so the normals and the joins are the same).
 fn placed_runs(mesh: &Mesh, runs: &[Run], fours: bool, at: Placing, near: Rect) -> Option<Mesh> {
-    let quads = at.scale != 1.0;
+    let quads = at.scale != Vec2::splat(1.0);
     if quads && !fours {
         return None;
     }
     let len = mesh.vertices.len() as u32;
-    let grow = if at.scale == 1.0 {
+    let grow = if at.scale == Vec2::splat(1.0) {
         0.0
     } else {
         2.0 * crate::draw::CURVE_WIDTH
@@ -352,6 +354,10 @@ fn placed_stroke(
 
 struct Plotted {
     frame: Frame,
+    /// The frame-to-canvas affine the polylines and the mesh were laid out
+    /// under ([`Curves::to_canvas`]'s `k`): a kept drawing is moved only
+    /// when it is the same one, and otherwise placed by its ratio.
+    affine: [f64; 4],
     pixels_per_point: f32,
     /// The polylines, plotted `margin` points around the area.
     paths: Vec<Vec<Pos2>>,
@@ -360,7 +366,7 @@ struct Plotted {
     mesh: Arc<Mesh>,
     mesh_at: Pos2,
     /// The mesh's triangles in runs, each with the bounds of its vertices,
-    /// so that a moved drawing copies only the runs that reach the area.
+    /// so that a scaled drawing copies only the runs that reach the area.
     runs: Arc<[Run]>,
     /// Whether the mesh has four vertices for each point of the polylines
     /// (of two points or more), as `placed_runs` needs to scale it (see
@@ -382,10 +388,13 @@ struct Plotted {
 /// One curve as drawn this frame, in screen points unless noted.
 pub struct Drawn {
     pub mesh: Arc<Mesh>,
+    /// Translation of the shared mesh in screen points.
+    pub mesh_transform: TSTransform,
     plotted: Arc<Plotted>,
-    /// Where the kept plot's area point `p` goes: `origin + scale * p`.
+    /// Where the kept plot's area point `p` goes: `origin + scale * p`,
+    /// per axis.
     origin: Pos2,
-    scale: f32,
+    scale: Vec2,
     pub point: Option<Pos2>,
     pub dot: Option<Pos2>,
     /// Relative to the area.
@@ -432,11 +441,12 @@ struct Cache {
 
 /// How a kept plot relates to the current view.
 enum Fit {
-    /// The same scale, moved by this much; whether every visible point was
-    /// plotted, and whether the view has passed half the margin.
+    /// The same canvas scales, moved by this much; whether every visible
+    /// point was plotted, and whether the view has passed half the margin.
     Moved(Vec2, bool, bool),
-    /// Another scale: the kept area point `p` goes to `origin + k * p`.
-    Scaled(Pos2, f32),
+    /// Other scales, one per axis: the kept area point `p` goes to
+    /// `origin + k * p` componentwise.
+    Scaled(Pos2, Vec2),
 }
 
 /// The curves of one frame: the shared cache and the view they are drawn
@@ -445,6 +455,8 @@ pub struct Curves {
     cache: Arc<Mutex<Cache>>,
     ctx: Context,
     frame: Frame,
+    /// `to_canvas` as `x -> k[0] * x + k[1]`, `y -> k[2] * y + k[3]`.
+    affine: [f64; 4],
     origin: Pos2,
     pixels_per_point: f32,
     options: eframe::egui::epaint::TessellationOptions,
@@ -454,7 +466,7 @@ pub struct Curves {
     /// Whether the last frame had the same view: the view stopped moving.
     still: bool,
     /// Whether the view moves at the same scale and size as the last
-    /// frame's (a pan): the frame moves every kept mesh, so it plots less.
+    /// frame's (a pan), with the lower plotting cap.
     panning: bool,
     /// Whether the view can be drawn at all ([`Frame::resolves`]).
     usable: bool,
@@ -476,6 +488,29 @@ impl Curves {
         });
         let frame = Frame::fit(t.view(), rect.width() as f64, rect.height() as f64);
         let usable = frame.resolves();
+        // The frame keeps one scale, the smaller of the canvas's two, and
+        // centres what it shows: on the wider axis it letterboxes, showing
+        // world the canvas does not. A plotted point goes to the canvas
+        // through world coordinates, which is a stretch per axis (the
+        // composition of the frame's and the canvas's transforms flips y
+        // twice, so it does not flip), sampled at three points. A view of
+        // the area's own ratio has no letterbox: the stretch is the
+        // identity, taken exactly, so such a view plots as before.
+        let at = |x: f64, y: f64| {
+            let (wx, wy) = frame.screen_to_world(x, y);
+            t.world_to_screen(wx, wy)
+        };
+        let (p0, px, py) = (at(0.0, 0.0), at(1.0, 0.0), at(0.0, 1.0));
+        let snap = |k: f64, a: f64| -> (f64, f64) {
+            if (k - 1.0).abs() <= 1e-9 && a.abs() <= 1e-6 {
+                (1.0, 0.0)
+            } else {
+                (k, a)
+            }
+        };
+        let (kx, ax) = snap(px.0 - p0.0, p0.0);
+        let (ky, ay) = snap(py.1 - p0.1, p0.1);
+        let affine = [kx, ax, ky, ay];
         let (now, still, panning) = {
             let mut guard = cache.lock().unwrap_or_else(|e| e.into_inner());
             let cache = &mut *guard;
@@ -502,6 +537,7 @@ impl Curves {
             cache,
             ctx,
             frame,
+            affine,
             origin: rect.min,
             pixels_per_point,
             options,
@@ -511,6 +547,16 @@ impl Curves {
             panning,
             usable,
         }
+    }
+
+    /// A point of the frame's pixels on the canvas: where the world point
+    /// under it is drawn, at the canvas's own scale on each axis (see
+    /// [`Curves::new`]). Exact, as both transforms are affine per axis.
+    fn to_canvas(&self, (x, y): (f64, f64)) -> (f64, f64) {
+        (
+            self.affine[0] * x + self.affine[1],
+            self.affine[2] * y + self.affine[3],
+        )
     }
 
     /// Whether the frame may still plot the curve `id` because of the view;
@@ -649,17 +695,20 @@ impl Curves {
         let p = &entry.plotted;
         let (w, h) = (self.frame.width() as f32, self.frame.height() as f32);
         let area = Rect::from_min_size(self.origin, vec2(w, h));
-        let (origin, scale) = match self.fit(p) {
+        let fit = self.fit(p);
+        let (origin, scale) = match fit {
             Fit::Moved(d, covered, _) => {
                 if !covered {
                     count(&UNCOVERED);
                 }
-                (self.origin + d, 1.0)
+                (self.origin + d, Vec2::splat(1.0))
             }
             Fit::Scaled(o, k) => {
-                let sane = (1.0 / MAX_STALE_SCALE..=MAX_STALE_SCALE).contains(&k)
-                    && o.x.is_finite()
-                    && o.y.is_finite();
+                let sane = o.x.is_finite()
+                    && o.y.is_finite()
+                    && [k.x, k.y]
+                        .into_iter()
+                        .all(|k| (1.0 / MAX_STALE_SCALE..=MAX_STALE_SCALE).contains(&k));
                 if !sane {
                     return None;
                 }
@@ -669,9 +718,10 @@ impl Curves {
         let place = |q: Pos2| origin + scale * q.to_vec2();
         // The label: a conic's is placed for this view; a function's is the
         // plotter's when the plot was made for this view, otherwise its
-        // first drawn point in the area.
+        // first drawn point in the area. A conic's comes in the frame's
+        // pixels and goes to the canvas like any plotted point.
         let label = match &p.conic {
-            Some(d) => plot::conic::label(d, &self.frame),
+            Some(d) => plot::conic::label(d, &self.frame).map(|q| self.to_canvas(q)),
             None if p.frame == self.frame => p.label,
             None => self.function_label(p, &place),
         };
@@ -697,13 +747,18 @@ impl Curves {
             return None;
         }
         let reach = STALE_REACH * w.max(h);
-        if scale != 1.0 && !area.expand(reach).contains_rect(bounds) {
+        if scale != Vec2::splat(1.0) && !area.expand(reach).contains_rect(bounds) {
             return None;
         }
-        let mesh = if !strokes {
-            Arc::new(Mesh::default())
-        } else if scale == 1.0 && origin == p.mesh_at {
-            p.mesh.clone()
+        let (mesh, mesh_transform) = if !strokes {
+            (Arc::new(Mesh::default()), TSTransform::IDENTITY)
+        } else if matches!(fit, Fit::Moved(..))
+            || (scale == Vec2::splat(1.0) && origin == p.mesh_at)
+        {
+            (
+                p.mesh.clone(),
+                TSTransform::from_translation(origin - p.mesh_at),
+            )
         } else {
             let at = Placing {
                 from: p.mesh_at,
@@ -711,12 +766,14 @@ impl Curves {
                 scale,
             };
             let kept = (&*p.mesh, &*p.runs, p.points_of_four);
-            Arc::new(placed_stroke(kept, &p.paths, at, area, |pieces| {
+            let scaled = placed_stroke(kept, &p.paths, at, area, |pieces| {
                 self.tessellate(pieces.into_iter(), entry.color).0
-            }))
+            });
+            (Arc::new(scaled), TSTransform::IDENTITY)
         };
         Some(Arc::new(Drawn {
             mesh,
+            mesh_transform,
             plotted: p.clone(),
             origin,
             scale,
@@ -739,34 +796,61 @@ impl Curves {
     }
 
     fn fit(&self, p: &Plotted) -> Fit {
-        match p.frame.shift_to(&self.frame) {
-            Some((dx, dy)) => {
-                // The current area in the kept plot's pixels, against the
-                // kept area grown by `m`.
-                let (pw, ph) = (p.frame.width(), p.frame.height());
-                let (w, h) = (self.frame.width(), self.frame.height());
-                let within =
-                    |m: f64| -dx >= -m && w - dx <= pw + m && -dy >= -m && h - dy <= ph + m;
-                Fit::Moved(
-                    vec2(dx as f32, dy as f32),
-                    within(p.margin),
-                    !within(0.5 * p.margin),
-                )
-            }
-            None => {
-                let k = self.frame.scale() / p.frame.scale();
-                let (wx, wy) = p.frame.screen_to_world(0.0, 0.0);
-                let (ox, oy) = self.frame.world_to_screen(wx, wy);
-                Fit::Scaled(Pos2::new(ox as f32, oy as f32), k as f32)
-            }
+        // A kept mesh sits in the canvas's pixels, placed under the affine
+        // of the frame it was made in. While that affine's stretch stands
+        // — the frame's scale the same, so the view's scales are, and the
+        // canvas's the same over it (`k` below) — the mesh moves as a
+        // whole: by the frame-pixel move of the view (`Frame::shift_to`)
+        // through the stretch, plus whatever the letterbox made (a resize
+        // that keeps the scales still shifts every point; its offset is
+        // the difference of the affines' constant parts). A view whose
+        // scales changed is placed by the scaled rule below, which is
+        // exact for any pair of views, or plotted again.
+        let same_k = (self.affine[0] - p.affine[0]).abs() <= 1e-9 * p.affine[0].abs().max(1.0)
+            && (self.affine[2] - p.affine[2]).abs() <= 1e-9 * p.affine[2].abs().max(1.0);
+        if let (true, Some((dx, dy))) = (same_k, p.frame.shift_to(&self.frame)) {
+            // The current area in the kept plot's pixels, against the
+            // kept area grown by `m`.
+            let (pw, ph) = (p.frame.width(), p.frame.height());
+            let (w, h) = (self.frame.width(), self.frame.height());
+            let within = |m: f64| -dx >= -m && w - dx <= pw + m && -dy >= -m && h - dy <= ph + m;
+            // The move of the mesh, which sits in the canvas's pixels: a
+            // frame pixel is `affine[0]` / `affine[2]` of them, and the
+            // letterbox moved the canvas's origin corner by the rest.
+            return Fit::Moved(
+                vec2(
+                    (self.affine[1] - p.affine[1] + dx * self.affine[0]) as f32,
+                    (self.affine[3] - p.affine[3] + dy * self.affine[2]) as f32,
+                ),
+                within(p.margin),
+                !within(0.5 * p.margin),
+            );
         }
+        // The kept canvas point `q` goes to `anchor + k * q` per
+        // axis: `anchor` is where the world point of the kept
+        // canvas's corner `(0, 0)` is now, and `k` the ratio of
+        // the affines, which is exact for any pair of views.
+        let k = vec2(
+            (self.affine[0] / p.affine[0]) as f32,
+            (self.affine[2] / p.affine[2]) as f32,
+        );
+        let corner = (-p.affine[1] / p.affine[0], -p.affine[3] / p.affine[2]);
+        let world = p.frame.screen_to_world(corner.0, corner.1);
+        let (nx, ny) = self.frame.world_to_screen(world.0, world.1);
+        let (ox, oy) = self.to_canvas((nx, ny));
+        Fit::Scaled(Pos2::new(ox as f32, oy as f32), k)
     }
 
     fn plot(&self, c: &Construction, id: Id, color: Color32) -> Plotted {
         count(&PLOTTED);
         COST.with(|n| n.set(n.get() + plot_cost(c, id) as u64));
         let margin = margin(self.frame.width(), self.frame.height());
-        let at = |(x, y): (f64, f64)| Pos2::new(x as f32, y as f32);
+        // What the plotter gives sits in the frame's pixels; it goes to the
+        // canvas, at the canvas's own scale on each axis.
+        let at = |(x, y): (f64, f64)| {
+            let (x, y) = self.to_canvas((x, y));
+            Pos2::new(x as f32, y as f32)
+        };
         let (paths, point, dot, label, conic, function) = match c.value(id) {
             Value::Conic { .. } => match c.conic(id) {
                 Some(d) => {
@@ -796,7 +880,14 @@ impl Curves {
                     .into_iter()
                     .map(|path| path.into_iter().map(at).collect())
                     .collect();
-                (paths, None, None, p.label, None, true)
+                (
+                    paths,
+                    None,
+                    None,
+                    p.label.map(|q| self.to_canvas(q)),
+                    None,
+                    true,
+                )
             }
             _ => {
                 let paths = c
@@ -821,6 +912,7 @@ impl Curves {
         let mesh = Arc::new(mesh);
         Plotted {
             frame: self.frame,
+            affine: self.affine,
             pixels_per_point: self.pixels_per_point,
             paths,
             runs: runs(&mesh),
@@ -844,6 +936,7 @@ impl Curves {
         let (mesh, points_of_four) = self.tessellate(at_origin(&p.paths, p.mesh_at), color);
         Plotted {
             frame: p.frame,
+            affine: p.affine,
             pixels_per_point: p.pixels_per_point,
             paths: p.paths.clone(),
             runs: runs(&mesh),
@@ -1050,6 +1143,7 @@ mod placing_tests {
                 (Pos2::new(140.0, 95.0), 0.8),
             ] {
                 let what = format!("{ppp} {origin:?} {scale}");
+                let scale = Vec2::splat(scale);
                 let at = Placing {
                     from,
                     origin,
@@ -1067,8 +1161,8 @@ mod placing_tests {
                     tessellated = true;
                     stroke(&pieces, ppp).0
                 });
-                assert_eq!(tessellated, thin && scale != 1.0, "{what}");
-                assert_same_mesh(&got, &want, scale, &what);
+                assert_eq!(tessellated, thin && scale != Vec2::splat(1.0), "{what}");
+                assert_same_mesh(&got, &want, scale.x, &what);
 
                 // Only part of it near a small rectangle.
                 let near = Rect::from_min_size(origin + vec2(150.0, 120.0), vec2(90.0, 70.0));
@@ -1100,6 +1194,7 @@ mod placing_tests {
                 (Pos2::new(140.0, 95.0), 0.8),
                 (Pos2::new(-900.0, -700.0), 3.7),
             ] {
+                let scale = Vec2::splat(scale);
                 let at = Placing {
                     from,
                     origin,
@@ -1111,7 +1206,7 @@ mod placing_tests {
                     .collect();
                 let (want, _) = stroke(&placed, ppp);
                 let got = placed_runs(&mesh, &runs, fours, at, Rect::EVERYTHING).unwrap();
-                assert_same_mesh(&got, &want, scale, &format!("{origin:?} {scale}"));
+                assert_same_mesh(&got, &want, scale.x, &format!("{origin:?} {scale}"));
 
                 // Only part of it near a small rectangle: every triangle
                 // of the whole stroke that reaches it is there.
