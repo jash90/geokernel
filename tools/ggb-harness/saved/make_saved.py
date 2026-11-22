@@ -607,6 +607,16 @@ style_case([
     [st("q", line=[20, 6], line_opacity=90)],
 ], hidden=["q"])
 
+# Sliders whose value lies outside the interval the reference application
+# gives a number that becomes visible (-5 to 5, an angle 0 to 360 degrees).
+style_case([
+    "n = Slider(0, 100, 1)", "m = Slider(-200, -100, 10)", "P = (n / 10, m / 100)",
+], [
+    [{"action": "set_number", "label": "n", "value": 30},
+     {"action": "set_number", "label": "m", "value": -170},
+     st("n", slider={"width": 150}, label_visible=False)],
+])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

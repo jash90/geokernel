@@ -95,6 +95,21 @@ impl Writer<'_> {
             _ => [None; 2],
         };
         let bounded = bounds.iter().any(Option::is_some);
+        // The reference shows a number by giving it an interval around its
+        // current value, so the value, and the slider with its bounds, come
+        // before `<show>`, as in the files of the reference application.
+        let number = matches!(object_kind, Kind::Number | Kind::Angle);
+        // Only a number or an angle takes the tag in the reference reader.
+        let layout = saved
+            .and_then(|style| style.slider.as_deref())
+            .filter(|_| number);
+        if number {
+            self.angle(id, saved)?;
+            self.value(id)?;
+            if bounded || layout.is_some() {
+                self.slider(bounds, layout)?;
+            }
+        }
         let reader_decides = match saved {
             // The file had no tag and the object is still visible.
             Some(saved) => saved.untagged && shown,
@@ -191,13 +206,10 @@ impl Writer<'_> {
         {
             self.xml.pixels("labelOffset", x, y)?;
         }
-        if let Some(angle) = c.angle_style(id) {
-            self.xml.val("angleStyle", &angle.xml_code().to_string())?;
+        if !number {
+            self.angle(id, saved)?;
         }
         if object_kind == Kind::Angle {
-            if let Some(emphasize) = saved.and_then(|style| style.emphasize_right_angle) {
-                self.xml.val("emphasizeRightAngle", flag(emphasize))?;
-            }
             if let Some(size) = saved.and_then(|style| style.arc_size) {
                 self.xml.val("arcSize", &size.to_string())?;
             }
@@ -278,13 +290,8 @@ impl Writer<'_> {
             }
         }
 
-        self.value(id)?;
-        // Only a number or an angle takes the tag in the reference reader.
-        let layout = saved
-            .and_then(|style| style.slider.as_deref())
-            .filter(|_| matches!(object_kind, Kind::Number | Kind::Angle));
-        if bounded || layout.is_some() {
-            self.slider(bounds, layout)?;
+        if !number {
+            self.value(id)?;
         }
         let animation = self
             .presentation
@@ -321,6 +328,19 @@ impl Writer<'_> {
             self.text_style(id)?;
         }
         self.xml.buffer.push_str("</element>\n");
+        Ok(())
+    }
+
+    /// The interval of an angle and its right-angle marker.
+    fn angle(&mut self, id: Id, saved: Option<&ObjectStyle>) -> Result<(), ExportError> {
+        if let Some(angle) = self.c.angle_style(id) {
+            self.xml.val("angleStyle", &angle.xml_code().to_string())?;
+        }
+        if self.c.kind(id) == Kind::Angle {
+            if let Some(emphasize) = saved.and_then(|style| style.emphasize_right_angle) {
+                self.xml.val("emphasizeRightAngle", flag(emphasize))?;
+            }
+        }
         Ok(())
     }
 

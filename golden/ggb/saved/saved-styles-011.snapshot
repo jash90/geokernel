@@ -1,0 +1,22 @@
+{
+  "schema": 2,
+  "id": "saved-styles-011",
+  "script": [
+    "r = 0.25",
+    "g = 0.5",
+    "b = 0.75",
+    "show = true",
+    "n = Slider(0, 100, 1)",
+    "m = Slider(-200, -100, 10)",
+    "P = (n / 10, m / 100)"
+  ],
+  "objects": {
+    "r": { "type": "number", "defined": true, "value": 0.25 },
+    "g": { "type": "number", "defined": true, "value": 0.5 },
+    "b": { "type": "number", "defined": true, "value": 0.75 },
+    "show": { "type": "boolean", "defined": true, "value": true },
+    "n": { "type": "number", "defined": true, "value": 30.0 },
+    "m": { "type": "number", "defined": true, "value": -170.0 },
+    "P": { "type": "point", "defined": true, "x": 3.0, "y": -1.7 }
+  }
+}

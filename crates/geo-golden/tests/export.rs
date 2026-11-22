@@ -35,6 +35,8 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     // Free numbers outside the interval the reference gives a new slider.
     ("export-numbers-001", 0),
     ("export-sliders-001", 0),
+    // Sliders set outside the interval the reference gives a shown number.
+    ("export-sliders-002", 2),
     ("export-texts-001", 0),
     ("funcanalysis-curvatureupstream-002", 0),
     ("georestintersect-affine-002", 0),
@@ -78,6 +80,7 @@ const SAVED_CASES: &[&str] = &[
     // Styled objects that are undefined in the saved state.
     "saved-styles-009.xml",
     "saved-styles-010.xml",
+    "saved-styles-011.xml",
 ];
 
 const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
@@ -778,12 +781,17 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
                 assert_json(&json!(max), &slider["max"], &where_);
                 let moving = &actual["animation"];
                 let animation = presentation.slider_animation.get(label);
-                let step = match (name, label) {
-                    ("export-sliders-001", "a") => json!(0.25),
-                    ("export-sliders-001", "b") => json!(0.5),
-                    _ => {
-                        animation.map_or(json!(0.1), |a| number_or_reference(c, a.step.as_deref()))
-                    }
+                // A slider made by its command keeps the step of the command.
+                let command_step = wb
+                    .definition(label)
+                    .and_then(geo_kernel::script::split_call)
+                    .and_then(|(name, args)| match (name, args.as_slice()) {
+                        ("Slider", [_, _, step]) => Some(*step),
+                        _ => None,
+                    });
+                let step = match animation {
+                    Some(animation) => number_or_reference(c, animation.step.as_deref()),
+                    None => number_or_reference(c, command_step.or(Some("0.1"))),
                 };
                 let speed = animation.and_then(|a| a.speed.as_deref()).or(Some("1"));
                 assert_json(&step, &moving["step"], &format!("{where_}.step"));
@@ -867,13 +875,11 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
 }
 
 fn number_or_reference(c: &Construction, source: Option<&str>) -> Value {
+    // A step or a speed is a number or arithmetic over the construction.
     source.map_or(Value::Null, |source| {
-        let value = source.parse::<f64>().unwrap_or_else(|_| {
-            let geo_kernel::Value::Number(value) = c.value(c.id(source).unwrap()) else {
-                panic!("expected a numeric reference for {source}")
-            };
-            value
-        });
+        let value = c
+            .numeric_value(source)
+            .unwrap_or_else(|| panic!("`{source}` is not a number of the construction"));
         json!(value)
     })
 }
