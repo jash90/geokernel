@@ -159,6 +159,9 @@ pub fn compare_sampled(
             ok(all_agree(&[(*x, ax), (*y, ay)]))
         }
         (ExpectedData::Number(v), Value::Number(av)) => ok(numbers_agree(*v, av)),
+        (ExpectedData::Curve { start, end }, Value::Curve { start: a, end: b }) => {
+            ok(numbers_agree(*start, a) && numbers_agree(*end, b))
+        }
         (ExpectedData::Bool(b), Value::Bool(ab)) => ok(*b == ab),
         (
             ExpectedData::Circle { cx, cy, r },

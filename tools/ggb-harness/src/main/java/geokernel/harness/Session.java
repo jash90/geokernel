@@ -35,6 +35,7 @@ import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
+import org.geogebra.common.kernel.geos.GeoFunctionNVar;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoLocus;
@@ -47,6 +48,7 @@ import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoRay;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoVector;
+import org.geogebra.common.kernel.geos.GeoCurveCartesian;
 import org.geogebra.common.kernel.kernelND.GeoConicND;
 import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
@@ -67,7 +69,7 @@ import org.geogebra.common.util.StringUtil;
 final class Session {
 
     private static final Pattern LINE =
-            Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?)(\\(x\\))? = (.+)$");
+            Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?)(\\([xy]\\))? = (.+)$");
     /** `label: lhs = rhs`, an equation line (its `=` belongs to the definition). */
     private static final Pattern EQUATION =
             Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
@@ -673,8 +675,11 @@ final class Session {
         return false;
     }
 
-    /** The schema type of a scripted object: `conic` for a general conic, else {@link #typeOf}. */
+    /** The schema type of a scripted object, including two-variable slopes. */
     private String schemaType(GeoElement geo) {
+        if (geo instanceof GeoFunctionNVar) {
+            return "function";
+        }
         return conics.contains(geo) ? "conic" : typeOf(geo);
     }
 
@@ -723,6 +728,9 @@ final class Session {
         }
         if (geo instanceof GeoFunction) {
             return "function";
+        }
+        if (geo instanceof GeoCurveCartesian) {
+            return "curve";
         }
         if (geo instanceof GeoLocus) {
             return "locus";
@@ -1023,7 +1031,10 @@ final class Session {
             case "Segment":
                 return "segment";
             case "Locus":
+            case "SlopeField":
                 return "locus";
+            case "Curve":
+                return "curve";
             case "Slider":
                 return "number";
             case "Intersect":
@@ -1138,12 +1149,11 @@ final class Session {
             return obj;
         }
         if (type.equals("function")) {
-            GeoFunction f = (GeoFunction) geo;
-            obj.put("defined", f.isDefined());
-            if (f.isDefined()) {
+            obj.put("defined", geo.isDefined());
+            if (geo.isDefined()) {
                 List<Object> samples = new ArrayList<>();
                 for (double x : SAMPLES) {
-                    double v = f.isBooleanFunction() ? (f.evaluateBoolean(x) ? 1.0 : 0.0) : f.value(x);
+                    double v = sampleFunction(geo, x);
                     samples.add(Arrays.asList(x, Double.isFinite(v) ? (Object) v : null));
                 }
                 obj.put("samples", samples);
@@ -1158,6 +1168,14 @@ final class Session {
             obj.put("defined", false);
         }
         return obj;
+    }
+
+    private static double sampleFunction(GeoElement geo, double argument) {
+        if (geo instanceof GeoFunction f) {
+            return f.isBooleanFunction() ? (f.evaluateBoolean(argument) ? 1.0 : 0.0)
+                    : f.value(argument);
+        }
+        return ((GeoFunctionNVar) geo).evaluate(argument, 0);
     }
 
     /** Whether a field is finite: a number, or a list of finite fields or nulls; a name is. */
@@ -1285,6 +1303,12 @@ final class Session {
                 }
                 f.put("vertices", vertices);
                 f.put("length", poly.getLength());
+                return f;
+            }
+            case "curve": {
+                GeoCurveCartesian curve = (GeoCurveCartesian) geo;
+                f.put("start", curve.getMinParameter());
+                f.put("end", curve.getMaxParameter());
                 return f;
             }
             case "locus": {

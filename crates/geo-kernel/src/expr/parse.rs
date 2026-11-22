@@ -73,6 +73,10 @@ pub(super) fn parse_argument(c: &Construction, src: &str) -> Result<Parsed, Stri
     parse_in(c, src, Mode::Argument)
 }
 
+pub(super) fn parse_parameter(c: &Construction, src: &str, name: &str) -> Result<Parsed, String> {
+    parse_in(c, src, Mode::Parameter(name))
+}
+
 /// [`parse`] with the variables an equation may read: `x` and `y` are
 /// GeoGebra's function variables, not objects (`Equation.initEquation`
 /// replaces the `x`, `y` and `z` nodes).
@@ -88,14 +92,15 @@ pub(crate) fn parse_equation_left(c: &Construction, src: &str) -> Result<Parsed,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Mode {
+enum Mode<'a> {
     Expression,
     Argument,
     Equation,
     EquationLeft,
+    Parameter(&'a str),
 }
 
-fn parse_in(c: &Construction, src: &str, mode: Mode) -> Result<Parsed, String> {
+fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, String> {
     let equation = matches!(mode, Mode::Equation | Mode::EquationLeft);
     let preprocessed = split_bars(src);
     let src: &str = &preprocessed;
@@ -128,6 +133,11 @@ fn parse_in(c: &Construction, src: &str, mode: Mode) -> Result<Parsed, String> {
         equation,
         inline_argument: mode == Mode::Argument,
         split_names: equation && !whole_name,
+        parameter: if let Mode::Parameter(name) = mode {
+            Some(name)
+        } else {
+            None
+        },
         locals: Vec::new(),
     };
     if p.toks.is_empty() {
@@ -182,6 +192,7 @@ pub(super) struct Parser<'a> {
     /// coordinate function (see [`parse_equation`]).
     equation: bool,
     inline_argument: bool,
+    parameter: Option<&'a str>,
     /// Whether a name that resolves as nothing may read as a product of
     /// single-letter variables (see [`parse_in`]).
     split_names: bool,
@@ -692,7 +703,16 @@ impl Parser<'_> {
                 }
                 let first = self.nodes.len() as u32;
                 for &e in &elements {
-                    self.push(Node::Item(e));
+                    let item = match self.node(e) {
+                        Node::Obj(id) if super::list::object_kind(self.c.kind(id)) => {
+                            for p in super::list::object_parents(self.c, id) {
+                                self.read(p, false);
+                            }
+                            Node::ItemObject(id)
+                        }
+                        _ => Node::Item(e),
+                    };
+                    self.push(item);
                 }
                 Ok(self.push(Node::List(first, elements.len() as u32)))
             }
@@ -715,6 +735,15 @@ impl Parser<'_> {
             }
             let arg = self.element()?;
             return Ok(self.push(Node::Bin(Bin::Mul, local, arg)));
+        }
+        if self.parameter == Some(text) {
+            self.uses_var = true;
+            let variable = self.push(Node::Var);
+            if !call {
+                return Ok(variable);
+            }
+            let arg = self.element()?;
+            return Ok(self.push(Node::Bin(Bin::Mul, variable, arg)));
         }
         let free = |s: &str| self.c.id(s).is_none();
         let letter = match text {

@@ -140,6 +140,7 @@ pub enum Kind {
     /// slider runs through its interval; its points are read with
     /// [`Construction::locus`].
     Locus,
+    Curve,
 }
 
 impl Kind {
@@ -169,6 +170,7 @@ impl fmt::Display for Kind {
             Kind::Arc => "arc",
             Kind::Sector => "sector",
             Kind::Locus => "locus",
+            Kind::Curve => "curve",
         })
     }
 }
@@ -233,6 +235,11 @@ pub enum Value {
     /// A defined function; its values come from
     /// [`Construction::function_value`].
     Function,
+    /// The parameter interval of a defined Cartesian curve.
+    Curve {
+        start: f64,
+        end: f64,
+    },
     /// A polygon with its signed area: positive when the vertices run
     /// counter-clockwise. The vertices are not copied into the value; read
     /// them with [`Construction::vertices`].
@@ -346,6 +353,7 @@ impl Value {
             Value::PolyLine { length } => length.is_finite(),
             Value::Arc { length } => length.is_finite(),
             Value::Sector { area } => area.is_finite(),
+            Value::Curve { start, end } => start.is_finite() && end.is_finite(),
             Value::Function
             | Value::List { .. }
             | Value::Conic { .. }
@@ -730,6 +738,7 @@ pub struct Construction {
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
+    rigid_replacements: Vec<(Id, Id, Def)>,
     /// Helper intersection states for common tangents starting on an arc.
     limited_common_tangents: Vec<(usize, CommonTangentState)>,
     /// The records of the arcs and sectors, with the index of each object,
@@ -1181,6 +1190,26 @@ impl Construction {
         {
             self.sliders.pop();
         }
+        while self
+            .rigid_replacements
+            .last()
+            .is_some_and(|&(owner, _, _)| owner.0 >= at.len)
+        {
+            let (_, id, prior) = self.rigid_replacements.pop().expect("replacement");
+            if id.0 >= at.len {
+                continue;
+            }
+            let def = self.defs[id.0];
+            for parent in def.parents().as_slice() {
+                self.children[parent.0].retain(|&child| child != id);
+            }
+            if let Some(slot) = self.path_slot(id.0) {
+                self.paths.remove(slot);
+            }
+            self.defs[id.0] = prior;
+            self.values[id.0] = self.compute(prior, id.0);
+            self.propagate(id);
+        }
         // Labels became free again, so the hints may be too high.
         self.label_hints
             .get_mut()
@@ -1200,6 +1229,7 @@ impl Construction {
         ids.extend(algo::vector::hidden_parents(self, def));
         ids.extend(algo::predicate::hidden_parents(self, def));
         ids.extend(algo::polygon::hidden_parents(self, def));
+        ids.extend(algo::measure::hidden_parents(self, def));
         ids.extend(angle::hidden_parents(self, def));
         ids.extend(expr::parents(self, def));
         if let Def::Equation(d) = *def {
@@ -1294,6 +1324,30 @@ impl Construction {
         Ok(id)
     }
 
+    /// Installs rigid constraints on existing free points after all outputs
+    /// of the polygon have been validated and added.
+    pub(crate) fn rigidify_points(&mut self, owner: Id, defs: Vec<(Id, Def)>) {
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        for (id, def) in defs {
+            let prior = self.defs[id.0];
+            debug_assert!(matches!(prior, Def::FreePoint { .. }));
+            self.rigid_replacements.push((owner, id, prior));
+            self.defs[id.0] = def;
+            for parent in def.parents().as_slice() {
+                let children = &mut self.children[parent.0];
+                let slot = children.partition_point(|&child| child < id);
+                children.insert(slot, id);
+            }
+            if let Def::Path(path) = def {
+                let slot = self.paths.partition_point(|&(other, _)| other < id.0);
+                self.paths.insert(slot, (id.0, path.create(self)));
+            }
+            dirty.insert(id.0);
+        }
+        self.propagate_dirty(dirty, 0);
+    }
+
     /// The elements of the list object `id`; `None` when it is not a list
     /// or the list is undefined.
     pub fn elements(&self, id: Id) -> Option<expr::List<'_>> {
@@ -1383,7 +1437,10 @@ impl Construction {
             return Err(Error::NotFree(axis.label.to_string()));
         }
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
-        if let Def::Path(d @ PathDef::On { .. }) = *def {
+        if let Def::Path(
+            d @ (PathDef::On { .. } | PathDef::InRegion { .. } | PathDef::RigidEndpoint { .. }),
+        ) = *def
+        {
             return self.move_on_path(id, d, x, y);
         }
         // The value of a free point or vector is always its coordinates.
@@ -1747,8 +1804,8 @@ impl Construction {
     }
 
     /// Recomputes the record of the arc or sector `i`; tells whether its
-    /// children must follow: whether the record changed, bit for bit. Out
-    /// of line like [`Self::update_expr`].
+    /// children must follow: whether the record changed or is undefined.
+    /// Out of line like [`Self::update_expr`].
     #[inline(never)]
     fn update_arc(&mut self, i: usize, d: ArcDef) -> bool {
         let Some(slot) = self.arc_slot(i) else {
@@ -1756,7 +1813,9 @@ impl Construction {
         };
         let new = d.record(self);
         if new.same(&self.arcs[slot].1) {
-            return false;
+            // A point can be placed directly on an undefined arc. Its next
+            // AlgoPointOnPath update clears it even when the arc stays undefined.
+            return !new.defined;
         }
         self.arcs[slot].1 = new;
         self.values[i] = algo::arc::value(d.kind() == Kind::Sector, &new);
@@ -1865,7 +1924,11 @@ impl Construction {
             Some(
                 Def::FreePoint { .. }
                     | Def::Vector(VectorDef::Free { .. })
-                    | Def::Path(PathDef::On { .. })
+                    | Def::Path(
+                        PathDef::On { .. }
+                            | PathDef::InRegion { .. }
+                            | PathDef::RigidEndpoint { .. }
+                    )
             )
         )
     }

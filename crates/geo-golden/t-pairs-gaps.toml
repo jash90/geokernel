@@ -1504,9 +1504,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1250"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Curve`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoCurveCartesian` has no schema object (unsupported-type); string `(t^(2), t^(2))`"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1255"
@@ -3735,12 +3735,6 @@ reason = "the kernel refuses the input: unknown object `freehandFunc`; the metho
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2590"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unexpected `\"`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2595"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `LetterToUnicode`"
@@ -5158,9 +5152,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3330"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `{(1,1),(2,2),(3,3),(4,1/4),(5,1/5)}`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoPolygon` of kind polygon has no GeoGebra-style text yet; GeoGebra prints `3.4499999999999997`"
+mismatches = ["poly1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3331"
@@ -5176,9 +5170,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3342"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `PolyLine` does not take 1 argument(s)"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoPolyLine` of kind polyline has no GeoGebra-style text yet; GeoGebra prints `6.755851322151136`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3343"
@@ -6514,9 +6508,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4090"
-category = "unsupported-form"
-reason = "the kernel refuses the input: `y` needs arguments"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `x + y`"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4093"
@@ -6718,9 +6712,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4217"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SlopeField`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoLocus` has no schema object (unsupported-type); string `SlopeField[x / y]`"
+mismatches = ["slopefield1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4218"

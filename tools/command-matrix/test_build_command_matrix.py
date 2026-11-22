@@ -106,6 +106,7 @@ class BuildMatrixTest(unittest.TestCase):
             m.read_forms('command,group,forms_2d,forms\nLine,geometry,3,"point,point"\n')
         row = '[[form]]\ncommand = "Line"\nform = "point,point"\ncases = ["x"]\n'
         self.assertEqual(m.read_evidence(row, forms), {"Line": 1})
+        self.assertEqual(m.read_evidence(row + 'difference = "s: a"\n', forms), {"Line": 1})
         for bad in (row + row, row.replace("point,point", "line"),
                     '[[form]]\ncommand = "Line"\nform = "point,line"\n'):
             with self.assertRaises(ValueError):

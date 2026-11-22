@@ -61,6 +61,8 @@ pub enum PointDef {
     Barycenter { points: Id, weights: Id },
     /// `Vertex(segment, n)`.
     SegmentVertex { segment: Id, index: Count },
+    /// `Vertex(n)` or `Vertex(view, n)` in the kernel's graphics view.
+    ViewCorner { view: Option<Count>, index: Count },
     /// A segment whose endpoint objects are available even when it is undefined.
     SegmentEndpoint {
         segment: Id,
@@ -78,6 +80,49 @@ pub enum PointDef {
     Trilinear { ids: [u32; 6] },
     /// `TriangleCenter(A, B, C, n)`.
     TriangleCenter { a: Id, b: Id, c: Id, index: Count },
+}
+
+pub(crate) fn parse_view_corner(
+    c: &Construction,
+    args: &[&str],
+) -> Option<Result<PointDef, String>> {
+    let number = |arg| super::polygon::count_arg(c, arg);
+    Some(Ok(match *args {
+        [index] => PointDef::ViewCorner {
+            view: None,
+            index: number(index).ok()?,
+        },
+        [view, index] => PointDef::ViewCorner {
+            view: Some(number(view).ok()?),
+            index: number(index).ok()?,
+        },
+        _ => return None,
+    }))
+}
+
+fn view_corner(c: &Construction, view: Option<Count>, index: Count) -> Option<Value> {
+    if view.is_some_and(|v| v.value(c) != 1.0) {
+        return None;
+    }
+    let [xmin, xmax, ymin, ymax, xs, ys] = c
+        .locus_view()
+        .unwrap_or(crate::kernel::locus::HEADLESS_VIEW);
+    let (left, right, bottom, top) = (
+        xmin - 1.0 / xs,
+        xmax + 1.0 / xs,
+        ymin - 1.0 / ys,
+        ymax + 1.0 / ys,
+    );
+    let (x, y) = match index.value(c) as i32 {
+        1 => (left, bottom),
+        2 => (right, bottom),
+        3 => (right, top),
+        4 => (left, top),
+        5 => (((xmax - xmin) * xs).round(), ((ymax - ymin) * ys).round()),
+        6 => (0.0, 0.0), // There is no application window in the kernel.
+        _ => return None,
+    };
+    Some(Value::Point { x, y })
 }
 
 fn id_of(raw: u32) -> Id {
@@ -384,6 +429,11 @@ impl Group for PointDef {
 
     fn parents(&self) -> Parents {
         match *self {
+            PointDef::ViewCorner { view, index } => match (view.and_then(Count::id), index.id()) {
+                (Some(view), Some(index)) => Parents::of(&[view, index]),
+                (Some(id), None) | (None, Some(id)) => Parents::of(&[id]),
+                (None, None) => Parents::none(),
+            },
             PointDef::Offset { point, vector } => Parents::of(&[point, vector]),
             PointDef::Coordinates { list, .. } => Parents::of(&[list]),
             PointDef::Barycenter { points, weights } => Parents::of(&[points, weights]),
@@ -417,6 +467,12 @@ impl Group for PointDef {
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
+            PointDef::ViewCorner { view, index } => {
+                if let Some(view) = view {
+                    view.check(c)?;
+                }
+                index.check(c)
+            }
             PointDef::Offset { point, vector } => {
                 c.expect(point, POINT)?;
                 c.expect(vector, &[Kind::Vector])
@@ -469,6 +525,7 @@ impl Group for PointDef {
 
     fn compute(&self, c: &Construction) -> Option<Value> {
         match *self {
+            PointDef::ViewCorner { view, index } => view_corner(c, view, index),
             PointDef::Offset { point, vector } => {
                 let (px, py) = c.point(point)?;
                 let Value::Vector { x, y } = c.value(vector) else {

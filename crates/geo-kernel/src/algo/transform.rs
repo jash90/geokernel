@@ -103,6 +103,7 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Arc => &[Kind::Arc],
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
+        Kind::Curve => &[Kind::Curve],
     }
 }
 
@@ -361,6 +362,7 @@ impl Map {
             | Value::Sector { .. }
             | Value::Locus { .. }
             | Value::HomogeneousPoint { .. }
+            | Value::Curve { .. }
             | Value::Undefined => None,
         }
     }

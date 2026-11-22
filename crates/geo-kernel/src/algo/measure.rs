@@ -50,7 +50,7 @@ use super::conic_nd::ConicType;
 use super::point::{closest_coords, CLOSEST_PATH};
 use super::polygon::{count_arg, Count};
 use super::{conic_object, Group, Parents, CARRIERS, CONIC_OBJECTS, POINT};
-use crate::kernel::{Construction, Error, Id, Kind, Value};
+use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
 use std::f64::consts::PI;
@@ -58,16 +58,28 @@ use std::f64::consts::PI;
 /// Numbers measured on objects.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MeasureDef {
-    /// `Length(segment)`.
+    /// `Length(segment)`, `Length(point)` or the sample count of a locus.
     Length(Id),
-    /// `Length(f, a, b)`. The function id is packed to keep `Def` at 48 bytes.
+    TextLength(usize),
+    /// A Cartesian curve with two coordinate functions and an interval.
+    CartesianCurve {
+        coordinates: [u32; 2],
+        bounds: [u32; 2],
+    },
+    /// The summed distances between consecutive points of a locus.
+    LocusPerimeter(Id),
+    /// Graph or curve length between numeric bounds; the id is packed.
     FunctionLength {
         function: u32,
         start: Count,
         end: Count,
     },
-    /// `Length(f, P, Q)` between the points' x coordinates.
-    FunctionLengthBetweenPoints { function: Id, start: Id, end: Id },
+    /// Graph or curve length between endpoints given as points.
+    FunctionLengthBetweenPoints {
+        function: Id,
+        start: Id,
+        end: Id,
+    },
     /// `Radius(conic)` of a circle or single-point conic.
     Radius(Id),
     /// `Circumference(conic)` and `Perimeter(conic)` of a full conic.
@@ -81,7 +93,10 @@ pub enum MeasureDef {
     /// `Slope(line)` or the derivative of a function at zero.
     Slope(Id),
     /// `Distance(point, path)` in either order of the arguments.
-    DistancePointPath { point: Id, path: Id },
+    DistancePointPath {
+        point: Id,
+        path: Id,
+    },
     /// `Distance(line, line)`; segments count as the lines they lie on.
     DistanceLines(Id, Id),
     /// `AffineRatio(A, B, C)`.
@@ -244,12 +259,22 @@ fn line_line_distance(g: (f64, f64, f64), h: (f64, f64, f64)) -> f64 {
 
 impl Group for MeasureDef {
     fn kind(&self) -> Kind {
-        Kind::Number
+        if matches!(self, MeasureDef::CartesianCurve { .. }) {
+            Kind::Curve
+        } else {
+            Kind::Number
+        }
     }
 
     fn parents(&self) -> Parents {
         match *self {
+            MeasureDef::TextLength(_) => Parents::none(),
+            MeasureDef::CartesianCurve {
+                coordinates: [x, y],
+                bounds: [a, b],
+            } => Parents::of(&[x, y, a, b].map(|id| Id(id as usize))),
             MeasureDef::Length(a)
+            | MeasureDef::LocusPerimeter(a)
             | MeasureDef::Radius(a)
             | MeasureDef::Circumference(a)
             | MeasureDef::CircleArea(a)
@@ -284,13 +309,27 @@ impl Group for MeasureDef {
 
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
-            MeasureDef::Length(s) => c.expect(s, &[Kind::Segment]),
+            MeasureDef::TextLength(_) => Ok(()),
+            MeasureDef::CartesianCurve {
+                coordinates: [x, y],
+                bounds: [a, b],
+            } => {
+                for id in [x, y] {
+                    c.expect(Id(id as usize), &[Kind::Function])?;
+                }
+                for id in [a, b] {
+                    c.expect(Id(id as usize), &[Kind::Number])?;
+                }
+                Ok(())
+            }
+            MeasureDef::Length(s) => c.expect(s, &[Kind::Segment, Kind::Point, Kind::Locus]),
+            MeasureDef::LocusPerimeter(locus) => c.expect(locus, &[Kind::Locus]),
             MeasureDef::FunctionLength {
                 function,
                 start,
                 end,
             } => {
-                c.expect(Id(function as usize), &[Kind::Function])?;
+                c.expect(Id(function as usize), &[Kind::Function, Kind::Curve])?;
                 start.check(c)?;
                 end.check(c)
             }
@@ -299,7 +338,7 @@ impl Group for MeasureDef {
                 start,
                 end,
             } => {
-                c.expect(function, &[Kind::Function])?;
+                c.expect(function, &[Kind::Function, Kind::Curve])?;
                 c.expect(start, POINT)?;
                 c.expect(end, POINT)
             }
@@ -338,30 +377,71 @@ impl Group for MeasureDef {
     fn compute(&self, c: &Construction) -> Option<Value> {
         let number = |v: f64| Some(Value::Number(v));
         match *self {
+            MeasureDef::TextLength(n) => number(n as f64),
+            MeasureDef::CartesianCurve {
+                coordinates,
+                bounds: [a, b],
+            } => {
+                if !coordinates
+                    .iter()
+                    .all(|&id| c.value(Id(id as usize)).is_defined())
+                {
+                    return None;
+                }
+                let (start, end) = (c.number(Id(a as usize))?, c.number(Id(b as usize))?);
+                (start <= end).then_some(Value::Curve { start, end })
+            }
             MeasureDef::Length(s) => match c.value(s) {
                 Value::Segment { x1, y1, x2, y2 } => number(segment_length(x1, y1, x2, y2)),
-                _ => None,
+                Value::Locus { len, .. } => number(f64::from(len)),
+                _ => {
+                    let (x, y) = c.point(s)?;
+                    number((x * x + y * y).sqrt())
+                }
             },
+            MeasureDef::LocusPerimeter(id) => {
+                let locus = c.locus(id)?;
+                if !locus.defined || locus.points.is_empty() {
+                    return None;
+                }
+                number(
+                    locus
+                        .points
+                        .windows(2)
+                        .map(|ends| {
+                            let dx = ends[1].x - ends[0].x;
+                            let dy = ends[1].y - ends[0].y;
+                            (dx * dx + dy * dy).sqrt()
+                        })
+                        .sum(),
+                )
+            }
             MeasureDef::FunctionLength {
                 function,
                 start,
                 end,
-            } => number(super::curve::length(
-                c,
-                Id(function as usize),
-                start.value(c),
-                end.value(c),
-            )?),
+            } => {
+                let id = Id(function as usize);
+                let (a, b) = (start.value(c), end.value(c));
+                if c.kind(id) == Kind::Curve {
+                    number(super::curve::Cartesian::new(c, id)?.length(a, b))
+                } else {
+                    number(super::curve::length(c, id, a, b)?)
+                }
+            }
             MeasureDef::FunctionLengthBetweenPoints {
                 function,
                 start,
                 end,
-            } => number(super::curve::length(
-                c,
-                function,
-                c.point(start)?.0,
-                c.point(end)?.0,
-            )?),
+            } => {
+                let (a, b) = (c.point(start)?, c.point(end)?);
+                if c.kind(function) == Kind::Curve {
+                    let curve = super::curve::Cartesian::new(c, function)?;
+                    number(curve.length(curve.closest(a), curve.closest(b)))
+                } else {
+                    number(super::curve::length(c, function, a.0, b.0)?)
+                }
+            }
             MeasureDef::Radius(k) => {
                 if c.kind(k) == Kind::Circle {
                     return number(circle_radius(c, k)?);
@@ -503,6 +583,9 @@ impl Group for MeasureDef {
         Some(Ok(match (func, n) {
             ("Length", _) => MeasureDef::Length(a),
             ("Radius", _) => MeasureDef::Radius(a),
+            ("Circumference" | "Perimeter", _) if c.kind(a) == Kind::Locus => {
+                MeasureDef::LocusPerimeter(a)
+            }
             ("Circumference" | "Perimeter", _) => MeasureDef::Circumference(a),
             ("Area", 1) => MeasureDef::CircleArea(a),
             ("Area", 3) => MeasureDef::Area3(a, b, d),
@@ -515,6 +598,18 @@ impl Group for MeasureDef {
     }
 }
 
+pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
+    let curve = match *def {
+        Def::Measure(MeasureDef::FunctionLength { function, .. }) => Id(function as usize),
+        Def::Measure(MeasureDef::FunctionLengthBetweenPoints { function, .. }) => function,
+        _ => return Vec::new(),
+    };
+    if let Def::Measure(d @ MeasureDef::CartesianCurve { .. }) = c.def(curve) {
+        return d.parents().as_slice().to_vec();
+    }
+    Vec::new()
+}
+
 fn parse_function_length(
     c: &Construction,
     f: &str,
@@ -522,7 +617,7 @@ fn parse_function_length(
     b: &str,
 ) -> Result<MeasureDef, String> {
     let function = object(c, f)?;
-    c.expect(function, &[Kind::Function])
+    c.expect(function, &[Kind::Function, Kind::Curve])
         .map_err(|err| err.to_string())?;
     if let (Some(start), Some(end)) = (c.id(a), c.id(b)) {
         if c.kind(start) == Kind::Point && c.kind(end) == Kind::Point {
@@ -567,7 +662,6 @@ fn parse_distance(c: &Construction, args: &[&str]) -> Option<Result<MeasureDef, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::kernel::Def;
     use crate::script::{exec, load};
 
     fn num(c: &Construction, label: &str) -> Option<f64> {
@@ -656,7 +750,6 @@ mod tests {
             ),
             ("d = Distance(A, B, P)", "`Distance` does not take 3"),
             ("d = Length(l)", "`l` is a line, expected a segment"),
-            ("d = Length(A)", "`A` is a point, expected a segment"),
             ("d = Radius(s)", "`s` is a segment, expected a circle"),
             ("d = Area(A)", "`A` is a point, expected a circle"),
             (

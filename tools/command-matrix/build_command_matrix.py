@@ -43,6 +43,7 @@ KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
 # (derived from crates/geo-kernel/src/script.rs and the group files in
 # crates/geo-kernel/src/algo/). The note lists the supported forms.
 PARTIAL = {
+    "Locus": "Tracing point with a movable path point or slider, slope function with initial point, or slope field with initial point",
     "Line": "Line(point, point); Line(point, line, segment or ray); Line(point, vector)",
     "Segment": "Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output",
     "Midpoint": "Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)",
@@ -58,20 +59,20 @@ PARTIAL = {
     "Incircle": "Incircle(point, point, point)",
     "Center": "Center(circle or conic); Center(segment)",
     "Diameter": "Diameter(line or segment, circle or conic)",
-    "Length": "Length(segment); Length(vector); Length(list); Length(arc or sector)",
+    "Length": "Point, vector, segment, list, quoted text, locus sample count, conic part, function or Cartesian curve between bounds",
     "Radius": "Radius(conic or conic part); defined for circle and single-point types",
-    "Circumference": "Circumference(circle); Circumference(arc or sector)",
-    "Perimeter": "Perimeter(circle); Perimeter(polygon); Perimeter(arc or sector)",
+    "Circumference": "Conic, conic part, polygon or locus",
+    "Perimeter": "Polygon, conic, conic part or locus",
     "Area": "Area(conic, arc, sector or polygon); Area of three or more points",
-    "Point": "Point(path); Point(path, parameter) on a line, segment, ray, circle, conic, polygon, polyline, arc or sector",
+    "Point": "Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc or sector with an optional path parameter",
     "PathParameter": "PathParameter(point on a path)",
     "CircleArc": "CircularArc(centre, point, point)",
     "CircleSector": "CircularSector(centre, point, point)",
     "CircumcircleArc": "CircumcircularArc(point, point, point)",
     "CircumcircleSector": "CircumcircularSector(point, point, point)",
     "Semicircle": "Semicircle(point, point)",
-    "Arc": "Arc(circle, point, point); Arc(circle or conic, parameter, parameter)",
-    "Sector": "Sector(circle, point, point); Sector(circle or conic, parameter, parameter)",
+    "Arc": "Conic with point endpoints or numeric parameters",
+    "Sector": "Conic with point endpoints or numeric parameters",
     "Slope": "Slope(line, segment, ray or function)",
     "AffineRatio": "AffineRatio(point, point, point)",
     "CrossRatio": "CrossRatio(point, point, point, point)",
@@ -102,15 +103,15 @@ PARTIAL = {
     "ArePerpendicular": "ArePerpendicular of two lines, segments or rays",
     "AreConcurrent": "AreConcurrent of three lines, segments or rays",
     "AreConcyclic": "AreConcyclic(point, point, point, point)",
-    "AreEqual": "AreEqual of two objects of any kind the kernel has",
-    "AreCongruent": "AreCongruent of two objects of any kind the kernel has",
+    "AreEqual": "Numeric equality by object kind, including cyclic vertex equality and polynomial equality through degree four",
+    "AreCongruent": "Numeric congruence by object kind, including cyclic or reversed polygon congruence",
     "IsTangent": "IsTangent(line, segment or ray, conic or conic part)",
     "ClosestPoint": "Path and point in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers except line with segment",
     "Trilinear": "Trilinear(point, point, point, number, number, number)",
-    "Polygon": "Polygon of three or more points; Polygon(point, point, number of vertices)",
-    "PolyLine": "PolyLine of two or more points",
+    "Polygon": "Live list of points, separate points, or two points and a regular polygon vertex count",
+    "PolyLine": "Live list with optional Boolean or separate points with an optional false flag",
     "Centroid": "Centroid(polygon)",
-    "Vertex": "Vertex(polygon); Vertex(polygon, index); Vertex(conic)",
+    "Vertex": "Conic, polygon, polyline or a kernel graphics corner, including indexed polygon, polyline and segment forms",
     "InteriorAngles": "InteriorAngles(polygon)",
     "If": "If(condition, then); If(condition, then, else); If(condition, value, condition, value, ..., else)",
     "Element": "Element(list, index)",
@@ -145,7 +146,7 @@ PARTIAL = {
     "Eccentricity": "Eccentricity(conic)",
     "Excentricity": "Excentricity(conic)",
     "Parameter": "Parameter(parabola)",
-    "RigidPolygon": "RigidPolygon(polygon); RigidPolygon(polygon, x offset, y offset); RigidPolygon of three or more points (separate constrained vertices)",
+    "RigidPolygon": "Copy of a polygon with optional offsets or rigid polygon from three or more points",
     "TriangleCenter": "TriangleCenter(point, point, point, index)",
     "PointIn": "PointIn(polygon, conic or conic part as a single region argument)",
     "IntersectPath": "Polygon and line, segment, ray or conic in either order; two polygons",
@@ -350,7 +351,7 @@ def read_evidence(text, forms):
             raise ValueError("form-evidence.toml: unknown form %s(%s)" % (command, form))
         if (command, form) in seen:
             raise ValueError("form-evidence.toml: %s(%s) is listed twice" % (command, form))
-        if bool(row.get("cases")) == bool(row.get("difference")):
+        if not row.get("cases") and not row.get("difference"):
             raise ValueError("form-evidence.toml: %s(%s) needs cases or a difference"
                              % (command, form))
         seen.add((command, form))

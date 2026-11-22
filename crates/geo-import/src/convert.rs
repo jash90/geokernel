@@ -956,10 +956,15 @@ mod tests {
 
     #[test]
     fn skipped_arc_leaves_no_helpers() {
-        let imported = import(include_bytes!(
-            "../../../golden/ggb/transform/transform-arcpart-005.xml"
-        ))
-        .unwrap();
+        let xml = include_str!("../../../golden/ggb/transform/transform-arcpart-005.xml");
+        // Use a line for the end point so the arc fails after expanding its
+        // transformed conic into a helper.
+        let broken = xml.replace(
+            "a0=\"Shear[k, n, f]\" a1=\"P&apos;\" a2=\"Q&apos;\"",
+            "a0=\"Shear[k, n, f]\" a1=\"P&apos;\" a2=\"n\"",
+        );
+        assert_ne!(xml, broken);
+        let imported = import(broken.as_bytes()).unwrap();
         assert_eq!(imported.skipped.len(), 1, "{:?}", imported.skipped);
         assert_eq!(imported.skipped[0].label, "m");
         let c = script::load(&imported.script.join("\n")).unwrap();

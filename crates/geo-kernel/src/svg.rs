@@ -341,6 +341,7 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
             | Value::Bool(_)
             | Value::List { .. }
             | Value::HomogeneousPoint { .. }
+            | Value::Curve { .. }
             | Value::Undefined => {}
         }
     }

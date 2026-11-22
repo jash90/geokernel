@@ -21,30 +21,17 @@ use std::path::{Path, PathBuf};
 /// At the time of writing (see the assertions below for the exact counts).
 const MIN_FILES: usize = 1636;
 const MIN_ZIPS: usize = 37;
-const MIN_COMPARED: usize = 13085;
+const MIN_COMPARED: usize = 13091;
 /// Objects the importer may skip in the whole corpus (listed in `EXPECTED_SKIPPED`).
-const MAX_SKIPPED: usize = 10;
+const MAX_SKIPPED: usize = 4;
 /// Every object the importer may skip, as `case:label`. `polygon-small-001`
 /// is `Polygon(A)` of one point, which GeoGebra saves with the list `{A}` as
-/// its argument (an expression), and the three objects measured on it. The
-/// `m` of the `arcpart`/`secpart` cases is the image of `Arc(k, P, Q)` /
-/// `Sector(k, P, Q)` under a shear or a stretch: GeoGebra saves it as
-/// `Arc(Shear[k, n, f], P', Q')`, the part of an elliptic conic, which the
-/// kernel refuses on purpose (a part is taken of a circle). Nothing else may
-/// be skipped: the image of `Ray(A, u)`, which GeoGebra saves as
-/// `Ray(A', Vector[<transform>[Direction[g]]])`, and the images whose
-/// conic stays a circle are read as objects of the script first.
+/// its argument (an expression), and the three objects measured on it.
 const EXPECTED_SKIPPED: &[&str] = &[
     "polygon-small-001:p",
     "polygon-small-001:ar",
     "polygon-small-001:pe",
     "polygon-small-001:M",
-    "transform-arcpart-005:m",
-    "transform-arcpart-006:m",
-    "transform-arcpart-007:m",
-    "transform-secpart-005:m",
-    "transform-secpart-006:m",
-    "transform-secpart-007:m",
 ];
 
 /// An entry of `known-import-gaps.toml`.
@@ -459,17 +446,13 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
     );
     for key in totals.skipped_by_reason.keys() {
         assert!(
-            key.contains("is an expression")
-                || key.contains("depends on a skipped object")
-                // the part of an elliptic conic, which the kernel refuses on
-                // purpose (see `EXPECTED_SKIPPED`)
-                || key.contains("expected a circle"),
+            key.contains("is an expression") || key.contains("depends on a skipped object"),
             "an undocumented reason for skipping: {key}"
         );
     }
     assert_eq!(
         totals.skipped_by_group.keys().collect::<Vec<_>>(),
-        ["polygon", "transform"]
+        ["polygon"]
     );
     assert!(
         totals.unlabelled <= MAX_UNLABELLED,

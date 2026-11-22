@@ -117,6 +117,7 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Arc => &[Kind::Arc],
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
+        Kind::Curve => &[Kind::Curve],
     }
 }
 
@@ -472,6 +473,7 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         | Value::Arc { .. }
         | Value::Sector { .. }
         | Value::Locus { .. }
+        | Value::Curve { .. }
         | Value::Undefined => return None,
     })
 }
@@ -963,8 +965,7 @@ mod tests {
         assert!(err(&mut c, "a = Translate(A, B)").contains("expected a vector"));
         assert!(err(&mut c, "a = Translate(r, u)").contains("`r` is a number"));
         assert!(err(&mut c, "a = Ray(A, l)").contains("expected a point"));
-        // `Length` of a point is not handled here and not by any other group.
-        assert!(exec(&mut c, "a = Length(A)").is_err());
+        assert!(err(&mut c, "a = Length(l)").contains("expected a segment"));
         // Nothing was added by the failed lines.
         assert_eq!(c.len(), load(BASE).unwrap().len());
     }
