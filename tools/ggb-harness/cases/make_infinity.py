@@ -161,6 +161,11 @@ for line in ("r = d / (a - a)", "r = Length(w) / 0", "r = x(A) / 0", "r = y(B) /
              "r = 1 / (d - d)", "r = Area(k) / (a - a)", "r = m / 0", "r = 1 / (a m)"):
     case("outputs", GEOMETRY + [line],
          [setn("a", 0), mv("B", 1, 5), setn("a", 3), mv("B", 4, 2), mv("B", 4, 3), setn("a", 2)])
+# The function of calculus-degree-010 without its Degree line, which exhausts
+# the heap of the reference when that file is recorded again: the power
+# overflows at both ends of the samples while `a` moves.
+case("outputs", [num("a", 1), num("b", 1), "f(x) = (a x + b)^300"],
+     [setn("a", 2), setn("a", 0), setn("a", 1)])
 
 # ------------------------------------------------------- commands with an infinite number
 # Every command whose answer changed when an infinite number became a
