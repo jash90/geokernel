@@ -1,0 +1,392 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "lists-fold-001",
+      "group": "lists",
+      "script": [
+        "a = 1",
+        "b = 4",
+        "c = Product(k^2, k, 1, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 6.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        }
+      ]
+    },
+    {
+      "id": "lists-fold-002",
+      "group": "lists",
+      "script": [
+        "a = 1",
+        "b = 4",
+        "c = Product(k^2, k, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 6.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 518400.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 900.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 25.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 576.0 }
+        }
+      ]
+    },
+    {
+      "id": "lists-fold-003",
+      "group": "lists",
+      "script": [
+        "a = 1",
+        "b = 4",
+        "c = Product(k^2, k, 3, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 6.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 9.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 9.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 9.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 9.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 9.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 9.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 9.0 }
+        }
+      ]
+    },
+    {
+      "id": "lists-fold-004",
+      "group": "lists",
+      "script": [
+        "a = 1",
+        "b = 4",
+        "c = Product(k^2, k, 1.5, 3.8)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 6.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 81.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 81.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 81.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 81.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 81.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 81.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 81.0 }
+        }
+      ]
+    },
+    {
+      "id": "lists-fold-005",
+      "group": "lists",
+      "script": [
+        "a = 1",
+        "b = 4",
+        "c = Product(k, k, 1, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 6.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "lists-fold-006",
+      "group": "lists",
+      "script": [
+        "a = 1",
+        "b = 4",
+        "c = Product(2, k, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 6.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 16.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 32.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 16.0 }
+        }
+      ]
+    },
+    {
+      "id": "lists-fold-007",
+      "group": "lists",
+      "script": [
+        "a = 1",
+        "b = 4",
+        "c = Product(1 / k, k, 1, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "b", "value": 6.0 },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 0.041666666666666664 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 0.041666666666666664 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0013888888888888887 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0013888888888888887 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": true, "value": 0.041666666666666664 }
+        }
+      ]
+    }
+  ]
+}

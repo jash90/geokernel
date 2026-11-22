@@ -10,7 +10,7 @@
 
 mod format;
 mod numeric;
-mod strings;
+pub(crate) mod strings;
 mod table;
 
 use std::ops::Range;
@@ -45,6 +45,12 @@ pub(crate) enum TextOp {
     IndexOf,
     Length,
     Take,
+    /// `First(text[, n])` of a text (`AlgoFirstString`).
+    First,
+    /// `Last(text[, n])` of a text (`AlgoLastString`).
+    Last,
+    /// `Element(text, n)`: one character of a text (`AlgoTextElement`).
+    TextElement,
 }
 
 pub(super) const NAMES: &[&str] = &[
@@ -91,12 +97,29 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
         "IndexOf" => TextOp::IndexOf,
         "Length" => TextOp::Length,
         "Take" => TextOp::Take,
+        "First" => TextOp::First,
+        "Last" => TextOp::Last,
+        "Element" => TextOp::TextElement,
         _ => return Ok(None),
     };
-    if matches!(op, TextOp::Length | TextOp::IndexOf | TextOp::Take) {
+    if matches!(
+        op,
+        TextOp::Length
+            | TextOp::IndexOf
+            | TextOp::Take
+            | TextOp::First
+            | TextOp::Last
+            | TextOp::TextElement
+    ) {
         return p.list_command(|p, args, _| {
-            let first = args[0];
-            if p.is_text(first) {
+            // `IndexOf` takes its text form only when the haystack is a
+            // text too (`CmdIndexOf`); the others read their first argument
+            let text_at = |i: usize| args.get(i).is_some_and(|&a| p.is_text(a));
+            let takes = match op {
+                TextOp::IndexOf => text_at(0) && text_at(1),
+                _ => text_at(0),
+            };
+            if takes {
                 return Ok(Some(call_node(p, op, args)));
             }
             Ok(None)
@@ -153,6 +176,9 @@ pub(in crate::expr) fn result_type(
         (IndexOf, [Text, Text]) => true,
         (IndexOf, [Text, Text, n]) | (Take, [Text, n]) => number(*n),
         (Take, [Text, a, b]) => number(*a) && number(*b),
+        (First | Last, [Text]) => true,
+        (First | Last, [Text, n]) => number(*n),
+        (TextElement, [Text, n]) => number(*n),
         _ => false,
     };
     if !valid {
@@ -246,7 +272,7 @@ impl<const M: bool> Ctx<'_, M> {
                 numeric::continued(number(a), level, c.or(boolean).is_some_and(flag))
             }
             Table => table::evaluate(self, &args),
-            UnicodeToLetter | UnicodeToText | ReplaceAll | Take => {
+            UnicodeToLetter | UnicodeToText | ReplaceAll | Take | First | Last | TextElement => {
                 strings::evaluate(self, op, &args)
             }
             _ => None,
