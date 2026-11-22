@@ -31,6 +31,7 @@
 
 use crate::{ImportError, Settings};
 use geo_kernel::kernel::control::ControlScript;
+use geo_kernel::kernel::image::{ImageCorner, ImageStyle};
 use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::kernel::EquationForm;
 use quick_xml::events::{BytesStart, Event};
@@ -75,6 +76,18 @@ pub struct Element {
     /// A `<startPoint>` of a vector: not used, counted for a note.
     pub start_point: bool,
     pub text: Option<Box<TextStyle>>,
+    pub image: Option<Box<SavedImage>>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SavedImage {
+    pub file: Option<String>,
+    pub screen: Option<[f64; 2]>,
+    pub corners: [Option<ImageCorner<String>>; 4],
+    pub anchors_in_screen_coords: bool,
+    pub centered: bool,
+    pub style: ImageStyle,
+    pub invalid_position: bool,
 }
 
 /// The presentation properties of a saved text.
@@ -152,6 +165,58 @@ fn value_of(a: &quick_xml::events::attributes::Attribute) -> Result<String, Impo
     Ok(a.normalized_value(XmlVersion::Implicit1_0)
         .map_err(bad)?
         .into_owned())
+}
+
+fn read_image(el: &mut Element, name: &str, e: &BytesStart) -> Result<(), ImportError> {
+    let image = el.image.get_or_insert_with(Box::default);
+    let read = |key| attr(e, key);
+    let number = |key| read(key).map(|s| s.and_then(|s| s.parse::<f64>().ok()));
+    let flag = |key| read(key).map(|s| s.is_some_and(|s| s == "true"));
+    match name {
+        "file" => image.file = read("name")?,
+        "inBackground" => image.style.background = flag("val")?,
+        "interpolate" => image.style.interpolate = flag("val")?,
+        "centered" => image.centered = flag("val")?,
+        "objColor" => {
+            if let Some(alpha) = number("alpha")? {
+                image.style.alpha = (alpha as f32).clamp(0.0, 1.0);
+            }
+        }
+        "cropBox" if flag("cropped")? => {
+            if let (Some(x), Some(y), Some(w), Some(h)) = (
+                number("x")?,
+                number("y")?,
+                number("width")?,
+                number("height")?,
+            ) {
+                image.style.crop = Some([x, y, w, h]);
+            }
+        }
+        "absoluteScreenLocation" => {
+            if let (Some(x), Some(y)) = (number("x")?, number("y")?) {
+                image.screen = Some([x, y]);
+            } else {
+                image.invalid_position = true;
+            }
+        }
+        "startPoint" => {
+            let index = read("number")?.map_or(Some(0), |s| s.parse::<usize>().ok());
+            if let Some(slot) = index.and_then(|i| image.corners.get_mut(i)) {
+                image.anchors_in_screen_coords |= flag("absolute")?;
+                *slot = if let Some(name) = read("exp")?.or(read("label")?) {
+                    Some(ImageCorner::Point(name))
+                } else if let (Some(x), Some(y)) = (number("x")?, number("y")?) {
+                    let z = number("z")?.unwrap_or(1.0);
+                    Some(ImageCorner::Coordinates([x / z, y / z]))
+                } else {
+                    image.invalid_position = true;
+                    None
+                };
+            }
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 fn read_text_style(el: &mut Element, name: &str, e: &BytesStart) -> Result<(), ImportError> {
@@ -418,6 +483,18 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "slider" if element.is_some() => {
                     element.as_mut().expect("checked above").slider =
                         Some([attr(e, "min")?, attr(e, "max")?]);
+                }
+                "file"
+                | "inBackground"
+                | "interpolate"
+                | "centered"
+                | "objColor"
+                | "cropBox"
+                | "absoluteScreenLocation"
+                | "startPoint"
+                    if element.as_ref().is_some_and(|el| el.kind == "image") =>
+                {
+                    read_image(element.as_mut().expect("checked above"), &name, e)?;
                 }
                 "startPoint" | "absoluteScreenLocation" | "labelOffset" | "isLaTeX" | "font"
                     if element.as_ref().is_some_and(|el| el.kind == "text") =>

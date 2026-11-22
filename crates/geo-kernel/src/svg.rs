@@ -364,6 +364,7 @@ pub fn render_visible(
             | Value::Curve { .. }
             | Value::Button
             | Value::InputBox
+            | Value::Image
             | Value::Undefined => {}
         }
     }

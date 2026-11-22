@@ -68,6 +68,7 @@ pub(crate) fn same_value(a: Value, b: Value) -> bool {
         (Value::Polygon { area }, Value::Polygon { area: a2 }) => s(area, a2),
         (Value::PolyLine { length }, Value::PolyLine { length: l2 }) => s(length, l2),
         (Value::Function, Value::Function)
+        | (Value::Image, Value::Image)
         | (Value::FunctionNVar, Value::FunctionNVar)
         | (Value::Undefined, Value::Undefined) => true,
         _ => false,
@@ -202,6 +203,7 @@ fn head_parts<'a>(
         .map(|g| g[0].as_str())
         .filter(|&p| c.id(p).is_some_and(|p| c.kind(p) == Kind::Polygon));
     match (c.def(id), polygon) {
+        (Def::Image(_), _) => ([label, "", "", "", "", "", "", ""], 1),
         (Def::Segment(p, q), Some(poly)) => (
             [
                 label,
@@ -343,7 +345,7 @@ fn set_value(row: &mut Row, text: String, free_number: Option<f64>) -> bool {
         let head = format!("{} =", row.label);
         changed |= row.head != head;
         row.head = head;
-    } else if matches!(row.kind, Kind::Function | Kind::FunctionNVar) {
+    } else if matches!(row.kind, Kind::Function | Kind::FunctionNVar | Kind::Image) {
         // A function's value is the expression its definition shows.
         changed |= row.value.is_some();
         row.value = None;
@@ -541,6 +543,8 @@ impl Workbench {
                 };
                 let (head, second) = if free_number.is_some() {
                     (format!("{label} ="), None)
+                } else if kind == Kind::Image {
+                    (label.clone(), None)
                 } else if matches!(kind, Kind::Function | Kind::FunctionNVar) {
                     let head = match rhs.get(label.as_str()) {
                         Some(rhs) => format!("{label} = {rhs}"),

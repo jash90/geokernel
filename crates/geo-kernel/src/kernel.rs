@@ -35,6 +35,7 @@ pub mod angle;
 mod axis;
 #[path = "control.rs"]
 pub mod control;
+pub mod image;
 #[path = "algo/locus.rs"]
 pub mod locus;
 mod slider;
@@ -151,6 +152,7 @@ pub enum Kind {
     Curve,
     Button,
     InputBox,
+    Image,
 }
 
 impl Kind {
@@ -185,6 +187,7 @@ impl fmt::Display for Kind {
             Kind::Curve => "curve",
             Kind::Button => "button",
             Kind::InputBox => "input box",
+            Kind::Image => "image",
         })
     }
 }
@@ -248,6 +251,7 @@ pub enum Value {
     Bool(bool),
     Button,
     InputBox,
+    Image,
     /// A defined function; its values come from
     /// [`Construction::function_value`].
     Function,
@@ -366,7 +370,7 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
-            Value::Bool(_) | Value::Button | Value::InputBox => true,
+            Value::Bool(_) | Value::Button | Value::InputBox | Value::Image => true,
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
             Value::Arc { length } => length.is_finite(),
@@ -407,6 +411,7 @@ pub enum Def {
     Boolean(bool),
     Button,
     InputBox(Option<Id>),
+    Image(IdList),
     /// A free angle in radians, such as `c = 30°`: a number the user can
     /// change that `floor`, `ceil` and `round` treat in whole degrees
     /// (GeoGebra's independent `GeoAngle`).
@@ -597,6 +602,7 @@ impl Def {
             Def::Boolean(_) => Kind::Boolean,
             Def::Button => Kind::Button,
             Def::InputBox(_) => Kind::InputBox,
+            Def::Image(_) => Kind::Image,
             Def::Angle(_)
             | Def::Measure(MeasureDef::Angle(..))
             | Def::Polygon(PolygonDef::Angle { .. }) => Kind::Angle,
@@ -630,6 +636,7 @@ impl Def {
     /// The stored list of parents this definition reads, if it has one.
     pub fn list(&self) -> Option<IdList> {
         match self {
+            Def::Image(list) => Some(*list),
             Def::Polygon(d) => d.list(),
             Def::GeneralConic(d) => d.list(),
             _ => None,
@@ -640,6 +647,7 @@ impl Def {
     /// A definition without a list is returned unchanged.
     pub fn with_list(self, list: IdList) -> Def {
         match self {
+            Def::Image(_) => Def::Image(list),
             Def::Polygon(d) => Def::Polygon(d.with_list(list)),
             Def::GeneralConic(d) => Def::GeneralConic(d.with_list(list)),
             other => other,
@@ -671,6 +679,7 @@ impl Def {
             | Def::Boolean(_)
             | Def::Button
             | Def::InputBox(None)
+            | Def::Image(_)
             | Def::Angle(_)
             | Def::Expr(_)
             | Def::Equation(_) => Parents::none(),
@@ -759,6 +768,7 @@ pub struct Checkpoint {
     lists: usize,
     exprs: usize,
     frozen_line_starts: usize,
+    image_assets: usize,
     /// How many rollbacks the construction had made when it was taken.
     generation: u64,
 }
@@ -792,6 +802,7 @@ pub struct Construction {
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
+    images: image::Images,
     text_presentations: HashMap<Id, text::TextOverrides>,
     /// Selected equation forms and their display revisions.
     equation_forms: HashMap<Id, (EquationForm, u64)>,
@@ -1197,6 +1208,7 @@ impl Construction {
             lists: self.lists.len(),
             exprs: self.exprs.len(),
             frozen_line_starts: self.frozen_line_starts.len(),
+            image_assets: self.images.asset_count(),
             generation: self.generation,
         }
     }
@@ -1256,6 +1268,7 @@ impl Construction {
                     .flatten()
                     .all(|bound| bound.exists_before(at.len))
         });
+        self.images.discard_since(at.len, at.image_assets);
         self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
@@ -2166,6 +2179,7 @@ impl Construction {
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
             Def::XAxis | Def::YAxis | Def::Boolean(_) | Def::Button | Def::InputBox(None) => Ok(()),
+            Def::Image(list) => self.expect_list(list, POINT),
             Def::InputBox(Some(linked)) => {
                 if self.defs.get(linked.0).is_some() || axis::get(linked).is_some() {
                     Ok(())
@@ -2300,6 +2314,11 @@ impl Construction {
             Def::Boolean(v) => Some(Value::Bool(v)),
             Def::Button => Some(Value::Button),
             Def::InputBox(_) => Some(Value::InputBox),
+            Def::Image(list) => self
+                .list(list)
+                .iter()
+                .all(|&id| self.value(id).is_defined())
+                .then_some(Value::Image),
             Def::Line(p, q) => algo::basic::line(self, p, q),
             Def::Segment(p, q) => algo::basic::segment(self, p, q),
             Def::Midpoint(p, q) => algo::basic::midpoint(self, p, q),

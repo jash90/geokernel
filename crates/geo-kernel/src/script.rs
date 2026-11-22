@@ -97,6 +97,7 @@ pub fn load(src: &str) -> Result<Construction, ScriptError> {
 }
 
 pub mod equation;
+pub mod image;
 pub mod saved;
 pub mod text;
 
@@ -339,6 +340,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         if let Some((form @ ("$checkBox" | "$button" | "$inputBox"), args)) = split_call(rhs) {
             return crate::kernel::control::define(c, name, form, &args).map(Some);
         }
+    }
+    if rhs.starts_with("$image(") {
+        return image::define(c, name, rhs).map(Some);
     }
     if let Some(result) = define_saved(c, name, rhs) {
         return result.map(Some);
@@ -1185,9 +1189,11 @@ fn is_finite(v: &Value) -> bool {
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
         Value::Locus { .. } => true,
-        Value::HomogeneousPoint { .. } | Value::Button | Value::InputBox | Value::Undefined => {
-            false
-        }
+        Value::HomogeneousPoint { .. }
+        | Value::Button
+        | Value::InputBox
+        | Value::Image
+        | Value::Undefined => false,
     }
 }
 

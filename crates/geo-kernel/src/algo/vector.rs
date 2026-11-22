@@ -120,7 +120,7 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
         Kind::Curve => &[Kind::Curve],
-        Kind::Button | Kind::InputBox => &[],
+        Kind::Button | Kind::InputBox | Kind::Image => &[],
     }
 }
 
@@ -481,6 +481,7 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         | Value::Curve { .. }
         | Value::Button
         | Value::InputBox
+        | Value::Image
         | Value::Undefined => return None,
     })
 }

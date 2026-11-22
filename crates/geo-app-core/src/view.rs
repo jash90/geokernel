@@ -68,6 +68,17 @@ pub fn content_bounds(c: &Construction) -> Option<Bounds> {
                     add(&mut b, xmax, ymax);
                 }
             }
+            Value::Image => {
+                if let Some(points) = c
+                    .image(id)
+                    .filter(|image| !image.placement.is_screen())
+                    .and_then(|_| c.image_quad(id, DEFAULT_SCALE))
+                {
+                    for [x, y] in points {
+                        add(&mut b, x, y);
+                    }
+                }
+            }
             Value::Text => {
                 if let Some(TextPosition::World { x, y }) = c.text_position(id) {
                     add(&mut b, x, y);

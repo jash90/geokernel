@@ -62,6 +62,7 @@ struct Counts {
     shapes: u64,
     texts: u64,
     vertices: u64,
+    raster_quads: u64,
     allocs: u64,
     bytes: u64,
     /// Objects looked through for polygon sides (`style::objects_scanned`).
@@ -142,6 +143,9 @@ impl Window {
         for p in self.ctx.tessellate(out.shapes, out.pixels_per_point) {
             if let epaint::Primitive::Mesh(m) = p.primitive {
                 c.vertices += m.vertices.len() as u64;
+                if m.texture_id != epaint::TextureId::default() {
+                    c.raster_quads += (m.indices.len() / 6) as u64;
+                }
             }
         }
         c
@@ -532,6 +536,59 @@ fn locus_frames_stay_within_the_budget() {
     assert!(idle.allocs <= 2_850 && idle.bytes <= 560_000, "{idle:?}");
     assert_eq!((idle.rows_formatted, idle.rows_built), (0, 0));
     assert!(!idle.immediate);
+}
+
+#[test]
+fn raster_frames_stay_within_the_budget() {
+    use geo_kernel::kernel::image::{ImagePlacement, ImageStyle};
+    use geo_kernel::script::image::definition;
+
+    let (mut script, mid) = grid(82);
+    let mut fixture = Workbench::default();
+    fixture
+        .load_bytes(
+            include_bytes!("../../../golden/ggb/saved/saved-images-001.ggb"),
+            "raster",
+        )
+        .unwrap();
+    let snapshot = fixture.snapshot_text();
+    script += snapshot
+        .lines()
+        .find(|line| line.starts_with("$imageAsset("))
+        .unwrap();
+    script.push('\n');
+    let name = &fixture
+        .construction()
+        .image(fixture.construction().id("fixedImage").unwrap())
+        .unwrap()
+        .name;
+    for i in 0..16 {
+        let placement = ImagePlacement::Screen([30.0 + f64::from(i) * 14.0, 60.0]);
+        let style = ImageStyle {
+            background: i % 2 == 0,
+            ..ImageStyle::default()
+        };
+        script += &format!("image_{{{i}}} = {}\n", definition(name, placement, style));
+    }
+
+    let mut w = Window::with(&script, mid);
+    assert_eq!(w.app.wb.construction().len(), 1000);
+    let idle = w.settled(1);
+    w.app.camera.as_mut().unwrap().cx += 1.0;
+    let panned = w.frames(1);
+    for counts in [idle, panned] {
+        assert_eq!(counts.raster_quads, 16, "{counts:?}");
+        assert!(
+            counts.shapes <= 2_600 && counts.texts <= 1_040,
+            "{counts:?}"
+        );
+        assert!(counts.vertices <= 95_000, "{counts:?}");
+        assert!(
+            counts.allocs <= 2_900 && counts.bytes <= 575_000,
+            "{counts:?}"
+        );
+        assert_eq!((counts.rows_formatted, counts.rows_built), (0, 0));
+    }
 }
 
 /// The benchmark's grid of 45 cells (540 objects, with the triangles'

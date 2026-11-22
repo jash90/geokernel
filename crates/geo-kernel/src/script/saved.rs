@@ -2,13 +2,20 @@
 
 use super::{object, split_call};
 use crate::kernel::control::{
-    decode_scripts, decode_text, encode_scripts, encode_text, ControlScript,
+    decode_bytes, decode_scripts, decode_text, encode_bytes, encode_scripts, encode_text,
+    ControlScript,
 };
+use crate::kernel::image::{RasterAsset, MAX_ASSET_BYTES};
 use crate::Construction;
 use std::fmt;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Property {
+    ImageAsset {
+        name: Arc<str>,
+        asset: Arc<RasterAsset>,
+    },
     SliderBounds {
         label: String,
         bounds: [Option<String>; 2],
@@ -20,14 +27,16 @@ pub enum Property {
 }
 
 impl Property {
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Option<&str> {
         match self {
-            Self::SliderBounds { label, .. } | Self::ObjectScripts { label, .. } => label,
+            Self::SliderBounds { label, .. } | Self::ObjectScripts { label, .. } => Some(label),
+            Self::ImageAsset { .. } => None,
         }
     }
 
     pub fn apply(&self, c: &mut Construction) -> Result<(), String> {
         match self {
+            Self::ImageAsset { name, asset } => c.register_image_asset(name.clone(), asset.clone()),
             Self::SliderBounds { label, bounds } => {
                 let id = object(c, label)?;
                 let [min, max] = bounds;
@@ -77,6 +86,14 @@ impl Property {
 impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ImageAsset { name, asset } => {
+                write!(
+                    f,
+                    "$imageAsset({}, {})",
+                    encode_text(name),
+                    encode_bytes(asset.bytes())
+                )
+            }
             Self::SliderBounds {
                 label,
                 bounds: [min, max],
@@ -104,12 +121,25 @@ impl fmt::Display for Property {
 }
 
 pub fn parse(line: &str) -> Option<Result<Property, String>> {
-    if !line.starts_with("$sliderBounds(") && !line.starts_with("$objectScripts(") {
+    if !line.starts_with("$sliderBounds(")
+        && !line.starts_with("$objectScripts(")
+        && !line.starts_with("$imageAsset(")
+    {
         return None;
     }
     Some((|| {
         let (form, args) = split_call(line).ok_or("invalid saved property")?;
         match (form, args.as_slice()) {
+            ("$imageAsset", [name, bytes]) => {
+                if bytes.len() as u64 > 2 * MAX_ASSET_BYTES + 1 {
+                    return Err("image asset is too large".into());
+                }
+                let asset = RasterAsset::decode(decode_bytes(bytes)?)?;
+                Ok(Property::ImageAsset {
+                    name: decode_text(name)?.into(),
+                    asset: Arc::new(asset),
+                })
+            }
             ("$sliderBounds", [label, min, max]) => {
                 let bound = |field| (field != "_").then(|| decode_text(field)).transpose();
                 Ok(Property::SliderBounds {

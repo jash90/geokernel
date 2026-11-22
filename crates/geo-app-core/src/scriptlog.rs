@@ -680,7 +680,9 @@ impl Log {
             Op::Define(e) if grouped => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Define(e) => e.labels != labels,
             Op::Set { label, .. } | Op::EquationStyle { label, .. } => !labels.contains(label),
-            Op::SavedProperty(property) => !labels.iter().any(|label| label == property.label()),
+            Op::SavedProperty(property) => !property
+                .label()
+                .is_some_and(|label| labels.iter().any(|l| l == label)),
             Op::Freeze { .. } | Op::MovePoints(_) | Op::TextProperties(_) => true,
         });
         self.removed.extend(labels);
@@ -836,14 +838,16 @@ impl Log {
                     }
                 }
                 Op::SavedProperty(property) => {
-                    if !gone.contains(property.label()) && property.apply(&mut c).is_ok() {
+                    if property.label().is_none_or(|label| !gone.contains(label))
+                        && property.apply(&mut c).is_ok()
+                    {
                         match &mut same {
                             Some(n) => *n = i + 1,
                             None => kept.ops.push((*op).clone()),
                         }
                     } else {
                         diverge(&mut kept, &mut same);
-                        if !gone.contains(property.label()) {
+                        if property.label().is_none_or(|label| !gone.contains(label)) {
                             if let Some(property) = property.as_ref().clone().restore(&mut c).0 {
                                 kept.ops.push(Op::SavedProperty(Box::new(property)));
                             }
@@ -981,7 +985,7 @@ impl Log {
                     }
                 }
                 Op::SavedProperty(property) => {
-                    if !gone.contains(property.label()) {
+                    if property.label().is_none_or(|label| !gone.contains(label)) {
                         if let Some(property) = property.as_ref().clone().restore(&mut c).0 {
                             kept.ops.push(Op::SavedProperty(Box::new(property)));
                         }

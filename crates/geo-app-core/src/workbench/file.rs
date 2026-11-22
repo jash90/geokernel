@@ -403,8 +403,44 @@ mod tests {
         }
     }
 
+    #[test]
+    fn image_rows_and_assets_survive_editing_and_snapshot_restore() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-images-001.ggb"),
+            "raster",
+        )
+        .unwrap();
+        assert_eq!(wb.notice, None);
+        let row = wb
+            .rows()
+            .iter()
+            .find(|row| row.label == "anchoredImage")
+            .unwrap();
+        assert_eq!(row.head, "anchoredImage");
+        assert_eq!(row.value, None);
+
+        let anchor = wb.construction().id("A").unwrap();
+        assert!(wb.move_point(anchor, -3.0, 0.0));
+        let image = wb.construction().id("anchoredImage").unwrap();
+        let quad = wb.construction().image_quad(image, 50.0).unwrap();
+        let asset = wb.construction().image(image).unwrap().asset.clone();
+        assert_round_trip(&mut wb, "images");
+        let mut copy = Workbench::default();
+        copy.restore_text(&wb.snapshot_text()).unwrap();
+        let image = copy.construction().id("anchoredImage").unwrap();
+        assert_eq!(*copy.construction().image(image).unwrap().asset, *asset);
+        let anchor = copy.construction().id("A").unwrap();
+        assert!(copy.move_point(anchor, -3.0, 0.0));
+        let d = copy.construction().id("D").unwrap();
+        assert!(copy.move_point(d, -1.0, 2.0));
+        let b = copy.construction().id("B").unwrap();
+        assert!(copy.move_point(b, 1.0, 0.0));
+        assert_eq!(copy.construction().image_quad(image, 50.0), Some(quad));
+    }
+
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 39;
+    const GOLDEN_FILES: usize = 41;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]

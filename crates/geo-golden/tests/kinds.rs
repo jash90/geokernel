@@ -202,6 +202,15 @@ fn samples() -> Samples {
             }
         }
     }
+    let rasters = include_bytes!("../../../golden/ggb/saved/saved-images-001.ggb");
+    let imported = geo_import::import(rasters).unwrap();
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    s.any.insert(
+        "Image".into(),
+        c.images()
+            .map(|(id, _)| (imported.script.clone(), c.label(id).into()))
+            .collect(),
+    );
     s.single.retain(|_, v| !v.is_empty());
     s
 }
@@ -512,7 +521,11 @@ fn checked_cells_agree_with_the_code() {
     let s = samples();
     let imported = imported_kinds();
     let draw = code_only(
-        &(read("crates/geo-app/src/draw.rs") + "\n" + &read("crates/geo-app/src/curves/mod.rs")),
+        &(read("crates/geo-app/src/draw.rs")
+            + "\n"
+            + &read("crates/geo-app/src/curves/mod.rs")
+            + "\n"
+            + &read("crates/geo-app/src/draw/image.rs")),
     );
     let mut errors = Vec::new();
     for r in &rows {

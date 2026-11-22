@@ -32,6 +32,7 @@ const DEPENDENT_POINT_RADIUS: f32 = 4.0;
 pub const CURVE_WIDTH: f32 = 2.5;
 const LABEL_FONT: f32 = 16.0;
 
+pub(crate) mod image;
 mod text;
 
 /// What the picture needs besides the construction.

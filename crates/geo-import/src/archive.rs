@@ -10,6 +10,7 @@
 use crate::ImportError;
 use miniz_oxide::inflate::{decompress_to_vec_with_limit, TINFLStatus};
 use std::borrow::Cow;
+use std::collections::HashMap;
 
 /// The most unpacked XML the importer reads (a guard against zip bombs).
 pub const MAX_XML_BYTES: u64 = 256 * 1024 * 1024;
@@ -107,8 +108,10 @@ fn find_end(bytes: &[u8]) -> Result<(usize, usize), ImportError> {
     }
 }
 
-/// The central-directory entry called [`XML_FILE`], if the archive has one.
-fn find_entry(bytes: &[u8]) -> Result<Option<Entry>, ImportError> {
+fn scan_entries<'a>(
+    bytes: &'a [u8],
+    mut visit: impl FnMut(&'a [u8], usize) -> bool,
+) -> Result<(), ImportError> {
     let (mut at, count) = find_end(bytes)?;
     if count > MAX_ZIP_ENTRIES {
         return Err(ImportError::TooManyEntries(count));
@@ -123,30 +126,61 @@ fn find_entry(bytes: &[u8]) -> Result<Option<Entry>, ImportError> {
         let name = bytes
             .get(at.saturating_add(46)..at.saturating_add(46).saturating_add(name_len))
             .ok_or_else(|| zip_error("truncated"))?;
-        if name == XML_FILE.as_bytes() {
-            let flags = u16_at(bytes, at + 8)?;
-            if flags & 1 != 0 {
-                return Err(zip_error("encrypted entries are not supported"));
-            }
-            let entry = Entry {
-                method: u16_at(bytes, at + 10)?,
-                crc: u32_at(bytes, at + 16)? as u32,
-                compressed: u32_at(bytes, at + 20)?,
-                size: u32_at(bytes, at + 24)?,
-                local_offset: u32_at(bytes, at + 42)?,
-            };
-            // 0xFFFFFFFF in any of these means the real value is in a zip64
-            // extra field, which is not read.
-            if [entry.compressed, entry.size, entry.local_offset].contains(&0xFFFF_FFFF) {
-                return Err(zip_error("zip64 entries are not supported"));
-            }
-            return Ok(Some(entry));
+        if !visit(name, at) {
+            return Ok(());
         }
         at = at
             .checked_add(46 + name_len + extra_len + comment_len)
             .ok_or_else(|| zip_error("damaged central directory"))?;
     }
-    Ok(None)
+    Ok(())
+}
+
+fn read_entry(bytes: &[u8], at: usize) -> Result<Entry, ImportError> {
+    let flags = u16_at(bytes, at + 8)?;
+    if flags & 1 != 0 {
+        return Err(zip_error("encrypted entries are not supported"));
+    }
+    let entry = Entry {
+        method: u16_at(bytes, at + 10)?,
+        crc: u32_at(bytes, at + 16)? as u32,
+        compressed: u32_at(bytes, at + 20)?,
+        size: u32_at(bytes, at + 24)?,
+        local_offset: u32_at(bytes, at + 42)?,
+    };
+    if [entry.compressed, entry.size, entry.local_offset].contains(&0xFFFF_FFFF) {
+        return Err(zip_error("zip64 entries are not supported"));
+    }
+    Ok(entry)
+}
+
+/// Index the archive once when the XML references image assets.
+pub(crate) struct AssetArchive<'a> {
+    bytes: &'a [u8],
+    offsets: HashMap<&'a [u8], usize>,
+}
+
+impl<'a> AssetArchive<'a> {
+    pub(crate) fn new(bytes: &'a [u8]) -> Result<Self, ImportError> {
+        let mut offsets = HashMap::new();
+        scan_entries(bytes, |name, offset| {
+            offsets.entry(name).or_insert(offset);
+            true
+        })?;
+        Ok(Self { bytes, offsets })
+    }
+
+    pub(crate) fn image(&self, name: &str) -> Result<Vec<u8>, String> {
+        let offset = self
+            .offsets
+            .get(name.as_bytes())
+            .ok_or("image asset is missing from the archive")?;
+        let entry = read_entry(self.bytes, *offset).map_err(|e| e.to_string())?;
+        if entry.size > geo_kernel::kernel::image::MAX_ASSET_BYTES {
+            return Err("image asset is too large".into());
+        }
+        extract_entry(self.bytes, entry).map_err(|e| e.to_string())
+    }
 }
 
 const CRC_TABLE: [u32; 256] = {
@@ -176,10 +210,23 @@ fn crc32(data: &[u8]) -> u32 {
 }
 
 fn unzip(bytes: &[u8]) -> Result<Vec<u8>, ImportError> {
-    let entry = find_entry(bytes)?.ok_or(ImportError::MissingXml)?;
+    let mut offset = None;
+    scan_entries(bytes, |name, at| {
+        if name == XML_FILE.as_bytes() {
+            offset = Some(at);
+            false
+        } else {
+            true
+        }
+    })?;
+    let entry = read_entry(bytes, offset.ok_or(ImportError::MissingXml)?)?;
     if entry.size > MAX_XML_BYTES {
         return Err(ImportError::TooLarge);
     }
+    extract_entry(bytes, entry)
+}
+
+fn extract_entry(bytes: &[u8], entry: Entry) -> Result<Vec<u8>, ImportError> {
     let at = usize::try_from(entry.local_offset).map_err(|_| zip_error("bad offset"))?;
     if u32_at(bytes, at)? != LOCAL as u64 {
         return Err(zip_error("damaged local header"));

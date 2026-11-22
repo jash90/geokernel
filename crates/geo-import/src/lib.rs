@@ -188,7 +188,14 @@ pub fn import(bytes: &[u8]) -> Result<Imported, ImportError> {
         let text = archive::extract_xml(bytes)?;
         xml::parse(&text)?
     };
-    convert::convert(doc)
+    let archive = (archive::is_zip(bytes)
+        && doc
+            .items
+            .iter()
+            .any(|item| matches!(item, xml::Item::Element(element) if element.kind == "image")))
+    .then(|| archive::AssetArchive::new(bytes))
+    .transpose()?;
+    convert::convert_with_assets(doc, archive.as_ref())
 }
 
 /// Whether `bytes` look like a construction file (a zip archive, or XML whose

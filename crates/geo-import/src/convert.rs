@@ -7,11 +7,13 @@
 //! executed on a scratch [`Construction`] before it is accepted, so whatever
 //! the kernel cannot do is skipped with the kernel's message.
 
+use crate::archive::AssetArchive;
 use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
 use geo_kernel::kernel::control::{encode_scripts, encode_text, visibility_boolean};
+use geo_kernel::kernel::image::{ImageCorner, ImagePlacement, RasterAsset};
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
 use geo_kernel::kernel::{angle::AngleStyle, Def};
 use geo_kernel::script::equation::Style as EquationStyle;
@@ -22,6 +24,7 @@ use geo_kernel::script::text::{
 use geo_kernel::script::{exec, is_vector_label, multi_output_count};
 use geo_kernel::{Construction, Id, Kind, Value};
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 /// The longest text a reason may quote from the file, in characters.
 const QUOTE_CHARS: usize = 60;
@@ -43,6 +46,13 @@ pub fn quote(text: &str) -> String {
 
 /// Runs the whole conversion.
 pub fn convert(doc: Document) -> Result<Imported, ImportError> {
+    convert_with_assets(doc, None)
+}
+
+pub(crate) fn convert_with_assets(
+    doc: Document,
+    archive: Option<&AssetArchive<'_>>,
+) -> Result<Imported, ImportError> {
     let mut c = Converter {
         function_path_bounds: doc.function_path_bounds,
         ..Converter::default()
@@ -50,6 +60,7 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
     let mut flags = Flags::default();
     let mut elements = BTreeMap::new();
     let mut polygon_inputs = BTreeMap::new();
+    let mut images = Vec::new();
     for item in &doc.items {
         match item {
             Item::Expression { .. } => {}
@@ -82,6 +93,11 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
             } => c.command(name, inputs, outputs, &elements)?,
             Item::Element(el) => {
                 flags.count(el);
+                if el.kind == "image" && !c.produced.contains(&el.label) {
+                    c.claim(&el.label)?;
+                    images.push(el.as_ref());
+                    continue;
+                }
                 let points = polygon_inputs.get(el.label.as_str()).and_then(|inputs| {
                     inputs
                         .iter()
@@ -98,6 +114,11 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
                 c.element(el, points.as_deref(), doc.gui_font_size.unwrap_or(12.0))?;
             }
         }
+    }
+    // Saved corner references can name points that appear later in the file.
+    let mut assets = BTreeMap::new();
+    for el in images {
+        c.image(el, archive, &mut assets)?;
     }
     for el in elements.values() {
         c.restore_slider(el);
@@ -640,6 +661,76 @@ impl Converter {
         Ok(())
     }
 
+    fn image<'a>(
+        &mut self,
+        el: &'a Element,
+        archive: Option<&AssetArchive<'_>>,
+        assets: &mut BTreeMap<&'a str, Result<(), String>>,
+    ) -> Result<(), ImportError> {
+        let line = (|| {
+            let image = el
+                .image
+                .as_deref()
+                .ok_or("the image has no saved properties")?;
+            let name = image
+                .file
+                .as_deref()
+                .filter(|name| !name.is_empty())
+                .ok_or("the image has no asset name")?;
+            if image.invalid_position {
+                return Err("invalid image position".into());
+            }
+            let corner = |i: usize| {
+                image.corners[i].as_ref().map(|corner| match corner {
+                    ImageCorner::Coordinates(coords) => ImageCorner::Coordinates(*coords),
+                    ImageCorner::Point(label) => ImageCorner::Point(label.as_str()),
+                })
+            };
+            let placement = match image.screen {
+                Some(coords) => ImagePlacement::Screen(coords),
+                None => ImagePlacement::World {
+                    corners: if image.centered {
+                        [corner(3), None, None]
+                    } else {
+                        [corner(0), corner(1), corner(2)]
+                    },
+                    centered: image.centered,
+                    screen_coords: image.anchors_in_screen_coords,
+                },
+            };
+            assets
+                .entry(name)
+                .or_insert_with(|| {
+                    let bytes = archive
+                        .ok_or("the image has no archive asset")?
+                        .image(name)?;
+                    let asset = Arc::new(RasterAsset::decode(bytes)?);
+                    let property = Property::ImageAsset {
+                        name: name.into(),
+                        asset,
+                    };
+                    property.apply(&mut self.kernel)?;
+                    self.out.script.push(property.to_string());
+                    Ok(())
+                })
+                .as_ref()
+                .map_err(Clone::clone)?;
+            let rhs = geo_kernel::script::image::definition(name, placement, image.style);
+            Ok(format!("{} = {rhs}", el.label))
+        })();
+        match line {
+            Ok(line) => match self.run(&line, std::slice::from_ref(&el.label))? {
+                Ok(()) => {
+                    self.out.script.push(line);
+                    self.record_element(el, None, None);
+                }
+                Err(e) => self.skip(&el.label, &el.kind, e),
+            },
+            Err(e) => self.skip(&el.label, &el.kind, e),
+        }
+        Ok(())
+    }
+
     fn define_element(
         &mut self,
         el: &Element,
@@ -1059,7 +1150,6 @@ fn control_line(label: &str, form: &str, value: Option<&str>, element: Option<&E
 fn unsupported_element(kind: &str) -> String {
     let reason = match kind {
         "audio" | "video" | "embed" => "out of scope: media playback and embedded applications",
-        "image" => "there is no raster image kind or asset renderer",
         "implicitpoly" => "there is no implicit curve kind",
         "penstroke" | "turtle" => "there is no corresponding stroke or turtle kind",
         _ => return format!("the element type `{}` is not supported", quote(kind)),
@@ -1079,6 +1169,7 @@ fn expression_kind(saved_type: &str) -> Result<Kind, String> {
         "numeric" => Kind::Number,
         "button" => Kind::Button,
         "textfield" => Kind::InputBox,
+        "image" => Kind::Image,
         "angle" => Kind::Angle,
         "function" => Kind::Function,
         "functionnvar" => return Err("a function with multiple variables is unsupported".into()),
@@ -1618,6 +1709,7 @@ fn kind_agrees(saved: &str, actual: Kind) -> bool {
         "numeric" => Kind::Number,
         "button" => Kind::Button,
         "textfield" => Kind::InputBox,
+        "image" => Kind::Image,
         "angle" => Kind::Angle,
         "boolean" => Kind::Boolean,
         "function" => Kind::Function,
