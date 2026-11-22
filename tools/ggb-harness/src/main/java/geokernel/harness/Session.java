@@ -166,9 +166,10 @@ final class Session {
     /** Checks that GeoGebra reports an error and creates no output. */
     void reject(String line) {
         Matcher matcher = LINE.matcher(line);
-        if (!matcher.matches() || kernel.lookupLabel(matcher.group(1)) != null) {
-            throw new IllegalArgumentException("expected an assignment to a new label: " + line);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("expected an assignment: " + line);
         }
+        GeoElement original = kernel.lookupLabel(matcher.group(1));
         CommandErrorHandler errors = new CommandErrorHandler(line, true);
         Log logger = Log.getLogger();
         Log.Level level = logger.getLogLevel();
@@ -183,9 +184,24 @@ final class Session {
             logger.setLogLevel(level);
         }
         if (!errors.reported || (out != null && out.length != 0)
-                || kernel.lookupLabel(matcher.group(1)) != null) {
-            throw new IllegalStateException("GeoGebra did not reject: " + line);
+                || kernel.lookupLabel(matcher.group(1)) != original) {
+            throw new IllegalStateException("expected rejection with an unchanged label: " + line);
         }
+    }
+
+    /** Applies an assignment to a label already in the snapshot. */
+    void redefine(String line) {
+        Matcher matcher = LINE.matcher(line);
+        if (!matcher.matches() || !objects.containsKey(matcher.group(1))) {
+            throw new IllegalArgumentException("expected an assignment to an existing label: " + line);
+        }
+        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
+                line, false, new CommandErrorHandler(line, false), false, null);
+        GeoElement replacement = kernel.lookupLabel(matcher.group(1));
+        if (out == null || out.length != 1 || replacement != out[0]) {
+            throw new IllegalStateException("expected one replacement from: " + line);
+        }
+        objects.replaceAll((name, old) -> kernel.lookupLabel(name));
     }
 
     /** Runs a scripting command that creates no object of its own, such as
@@ -1253,8 +1269,8 @@ final class Session {
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":
             case "Midpoint":
-                return VARIABLE_X.matcher(arguments).find()
-                        || first instanceof GeoFunction && ((GeoFunction) first).isBooleanFunction()
+                return !arguments.contains("=") && (VARIABLE_X.matcher(arguments).find()
+                        || first instanceof GeoFunction && ((GeoFunction) first).isBooleanFunction())
                         ? "number" : "point";
             case "Line":
             case "PerpendicularLine":

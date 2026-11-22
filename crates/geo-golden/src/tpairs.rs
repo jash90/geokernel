@@ -480,6 +480,11 @@ fn exec_step(c: &mut Construction, pair: &Pair) -> Exec {
     if top_level_equals(&input).is_some() {
         return Exec::Script(script::exec(c, &input));
     }
+    if let Some(id) = c.id(input.trim()) {
+        if matches!(pair.outputs.as_slice(), [out] if out.label.as_deref() == Some(c.label(id))) {
+            return Exec::Script(Ok(Some(id)));
+        }
+    }
     let line = pair.id.rsplit(':').next().unwrap_or("0");
     if pair.outputs.is_empty() {
         return Exec::Probed {

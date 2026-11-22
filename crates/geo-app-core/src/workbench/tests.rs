@@ -56,8 +56,24 @@ fn failed_line_changes_nothing() {
     assert_eq!(w.version(), v);
     assert_eq!(w.history.len(), 0);
     assert!(!w.can_undo());
-    // A duplicate name is also an error.
-    assert!(w.run_line("A = (9, 9)").is_err());
+    assert!(w.run_line("A = A + (9, 9)").is_err());
+}
+
+#[test]
+fn redefinition_keeps_the_object_and_survives_undo_and_replay() {
+    let mut w = triangle();
+    let a = w.construction().id("A").unwrap();
+    let before = w.construction().value(a);
+    w.run_line("A = (9, 9)").unwrap();
+    assert_eq!(w.construction().id("A"), Some(a));
+    assert_eq!(w.construction().value(a), Value::Point { x: 9.0, y: 9.0 });
+    let text = w.snapshot_text();
+    assert!(w.undo());
+    assert_eq!(w.construction().value(a), before);
+    assert!(w.redo());
+    assert_eq!(w.construction().value(a), Value::Point { x: 9.0, y: 9.0 });
+    let (restored, _) = crate::scriptlog::Log::load(&text).unwrap();
+    assert_eq!(restored.value(a), Value::Point { x: 9.0, y: 9.0 });
 }
 
 #[test]

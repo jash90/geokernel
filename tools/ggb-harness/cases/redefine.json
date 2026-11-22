@@ -1,0 +1,18 @@
+{
+  "cases": [
+    {"id": "redefine-assignment-001", "group": "redefine", "script": ["a = 1", "A = (1, 1 / a)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = 0"}, {"action": "set_number", "label": "a", "value": 1.0}]},
+    {"id": "redefine-assignment-002", "group": "redefine", "script": ["a = 1", "A = (1, 1 / a)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = 0"}, {"action": "redefine", "line": "a = 2"}, {"action": "set_number", "label": "a", "value": 0.0}, {"action": "set_number", "label": "a", "value": 1.0}]},
+    {"id": "redefine-assignment-003", "group": "redefine", "script": ["a = 1", "A = (1, 1 / a)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = ?"}, {"action": "set_number", "label": "a", "value": 1.0}]},
+    {"id": "redefine-assignment-004", "group": "redefine", "script": ["a = 1", "A = (1, 1 / a)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = ?"}, {"action": "redefine", "line": "a = 2"}]},
+    {"id": "redefine-assignment-005", "group": "redefine", "script": ["a = 1", "f(x) = 3 a", "l = {f}"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = 2"}]},
+    {"id": "redefine-assignment-006", "group": "redefine", "script": ["seqa = 2 (1..5)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "seqa = (1..3) + 3"}]},
+    {"id": "redefine-assignment-007", "group": "redefine", "script": ["la = {1}", "lb = {2}", "lc = la"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "lc = lb"}]},
+    {"id": "redefine-assignment-008", "group": "redefine", "script": ["f(x) = x (2 x - 2)", "b = IsFactored(f)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "f(x) = x (x - 1)"}]},
+    {"id": "redefine-assignment-009", "group": "redefine", "script": ["r = 2", "a = 3", "b = a^2"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = 1 / r"}, {"action": "set_number", "label": "r", "value": 0.0}, {"action": "set_number", "label": "r", "value": 4.0}]},
+    {"id": "redefine-assignment-010", "group": "redefine", "script": ["A = (1, 1)", "B = 2 A"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "A = (3, 2)"}, {"action": "move", "label": "A", "x": -2.0, "y": 4.0}]},
+    {"id": "redefine-assignment-011", "group": "redefine", "script": ["A = (1, 1)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "A = Point(xAxis)"}, {"action": "move", "label": "A", "x": 5.0, "y": 2.0}]},
+    {"id": "redefine-assignment-012", "group": "redefine", "script": ["a = 2"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = {1, 2}"}]},
+    {"id": "redefine-assignment-013", "group": "redefine", "script": ["A = (1, 2)"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "A = 6"}]},
+    {"id": "redefine-assignment-014", "group": "redefine", "script": ["r = 1", "a = 2", "b = a + 1"], "steps": [{"action": "initial"}, {"action": "redefine", "line": "a = r + 2"}, {"action": "reject", "line": "a = b + 1"}, {"action": "set_number", "label": "r", "value": 3.0}]}
+  ]
+}

@@ -380,6 +380,17 @@ fn outputs(c: &Construction, from: usize) -> impl Iterator<Item = Id> + '_ {
     c.ids().skip(from).filter(|&id| !is_internal(c, id))
 }
 
+fn definition_outputs(
+    c: &Construction,
+    from: usize,
+    first: Option<Id>,
+) -> impl Iterator<Item = Id> + '_ {
+    first
+        .filter(|&id| id.index() < from && !is_internal(c, id))
+        .into_iter()
+        .chain(outputs(c, from))
+}
+
 pub(crate) fn is_internal(c: &Construction, id: Id) -> bool {
     is_internal_label(c.label(id))
 }
@@ -516,10 +527,17 @@ impl Log {
 
     /// Records the objects with index `from..` in `c`, or a protocol step.
     pub fn record(&mut self, c: &Construction, from: usize, line: &str) {
-        let labels: Vec<String> = c
-            .ids()
-            .skip(from)
-            .filter(|&id| !is_internal(c, id))
+        self.record_definition(c, from, None, line);
+    }
+
+    pub(crate) fn record_definition(
+        &mut self,
+        c: &Construction,
+        from: usize,
+        first: Option<Id>,
+        line: &str,
+    ) {
+        let labels: Vec<String> = definition_outputs(c, from, first)
             .map(|id| c.label(id).to_owned())
             .collect();
         if !labels.is_empty() || geo_kernel::script::is_construction_step_command(line) {
@@ -649,9 +667,9 @@ impl Log {
     /// The definition text of the entry that created `label`.
     pub fn rhs_of(&self, label: &str) -> Option<&str> {
         let definition = |name| {
-            self.definitions()
-                .find(|(label, _)| *label == name)
-                .map(|(_, rhs)| rhs)
+            self.entries_rev()
+                .find(|entry| entry.labels.iter().any(|label| label == name))
+                .map(Entry::rhs)
         };
         let rhs = definition(label)?;
         match boundary_slot_owner(rhs) {
@@ -775,9 +793,10 @@ impl Log {
                 Op::Define(e) => {
                     let before = c.len();
                     match e.replay(&mut c) {
-                        Ok(_) => {
-                            let made: Vec<&str> =
-                                outputs(&c, before).map(|id| c.label(id)).collect();
+                        Ok(first) => {
+                            let made: Vec<&str> = definition_outputs(&c, before, first)
+                                .map(|id| c.label(id))
+                                .collect();
                             if made != e.labels {
                                 return Err(format!(
                                     "`{}` created {made:?} instead of {:?}",
@@ -787,14 +806,19 @@ impl Log {
                             // What `record` would make of it is `e` itself.
                             match &mut same {
                                 Some(n) => *n = i + 1,
-                                None => kept.record(&c, before, &e.line),
+                                None => kept.record_definition(&c, before, first, &e.line),
                             }
                         }
                         Err(err) => {
                             if c.len() != before || !uses_removed_object(e, &gone) {
                                 return Err(format!("`{}`: {err}", e.line));
                             }
-                            gone.extend(e.labels.iter().cloned());
+                            gone.extend(
+                                e.labels
+                                    .iter()
+                                    .filter(|label| c.id(label).is_none())
+                                    .cloned(),
+                            );
                             diverge(&mut kept, &mut same);
                         }
                     }
@@ -956,22 +980,28 @@ impl Log {
                 Op::Define(e) => {
                     let before = c.len();
                     match e.replay(&mut c) {
-                        Ok(_) => {
-                            let made: Vec<&str> =
-                                outputs(&c, before).map(|id| c.label(id)).collect();
+                        Ok(first) => {
+                            let made: Vec<&str> = definition_outputs(&c, before, first)
+                                .map(|id| c.label(id))
+                                .collect();
                             if made != e.labels {
                                 return Err(format!(
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
                             }
-                            kept.record(&c, before, &e.line);
+                            kept.record_definition(&c, before, first, &e.line);
                         }
                         Err(err) => {
                             if c.len() != before || !uses_removed_object(e, &gone) {
                                 return Err(format!("`{}`: {err}", e.line));
                             }
-                            gone.extend(e.labels.iter().cloned());
+                            gone.extend(
+                                e.labels
+                                    .iter()
+                                    .filter(|label| c.id(label).is_none())
+                                    .cloned(),
+                            );
                         }
                     }
                 }
@@ -1364,6 +1394,16 @@ impl Log {
         line: &str,
         expected: Option<&[&str]>,
     ) -> Result<Option<Id>, String> {
+        // Validate the expected label before changing an existing definition.
+        if let (Some(label), Some(expected)) =
+            (geo_kernel::script::assignment_label(line), expected)
+        {
+            if c.id(label).is_some() && expected != [label] {
+                return Err(format!(
+                    "it would redefine {label:?} instead of creating {expected:?}"
+                ));
+            }
+        }
         let at = c.checkpoint();
         let before = c.len();
         // The checkpoint was taken just above and nothing rolls the
@@ -1378,16 +1418,18 @@ impl Log {
             .unwrap_or_else(|| exec_definition(c, line));
         let first = result.map_err(|reason| undo(c, reason))?;
         if let Some(expected) = expected {
-            if !outputs(c, before)
+            if !definition_outputs(c, before, first)
                 .map(|id| c.label(id))
                 .eq(expected.iter().copied())
             {
-                let made: Vec<&str> = outputs(c, before).map(|id| c.label(id)).collect();
+                let made: Vec<&str> = definition_outputs(c, before, first)
+                    .map(|id| c.label(id))
+                    .collect();
                 let reason = format!("it made {made:?} instead of {expected:?}");
                 return Err(undo(c, reason));
             }
         }
-        self.record(c, before, line);
+        self.record_definition(c, before, first, line);
         Ok(first)
     }
 
@@ -1437,7 +1479,7 @@ impl Log {
                 .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))
                 .unwrap_or_else(|| exec_definition(&mut c, &line))
                 .map_err(at)?;
-            log.record(&c, before, &line);
+            log.record_definition(&c, before, first, &line);
             if let Some(id) = first.filter(|_| grow && c.len() > before) {
                 groups.record(&c, &line, id, c.len() - before);
             }

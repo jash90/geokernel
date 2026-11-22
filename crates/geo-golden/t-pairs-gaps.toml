@@ -905,8 +905,8 @@ mismatches = ["fm"]
 [[gap]]
 id = "cas/AlgoDerivativeTest.java:37"
 category = "incomplete-context"
-reason = "the kernel refuses the input: a function needs an argument"
-mismatches = ["step"]
+reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `x * y * z`"
+mismatches = ["fm"]
 
 [[gap]]
 id = "cas/AlgoDerivativeTest.java:42"
@@ -939,12 +939,6 @@ reason = "the kernel refuses the input: unknown command `CopyFreeObject`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CmdCopyFreeObjectTest.java:30"
-category = "redefine"
-reason = "the kernel refuses the input: object `a` already exists"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CmdCopyFreeObjectTest.java:31"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `myCopy`; the method's step `commands/CmdCopyFreeObjectTest.java:27` fails earlier here, so the object is missing only in its wake"
@@ -966,12 +960,6 @@ mismatches = ["myList2"]
 id = "commands/CmdCopyFreeObjectTest.java:39"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `CopyFreeObject`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CmdCopyFreeObjectTest.java:40"
-category = "redefine"
-reason = "the kernel refuses the input: object `a` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -2410,27 +2398,15 @@ mismatches = ["redef2"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2454"
-category = "redefine"
-reason = "the kernel refuses the input: object `redef1` already exists"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(x * (x - 1))`"
+mismatches = ["redef1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2455"
-category = "redefine"
-reason = "the kernel refuses the input: object `redef2` already exists"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2456"
-category = "redefine"
-reason = "the kernel refuses the input: object `check1` already exists"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2457"
-category = "redefine"
-reason = "the kernel refuses the input: object `check2` already exists"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(x * (x - 1))`"
+mismatches = ["redef2"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2465"
@@ -2794,9 +2770,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2704"
-category = "redefine"
-reason = "the kernel refuses the input: object `intervalMax` already exists"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Number(3.0) does not match `NaN` (expected undefined, kernel has a value)"
+mismatches = ["intervalMax"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2709"
@@ -2997,12 +2973,6 @@ reason = "the kernel refuses the input: `Reflect` does not take 3 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:283"
-category = "incomplete-context"
-reason = "the kernel refuses the input: object `cs` already exists"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2831"
 category = "incomplete-context"
 reason = "the kernel refuses the input: `Reflect` does not take 6 argument(s)"
@@ -3054,12 +3024,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:2846"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Mode`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:285"
-category = "incomplete-context"
-reason = "the kernel refuses the input: object `cs` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -3745,12 +3709,6 @@ id = "commands/CommandsTest.java:3366"
 category = "unsupported-type"
 reason = "class `GeoFunctionNVar` has no schema object (unsupported-type); string `(x^(2) * y^(2)) + x^(3) + (x^(2) * y) + y^(3) + (x * y) + 1`"
 mismatches = ["i"]
-
-[[gap]]
-id = "commands/CommandsTest.java:340"
-category = "redefine"
-reason = "the kernel refuses the input: object `lc` already exists"
-mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3439"
@@ -4684,9 +4642,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4044"
-category = "redefine"
-reason = "the kernel refuses the input: object `A` already exists"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Point { x: 1.0, y: 1.0 } does not match `(3, 3)` (values differ)"
+mismatches = ["A"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4045"
@@ -4713,12 +4671,6 @@ reason = "the kernel refuses the input: unknown object `B`; the method's step `c
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4050"
-category = "redefine"
-reason = "the kernel refuses the input: object `A` already exists"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4051"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetCoords`"
@@ -4726,9 +4678,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4052"
-category = "redefine"
-reason = "the kernel refuses the input: object `A` already exists"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Point { x: 0.0, y: 0.0 } does not match `(Infinity, 0)` (expected undefined, kernel has a value)"
+mismatches = ["A"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4054"
@@ -4836,12 +4788,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4096"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetLevelOfDetail`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:411"
-category = "redefine"
-reason = "the kernel refuses the input: object `ab_1` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -6113,8 +6059,8 @@ mismatches = ["a"]
 [[gap]]
 id = "commands/CommandsTest.java:605"
 category = "incomplete-context"
-reason = "the kernel refuses the input: object `a` already exists"
-mismatches = ["step"]
+reason = "string `2.7088378687594363`, GeoGebra prints `2.70883786875944`"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsTest.java:607"
@@ -6125,8 +6071,8 @@ mismatches = ["b"]
 [[gap]]
 id = "commands/CommandsTest.java:609"
 category = "incomplete-context"
-reason = "the kernel refuses the input: object `b` already exists"
-mismatches = ["step"]
+reason = "string `2.714891744381287`, GeoGebra prints `2.71489174438129`"
+mismatches = ["b"]
 
 [[gap]]
 id = "commands/CommandsTest.java:614"
@@ -6462,12 +6408,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:867"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Checkbox`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:87"
-category = "redefine"
-reason = "the kernel refuses the input: object `seqa` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -6831,12 +6771,6 @@ reason = "the kernel refuses the input: unknown object `ax`; the method's step `
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/FormulaTextTest.java:44"
-category = "incomplete-context"
-reason = "the kernel refuses the input: object `a` already exists"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/FormulaTextTest.java:45"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `ax`; the method's step `commands/FormulaTextTest.java:34` fails earlier here, so the object is missing only in its wake"
@@ -6855,28 +6789,10 @@ reason = "values agree but `GeoPolygon` of kind polygon has no GeoGebra-style te
 mismatches = ["poly1"]
 
 [[gap]]
-id = "commands/RedefineTest.java:115"
-category = "incomplete-context"
-reason = "the kernel refuses the input: a segment cannot be used in an expression"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:122"
-category = "incomplete-context"
-reason = "the kernel refuses the input: object `A` already exists"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/RedefineTest.java:123"
 category = "incomplete-context"
-reason = "the kernel refuses the input: a polygon cannot be used in an expression"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:124"
-category = "incomplete-context"
-reason = "the kernel refuses the input: a segment cannot be used in an expression"
-mismatches = ["step"]
+reason = "values agree but `GeoPolygon` of kind polygon has no GeoGebra-style text yet; GeoGebra prints `1`"
+mismatches = ["poly1"]
 
 [[gap]]
 id = "commands/RedefineTest.java:129"
@@ -7029,12 +6945,6 @@ reason = "the kernel refuses the input: unknown object `B20`; the method's step 
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/RedefineTest.java:289"
-category = "incomplete-context"
-reason = "the kernel refuses the input: object `A` already exists"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/RedefineTest.java:296"
 category = "error-behaviour"
 reason = "the kernel refuses the input: unknown object `axx`"
@@ -7044,18 +6954,6 @@ mismatches = ["step"]
 id = "commands/RedefineTest.java:297"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `f`; the method's step `commands/RedefineTest.java:296` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:298"
-category = "redefine"
-reason = "the kernel refuses the input: object `a` already exists"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:299"
-category = "redefine"
-reason = "the kernel refuses the input: object `a` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -7083,12 +6981,6 @@ reason = "the kernel refuses the input: `Point` needs a line, segment, ray, circ
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/RedefineTest.java:310"
-category = "redefine"
-reason = "the kernel refuses the input: object `a` already exists"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/RedefineTest.java:311"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `A`; the method's step `commands/RedefineTest.java:305` fails earlier here, so the object is missing only in its wake"
@@ -7104,12 +6996,6 @@ mismatches = ["step"]
 id = "commands/RedefineTest.java:332"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unexpected `=`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:337"
-category = "redefine"
-reason = "the kernel refuses the input: object `a` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -7138,20 +7024,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/RedefineTest.java:383"
-category = "redefine"
-reason = "the kernel refuses the input: object `A` already exists"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Point { x: 1.0, y: 1.0 } does not match `(NaN, NaN)` (expected undefined, kernel has a value)"
+mismatches = ["A"]
 
 [[gap]]
 id = "commands/RedefineTest.java:384"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetValue`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/RedefineTest.java:385"
-category = "redefine"
-reason = "the kernel refuses the input: object `A` already exists"
 mismatches = ["step"]
 
 [[gap]]

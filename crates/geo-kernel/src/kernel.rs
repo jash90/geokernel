@@ -906,6 +906,7 @@ pub struct Construction {
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
+    replacement_label: Option<String>,
     images: image::Images,
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
     drawing_styles: std::collections::BTreeMap<Id, DrawingStyle>,
@@ -1646,6 +1647,144 @@ impl Construction {
         }
     }
 
+    /// Stages a single definition and installs it at the existing object ID.
+    /// The dependency order stays valid when every input precedes that ID.
+    pub(crate) fn redefine(
+        &mut self,
+        id: Id,
+        define: impl FnOnce(&mut Self) -> Result<Option<Id>, String>,
+    ) -> Result<Option<Id>, String> {
+        let label = self.label(id).to_owned();
+        let refuse = |reason| format!("object `{label}` already exists: {reason}");
+        let supported = |def| {
+            matches!(
+                def,
+                Def::Number(_)
+                    | Def::Boolean(_)
+                    | Def::Angle(_)
+                    | Def::FreePoint { .. }
+                    | Def::Vector(VectorDef::Free { .. })
+                    | Def::Expr(_)
+                    | Def::Path(PathDef::On { .. } | PathDef::OnParam { .. })
+            )
+        };
+        let old = self.def(id);
+
+        let checkpoint = self.checkpoint();
+        self.by_label.remove(&label);
+        self.replacement_label = Some(label.clone());
+        let result = define(self);
+        self.replacement_label = None;
+
+        let replacement = (|| {
+            let new = result
+                .map_err(|error| {
+                    if error.contains(&format!("unknown object `{label}`")) {
+                        refuse("a replacement cannot read itself")
+                    } else {
+                        error
+                    }
+                })?
+                .ok_or_else(|| refuse("a replacement must define an object"))?;
+            if !supported(old)
+                || self.slider_interval(id).is_some()
+                || self.saved_slider_bounds.contains_key(&id)
+            {
+                return Err(refuse("this definition cannot be replaced in place"));
+            }
+            if self.len() != checkpoint.len + 1 || self.by_label.get(&label) != Some(&new) {
+                return Err(refuse(
+                    "a replacement must have one output and no new auxiliary objects",
+                ));
+            }
+            let def = self.defs[new.0];
+            if !supported(def) {
+                return Err(refuse("this replacement cannot be installed in place"));
+            }
+            if def.kind() != old.kind() && !self.children[id.0].is_empty() {
+                return Err(refuse("a dependent object requires the original kind"));
+            }
+            let parents = self.read_ids(&def);
+            if parents
+                .iter()
+                .any(|&parent| parent >= id && axis::get(parent).is_none())
+            {
+                return Err(refuse(
+                    "a replacement input must precede the original definition",
+                ));
+            }
+            Ok((new, def, parents))
+        })();
+
+        let (new, mut def, parents) = match replacement {
+            Ok(staged) => staged,
+            Err(error) => {
+                self.discard_since(checkpoint);
+                self.by_label.insert(label, id);
+                return Err(error);
+            }
+        };
+
+        let value = self.values[new.0];
+        let hint = self.hints[new.0];
+        let path = self.path_state(new);
+        let mut source = self.construction_sources.remove(&new);
+        if matches!(old, Def::Number(_))
+            && matches!(def, Def::Expr(d) if d.kind() == Kind::Number && expr::undefined_literal(self, d))
+        {
+            def = Def::Number(f64::NAN);
+            source = Some("?".into());
+        }
+        let decimal = expr::free_decimal(self, new).cloned();
+        let kept = Checkpoint {
+            lists: self.lists.len(),
+            exprs: if matches!(def, Def::Expr(_)) {
+                self.exprs.len()
+            } else {
+                checkpoint.exprs
+            },
+            ..checkpoint
+        };
+        self.discard_since(kept);
+        self.by_label.insert(label, id);
+
+        for parent in self.read_ids(&old) {
+            if let Some(children) = self.children.get_mut(parent.0) {
+                children.retain(|&child| child != id);
+            }
+        }
+        for parent in parents {
+            if let Some(children) = self.children.get_mut(parent.0) {
+                if let Err(slot) = children.binary_search(&id) {
+                    children.insert(slot, id);
+                }
+            }
+        }
+        let slot = self.paths.partition_point(|(owner, _)| *owner < id.0);
+        if self
+            .paths
+            .get(slot)
+            .is_some_and(|(owner, _)| *owner == id.0)
+        {
+            self.paths.remove(slot);
+        }
+        if let Some(path) = path {
+            self.paths.insert(slot, (id.0, path));
+        }
+        self.defs[id.0] = def;
+        self.values[id.0] = value;
+        self.hints[id.0] = hint;
+        expr::replace_free_decimal(self, id, decimal);
+        self.construction_sources.remove(&id);
+        if let Some(source) = source {
+            self.remember_construction_source(id, &source);
+        }
+        self.propagate(id);
+        // A checkpoint only stores lengths, so it cannot restore a changed definition.
+        self.generation += 1;
+        Ok(Some(id))
+    }
+
     /// Every object `def` reads: its parents, the objects its rule also
     /// reads (for example the line an intersection was prepared with), and
     /// its list. An object may appear more than once.
@@ -1788,7 +1927,7 @@ impl Construction {
         self.by_label.insert(label.to_string(), id);
         let element = if let Some(owner) = owner {
             self.output_entry(owner)
-        } else if label.starts_with('\0') {
+        } else if label.starts_with('\0') || self.replacement_label.as_deref() == Some(label) {
             ProtocolEntry::Hidden
         } else {
             let index = self.step;

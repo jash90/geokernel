@@ -166,22 +166,48 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
             .map_err(|e| e.to_string())?;
         return Ok(None);
     }
-    // `name: definition`, the input bar's other form of a labelled line.
-    // A definition with `=` in it is an equation (`a: 2x + 3y = 6`); the
-    // rest is the same as after `=`. A `:` after the first `=` belongs to
-    // the definition (`c = Circle(O, r:c)` names a label holding a colon),
-    // so only a `:` before any `=` separates the label.
-    let label_colon = line
-        .find(':')
-        .filter(|&i| line.find('=').is_none_or(|e| i < e));
-    if let Some((name, rhs)) = label_colon.map(|i| (&line[..i], &line[i + 1..])) {
-        let name = name.trim();
+    let (name, rhs, colon) = assignment(line).ok_or("expected `name = definition`")?;
+    if let Some(id) = definition_label(name).and_then(|label| c.id(label)) {
+        return c.redefine(id, |c| define_assignment(c, name, rhs, colon));
+    }
+    define_assignment(c, name, rhs, colon)
+}
+
+/// The visible label assigned by a single-output definition.
+pub fn assignment_label(line: &str) -> Option<&str> {
+    assignment(split_comment(line).0).and_then(|(name, _, _)| definition_label(name))
+}
+
+fn definition_label(name: &str) -> Option<&str> {
+    let label = split_call(name).map_or(name, |(label, _)| label);
+    (is_output_label(label) && !label.starts_with('\0')).then_some(label)
+}
+
+/// Finds the assignment delimiter before the definition.
+fn assignment(line: &str) -> Option<(&str, &str, bool)> {
+    let i = line.find([':', '='])?;
+    let colon = line.as_bytes()[i] == b':';
+    let rhs = &line[i + 1..];
+    let rhs = if colon {
+        rhs.strip_prefix('=').unwrap_or(rhs)
+    } else {
+        rhs
+    };
+    Some((line[..i].trim(), rhs.trim(), colon))
+}
+
+fn define_assignment(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    colon: bool,
+) -> Result<Option<Id>, String> {
+    if colon {
         if !is_output_label(name) {
             return Err(format!("`{name}` is not a valid object name"));
         }
         check_label(name)?;
-        let rhs = rhs.trim();
-        if rhs.contains('=') {
+        if crate::expr::equation::split_equation(rhs).is_ok() {
             return crate::expr::equation::define(c, name, rhs).map(Some);
         }
         if rhs.contains('<') || rhs.contains('>') {
@@ -190,8 +216,6 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         }
         return define_after_label(c, name, rhs);
     }
-    let (name, rhs) = line.split_once('=').ok_or("expected `name = definition`")?;
-    let name = name.trim();
     // Named functions use `x`, and also `y` for inequalities.
     let function = name
         .strip_suffix("(x)")

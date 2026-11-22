@@ -203,6 +203,15 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
                 .map(|recomputed| (recomputed > 0).then_some(id))
                 .map_err(|e| format!("set `{label}`: {e}"))
         }
+        Step::Redefine { line } => {
+            let id = script::assignment_label(line)
+                .and_then(|label| c.id(label))
+                .ok_or_else(|| format!("expected an assignment to an existing label: {line}"))?;
+            match script::exec(c, line)? {
+                Some(replaced) if replaced == id => Ok(Some(id)),
+                _ => Err(format!("expected one replacement: {line}")),
+            }
+        }
         Step::Reject { line } => {
             let len = c.len();
             if script::exec(c, line).is_err() && c.len() == len {

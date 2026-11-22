@@ -157,6 +157,12 @@ public final class GoldenGenerator {
                     outStep.put("value", value);
                     break;
                 }
+                case "redefine": {
+                    String line = (String) step.get("line");
+                    session.redefine(line);
+                    outStep.put("line", line);
+                    break;
+                }
                 case "reject": {
                     String line = (String) step.get("line");
                     session.reject(line);

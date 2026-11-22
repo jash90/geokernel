@@ -1113,6 +1113,14 @@ pub(crate) fn record_literal(c: &mut Construction, id: Id, text: &str) {
     }
 }
 
+pub(crate) fn replace_free_decimal(c: &mut Construction, id: Id, decimal: Option<Dec>) {
+    if let Some(decimal) = decimal {
+        set_free_decimal(c, id, decimal);
+    } else {
+        forget_decimal(c, id);
+    }
+}
+
 /// Forgets the exact decimal of a free number that is being changed
 /// (`GeoNumeric.setValue`); whether it had one.
 pub(crate) fn forget_decimal(c: &mut Construction, id: Id) -> bool {
@@ -1318,6 +1326,11 @@ pub(crate) fn function_metrics(c: &Construction, f: Id) -> (u32, u64, u64) {
         }
         _ => (1, 1, 0),
     }
+}
+
+pub(crate) fn undefined_literal(c: &Construction, d: ExprDef) -> bool {
+    let e = entry(c, d);
+    matches!(e.nodes[e.root as usize], Node::Num(v) if v.is_nan())
 }
 
 /// The objects an expression object reads.

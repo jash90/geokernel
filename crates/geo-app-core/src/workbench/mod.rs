@@ -458,6 +458,7 @@ impl Workbench {
         let snapshot = self.copy(&self.log);
         let n0 = self.construction.len();
         let mut step_changed = false;
+        let mut redefined = false;
         let mut failure = None;
         for raw in lines {
             let line = normalize(raw);
@@ -476,9 +477,11 @@ impl Workbench {
                 Ok(first) => {
                     let added = self.construction.len() > before;
                     let moved_step = !added && self.construction.step() != step_before;
-                    if added || moved_step {
-                        self.log.record(&self.construction, before, &line);
-                        if let Some(first) = first {
+                    let replaced = first.is_some_and(|id| id.index() < before);
+                    if added || moved_step || replaced {
+                        self.log
+                            .record_definition(&self.construction, before, first, &line);
+                        if let Some(first) = first.filter(|_| added) {
                             self.boundary_outputs.record(
                                 &self.construction,
                                 &line,
@@ -488,6 +491,7 @@ impl Workbench {
                         }
                     }
                     step_changed |= moved_step;
+                    redefined |= replaced;
                 }
                 Err(e) => {
                     failure = Some(e);
@@ -496,10 +500,10 @@ impl Workbench {
             }
         }
         let objects_added = self.construction.len() != n0;
-        if objects_added {
+        if objects_added || redefined {
             self.objects_changed();
         }
-        let changed = objects_added || step_changed;
+        let changed = objects_added || step_changed || redefined;
         match failure {
             Some(e) => {
                 if changed {
