@@ -134,6 +134,19 @@ impl<T: Clone> Chain<T> {
         *self = out;
     }
 
+    /// Inserts `item` at `at` (`at <= len`). The items before it stay
+    /// shared; the items from `at` on are copied after it, like the tail a
+    /// change in the middle copies.
+    pub fn insert(&mut self, at: usize, item: T) {
+        let items = self.items();
+        let mut out = self.prefix(at);
+        out.push(item);
+        for i in &items[at..] {
+            out.push((*i).clone());
+        }
+        *self = out;
+    }
+
     /// The distinct nodes of `chains` (the memory they take together, in
     /// items).
     #[cfg(test)]
@@ -248,6 +261,21 @@ mod tests {
         assert_eq!(Chain::distinct_nodes([&a, &b, &c, &d]), 110);
         assert_eq!(a.prefix(3).items(), [&0, &1, &2]);
         assert_eq!(a.prefix(0).len(), 0);
+    }
+
+    #[test]
+    fn an_insert_in_the_middle_copies_only_what_follows() {
+        let mut a: Chain<u32> = Chain::default();
+        for i in 0..10 {
+            a.push(i);
+        }
+        let b = a.clone();
+        let mut c = a.clone();
+        c.insert(4, 40);
+        assert_eq!(c.items(), [&0, &1, &2, &3, &40, &4, &5, &6, &7, &8, &9]);
+        assert_eq!(a, b);
+        // 10 shared, 7 for c's tail after the inserted item.
+        assert_eq!(Chain::distinct_nodes([&a, &b, &c]), 17);
     }
 
     #[test]

@@ -349,30 +349,7 @@ pub fn render_visible(
                 let Some(locus) = c.locus(id) else {
                     continue;
                 };
-                // A point without `line_to` starts a new piece.
-                let mut pts = String::new();
-                let mut flush = |pts: &mut String| {
-                    if pts.matches(' ').count() > 1 {
-                        let _ = writeln!(
-                            segments,
-                            r##"<polyline points="{}" fill="none"/>"##,
-                            pts.trim_end()
-                        );
-                    }
-                    pts.clear();
-                };
-                for p in locus.points.iter() {
-                    if !p.line_to {
-                        flush(&mut pts);
-                    }
-                    // an undefined point (NaN) is a break too
-                    if p.x.is_finite() && p.y.is_finite() {
-                        let _ = write!(pts, "{:.2},{:.2} ", sx(p.x), sy(p.y));
-                    } else {
-                        flush(&mut pts);
-                    }
-                }
-                flush(&mut pts);
+                write_locus(&locus.points, &mut segments, |x, y| (sx(x), sy(y)));
             }
             Value::Number(_)
             | Value::Text
@@ -436,6 +413,54 @@ fn escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+}
+
+/// The pieces of a locus into `out` (the segments group): every run of
+/// samples joined by `line_to` as a polyline, and a run of a single sample
+/// as the round cap of the stroke, a dot — the drawing draws one too
+/// (`CurvePlotterUtils.moveTo`; a polyline of one point would be nothing).
+fn write_locus(
+    points: &[crate::LocusPoint],
+    out: &mut String,
+    at: impl Fn(f64, f64) -> (f64, f64),
+) {
+    let mut run: Vec<(f64, f64)> = Vec::new();
+    fn flush(run: &mut Vec<(f64, f64)>, out: &mut String) {
+        match run.as_slice() {
+            [] => {}
+            // the round cap of the 2 px stroke, like the drawing's dot
+            &[(x, y)] => {
+                let _ = writeln!(
+                    out,
+                    r##"<circle cx="{x:.2}" cy="{y:.2}" r="1" fill="#202124"/>"##
+                );
+            }
+            _ => {
+                let mut pts = String::new();
+                for &(x, y) in run.iter() {
+                    let _ = write!(pts, "{x:.2},{y:.2} ");
+                }
+                let _ = writeln!(
+                    out,
+                    r##"<polyline points="{}" fill="none"/>"##,
+                    pts.trim_end()
+                );
+            }
+        }
+        run.clear();
+    }
+    for p in points {
+        if !p.line_to {
+            flush(&mut run, out);
+        }
+        // an undefined point (NaN) is a break too
+        if p.x.is_finite() && p.y.is_finite() {
+            run.push(at(p.x, p.y));
+        } else {
+            flush(&mut run, out);
+        }
+    }
+    flush(&mut run, out);
 }
 
 /// The points of an arc or sector, sampled from its start to its end
@@ -512,5 +537,52 @@ mod angle_tests {
         assert_eq!(svg.matches("<path").count(), 2);
         assert!(svg.contains("M 200.00,200.00 L 221.21,200.00 L 221.21,178.79 L 200.00,178.79 Z"));
         assert!(svg.contains("A 30.00,30.00 0 1 0 230.00,200.00 Z"));
+    }
+
+    /// A piece of a locus with a single sample is drawn as the dot of its
+    /// stroke cap, not dropped (`DrawLocus` draws one as a dot).
+    #[test]
+    fn a_lone_locus_sample_is_drawn_as_a_dot() {
+        use crate::LocusPoint;
+        let points = [
+            LocusPoint {
+                x: 10.0,
+                y: 20.0,
+                line_to: false,
+            },
+            LocusPoint {
+                x: 30.0,
+                y: 20.0,
+                line_to: true,
+            },
+            // a lone point, then an undefined stretch, then a lone point
+            LocusPoint {
+                x: 50.0,
+                y: 40.0,
+                line_to: false,
+            },
+            LocusPoint {
+                x: f64::NAN,
+                y: f64::NAN,
+                line_to: true,
+            },
+            LocusPoint {
+                x: 60.0,
+                y: 41.0,
+                line_to: false,
+            },
+        ];
+        let mut out = String::new();
+        write_locus(&points, &mut out, |x, y| (x, y));
+        assert_eq!(out.matches("<polyline").count(), 1, "{out}");
+        assert_eq!(out.matches("<circle").count(), 2, "{out}");
+        assert!(
+            out.contains(r##"<circle cx="50.00" cy="40.00" r="1" fill="#202124"/>"##),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"<polyline points="10.00,20.00 30.00,20.00""#),
+            "{out}"
+        );
     }
 }

@@ -1,0 +1,909 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "conicpaths-degenerate-001",
+      "group": "conicpaths",
+      "script": [
+        "A = (-3, -1)",
+        "B = (0, 0)",
+        "C = (3, 1)",
+        "D = (1, 3)",
+        "E = (2, -2)",
+        "k = Conic(A, B, C, D, E)",
+        "P = Point(k)",
+        "t = PathParameter(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 0.0, "y": 3.0 },
+        { "action": "move", "label": "P", "x": 2.0, "y": -3.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": -2.0, "y": 1.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "E", "x": 0.0, "y": -2.0 },
+        { "action": "move", "label": "P", "x": 4.0, "y": 4.0 },
+        { "action": "move", "label": "C", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "C", "x": 3.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [640.0, -384.0, 0.0, -896.0, -512.0, 1536.0],
+            "lines": [
+              [-0.47782795592496774, 1.4334838677749029, 2.220446049250313E-16],
+              [1.4816815923114341, 0.29633631846228703, -2.370690547698295]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.646957177195772E-17, "y": -1.3940871531587314E-16 },
+          "t": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [640.0, -384.0, 0.0, -896.0, -512.0, 1536.0],
+            "lines": [
+              [-0.47782795592496774, 1.4334838677749029, 2.220446049250313E-16],
+              [1.4816815923114341, 0.29633631846228703, -2.370690547698295]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.9615384615384612, "y": 3.1923076923076925 },
+          "t": { "type": "number", "defined": true, "value": 0.5792514435787893 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [640.0, -384.0, 0.0, -896.0, -512.0, 1536.0],
+            "lines": [
+              [-0.47782795592496774, 1.4334838677749029, 2.220446049250313E-16],
+              [1.4816815923114341, 0.29633631846228703, -2.370690547698295]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.192307692307693, "y": -2.9615384615384612 },
+          "t": { "type": "number", "defined": true, "value": 0.9166324436808161 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [640.0, -384.0, 0.0, -896.0, -512.0, 1536.0],
+            "lines": [
+              [-0.47782795592496774, 1.4334838677749029, 2.220446049250313E-16],
+              [1.4816815923114341, 0.29633631846228703, -2.370690547698295]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.3846153846153846, "y": 1.076923076923077 },
+          "t": { "type": "number", "defined": true, "value": 0.644774377429977 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [640.0, -384.0, 0.0, -896.0, -512.0, 1536.0],
+            "lines": [
+              [-0.47782795592496774, 1.4334838677749029, 2.220446049250313E-16],
+              [1.4816815923114341, 0.29633631846228703, -2.370690547698295]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -1.5, "y": -0.5000000000000002 },
+          "t": { "type": "number", "defined": true, "value": 0.1221656511837429 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [384.0, -576.0, 0.0, -480.0, -192.0, 576.0],
+            "lines": [
+              [-0.4826418277832761, 1.4479254833498283, -0.0],
+              [-1.3651172372392975, -0.6825586186196486, 1.3651172372392972]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -1.5151117315299913, "y": -0.5050372438433304 },
+          "t": { "type": "number", "defined": true, "value": 0.1221656511837429 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [288.0, 0.0, 0.0, -432.0, -0.0, 0.0],
+            "lines": [
+              [-0.5408281234503741, 1.6224843703511218, -0.0],
+              [1.710248692777904, 1.1102230246251565E-16, 0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -1.6977704529764863, "y": -0.5659234843254957 },
+          "t": { "type": "number", "defined": true, "value": 0.1221656511837429 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [288.0, 0.0, 0.0, -432.0, -0.0, 0.0],
+            "lines": [
+              [-0.5408281234503741, 1.6224843703511218, -0.0],
+              [1.710248692777904, 1.1102230246251565E-16, 0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.8, "y": 1.600000000000001 },
+          "t": { "type": "number", "defined": true, "value": 0.4368435843206879 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [576.0, 0.0, 0.0, -672.0, 192.0, 0.0],
+            "lines": [
+              [-0.7155780790613723, 1.6696821844765353, -0.4770520527075815],
+              [1.8165600965537854, 0.0, -0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.939631242027285, "y": 2.402699103725979 },
+          "t": { "type": "number", "defined": true, "value": 0.4368435843206879 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [288.0, 0.0, 0.0, -432.0, -0.0, 0.0],
+            "lines": [
+              [-0.5408281234503741, 1.6224843703511218, -0.0],
+              [1.710248692777904, 1.1102230246251565E-16, 0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.8, "y": 1.6000000000000005 },
+          "t": { "type": "number", "defined": true, "value": 0.4368435843206879 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-degenerate-002",
+      "group": "conicpaths",
+      "script": [
+        "A = (-3, -1)",
+        "B = (0, 0)",
+        "C = (3, 1)",
+        "D = (1, 3)",
+        "E = (2, -2)",
+        "k = Conic(A, B, C, D, E)",
+        "P = Point(k)",
+        "t = PathParameter(P)",
+        "u = 0.2",
+        "U = Point(k, u)",
+        "w = PathParameter(U)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "u", "value": 0.4 },
+        { "action": "set_number", "label": "u", "value": 0.6 },
+        { "action": "set_number", "label": "u", "value": 0.8 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 },
+        { "action": "set_number", "label": "u", "value": 0.3 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [640.0, -384.0, 0.0, -896.0, -512.0, 1536.0],
+            "lines": [
+              [-0.47782795592496774, 1.4334838677749029, 2.220446049250313E-16],
+              [1.4816815923114341, 0.29633631846228703, -2.370690547698295]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.646957177195772E-17, "y": -1.3940871531587314E-16 },
+          "t": { "type": "number", "defined": true, "value": 0.25 },
+          "u": { "type": "number", "defined": true, "value": 0.2 },
+          "U": { "type": "point", "defined": true, "x": -0.35837096694372567, "y": -0.11945698898124206 },
+          "w": { "type": "number", "defined": true, "value": 0.2 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [640.0, -384.0, 0.0, -896.0, -512.0, 1536.0],
+            "lines": [
+              [-0.47782795592496774, 1.4334838677749029, 2.220446049250313E-16],
+              [1.4816815923114341, 0.29633631846228703, -2.370690547698295]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.646957177195772E-17, "y": -1.3940871531587314E-16 },
+          "t": { "type": "number", "defined": true, "value": 0.25 },
+          "u": { "type": "number", "defined": true, "value": 0.4 },
+          "U": { "type": "point", "defined": true, "x": 2.1502258016623563, "y": 0.7167419338874521 },
+          "w": { "type": "number", "defined": true, "value": 0.4 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [640.0, -384.0, 0.0, -896.0, -512.0, 1536.0],
+            "lines": [
+              [-0.47782795592496774, 1.4334838677749029, 2.220446049250313E-16],
+              [1.4816815923114341, 0.29633631846228703, -2.370690547698295]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.646957177195772E-17, "y": -1.3940871531587314E-16 },
+          "t": { "type": "number", "defined": true, "value": 0.25 },
+          "u": { "type": "number", "defined": true, "value": 0.6 },
+          "U": { "type": "point", "defined": true, "x": 1.1554955223065693, "y": 2.2225223884671523 },
+          "w": { "type": "number", "defined": true, "value": 0.6 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [640.0, -384.0, 0.0, -896.0, -512.0, 1536.0],
+            "lines": [
+              [-0.47782795592496774, 1.4334838677749029, 2.220446049250313E-16],
+              [1.4816815923114341, 0.29633631846228703, -2.370690547698295]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 4.646957177195772E-17, "y": -1.3940871531587314E-16 },
+          "t": { "type": "number", "defined": true, "value": 0.25 },
+          "u": { "type": "number", "defined": true, "value": 0.8 },
+          "U": { "type": "point", "defined": true, "x": 1.674084079615572, "y": -0.3704203980778589 },
+          "w": { "type": "number", "defined": true, "value": 0.8 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [576.0, -256.0, -512.0, -736.0, -416.0, 1248.0],
+            "midpoint": [1.487369985141159, 0.5988112927191679],
+            "half_axes": [0.6175424011788342, 0.7479303224172207],
+            "eigenvectors": [
+              [0.8637294879381802, -0.5039557239143623],
+              [0.5039557239143623, 0.8637294879381802]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -0.08009832827902885, "y": 0.17185930121996984 },
+          "t": { "type": "number", "defined": true, "value": 0.6125235604775977 },
+          "u": { "type": "number", "defined": true, "value": 0.8 },
+          "U": { "type": "point", "defined": true, "x": 1.8664215004099343, "y": -0.3764438463489236 },
+          "w": { "type": "number", "defined": true, "value": 0.1398962500521046 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [576.0, -256.0, -512.0, -736.0, -416.0, 1248.0],
+            "midpoint": [1.487369985141159, 0.5988112927191679],
+            "half_axes": [0.6175424011788342, 0.7479303224172207],
+            "eigenvectors": [
+              [0.8637294879381802, -0.5039557239143623],
+              [0.5039557239143623, 0.8637294879381802]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -0.08009832827902885, "y": 0.17185930121996984 },
+          "t": { "type": "number", "defined": true, "value": 0.6125235604775977 },
+          "u": { "type": "number", "defined": true, "value": 0.3 },
+          "U": { "type": "point", "defined": true, "x": 2.1327305733639332, "y": 0.4410110175519183 },
+          "w": { "type": "number", "defined": true, "value": 0.3 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-degenerate-003",
+      "group": "conicpaths",
+      "script": [
+        "A = (-2, 0)",
+        "B = (0, 0)",
+        "C = (2, 0)",
+        "D = (-2, 1)",
+        "E = (2, 1)",
+        "k = Conic(A, B, C, D, E)",
+        "P = Point(k)",
+        "t = PathParameter(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 0.5 },
+        { "action": "move", "label": "P", "x": 1.0, "y": -1.0 },
+        { "action": "move", "label": "P", "x": 100.0, "y": 100.0 },
+        { "action": "move", "label": "D", "x": -2.0, "y": -1.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [0.0, 64.0, 0.0, 0.0, 0.0, -32.0],
+            "lines": [
+              [-0.0, 1.0, -1.0],
+              [-0.0, 1.0, 0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [0.0, 64.0, 0.0, 0.0, 0.0, -32.0],
+            "lines": [
+              [-0.0, 1.0, -1.0],
+              [-0.0, 1.0, 0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "t": { "type": "number", "defined": true, "value": 0.375 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [0.0, 64.0, 0.0, 0.0, 0.0, -32.0],
+            "lines": [
+              [-0.0, 1.0, -1.0],
+              [-0.0, 1.0, 0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "t": { "type": "number", "defined": true, "value": 0.375 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [0.0, 64.0, 0.0, 0.0, 0.0, -32.0],
+            "lines": [
+              [-0.0, 1.0, -1.0],
+              [-0.0, 1.0, 0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.875 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [0.0, 64.0, 0.0, 0.0, 0.0, -32.0],
+            "lines": [
+              [-0.0, 1.0, -1.0],
+              [-0.0, 1.0, 0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 100.0, "y": 1.0 },
+          "t": { "type": "number", "defined": true, "value": 0.4975247524752475 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [0.0, -64.0, 0.0, 16.0, 0.0, 0.0],
+            "lines": [
+              [0.0, -4.352501798965643, -0.0],
+              [-1.9464979789354604, 3.8929959578709203, -0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 100.0, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.01042740165288683 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [0.0, -64.0, 0.0, 16.0, 0.0, 0.0],
+            "lines": [
+              [0.0, -4.352501798965643, -0.0],
+              [-1.9464979789354604, 3.8929959578709203, -0.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "t": { "type": "number", "defined": true, "value": 0.8010934409414027 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-degenerate-004",
+      "group": "conicpaths",
+      "script": [
+        "A = (-2, 0)",
+        "B = (-1, 0)",
+        "C = (0, 0)",
+        "D = (1, 0)",
+        "E = (2, 0)",
+        "k = Conic(A, B, C, D, E)",
+        "P = Point(k)",
+        "t = PathParameter(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 5.0, "y": 5.0 },
+        { "action": "move", "label": "P", "x": -5.0, "y": -5.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "P", "x": 3.0, "y": 3.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "k": { "type": "conic", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "k": { "type": "conic", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "k": { "type": "conic", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "k": { "type": "conic", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "k": { "type": "conic", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "k": { "type": "conic", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "k": { "type": "conic", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-degenerate-005",
+      "group": "conicpaths",
+      "script": [
+        "a = 0",
+        "k: x^2 + y^2 = a",
+        "P = Point(k)",
+        "t = PathParameter(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 5.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "P", "x": -3.0, "y": -3.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 1.414213562373095 },
+          "t": { "type": "number", "defined": true, "value": 0.625 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.7071067811865476, "y": 0.7071067811865475 },
+          "t": { "type": "number", "defined": true, "value": 0.625 }
+        }
+      ]
+    },
+    {
+      "id": "conicpaths-degenerate-006",
+      "group": "conicpaths",
+      "script": [
+        "A = (-2, 0)",
+        "B = (0, 1)",
+        "C = (2, 0)",
+        "D = (0, -1)",
+        "E = (1, 1)",
+        "k = Conic(A, B, C, D, E)",
+        "P = Point(k)",
+        "t = PathParameter(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "E", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": 7.0, "y": 7.0 },
+        { "action": "move", "label": "E", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": -2.0, "y": 0.0 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [-8.0, -32.0, 32.0, 4.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0864358969519774, 0.9900093844219513],
+            "eigenvectors": [
+              [-0.9870874576374968, -0.1601822430069672],
+              [0.1601822430069672, -0.9870874576374968]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.15858192379465488, "y": -0.9772258463063271 },
+          "t": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [-8.0, -32.0, 32.0, 4.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0864358969519774, 0.9900093844219513],
+            "eigenvectors": [
+              [-0.9870874576374968, -0.1601822430069672],
+              [0.1601822430069672, -0.9870874576374968]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.9999999999999999, "y": 1.0 },
+          "t": { "type": "number", "defined": true, "value": 0.15733851627931267 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": { "type": "conic", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "t": { "type": "number", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": { "type": "conic", "defined": false },
+          "P": { "type": "point", "defined": true, "x": 1.8374553438117724, "y": 0.6865114795415491 },
+          "t": { "type": "number", "defined": true, "value": 0.063276676652694 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [-8.0, -32.0, 32.0, 4.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0864358969519774, 0.9900093844219513],
+            "eigenvectors": [
+              [-0.9870874576374968, -0.1601822430069672],
+              [0.1601822430069672, -0.9870874576374968]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.8374553438117724, "y": 0.6865114795415491 },
+          "t": { "type": "number", "defined": true, "value": 0.063276676652694 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [-8.0, -32.0, 32.0, 4.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0864358969519774, 0.9900093844219513],
+            "eigenvectors": [
+              [-0.9870874576374968, -0.1601822430069672],
+              [0.1601822430069672, -0.9870874576374968]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 1.1102230246251565E-16 },
+          "t": { "type": "number", "defined": true, "value": 0.44755382790689574 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [0.0, -8.0, 8.0, -2.0, 2.0, 0.0],
+            "lines": [
+              [-1.9464979789354604, -3.8929959578709203, -3.8929959578709212],
+              [0.0, 4.352501798965643, -4.352501798965643]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": -6.905465503823787E-17 },
+          "t": { "type": "number", "defined": true, "value": 0.3348464861633207 }
+        }
+      ]
+    }
+  ]
+}
