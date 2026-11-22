@@ -241,6 +241,11 @@ for index in range(584, 588):
                [dict(mv("Q", 100000000, 0), reference_parse_error=True),
                 dict(mv("R", 0.2, 0.00001), reference_parse_error=True),
                 mv("Q", 1, 0), mv("R", 0.2, 0.8), setn("n", 0), setn("n", index)])
+cases.case("cubics", ["P = (0, 0)", "Q = (1, 0)", "R = (0.2, 0.8)", "n = 584",
+                     "c = Cubic(P, Q, R, n)"],
+           [mv("Q", 100000000, 0), mv("R", 0.2, 0),
+            dict(mv("R", 0.2, 0.00001), reference_parse_error=True),
+            mv("Q", 1, 0), mv("R", 0.2, 0.8)])
 
 cases.case(
     "trianglecurve", ["A = (0, 0)", "B = (4, 0)", "C = (0, 2)", "h = 2",
