@@ -98,7 +98,7 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
             }
         }
     }
-    for (label, element) in elements {
+    for (&label, element) in &elements {
         if let Some(condition) = &element.condition {
             if c.kernel.id(label).is_some() {
                 let result = expression_line(condition).and_then(|source| {

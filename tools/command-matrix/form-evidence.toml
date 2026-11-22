@@ -1822,9 +1822,6 @@ form = "conic"
 cases = ["relationreview-asymptotes-001"]
 
 [[form]]
-command = "CurveCartesian"
-form = "number,number,number,number,number"
-cases = ["importgaps-curve-001"]
 command = "Text"
 form = "any"
 cases = ["textformat-signatures-001"]
@@ -2043,3 +2040,8 @@ cases = ["textnumbers-continuedlong-001"]
 command = "ContinuedFraction"
 form = "number,number,boolean"
 cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "CurveCartesian"
+form = "number,number,number,number,number"
+cases = ["importgaps-curve-001"]
