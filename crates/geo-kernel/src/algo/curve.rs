@@ -225,6 +225,7 @@ impl<'a> Cartesian<'a> {
     fn with_depth(c: &'a Construction, id: Id, depth: u8) -> Option<Self> {
         use super::{analysis::AnalysisDef, measure::MeasureDef, vector::VectorDef};
         use crate::{Def, Kind};
+        let id = c.conditional_source(id)?;
         let Value::Curve { start, end } = c.value(id) else {
             return None;
         };

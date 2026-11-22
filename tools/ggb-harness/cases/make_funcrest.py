@@ -105,4 +105,28 @@ case("vertexform", "n = 2\nf(x) = (x+1)^n\ng(x) = n*(x+1)^2\nh(x) = 4*(x+1)^2 + 
 case("vertexform", "n = 1\nf(x) = (x+1)^2 + 0/n\ng = IsVertexForm(f)\nh = IsVertexForm(Function())",
      [setn("n", 0), setn("n", 2), reject("a = IsVertexForm()"), reject("a = IsVertexForm({1,2})")])
 
+# ---------------------------------------------------------------------- If
+cases.topic("conditional")
+case("conditional",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\nb = n > 0\ns = If(b, r, Segment(A, C))\nd = Length(s)",
+     [setn("n", 0), mv("C", 0, 2), setn("n", 1)])
+case("conditional",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\ns = If(n > 0, Line(A, B), n < 0, Line(A, C))",
+     [setn("n", 0), setn("n", -1), mv("C", 3, 3)])
+case("conditional",
+     "n = 1\nA = (3, 0)\nB = (0, 3)\nO = (0, 0)\na = CircularArc(O, A, B)\nb = CircularArc(O, B, A)\nc = If(n > 0, a, b)\nd = Length(c)\nP = Point(c, 0.5)",
+     [setn("n", -1), mv("A", 0, 0), mv("A", 3, 0), setn("n", 1)])
+case("conditional",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (0, -3)\np = Polygon(A, B, C)\nq = Polygon(A, B, D)\nr = If(n > 0, p, n < 0, q)\naa = Area(r)",
+     [setn("n", 0), setn("n", -1), mv("D", 0, -5), setn("n", 1)])
+case("conditional",
+     "n = 1\np = Curve(t, t^2, t, 0, 3)\nq = Curve(t, -t^2, t, 0, 3)\nr = If(n > 0, p, q)\nP = Point(r, 0.5)",
+     [setn("n", -1), setn("n", 1)])
+case("conditional",
+     "n = 1\nb = n > 0\na = If(b, true, 5)\nP = If(b, 3, (2, 1))\nq = If(b, {1, 2}, 3)",
+     [setn("n", 0), setn("n", 1)])
+case("conditional",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\ng = Line(A, C)\ns = If(n > 0, r, g)",
+     [setn("n", -1), setn("n", 1)])
+
 cases.write()

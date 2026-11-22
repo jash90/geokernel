@@ -29,11 +29,17 @@ pub(crate) fn conditional_kind(kind: Kind) -> Option<&'static [Kind]> {
         Kind::Ray => &[Kind::Ray],
         Kind::Circle => &[Kind::Circle],
         Kind::Conic => &[Kind::Conic],
+        Kind::Arc => &[Kind::Arc],
+        Kind::Sector => &[Kind::Sector],
+        Kind::Polygon => &[Kind::Polygon],
+        Kind::PolyLine => &[Kind::PolyLine],
+        Kind::Curve => &[Kind::Curve],
+        Kind::Locus => &[Kind::Locus],
         _ => return None,
     })
 }
 
-/// `AlgoIf` where the alternatives are named geometric objects of one kind.
+/// Conditional alternatives that carry geometric values or records.
 pub(crate) fn define_geometry_if(
     c: &mut Construction,
     label: &str,
@@ -42,8 +48,16 @@ pub(crate) fn define_geometry_if(
     let ("If", args) = split_call(input)? else {
         return None;
     };
-    let kind = c.kind(c.id(args.get(1)?)?);
+    let first = args.get(1)?;
+    let kind = c.id(first).map(|id| c.kind(id)).or_else(|| {
+        crate::script::parse_def(c, first)
+            .ok()
+            .map(|def| def.kind())
+    })?;
     conditional_kind(kind)?;
+    if args.len() > crate::expr::MAX_EVALUATION_WORK as usize {
+        return Some(Err("too many If alternatives".into()));
+    }
     let checkpoint = c.checkpoint();
     let result = (|| {
         let mut parents = Vec::with_capacity(args.len());
@@ -59,9 +73,12 @@ pub(crate) fn define_geometry_if(
                 }
                 c.id(&label).expect("argument object was just added")
             } else {
-                return Err(format!(
-                    "`If` needs a named {kind} alternative, got `{arg}`"
-                ));
+                let def = crate::script::parse_def(c, arg)
+                    .ok()
+                    .filter(|def| def.kind() == kind)
+                    .ok_or_else(|| format!("`If` needs a {kind} alternative, got `{arg}`"))?;
+                let label = format!("\0arg{}", c.len());
+                c.add(&label, def).map_err(|e| e.to_string())?
             };
             parents.push(id);
         }
@@ -197,6 +214,7 @@ impl<const M: bool> Ctx<'_, M> {
         match (ty, x.val) {
             (_, Val::N(v)) if v.is_nan() => undefined(),
             (Ty::Vec, Val::N(v)) => Ex::plain(Val::V(v, 0.0)),
+            (Ty::Num(_), Val::B(b, _)) => Ex::plain(Val::N(f64::from(u8::from(b)))),
             (Ty::Num(_), Val::N(v)) => {
                 // `getNumber` keeps the decimal when the definition is
                 // constant (`reuseDefinition`): the branch is a literal, a

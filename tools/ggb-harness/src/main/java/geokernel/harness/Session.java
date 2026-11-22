@@ -373,6 +373,9 @@ final class Session {
             throw new IllegalStateException("GeoGebra labelled '" + line + "' as "
                     + geo.getLabelSimple());
         }
+        if ("conditional".equals(expected)) {
+            expected = schemaType(geo);
+        }
         boolean expression = expected == null;
         if (equationLine) {
             // an equation makes a line, a conic or (of `y = ...` alone) a
@@ -1189,7 +1192,7 @@ final class Session {
                 if (branch instanceof GeoLine || branch instanceof GeoConic) {
                     return schemaType(branch);
                 }
-                return null;
+                return "conditional";
             case "ApplyMatrix":
                 List<String> args = arguments(definition);
                 GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;

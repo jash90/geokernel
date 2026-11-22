@@ -155,6 +155,7 @@ impl LocusData {
 impl Construction {
     /// The points of the locus `id`; `None` for any other object.
     pub fn locus(&self, id: Id) -> Option<&LocusData> {
+        let id = self.conditional_source(id)?;
         match self.defs.get(id.0)? {
             Def::Locus(_) | Def::Discrete(_) => {
                 self.locus_slot(id.0).map(|slot| &self.loci[slot].1)

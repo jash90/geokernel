@@ -779,13 +779,6 @@ mismatches = [
 ]
 
 [[gap]]
-id = "georestsmall-iflimited-001"
-reason = "Geometric If alternatives must be named objects."
-mismatches = [
-  "0:script line 6",
-]
-
-[[gap]]
 id = "georestsmall-surdcomplex-001"
 reason = "The kernel has no complex point mode, so the input point cannot be constructed."
 mismatches = [
@@ -924,3 +917,8 @@ mismatches = ["0:M", "1:M", "2:M"]
 id = "misc-minimizepoint-001"
 reason = "the minimum of the circle has the same y coordinate but the reference search returns x = 2.9999999942609166 and the kernel search returns x = 2.999999999999956, outside the coordinate tolerance"
 mismatches = ["0:M", "1:M"]
+
+[[gap]]
+id = "funcrest-conditional-007"
+reason = "the reference keeps a segment result and its last copied endpoints when a plain line is selected; the kernel refuses mixed geometric kinds because a segment value has no independent supporting line or retained endpoints"
+mismatches = ["0:script line 7"]

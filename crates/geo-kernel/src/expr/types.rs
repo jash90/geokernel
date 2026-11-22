@@ -385,12 +385,14 @@ fn type_node(
                 (state.tys[then], 0, 0, 0)
             } else {
                 let r = rest as usize;
-                (
-                    join(state.tys[then], state.tys[r])?,
-                    state.depth[r],
-                    state.cost[r],
-                    state.vars[r],
-                )
+                let (left, right) = (state.tys[then], state.tys[r]);
+                let ty = match (mode, left, right) {
+                    (IfMode::Algo, Ty::Bool, n @ Ty::Num(_))
+                    | (IfMode::Algo, n @ Ty::Num(_), Ty::Bool)
+                    | (IfMode::Algo, n @ Ty::List(_), Ty::Num(_)) => n,
+                    _ => join(left, right)?,
+                };
+                (ty, state.depth[r], state.cost[r], state.vars[r])
             };
             if mode != IfMode::Algo && !matches!(ty, Ty::Num(_)) {
                 // `CmdIf.checkAdd`: the branches must be functions

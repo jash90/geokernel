@@ -90,7 +90,7 @@ FORM_NOTES = {
     "CommonDenominator": "Number pairs and rational-function pairs.",
     "LeftSide": "Lines, conics and implicit polynomial equations.",
     "RightSide": "Lines, conics and implicit polynomial equations.",
-    "If": "Scalar, coordinate, boolean, text, list and numeric-function branches, and named alternatives of a single line, segment, ray, circle or conic kind.",
+    "If": "Scalar, coordinate, boolean, text, list and numeric-function branches, plus same-kind geometry alternatives with live shape records.",
     "Relation": "Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.",
 }
 P1_GROUPS = {"geometry", "conic", "transformation"}

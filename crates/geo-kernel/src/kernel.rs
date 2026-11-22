@@ -2209,7 +2209,13 @@ impl Construction {
                         && !matches!(
                             def,
                             Def::Conditional {
-                                kind: Kind::Circle | Kind::Conic,
+                                kind: Kind::Circle
+                                    | Kind::Conic
+                                    | Kind::Polygon
+                                    | Kind::PolyLine
+                                    | Kind::Arc
+                                    | Kind::Sector
+                                    | Kind::Locus,
                                 ..
                             }
                         )
@@ -2217,7 +2223,7 @@ impl Construction {
                         // Nothing downstream can change because of this object.
                         continue;
                     }
-                    // Curves and conditional conics can change shape at constant summary values.
+                    // Shape records can change while their summary values stay equal.
                     self.values[i] = new;
                 }
             }
@@ -2437,10 +2443,19 @@ impl Construction {
     /// The record of the arc or sector `id`: its conic, the range of its
     /// parameter and its measures. `None` for any other object.
     pub fn arc(&self, id: Id) -> Option<ArcData> {
-        match self.defs.get(id.0)? {
-            Def::Arc(d) if d.has_record() => self.arc_slot(id.0).map(|slot| self.arcs[slot].1),
-            _ => None,
+        let source = self.conditional_source(id)?;
+        let Def::Arc(d) = self.defs.get(source.0)? else {
+            return None;
+        };
+        if !d.has_record() {
+            return None;
         }
+        let arc = self.arcs[self.arc_slot(source.0)?].1;
+        Some(if source == id {
+            arc
+        } else {
+            arc.conditional_copy()
+        })
     }
 
     /// Where the state of object `i` is kept in `paths`.
@@ -2553,13 +2568,8 @@ impl Construction {
     /// any other defined circle the record GeoGebra's circle commands make.
     /// `None` for other objects and for an undefined circle that keeps no
     /// record. A record may be undefined ([`ConicData::defined`]).
-    pub fn conic(&self, mut id: Id) -> Option<ConicData> {
-        while let Def::Conditional { args, .. } = self.defs.get(id.0)? {
-            if !self.values[id.0].is_defined() {
-                return None;
-            }
-            id = expr::conditional_branch(self, self.list(*args))?;
-        }
+    pub fn conic(&self, id: Id) -> Option<ConicData> {
+        let id = self.conditional_source(id)?;
         match self.defs.get(id.0)? {
             Def::ImplicitCurve(index)
                 if self.kind(id) == Kind::Conic && self.value(id).is_defined() =>
@@ -2574,6 +2584,21 @@ impl Construction {
                 _ => None,
             },
         }
+    }
+
+    /// The active source of a conditional object. Branches precede their
+    /// result in the construction.
+    pub(crate) fn conditional_source(&self, mut id: Id) -> Option<Id> {
+        for _ in 0..=id.0 {
+            let Some(Def::Conditional { args, .. }) = self.defs.get(id.0) else {
+                return Some(id);
+            };
+            if !self.values[id.0].is_defined() {
+                return None;
+            }
+            id = expr::conditional_branch(self, self.list(*args))?;
+        }
+        None
     }
 
     /// The current contents of a text object.
