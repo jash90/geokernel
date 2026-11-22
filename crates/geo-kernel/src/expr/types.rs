@@ -191,6 +191,60 @@ pub(crate) fn check(
                     0,
                 )
             }
+            Node::SystemFunction(_, a) => {
+                let a = a as usize;
+                if !matches!(tys[a], Ty::Num(_)) {
+                    return Err("a system function must give a number".into());
+                }
+                (tys[a], depth[a] + 1, cost[a].saturating_add(1), 0)
+            }
+            Node::FunctionAsymptotes(a) => {
+                let a = a as usize;
+                if !matches!(tys[a], Ty::Num(_)) {
+                    return Err("Asymptote needs a real function".into());
+                }
+                (
+                    Ty::List(Elem::Object),
+                    depth[a] + 1,
+                    cost[a].saturating_add(1),
+                    0,
+                )
+            }
+            Node::RootList(a) => {
+                let a = a as usize;
+                if !matches!(tys[a], Ty::List(_)) || vars[a] != 0 {
+                    return Err("RootList needs a list of values".into());
+                }
+                (
+                    Ty::List(Elem::Vec),
+                    depth[a] + 1,
+                    cost[a].saturating_add(1),
+                    0,
+                )
+            }
+            Node::Iteration {
+                mode,
+                collect,
+                formula,
+                initial,
+                count,
+            } => {
+                let [f, a, n] = [formula, initial, count].map(|i| i as usize);
+                let ty = commands::function_analysis::iteration_type(
+                    mode, collect, tys[f], tys[a], tys[n],
+                )?;
+                if vars[a] != 0 || vars[n] != 0 {
+                    return Err("Iteration needs fixed initial values and count".into());
+                }
+                (
+                    ty,
+                    1 + depth[f].max(depth[a]).max(depth[n]),
+                    1u64.saturating_add(cost[f])
+                        .saturating_add(cost[a])
+                        .saturating_add(cost[n]),
+                    0,
+                )
+            }
             Node::PolynomialPart(_, a, b) => {
                 let (a, b) = (a as usize, b as usize);
                 if !matches!((tys[a], tys[b]), (Ty::Num(_), Ty::Num(_))) {

@@ -165,3 +165,59 @@ Each of these is a switch of `OwnerRules` (`crates/geo-app-core/src/app.rs`); th
 | `MinimumSpanningTree(number, number, ...)` | The shared dispatcher can wrap numbers into a list, but the algorithm rejects a list of multiple numbers when it reads them as points. | Reports a command error. | A number supplies no point coordinates. The harness records the rejection in `discrete-tree-001`. |
 | Traveling salesman with an undefined site on update | The tour heuristic can throw while reading the missing site. | The locus is undefined until the sites are defined again. | A partial tour would be misleading. Both reject a missing site at creation, as recorded in `discrete-tour-009`. |
 | Discrete graph work limit | Work depends on list size, geometry and the tour's improvement steps. | A graph is undefined when its computation exhausts the kernel's work budget. | Moving a site or growing a list recomputes the graph and must finish within a bounded amount of work. |
+
+## Numerical function analysis
+
+| Area | GeoGebra | geokernel | Reason |
+| --- | --- | --- | --- |
+| `Root(function)`, `Roots(function)`, `Roots(function, number, number)`, `Extremum(function)`, `Extremum(function, number, number)`, `TurningPoint(function)`, `ComplexRoot(function)`, `RemovableDiscontinuity(function)` | An algorithm can create more labelled outputs after an edit. | Existing slots recompute in order and become undefined when the corresponding result disappears. Additional labels are allocated at creation. | Growing the output list requires journal support. The kernel keeps a stable set of objects for replay. |
+| `ComplexRoot(function)` | Uses complex-number display and CAS-aware polynomial expansion. | Returns points whose coordinates are the real and imaginary parts of the numeric polynomial roots. | The geometry kernel represents the two coordinates without a separate complex number kind. |
+| `Function(function, any, number, number)` | A standalone bound variable names the restricted function's local argument. | Accepts an identifier as the bound variable, with inclusive endpoints. | The argument is a binding and must be a valid name. The empty and freehand forms are outside the restriction implementation. |
+| `Iteration(function, any, ...)`, `IterationList(function, any, ...)` | Local variables can carry arbitrary objects and may use symbolic substitution. | Local recurrences support numeric, point and boolean values with homogeneous seeds. The standard one- and two-variable numeric forms are also supported. | Both commands share the expression work budget. `IterationList` also has the list element limit of 2²⁰, including the initial value. |
+| `Asymptote(conic)` | Computes conic asymptotes without CAS. | Computes conic asymptotes. | The Java harness verifies the hyperbola case in `relationreview-asymptotes-001`. |
+| `Asymptote(function)` | Uses CAS limits and solves for poles. | Finds poles and horizontal or oblique limits of rational functions and of exp, atan or log with affine arguments. | Defined function asymptotes are unverified against a CAS-enabled reference. General CAS limits and implicit polynomials are outside the numeric solver. |
+| `RemovableDiscontinuity(function)` | Solves denominators and takes limits with CAS. | Finds rational holes by polynomial multiplicity. For other expressions with a polynomial denominator, it estimates a two-sided limit at each denominator root. | Defined holes are unverified against a CAS-enabled reference. |
+| `NSolveODE(list, number, list, number)` | Uses Dormand–Prince 5(4) and records the accepted steps. | Integrates once per input set and recomputation, sharing accepted states across output slots. Supports up to 16 coupled states and 99,999 trials after the initial state. The outputs are undefined if the solve runs out of trials or work before reaching the end. | The limit bounds memory and work. With `y'(t,y) = 1`, the Java harness records 200,002 points for `NSolveODE({y'},0,{1},2000)`, including the initial point and the endpoint at time 2000. The kernel returns an undefined locus for this input. |
+| Numeric `SolveODE` | Uses classical RK4. A failure during integration leaves a defined locus containing the points already recorded. | Keeps the initial point and any completed steps when integration stops. The kernel caps the trace at 100,000 points and also stops on work-budget exhaustion. | Invalid inputs such as a zero step still give an undefined locus. |
+
+The headless reference harness configures `CASFactoryDummy`. It records
+empty asymptote lists for the polynomial and undefined holes for the
+no-hole examples. Those outcomes verify the headless configuration only.
+The function asymptotes and finite holes listed in the fixture gaps have
+no CAS-enabled oracle values. The dummy CAS also leaves the sine curvature
+vector undefined in the harness. The kernel evaluates it numerically.
+
+`Roots` samples both explicit intervals and the active sampling window,
+even for polynomials. It uses the construction's horizontal view scale and
+falls back to the reference headless view when no view is supplied.
+Unrestricted `Extremum(function)` samples the view when the expanded
+degree exceeds 25. Three-argument `If` uses the numerical path in
+`Root`, `Roots` and `Extremum`. The reference `TurningPoint` still
+requires a polynomial or a supported restricted polynomial.
+
+`Root(function)` keeps products and integer powers factored when possible.
+Dense polynomial expansion and Laguerre deflation are work-budgeted.
+Expansion bounds each power at 300, the reference parser's bound for literal
+powers. The work budget governs the overall expanded degree.
+The real polynomial command limits Laguerre to 100 evaluations per factor
+and keeps exact zero roots if deflation fails, as the reference does.
+
+The bracketed solver introduced in `b95f406` had tolerance defaults and
+control flow consistent with the reference's third-party solver. This
+revision implements the bracket updates and inverse interpolation from
+[Brent, *Algorithms for Minimization without Derivatives* (1973), chapter 4](https://maths-people.anu.edu.au/brent/pub/pub011.html).
+The EUPL command classes supply the seed and endpoint ordering,
+defined-domain retry, and accuracy settings. The Java harness checks the
+returned roots and Newton polishing, including when Brent returns an
+endpoint.
+
+The Runge–Kutta formulas come from [Dormand and Prince, *A family of
+embedded Runge-Kutta formulae* (1980), table 2](https://doi.org/10.1016/0771-050X(80)90013-3)
+and [Hairer, Nørsett and Wanner, *Solving Ordinary Differential Equations I*,
+chapter II](https://doi.org/10.1007/978-3-540-78862-1), which describes
+classical RK4 and adaptive step size selection. The Java harness compares
+step times, accepted states and endpoints.
+
+Curvature of general function and parametric inputs uses a five-point
+finite difference of the kernel's first derivative where a second derivative
+is needed.

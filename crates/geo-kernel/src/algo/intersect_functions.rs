@@ -263,7 +263,13 @@ impl FunctionIntersection {
                     let (Some(left), Some(right)) = (number(c, left), number(c, right)) else {
                         return Vec::new();
                     };
-                    interval_roots(&difference, left, right, || work.exhausted())
+                    interval_roots(
+                        &difference,
+                        left,
+                        right,
+                        crate::kernel::locus::HEADLESS_VIEW[4],
+                        || work.exhausted(),
+                    )
                 }
                 Method::Seed { .. } | Method::Automatic(_) => self
                     .seed(c)
@@ -448,6 +454,7 @@ impl FunctionIntersection {
                 },
                 left,
                 right,
+                crate::kernel::locus::HEADLESS_VIEW[4],
                 || work.exhausted(),
             )
         };

@@ -55,6 +55,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | `id` | string | Unique within the whole `golden/` tree. |
 | `group` | string | Command group, equal to the directory name. |
 | `script` | array of string | GeoGebra input-bar lines with English command names, run in order. Every line has the form `label = definition` or, for an equation, `label: lhs = rhs`, so every object has an explicit label. |
+| `view` (optional) | array of six numbers | Initial sampling window, in the order xmin, xmax, ymin, ymax, x scale, y scale. Scales are in pixels per world unit. |
 | `steps` | array of Step | The first step is always `initial`. |
 | `snapshots` | array of Snapshot | Same length as `steps`. `snapshots[i]` is the state after `steps[i]`. |
 
@@ -183,6 +184,11 @@ This includes a point at infinity and a circle whose centre is at infinity,
 both of which GeoGebra itself reports as defined. A polygon with a vertex at
 infinity is recorded as undefined; in a polyline such a vertex is `null`, and
 its length is not finite, so the polyline is undefined.
+
+A defined Cartesian curve can also carry `samples_curve`, an array of
+`[parameter, [x, y]]` entries at fixed fractions of its parameter interval.
+The coordinate pair is `null` when either coordinate is nonfinite. If the
+array is present, replay checks every sample at the existing tolerance.
 
 ## Comparison rules
 
