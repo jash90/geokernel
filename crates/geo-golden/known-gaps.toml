@@ -793,11 +793,6 @@ mismatches = [
 ]
 
 [[gap]]
-id = "implicit-barycentric-002"
-reason = "The kernel has no scoped binding and substitution of the three barycentric coordinates in the command equation."
-mismatches = ["0:script line 4"]
-
-[[gap]]
 id = "implicit-graph-003"
 reason = "The oscillating graph reaches 66 reference outputs. Above the 64-slot budget, the kernel keeps its existing first slot undefined and skips growth. The first slot recovers after the frequency drops."
 mismatches = [

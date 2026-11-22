@@ -3,7 +3,7 @@
 use super::{build_normal, Builder, Entry, NotPolynomial};
 use crate::algo::implicit::barycentric;
 use crate::algo::{conic_nd::ConicData, general_conic};
-use crate::expr::{eval, parse, shift_children, Element, Lit, Node, Raw, Ty};
+use crate::expr::{eval, parse, shift_children, Bin, Elem, Element, Lit, Node, Raw, Ty};
 use crate::{Construction, Def, Error, Id, Kind, Value};
 
 /// Coefficients indexed by the power of x, then by the power of y.
@@ -27,6 +27,7 @@ enum Source {
     Function(Id),
     Points(Id),
     Cubic([Id; 4]),
+    Triangle { vertices: [Id; 3], sides: [u32; 2] },
 }
 
 impl Record {
@@ -54,21 +55,22 @@ pub(super) fn definition(
     sides: [parse::Parsed; 2],
 ) -> Result<Id, Error> {
     let first = c.exprs.entries.len();
-    for parsed in sides {
-        let entry = Entry::new(c, parsed, true);
-        c.exprs.entries.push(entry);
-    }
-    let result = add(
-        c,
-        label,
-        Record::new(Source::Equation([first as u32, first as u32 + 1])),
-    );
+    let sides = store_sides(c, sides);
+    let result = add(c, label, Record::new(Source::Equation(sides)));
     if let Ok(id) = result {
         c.set_equation_form(id, crate::kernel::EquationForm::User)?;
     } else {
         c.exprs.entries.truncate(first);
     }
     result
+}
+
+fn store_sides(c: &mut Construction, sides: [parse::Parsed; 2]) -> [u32; 2] {
+    sides.map(|parsed| {
+        let index = c.exprs.entries.len() as u32;
+        c.exprs.entries.push(Entry::new(c, parsed, true));
+        index
+    })
 }
 
 impl Construction {
@@ -147,17 +149,20 @@ fn add(c: &mut Construction, label: &str, record: Record) -> Result<Id, Error> {
 pub(crate) fn parents(c: &Construction, index: u32) -> Vec<Id> {
     let mut parents = Vec::new();
     match c.implicit_curves[index as usize].1.source {
-        Source::Equation(sides) => {
+        Source::Equation(sides) | Source::Triangle { sides, .. } => {
+            if let Source::Triangle { vertices, .. } = c.implicit_curves[index as usize].1.source {
+                parents.extend(vertices);
+            }
             for entry in sides {
                 parents.extend(&c.exprs.entries[entry as usize].parents);
             }
-            parents.sort_unstable();
-            parents.dedup();
         }
         Source::Function(id) | Source::Points(id) => parents.push(id),
         Source::Cubic(inputs) => parents.extend(inputs),
         Source::Matrix => {}
     }
+    parents.sort_unstable();
+    parents.dedup();
     parents
 }
 
@@ -165,10 +170,18 @@ fn normal(
     c: &Construction,
     lhs: &Entry,
     rhs: Option<&Entry>,
+    affine: Option<[[f64; 3]; 3]>,
 ) -> Result<(u32, Coefficients), NotPolynomial> {
-    let mut builder = Builder::function(lhs);
+    let mut builder = if affine.is_some() {
+        Builder::empty()
+    } else {
+        Builder::function(lhs)
+    };
     builder.max_degree = MAX_DEGREE;
-    let poly = if let Some(rhs) = rhs {
+    let poly = if let (Some(affine), Some(rhs)) = (affine, rhs) {
+        let [left, right] = substitute_affine(&mut builder, [lhs, rhs], affine)?;
+        build_normal(c, &mut builder, left, right)?
+    } else if let Some(rhs) = rhs {
         let offset = builder.nodes.len() as u32;
         builder.nodes.extend(rhs.nodes.iter().map(|node| {
             let mut node = *node;
@@ -223,8 +236,70 @@ fn normal(
     Ok((degree, coefficients))
 }
 
+fn substitute_affine(
+    builder: &mut Builder,
+    sides: [&Entry; 2],
+    affine: [[f64; 3]; 3],
+) -> Result<[u32; 2], NotPolynomial> {
+    const MAX_INPUT_NODES: usize = 512;
+    const WORK_LIMIT: usize = 250_000;
+    if sides.iter().map(|entry| entry.nodes.len()).sum::<usize>() > MAX_INPUT_NODES {
+        return Err(NotPolynomial::ImplicitCurve);
+    }
+    builder.remaining_work = Some(WORK_LIMIT);
+    builder.coefficient_locals = Some(std::array::from_fn(|i| affine[i / 3][i % 3]));
+    let x = builder.push(Node::Var);
+    let y = builder.push(Node::VarY);
+    let substitutions: [Node; 3] = std::array::from_fn(|i| {
+        let slot = |j: u32| Node::Local(u32::MAX - 3 * i as u32 - j, Elem::Num);
+        let constant = builder.push(slot(0));
+        let a = builder.push(slot(1));
+        let b = builder.push(slot(2));
+        let ax = builder.push(Node::Bin(Bin::Mul, a, x));
+        let by = builder.push(Node::Bin(Bin::Mul, b, y));
+        let sum = builder.push(Node::Bin(Bin::Add, ax, by));
+        Node::Bin(Bin::Add, sum, constant)
+    });
+    let mut roots = [0; 2];
+    for (entry, root) in sides.into_iter().zip(&mut roots) {
+        let Node::SystemFunction(3, body) = entry.nodes[entry.root as usize] else {
+            return Err(NotPolynomial::ImplicitCurve);
+        };
+        let offset = builder.nodes.len() as u32;
+        builder
+            .nodes
+            .extend(entry.nodes[..entry.root as usize].iter().map(|&node| {
+                if let Node::Local(index @ 0..=2, _) = node {
+                    return substitutions[index as usize];
+                }
+                let mut node = node;
+                shift_children(&mut node, offset);
+                node
+            }));
+        builder
+            .lits
+            .extend_from_slice(&entry.lits[..entry.root as usize]);
+        *root = offset + body;
+    }
+    Ok(roots)
+}
+
 fn coefficient_value(c: &Construction, builder: &Builder, root: u32) -> Option<f64> {
-    let parsed = crate::expr::reparse(c, Kind::Number, &builder.nodes, &builder.lits, root)?;
+    let resolved;
+    let nodes = if builder.coefficient_locals.is_some() {
+        resolved = builder
+            .nodes
+            .iter()
+            .map(|&node| match node {
+                Node::Local(index, _) => builder.coefficient_local(index).map_or(node, Node::Num),
+                _ => node,
+            })
+            .collect::<Vec<_>>();
+        &resolved
+    } else {
+        &builder.nodes
+    };
+    let parsed = crate::expr::reparse(c, Kind::Number, nodes, &builder.lits, root)?;
     match eval::root(c, &Entry::new(c, parsed, false), None).0 {
         Raw::Num(value) => Some(value),
         _ => None,
@@ -246,6 +321,7 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
                 c,
                 &c.exprs.entries[left as usize],
                 Some(&c.exprs.entries[right as usize]),
+                None,
             ) else {
                 return Value::Undefined;
             };
@@ -260,7 +336,7 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
             let Def::Expr(def) = c.def(id) else {
                 return Value::Undefined;
             };
-            let Ok((_, coefficients)) = normal(c, crate::expr::entry(c, def), None) else {
+            let Ok((_, coefficients)) = normal(c, crate::expr::entry(c, def), None, None) else {
                 return Value::Undefined;
             };
             (Kind::ImplicitCurve, coefficients)
@@ -273,6 +349,26 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
         }
         Source::Cubic(inputs) => {
             let Some(coefficients) = barycentric::cubic(c, inputs) else {
+                return Value::Undefined;
+            };
+            (Kind::ImplicitCurve, coefficients)
+        }
+        Source::Triangle {
+            vertices: [a, b, d],
+            sides: [left, right],
+        } => {
+            let (Some(a), Some(b), Some(d)) = (c.point(a), c.point(b), c.point(d)) else {
+                return Value::Undefined;
+            };
+            let Some(affine) = barycentric::coordinates([a, b, d]) else {
+                return Value::Undefined;
+            };
+            let Ok((_, coefficients)) = normal(
+                c,
+                &c.exprs.entries[left as usize],
+                Some(&c.exprs.entries[right as usize]),
+                Some(affine),
+            ) else {
                 return Value::Undefined;
             };
             (Kind::ImplicitCurve, coefficients)
@@ -409,7 +505,9 @@ pub(crate) fn command(
     label: &str,
     input: &str,
 ) -> Option<Result<Id, String>> {
-    let (command @ ("ImplicitCurve" | "Cubic"), args) = crate::script::split_call(input)? else {
+    let (command @ ("ImplicitCurve" | "Cubic" | "TriangleCurve"), args) =
+        crate::script::split_call(input)?
+    else {
         return None;
     };
     let start = c.checkpoint();
@@ -424,6 +522,25 @@ pub(crate) fn command(
                 barycentric::argument(c, d, Kind::Point)?,
                 barycentric::argument(c, n, Kind::Number)?,
             ])
+        } else if command == "TriangleCurve" {
+            let [a, b, d, equation] = args.as_slice() else {
+                return Err("TriangleCurve needs three points and an equation".into());
+            };
+            let vertices = [
+                barycentric::argument(c, a, Kind::Point)?,
+                barycentric::argument(c, b, Kind::Point)?,
+                barycentric::argument(c, d, Kind::Point)?,
+            ];
+            let (left, right) = super::split_equation(equation)?;
+            let variables = &["A", "B", "C"];
+            let sides = store_sides(
+                c,
+                [
+                    parse::parse_scoped_equation(c, left, variables)?,
+                    parse::parse_scoped_equation(c, right, variables)?,
+                ],
+            );
+            Source::Triangle { vertices, sides }
         } else if let [argument] = args.as_slice() {
             let hidden = format!("\0implicit{}", c.len());
             match c.id(argument) {

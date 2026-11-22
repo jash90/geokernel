@@ -348,6 +348,13 @@ pub fn script_uses_form(
                 }
                 let mut kinds: Vec<Option<Kind>> =
                     args.iter().map(|a| arg_kind(a, labels)).collect();
+                if command == "TriangleCurve"
+                    && matches!(args.as_slice(), [_, _, _, equation]
+                        if equation.matches('=').count() == 1
+                            && !["<=", ">=", "!="].iter().any(|op| equation.contains(op)))
+                {
+                    kinds[3] = Some(Kind::ImplicitCurve);
+                }
                 if matches!(command, "If" | "CountIf" | "KeepIf") {
                     match (args.as_slice(), kinds.as_mut_slice()) {
                         ([test, ..], [first, ..]) if inline_inequality(test) => {

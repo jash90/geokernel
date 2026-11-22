@@ -3588,3 +3588,8 @@ cases = ["implicit-conic-010"]
 command = "Cubic"
 form = "point,point,point,number"
 cases = ["implicit-barycentric-001", "implicit-cubics-001", "implicit-cubics-002", "implicit-cubics-003"]
+
+[[form]]
+command = "TriangleCurve"
+form = "point,point,point,implicit"
+cases = ["implicit-barycentric-002", "implicit-trianglecurve-001", "implicit-trianglecurve-002"]

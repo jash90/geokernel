@@ -59,7 +59,7 @@ TriangleCenter,,geometry,P1,done,1,1,"TriangleCenter(point, point, point, index)
 Barycenter,,geometry,P1,done,1,1,
 Trilinear,,geometry,P1,done,1,1,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,done,1,1,
-TriangleCurve,,geometry,P1,todo,1,0,
+TriangleCurve,,geometry,P1,done,1,1,
 Vertex,,geometry,P1,partial,12,9,"Conic, polygon, polyline or graphics view, including indexed polygon, polyline, segment and raster image forms"
 PolyLine,,geometry,P1,done,4,4,Live list with optional Boolean or separate points with an optional false flag
 PenStroke,,geometry,P1,todo,2,0,

@@ -132,6 +132,8 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         function_dependent: false,
         variable_powers: false,
         abort_at: u64::MAX,
+        coefficient_locals: None,
+        remaining_work: None,
         max_degree: u32::MAX,
     };
 
@@ -353,6 +355,8 @@ pub(crate) struct Builder {
     /// build a tree far past the budget before the next pass is checked.
     pub(crate) abort_at: u64,
     max_degree: u32,
+    coefficient_locals: Option<[f64; 9]>,
+    remaining_work: Option<usize>,
 }
 
 impl Builder {
@@ -377,6 +381,8 @@ impl Builder {
             variable_powers: true,
             abort_at: u64::MAX,
             max_degree: u32::MAX,
+            coefficient_locals: None,
+            remaining_work: None,
         }
     }
 
@@ -391,12 +397,31 @@ impl Builder {
             variable_powers: true,
             abort_at: u64::MAX,
             max_degree: u32::MAX,
+            coefficient_locals: None,
+            remaining_work: None,
         }
+    }
+
+    fn charge(&mut self, steps: usize) -> Result<(), NotPolynomial> {
+        if let Some(remaining) = &mut self.remaining_work {
+            *remaining = remaining
+                .checked_sub(steps)
+                .ok_or(NotPolynomial::ImplicitCurve)?;
+        }
+        Ok(())
+    }
+
+    fn coefficient_local(&self, index: u32) -> Option<f64> {
+        self.coefficient_locals
+            .as_ref()?
+            .get((u32::MAX - index) as usize)
+            .copied()
     }
 
     /// `ExpressionNode.makePolynomialTree` of the subtree at `i`, with the
     /// operations of `Polynomial.apply` and `Term` on the coefficients.
     pub(crate) fn expand(&mut self, c: &Construction, i: u32) -> Result<Poly, NotPolynomial> {
+        self.charge(1)?;
         match self.node(i) {
             Node::Var => Ok(Poly(vec![Term {
                 x: 1,
@@ -595,6 +620,7 @@ impl Builder {
             seen[i as usize] = true;
             match self.node(i) {
                 Node::Obj(_) | Node::Apply(..) | Node::Cmd(..) | Node::If(..) => return true,
+                Node::Local(index, _) if self.coefficient_local(index).is_some() => return true,
                 node => stack.extend(children(&node)),
             }
         }
@@ -655,6 +681,7 @@ impl Builder {
             Node::Num(v) => v,
             Node::MinusOne => -1.0,
             Node::Degree => math::PI_180,
+            Node::Local(index, _) => self.coefficient_local(index)?,
             Node::Obj(id) => match c.value(id) {
                 Value::Number(v) => v,
                 _ => return None,
@@ -936,6 +963,7 @@ impl Poly {
     /// `Polynomial.multiply`: every term of this polynomial times every
     /// term of `e`, the variables joined, then [`Poly::simplify`].
     fn mul(&mut self, e: &Poly, b: &mut Builder) -> Result<(), NotPolynomial> {
+        b.charge(self.0.len().saturating_mul(e.0.len()))?;
         if self.0.len().saturating_mul(e.0.len()) > MAX_PRODUCT_TERMS
             || (b.max_degree != u32::MAX && self.degree().saturating_add(e.degree()) > b.max_degree)
         {
@@ -1003,6 +1031,7 @@ impl Poly {
     /// constant 0 is dropped, and a polynomial of no terms keeps a single
     /// constant 0.
     fn simplify(&mut self, b: &mut Builder) -> Result<(), NotPolynomial> {
+        b.charge(self.0.len().saturating_mul(self.0.len()))?;
         let mut kept: Vec<Term> = Vec::with_capacity(self.0.len());
         let mut consumed = vec![false; self.0.len()];
         for i in 0..self.0.len() {

@@ -231,14 +231,20 @@ for indices in ((1, 2, 3, 4, 10, 42, 42.9), (29, 30, 31, 129, -129, -400, 400),
                                               mv("R", 1, 3), mv("P", -2, 1)])
 cases.case("cubics", ["c = Cubic((1,1), (2,1/2), (3,1/3), 42)"], [])
 
+cases.case(
+    "trianglecurve", ["A = (0, 0)", "B = (4, 0)", "C = (0, 2)", "h = 2",
+                      "c = TriangleCurve(A, B, C, A^2 + h*B*C = C^2)",
+                      "M = Midpoint(A, B)"],
+    [mv("B", 0, 4), mv("B", 4, 0), setn("h", 3), mv("C", 1, 3)],
+)
+cases.case("trianglecurve", scalene + ["h = 1", "c = TriangleCurve(P, Q, R, (A+B)^3/h = C)"],
+           [setn("h", 0), setn("h", 2), mv("R", 1.5, 0.5), mv("R", 1, 3)])
+cases.case("trianglecurve", ["c = TriangleCurve((1,1), (2,1/2), (3,1/3), A+B=C)"], [])
 
-cases.write()
-
-reference = Cases("implicit")
 triangle = ["P = (1, 1)", "Q = (2, 0.5)", "R = (3, 1/3)"]
-reference.case("barycentric", triangle + ["n = 42", "c = Cubic(P, Q, R, n)"],
+cases.case("barycentric", triangle + ["n = 42", "c = Cubic(P, Q, R, n)"],
            [setn("n", 0), setn("n", 42), mv("Q", 1, 1), mv("Q", 2, 0.5)])
-reference.case("barycentric", triangle + ["c = TriangleCurve(P, Q, R, A+B=C)"],
+cases.case("barycentric", triangle + ["c = TriangleCurve(P, Q, R, A+B=C)"],
            [mv("Q", 1, 1), mv("Q", 2, 0.5)])
 
-reference.write("reference")
+cases.write()
