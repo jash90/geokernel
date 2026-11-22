@@ -439,7 +439,8 @@ public final class SavedExporter {
                 || geo instanceof GeoList || geo instanceof GeoPolygon || geo instanceof GeoText
                 || geo.isGeoLocus() || geo.isGeoPolyLine() || geo.isGeoCurveCartesian()
                 || geo instanceof GeoConicPart
-                || geo instanceof GeoPieChart) {
+                || geo instanceof GeoPieChart
+                || geo.isGeoImplicitCurve()) {
             return Session.describe(geo, Session.typeOf(geo));
         } else if (geo instanceof GeoFunctionNVar) {
             return Session.describe(geo, "function");

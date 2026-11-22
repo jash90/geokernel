@@ -251,6 +251,11 @@ pub(crate) fn exec_selected(
     let [first, second, tail @ ..] = args.as_slice() else {
         return None;
     };
+    if let Some(result) =
+        super::implicit::intersection::Intersection::exec_selected(c, label, &args)
+    {
+        return Some(result);
+    }
     let checkpoint = c.checkpoint();
     if let Some(def) = curves::CurveIntersection::selected(c, &args) {
         let result = def.and_then(|d| crate::script::add_outputs(c, label, vec![d]));

@@ -42,6 +42,8 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("georestintersect-pathcurve-001", 0),
     ("georestsmall-dilatecurve-001", 2),
     ("georestsmall-matrixcurve-001", 0),
+    ("implicit-equations-001", 0),
+    ("implicit-equations-003", 2),
     ("lists-objects-001", 0),
     ("locus-slider-001", 0),
     ("paths-chain-001", 1),
@@ -57,6 +59,7 @@ const SAVED_CASES: &[&str] = &[
     "saved-curve-intersections-001.xml",
     "saved-curve-intersections-002.xml",
     "saved-paths-002.xml",
+    "saved-implicit-001.xml",
     "saved-images-001.ggb",
     "saved-images-002.ggb",
     "saved-object-scripts-001.xml",
@@ -74,6 +77,7 @@ const SAVED_CASES: &[&str] = &[
     "saved-styles-008.ggb",
     // Styled objects that are undefined in the saved state.
     "saved-styles-009.xml",
+    "saved-styles-010.xml",
 ];
 
 const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
@@ -104,6 +108,15 @@ const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
       <value val="2"/>
       <slider min="0" max="5" x="20" y="40" width="100" horizontal="true" absoluteScreenLocation="true"/>
       <animation step="0.125" speed="2.5" type="2" playing="false"/>
+    </element>
+  </construction>
+</geogebra>"#;
+
+const IMPLICIT_MATRIX_FILE: &[u8] = br#"<geogebra format="5.0">
+  <construction>
+    <element type="implicitpoly" label="c">
+      <userinput show="false"/>
+      <coefficients rep="array" data="[[-1,0,0,1],[0,0,0,0],[0,0,0,0],[1,0,0,0]]"/>
     </element>
   </construction>
 </geogebra>"#;
@@ -174,6 +187,22 @@ fn corpus() -> Vec<Case> {
     let mut styled = Workbench::default();
     styled.load_for_export(STYLED_FILE, "styled").unwrap();
     out.push(("styled".into(), styled, None, Some(STYLED_FILE.to_vec())));
+    let mut matrix = Workbench::default();
+    matrix
+        .load_for_export(IMPLICIT_MATRIX_FILE, "implicit-matrix")
+        .unwrap();
+    assert_eq!(
+        matrix
+            .construction()
+            .implicit_degree(matrix.construction().id("c").unwrap()),
+        Some(3)
+    );
+    out.push((
+        "implicit-matrix".into(),
+        matrix,
+        None,
+        Some(IMPLICIT_MATRIX_FILE.to_vec()),
+    ));
     out
 }
 
@@ -574,7 +603,7 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
             LABEL,
             &["point_size", "point_style", "trace"],
         ],
-        "Line" | "Ray" | "Vector" | "PolyLine" | "Function" | "Curve" => {
+        "Line" | "Ray" | "Vector" | "PolyLine" | "Function" | "Curve" | "ImplicitCurve" => {
             &[SHARED, FLAGS, LABEL, LINE, &["trace"]]
         }
         "Locus" => &[SHARED, &["fixed"], LABEL, LINE, &["trace"]],

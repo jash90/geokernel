@@ -1,0 +1,43 @@
+{
+  "schema": 2,
+  "id": "saved-styles-010",
+  "script": [
+    "r = 0.25",
+    "g = 0.5",
+    "b = 0.75",
+    "show = true",
+    "p: x^3 + y^3 = 1",
+    "q: x^4 + y^4 = 2"
+  ],
+  "objects": {
+    "r": { "type": "number", "defined": true, "value": 0.25 },
+    "g": { "type": "number", "defined": true, "value": 0.5 },
+    "b": { "type": "number", "defined": true, "value": 0.75 },
+    "show": { "type": "boolean", "defined": true, "value": true },
+    "p": {
+      "type": "implicit",
+      "defined": true,
+      "coefficients": [
+        [-1.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0]
+      ],
+      "equation": "x^(3) + y^(3) = 1",
+      "input_form": true
+    },
+    "q": {
+      "type": "implicit",
+      "defined": true,
+      "coefficients": [
+        [-2.0, 0.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0, 0.0]
+      ],
+      "equation": "x^(4) + y^(4) = 2",
+      "input_form": true
+    }
+  }
+}

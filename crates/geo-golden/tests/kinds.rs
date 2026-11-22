@@ -571,6 +571,17 @@ const SAMPLE_CASES: &[&str] = &[
     "geomformsreview-odenamed-001",
     "geomformsreview-shapes-001",
     "importgaps-curve-001",
+    "implicit-asymptotes-006",
+    "implicit-conic-005",
+    "implicit-conic-010",
+    "implicit-constructors-012",
+    "implicit-equations-001",
+    "implicit-equations-002",
+    "implicit-equations-003",
+    "implicit-equations-004",
+    "implicit-equations-005",
+    "implicit-line-008",
+    "implicit-line-009",
     "intersectconics-conicboundary-001",
     "intersectconics-conicboundary-002",
     "intersectconics-conicboundary-003",
@@ -1009,7 +1020,7 @@ fn every_kernel_kind_and_upstream_kind_has_a_row() {
             "Image" | "Button" | "InputBox" | "Point" | "Line" | "Segment" | "Ray" | "Vector"
             | "Circle" | "Conic" | "Arc" | "Sector" | "Number" | "Angle" | "Boolean"
             | "Function" | "Polygon" | "PolyLine" | "List" | "Text" | "Locus" | "Curve"
-            | "FunctionNVar" => "yes",
+            | "ImplicitCurve" | "FunctionNVar" => "yes",
             "PieChart" => "partial",
             _ => "no",
         };

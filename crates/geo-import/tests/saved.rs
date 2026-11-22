@@ -9,7 +9,8 @@
 //! under both angle units).
 
 use geo_golden::compare::{
-    compare, compare_conic, compare_list, compare_locus, compare_object, compare_sampled,
+    compare, compare_conic, compare_construction_object, compare_list, compare_locus,
+    compare_object, compare_sampled,
 };
 use geo_golden::model::{set_snapshot_schema, Expected, ExpectedData};
 use geo_golden::repo_root;
@@ -208,7 +209,7 @@ fn saved_style_fixtures_import_every_object_with_a_style() {
             "{name}"
         );
     }
-    assert_eq!(fixtures, 9);
+    assert_eq!(fixtures, 10);
 }
 
 #[test]
@@ -656,7 +657,12 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
             } else {
                 Vec::new()
             };
-            match compare_object(expected, kind, &c.value(id), &vertices) {
+            let agrees = if kind == Kind::ImplicitCurve {
+                compare_construction_object(expected, &c, id)
+            } else {
+                compare_object(expected, kind, &c.value(id), &vertices)
+            };
+            match agrees {
                 Ok(_) => compared += 1,
                 Err(why) => failures.push(format!(
                     "{}: `{label}` disagrees: {why}; expected {expected:?}, got {:?}",

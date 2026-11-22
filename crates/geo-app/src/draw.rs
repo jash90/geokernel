@@ -258,7 +258,9 @@ fn paint_layer<'c>(
     // Curved outlines are tessellated and kept between frames.
     let is_curve = |id: Id| match c.value(id) {
         Value::Function => !matches!(c.def(id), geo_kernel::Def::Chart(_)),
-        Value::Conic { .. } | Value::Arc { .. } | Value::Sector { .. } => true,
+        Value::Conic { .. } | Value::Arc { .. } | Value::Sector { .. } | Value::ImplicitCurve => {
+            true
+        }
         Value::Undefined => matches!(c.kind(id), Kind::Arc | Kind::Sector),
         _ => false,
     };

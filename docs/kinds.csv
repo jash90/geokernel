@@ -20,7 +20,7 @@ Text,TEXT,Text,yes,yes,yes,no,no,yes,yes,yes,Static and dependent texts with sav
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
 Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,yes,Tracing loci and integral curves from slopes. Discrete geometry commands also produce loci.
 CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,yes,Cartesian coordinates and parameter interval for Length
-ImplicitCurve,IMPLICIT_POLY,,no,no,no,no,no,no,no,no,
+ImplicitCurve,IMPLICIT_POLY,ImplicitCurve,yes,partial,partial,partial,no,yes,partial,yes,Polynomial equations and saved matrices.
 FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,partial,yes,saved numeric functions with supported definitions
 Image,IMAGE,Image,no,no,yes,no,no,yes,yes,yes,PNG and JPEG and first-frame GIF; checked against the saved archive fixtures
 PieChart,PIECHART,PieChart,yes,no,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius. Import and export drop the colour and filling of single slices.

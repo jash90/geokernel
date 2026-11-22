@@ -27,6 +27,7 @@ pub(super) fn kind(kind: Kind) -> &'static str {
         Kind::Arc | Kind::Sector => "conicpart",
         Kind::Locus => "locus",
         Kind::Curve => "curvecartesian",
+        Kind::ImplicitCurve => "implicitpoly",
         Kind::Button => "button",
         Kind::InputBox => "textfield",
         Kind::Image => "image",
@@ -54,6 +55,7 @@ fn traceable(kind: Kind) -> bool {
             | Kind::List
             | Kind::Locus
             | Kind::Curve
+            | Kind::ImplicitCurve
     )
 }
 
@@ -200,7 +202,15 @@ impl Writer<'_> {
                 self.xml.val("arcSize", &size.to_string())?;
             }
         }
-        if let Some(form) = c.equation_form(id) {
+        if object_kind == Kind::ImplicitCurve {
+            if let Some(coefficients) = c.implicit_coefficients(id) {
+                let data = format!("{coefficients:?}");
+                self.xml
+                    .tag("coefficients", &[("rep", "array"), ("data", &data)])?;
+            }
+            let user = c.equation_form(id) == Some(&geo_kernel::kernel::EquationForm::User);
+            self.xml.tag("userinput", &[("show", flag(user))])?;
+        } else if let Some(form) = c.equation_form(id) {
             let mut attrs = vec![("style", form.xml_style())];
             if let geo_kernel::kernel::EquationForm::Parametric(parameter) = form {
                 attrs.push(("parameter", parameter));
