@@ -80,7 +80,8 @@ impl BoundaryOutputs {
                     break;
                 };
                 let label = script::index_label(c, &group.prefix);
-                let Ok(id) = c.add_output(&label, Def::IntersectBoundary(output), group.first) else {
+                let Ok(id) = c.add_output(&label, Def::IntersectBoundary(output), group.first)
+                else {
                     break;
                 };
                 group.slots = slot + 1;

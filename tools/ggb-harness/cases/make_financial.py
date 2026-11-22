@@ -56,6 +56,12 @@ cases.case("rate", [
 cases.case("rate", [
     "r = Rate(1, -1000, 1000)",
 ], [])
+# A nonzero rate near zero and payments at the start of the period,
+# even with a guess far from the root.
+cases.case("rate", [
+    "a = Rate(1, -1000.00001, 1000, 0, 0, 0.1)",
+    "b = Rate(12, -5, 55, 0, 1, 2)",
+], [])
 
 # Periods: how long paying off takes, with and without a final value and
 # a guess.
@@ -155,12 +161,17 @@ cases.case("future", [
 cases.case("future", [
     "f = FutureValue(-3, 0.07, -13)",
 ], [])
-# an overflowing input is an undefined number, which the setters reject
+# The snapshot format hides infinity in a numeric row. The reciprocal,
+# sign and IsDefined make the result observable through dependents.
 cases.case("future", [
-    "f = FutureValue(0, 4, 1/0, 13)",
+    "f = FutureValue(0, 4, 1/0, 13)", "d = IsDefined(f)", "r = 1/f", "s = sgn(f)",
 ], [])
 cases.case("future", [
-    "f = FutureValue(0, 4, 10^400, 13)",
+    "f = FutureValue(0, 4, 10^400, 13)", "d = IsDefined(f)", "r = 1/f",
+], [])
+cases.case("future", [
+    "a = FutureValue(0, 1/0, 13)", "b = sgn(a)",
+    "c = FutureValue(-2, 1/0, 13)", "d = IsDefined(c)",
 ], [])
 
 # PresentValue: what the stream is worth today.
@@ -219,6 +230,9 @@ cases.case("npr", [
 # of the factors is empty
 cases.case("npr", [
     "a = nPr(10^40, 2)", "b = nPr(10^300, 0)",
+], [])
+cases.case("npr", [
+    "a = nPr(10^16, 10)", "b = nPr(9007199254740996, 4)",
 ], [])
 # nCr in the same range keeps the log value
 cases.case("ncr", [

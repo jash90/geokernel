@@ -392,10 +392,10 @@ impl std::fmt::Write for Stack {
     }
 }
 
-/// The most factors the exact `nPr` product multiplies; beyond it the
+/// The most factors a combinatorial product multiplies; beyond it the
 /// log-gamma value stands (upstream would multiply every factor without a
 /// bound; see `DIFFERENCES.md`).
-const N_PR_WORK: u64 = 100_000;
+const COMBINATORIAL_FACTOR_LIMIT: u64 = 100_000;
 
 /// `MyMath.binomial(n, k)`: the binomial coefficient, exact through the
 /// log-gamma path for small `n` and through an exact wide product for the
@@ -427,7 +427,7 @@ pub(crate) fn binomial(n0: f64, k: f64) -> f64 {
     // exactly, so a 128-bit product is the exact answer whenever it fits.
     // A count of factors past the work bound keeps the log-gamma value
     // (upstream multiplies without a bound; see `DIFFERENCES.md`).
-    if r as u64 > N_PR_WORK {
+    if r as u64 > COMBINATORIAL_FACTOR_LIMIT {
         return ncr;
     }
     let mut acc: u128 = 1;
@@ -451,7 +451,7 @@ fn wide_product_binomial(n: f64, r: f64) -> f64 {
     let mut acc = 1.0f64;
     let mut dd = 1.0f64;
     let mut nn = n;
-    while dd <= r.min(N_PR_WORK as f64) {
+    while dd <= r.min(COMBINATORIAL_FACTOR_LIMIT as f64) {
         acc *= nn / dd;
         nn -= 1.0;
         dd += 1.0;
@@ -474,6 +474,9 @@ pub(crate) fn n_pr(n: f64, r: f64) -> f64 {
     if n.floor() != n || r.floor() != r {
         return 0.0;
     }
+    if n.is_infinite() {
+        return f64::INFINITY;
+    }
     let npr = (0.5 + (ln_gamma(n + 1.0) - ln_gamma(n - r + 1.0)).exp()).floor();
     if npr == f64::INFINITY {
         return f64::INFINITY;
@@ -489,37 +492,36 @@ pub(crate) fn n_pr(n: f64, r: f64) -> f64 {
     if from == n {
         return 1.0;
     }
-    // The loop below cannot run past the exact-integer range of `u128`.
-    if !(from.is_finite() && n < 3.4e38) {
+    let factors = n - from;
+    // Bound the range before converting to integers. Even the shortest
+    // nonempty range above 2^128 exceeds the factor limit.
+    if factors > COMBINATORIAL_FACTOR_LIMIT as f64 {
         return npr;
     }
-    let iterations = n - from;
-    if iterations > N_PR_WORK as f64 {
-        return npr;
-    }
+    super::eval::work(factors as u64);
     let mut acc: u128 = 1;
-    let mut factor = from as u128 + 1;
     let top = n as u128;
-    while factor <= top {
+    for factor in from as u128 + 1..=top {
         acc = match acc.checked_mul(factor) {
             Some(v) => v,
-            None => return wide_product_permutation(from, n),
+            // Keep advancing the integer factors after the accumulator
+            // overflows. Adding 1.0 may not advance a factor above 2^53.
+            None => return (factor..=top).fold(acc as f64, |product, k| product * k as f64),
         };
-        factor += 1;
     }
     acc as f64
 }
 
-/// The `nPrBig` fallback beyond 128 bits: a plain product of the factors
-/// that remain, accurate far within the comparison tolerance.
-fn wide_product_permutation(from: f64, n: f64) -> f64 {
-    let mut acc = 1.0f64;
-    let mut factor = from + 1.0;
-    while factor <= n {
-        acc *= factor;
-        factor += 1.0;
+/// The number of terms in `AlgoFoldExpression`. The first term is always
+/// included. The remaining indices start after the truncated lower bound.
+pub(crate) fn fold_count(from: f64, to: f64) -> f64 {
+    // An upper endpoint at least as large as i32::MAX would wrap the
+    // reference's loop counter forever.
+    if !from.is_finite() || !to.is_finite() || to >= f64::from(i32::MAX) {
+        return f64::NAN;
     }
-    acc
+    let start = f64::from((from as i32).wrapping_add(1));
+    1.0 + (to.floor() - start + 1.0).max(0.0)
 }
 
 /// `MyMath2.factorial`: a table product for small integers, `Γ(x + 1)`
@@ -612,38 +614,46 @@ pub(crate) fn ln_gamma(x: f64) -> f64 {
 mod tests {
     use super::*;
 
-    /// `CommandsTest.cmdnCr` and the neighbouring cases: a negative or
-    /// missing slot is 0, and near-integers count as integers
-    /// (`DoubleUtil.isEqual` at the standard precision).
     #[test]
-    fn binomial_upstream_values() {
+    fn binomial_counts_subsets() {
+        // Pascal's recurrence counts subsets independently of the
+        // implementation's factorial ratios.
+        let choose = |n: usize, k: usize| {
+            let mut row = vec![0.0; k + 1];
+            row[0] = 1.0;
+            for i in 1..=n {
+                for j in (1..=i.min(k)).rev() {
+                    row[j] += row[j - 1];
+                }
+            }
+            row[k]
+        };
         assert_eq!(binomial(5.0, -1.0), 0.0);
         assert_eq!(binomial(5.0, 1.0), 5.0);
         assert_eq!(binomial(5.0, 0.0), 1.0);
         assert_eq!(binomial(0.0, 0.0), 1.0);
-        assert_eq!(binomial(10.0, 3.0), 120.0);
+        assert_eq!(binomial(10.0, 3.0), choose(10, 3));
         // `r` folds to the smaller side.
-        assert_eq!(binomial(10.0, 7.0), 120.0);
+        assert_eq!(binomial(10.0, 7.0), choose(10, 3));
         // a non-integer count is 0, a near-integer one is not.
         assert_eq!(binomial(5.5, 2.0), 0.0);
-        assert_eq!(binomial(5.000000001, 2.0), 10.0);
+        assert_eq!(binomial(5.000000001, 2.0), choose(5, 2));
         assert_eq!(binomial(-3.0, 2.0), 0.0);
         // past the log-gamma path the exact product runs.
-        assert_eq!(binomial(38.0, 19.0), 35_345_263_800.0);
-        assert_eq!(binomial(52.0, 5.0), 2_598_960.0);
+        assert_eq!(binomial(38.0, 19.0), choose(38, 19));
+        assert_eq!(binomial(52.0, 5.0), choose(52, 5));
         // huge values overflow the exact product but stay within the
         // comparison tolerance as a plain product.
-        let big = binomial(200.0, 100.0);
-        assert!((big - 9.054_851_465_610_328e58).abs() / 9.054_851_465_610_328e58 < 1e-9);
-        assert_eq!(binomial(1.0e7, 2.0), 49_999_995_000_000.0);
-        assert_eq!(binomial(1.0e6, 3.0), 166_666_166_667_000_000.0);
+        assert!((binomial(200.0, 100.0) / choose(200, 100) - 1.0).abs() < 1e-9);
+        let n = 10_000_000_u64;
+        assert_eq!(binomial(n as f64, 2.0), (n * (n - 1) / 2) as f64);
+        let n = 1_000_000_u64;
+        assert_eq!(binomial(n as f64, 3.0), (n * (n - 1) * (n - 2) / 6) as f64);
     }
 
-    /// `CommandsTest.cmdnPr`: an exact-integer test here, so a
-    /// near-integer that `nCr` would accept is 0.
     #[test]
-    fn n_pr_upstream_values() {
-        assert_eq!(n_pr(8.0, 7.0), 40320.0);
+    fn n_pr_counts_ordered_selections() {
+        assert_eq!(n_pr(8.0, 7.0), (2..=8).product::<u64>() as f64);
         assert_eq!(n_pr(0.0, 0.0), 1.0);
         assert_eq!(n_pr(5.0, 0.0), 1.0);
         assert_eq!(n_pr(5.0, -1.0), 0.0);
@@ -651,13 +661,13 @@ mod tests {
         assert_eq!(n_pr(-3.0, 2.0), 0.0);
         assert_eq!(n_pr(5.000000001, 2.0), 0.0);
         assert_eq!(n_pr(5.5, 2.0), 0.0);
-        // past the log-gamma path (17P16 was wrong there upstream).
-        assert_eq!(n_pr(17.0, 16.0), 355_687_428_096_000.0);
-        assert_eq!(n_pr(20.0, 3.0), 6840.0);
+        assert_eq!(n_pr(17.0, 16.0), (2..=17).product::<u64>() as f64);
+        assert_eq!(n_pr(20.0, 3.0), 20.0 * 19.0 * 18.0);
         // 1000P999 is 1000! , far beyond the double range: the log-gamma
         // path overflows first.
         assert_eq!(n_pr(1000.0, 999.0), f64::INFINITY);
-        assert_eq!(n_pr(1.0e6, 3.0), 999_997_000_002_000_000.0);
+        let n = 1_000_000_u64;
+        assert_eq!(n_pr(n as f64, 3.0), (n * (n - 1) * (n - 2)) as f64);
     }
 
     #[test]

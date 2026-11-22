@@ -528,6 +528,8 @@ pub(crate) enum Bin {
     /// `log(b, x)`: the base comes first.
     LogB,
     Round2,
+    /// Number of terms in a fold whose expression is independent of the index.
+    FoldCount,
     /// The commands of two numbers (see [`commands`]).
     Mod,
     /// `Div`, the integer quotient.
@@ -1868,6 +1870,15 @@ pub(crate) fn constant_number(c: &Construction, text: &str) -> Option<(f64, bool
         Raw::Num(v) if v.is_finite() => Some((v, entry.root_ty() == Ty::Num(1))),
         _ => None,
     }
+}
+
+/// Reads the current value of a numeric argument without adding an object.
+pub(crate) fn argument_number(c: &Construction, text: &str) -> Option<f64> {
+    let parsed = parse::parse_argument(c, text).ok()?;
+    if parsed.uses_var || parsed.uses_y || !matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) {
+        return None;
+    }
+    value_of_tree(c, &parsed)
 }
 
 /// Defines `name = rhs` as an expression. `vector_label` tells whether a

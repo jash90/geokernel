@@ -1883,6 +1883,7 @@ fn binary(op: Bin, l: Val, r: Val, left_angle: bool) -> Val {
         // `MyDouble.log(base)`
         (Bin::LogB, N(base), N(x)) => N(x.ln() / base.ln()),
         (Bin::Round2, N(x), N(digits)) => N(math::round(x, digits, left_angle)),
+        (Bin::FoldCount, N(from), N(to)) => N(math::fold_count(from, to)),
         (op, N(a), N(b)) if op.is_command() => N(commands::binary(op, a, b)),
         _ => N(f64::NAN),
     }

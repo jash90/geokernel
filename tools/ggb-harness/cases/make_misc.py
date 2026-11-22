@@ -43,6 +43,17 @@ cases.case("optimize", [
     "A = (0, 0)", "B = (10, 0)", "s = Segment(A, B)", "P = Point(s)",
     "C = (m, a)", "Q = Midpoint(P, C)", "l = Locus(Q, P)",
 ], [mv("P", 2, 0), mv("P", 8, 0)])
+# The optimizer depends on the mover. Its current value is held by the
+# locus's sampling construction, for both point paths and sliders.
+cases.case("optimize", [
+    "a = Slider(0, 6)", pt("A", 1, 0), pt("B", 3, 0),
+    "s = Segment(A, B)", "P = Point(s)",
+    "n = Maximize(-(a - x(P))^2, a)", "Q = (n, x(P))", "l = Locus(Q, P)",
+], [])
+cases.case("optimize", [
+    "a = Slider(0, 6)", "t = Slider(1, 3)",
+    "n = Minimize((a - t)^2, a)", "Q = (n, t)", "l = Locus(Q, t)",
+], [])
 
 # Hull: the convex hull of a list of points, as a locus.
 cases.case("hull", [
@@ -84,6 +95,12 @@ cases.case("hull", [
 # every point on one line
 cases.case("hull", [
     "l = {(0, 0), (1, 1), (2, 2), (3, 3)}", "h = ConvexHull(l)",
+], [])
+# A near duplicate keeps the first point, even in the presence of an
+# unrelated point in its coordinate sort order.
+cases.case("hull", [
+    "l = {(0.000000008, 0.000000008), (0.000000004, 3), (0, 0), (4, 0)}",
+    "h = ConvexHull(l)",
 ], [])
 
 # ToComplex, ToPolar and ToPoint: the same value, another style.
@@ -151,6 +168,25 @@ cases.case("protocol", [
     "j = ConstructionStep()", "SetConstructionStep(1)",
     "k = ConstructionStep()",
 ], [])
+# Infinity and a finite value outside the range of a signed 32-bit step
+# both return from the start to the last element.
+for end in ("1/0", "3000000000"):
+    cases.case("protocol", [
+        "cs = ConstructionStep()", pt("A", 0, 0), pt("B", 1, 1),
+        "SetConstructionStep(1)", f"SetConstructionStep({end})",
+    ], [])
+# An inline point used for coordinate conversion has no protocol entry.
+cases.case("protocol", [
+    pt("A", 1, 2), "T = ToPoint((3, 4))", pt("D", 3, 4),
+    "s = ConstructionStep(D)", "t = ConstructionStep(T)",
+], [])
+# Additions after navigating back are inserted after the current step.
+cases.case("protocol", [
+    "cs = ConstructionStep()", pt("A", 0, 0), pt("B", 1, 1), pt("C", 2, 2),
+    "SetConstructionStep(1)", pt("D", 3, 3), "ds = ConstructionStep(D)",
+    "SetConstructionStep(1/0)", "bs = ConstructionStep(B)",
+    "aa = ConstructionStep(A)",
+], [])
 
 # The view readers.
 cases.case("view", [
@@ -193,6 +229,13 @@ cases.case("sum", [
 # function of it
 cases.case("sum", [
     "f(x) = x^2", "g = Sum(x^2, x, 1, 3)", "a = g(4)", "b = f(2)",
+], [])
+# Fractions keep the initial term and then use whole-number indices.
+# A reversed range still counts the initial term, even for a constant.
+cases.case("sum", [
+    "f = Sum(x^2, x, 1.2, 3.9)", "g = Sum(x^2, x, -1.2, 1.9)",
+    "h = Sum(x^2, x, 4, 2)", "a = Sum(7, x, 4, 2)",
+    "p = Product(x^2, x, 1.2, 3.9)", "q = Product(x^2, x, 1, 3)",
 ], [])
 
 # The deprecated IntersectPath aliases.

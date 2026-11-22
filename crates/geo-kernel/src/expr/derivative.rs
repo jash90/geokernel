@@ -282,7 +282,7 @@ impl Walker<'_> {
                 }
             }
             Bin::Pow => self.power(a, b, depth)?,
-            Bin::Round2 => 0.0,
+            Bin::Round2 | Bin::FoldCount => 0.0,
             Bin::Atan2 => {
                 let (u, v) = (self.value(a), self.value(b));
                 let (du, dv) = (self.gradient(a, depth)?, self.gradient(b, depth)?);

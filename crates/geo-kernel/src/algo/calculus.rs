@@ -1,7 +1,6 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoFunctionAreaSums.java
-//   source/shared/common/src/main/java/org/geogebra/common/kernel/optimization/ExtremumFinder.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdLowerSum.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdUpperSum.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdLeftSum.java
@@ -552,7 +551,7 @@ fn sum_input(c: &Construction, id: Id) -> Option<f64> {
 }
 
 /// The lower or upper sum over every rectangle: subsampling inside the
-/// graphics window, then Brent's method on the bracketed minimum
+/// graphics window, then parabolic and golden-section search within the bracket
 /// (`AlgoFunctionAreaSums.compute` for `LOWERSUM`/`UPPERSUM`).
 fn lower_upper_area(
     c: &Construction,
@@ -608,7 +607,10 @@ fn lower_upper_area(
             left = (min_sample - sub_step).max(left);
             right = (min_sample + sub_step).min(right);
         }
-        let x = find_minimum(budget, c, left, right, fmin, SUM_TOLERANCE);
+        let Some(x) = expr::brent_minimum(left, right, SUM_TOLERANCE, fmin, |n| !budget.step(c, n))
+        else {
+            return f64::NAN;
+        };
         let mut y = fmin(x);
         if y.is_nan() {
             return f64::NAN;
@@ -623,148 +625,6 @@ fn lower_upper_area(
         return f64::NAN;
     }
     total
-}
-
-/// `ExtremumFinder.findMinimum`: Brent's method over `[a0, b0]`, a
-/// transcription of the Netlib `fmin` translation GeoGebra uses, with its
-/// NaN and iteration-count additions. Returns the abscissa of the
-/// minimum.
-fn find_minimum(
-    budget: &mut Budget,
-    c: &Construction,
-    a0: f64,
-    b0: f64,
-    f: &impl Fn(f64) -> f64,
-    tol: f64,
-) -> f64 {
-    let mut a = a0;
-    let mut b = b0;
-    let ch = 0.5 * (3.0 - 5.0_f64.sqrt());
-    let eps = 1.2e-16_f64.sqrt();
-
-    let mut v = a + ch * (b - a);
-    let mut x = v;
-    if !budget.step(c, 1) {
-        return f64::NAN;
-    }
-    let mut fx = f(x);
-    if fx.is_nan() {
-        return f64::NAN;
-    }
-    let tol3 = tol / 3.0;
-    let mut w = v;
-    let mut fv = fx;
-    let mut fw = fx;
-    let mut xm = 0.5 * (a + b);
-    let mut tol1 = eps * x.abs() + tol3;
-    let mut t2 = 2.0 * tol1;
-
-    let mut iterations = 0;
-    let mut d = 0.0;
-    let mut e: f64 = 0.0;
-    while (x - xm).abs() > t2 - 0.5 * (b - a) {
-        if iterations > 100 {
-            return f64::NAN;
-        }
-        iterations += 1;
-
-        let mut p = 0.0;
-        let mut q = 0.0;
-        let mut r = 0.0;
-        if e.abs() > tol1 {
-            // fit the parabola
-            r = (x - w) * (fx - fv);
-            q = (x - v) * (fx - fw);
-            p = (x - v) * q - (x - w) * r;
-            q = 2.0 * (q - r);
-            if q > 0.0 {
-                p = -p;
-            } else {
-                q = -q;
-            }
-            r = e;
-            e = d;
-        }
-
-        let u;
-        if p.abs() < (0.5 * q * r).abs() && p > q * (a - x) && p < q * (b - x) {
-            // a parabolic interpolation step
-            d = p / q;
-            u = x + d;
-            // f must not be evaluated too close to a or b
-            if u - a < t2 || b - u < t2 {
-                d = if x >= xm { tol1 } else { -tol1 };
-            }
-        } else {
-            // a golden-section step
-            if x < xm {
-                e = b - x;
-            } else {
-                e = a - x;
-            }
-            d = ch * e;
-        }
-
-        // f must not be evaluated too close to x
-        let u = if d.abs() >= tol1 {
-            x + d
-        } else if d > 0.0 {
-            x + tol1
-        } else {
-            x - tol1
-        };
-        if !budget.step(c, 1) {
-            return f64::NAN;
-        }
-        let fu = f(u);
-        if fu.is_nan() {
-            return f64::NAN;
-        }
-
-        if fx <= fu {
-            if u < x {
-                a = u;
-            } else {
-                b = u;
-            }
-        }
-
-        if fu <= fx {
-            if u < x {
-                b = x;
-            } else {
-                a = x;
-            }
-            v = w;
-            fv = fw;
-            w = x;
-            fw = fx;
-            x = u;
-            fx = fu;
-            xm = 0.5 * (a + b);
-            tol1 = eps * x.abs() + tol3;
-            t2 = 2.0 * tol1;
-        } else if fu <= fw || w.to_bits() == x.to_bits() {
-            v = w;
-            fv = fw;
-            w = u;
-            fw = fu;
-            xm = 0.5 * (a + b);
-            tol1 = eps * x.abs() + tol3;
-            t2 = 2.0 * tol1;
-        } else if fu > fv && v.to_bits() != x.to_bits() && v.to_bits() != w.to_bits() {
-            xm = 0.5 * (a + b);
-            tol1 = eps * x.abs() + tol3;
-            t2 = 2.0 * tol1;
-        } else {
-            v = u;
-            fv = fu;
-            xm = 0.5 * (a + b);
-            tol1 = eps * x.abs() + tol3;
-            t2 = 2.0 * tol1;
-        }
-    }
-    x
 }
 
 /// `AlgoFunctionAreaSums.functionDefined`: the function has a finite value

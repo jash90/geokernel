@@ -4749,6 +4749,18 @@ reason = "the kernel refuses the input: unknown command `RandomDiscrete`"
 mismatches = ["step"]
 
 [[gap]]
+id = "commands/CommandsTest.java:3559"
+category = "text-formatting"
+reason = "the bisection and Newton result agrees numerically with the reference but prints different final decimal digits"
+mismatches = ["a"]
+
+[[gap]]
+id = "commands/CommandsTest.java:3561"
+category = "text-formatting"
+reason = "the Newton iteration reaches -1 exactly, while the reference prints a nearby approximation within the golden tolerance"
+mismatches = ["c"]
+
+[[gap]]
 id = "commands/CommandsTest.java:3567"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Ray` does not take 4 argument(s)"

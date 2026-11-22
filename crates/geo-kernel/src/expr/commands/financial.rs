@@ -14,20 +14,15 @@
 
 //! The financial group of the command matrix: `Rate`, `Periods`,
 //! `Payment`, `FutureValue` and `PresentValue`, the compound-interest
-//! family of `AlgoFinancial`. Everything but `Rate` is closed form; `Rate`
-//! solves the fundamental equation
+//! family of `AlgoFinancial`. `Rate` solves the fundamental equation
 //! `pmt (1 + rate pmtType) ((1 + rate)^n - 1) / rate + pv (1 + rate)^n + fv = 0`
-//! by bracketing a sign change and running Brent's root method over it,
-//! then polishing the root with Newton steps, as `AlgoFinancial.computeRate`
-//! does through its math library. The iteration structure of both solvers
-//! follows the published algorithms (R. P. Brent, *Algorithms for
-//! Minimization Without Derivatives*, chapter 4) with the accuracies,
-//! the evaluation limit and the control flow of that library call
-//! (absolute accuracy 1e-6, relative 1e-14, function value 1e-15, at most
-//! 100 evaluations, midpoint start, exceptions treated as failure).
+//! by bisection followed by a Newton refinement. The expansion of the
+//! bracket around a supplied guess or from the default seed follows the
+//! EUPL command. The numerical iterations follow the descriptions in
+//! NIST DLMF sections 3.8(ii) and 3.8(iii).
 
 use crate::expr::eval::{Ctx, Val};
-use crate::expr::math::{check_integer, is_equal, is_zero};
+use crate::expr::math::{check_integer, is_equal, is_zero, java_pow};
 use crate::expr::parse::Parser;
 use crate::expr::{Finance, Node, NONE};
 
@@ -54,19 +49,15 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
 }
 
 /// The value of a financial command (see `Node::Financial` in `eval`).
-/// Every evaluation of the root function of the `Rate` search is charged
-/// to the evaluation budget this command runs under.
+/// In a metered expression, each evaluation of the rate equation or its
+/// derivative is charged to the expression's budget.
 pub(crate) fn value<const M: bool>(ctx: &Ctx<'_, M>, op: Finance, args: &[u32; 6]) -> Val {
     let mut values = [f64::NAN; 6];
     let count = args.iter().take_while(|&&a| a != NONE).count();
     for (slot, arg) in values.iter_mut().zip(args).take(count) {
         *slot = ctx.full_number(*arg);
     }
-    let mut budget = 0u64;
-    let charge = &mut || {
-        budget += 1;
-        ctx.stop(8)
-    };
+    let charge = &mut || ctx.stop(8);
     Val::N(evaluate(op, &values[..count], charge))
 }
 
@@ -148,13 +139,11 @@ enum Slot {
 /// `Rate` search; once it refuses, the rate is undefined.
 pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bool) -> f64 {
     let input = |slot: Slot| args.get(op.slot(slot).unwrap_or(usize::MAX)).copied();
-    // the setters of `AlgoFinancial` reject only an undefined input; an
-    // infinite one flows through (the kernel evaluates no expression to
-    // infinity, so none can arrive: the recorded cases with `1/0` and
-    // `10^400` payments are undefined because those inputs are)
+    // An infinite input retains its value in the expression evaluator
+    // even when the public numeric row shows it as undefined.
     let required = |slot: Slot| -> Option<f64> { input(slot).filter(|v| !v.is_nan()) };
-    // `setNper`: the number of periods must be a positive integer; only
-    // `Periods` does not read it (it is that command's output).
+    // `setNper`: the number of periods must be positive and is snapped
+    // near integers. `Periods` returns this count instead of reading it.
     let nper = if op == Finance::Periods {
         0.0
     } else {
@@ -206,8 +195,9 @@ pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bo
         Some(_) => return f64::NAN,
     };
     // `AlgoFinancial.pmtFactor`.
+    let compound = |rate: f64, nper: f64| java_pow(1.0 + rate, nper);
     let factor =
-        |rate: f64, nper: f64| (1.0 + rate * pmt_type) * ((1.0 + rate).powf(nper) - 1.0) / rate;
+        |rate: f64, nper: f64| (1.0 + rate * pmt_type) * (compound(rate, nper) - 1.0) / rate;
     match op {
         Finance::Rate => {
             // The search brackets around the guess only when the form
@@ -241,7 +231,7 @@ pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bo
             if rate == 0.0 {
                 -(pv + fv) / nper
             } else {
-                (-fv - pv * (1.0 + rate).powf(nper)) / factor(rate, nper)
+                (-fv - pv * compound(rate, nper)) / factor(rate, nper)
             }
         }
         Finance::PresentValue => {
@@ -251,7 +241,7 @@ pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bo
             if rate == 0.0 {
                 -pmt * nper - fv
             } else {
-                (-fv - pmt * factor(rate, nper)) / (1.0 + rate).powf(nper)
+                (-fv - pmt * factor(rate, nper)) / compound(rate, nper)
             }
         }
         Finance::FutureValue => {
@@ -261,15 +251,15 @@ pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bo
             if rate == 0.0 {
                 -pmt * nper - pv
             } else {
-                -pmt * factor(rate, nper) - pv * (1.0 + rate).powf(nper)
+                -pmt * factor(rate, nper) - pv * compound(rate, nper)
             }
         }
     }
 }
 
-/// Runs the Brent root search and the Newton polishing of
-/// `AlgoFinancial.computeRate`; `None` where GeoGebra leaves the rate
-/// undefined. A NaN guess stands for the argument the form left out.
+/// Bracket the root as in `AlgoFinancial.computeRate`. If the bracket
+/// has no sign change, try the command's Newton seed. The open iteration
+/// can start at a supplied guess outside the bracketing interval.
 fn compute_rate(
     nper: f64,
     pv: f64,
@@ -279,73 +269,54 @@ fn compute_rate(
     guess: Option<f64>,
     charge: &mut dyn FnMut() -> bool,
 ) -> Option<f64> {
-    let f = RateFunction {
+    let equation = RateFunction {
         n: nper,
         pv,
         fv,
         pmt,
         pmt_type,
     };
-    if charge() {
-        return None;
-    }
-    // The helper `value` of the algo swallows the library's arithmetic
-    // exceptions and returns NaN, whose signum makes comparisons false.
-    let mut value = |x: f64| -> Option<f64> {
+    let value = |x: f64, charge: &mut dyn FnMut() -> bool| {
         if charge() {
-            return None;
+            None
+        } else {
+            Some(equation.value(x))
         }
-        Some(f.value(x))
     };
-    let mut sign = |x: f64| value(x).filter(|v| v.is_finite()).map(f64::signum);
-    let (mut min, mut max, mut rate);
+    let (mut lower, mut upper);
     if let Some(guess) = guess {
-        rate = guess;
-        let mut dx = 0.001;
-        // Look for a sign change around the guess, within [-1, 1].
-        min = (rate - dx).max(-1.0);
-        max = (rate + dx).min(1.0);
-        let mut min_sign = sign(min);
-        let mut max_sign = sign(max);
-        // A sensible bound on the rate (between 0 and 1).
-        while min_sign == max_sign && dx < 1.0 {
-            dx *= 2.0;
-            min = (rate - dx).max(0.0);
-            max = (rate + dx).min(1.0);
-            min_sign = sign(min);
-            max_sign = sign(max);
+        let mut radius = 0.001;
+        lower = (guess - radius).max(-1.0);
+        upper = (guess + radius).min(1.0);
+        while radius < 1.0 && value(lower, charge)?.signum() == value(upper, charge)?.signum() {
+            radius *= 2.0;
+            lower = (guess - radius).max(0.0);
+            upper = (guess + radius).min(1.0);
         }
     } else {
-        // The default starting value if Brent fails.
-        rate = 0.1;
-        min = 0.0;
-        max = 0.001;
-        let min_sign = sign(min);
-        let mut max_sign = sign(max);
-        // A sensible bound on the rate (1): a quick and dirty look for an
-        // interval with a sign change.
-        while min_sign == max_sign && max < 1.0 {
-            max += 0.05;
-            max_sign = sign(max);
+        lower = 0.0;
+        upper = 0.001;
+        let sign = value(lower, charge)?.signum();
+        while upper < 1.0 && value(upper, charge)?.signum() == sign {
+            upper += 0.05;
         }
     }
-    if let Some(root) = brent_root(&f, min, max) {
-        rate = root;
+
+    let mut seed = bisect(lower, upper, |x| value(x, charge)).unwrap_or(guess.unwrap_or(0.1));
+    if is_equal(seed, 1.0) || !seed.is_finite() {
+        seed = 0.1;
     }
-    if is_equal(rate, 1.0) || !rate.is_finite() {
-        rate = 0.1;
-    }
-    // A failing Newton search leaves the rate undefined (`computeRate`
-    // returns false), whatever Brent found.
-    let polished = newton_root(&f, min, max, rate)?;
-    if f.value(polished).abs() < f.value(rate).abs() {
-        rate = polished;
-    }
-    Some(rate)
+    let polished = newton_polish(seed, &equation, charge)?;
+    let seed_residual = value(seed, charge)?.abs();
+    let polished_residual = value(polished, charge)?.abs();
+    Some(if polished_residual < seed_residual {
+        polished
+    } else {
+        seed
+    })
 }
 
-/// The fundamental equation of `RateFunction`, with the removable hole at
-/// `rate = 0` filled with its limit `n`.
+/// The cash-flow equation with the annuity's limit at zero restored.
 struct RateFunction {
     n: f64,
     pv: f64,
@@ -356,233 +327,111 @@ struct RateFunction {
 
 impl RateFunction {
     fn value(&self, x: f64) -> f64 {
-        if x == 0.0 {
-            return self.fv + self.pmt * self.n + self.pv;
-        }
-        let pow = (1.0 + x).powf(self.n);
-        self.fv + self.pmt * (1.0 + x * self.pmt_type) * (pow - 1.0) / x + self.pv * pow
+        let power = (1.0 + x).powf(self.n);
+        let annuity = if x == 0.0 {
+            self.n
+        } else if x.abs() < 0.01 {
+            // Subtracting 1 from the compounded value loses precision
+            // around zero. Evaluate that difference directly.
+            (x.ln_1p() * self.n).exp_m1() / x
+        } else {
+            (power - 1.0) / x
+        };
+        self.fv + self.pmt * (1.0 + x * self.pmt_type) * annuity + self.pv * power
     }
 
-    /// The derivative of `RateFunctionDerivative`, with the hole at
-    /// `x = 0` filled with its limit.
     fn derivative(&self, x: f64) -> f64 {
-        let (a, b, c, n) = (self.pv, self.pmt, self.pmt_type, self.n);
-        if x == 0.0 {
-            return (b / 2.0 * n * n) + (b * c * n) + (a * n) - (b / 2.0 * n);
-        }
-        let p = (1.0 + x).powf(n);
-        let x2 = x * x;
-        let xp = x * p;
-        let num = a * n * x2 * p + b * (c * n * x2 * p + n * xp - xp - p + x + 1.0);
-        num / (x2 * (x + 1.0))
+        let (pv, pmt, kind, n) = (self.pv, self.pmt, self.pmt_type, self.n);
+        let factor = 1.0 + x;
+        let power_derivative = n * factor.powf(n - 1.0);
+        let (annuity, annuity_derivative) = if (x * n).abs() < 0.001 {
+            // The first terms of the binomial series for
+            // ((1+x)^n - 1)/x and its derivative at x = 0.
+            let second = n * (n - 1.0) / 2.0;
+            let third = second * (n - 2.0) / 3.0;
+            let fourth = third * (n - 3.0) / 4.0;
+            (
+                n + x * (second + x * (third + x * fourth)),
+                second + x * (2.0 * third + x * 3.0 * fourth),
+            )
+        } else {
+            let annuity = (factor.powf(n) - 1.0) / x;
+            (annuity, (power_derivative - annuity) / x)
+        };
+        pmt * (kind * annuity + (1.0 + x * kind) * annuity_derivative) + pv * power_derivative
     }
 }
 
-/// A bracketing root search over `[min, max]`: Brent's 1973 method for
-/// finding a zero without derivatives, written from the published
-/// description of the algorithm (R. P. Brent, *Algorithms for Minimization
-/// without Derivatives*, 1973, the chapter on root finding; inverse
-/// quadratic and secant steps that fall back to bisection). The search
-/// starts from the midpoint, brackets one sign change and refines it under
-/// the shared evaluation limit (100, `AlgoRootNewton.MAX_ITERATIONS`) and
-/// the accuracies the caller passes: a relative one of `1e-14` and an
-/// absolute one of `1e-6`. `None` where the interval holds no sign change
-/// or the budget runs out, which the caller treats as the caught
-/// exception there.
-fn brent_root(f: &RateFunction, min: f64, max: f64) -> Option<f64> {
-    let mut evaluations = 0usize;
-    let mut value = |x: f64| -> Option<f64> {
-        if evaluations >= 100 {
-            return None;
-        }
-        evaluations += 1;
-        Some(f.value(x))
-    };
-    let start = 0.5 * (min + max);
-    if !(min..=max).contains(&start) {
+/// Bisection (DLMF 3.8(iii)) maintains a sign change between two endpoints.
+/// Two dozen halvings of the initial interval are ample for the Newton
+/// seed. The small absolute floor also handles roots close to zero.
+fn bisect(
+    mut lower: f64,
+    mut upper: f64,
+    mut value: impl FnMut(f64) -> Option<f64>,
+) -> Option<f64> {
+    if lower >= upper {
         return None;
     }
-    let y_start = value(start)?;
-    if y_start.abs() <= 1e-15 {
-        return Some(start);
+    let left = value(lower)?;
+    let right = value(upper)?;
+    if left == 0.0 {
+        return Some(lower);
     }
-    let y_min = value(min)?;
-    if y_min.abs() <= 1e-15 {
-        return Some(min);
+    if right == 0.0 {
+        return Some(upper);
     }
-    if y_start * y_min < 0.0 {
-        return refine(&mut value, min, start, y_min, y_start);
+    if left.is_nan() || right.is_nan() || left.is_sign_negative() == right.is_sign_negative() {
+        return None;
     }
-    let y_max = value(max)?;
-    if y_max.abs() <= 1e-15 {
-        return Some(max);
+
+    for _ in 0..32 {
+        let mid = lower.midpoint(upper);
+        let y = value(mid)?;
+        if y.is_nan() {
+            return None;
+        }
+        if y == 0.0 || upper - lower < 2.5e-8 {
+            return Some(mid);
+        }
+        if y.is_sign_negative() == left.is_sign_negative() {
+            lower = mid;
+        } else {
+            upper = mid;
+        }
     }
-    if y_start * y_max < 0.0 {
-        return refine(&mut value, start, max, y_start, y_max);
+    Some(lower.midpoint(upper))
+}
+
+/// Newton's tangent rule (DLMF 3.8(ii)) can leave the initial search
+/// interval. Limit the number of steps and require a representable trial.
+fn newton_polish(
+    mut x: f64,
+    equation: &RateFunction,
+    charge: &mut dyn FnMut() -> bool,
+) -> Option<f64> {
+    for _ in 0..64 {
+        if charge() {
+            return None;
+        }
+        let residual = equation.value(x);
+        if residual == 0.0 {
+            return Some(x);
+        }
+        if charge() {
+            return None;
+        }
+        let change = residual / equation.derivative(x);
+        let next = x - change;
+        if !next.is_finite() {
+            return None;
+        }
+        if change.abs() <= 2.5e-7 * x.abs().max(1.0) {
+            return Some(next);
+        }
+        x = next;
     }
     None
-}
-
-/// The refining loop of the search: the bracket runs between `best` (the
-/// point with the smaller value) and `far`, and `third` remembers the
-/// point that just left the bracket, so an inverse quadratic step through
-/// the three of them (a secant through two, when two coincide) is tried
-/// before every bisection. The loop ends at the accuracy of the call.
-fn refine(
-    value: &mut impl FnMut(f64) -> Option<f64>,
-    lo: f64,
-    hi: f64,
-    y_lo: f64,
-    y_hi: f64,
-) -> Option<f64> {
-    // `best` carries the smaller value of the two ends; the values swap
-    // the ends whenever the trial point takes the lead.
-    let mut far = lo;
-    let mut y_far = y_lo;
-    let mut best = hi;
-    let mut y_best = y_hi;
-    let mut third = lo;
-    let mut y_third = y_lo;
-    let mut step = best - far;
-    let mut previous = step;
-    loop {
-        if y_far.abs() < y_best.abs() {
-            far = best;
-            best = third;
-            third = far;
-            y_far = y_best;
-            y_best = y_third;
-            y_third = y_far;
-        }
-        let tolerance = 2.0 * 1e-14 * best.abs() + 1e-6;
-        let half_gap = 0.5 * (third - best);
-        // converged, or an exactly zero (or undefined) value
-        if half_gap.abs() <= tolerance || y_best.to_bits() == 0.0f64.to_bits() || y_best.is_nan() {
-            return Some(best);
-        }
-        let (taken, remembered) = interpolation(Interpolation {
-            far,
-            best,
-            third,
-            y_far,
-            y_third,
-            y_best,
-            step,
-            previous,
-            half_gap,
-            tolerance,
-        });
-        step = taken;
-        previous = remembered;
-        far = best;
-        y_far = y_best;
-        best += if step.abs() > tolerance {
-            step
-        } else if half_gap > 0.0 {
-            tolerance
-        } else {
-            -tolerance
-        };
-        y_best = value(best)?;
-        // the bracket keeps a sign change with `third`
-        if (y_best > 0.0 && y_third > 0.0) || (y_best <= 0.0 && y_third <= 0.0) {
-            third = far;
-            y_third = y_far;
-            step = best - far;
-            previous = step;
-        }
-    }
-}
-
-/// The state of one interpolation decision.
-struct Interpolation {
-    far: f64,
-    best: f64,
-    third: f64,
-    y_far: f64,
-    y_third: f64,
-    y_best: f64,
-    step: f64,
-    previous: f64,
-    half_gap: f64,
-    tolerance: f64,
-}
-
-/// The step to take from `best` and the step to remember as the previous
-/// one: an inverse quadratic (or secant) step through the known points
-/// when it stays inside the bracket and promises real progress, the
-/// bisection `half_gap` otherwise. The acceptance bound is Brent's own:
-/// at most three halves of the bisection, and half of the step before
-/// the previous one.
-fn interpolation(s: Interpolation) -> (f64, f64) {
-    let Interpolation {
-        far,
-        best,
-        third,
-        y_far,
-        y_third,
-        y_best,
-        step,
-        previous,
-        half_gap,
-        tolerance,
-    } = s;
-    if previous.abs() >= tolerance && y_far.abs() > y_best.abs() {
-        let slope = y_best / y_far;
-        let (p, q) = if far == third {
-            (2.0 * half_gap * slope, 1.0 - slope)
-        } else {
-            let far_ratio = y_far / y_third;
-            let best_ratio = y_best / y_third;
-            (
-                slope
-                    * (2.0 * half_gap * far_ratio * (far_ratio - best_ratio)
-                        - (best - far) * (best_ratio - 1.0)),
-                (far_ratio - 1.0) * (best_ratio - 1.0) * (slope - 1.0),
-            )
-        };
-        let (p, q) = if p > 0.0 { (p, -q) } else { (-p, q) };
-        let before = previous;
-        let remember = step;
-        if p < 1.5 * half_gap * q - (tolerance * q).abs() && p < 0.5 * (before * q).abs() {
-            return (p / q, remember);
-        }
-        return (half_gap, half_gap);
-    }
-    (half_gap, half_gap)
-}
-
-/// Newton's method for polishing the rate: `x - f(x) / f'(x)` until the
-/// step stays within the absolute accuracy of the call (`1e-6`), under
-/// the shared evaluation limit; the derivative evaluations are charged to
-/// the same budget as the values. A zero derivative, an undefined value
-/// or step, or the limit leaves the rate undefined, whatever the
-/// bracketing search found.
-fn newton_root(f: &RateFunction, min: f64, max: f64, start: f64) -> Option<f64> {
-    if !(min..=max).contains(&start) || start.is_nan() {
-        return None;
-    }
-    let mut evaluations = 0usize;
-    let mut x0 = start;
-    loop {
-        if evaluations >= 100 {
-            return None;
-        }
-        evaluations += 2;
-        let y = f.value(x0);
-        let d = f.derivative(x0);
-        if d == 0.0 || !y.is_finite() || !d.is_finite() {
-            return None;
-        }
-        let x1 = x0 - y / d;
-        if !x1.is_finite() {
-            return None;
-        }
-        if (x1 - x0).abs() <= 1e-6 {
-            return Some(x1);
-        }
-        x0 = x1;
-    }
 }
 
 #[cfg(test)]
@@ -616,6 +465,18 @@ mod tests {
         // interval and stops there
         let near = rate(&[42.0, 4.0, 13.0, 0.0, 1.0]);
         assert!((near - -1.0).abs() < 1e-9, "{near}");
+    }
+
+    #[test]
+    fn refining_an_established_rate_bracket_uses_the_budget() {
+        let args = [12.0, -5.0, 55.0, 0.0, 0.0, 0.013];
+        assert!(rate(&args).is_finite());
+        let mut remaining = 5usize;
+        let mut stop = || {
+            remaining = remaining.saturating_sub(1);
+            remaining == 0
+        };
+        assert!(evaluate(Finance::Rate, &args, &mut stop).is_nan());
     }
 
     /// The period count answers the annuity equation
@@ -679,9 +540,8 @@ mod tests {
         assert_eq!(v, -(13.0 * 43.0 * (pow - 1.0) / 42.0) / pow);
     }
 
-    /// A zero rate takes the straight-line branch, a fractional or
-    /// non-positive period count is undefined, and a payment type other
-    /// than 0 or 1 is refused (`setPmtType`, `setNper`).
+    /// A zero rate takes the straight-line branch, a non-positive period
+    /// count is undefined, and payment type must be 0 or 1.
     #[test]
     fn degenerate_inputs() {
         let v = eval(Finance::FutureValue, &[0.0, 4.0, 13.0]);
@@ -691,11 +551,17 @@ mod tests {
         // `setNper` rounds only near an integer and rejects nothing but a
         // non-positive count.
         let v = eval(Finance::FutureValue, &[42.0, 4.5, 13.0]);
-        assert!((v - (-6_939_083.166_575_921)).abs() < 1.0, "{v}");
+        assert_eq!(v, -13.0 * ((43.0_f64.powf(4.5) - 1.0) / 42.0));
         assert!(eval(Finance::FutureValue, &[42.0, -4.0, 13.0]).is_nan());
         assert!(eval(Finance::FutureValue, &[42.0, 4.0, 13.0, 0.0, 2.0]).is_nan());
-        // A missing present value defaults to 0, a missing future value too.
-        let v = eval(Finance::FutureValue, &[42.0, 4.0, 13.0]);
-        assert!((v - (-1_058_200.0)).abs() < 1e-6, "{v}");
+    }
+
+    #[test]
+    fn infinite_payments_propagate_their_sign() {
+        for payment in [f64::INFINITY, f64::NEG_INFINITY] {
+            let value = eval(Finance::FutureValue, &[0.0, 4.0, payment, 13.0]);
+            assert_eq!(value, -payment);
+        }
+        assert!(eval(Finance::FutureValue, &[0.0, 4.0, f64::NAN, 13.0]).is_nan());
     }
 }

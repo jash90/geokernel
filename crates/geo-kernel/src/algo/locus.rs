@@ -53,7 +53,6 @@ use crate::algo::conic_nd::ConicType;
 use crate::algo::path::{self, inf_function, inverse_inf_function, Geom, PathDef, PathState};
 use crate::algo::{Group, Parents, NUMBER, POINT};
 use crate::expr::fraction::FunctionFraction;
-use crate::expr::Element;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use std::sync::Arc;
 
@@ -226,8 +225,8 @@ impl Construction {
 
     /// Sets the window the view-dependent objects read (`Corner`,
     /// `AxisStepX`, `AxisStepY`) and recomputes them, as GeoGebra's
-    /// `euclidianViewUpdate` does on every view change. The loci are not
-    /// resampled here; they follow their own sampling window.
+    /// `euclidianViewUpdate` does on every view change. Returns whether any
+    /// view readers needed an update. Loci follow their own sampling window.
     pub fn set_view(
         &mut self,
         xmin: f64,
@@ -243,23 +242,18 @@ impl Construction {
             && ymax > ymin
             && xscale > 0.0
             && yscale > 0.0;
-        // a construction that read no view yet read the reference window,
-        // so publishing exactly that changes nothing
-        let current = self.view_state.unwrap_or(HEADLESS_VIEW);
-        if !valid || current == view {
+        if !valid || self.view_state == Some(view) {
             return false;
         }
+        let changed = self.view() != view;
         self.view_state = Some(view);
+        if !changed || self.view_readers.is_empty() {
+            return false;
+        }
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
-        for (i, def) in self.defs.iter().enumerate() {
-            if matches!(
-                def,
-                Def::Point(crate::algo::point::PointDef::ViewCorner { .. })
-                    | Def::Measure(crate::algo::measure::MeasureDef::AxisStep { .. })
-            ) {
-                dirty.insert(i);
-            }
+        for &i in &self.view_readers {
+            dirty.insert(i);
         }
         self.propagate_dirty(dirty, 0);
         true
@@ -528,6 +522,10 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
         }
         // a locus is never between a moving object and the point of a locus
         Def::Locus(_) => {}
+        // Locus and optimizer sampling keep the existing optimum. A live
+        // optimizer would cascade from its own slider into the construction
+        // being sampled. The general construction update still reruns it.
+        Def::Optimize(_) => {}
         Def::Discrete(d) => {
             c.update_locus(i, |c| d.record(c, c.locus(Id(i))));
         }
@@ -548,7 +546,11 @@ pub(crate) fn record(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData 
         LocusDef::Slider { point, slider } => record_slider(c, point, slider),
         LocusDef::Ode { point, source } => record_ode(c, point, source),
         LocusDef::SlopeField(source) => record_slope_field(c, source, None, None, None),
-        LocusDef::Hull(list) => record_hull(c, list),
+        LocusDef::Hull(list) => crate::algo::discrete::DiscreteDef::Points {
+            graph: crate::algo::discrete::PointGraph::Hull,
+            list,
+        }
+        .record(c, None),
         LocusDef::Numeric(d) => d.record(c),
     }
 }
@@ -664,139 +666,6 @@ fn record_slope_field(
         x += x_step;
     }
     locus_from_points(points)
-}
-
-/// `AlgoConvexHull.compute`: the closed convex hull of the defined points
-/// of a list as one locus run. Points that are not defined and duplicates
-/// (within `STANDARD_PRECISION`, as `DoubleUtil.isEqual`) are skipped; a
-/// single point becomes a run of two equal points.
-///
-/// The hull itself is gift wrapping (Jarvis's march, as textbooks describe
-/// it, e.g. Computational Geometry in C, chapter 8): starting at the point
-/// with the smallest `x` (then `y`), every edge is chosen so that all the
-/// other points lie to its right, collinear points keeping only the
-/// farthest, which walks the hull clockwise. The start point, the vertex
-/// order and the closing point are the reference's own (matched by the
-/// recorded hull cases: collinear runs, duplicates, one and two points).
-fn record_hull(c: &Construction, list: Id) -> LocusData {
-    let Some(elements) = c.elements(list) else {
-        return LocusData::default();
-    };
-    // The work of the hull: every list element read, every comparison of
-    // the wrap and every vertex it emits. Past the evaluation budget the
-    // hull is undefined, as the reference's own runaway inputs are.
-    let end = crate::expr::work_done() + crate::expr::MAX_EVALUATION_WORK;
-    let mut charge = |n: u64| -> bool {
-        crate::expr::charge(n);
-        crate::expr::work_done() <= end
-    };
-    if !charge(1) {
-        return LocusData::default();
-    }
-    let mut points: Vec<(f64, f64)> = Vec::new();
-    for element in elements.iter() {
-        // only the defined points of the list count
-        let Element::Value(Kind::Point, Value::Point { x, y }) = element else {
-            continue;
-        };
-        if x.is_nan() || y.is_nan() {
-            return LocusData::default();
-        }
-        points.push((x, y));
-    }
-    // Each point only once: sorted, a point within `STANDARD_PRECISION` of
-    // the last one kept, in both coordinates, is the same as it.
-    points.sort_by(|a, b| {
-        a.0.partial_cmp(&b.0)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then(a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
-    });
-    let is_equal = |a: (f64, f64), b: (f64, f64)| {
-        (a.0 - b.0).abs() <= crate::tol::STANDARD_PRECISION
-            && (a.1 - b.1).abs() <= crate::tol::STANDARD_PRECISION
-    };
-    let mut kept: Vec<(f64, f64)> = Vec::with_capacity(points.len());
-    for &p in &points {
-        if kept.last().is_none_or(|&last| !is_equal(last, p)) {
-            kept.push(p);
-        }
-    }
-    match kept.len() {
-        0 => LocusData::default(),
-        1 => {
-            let (x, y) = kept[0];
-            locus_from_points(vec![
-                LocusPoint {
-                    x,
-                    y,
-                    line_to: false,
-                },
-                LocusPoint {
-                    x,
-                    y,
-                    line_to: true,
-                },
-            ])
-        }
-        _ => gift_wrap(&kept, &mut charge),
-    }
-}
-
-/// One clockwise tour of the hull by gift wrapping: from `cur`, the next
-/// vertex is the point that leaves every other point to the right of the
-/// edge to it, the farthest of the collinear ones. The tour closes at the
-/// start point.
-fn gift_wrap(points: &[(f64, f64)], charge: &mut dyn FnMut(u64) -> bool) -> LocusData {
-    let cross = |o: (f64, f64), a: (f64, f64), b: (f64, f64)| {
-        (a.0 - o.0) * (b.1 - o.1) - (a.1 - o.1) * (b.0 - o.0)
-    };
-    let farther = |o: (f64, f64), a: (f64, f64), b: (f64, f64)| {
-        let d = |p: (f64, f64)| (p.0 - o.0) * (p.0 - o.0) + (p.1 - o.1) * (p.1 - o.1);
-        d(b) > d(a)
-    };
-    // the sorted points start with the smallest `x`, then `y`
-    let start = points[0];
-    let mut run = Vec::with_capacity(points.len() + 1);
-    let mut cur = start;
-    loop {
-        run.push(LocusPoint {
-            x: cur.0,
-            y: cur.1,
-            line_to: run.len() != 1,
-        });
-        // the first candidate that is not the current point
-        let mut next = None;
-        for &p in points {
-            if p != cur {
-                next = Some(p);
-                break;
-            }
-        }
-        let Some(mut next) = next else {
-            return LocusData::default();
-        };
-        if !charge(points.len() as u64) {
-            return LocusData::default();
-        }
-        for &p in points {
-            if p == cur {
-                continue;
-            }
-            match cross(cur, next, p).partial_cmp(&0.0) {
-                // `p` lies to the left of the edge to `next`: the edge
-                // turns too far, `p` comes first on the clockwise walk
-                Some(std::cmp::Ordering::Greater) => next = p,
-                // on the edge itself only the farthest point is a vertex
-                Some(std::cmp::Ordering::Equal) if farther(cur, next, p) => next = p,
-                _ => {}
-            }
-        }
-        cur = next;
-        if cur == start {
-            break;
-        }
-    }
-    locus_from_points(run)
 }
 
 /// `AlgoLocusND.compute` for `Locus(Q, P)`.

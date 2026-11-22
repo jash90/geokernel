@@ -917,6 +917,8 @@ pub struct Construction {
     /// `AxisStepX`, `AxisStepY`); the app keeps it current, a headless
     /// construction uses the reference window.
     view_state: Option<[f64; 6]>,
+    /// Definitions that read the graphics window, in creation order.
+    view_readers: Vec<usize>,
     /// The number of construction elements through the current step.
     step: usize,
     /// The def indices of the construction elements (`ceList`) in protocol
@@ -1479,6 +1481,8 @@ impl Construction {
         self.step = step;
         self.protocol
             .truncate(self.protocol.partition_point(|&i| i < at.len));
+        self.view_readers
+            .truncate(self.view_readers.partition_point(|&i| i < at.len));
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
         self.function_roots.clear();
@@ -1710,6 +1714,13 @@ impl Construction {
         let reads_step = matches!(def, Def::Measure(MeasureDef::ConstructionStep(_)));
         if reads_step {
             self.protocol.push(id.0);
+        }
+        if matches!(
+            def,
+            Def::Point(crate::algo::point::PointDef::ViewCorner { .. })
+                | Def::Measure(MeasureDef::AxisStep { .. })
+        ) {
+            self.view_readers.push(id.0);
         }
         if reads_step || matches!(element, ProtocolEntry::Element(_)) {
             self.update_protocol();
@@ -2443,7 +2454,7 @@ impl Construction {
             return Err(Error::NotFinite);
         }
         let state = PathState::saved_curve(self, path, t);
-        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
+        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state), None)
     }
 
     /// Gives the point on a path `id` the state `state` read from another

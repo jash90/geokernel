@@ -4,9 +4,10 @@
 //! `CmdMinimize` accept a dependent number and an independent number and run
 //! `AlgoMaximize`/`AlgoMinimize`, both `AlgoOptimize` with an
 //! `OptimizerNumeric`. The optimizer packages the construction as one
-//! univariate function — set the independent number, cascade its update,
-//! read the dependent number — and `ExtremumFinder.findMinimum` (Brent's
-//! method, tolerance `5e-8`) searches the slider interval for the extreme.
+//! univariate function: set the independent number, cascade its update,
+//! then read the dependent number. The kernel searches for the extreme
+//! over the slider interval by parabolic interpolation with a
+//! golden-section fallback.
 //! The result is a copy of the independent number at the optimum; the number
 //! itself is restored and the construction recomputed afterwards, so nothing
 //! but the result remembers the search.

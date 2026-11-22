@@ -313,6 +313,19 @@ fn hull_skips_interior_and_duplicate_points_and_closes() {
 }
 
 #[test]
+fn hull_charges_for_reading_and_sorting_the_list() {
+    let mut c = build(&["l = Sequence((k, 0), k, 1, 13000)"]);
+    let before = geo_kernel::expr::work_done();
+    script::exec(&mut c, "h = ConvexHull(l)").unwrap();
+    assert_eq!(
+        points(&c, "h"),
+        vec![(1.0, 0.0, false), (13000.0, 0.0, true), (1.0, 0.0, true)]
+    );
+    let work = geo_kernel::expr::work_done() - before;
+    assert!((100_000..1_000_000).contains(&work), "{work} work units");
+}
+
+#[test]
 fn hull_follows_a_moved_point() {
     let mut c = build(&HULL);
     c.move_point(id(&c, "E"), -1.0, -1.0).unwrap();

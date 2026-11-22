@@ -875,7 +875,7 @@ pub(super) fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
         (Bin::Pow, Num(x), Num(y)) => Ok(Num(if y > 0 { 0 } else { x })),
         (Bin::Pow, Vec, Num(_)) => Ok(Num(0)),
         (Bin::Round2, Num(x), Num(_)) => Ok(Num(x)),
-        (Bin::Atan2 | Bin::LogB, Num(_), Num(_)) => Ok(Num(0)),
+        (Bin::Atan2 | Bin::LogB | Bin::FoldCount, Num(_), Num(_)) => Ok(Num(0)),
         (op, Num(_), Num(_)) if op.is_command() => Ok(Num(0)),
         (op, _, _) if op.is_command() => Err("the command takes two numbers".into()),
         _ => complex(),

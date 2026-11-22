@@ -450,6 +450,41 @@
           }
         }
       ]
+    },
+    {
+      "id": "misc-hull-011",
+      "group": "misc",
+      "script": [
+        "l = {(0.000000008, 0.000000008), (0.000000004, 3), (0, 0), (4, 0)}",
+        "h = ConvexHull(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 8.0E-9, "y": 8.0E-9 },
+              { "type": "point", "defined": true, "x": 4.0E-9, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [4.0E-9, 3.0, false],
+              [4.0, 0.0, true],
+              [8.0E-9, 8.0E-9, true],
+              [4.0E-9, 3.0, true]
+            ]
+          }
+        }
+      ]
     }
   ]
 }

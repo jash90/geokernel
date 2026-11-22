@@ -974,11 +974,7 @@ impl Parser<'_> {
         let to = self.expression()?;
         self.expect(&Tok::RParen, ")")?;
         if function_of_x {
-            // the count of the iterations, `to - from + 1`, folds the
-            // whole run onto the one function
-            let count = self.push(Node::Bin(Bin::Sub, to, from));
-            let one = self.push(Node::Num(1.0));
-            let count = self.push(Node::Bin(Bin::Add, count, one));
+            let count = self.push(Node::Bin(Bin::FoldCount, from, to));
             let node = if text == "Sum" {
                 Node::Bin(Bin::Mul, expression, count)
             } else {

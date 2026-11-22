@@ -303,14 +303,14 @@ fn construction_step_argument(input: &str) -> Option<&str> {
 pub fn is_construction_step_command(line: &str) -> bool {
     let line = split_comment(line).0.trim();
     construction_step_argument(line).is_some()
-        || line.split_once(['=', ':']).is_some_and(|(_, rhs)| {
-            construction_step_argument(rhs.trim()).is_some()
-        })
+        || line
+            .split_once(['=', ':'])
+            .is_some_and(|(_, rhs)| construction_step_argument(rhs.trim()).is_some())
 }
 
 fn set_construction_step(c: &mut Construction, arg: &str) -> Result<(), String> {
-    let value = crate::expr::argument_number(c, arg)
-        .ok_or_else(|| format!("`{arg}` is not a number"))?;
+    let value =
+        crate::expr::argument_number(c, arg).ok_or_else(|| format!("`{arg}` is not a number"))?;
     c.set_construction_step(value);
     Ok(())
 }
@@ -639,7 +639,10 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     }
     if let Some(def) = intersect::growth::parse_slot(c, rhs) {
         let (def, owner) = def?;
-        return c.add_output(name, def, owner).map(Some).map_err(|e| e.to_string());
+        return c
+            .add_output(name, def, owner)
+            .map(Some)
+            .map_err(|e| e.to_string());
     }
     if let Some((form @ ("$point" | "$vector"), args)) = split_call(rhs) {
         match forced_coordinates(form, &args) {
@@ -1459,7 +1462,8 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
                     .filter(|p| !p.is_empty())
                     .unwrap_or("a");
                 let label = index_label(c, prefix);
-                c.add_output(&label, second, id).map_err(|e| e.to_string())?;
+                c.add_output(&label, second, id)
+                    .map_err(|e| e.to_string())?;
                 Ok(id)
             }
             (false, true) => c.add(name, second).map_err(|e| e.to_string()),

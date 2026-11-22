@@ -586,6 +586,17 @@ mismatches = ["0:b"]
 id = "misc-alias-003"
 reason = "The contours agree geometrically. Once the moved vertex makes the triangles overlap, GeoGebra's sweep starts the intersection at the crossing of the boundaries and the kernel starts at the top of the contour, which also moves the first output point; the same difference as geomclip-polygon-003."
 mismatches = ["1:r_{1}", "1:G"]
+
+[[gap]]
+id = "misc-optimize-009"
+reason = "The point-path locus holds the current optimum and agrees at every emitted sample. GeoGebra adds two coincident line-to samples at the final wrap point, recording 151 samples where the kernel records 149."
+mismatches = ["0:l"]
+
+[[gap]]
+id = "misc-optimize-010"
+reason = "The slider locus holds the current optimum and agrees at every emitted sample. GeoGebra adds two coincident line-to samples at the final wrap point, recording 152 samples where the kernel records 150."
+mismatches = ["0:l"]
+
 # Discrete loci
 
 [[gap]]

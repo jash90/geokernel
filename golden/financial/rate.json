@@ -220,6 +220,23 @@
           "r": { "type": "number", "defined": true, "value": 0.0 }
         }
       ]
+    },
+    {
+      "id": "financial-rate-014",
+      "group": "financial",
+      "script": [
+        "a = Rate(1, -1000.00001, 1000, 0, 0, 0.1)",
+        "b = Rate(12, -5, 55, 0, 1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 9.999999974752426E-9 },
+          "b": { "type": "number", "defined": true, "value": 0.016231328174462472 }
+        }
+      ]
     }
   ]
 }

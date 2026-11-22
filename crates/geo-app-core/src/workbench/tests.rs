@@ -135,7 +135,10 @@ fn a_construction_step_refreshes_rows_and_survives_replay() {
     assert_eq!(row_value(&mut w, "s"), "1");
 
     let mut restored = Workbench::default();
-    assert!(restored.restore_text(&w.snapshot_text()).unwrap().is_empty());
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
     assert_eq!(row_value(&mut restored, "s"), "1");
 
     let bad = ["SetConstructionStep(1/0)".into(), "q = Line(A, Z)".into()];

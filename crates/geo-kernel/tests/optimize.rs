@@ -1,5 +1,5 @@
-//! `Maximize(dep, indep)` and `Minimize(dep, indep)` over a bounded number:
-//! the values GeoGebra's `AlgoOptimize` finds with `ExtremumFinder`.
+//! Mathematical properties of `Maximize` and `Minimize` over bounded numbers.
+//! The Java harness separately records the numerical search results.
 
 use geo_kernel::{script, Construction, Value};
 
@@ -24,38 +24,73 @@ fn maximize_and_minimize_a_quadratic_over_the_slider() {
         "n = Minimize(f, a)",
     ]);
     assert_eq!(number(&c, "m"), Value::Number(3.0));
-    // the boundary minimum, at the tolerance Brent stops at
-    assert_eq!(
-        number(&c, "n"),
-        Value::Number(-9.999999771177004),
-        "{:?}",
-        number(&c, "n")
-    );
+    // The left endpoint is farthest from the parabola's vertex.
+    let Value::Number(n) = number(&c, "n") else {
+        panic!("the boundary minimum is undefined");
+    };
+    assert!((-10.0..=-10.0 + 5e-7).contains(&n), "{n}");
 }
 
 #[test]
 fn maximize_and_minimize_an_inline_expression() {
-    // the forms of GeoGebra's own test (`cmdMinimize`, `cmdMaximize`)
     let c = build(&[
         "s = Slider(-5, 5)",
         "u = Maximize(5 - (3 - s)^2, s)",
         "v = Minimize(5 + (3 - s)^2, s)",
     ]);
-    assert_eq!(number(&c, "u"), Value::Number(3.0));
-    assert_eq!(number(&c, "v"), Value::Number(3.0000000000000004));
+    for label in ["u", "v"] {
+        let Value::Number(optimum) = number(&c, label) else {
+            panic!("{label} is undefined");
+        };
+        assert!((optimum - 3.0).abs() < 1e-9, "{label} = {optimum}");
+    }
 }
 
 #[test]
 fn optimize_without_dependency_still_runs_the_search() {
-    // a constant dependent value: the finder stops somewhere in the
-    // interval, at the same point GeoGebra's does
-    let c = build(&[
+    // Any value in the interval minimizes a constant. Offsetting the
+    // objective leaves the choice unchanged.
+    let mut c = build(&[
         "a = Slider(-10, 10)",
         "b = 5",
         "g = b",
         "p = Minimize(g, a)",
     ]);
-    assert_eq!(number(&c, "p"), Value::Number(1.055728075070692));
+    let Value::Number(optimum) = number(&c, "p") else {
+        panic!("the constant objective has no optimum");
+    };
+    assert!((-10.0..=10.0).contains(&optimum));
+    c.set_number(c.id("b").unwrap(), -3.0).unwrap();
+    assert_eq!(number(&c, "p"), Value::Number(optimum));
+}
+
+#[test]
+fn a_locus_keeps_the_current_optima_while_sampling_its_slider() {
+    let mut c = build(&[
+        "a = Slider(0, 6)",
+        "t = Slider(1, 3)",
+        "f = (a - t)^2",
+        "g = -f",
+        "m = Maximize(g, a)",
+        "n = Minimize(f, a)",
+        "Q = (m + n, t)",
+        "L = Locus(Q, t)",
+    ]);
+    let locus = c.locus(c.id("L").unwrap()).unwrap();
+    assert!(locus.defined);
+    assert!(locus.points.iter().any(|p| p.y > 2.9));
+    assert!(locus.points.iter().all(|p| (p.x - 2.0).abs() < 1e-9));
+    assert_eq!(number(&c, "a"), Value::Number(0.0));
+    assert_eq!(number(&c, "t"), Value::Number(1.0));
+    assert_eq!(number(&c, "f"), Value::Number(1.0));
+    assert_eq!(number(&c, "g"), Value::Number(-1.0));
+    c.set_number(c.id("t").unwrap(), 2.5).unwrap();
+    for label in ["m", "n"] {
+        let Value::Number(optimum) = number(&c, label) else {
+            panic!("{label} is undefined after updating the slider");
+        };
+        assert!((optimum - 2.5).abs() < 1e-9, "{label} = {optimum}");
+    }
 }
 
 #[test]
