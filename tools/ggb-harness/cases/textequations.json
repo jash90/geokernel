@@ -1,0 +1,5 @@
+{
+  "cases": [
+    {"id": "textequations-typed-001", "group": "textequations", "script": ["a = 2", "l: y = a x + 1", "m: 2x - y = -1", "p: y = a x^2 - x + 1", "q: x^2 + y^2 = 9", "lText = Text(l)", "lTex = FormulaText(l)", "mText = Text(m)", "mTex = FormulaText(m)", "pText = Text(p)", "pTex = FormulaText(p)", "qText = Text(q)", "qTex = FormulaText(q)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": -3}]}
+  ]
+}

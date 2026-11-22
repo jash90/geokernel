@@ -68,12 +68,19 @@ impl Format {
                 }
             }
             Node::Bool(b) => b.to_string(),
-            Node::Var => "x".into(),
+            Node::Var => ctx
+                .e
+                .curve_parameter
+                .as_deref()
+                .unwrap_or(if ctx.e.function_of_y { "y" } else { "x" })
+                .into(),
             Node::VarY => "y".into(),
             Node::Obj(id) | Node::FunctionObject(id) if !substitute => {
                 Self::label(ctx.c.label(id), self.latex)
             }
-            Node::Obj(id) => self.shown(ctx.c.kind(id), ctx.c.value(id)),
+            Node::Obj(id) | Node::FunctionObject(id) => self.object_value(ctx, id)?,
+            Node::ItemObject(id) if substitute => self.object_value(ctx, id)?,
+            Node::ItemObject(id) => Self::label(ctx.c.label(id), self.latex),
             Node::Tuple(x, y) => self.pair(&term(x, 0)?, &term(y, 0)?),
             Node::Polar(r, phi) => {
                 self.parenthesize(format_args!("{}; {}", term(r, 0)?, term(phi, 0)?))
@@ -155,12 +162,29 @@ impl Format {
                 (7, format!("{x}{power}"))
             }
             Bin::Mul => {
-                let implicit = matches!(ctx.node(b), Node::Var | Node::VarY)
-                    || !substitute
-                        && matches!(ctx.node(b), Node::Obj(_))
-                        && matches!(ctx.node(a), Node::Num(_));
+                let base = match ctx.node(b) {
+                    Node::Bin(Bin::Pow, base, _) => ctx.node(base),
+                    node => node,
+                };
+                let variable = matches!(base, Node::Var | Node::VarY);
+                if let (true, Node::Obj(id)) = (
+                    substitute && self.simplify_coefficients && variable,
+                    ctx.node(a),
+                ) {
+                    match ctx.c.value(id) {
+                        crate::Value::Number(0.0) => return Some("0".into()),
+                        crate::Value::Number(1.0) => return term(b, outer),
+                        crate::Value::Number(-1.0) => return Some(format!("-{}", term(b, 6)?)),
+                        _ => (),
+                    }
+                }
+                let numeric = matches!(ctx.node(a), Node::Num(x) if x.is_finite()
+                    && x != std::f64::consts::PI && x != std::f64::consts::E);
+                let implicit =
+                    variable || !substitute && matches!(ctx.node(b), Node::Obj(_)) && numeric;
                 let sep = match (self.latex, implicit) {
                     (false, false) => " * ",
+                    (false, true) if variable && numeric => "",
                     (false, true) => " ",
                     (true, false) => r" \cdot ",
                     (true, true) => r" \; ",
@@ -168,8 +192,29 @@ impl Format {
                 (5, format!("{}{sep}{}", term(a, 5)?, term(b, 6)?))
             }
             Bin::Add | Bin::Sub => {
-                let sign = if op == Bin::Add { " + " } else { " - " };
-                (4, format!("{}{sign}{}", term(a, 4)?, term(b, 5)?))
+                let (left, right) = (term(a, 4)?, term(b, 5)?);
+                let zero = |i| match ctx.node(i) {
+                    Node::Num(x) => x == 0.0,
+                    Node::Obj(id) => ctx.c.value(id) == crate::Value::Number(0.0),
+                    _ => false,
+                };
+                if substitute {
+                    if zero(b) || self.simplify_coefficients && right == "0" {
+                        return term(a, outer);
+                    }
+                    if op == Bin::Add && (zero(a) || self.simplify_coefficients && left == "0") {
+                        return term(b, outer);
+                    }
+                }
+                let (negative, term) = right
+                    .strip_prefix('-')
+                    .map_or((false, right.as_str()), |rest| (true, rest));
+                let sign = if (op == Bin::Sub) ^ negative {
+                    " - "
+                } else {
+                    " + "
+                };
+                (4, format!("{left}{sign}{term}"))
             }
             Bin::Div => (5, format!("{} / {}", term(a, 6)?, term(b, 6)?)),
             Bin::Less

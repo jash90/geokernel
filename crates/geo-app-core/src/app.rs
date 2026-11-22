@@ -115,6 +115,8 @@ pub struct App {
     /// Where the labels were painted in the last frame, in the area's
     /// coordinates and painting order (the buffer is reused).
     pub label_rects: RefCell<Vec<(Id, Rect)>>,
+    /// The painted bodies of text objects, in the area's coordinates.
+    pub text_rects: RefCell<Vec<(Id, Rect)>>,
 }
 
 impl App {
@@ -160,6 +162,7 @@ impl App {
             erasing: false,
             was_typing: false,
             label_rects: RefCell::new(Vec::new()),
+            text_rects: RefCell::new(Vec::new()),
         }
     }
 
@@ -174,6 +177,25 @@ impl App {
             .iter()
             .find(|(id, r)| id.index() < self.wb.construction().len() && r.contains(p))
             .map(|&(id, _)| id)
+    }
+
+    /// The selected text under the pointer, or the topmost text there.
+    pub fn text_at(
+        &self,
+        (sx, sy): (f64, f64),
+        selected: Option<Id>,
+        accept: impl Fn(Id) -> bool,
+    ) -> Option<Id> {
+        let (x, y) = (sx.trunc() as f32, sy.trunc() as f32);
+        let rects = self.text_rects.borrow();
+        let mut hits = rects.iter().rev().filter_map(|&(id, r)| {
+            (r.left() <= x && x < r.right() && r.top() <= y && y < r.bottom() && accept(id))
+                .then_some(id)
+        });
+        let top = hits.next()?;
+        selected
+            .filter(|&id| id == top || hits.any(|hit| hit == id))
+            .or(Some(top))
     }
 
     /// Abandons the drag in progress: the point or the object goes back, or

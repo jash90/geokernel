@@ -97,6 +97,18 @@ pub fn conic_equation(d: &ConicData) -> String {
 /// the equation of a conic, whose value alone does not hold it. A function
 /// has no text of its own: its row shows its definition.
 pub fn object_text(c: &Construction, id: Id) -> String {
+    if matches!(
+        c.kind(id),
+        geo_kernel::Kind::Line
+            | geo_kernel::Kind::Ray
+            | geo_kernel::Kind::Circle
+            | geo_kernel::Kind::Conic
+    ) && c.equation_form(id).is_some()
+    {
+        if let Some(equation) = c.formatted_equation(id) {
+            return equation;
+        }
+    }
     match c.value(id) {
         Value::Conic { .. } => match c.conic(id) {
             Some(d) => conic_equation(&d),

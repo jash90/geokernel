@@ -38,6 +38,9 @@ const REVIEW_FIXTURES: [&str; 4] = [
     "saved-coordinates-001",
 ];
 const TEXT_FIXTURES: [&str; 2] = ["saved-texts-001", "saved-texts-002"];
+const TEXT_EQUATION_FIXTURES: [&str; 2] = ["saved-text-equations-001", "saved-text-equations-002"];
+const TEXT_CONIC_STYLE_FIXTURE: &str = "saved-text-conic-styles-001";
+const TEXT_TEMPLATE_FIXTURES: [&str; 2] = ["saved-text-template-001", "saved-text-template-002"];
 
 fn fixture(name: &str) -> (Snapshot, geo_import::Imported) {
     let dir = repo_root().join("golden/ggb/saved");
@@ -142,6 +145,40 @@ fn saved_text_objects_match_before_and_after_edits() {
     live.move_point(live.id("P").unwrap(), *x, *y).unwrap();
     live.set_number(live.id("a").unwrap(), *n).unwrap();
     check_review_values(&after, &live, &[]);
+}
+
+#[test]
+fn saved_styles_are_used_to_recompute_texts() {
+    for pair in [TEXT_EQUATION_FIXTURES, TEXT_TEMPLATE_FIXTURES] {
+        check_saved_text_recompute(pair);
+    }
+}
+
+#[test]
+fn text_matches_saved_conic_equation_styles() {
+    let (snapshot, imported) = fixture(TEXT_CONIC_STYLE_FIXTURE);
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snapshot, &c, &[]);
+}
+
+fn check_saved_text_recompute(pair: [&str; 2]) {
+    let [before, after] = pair.map(fixture);
+    let load = |(snapshot, imported): &(Snapshot, geo_import::Imported)| {
+        assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+        assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+        let c = script::load(&imported.script.join("\n")).unwrap();
+        check_review_values(snapshot, &c, &[]);
+        c
+    };
+    let mut live = load(&before);
+    load(&after);
+    let Some(ExpectedData::Number(a)) = after.0.objects["a"].data else {
+        panic!("expected a number");
+    };
+    live.set_number(live.id("a").unwrap(), a).unwrap();
+    check_review_values(&after.0, &live, &[]);
 }
 
 #[test]
@@ -365,6 +402,9 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                 .iter()
                 .chain(&REVIEW_FIXTURES)
                 .chain(&TEXT_FIXTURES)
+                .chain(&TEXT_EQUATION_FIXTURES)
+                .chain(&TEXT_TEMPLATE_FIXTURES)
+                .chain(std::iter::once(&TEXT_CONIC_STYLE_FIXTURE))
                 .any(|id| p.file_stem().unwrap() == *id)
         })
         .collect();

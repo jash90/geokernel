@@ -524,7 +524,7 @@ fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
             Err("text operands require concatenation".into())
         };
     }
-    if a == Ty::Object || b == Ty::Object {
+    if matches!(a, Ty::Object | Ty::Function) || matches!(b, Ty::Object | Ty::Function) {
         return Err("geometric objects cannot be used as arithmetic operands".into());
     }
     let list = |t: Ty| match t {

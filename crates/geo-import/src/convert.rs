@@ -13,7 +13,10 @@ use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
 use geo_kernel::kernel::{angle::AngleStyle, Def};
-use geo_kernel::script::text::Properties as TextProperties;
+use geo_kernel::script::equation::Style as EquationStyle;
+use geo_kernel::script::text::{
+    literal as text_literal, push_escaped_char, Properties as TextProperties,
+};
 use geo_kernel::script::{exec, is_vector_label, multi_output_count};
 use geo_kernel::{Construction, Id, Kind, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -98,8 +101,7 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
                         })
                         .collect::<Option<Vec<_>>>()
                 });
-                c.element(el, points.as_deref())?;
-                c.apply_text_style(el, doc.gui_font_size.unwrap_or(12.0));
+                c.element(el, points.as_deref(), doc.gui_font_size.unwrap_or(12.0))?;
             }
         }
     }
@@ -608,12 +610,18 @@ impl Converter {
         label
     }
 
-    fn element(&mut self, el: &Element, polygon: Option<&[[f64; 2]]>) -> Result<(), ImportError> {
+    fn element(
+        &mut self,
+        el: &Element,
+        polygon: Option<&[[f64; 2]]>,
+        font_size: f64,
+    ) -> Result<(), ImportError> {
         let expression = self.expressions.remove(&el.label);
         if !self.produced.contains(&el.label) {
             self.claim(&el.label)?;
             self.define_element(el, expression.as_deref())?;
         }
+        self.apply_text_style(el, font_size);
         self.record_element(el, expression.as_deref(), polygon);
         Ok(())
     }
@@ -646,6 +654,24 @@ impl Converter {
         polygon: Option<&[[f64; 2]]>,
     ) {
         if let Some(id) = self.kernel.id(&el.label) {
+            if let Some(form) = el
+                .equation_form
+                .as_ref()
+                .filter(|form| self.kernel.equation_form(id) != Some(*form))
+            {
+                let line = EquationStyle {
+                    label: &el.label,
+                    form: form.clone(),
+                }
+                .to_string();
+                match exec(&mut self.kernel, &line) {
+                    Ok(_) => self.out.script.push(line),
+                    Err(e) => self
+                        .out
+                        .notes
+                        .push(format!("equation style for `{}`: {e}", quote(&el.label))),
+                }
+            }
             if let Some(code) = el
                 .angle_style
                 .filter(|_| self.kernel.kind(id) == Kind::Angle)
@@ -952,6 +978,8 @@ fn expression_kind(saved_type: &str, exp: &str) -> Result<Kind, String> {
         "boolean" => Kind::Boolean,
         "list" => Kind::List,
         "text" => Kind::Text,
+        "line" => Kind::Line,
+        "conic" => Kind::Conic,
         other => return Err(unsupported_element(other)),
     })
 }
@@ -1023,6 +1051,7 @@ fn object_expression(label: &str, kind: Kind, exp: &str) -> Result<String, Strin
     }
     let rhs = expression_line(exp)?;
     Ok(match kind {
+        Kind::Line | Kind::Conic => format!("{label}: {rhs}"),
         Kind::Point if is_vector_label(label) => format!("{label} = $point({rhs})"),
         Kind::Vector if !is_vector_label(label) => format!("{label} = $vector({rhs})"),
         _ => format!("{label} = {rhs}"),
@@ -1041,7 +1070,7 @@ pub fn expression_line(exp: &str) -> Result<String, String> {
                 quoted = false;
                 out.push(ch);
             } else {
-                push_text_char(&mut out, ch);
+                push_escaped_char(&mut out, ch);
             }
             continue;
         }
@@ -1097,26 +1126,6 @@ pub fn expression_line(exp: &str) -> Result<String, String> {
         return Err(format!("missing `{closer}` in expression"));
     }
     Ok(out)
-}
-
-fn push_text_char(out: &mut String, ch: char) {
-    match ch {
-        '\\' => out.push_str(r"\\"),
-        '"' => out.push_str(r#"\""#),
-        '\n' => out.push_str(r"\u{a}"),
-        '\r' => out.push_str(r"\u{d}"),
-        _ => out.push(ch),
-    }
-}
-
-fn text_literal(contents: &str) -> String {
-    let mut literal = String::with_capacity(contents.len() + 2);
-    literal.push('"');
-    for ch in contents.chars() {
-        push_text_char(&mut literal, ch);
-    }
-    literal.push('"');
-    literal
 }
 
 /// An argument of a command as a script argument. A label or a number goes
@@ -1389,9 +1398,22 @@ fn cross_check(
     let kind = c.kind(id);
     let value = c.value(id);
     let kind_matches = kind_agrees(&el.kind, kind);
+    // GeoGebra writes independent text as a quoted expression. Dependent
+    // texts normally save their definition or command and omit the result.
+    let saved_string = (el.kind == "text")
+        .then(|| {
+            el.value.as_deref().or_else(|| {
+                let body = expression?.trim().strip_prefix('"')?.strip_suffix('"')?;
+                (!body.contains('"')).then_some(body)
+            })
+        })
+        .flatten();
     let report = || {
-        let saved = saved_text(el);
-        let computed = if kind == Kind::Conic {
+        let saved =
+            saved_string.map_or_else(|| saved_text(el), |s| format!("value {:?}", quote(s)));
+        let computed = if let Some(text) = c.text(id) {
+            format!("{kind}, {:?}", quote(text))
+        } else if kind == Kind::Conic {
             format!(
                 "{kind}, {value:?}, matrix {:?}",
                 c.conic(id).map(|d| d.matrix)
@@ -1419,6 +1441,9 @@ fn cross_check(
     }
     if polygon.is_some_and(|points| !polygon_agrees(c, id, points)) {
         return report();
+    }
+    if let Some(saved) = saved_string {
+        return (c.text(id) != Some(saved)).then(report).flatten();
     }
     if let Some(exp) = expression {
         let exp = exp.trim();
@@ -1584,6 +1609,52 @@ fn list_item_agrees(actual: geo_kernel::expr::Element<'_>, saved: &str) -> bool 
 mod tests {
     use crate::import;
     use geo_kernel::{script, Value};
+
+    #[test]
+    fn saved_text_verification_reports_exact_string_differences() {
+        use super::cross_check;
+        use crate::xml::{parse, Item};
+        let xml = crate::archive::extract_xml(include_bytes!(
+            "../../../golden/ggb/saved/saved-texts-001.ggb"
+        ))
+        .unwrap();
+        let mut doc = parse(&xml).unwrap();
+        let label = "note";
+        let (el, exp) = (
+            doc.items
+                .iter()
+                .find_map(|item| match item {
+                    Item::Element(el) if el.label == label => Some(el.as_ref()),
+                    _ => None,
+                })
+                .unwrap(),
+            doc.items
+                .iter()
+                .find_map(|item| match item {
+                    Item::Expression { label: name, exp } if name == label => Some(exp.as_str()),
+                    _ => None,
+                })
+                .unwrap(),
+        );
+        let c = script::load(r#"note = "Survey note second line""#).unwrap();
+        assert!(cross_check(el, &c, c.id(label).unwrap(), Some(exp), None).is_some());
+
+        // Supply a cached value alongside the saved expression to exercise
+        // mismatch reporting through the converter's normal entry point.
+        for item in &mut doc.items {
+            if let Item::Element(el) = item {
+                if el.label == label {
+                    el.value = c.text(c.id(label).unwrap()).map(str::to_owned);
+                }
+            }
+        }
+        let imported = super::convert(doc).unwrap();
+        assert_eq!(imported.mismatched.len(), 1, "{:?}", imported.mismatched);
+        let mismatch = &imported.mismatched[0];
+        assert_eq!(mismatch.label, label);
+        assert!(mismatch.saved.contains("Survey note second line"));
+        assert!(mismatch.computed.contains(r"Survey note\nsecond line"));
+    }
 
     #[test]
     fn saved_verification_detects_different_kinds_and_serialized_values() {

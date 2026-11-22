@@ -16,7 +16,7 @@
 //!   `<show object=/>`.
 //! * `<kernel>`: `Kernel.getKernelXML` (decimals, angle unit, continuity).
 //!
-//! * `<matrix A0= .. A5=>` of a conic, and the flags `<fixed>`,
+//! * `<matrix A0= .. A5=>` of a conic, its `<eqnStyle>`, and the flags `<fixed>`,
 //!   `<auxiliary>`, `<condition>`, and non-text `<startPoint>` (counted for a note).
 //! * Text placement and style: `<startPoint>`, `<absoluteScreenLocation>`,
 //!   `<labelOffset>`, `<font>`, and `<isLaTeX>`.
@@ -30,6 +30,7 @@
 
 use crate::{ImportError, Settings};
 use geo_kernel::kernel::text::TextPosition;
+use geo_kernel::kernel::EquationForm;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
 
@@ -57,6 +58,8 @@ pub struct Element {
     pub value: Option<String>,
     /// GeoGebra's angle interval code (`<angleStyle val=>`).
     pub angle_style: Option<i32>,
+    /// The saved display form of a line or conic.
+    pub equation_form: Option<EquationForm>,
     /// `<matrix A0= ... A5=>` of a conic as written.
     pub matrix: Option<[String; 6]>,
     /// `<fixed val="true">`: not used, counted for a note.
@@ -401,6 +404,16 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "angleStyle" if element.is_some() => {
                     element.as_mut().expect("checked above").angle_style =
                         attr(e, "val")?.and_then(|v| v.parse().ok());
+                }
+                "eqnStyle"
+                    if element
+                        .as_ref()
+                        .is_some_and(|el| matches!(el.kind.as_str(), "line" | "ray" | "conic")) =>
+                {
+                    let style = attr(e, "style")?;
+                    let parameter = attr(e, "parameter")?;
+                    element.as_mut().expect("checked above").equation_form = style
+                        .and_then(|style| EquationForm::from_xml(&style, parameter.as_deref()));
                 }
                 _ => {}
             }

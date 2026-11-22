@@ -560,6 +560,8 @@ pub(super) struct Ctx<'a, const M: bool> {
     pub(super) meter: Option<&'a Lists>,
     /// The variables of the `Sequence`s around the node being evaluated.
     pub(super) locals: Option<&'a Local<'a>>,
+    /// A saved template override for the text being evaluated.
+    pub(super) text_latex_override: Option<bool>,
 }
 
 impl<'a, const M: bool> Ctx<'a, M> {
@@ -571,7 +573,13 @@ impl<'a, const M: bool> Ctx<'a, M> {
             lists: None,
             meter: None,
             locals: None,
+            text_latex_override: None,
         }
+    }
+
+    pub(super) fn text_latex(&self) -> bool {
+        self.text_latex_override
+            .unwrap_or_else(|| self.e.text_latex())
     }
 }
 
@@ -610,11 +618,12 @@ pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, 
     }
 }
 
-pub(super) fn text_root(c: &Construction, e: &Entry) -> super::TextResult {
+pub(super) fn text_root(c: &Construction, e: &Entry, latex: Option<bool>) -> super::TextResult {
     let meter = Lists::new(Vec::new());
     let ctx = Ctx::<true> {
         lists: Some(&meter),
         meter: Some(&meter),
+        text_latex_override: latex,
         ..Ctx::new(c, e, &Env::None)
     };
     let text = ctx.text(e.root);
@@ -627,7 +636,7 @@ pub(super) fn text_root(c: &Construction, e: &Entry) -> super::TextResult {
         while text.len() > 1 && text.ends_with('\n') {
             text.pop();
         }
-        if !presentation.latex && text.contains(r"\\n") {
+        if !latex.unwrap_or(presentation.latex) && text.contains(r"\\n") {
             text = text.replace(r"\\n", "\n");
         }
         text
@@ -1244,11 +1253,14 @@ impl<const M: bool> Ctx<'_, M> {
             };
         }
         if let Node::FunctionObject(id) = self.node(i) {
-            return Slot::function(id, self.c.value(id));
+            return Slot::object(self.c, id);
         }
         if let Node::Obj(id) = self.node(i) {
             if self.c.kind(id) == Kind::Point {
                 return Slot::point(self.c.stored_value(id)).with_object(id);
+            }
+            if self.c.kind(id) == Kind::Angle {
+                return Slot::object(self.c, id);
             }
         }
         let mark = self.lists.map(Lists::len);
@@ -1269,7 +1281,10 @@ impl<const M: bool> Ctx<'_, M> {
         }
         match x {
             Val::N(v) => {
-                let slot = Slot::number(v);
+                let mut slot = Slot::number(v);
+                if self.e.tys[i as usize] == Ty::Num(1) {
+                    slot.kind = Kind::Angle;
+                }
                 if let Node::Obj(id) = self.node(i) {
                     slot.with_object(id)
                 } else {

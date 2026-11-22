@@ -60,6 +60,8 @@ impl Default for TextFont {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TextPresentation {
     pub position: TextPosition,
+    /// A command supplies and controls the anchor, so the text cannot be dragged.
+    pub fixed: bool,
     pub latex: bool,
     pub size: f64,
     pub serif: bool,
@@ -74,6 +76,7 @@ impl Default for TextPresentation {
     fn default() -> Self {
         Self {
             position: TextPosition::Origin,
+            fixed: false,
             latex: false,
             size: 1.0,
             serif: false,
@@ -132,6 +135,10 @@ impl Construction {
         Some(self.text_presentation(id)?.position)
     }
 
+    pub(crate) fn text_latex_override(&self, id: Id) -> Option<bool> {
+        self.text_presentations.get(&id)?.latex
+    }
+
     pub(crate) fn apply_text_properties(
         &mut self,
         id: Id,
@@ -155,10 +162,18 @@ impl Construction {
             }
         }
         let current = self.text_presentations.entry(id).or_default();
+        let template_changed = props.latex.is_some() && props.latex != current.latex;
         current.position = props.position.or(current.position);
         current.latex = props.latex.or(current.latex);
         current.font = props.font.or(current.font);
         current.offset = props.offset.or(current.offset);
+        if template_changed {
+            if let super::Def::Expr(def) = self.def(id) {
+                if self.update_expr(id.0, def) {
+                    self.propagate(id);
+                }
+            }
+        }
         Ok(())
     }
 

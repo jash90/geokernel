@@ -130,8 +130,8 @@ pub enum Kind {
     FunctionNVar,
     Polygon,
     PolyLine,
-    /// A list of numbers, points, vectors, booleans or lists, such as
-    /// `{1, 2, 3}`; its elements are read with [`Construction::elements`].
+    /// A list of values such as `{1, 2, 3}`. Read its elements with
+    /// [`Construction::elements`].
     List,
     /// A general conic (`Conic`, `Ellipse`, `Hyperbola`, `Parabola` and
     /// their images); its state is read with [`Construction::conic`].
@@ -522,6 +522,50 @@ pub struct EquationRecord {
     pub(crate) sides: [u32; 2],
 }
 
+/// The presentation of a line or conic, independent of its coefficients.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum EquationForm {
+    Implicit,
+    Explicit,
+    General,
+    Specific,
+    Parametric(String),
+    User,
+    Vertex,
+    Conic,
+}
+
+impl EquationForm {
+    /// The style and optional parameter from a saved equation.
+    pub fn from_xml(style: &str, parameter: Option<&str>) -> Option<Self> {
+        Some(match style {
+            "implicit" => Self::Implicit,
+            "explicit" => Self::Explicit,
+            "general" => Self::General,
+            "specific" => Self::Specific,
+            "parametric" => Self::Parametric(parameter.unwrap_or("t").to_owned()),
+            "user" => Self::User,
+            "vertex" => Self::Vertex,
+            "conic" => Self::Conic,
+            _ => return None,
+        })
+    }
+
+    /// The style name used in saved files.
+    pub fn xml_style(&self) -> &'static str {
+        match self {
+            Self::Implicit => "implicit",
+            Self::Explicit => "explicit",
+            Self::General => "general",
+            Self::Specific => "specific",
+            Self::Parametric(_) => "parametric",
+            Self::User => "user",
+            Self::Vertex => "vertex",
+            Self::Conic => "conic",
+        }
+    }
+}
+
 impl Def {
     pub fn kind(&self) -> Kind {
         match self {
@@ -727,6 +771,8 @@ pub struct Construction {
     hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
     text_presentations: HashMap<Id, text::TextOverrides>,
+    /// Selected equation forms and their display revisions.
+    equation_forms: HashMap<Id, (EquationForm, u64)>,
     /// Original expressions whose structure is lost when bound to a value.
     construction_sources: HashMap<Id, String>,
     /// The stored lists of parents, one after the other (see [`IdList`]).
@@ -938,6 +984,39 @@ impl Construction {
         self.stored_value(id).cartesian()
     }
 
+    /// An object's selected equation form, if it has one.
+    pub fn equation_form(&self, id: Id) -> Option<&EquationForm> {
+        self.equation_forms.get(&id).map(|(form, _)| form)
+    }
+
+    /// A cache key for the equation's display state within this construction.
+    pub fn equation_display_revision(&self, id: Id) -> Option<u64> {
+        self.equation_forms.get(&id).map(|(_, revision)| *revision)
+    }
+
+    /// Changes the display form and refreshes texts that read it.
+    pub fn set_equation_form(&mut self, id: Id, form: EquationForm) -> Result<usize, Error> {
+        const EQUATIONS: &[Kind] = &[Kind::Line, Kind::Ray, Kind::Circle, Kind::Conic];
+        let kind = self.defs.get(id.0).ok_or(Error::UnknownObject)?.kind();
+        if !EQUATIONS.contains(&kind) {
+            return Err(Error::WrongKind {
+                label: self.label(id).to_owned(),
+                expected: EQUATIONS,
+                found: kind,
+            });
+        }
+        let revision = match self.equation_forms.get(&id) {
+            Some((previous, _)) if *previous == form => return Ok(0),
+            Some((_, revision)) => revision.wrapping_add(1),
+            None => 0,
+        };
+        self.equation_forms.insert(id, (form, revision));
+        if self.children[id.0].is_empty() {
+            return Ok(0);
+        }
+        Ok(self.propagate(id))
+    }
+
     /// Includes homogeneous coordinates so algorithms that read the raw
     /// fields see scale changes even when the Cartesian value is unchanged.
     pub(crate) fn stored_value(&self, id: Id) -> Value {
@@ -1133,6 +1212,7 @@ impl Construction {
     pub(crate) fn discard_since(&mut self, at: Checkpoint) {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
         self.discard_text_presentations(at.len);
+        self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
         self.frozen_line_starts
             .retain(|_, &mut (_, _, order)| order < at.frozen_line_starts);
@@ -1275,7 +1355,7 @@ impl Construction {
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
-            Def::Expr(d) => expr::update(self, d).0,
+            Def::Expr(d) => expr::update(self, id, d).0,
             Def::IntersectConics(d) => {
                 let mut state = self.create_conic_intersection(d);
                 let value = state.value(d, self).unwrap_or(Value::Undefined);
@@ -1686,7 +1766,9 @@ impl Construction {
                             self.last_update_changed_automatic_root = true;
                         }
                     }
-                    if new == self.values[i] {
+                    if new == self.values[i]
+                        && !matches!(def, Def::Measure(MeasureDef::CartesianCurve { .. }))
+                    {
                         // Nothing downstream can change because of this object.
                         continue;
                     }
@@ -1707,7 +1789,7 @@ impl Construction {
     /// Kept out of line so that the loop of [`Self::propagate`] stays small.
     #[inline(never)]
     fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
-        let (value, changed) = expr::update(self, d);
+        let (value, changed) = expr::update(self, Id(i), d);
         self.values[i] = value;
         changed
     }
@@ -1841,7 +1923,8 @@ impl Construction {
 
     /// Recomputes the equation object `i` from its coefficients; tells
     /// whether its children must follow: whether any coefficient changed,
-    /// bit for bit. A conic is classified again from its record, as
+    /// bit for bit, or its display uses the original expression sides.
+    /// A conic is classified again from its record, as
     /// `AlgoDependentConic.compute` calls `setCoeffs`. Out of line like
     /// [`Self::update_expr`].
     #[inline(never)]
@@ -1854,8 +1937,15 @@ impl Construction {
             ConicData::new()
         };
         let (changed, value, record) = crate::expr::equation::recompute(self, d, prev);
+        let user_form =
+            if let Some((EquationForm::User, revision)) = self.equation_forms.get_mut(&Id(i)) {
+                *revision = revision.wrapping_add(1);
+                true
+            } else {
+                false
+            };
         if !changed {
-            return false;
+            return user_form;
         }
         if let Some(record) = record {
             if let Some(slot) = self.conic_slot(i) {

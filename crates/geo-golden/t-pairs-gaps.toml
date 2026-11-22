@@ -496,8 +496,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "arithmetic/ArithmeticTest.java:388"
-category = "unsupported-form"
-reason = "the kernel refuses the input: the function `g` needs an argument"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `f`; the method's step `arithmetic/ArithmeticTest.java:382` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -1096,9 +1096,9 @@ mismatches = ["myFunc"]
 
 [[gap]]
 id = "commands/CmdCopyFreeObjectTest.java:28"
-category = "unsupported-form"
-reason = "the kernel refuses the input: the function `myFunc` needs an argument"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{(3 * 1)}`"
+mismatches = ["myList"]
 
 [[gap]]
 id = "commands/CmdCopyFreeObjectTest.java:29"

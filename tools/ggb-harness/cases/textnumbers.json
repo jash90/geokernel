@@ -1,5 +1,6 @@
 {
   "cases": [
+    {"id": "textnumbers-latexedit-001", "group": "textnumbers", "script": ["a = 3", "ta = FormulaText(a)", "tb = Text(a, (0, 0), true, true)", "tc = FractionText(a)", "td = FractionText(1E20)", "te = FormulaText(a + 0)", "tf = Text(a)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 3.141592653589793}, {"action": "set_number", "label": "a", "value": 1e20}, {"action": "set_number", "label": "a", "value": -1e20}]},
     {"id": "textnumbers-ordinalupstream-001", "group": "textnumbers", "script": ["ta = Ordinal( 4 )"], "steps": [{"action": "initial"}]},
     {"id": "textnumbers-fractionupstream-001", "group": "textnumbers", "script": ["ta = FractionText( 4/6 )", "tb = FractionText( -4/6 )", "tc = FractionText( 4/6, false )", "td = FractionText( -4/6 , false )", "te = FractionText( (1,1) )"], "steps": [{"action": "initial"}]},
     {"id": "textnumbers-scientificupstream-001", "group": "textnumbers", "script": ["ta = ScientificText(ℯ,5)", "tb = ScientificText(0.002)"], "steps": [{"action": "initial"}]},

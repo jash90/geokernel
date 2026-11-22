@@ -9,8 +9,9 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 mod expression;
+mod object;
 
-use super::{format_angle, format_number, format_value, TextOp, MAX_TEXT_BYTES};
+use super::{format_angle, format_number_with_template, format_value, TextOp, MAX_TEXT_BYTES};
 use crate::algo::polygon::{Count, PolygonDef};
 use crate::algo::vector::VectorDef;
 use crate::expr::eval::{Ctx, Val};
@@ -105,9 +106,7 @@ fn describe<const M: bool>(ctx: &Ctx<'_, M>, op: TextOp, args: &[u32]) -> Option
             .get(2)
             .is_some_and(|&i| matches!(ctx.full(i).val, Val::B(true, _)));
     // AlgoText switches the flag after formatting its content.
-    let format = Format {
-        latex: formula || ctx.e.text_latex(),
-    };
+    let format = Format::new(formula || ctx.text_latex());
     let text_input = ctx.e.tys[input as usize] == Ty::Text;
     if !formula && (anchor && !defined(ctx, args[1]) || !text_input && !defined(ctx, input)) {
         return None;
@@ -187,9 +186,30 @@ fn escape_percent(value: String) -> String {
 #[derive(Clone, Copy)]
 struct Format {
     latex: bool,
+    simplify_coefficients: bool,
+}
+
+pub(super) fn object_value<const M: bool>(ctx: &Ctx<'_, M>, id: Id, latex: bool) -> Option<String> {
+    Format::new(latex).object_value(ctx, id)
+}
+
+pub(super) fn list_value<const M: bool>(ctx: &Ctx<'_, M>, i: u32, latex: bool) -> Option<String> {
+    Format::new(latex).list(ctx, ctx.list(i), 0)
+}
+
+pub(super) fn coordinates(x: f64, y: f64, latex: bool) -> String {
+    let format = Format::new(latex);
+    format.pair(&format.number(x), &format.number(y))
 }
 
 impl Format {
+    fn new(latex: bool) -> Self {
+        Self {
+            latex,
+            simplify_coefficients: false,
+        }
+    }
+
     fn parenthesize(self, value: impl std::fmt::Display) -> String {
         if self.latex {
             format!(r"\left({value} \right)")
@@ -219,7 +239,7 @@ impl Format {
         match x {
             f64::INFINITY if self.latex => r"\infty".into(),
             f64::NEG_INFINITY if self.latex => r"-\infty".into(),
-            _ => format_number(x),
+            _ => format_number_with_template(x, self.latex),
         }
     }
 
@@ -236,51 +256,8 @@ impl Format {
         match value {
             Value::Point { x, y } => self.pair(&self.number(x), &self.number(y)),
             Value::Vector { x, y } => self.vector(x, y),
-            Value::Circle { cx, cy, r } => {
-                let square = |var: &str, center: f64| {
-                    let center = self.number(center);
-                    let base = match center.as_str() {
-                        "0" => var.to_owned(),
-                        s if s.starts_with('-') => format!("({var} + {})", &s[1..]),
-                        s => format!("({var} - {s})"),
-                    };
-                    format!("{base}{}", if self.latex { "^{2}" } else { "²" })
-                };
-                format!(
-                    "{} + {} = {}",
-                    square("x", cx),
-                    square("y", cy),
-                    self.number(r * r)
-                )
-            }
-            Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => {
-                let equals = if self.latex { r"\, = \," } else { " = " };
-                if a.abs() < crate::tol::STANDARD_PRECISION {
-                    return format!("y{equals}{}", self.number(-c / b));
-                }
-                if b.abs() < crate::tol::STANDARD_PRECISION {
-                    return format!("x{equals}{}", self.number(-c / a));
-                }
-                let scale = crate::equation::equation_scale(&[a, b, c]);
-                let (a, b) = (a / scale, b / scale);
-                let x = match a {
-                    1.0 => String::new(),
-                    -1.0 => "-".into(),
-                    _ => self.number(a),
-                };
-                let y = if b.abs() <= 0.005 {
-                    String::new()
-                } else {
-                    let value = if b.abs() == 1.0 {
-                        String::new()
-                    } else {
-                        self.number(b.abs())
-                    };
-                    let sign = if b < 0.0 { '-' } else { '+' };
-                    format!(" {sign} {value}y")
-                };
-                format!("{x}x{y}{equals}{}", self.number(-c / scale))
-            }
+            Value::Circle { cx, cy, r } => self.circle(cx, cy, r),
+            Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => self.line(a, b, c, None),
             Value::Number(value) if kind == Kind::Angle => format_angle(value),
             Value::Number(value) => self.number(value),
             _ => format_value(value),
@@ -325,10 +302,10 @@ impl Format {
         let kind = ctx.c.kind(id);
         let value = ctx.c.value(id);
         let def = ctx.c.def(id);
-        if kind == Kind::Function || !(substitute || self.latex && kind == Kind::Vector) {
-            if substitute && !value.is_defined() {
-                return Some("?".into());
-            }
+        if !substitute && matches!(def, Def::Equation(_)) {
+            return self.user_equation::<M>(ctx.c, id, ctx.meter, false);
+        }
+        if !substitute && (!self.latex || kind != Kind::Vector) {
             if let Def::Expr(def) = def {
                 let entry = expr::entry(ctx.c, def);
                 let nested = Ctx { e: entry, ..*ctx };
@@ -347,16 +324,7 @@ impl Format {
         if kind == Kind::List {
             return self.list(ctx, ctx.list(input), 0);
         }
-        if matches!(value, Value::Conic { .. }) {
-            let conic = ctx.c.conic(id)?;
-            let equation = crate::equation::conic_equation(&conic, &|c| self.number(c));
-            return Some(if self.latex {
-                equation.replace('²', "^{2}").replace(" = ", r"\, = \,")
-            } else {
-                equation
-            });
-        }
-        Some(self.shown(kind, value))
+        self.object_value(ctx, id)
     }
 
     fn command_definition<const M: bool>(self, ctx: &Ctx<'_, M>, def: Def) -> Option<String> {
@@ -445,13 +413,17 @@ impl Format {
                 self.write_list(ctx, s, n, depth + 1, out)?;
             } else {
                 let text = if let Some(text) = slot.text_value() {
-                    if ctx.stop(text.len() as u64) {
-                        return None;
-                    }
                     self.quoted(text)
+                } else if let Some(id) = slot.object_id().filter(|_| slot.value.is_defined()) {
+                    self.object_value(ctx, id)?
+                } else if slot.kind == Kind::Text {
+                    self.quoted("")
                 } else {
                     self.shown(slot.kind, slot.shown())
                 };
+                if ctx.stop(text.len() as u64) {
+                    return None;
+                }
                 self.append(out, &text)?;
             }
         }

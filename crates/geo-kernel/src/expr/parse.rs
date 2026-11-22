@@ -834,7 +834,7 @@ impl Parser<'_> {
             self.read(id, true);
             if self.c.kind(id) == Kind::FunctionNVar {
                 if !call {
-                    return Err(format!("the function `{text}` needs two arguments"));
+                    return Ok(self.push(Node::FunctionObject(id)));
                 }
                 return match self.arguments()?[..] {
                     [a, b] => Ok(self.push(Node::Apply2(id, a, b))),
@@ -843,7 +843,7 @@ impl Parser<'_> {
             }
             if self.c.kind(id) == Kind::Function {
                 if !call {
-                    return Err(format!("the function `{text}` needs an argument"));
+                    return Ok(self.push(Node::FunctionObject(id)));
                 }
                 return match self.arguments()?[..] {
                     [a] => Ok(self.push(Node::Apply(id, a))),
@@ -1058,30 +1058,6 @@ impl Parser<'_> {
 
     pub(super) fn is_text(&self, i: u32) -> bool {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if tys[i as usize] == Ty::Text)
-    }
-
-    /// Read a bare named function as the object a text command describes.
-    pub(super) fn text_arguments(&mut self) -> Result<Vec<u32>, String> {
-        self.expect(&Tok::LParen, "(")?;
-        let bare_function = matches!(
-            self.toks.get(self.pos + 1).map(|t| &t.tok),
-            Some(Tok::Comma | Tok::RParen)
-        )
-        .then(|| self.kind_at(self.pos, Kind::Function))
-        .flatten();
-        let first = if let Some(id) = bare_function {
-            self.pos += 1;
-            self.read(id, true);
-            self.push(Node::FunctionObject(id))
-        } else {
-            self.expression()?
-        };
-        let mut args = vec![first];
-        while self.eat(&Tok::Comma) {
-            args.push(self.expression()?);
-        }
-        self.expect(&Tok::RParen, ")")?;
-        Ok(args)
     }
 
     pub(super) fn uses_function_variable(&self, i: u32) -> bool {

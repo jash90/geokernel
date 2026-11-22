@@ -243,6 +243,50 @@ case("texts", texts, text_placement + [mv("P", 3.456, 2.468),
      {"action": "set_number", "label": "a", "value": 8.5678}],
      hidden=["hiddenText"], archive=True)
 
+text_equations = [
+    "a = 2", "l: y = a x + 1", "p: y = a x^2 - x + 1",
+    "A = (0, 1)", "B = (1, 3)", "e = Line(A, B)", "g = Line(A, B)", "r = Line(A, B)",
+    "lText = Text(l)", "pTex = FormulaText(p)", "eText = Text(e)",
+    "gText = Text(g)", "rText = Text(r)",
+]
+equation_styles = [
+    {"action": "line_style", "label": "e", "form": "EXPLICIT"},
+    {"action": "line_style", "label": "g", "form": "GENERAL"},
+    {"action": "line_style", "label": "r", "form": "PARAMETRIC", "parameter": "u"},
+]
+case("text-equations", text_equations, equation_styles)
+case("text-equations", text_equations, equation_styles + [
+    {"action": "set_number", "label": "a", "value": -3},
+])
+
+conic_styles = [
+    ("pe", "pe: y = x^2 - 4x + 7", "EXPLICIT"),
+    ("pv", "pv: y = x^2 - 4x + 7", "VERTEX"),
+    ("pc", "pc: x = 2y^2 + 8y + 11", "CONICFORM"),
+    ("ps", "ps: y^2 = 4x", "SPECIFIC"),
+    ("s", "s = Circle(C, 3)", "SPECIFIC"),
+    ("cp", "cp = Circle(O, 3)", "PARAMETRIC"),
+    ("ee", "ee: 4x^2 + 9y^2 = 36", "SPECIFIC"),
+    ("h", "h: 4x^2 - 9y^2 = 36", "SPECIFIC"),
+    ("di", "di: x^2 - y^2 = 0", "SPECIFIC"),
+    ("dp", "dp: x^2 - y^2 = 0", "PARAMETRIC"),
+    ("pp", "pp: (x - 1)^2 = 4", "PARAMETRIC"),
+    ("pl", "pl: (x - 1)^2 = 0", "PARAMETRIC"),
+    ("sp", "sp: x^2 + y^2 = 0", "PARAMETRIC"),
+]
+case("text-conic-styles",
+     ["C = (1, -2)", "O = (0, 0)"] + [source for _, source, _ in conic_styles]
+     + [f"{label}Text = Text({label})" for label, _, _ in conic_styles]
+     + [f"{label}TeX = FormulaText({label})" for label, _, _ in conic_styles],
+     [{"action": "conic_style", "label": label, "form": form}
+      for label, _, form in conic_styles])
+
+text_template = ["a = 3", 't = "value: " + a']
+latex = {"action": "text_font", "label": "t", "latex": True, "size": 1, "style": 0}
+case("text-template", text_template, [latex])
+case("text-template", text_template,
+     [latex, {"action": "set_number", "label": "a", "value": 3.141592653589793}])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

@@ -45,7 +45,7 @@ pub(super) fn fraction(value: f64, single: bool) -> String {
     }
     let (n, d) = decimal_fraction(value, STANDARD_PRECISION);
     if d == 1.0 {
-        return super::format_value(crate::Value::Number(n));
+        return super::format_number_with_template(n, true);
     }
     fraction_tex(n as i64, d as i64, single)
 }

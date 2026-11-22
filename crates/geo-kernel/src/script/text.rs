@@ -5,6 +5,28 @@ use crate::Construction;
 
 pub const DIRECTIVE_NAME: &str = "$textProperties";
 
+/// Appends one literal character to the contents of a quoted script string.
+pub fn push_escaped_char(out: &mut String, ch: char) {
+    match ch {
+        '\\' => out.push_str(r"\\"),
+        '"' => out.push_str(r#"\""#),
+        '\n' => out.push_str(r"\u{a}"),
+        '\r' => out.push_str(r"\u{d}"),
+        _ => out.push(ch),
+    }
+}
+
+/// Quotes a string so it can be read as a literal on one script line.
+pub fn literal(contents: &str) -> String {
+    let mut literal = String::with_capacity(contents.len() + 2);
+    literal.push('"');
+    for ch in contents.chars() {
+        push_escaped_char(&mut literal, ch);
+    }
+    literal.push('"');
+    literal
+}
+
 /// An object label and the presentation properties assigned to it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Properties<'a> {

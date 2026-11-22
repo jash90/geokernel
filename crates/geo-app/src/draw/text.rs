@@ -7,10 +7,11 @@
 
 //! Canvas text layout is independent of the view and reused across pans.
 
-use super::LABEL_FONT;
+use super::{Scene, LABEL_FONT};
+use crate::geom::ToCore;
 use crate::interact::ViewTransform;
 use eframe::egui::epaint::text::{Galley, LayoutJob, TextFormat};
-use eframe::egui::{vec2, Color32, FontId, Painter, Pos2, Rect};
+use eframe::egui::{Color32, FontId, Painter, Pos2, Rect, Stroke, StrokeKind};
 use geo_kernel::kernel::text::{TextPosition, TextPresentation};
 use geo_kernel::{Construction, Id, Value};
 use std::collections::HashMap;
@@ -62,9 +63,6 @@ impl Layout {
     }
 
     fn at(&self, mut anchor: Pos2, style: TextPresentation) -> Pos2 {
-        if !style.latex {
-            anchor.y -= self.baseline;
-        }
         if style.horizontal.is_some() || style.vertical.is_some() {
             let size = self.galley.size();
             anchor.x += match style.horizontal {
@@ -81,29 +79,41 @@ impl Layout {
                 (false, Some(0)) => remaining / 2.0,
                 (false, _) => -remaining,
             };
+            anchor.x = anchor.x.trunc();
+            anchor.y = anchor.y.trunc();
+        }
+        if !style.latex {
+            anchor.y -= self.baseline;
         }
         anchor
     }
 }
 
 fn position(c: &Construction, style: TextPresentation, t: &ViewTransform) -> Option<(f64, f64)> {
-    let world = |x, y| {
-        let (sx, sy) = t.world_to_screen(x, y);
+    let offset = |x, y| {
         (
-            sx + f64::from(style.offset[0]),
-            sy + f64::from(style.offset[1]),
+            x + f64::from(style.offset[0]),
+            y + f64::from(style.offset[1]),
         )
     };
+    let world = |x, y| {
+        let (sx, sy) = t.world_to_screen(x, y);
+        // toScreenCoordX/Y use Math.round (halfway values go up).
+        offset((sx + 0.5).floor(), (sy + 0.5).floor())
+    };
     Some(match style.position {
-        TextPosition::Origin => world(0.0, 0.0),
+        TextPosition::Origin => {
+            let (x, y) = t.world_to_screen(0.0, 0.0);
+            offset(x.trunc(), y.trunc())
+        }
         TextPosition::World { x, y } => world(x, y),
-        TextPosition::Screen { x, y } => (x, y),
+        TextPosition::Screen { x, y } => (x.trunc(), y.trunc()),
         TextPosition::Point(point) | TextPosition::ScreenPoint(point) => {
             let Value::Point { x, y } = c.value(point) else {
                 return None;
             };
             if matches!(style.position, TextPosition::ScreenPoint(_)) {
-                (f64::from(x as i32), f64::from(y as i32))
+                (x.trunc(), y.trunc())
             } else {
                 world(x, y)
             }
@@ -119,7 +129,7 @@ pub(super) fn paint(
     t: &ViewTransform,
     texts: impl Iterator<Item = Id>,
     color: impl Fn(Id) -> Color32,
-    generation: u64,
+    scene: &Scene<'_>,
 ) {
     let cache = painter.ctx().data_mut(|data| {
         let id = eframe::egui::Id::unique("geo_text_layouts");
@@ -134,16 +144,17 @@ pub(super) fn paint(
         FontId::proportional(LABEL_FONT),
         Color32::PLACEHOLDER,
     );
-    if cache.generation != generation
+    if cache.generation != scene.generation
         || cache
             .font_marker
             .as_ref()
             .is_none_or(|old| !Arc::ptr_eq(old, &marker))
     {
-        cache.generation = generation;
+        cache.generation = scene.generation;
         cache.font_marker = Some(marker);
         cache.entries.clear();
     }
+    let mut text_rects = scene.text_rects.map(|r| r.borrow_mut());
     for id in texts {
         let Some((text, style)) = c
             .text(id)
@@ -155,14 +166,14 @@ pub(super) fn paint(
         let Some((x, y)) = position(c, style, t) else {
             continue;
         };
-        let anchor = rect.min + vec2(x as f32, y as f32);
+        let anchor = Pos2::new(x as f32, y as f32);
         // An unaligned or right-aligned text extends right from its anchor.
         // A left-aligned text ends one pixel to the right of its anchor.
         if !anchor.is_finite()
             || match style.horizontal {
-                Some(-1) => anchor.x + 1.0 < rect.left(),
+                Some(-1) => anchor.x + 1.0 < 0.0,
                 Some(0) => false,
-                _ => anchor.x > rect.right(),
+                _ => anchor.x > rect.width(),
             }
         {
             continue;
@@ -177,9 +188,61 @@ pub(super) fn paint(
         if entry.size != size || entry.italic != style.italic || entry.galley.text() != text {
             *entry = Layout::new(painter, text, size, style.italic);
         }
-        let at = entry.at(anchor, style);
-        if rect.intersects(Rect::from_min_size(at, entry.galley.size())) {
-            painter.galley(at, entry.galley.clone(), color(id));
+        let at = rect.min + entry.at(anchor, style).to_vec2();
+        let bounds = Rect::from_min_size(at, entry.galley.size());
+        if rect.intersects(bounds) {
+            if let Some(text_rects) = &mut text_rects {
+                text_rects.push((id, bounds.translate(-rect.min.to_vec2()).core()));
+            }
+            let color = color(id);
+            painter.galley(at, entry.galley.clone(), color);
+            let highlight = if scene.selected == Some(id) {
+                0.75
+            } else if scene.hovered == Some(id) {
+                0.35
+            } else {
+                continue;
+            };
+            painter.rect_stroke(
+                bounds.expand(2.0),
+                3.0,
+                Stroke::new(1.5, color.gamma_multiply(highlight)),
+                StrokeKind::Outside,
+            );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use geo_kernel::svg::View;
+
+    #[test]
+    fn text_canvas_projects_to_integer_pixels_before_offsets() {
+        // The fractional origin and the point from the Java text-canvas case.
+        let t = ViewTransform::new(
+            View {
+                xmin: -200.75 / 50.0,
+                xmax: (800.0 - 200.75) / 50.0,
+                ymin: (180.75 - 600.0) / 50.0,
+                ymax: 180.75 / 50.0,
+            },
+            800.0,
+            600.0,
+        );
+        let c = geo_kernel::script::load("A = (1.016, 0.984)\n").unwrap();
+        let mut style = TextPresentation::default();
+        assert_eq!(position(&c, style, &t), Some((200.0, 180.0)));
+        style.position = TextPosition::Point(c.id("A").unwrap());
+        assert_eq!(position(&c, style, &t), Some((252.0, 132.0)));
+        style.position = TextPosition::World { x: 1.016, y: 0.984 };
+        style.offset = [2, -3];
+        assert_eq!(position(&c, style, &t), Some((254.0, 129.0)));
+        style.position = TextPosition::Screen {
+            x: 200.75,
+            y: 180.75,
+        };
+        assert_eq!(position(&c, style, &t), Some((200.0, 180.0)));
     }
 }

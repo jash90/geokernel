@@ -55,6 +55,8 @@ pub struct Scene<'a> {
     /// order they were painted: what a press of the move tool tests first
     /// (`EuclidianView.getLabelHit`). Cleared and filled by each paint.
     pub label_rects: Option<&'a RefCell<Vec<(Id, geom::Rect)>>>,
+    /// The bodies of visible texts, in canvas coordinates for picking.
+    pub text_rects: Option<&'a RefCell<Vec<(Id, geom::Rect)>>>,
 }
 
 /// How far outside the area, in pixels, an object's points may lie and
@@ -535,9 +537,12 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             has_text = true;
         }
     }
+    if let Some(text_rects) = scene.text_rects {
+        text_rects.borrow_mut().clear();
+    }
     if has_text {
         let texts = ids.iter().copied().filter(|&id| c.value(id) == Value::Text);
-        text::paint(painter, rect, c, t, texts, color, scene.generation);
+        text::paint(painter, rect, c, t, texts, color, scene);
     }
     let font = FontId::proportional(LABEL_FONT);
     let mut rects = scene.label_rects.map(|r| {
@@ -799,6 +804,7 @@ mod tests {
                 generation: wb.rebuilds(),
                 label_offset: &|_| None,
                 label_rects: None,
+                text_rects: None,
             };
             paint(ui.painter(), rect, c, &t, &scene);
         });
@@ -868,6 +874,7 @@ mod tests {
         }
         let mut wb = Workbench::from_script(&script).unwrap();
         let ctx = Context::default();
+        let text_rects = RefCell::new(Vec::new());
         let draw = |wb: &Workbench, camera: Camera| {
             let t = camera.transform(800.0, 600.0);
             let mut output = ctx.run_ui(Default::default(), |ui| {
@@ -882,15 +889,18 @@ mod tests {
                     generation: wb.rebuilds(),
                     label_offset: &|_| None,
                     label_rects: None,
+                    text_rects: Some(&text_rects),
                 };
                 paint(ui.painter(), rect, wb.construction(), &t, &scene);
             });
             output.textures_delta.clear();
-            output
+            let painted = output
                 .shapes
                 .iter()
                 .filter(|shape| matches!(shape.shape, Shape::Text(_)))
-                .count()
+                .count();
+            assert_eq!(text_rects.borrow().len(), painted);
+            painted
         };
         let layouts = text::layouts_built();
         assert_eq!(draw(&wb, Camera::STANDARD), 500);
@@ -925,6 +935,7 @@ mod tests {
                     generation: wb.rebuilds(),
                     label_offset: &|_| None,
                     label_rects: None,
+                    text_rects: None,
                 };
                 paint(ui.painter(), rect, wb.construction(), &t, &scene);
             });

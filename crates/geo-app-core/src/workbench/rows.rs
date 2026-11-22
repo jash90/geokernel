@@ -74,9 +74,8 @@ pub(crate) fn same_value(a: Value, b: Value) -> bool {
     }
 }
 
-/// What a row was made from: the value and, for a conic, the bits of its
-/// matrix (zero for any other kind).
-pub(crate) type RowKey = (Value, [u64; 6]);
+/// A row's value, conic matrix, and equation display revision.
+pub(crate) type RowKey = (Value, [u64; 6], Option<u64>);
 
 /// The [`RowKey`] of `id`, without allocating.
 fn row_key(c: &Construction, id: Id) -> RowKey {
@@ -87,11 +86,22 @@ fn row_key(c: &Construction, id: Id) -> RowKey {
             .map_or([u64::MAX; 6], |d| d.matrix.map(f64::to_bits)),
         _ => [0; 6],
     };
-    (value, matrix)
+    let display = match value {
+        Value::Line { .. }
+        | Value::Ray { .. }
+        | Value::Circle { .. }
+        | Value::Conic { .. }
+        | Value::Undefined => c.equation_display_revision(id),
+        _ => None,
+    };
+    (value, matrix, display)
 }
 
 /// Whether two row keys are the same bit for bit.
 fn same_key(a: RowKey, b: RowKey) -> bool {
+    if a.2 != b.2 {
+        return false;
+    }
     match (a.0, b.0) {
         (Value::Conic { ty }, Value::Conic { ty: ty2 }) => ty == ty2 && a.1 == b.1,
         _ => same_value(a.0, b.0),
@@ -318,6 +328,8 @@ fn still_fits(
         && same_row_value(c, id, row, made_from, key)
         && row.siblings.iter().eq(siblings(src, &row.label))
         && same_head
+        // Revision counters identify changes only within a construction.
+        && (key.2.is_none() || row.value.as_deref() == Some(&describe::object_text(c, id)))
 }
 
 /// Puts the value parts into `row`, whose definition part is in place: a

@@ -227,6 +227,57 @@ fn rows_describe_free_and_dependent_objects() {
 }
 
 #[test]
+fn equation_rows_keep_the_typed_form_after_a_coefficient_edit() {
+    let mut w =
+        Workbench::from_script("a = 2\nl: y = a x + 1\nm: 2x - y = -1\np: y = a x^2 - x + 1\n")
+            .unwrap();
+    let expected = [
+        ("l", "y = 2 x + 1"),
+        ("m", "2x - y = -1"),
+        ("p", "y = 2 x² - x + 1"),
+    ];
+    for (label, value) in expected {
+        let row = w.rows().iter().find(|row| row.label == label).unwrap();
+        assert_eq!(row.value.as_deref(), Some(value), "{label}");
+    }
+    let a = w.construction().id("a").unwrap();
+    assert!(w.set_number(a, -3.0));
+    let row = w.rows().iter().find(|row| row.label == "p").unwrap();
+    assert_eq!(row.value.as_deref(), Some("y = -3 x² - x + 1"));
+}
+
+#[test]
+fn imported_equation_rows_keep_the_saved_form_through_replay() {
+    let saved = include_bytes!("../../../../golden/ggb/saved/saved-text-equations-001.xml");
+    let mut w = Workbench::default();
+    w.load_bytes(saved, "saved equation forms").unwrap();
+    let expected = [
+        ("l", "y = 2 x + 1"),
+        ("p", "y = 2 x² - x + 1"),
+        ("e", "y = 2x + 1"),
+        ("g", "-2x + y - 1 = 0"),
+        ("r", "X = (0, 1) + u (1, 2)"),
+    ];
+    let assert_rows = |w: &mut Workbench| {
+        for (label, value) in expected {
+            let row = w.rows().iter().find(|row| row.label == label).unwrap();
+            assert_eq!(row.value.as_deref(), Some(value), "{label}");
+        }
+    };
+    assert_rows(&mut w);
+
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_rows(&mut restored);
+    restored.run_line("B' = (2, 4)").unwrap();
+    assert!(restored.undo());
+    assert_rows(&mut restored);
+}
+
+#[test]
 fn rows_are_cached_until_something_changes() {
     let mut w = triangle();
     w.rows();

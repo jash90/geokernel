@@ -97,7 +97,7 @@ impl IntersectionWork {
     }
 }
 
-mod lex;
+pub(crate) mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
 use commands::text::TextOp;
@@ -574,6 +574,8 @@ pub(crate) struct Entry {
     function: bool,
     /// Whether a one-variable function uses the vertical coordinate.
     function_of_y: bool,
+    /// The name used by a Cartesian curve's coordinate function.
+    curve_parameter: Option<Box<str>>,
     /// Whether a function's tree requires checking its branches or transforms
     /// to decide whether it is defined (see [`inputs_defined`]).
     checks_branches: bool,
@@ -624,6 +626,7 @@ impl Entry {
             parents: p.parents,
             function,
             function_of_y: false,
+            curve_parameter: None,
             inputs: p.inputs,
             raw: Raw::Num(f64::NAN),
             extra: StoredExtra::None,
@@ -1138,12 +1141,12 @@ fn evaluate_lists(
 
 /// Recomputes the expression object `d` and keeps its result; its value,
 /// and whether it changed (see [`store`]).
-pub(crate) fn update(c: &mut Construction, d: ExprDef) -> (Value, bool) {
+pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) {
     if d.kind == Kind::FunctionNVar {
         return (current(c, d), true);
     }
     if d.kind == Kind::Text {
-        let result = eval::text_root(c, entry(c, d));
+        let result = eval::text_root(c, entry(c, d), c.text_latex_override(id));
         let e = &mut c.exprs.entries[d.index as usize];
         let old = match &e.extra {
             StoredExtra::Text(old) => Some(old.as_ref()),
@@ -1293,7 +1296,7 @@ pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
         };
     }
     if d.kind == Kind::Text {
-        return if eval::text_root(c, entry(c, d)).text.is_some() {
+        return if eval::text_root(c, entry(c, d), None).text.is_some() {
             Value::Text
         } else {
             Value::Undefined
@@ -1593,7 +1596,12 @@ pub(crate) fn define_parametric_coordinate(
     rhs: &str,
     parameter: &str,
 ) -> Result<Id, String> {
-    numeric_function(c, label, parse::parse_parameter(c, rhs, parameter)?)
+    let id = numeric_function(c, label, parse::parse_parameter(c, rhs, parameter)?)?;
+    let Def::Expr(def) = c.def(id) else {
+        unreachable!("a curve coordinate is a function expression");
+    };
+    c.exprs.entries[def.index as usize].curve_parameter = Some(parameter.into());
+    Ok(id)
 }
 
 /// Hidden two-variable function for a slope field or integral curve.

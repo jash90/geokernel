@@ -3,6 +3,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/Kernel.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNodeEvaluator.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentText.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoText.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoVerticalText.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -14,7 +16,6 @@ mod table;
 use std::ops::Range;
 
 use crate::expr::eval::{Ctx, Val};
-use crate::expr::list::{Element, List};
 use crate::expr::parse::Parser;
 use crate::expr::{types, Elem, Node, Ty, NONE};
 use crate::kernel::text::{TextPosition, TextPresentation};
@@ -101,11 +102,7 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
             Ok(None)
         });
     }
-    let args = if matches!(op, TextOp::Display | TextOp::Formula) {
-        p.text_arguments()?
-    } else {
-        p.arguments()?
-    };
+    let args = p.arguments()?;
     let node = call_node(p, op, &args);
     Ok(Some(p.push(node)))
 }
@@ -190,6 +187,7 @@ impl<const M: bool> Ctx<'_, M> {
     }
 
     pub(crate) fn value_string(&self, i: u32) -> String {
+        let latex = self.text_latex();
         if self.e.tys[i as usize] == Ty::Text {
             // An undefined GeoText has an empty value string.
             return self
@@ -197,66 +195,31 @@ impl<const M: bool> Ctx<'_, M> {
                 .map_or_else(String::new, std::borrow::Cow::into_owned);
         }
         if matches!(self.e.tys[i as usize], Ty::List(_)) {
-            return self
-                .list(i)
-                .and_then(|(s, n)| {
-                    self.lists?
-                        .with_list(self.c, s, n, |l| self.format_list(l, 0))
-                })
-                .unwrap_or_else(|| "?".into());
+            return format::list_value(self, i, latex).unwrap_or_else(|| "?".into());
         }
-        if let Node::Obj(id) = self.node(i) {
+        if let Node::Obj(id) | Node::FunctionObject(id) = self.node(i) {
             let v = self.c.value(id);
             if !matches!(v, Value::Number(_) | Value::Undefined) {
-                return format_value(v);
+                return format::object_value(self, id, latex).unwrap_or_else(|| "?".into());
             }
         }
         let evaluated = self.full(i);
         match evaluated.val {
             Val::N(v) if self.e.tys[i as usize] == Ty::Num(1) && !v.is_nan() => format_angle(v),
-            Val::N(v) => format_number(
-                evaluated
+            Val::N(v) if v == std::f64::consts::PI => format_number_with_template(v, latex),
+            Val::N(v) => {
+                let rounded = evaluated
                     .dec
                     .as_ref()
                     .and_then(|exact| exact.get(v))
                     .and_then(|decimal| decimal.set_scale_half_up(2))
-                    .map_or(v, |decimal| decimal.to_f64()),
-            ),
-            Val::V(x, y) if x.is_finite() && y.is_finite() => format_coords(x, y),
+                    .map_or(v, |decimal| decimal.to_f64());
+                format_number_with_template(rounded, latex)
+            }
+            Val::V(x, y) if x.is_finite() && y.is_finite() => format::coordinates(x, y, latex),
             Val::B(b, true) => b.to_string(),
             _ => "?".into(),
         }
-    }
-
-    fn format_list(&self, list: List<'_>, depth: u32) -> Option<String> {
-        if depth >= crate::expr::parse::MAX_DEPTH {
-            return None;
-        }
-        let mut result = String::from("{");
-        for (i, e) in list.iter().enumerate() {
-            let item = match e {
-                Element::Text(s) => format!("\"{s}\""),
-                Element::List(l) => self.format_list(l, depth + 1)?,
-                Element::Value(Kind::Angle, Value::Number(v)) => format_angle(v),
-                Element::Value(kind, value) => {
-                    if kind == Kind::Text && !value.is_defined() {
-                        "\"\"".into()
-                    } else {
-                        format_value(value)
-                    }
-                }
-            };
-            self.bounded_text(item.len())?;
-            if result.len().saturating_add(item.len() + 2) > MAX_TEXT_BYTES {
-                return None;
-            }
-            if i != 0 {
-                result.push_str(", ");
-            }
-            result.push_str(&item);
-        }
-        result.push('}');
-        Some(result)
     }
 
     pub(crate) fn text_command(&self, op: TextOp, first: u32, count: u32) -> Option<String> {
@@ -326,6 +289,7 @@ impl<const M: bool> Ctx<'_, M> {
             _ => None,
         };
         if let Some(&anchor) = anchor {
+            s.fixed = true;
             s.position = match self.node(anchor) {
                 Node::Obj(id) if self.c.kind(id) == Kind::Point => TextPosition::Point(id),
                 _ => match self.full(anchor).val {
@@ -387,6 +351,11 @@ pub(super) fn format_angle(value: f64) -> String {
 }
 
 pub(super) fn format_number(value: f64) -> String {
+    format_number_with_template(value, false)
+}
+
+// StringTemplate uses its own pi and scientific notation for LaTeX.
+fn format_number_with_template(value: f64, latex: bool) -> String {
     if value.is_nan() {
         return "?".into();
     }
@@ -399,16 +368,17 @@ pub(super) fn format_number(value: f64) -> String {
         .into();
     }
     if value == std::f64::consts::PI {
-        return "π".into();
+        return if latex { r"\pi " } else { "π" }.into();
     }
     if value.abs() >= (1u64 << 53) as f64 {
         const SUPERSCRIPT: [char; 10] = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
         let scientific = format!("{value:.14e}");
         let (mantissa, exponent) = scientific.split_once('e').unwrap();
-        let mut formatted = mantissa
-            .trim_end_matches('0')
-            .trim_end_matches('.')
-            .to_owned();
+        let mantissa = mantissa.trim_end_matches('0').trim_end_matches('.');
+        if latex {
+            return format!(r"{mantissa} \cdot 10^{{{exponent}}}");
+        }
+        let mut formatted = mantissa.to_owned();
         formatted.push_str(" ⋅ 10");
         formatted.extend(
             exponent

@@ -96,6 +96,7 @@ pub fn load(src: &str) -> Result<Construction, ScriptError> {
     Ok(c)
 }
 
+pub mod equation;
 pub mod text;
 
 /// Runs one line. Returns the first output, or `Ok(None)` if the line
@@ -107,6 +108,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     }
     if let Some(result) = text::apply(c, line) {
         return result.map(|_| None);
+    }
+    if let Some(style) = equation::parse_style(line) {
+        return style?.apply(c).map(|_| None);
     }
     if line.starts_with('{') {
         return exec_labelled(c, line);

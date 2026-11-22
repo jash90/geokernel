@@ -19,6 +19,8 @@ import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.jre.io.MyXMLioJre;
 import org.geogebra.common.kernel.CircularDefinitionException;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.LinearEquationRepresentable;
+import org.geogebra.common.kernel.QuadraticEquationRepresentable;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
@@ -49,7 +51,7 @@ import org.geogebra.common.util.AsyncOperation;
  * id, optionally an {@code angle_unit} ({@code degree} or {@code radiant}), raw
  * GeoGebra input lines, optional {@code hidden} labels, and {@code move} or
  * {@code set_number} steps. Steps can also enable point animation, set an
- * angle style, position or style a text, or rename an object. The lines are given to the
+ * angle or equation style, position or style a text, or rename an object. The lines are given to the
  * algebra processor as typed (so a command that makes several objects, such as
  * {@code P = Intersect(f, k)}, gives all of them), the moves are applied, and
  * then, with nothing else done in between, the case is written as
@@ -157,6 +159,16 @@ public final class SavedExporter {
                 }
             } else if ("angle_style".equals(action) && geo instanceof GeoAngle angle) {
                 angle.setAngleStyle(((Number) step.get("value")).intValue());
+            } else if ("line_style".equals(action) && geo instanceof GeoLine line) {
+                var form = LinearEquationRepresentable.Form.valueOf((String) step.get("form"));
+                if (form == LinearEquationRepresentable.Form.PARAMETRIC) {
+                    line.setToParametricForm((String) step.get("parameter"));
+                } else {
+                    line.setEquationForm(form);
+                }
+            } else if ("conic_style".equals(action) && geo instanceof GeoConic conic) {
+                conic.setEquationForm(
+                        QuadraticEquationRepresentable.Form.valueOf((String) step.get("form")));
             } else if ("rename".equals(action)) {
                 geo.rename((String) step.get("name"));
             } else if (geo instanceof GeoText text && action instanceof String name

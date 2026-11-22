@@ -26,7 +26,8 @@
 
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::text::TextPosition;
-use geo_kernel::kernel::{Construction, Def, Id, Value};
+use geo_kernel::kernel::{Construction, Def, EquationForm, Id, Value};
+use geo_kernel::script::equation::{parse_style, Style as EquationStyle};
 use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
 use geo_kernel::script::{
     boundary_slot_owner, find_unquoted, restore_boundary_labels, split_comment, BoundaryOutputs,
@@ -113,6 +114,10 @@ enum Op {
     },
     MovePoints(Vec<Position<String>>),
     TextProperties(Box<str>),
+    EquationStyle {
+        label: String,
+        form: EquationForm,
+    },
 }
 
 /// Rewrites `f: Line(A, B)` as `f = Line(A, B)` and removes a trailing `#`
@@ -141,6 +146,7 @@ enum Directive<'a> {
     MovePoints(Vec<Position<&'a str>>),
     Visible(&'a str, bool),
     TextProperties(TextProperties<'a>),
+    EquationStyle(EquationStyle<'a>),
 }
 
 /// The directive on a normalised line, if it is one (a definition always has
@@ -148,6 +154,9 @@ enum Directive<'a> {
 fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     if let Some(props) = parse_properties(line) {
         return Some(props.map(Directive::TextProperties));
+    }
+    if let Some(style) = parse_style(line) {
+        return Some(style.map(Directive::EquationStyle));
     }
     if line.contains('=') {
         return None;
@@ -382,7 +391,7 @@ impl Log {
     fn entries(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items().into_iter().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } | Op::MovePoints(_) | Op::TextProperties(_) => None,
+            _ => None,
         })
     }
 
@@ -390,7 +399,7 @@ impl Log {
     pub(crate) fn entries_rev(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items_rev().filter_map(|op| match op {
             Op::Define(e) => Some(e),
-            Op::Set { .. } | Op::MovePoints(_) | Op::TextProperties(_) => None,
+            _ => None,
         })
     }
 
@@ -446,6 +455,29 @@ impl Log {
                 .map(|&(id, x, y)| (c.label(id).to_owned(), x, y))
                 .collect();
             self.ops.push(Op::MovePoints(points));
+        }
+    }
+
+    pub(crate) fn record_text_properties(&mut self, props: TextProperties<'_>) {
+        let op = Op::TextProperties(props.to_string().into());
+        // Coalesce successive changes to the same text properties, as
+        // during a drag. A different property still needs its own edit.
+        let replaces = match self.ops.last() {
+            Some(Op::TextProperties(previous)) => parse_properties(previous)
+                .and_then(Result::ok)
+                .is_some_and(|old| {
+                    old.label == props.label
+                        && old.overrides.position.is_some() == props.overrides.position.is_some()
+                        && old.overrides.offset.is_some() == props.overrides.offset.is_some()
+                        && old.overrides.latex.is_some() == props.overrides.latex.is_some()
+                        && old.overrides.font.is_some() == props.overrides.font.is_some()
+                }),
+            _ => false,
+        };
+        if replaces {
+            self.ops.replace_last(op);
+        } else {
+            self.ops.push(op);
         }
     }
 
@@ -555,7 +587,7 @@ impl Log {
         self.ops.retain(|op| match op {
             Op::Define(e) if grouped => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Define(e) => e.labels != labels,
-            Op::Set { label, .. } => !labels.contains(label),
+            Op::Set { label, .. } | Op::EquationStyle { label, .. } => !labels.contains(label),
             Op::MovePoints(_) | Op::TextProperties(_) => true,
         });
         self.removed.extend(labels);
@@ -673,6 +705,21 @@ impl Log {
                         kept.ops.push(Op::TextProperties(line.into()));
                     }
                 }
+                Op::EquationStyle { label, form } => {
+                    if gone.contains(label) && c.id(label).is_none() {
+                        diverge(&mut kept, &mut same);
+                        continue;
+                    }
+                    EquationStyle {
+                        label,
+                        form: form.clone(),
+                    }
+                    .apply(&mut c)?;
+                    match &mut same {
+                        Some(n) => *n = i + 1,
+                        None => kept.ops.push((*op).clone()),
+                    }
+                }
             }
         }
         if let Some(n) = same {
@@ -763,6 +810,16 @@ impl Log {
                     if let Some(line) = replay_text_properties(&mut c, line, &gone, Some(previous))?
                     {
                         kept.ops.push(Op::TextProperties(line.into()));
+                    }
+                }
+                Op::EquationStyle { label, form } => {
+                    if !gone.contains(label) || c.id(label).is_some() {
+                        EquationStyle {
+                            label,
+                            form: form.clone(),
+                        }
+                        .apply(&mut c)?;
+                        kept.ops.push(op.clone());
                     }
                 }
             }
@@ -868,6 +925,16 @@ impl Log {
                     writeln!(out, ")")
                 }
                 Op::TextProperties(line) => writeln!(out, "{line}"),
+                Op::EquationStyle { label, form } => {
+                    writeln!(
+                        out,
+                        "{}",
+                        EquationStyle {
+                            label,
+                            form: form.clone()
+                        }
+                    )
+                }
             };
         }
         for label in &self.hidden {
@@ -902,6 +969,13 @@ impl Log {
             Directive::TextProperties(props) => {
                 props.apply(c)?;
                 self.ops.push(Op::TextProperties(props.to_string().into()));
+                return Ok(Vec::new());
+            }
+            Directive::EquationStyle(style) => {
+                let label = style.label.to_owned();
+                let form = style.form.clone();
+                style.apply(c)?;
+                self.ops.push(Op::EquationStyle { label, form });
                 return Ok(Vec::new());
             }
         };

@@ -3,8 +3,8 @@
 //! A list keeps its elements in its expression's entry, flattened: the
 //! top-level elements come first, and an element that is itself a list
 //! names the run of slots, further on in the same buffer, that holds its
-//! elements. The object's [`Value::List`] only carries the length, so values
-//! stay `Copy` and of fixed size; [`List`] reads the elements.
+//! elements. The object's [`Value::List`] only carries the length. The
+//! slots can own text, and [`List`] reads the elements from the buffer.
 
 use crate::kernel::{Construction, Id, Kind, Value};
 use std::sync::Arc;
@@ -21,6 +21,7 @@ pub(crate) struct Slot {
     pub(crate) start: u32,
     /// A named geometric object whose equality uses its construction data.
     object: Id,
+    equation_revision: u64,
     text: Option<Arc<String>>,
 }
 
@@ -31,6 +32,7 @@ impl Slot {
             value: Value::Undefined,
             start: 0,
             object: NO_OBJECT,
+            equation_revision: 0,
             text: None,
         }
     }
@@ -44,6 +46,7 @@ impl Slot {
                 value: Value::Number(v),
                 start: 0,
                 object: NO_OBJECT,
+                equation_revision: 0,
                 text: None,
             }
         } else {
@@ -78,6 +81,7 @@ impl Slot {
             value,
             start: 0,
             object: NO_OBJECT,
+            equation_revision: 0,
             text: None,
         }
     }
@@ -92,6 +96,7 @@ impl Slot {
             value,
             start: 0,
             object: NO_OBJECT,
+            equation_revision: 0,
             text: None,
         }
     }
@@ -102,6 +107,7 @@ impl Slot {
             value: Value::Text,
             start: 0,
             object: object.unwrap_or(NO_OBJECT),
+            equation_revision: 0,
             text: Some(Arc::new(value.into())),
         }
     }
@@ -129,16 +135,7 @@ impl Slot {
             value: Value::Bool(b),
             start: 0,
             object: NO_OBJECT,
-            text: None,
-        }
-    }
-
-    pub(crate) fn function(id: Id, value: Value) -> Slot {
-        Slot {
-            kind: Kind::Function,
-            value,
-            start: 0,
-            object: id,
+            equation_revision: 0,
             text: None,
         }
     }
@@ -150,16 +147,25 @@ impl Slot {
             value: Value::List { len },
             start,
             object: NO_OBJECT,
+            equation_revision: 0,
             text: None,
         }
     }
 
     pub(super) fn object(c: &Construction, id: Id) -> Self {
+        let kind = c.kind(id);
+        let equation_revision = match kind {
+            Kind::Line | Kind::Ray | Kind::Circle | Kind::Conic => c
+                .equation_display_revision(id)
+                .map_or(0, |rev| rev.wrapping_add(1)),
+            _ => 0,
+        };
         Self {
-            kind: c.kind(id),
+            kind,
             value: c.value(id),
             start: 0,
             object: id,
+            equation_revision,
             text: None,
         }
     }
@@ -174,13 +180,22 @@ impl Slot {
 
     /// Bit equality, so that a change from `0` to `-0` is seen.
     fn same(&self, other: &Slot) -> bool {
-        if self.text != other.text || self.object != other.object {
+        if self.text != other.text
+            || self.object != other.object
+            || self.equation_revision != other.equation_revision
+        {
             return false;
         }
         if self.object != NO_OBJECT
-            && (self.value != other.value || self.kind == Kind::Line && !self.value.is_defined())
+            && (self.value != other.value
+                || self.kind == Kind::Line && !self.value.is_defined()
+                || matches!(
+                    self.kind,
+                    Kind::Conic | Kind::Curve | Kind::Function | Kind::FunctionNVar
+                ))
         {
-            // An undefined named line can retain coefficients used by equality.
+            // An undefined line retains coefficients used by equality. Functions,
+            // curves, and conics can change data held outside their value.
             return false;
         }
         let bits = |v: &Value| -> [u64; 3] {
@@ -202,7 +217,20 @@ impl Slot {
 
 /// Named geometric objects supported as entries in a literal list.
 pub(super) fn object_kind(kind: Kind) -> bool {
-    matches!(kind, Kind::Segment | Kind::Line | Kind::Circle)
+    matches!(
+        kind,
+        Kind::Arc
+            | Kind::Circle
+            | Kind::Conic
+            | Kind::Curve
+            | Kind::Line
+            | Kind::Locus
+            | Kind::Polygon
+            | Kind::PolyLine
+            | Kind::Ray
+            | Kind::Sector
+            | Kind::Segment
+    )
 }
 
 /// Parents whose changes can alter an undefined named line's equality.
