@@ -113,9 +113,7 @@ pub(super) fn list<const M: bool>(
             let [axis] = held[..] else {
                 return None;
             };
-            if equation.denominator.scalar().is_none() {
-                return None;
-            }
+            equation.denominator.scalar()?;
             let coefficients = dense_at(&equation.numerator, axis);
             // The reference answers the recorded `a x - 1` with |a| up to
             // 10^10 and none with |a| from 10^15 on (golden/cas/magnitude.json):
