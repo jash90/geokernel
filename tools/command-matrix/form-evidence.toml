@@ -1952,6 +1952,7 @@ difference = "calculus-commands: The variable forms `Derivative(function, any)`,
 [[form]]
 command = "Derivative"
 form = "function,any,number"
+cases = ["calculus-curvederivative-011"]
 difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(curve, any)`, `Derivative(function, any, number)`, `Derivative(curve, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
 
 [[form]]
@@ -1989,6 +1990,21 @@ cases = ["calculus-curvederivative-002", "calculus-curvederivative-004"]
 command = "NDerivative"
 form = "curve,number,number"
 cases = ["calculus-curvederivative-014"]
+
+[[form]]
+command = "NDerivative"
+form = "function,number,number"
+cases = ["calculus-curvederivative-012"]
+
+[[form]]
+command = "NDerivative"
+form = "function,function,number"
+cases = ["calculus-curvederivative-011"]
+
+[[form]]
+command = "NDerivative"
+form = "function,function"
+difference = "calculus-commands: `NDerivative(function, function)` and `Derivative(function, function)`"
 
 [[form]]
 command = "Integral"

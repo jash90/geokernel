@@ -329,5 +329,14 @@ cases.cases[-1]["sample_curves"] = True
 case("curvederivative", nums(n=2) + ["c = Curve(t^2, t^3, t, -2, 2)",
                                      "d = NDerivative(c, n, 3)"], [])
 cases.cases[-1]["sample_curves"] = True
+# the forms the reference rejects: two functions in two arguments, a
+# number literal in the variable place, a name that is not the parameter
+case("curvederivative",
+     ["f(x) = x^3", "g(x) = sin(x)", "c = Curve(t^2, t^3, t, -2, 2)"],
+     [{"action": "reject", "line": "d = Derivative(f, g)"},
+      {"action": "reject", "line": "e = NDerivative(f, g)"},
+      {"action": "reject", "line": "h = Derivative(f, 2, 3)"},
+      {"action": "reject", "line": "i = Derivative(c, x)"},
+      {"action": "reject", "line": "j = Derivative(c, g)"}])
 
 cases.write()

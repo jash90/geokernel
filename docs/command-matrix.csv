@@ -116,7 +116,7 @@ RemovableDiscontinuity,,function,P2,done,1,1,Rational holes have reference evide
 CurveCartesian,,function,P2,done,3,3,
 ParametricDerivative,,function,P2,done,1,1,
 Derivative,,function,P2,done,8,8,
-NDerivative,,function,P2,partial,9,5,
+NDerivative,,function,P2,partial,9,8,
 Integral,,function,P2,done,7,7,
 IntegralBetween,,function,P2,done,7,7,
 LowerSum,,function,P2,done,1,1,

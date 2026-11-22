@@ -149,6 +149,7 @@
     {"id": "calculus-curvederivative-011", "group": "calculus", "script": ["f(x) = x^3", "g(x) = sin(x)", "c = Curve(t^2, t^3, t, -2, 2)", "d = NDerivative(f, g, 2)", "e = Derivative(f, g, 2)", "h = Derivative(f, x, 2)", "i = NDerivative(c, g, 2)"], "steps": [{"action": "initial"}], "sample_curves": true},
     {"id": "calculus-curvederivative-012", "group": "calculus", "script": ["n = 2", "f(x) = x^4", "d = NDerivative(f, n, 3)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "n", "value": 1.0}]},
     {"id": "calculus-curvederivative-013", "group": "calculus", "script": ["c = Curve(t^2, t^3, t, -2, 2)", "g(x) = sin(x)", "d = Derivative(c, g, 2)", "e = NDerivative(c, g, 3)"], "steps": [{"action": "initial"}], "sample_curves": true},
-    {"id": "calculus-curvederivative-014", "group": "calculus", "script": ["n = 2", "c = Curve(t^2, t^3, t, -2, 2)", "d = NDerivative(c, n, 3)"], "steps": [{"action": "initial"}], "sample_curves": true}
+    {"id": "calculus-curvederivative-014", "group": "calculus", "script": ["n = 2", "c = Curve(t^2, t^3, t, -2, 2)", "d = NDerivative(c, n, 3)"], "steps": [{"action": "initial"}], "sample_curves": true},
+    {"id": "calculus-curvederivative-015", "group": "calculus", "script": ["f(x) = x^3", "g(x) = sin(x)", "c = Curve(t^2, t^3, t, -2, 2)"], "steps": [{"action": "initial"}, {"action": "reject", "line": "d = Derivative(f, g)"}, {"action": "reject", "line": "e = NDerivative(f, g)"}, {"action": "reject", "line": "h = Derivative(f, 2, 3)"}, {"action": "reject", "line": "i = Derivative(c, x)"}, {"action": "reject", "line": "j = Derivative(c, g)"}]}
   ]
 }
