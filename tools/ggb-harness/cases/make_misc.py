@@ -70,6 +70,13 @@ cases.case("optimize", [
     "f = If(x(P) > 0, a * (2 * x(P) - a))", "g = -f",
     "c = Circle(A, Maximize(f, a))", "d = Circle(A, Minimize(g, a))",
 ], [mv("P", 2, 0), mv("P", 0, 0), mv("P", 4, 0)])
+# Optimizers created before the number has slider bounds stay undefined
+# after the bounds arrive; one created afterwards searches.
+cases.case("optimize", [
+    "a = 2", "f = (a - 3)^2", "m = Minimize(f, a)", "n = Maximize(-f, a)",
+    "b = Slider(0, 6)", "g = (a - 3)^2 + b", "p = Minimize(g, b)",
+], [{"action": "set_slider_bounds", "label": "a", "min": 0, "max": 6}, setn("a", 4),
+    setn("b", 2), setn("a", 1)])
 
 # Hull: the convex hull of a list of points, as a locus.
 cases.case("hull", [

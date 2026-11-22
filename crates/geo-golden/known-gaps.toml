@@ -999,11 +999,6 @@ reason = "The kernel always integrates supported polynomial slopes. It has no mo
 mismatches = ["0:g", "0:h", "3:g", "3:h"]
 
 [[gap]]
-id = "misc-optimize-013"
-reason = "The kernel reads the mover bounds at each solve and has no persistent disabled state for an optimizer created without them. It starts minimizing after the endpoints are attached and the number is edited."
-mismatches = ["2:m"]
-
-[[gap]]
 id = "funcrest-derivative-004"
 reason = "The 260-point spline system is solved with the reference elimination and agrees bit for bit on the x coordinates. Seven of its y inputs sin(k) (k = 18, 64, 89, 131, 202, 224, 233) differ by one ulp: the kernel evaluates sin with the portable fdlibm algorithm, the recording JVM with its Math.sin intrinsic. The ill-conditioned 260-piece monomial system amplifies the ulp to a relative 1.5e-9 in y(0.875). Both derivatives agree."
 mismatches = ["1:s"]

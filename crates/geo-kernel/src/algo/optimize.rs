@@ -39,6 +39,10 @@ enum Watch {
     Unattached,
     Attached(IdList),
     OverBudget,
+    /// `AlgoOptimize.compute` found the number without slider bounds: it
+    /// returns with its recursion guard still set, so the result stays
+    /// undefined from then on.
+    Disabled,
 }
 
 impl OptimizeDef {
@@ -55,7 +59,7 @@ impl OptimizeDef {
     pub(crate) fn watched(self) -> Option<IdList> {
         match self.watch {
             Watch::Attached(list) => Some(list),
-            Watch::Unattached | Watch::OverBudget => None,
+            Watch::Unattached | Watch::OverBudget | Watch::Disabled => None,
         }
     }
 
@@ -143,6 +147,20 @@ impl Group for OptimizeDef {
     }
 }
 
+/// The definition to keep once `d` meets a number without slider bounds
+/// (`OptimizerNumeric.hasBounds`): `AlgoOptimize.compute` sets its guard
+/// against recursive calls and returns before clearing it, so every later
+/// update returns at once and the result stays undefined, also after
+/// bounds are added. A point on a path always has bounds.
+pub(crate) fn disabled(c: &Construction, d: OptimizeDef) -> Option<OptimizeDef> {
+    (!d.point && d.watch != Watch::Disabled && c.slider_interval(d.independent).is_none()).then_some(
+        OptimizeDef {
+            watch: Watch::Disabled,
+            ..d
+        },
+    )
+}
+
 /// Runs the search and returns the value of the result: the independent
 /// number at the optimum, or undefined when it has no bounds or the search
 /// fails (`AlgoOptimize.compute`).
@@ -154,7 +172,7 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         point,
         watch,
     } = d;
-    if watch == Watch::OverBudget {
+    if matches!(watch, Watch::OverBudget | Watch::Disabled) {
         return Value::Undefined;
     }
     let on_path = if point {

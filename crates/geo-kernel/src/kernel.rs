@@ -1723,7 +1723,11 @@ impl Construction {
                 let data = locus::record(self, d, id);
                 self.store_locus(id, data)
             }
-            Def::Optimize(d) => algo::optimize::record(self, d),
+            Def::Optimize(d) => {
+                let d = algo::optimize::disabled(self, d).unwrap_or(d);
+                def = Def::Optimize(d);
+                algo::optimize::record(self, d)
+            }
             Def::Calculus(d) if d.has_record() => {
                 let (value, record) = algo::calculus::initialize(self, &d);
                 self.calculus.push((id.0, record));
@@ -2229,6 +2233,13 @@ impl Construction {
                     }
                 }
                 Def::Optimize(d) => {
+                    let d = match algo::optimize::disabled(self, d) {
+                        Some(disabled) => {
+                            self.defs[i] = Def::Optimize(disabled);
+                            disabled
+                        }
+                        None => d,
+                    };
                     let new = algo::optimize::record(self, d);
                     if new == self.values[i] {
                         // Nothing downstream can change because of this
