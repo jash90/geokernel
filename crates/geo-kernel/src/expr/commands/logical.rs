@@ -21,6 +21,11 @@ use crate::{Construction, Def, Id, Kind, Value};
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &["If", "CountIf", "KeepIf", "Defined", "IsDefined"];
+pub(crate) const MAX_IF_ALTERNATIVES: usize = 64;
+
+fn alternative_count(args: usize) -> usize {
+    args.div_ceil(2)
+}
 
 pub(crate) fn conditional_kind(kind: Kind) -> Option<&'static [Kind]> {
     Some(match kind {
@@ -48,6 +53,9 @@ pub(crate) fn define_geometry_if(
     let ("If", args) = split_call(input)? else {
         return None;
     };
+    if alternative_count(args.len()) > MAX_IF_ALTERNATIVES {
+        return Some(Err("too many If alternatives".into()));
+    }
     let first = args.get(1)?;
     let kind = c.id(first).map(|id| c.kind(id)).or_else(|| {
         crate::script::parse_def(c, first)
@@ -55,9 +63,6 @@ pub(crate) fn define_geometry_if(
             .map(|def| def.kind())
     })?;
     conditional_kind(kind)?;
-    if args.len() > crate::expr::MAX_EVALUATION_WORK as usize {
-        return Some(Err("too many If alternatives".into()));
-    }
     let checkpoint = c.checkpoint();
     let result = (|| {
         let mut parents = Vec::with_capacity(args.len());
@@ -92,13 +97,21 @@ pub(crate) fn define_geometry_if(
 }
 
 pub(crate) fn conditional_branch(c: &Construction, ids: &[Id]) -> Option<Id> {
+    if alternative_count(ids.len()) > MAX_IF_ALTERNATIVES {
+        return None;
+    }
     let (pairs, fallback) = ids.as_chunks::<2>();
     pairs
         .iter()
         .find_map(|&[condition, branch]| {
+            crate::expr::charge(1);
             (c.value(condition) == Value::Bool(true)).then_some(branch)
         })
-        .or_else(|| fallback.first().copied())
+        .or_else(|| {
+            let branch = *fallback.first()?;
+            crate::expr::charge(1);
+            Some(branch)
+        })
 }
 
 /// `If(...)`.
@@ -133,6 +146,9 @@ impl Parser<'_> {
         if args.len() < 2 {
             return Err("`If` needs a condition and a value".into());
         }
+        if alternative_count(args.len()) > MAX_IF_ALTERNATIVES {
+            return Err("too many If alternatives".into());
+        }
         let pairs = args.len() / 2;
         let conditions_read_x = (0..pairs).any(|k| self.reads(args[2 * k], true));
         let mode = match (conditions_read_x, args.len()) {
@@ -146,6 +162,11 @@ impl Parser<'_> {
             NONE
         };
         for k in (0..pairs).rev() {
+            let mode = if mode == IfMode::Algo && k != 0 {
+                IfMode::AlgoNext
+            } else {
+                mode
+            };
             rest = self.push(Node::If(mode, args[2 * k], args[2 * k + 1], rest));
         }
         Ok(rest)
@@ -175,15 +196,49 @@ impl Parser<'_> {
 }
 
 impl<const M: bool> Ctx<'_, M> {
+    /// Select the original alternative so it is copied into the output
+    /// type of the whole command just once.
+    pub(crate) fn if_alternative(&self, mut i: u32) -> Option<u32> {
+        let charge = || match self.meter {
+            Some(meter) => meter.charge(1),
+            None => {
+                crate::expr::charge(1);
+                true
+            }
+        };
+        for _ in 0..MAX_IF_ALTERNATIVES {
+            if !charge() {
+                return None;
+            }
+            let Node::If(mode, cond, then, rest) = self.node(i) else {
+                return None;
+            };
+            let (value, defined) = match self.full(cond).val {
+                Val::B(v, d) => (v, d),
+                _ => (false, false),
+            };
+            if mode == IfMode::Else && !defined {
+                return None;
+            }
+            if value {
+                return Some(then);
+            }
+            if rest == NONE {
+                return None;
+            }
+            if !matches!(self.node(rest), Node::If(IfMode::AlgoNext, ..)) {
+                return charge().then_some(rest);
+            }
+            i = rest;
+        }
+        None
+    }
+
     /// `AlgoIf.compute` and `Operation.IF`, `IF_ELSE`, `IF_LIST` (see
     /// [`IfMode`]). Only the chosen branch is evaluated: an untaken branch
     /// changes no value.
     #[inline(never)]
-    pub(crate) fn conditional(&self, i: u32, mode: IfMode, cond: u32, then: u32, rest: u32) -> Ex {
-        let (value, defined) = match self.full(cond).val {
-            Val::B(v, d) => (v, d),
-            _ => (false, false),
-        };
+    pub(crate) fn conditional(&self, i: u32, mode: IfMode) -> Ex {
         let ty = self.e.tys[i as usize];
         let undefined = || match ty {
             Ty::Vec => Ex::plain(Val::V(f64::NAN, f64::NAN)),
@@ -193,14 +248,7 @@ impl<const M: bool> Ctx<'_, M> {
                 Ex::plain(Val::N(f64::NAN))
             }
         };
-        if mode == IfMode::Else && !defined {
-            return undefined();
-        }
-        let chosen = if value {
-            then
-        } else if rest != NONE {
-            rest
-        } else {
+        let Some(chosen) = self.if_alternative(i) else {
             return undefined();
         };
         let x = self.full(chosen);
@@ -214,6 +262,8 @@ impl<const M: bool> Ctx<'_, M> {
         match (ty, x.val) {
             (_, Val::N(v)) if v.is_nan() => undefined(),
             (Ty::Vec, Val::N(v)) => Ex::plain(Val::V(v, 0.0)),
+            (Ty::Num(_), Val::V(..)) => undefined(),
+            (Ty::Bool, Val::N(v)) => Ex::plain(Val::B((v - 1.0).abs() < 1e-8, true)),
             (Ty::Num(_), Val::B(b, _)) => Ex::plain(Val::N(f64::from(u8::from(b)))),
             (Ty::Num(_), Val::N(v)) => {
                 // `getNumber` keeps the decimal when the definition is
@@ -239,18 +289,12 @@ impl<const M: bool> Ctx<'_, M> {
     /// `AlgoIf` of lists: the first branch whose condition is true (an
     /// undefined condition reads false), the else branch, or undefined
     /// without one. What the condition built is dropped.
-    pub(crate) fn list_if(&self, cond: u32, then: u32, rest: u32) -> Option<(u32, u32)> {
+    pub(crate) fn list_if(&self, i: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
         let mark = lists.len();
-        let value = matches!(self.full(cond).val, Val::B(true, _));
+        let chosen = self.if_alternative(i);
         lists.truncate(mark);
-        if value {
-            self.list(then)
-        } else if rest != NONE {
-            self.list(rest)
-        } else {
-            None
-        }
+        self.list(chosen?)
     }
 }
 

@@ -459,9 +459,10 @@ pub(crate) enum IfMode {
     /// `AlgoIf`, the command of an expression that is not a function of
     /// `x` in its conditions: the first true condition picks its branch;
     /// an undefined condition is false; no true condition and no else
-    /// branch is undefined. The result has the most general type of the
-    /// branches: a number in a point result is the point `(v, 0)`.
+    /// branch is undefined. The result type widens in argument order.
     Algo,
+    /// Another condition in the same `AlgoIf` call.
+    AlgoNext,
     /// `Operation.IF_ELSE`, a function with one condition in `x` that
     /// reads no object, and an else branch: an undefined condition gives
     /// `NaN`. A condition that reads an object is a helper function whose
@@ -1538,13 +1539,9 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
             defined_below(ctx, source)
                 && !crate::algo::transform::zero_dilation(ctx.full_number(factor))
         }
-        Node::If(IfMode::Algo, cond, then, rest) => {
-            if matches!(ctx.full(cond).val, eval::Val::B(true, _)) {
-                defined_below(ctx, then)
-            } else {
-                rest != NONE && defined_below(ctx, rest)
-            }
-        }
+        Node::If(IfMode::Algo | IfMode::AlgoNext, ..) => ctx
+            .if_alternative(i)
+            .is_some_and(|branch| defined_below(ctx, branch)),
         Node::If(..) => true,
         node => children(&node).all(|child| defined_below(ctx, child)),
     }

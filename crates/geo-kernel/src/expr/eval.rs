@@ -886,7 +886,7 @@ impl<const M: bool> Ctx<'_, M> {
                     Ex::plain(N(f.fast(src) * r + (-sy * r + sy)))
                 }
             }
-            Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
+            Node::If(mode, ..) => self.conditional(i, mode),
             Node::VertexForm(a) => Ex::plain(self.vertex_form(a)),
             Node::Item(a) | Node::Vector(a) => self.full(a),
             // the variable of a `Sequence` is a `GeoNumeric`; the variable
@@ -1346,7 +1346,7 @@ impl<const M: bool> Ctx<'_, M> {
             // an element that is a list: its elements were built with the
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
-            Node::If(_, cond, then, rest) => self.list_if(cond, then, rest),
+            Node::If(..) => self.list_if(i),
             Node::Dilate(src, factor, center) => {
                 let (r, sx, sy) = self.dilation(factor, center);
                 let source = self.list(src)?;

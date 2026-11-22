@@ -5,9 +5,9 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use crate::expr::eval::{Ctx, Val};
+use crate::expr::eval::Ctx;
 use crate::expr::math::{is_integer, java_round};
-use crate::expr::{Bin, Lit, Node, NONE};
+use crate::expr::{Bin, IfMode, Lit, Node, Ty};
 use std::borrow::Cow;
 
 const DIGITS: &[u8; 36] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -80,14 +80,21 @@ impl<const M: bool> Ctx<'_, M> {
                 }
                 Some(Cow::Owned(text))
             }
-            Node::If(_, condition, chosen, rest) => {
-                if matches!(self.full(condition).val, Val::B(true, _)) {
-                    self.text(chosen)
-                } else if rest != NONE {
-                    self.text(rest)
-                } else {
-                    None
+            Node::If(mode, _, first, _) => {
+                let chosen = self.if_alternative(i)?;
+                if mode == IfMode::Algo
+                    && matches!(self.e.tys[chosen as usize], Ty::Num(_))
+                    && !self.full_number(chosen).is_nan()
+                {
+                    // Copying a number into a text leaves the previous text.
+                    if i == self.e.root {
+                        if let Some(text) = self.e.text() {
+                            return Some(Cow::Borrowed(text));
+                        }
+                    }
+                    return self.text(first);
                 }
+                self.text(chosen)
             }
             Node::Item(a) => self.text(a),
             _ => None,

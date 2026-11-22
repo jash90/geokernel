@@ -1322,7 +1322,7 @@ fn collect_cases(
             complete
         }
         // an `AlgoIf` command: one case of its own, never split
-        IfMode::Algo => {
+        IfMode::Algo | IfMode::AlgoNext => {
             cases.push(i);
             bounds.push(parent.clone());
             false

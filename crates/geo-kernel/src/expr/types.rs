@@ -389,16 +389,14 @@ fn type_node(
                 (state.tys[then], 0, 0, 0)
             } else {
                 let r = rest as usize;
-                let (left, right) = (state.tys[then], state.tys[r]);
-                let ty = match (mode, left, right) {
-                    (IfMode::Algo, Ty::Bool, n @ Ty::Num(_))
-                    | (IfMode::Algo, n @ Ty::Num(_), Ty::Bool)
-                    | (IfMode::Algo, n @ Ty::List(_), Ty::Num(_)) => n,
-                    _ => join(left, right)?,
+                let ty = match mode {
+                    IfMode::Algo => conditional_type(nodes, &state.tys, then, r),
+                    IfMode::AlgoNext => state.tys[then],
+                    _ => join(state.tys[then], state.tys[r])?,
                 };
                 (ty, state.depth[r], state.cost[r], state.vars[r])
             };
-            if mode != IfMode::Algo && !matches!(ty, Ty::Num(_)) {
+            if matches!(mode, IfMode::Else | IfMode::List) && !matches!(ty, Ty::Num(_)) {
                 // `CmdIf.checkAdd`: the branches must be functions
                 return Err("the branches of a function's `If` must be numbers".into());
             }
@@ -931,9 +929,32 @@ pub(super) fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     }
 }
 
-/// The type of `AlgoIf`'s result: `GeoList.getGenericElement` keeps the
-/// first branch's type unless a later one can take it, which a point does
-/// for a number.
+/// Widen through the alternatives of one call until the first incompatible
+/// assignment. A nested `If` expression is a single alternative.
+fn conditional_type(nodes: &[Node], types: &[Ty], first: usize, mut next: usize) -> Ty {
+    let mut result = types[first];
+    for _ in 0..super::commands::logical::MAX_IF_ALTERNATIVES {
+        let (branch, tail) = match nodes[next] {
+            Node::If(IfMode::AlgoNext, _, branch, rest) => (branch as usize, rest),
+            _ => (next, NONE),
+        };
+        result = match (result, types[branch]) {
+            (Ty::Bool | Ty::Num(1), t @ Ty::Num(n)) if n != 1 => t,
+            (Ty::Bool | Ty::Num(_), Ty::Vec) => Ty::Vec,
+            (Ty::List(a), Ty::List(b)) => Ty::List(join_elem(a, b)),
+            (a, b) if a == b => a,
+            (Ty::Num(a), Ty::Num(b)) if a != 1 && b != 1 => Ty::Num(b),
+            _ => break,
+        };
+        if tail == NONE {
+            break;
+        }
+        next = tail as usize;
+    }
+    result
+}
+
+/// Combine the numeric branches of a conditional function.
 fn join(a: Ty, b: Ty) -> Result<Ty, String> {
     match (a, b) {
         (Ty::Num(x), Ty::Num(_)) => Ok(Ty::Num(x)),
