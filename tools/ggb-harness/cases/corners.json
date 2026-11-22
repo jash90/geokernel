@@ -48,6 +48,14 @@
     {"id": "corners-inequality-006", "group": "corners", "script": ["k = 1", "q(x,y) = x > ln(y) + k && y > 0.5 && y < 3", "P = Corner(q)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "k", "value": -1.0}, {"action": "set_number", "label": "k", "value": 1.0}], "track_boundary_growth": true},
     {"id": "corners-inequality-007", "group": "corners", "script": ["q(x,y) = x > 0 && y > 0 && x + y < 2 && sin(x y) > -2"], "steps": [{"action": "initial"}, {"action": "reject", "line": "P = Vertex(q)"}, {"action": "reject", "line": "Q = Corner(q)"}]},
     {"id": "corners-inequality-008", "group": "corners", "script": ["q(x,y) = x > 0 && y > 0 && x + y < 2 && x y + sin(x) > 5"], "steps": [{"action": "initial"}, {"action": "reject", "line": "P = Vertex(q)"}, {"action": "reject", "line": "Q = Corner(q)"}]},
-    {"id": "corners-inequality-009", "group": "corners", "script": ["q(x,y) = x > 0 && y > 0 && x + y < 2 && (sin(x y) > -2 || x > 5)"], "steps": [{"action": "initial"}, {"action": "reject", "line": "P = Vertex(q)"}, {"action": "reject", "line": "Q = Corner(q)"}]}
+    {"id": "corners-inequality-009", "group": "corners", "script": ["q(x,y) = x > 0 && y > 0 && x + y < 2 && (sin(x y) > -2 || x > 5)"], "steps": [{"action": "initial"}, {"action": "reject", "line": "P = Vertex(q)"}, {"action": "reject", "line": "Q = Corner(q)"}]},
+    {"id": "corners-inequality-010", "group": "corners", "script": ["q(x,y) = x > 0 && y > 0 && y > sin(x) && sin(x y) > 1"], "steps": [{"action": "initial"}, {"action": "reject", "line": "P = Vertex(q)"}, {"action": "reject", "line": "Q = Corner(q)"}]},
+    {"id": "corners-inequality-011", "group": "corners", "script": ["q(x,y) = x > 0 && y > 0 && x^2 < 1 && y^2 < 4 && sin(x y) > 1"], "steps": [{"action": "initial"}, {"action": "reject", "line": "P = Vertex(q)"}, {"action": "reject", "line": "Q = Corner(q)"}]},
+    {"id": "corners-inequality-012", "group": "corners", "script": ["q(x,y) = x^2 > -1 && y > sin(x) && sin(x y) > 1", "P = Vertex(q)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-inequality-013", "group": "corners", "script": ["q(x,y) = x > 0 && x^2 < 4 && sin(x y) > 1", "P = Vertex(q)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-inequality-014", "group": "corners", "script": ["h = 2", "P = Corner(x > -1 && y > 0 && x + y < h)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "h", "value": -2.0}, {"action": "set_number", "label": "h", "value": 3.0}]},
+    {"id": "corners-inequality-015", "group": "corners", "script": ["P = Corner(x^2 < 4 && y > sqrt(x + 3) && y < 5)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-inequality-016", "group": "corners", "script": ["P = Vertex(y > cos(x) && x^2 > 0)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-inequality-017", "group": "corners", "script": ["P = Vertex(x < exp(y) && y^2 < 1)"], "steps": [{"action": "initial"}]}
   ]
 }

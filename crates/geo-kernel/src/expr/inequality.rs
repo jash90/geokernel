@@ -81,7 +81,7 @@ fn compute(c: &Construction, source: Id) -> Option<Outcome> {
                 return None;
             }
             let candidates = a.intersections(b, &at)?;
-            if stopped && !candidates.is_empty() {
+            if stopped && Border::validates(a, b, &candidates, &at)? {
                 return Some(Outcome {
                     vertices: Vec::new(),
                     fails: true,
@@ -351,6 +351,43 @@ impl Border {
             }
             _ => plane_polynomial::intersections(&a.polynomial, &b.polynomial, work),
         }
+    }
+
+    /// Whether `AlgoVertexIneq.typeSwitch` tests at least one candidate of
+    /// this pair (`validateLast`), including the undefined outputs of its
+    /// intersection helpers. `candidates` are the pair's own intersections.
+    fn validates(a: &Self, b: &Self, candidates: &[(f64, f64)], at: &Plane<'_>) -> Option<bool> {
+        use BorderType::*;
+        let kind = |border: &Self| match border.kind {
+            OneVariableX | OneVariableY if !border.is_one_variable_nonlinear() => Line,
+            kind => kind,
+        };
+        let (ka, kb) = if kind(a) <= kind(b) {
+            ((kind(a), a), (kind(b), b))
+        } else {
+            ((kind(b), b), (kind(a), a))
+        };
+        let ((ka, a), (kb, b)) = (ka, kb);
+        let zeros = |border: &Self| border.zeros(at.work).map(|zeros| !zeros.is_empty());
+        Some(match (ka, kb) {
+            (Implicit | Invalid, _) | (_, Implicit | Invalid) => false,
+            (ParametricX | ParametricY, Conic) => a.expression.is_none(),
+            (ParametricX | ParametricY, OneVariableX | OneVariableY) => zeros(b)?,
+            (ParametricX | ParametricY, _) | (Line, Line | Conic) | (Conic, Conic) => true,
+            (Line, OneVariableX | OneVariableY) => {
+                // `intLinearX` and `intLinearY` skip a line parallel to the
+                // one-variable border's zeros.
+                let line = if kb == OneVariableX {
+                    a.coefficient(0, 1)
+                } else {
+                    a.coefficient(1, 0)
+                };
+                !is_zero(line) && zeros(b)?
+            }
+            (Conic, OneVariableX | OneVariableY) => !candidates.is_empty(),
+            (OneVariableX, OneVariableY) => zeros(a)? && zeros(b)?,
+            _ => false,
+        })
     }
 
     fn is_one_variable_nonlinear(&self) -> bool {

@@ -198,9 +198,19 @@ cases.cases[-1]["track_boundary_growth"] = True
 # A border that is neither polynomial nor a function of one coordinate
 # stops building the inequality tree; testing a vertex then fails.
 for border in ("x + y < 2 && sin(x y) > -2", "x + y < 2 && x y + sin(x) > 5",
-               "x + y < 2 && (sin(x y) > -2 || x > 5)"):
+               "x + y < 2 && (sin(x y) > -2 || x > 5)", "y > sin(x) && sin(x y) > 1",
+               "x^2 < 1 && y^2 < 4 && sin(x y) > 1"):
     cases.case("inequality", ["q(x,y) = x > 0 && y > 0 && " + border],
                [{"action": "reject", "line": "P = Vertex(q)"},
                 {"action": "reject", "line": "Q = Corner(q)"}])
+# Without a tested candidate the incomplete tree is never read.
+for script in ("x^2 > -1 && y > sin(x) && sin(x y) > 1", "x > 0 && x^2 < 4 && sin(x y) > 1"):
+    cases.case("inequality", ["q(x,y) = " + script, "P = Vertex(q)"], [])
+# Inline inequalities.
+cases.case("inequality", [num("h", 2), "P = Corner(x > -1 && y > 0 && x + y < h)"],
+           [setn("h", -2), setn("h", 3)])
+cases.case("inequality", ["P = Corner(x^2 < 4 && y > sqrt(x + 3) && y < 5)"], [])
+cases.case("inequality", ["P = Vertex(y > cos(x) && x^2 > 0)"], [])
+cases.case("inequality", ["P = Vertex(x < exp(y) && y^2 < 1)"], [])
 
 cases.write()
