@@ -374,7 +374,9 @@ fn an_element_with_a_million_attributes_is_read_in_linear_time() {
 }
 
 #[test]
-fn deep_nesting_does_not_overflow_the_stack() {
+fn deep_nesting_is_refused_at_once() {
+    // A saved file nests five levels. Wrappers around a tag would otherwise
+    // be read as if they were not there, a million deep.
     let depth = 200_000;
     let xml = format!(
         "<geogebra><construction>{}{}</construction></geogebra>",
@@ -382,8 +384,62 @@ fn deep_nesting_does_not_overflow_the_stack() {
         "</a>".repeat(depth)
     );
     let (r, took) = timed(|| import(xml.as_bytes()));
-    assert!(r.is_ok());
+    assert_eq!(r.unwrap_err(), geo_import::ImportError::TooDeep);
     assert!(took < BOUND, "{took:?}");
+    // The limit itself is read.
+    let nested = |levels: usize| {
+        format!(
+            "<geogebra><construction>{}<element type=\"point\" label=\"A\">\
+             <coords x=\"1\" y=\"2\" z=\"1\"/></element>{}</construction></geogebra>",
+            "<a>".repeat(levels),
+            "</a>".repeat(levels)
+        )
+    };
+    let limit = geo_import::xml::MAX_DEPTH;
+    // The root, the construction and the element take three levels.
+    assert_eq!(
+        import(nested(limit - 3).as_bytes()).unwrap().script.len(),
+        1
+    );
+    assert_eq!(
+        import(nested(limit - 2).as_bytes()).unwrap_err(),
+        geo_import::ImportError::TooDeep
+    );
+}
+
+#[test]
+fn the_style_expressions_of_a_document_share_one_budget() {
+    use geo_import::convert::StyleExpressions;
+    let c = geo_kernel::script::load("a = 2").unwrap();
+    // Each evaluation is charged, and the budget is for all of them.
+    let mut expressions = StyleExpressions::with_budget(1_000);
+    let mut accepted = 0;
+    while expressions.number(&c, "a + 1").is_ok() {
+        accepted += 1;
+        assert!(accepted < 1_000, "the budget never runs out");
+    }
+    assert!(accepted > 1);
+    assert!(expressions.work() >= 1_000);
+    let reason = expressions.number(&c, "a + 1").unwrap_err();
+    assert!(reason.contains("evaluation budget"), "{reason}");
+    // The same holds for the channels of a dynamic colour.
+    let colour = geo_import::export::DynamicColor {
+        red: "a".into(),
+        green: "a / 2".into(),
+        blue: "1 - a".into(),
+        alpha: None,
+        space: 0,
+    };
+    assert!(expressions.dynamic_color(&c, &colour).is_err());
+    assert!(StyleExpressions::default()
+        .dynamic_color(&c, &colour)
+        .is_ok());
+    // A command the kernel parses without running is no number.
+    assert!(StyleExpressions::default()
+        .number(&c, "Sum(Sequence(k, k, 1, 1000000))")
+        .is_err());
+    // An expression without a value right now is still arithmetic.
+    assert!(StyleExpressions::default().number(&c, "sqrt(-a)").is_ok());
 }
 
 #[test]

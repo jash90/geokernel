@@ -26,6 +26,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, Weak};
 
+use crate::style::FILL_OPACITY;
 /// Point radii in pixels: point size 5 for free points, 4 for dependent ones.
 pub use crate::style::FREE_POINT_RADIUS;
 const DEPENDENT_POINT_RADIUS: f32 = 4.0;
@@ -355,7 +356,7 @@ fn paint_layer<'c>(
         }
         let vertex = p(angle.center.0, angle.center.1);
         let col = color(id);
-        let fill = col.gamma_multiply(0.1);
+        let fill = col.gamma_multiply(FILL_OPACITY as f32);
         let stroke = Stroke::new(1.5, col);
         let at = |direction: f64, distance: f32| {
             let (sin, cos) = direction.sin_cos();
@@ -444,7 +445,7 @@ fn paint_layer<'c>(
                 .collect();
             let mut mesh = Mesh::default();
             for &p in &points {
-                mesh.colored_vertex(p, col.gamma_multiply(0.1));
+                mesh.colored_vertex(p, col.gamma_multiply(FILL_OPACITY as f32));
             }
             for [a, b, d] in shape::triangulate(&pts) {
                 mesh.add_triangle(a as u32, b as u32, d as u32);

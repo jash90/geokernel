@@ -76,10 +76,36 @@ for the checkout. Two runs produce byte-identical files.
 app and writes a `.ggb.snapshot` alongside it. GeoGebra warnings, errors and
 unrecognized XML tags fail the run. The integration test exports constructions
 replayed from harness goldens, including `cases/export.json`, and exports
-reference-saved text, raster, control and path fixtures. It compares every
-labelled object against both Rust constructions at the golden tolerance and
-checks object styles, slider settings and the primary view directly in the
-Java reader.
+reference-saved text, raster, control, path and style fixtures. It compares
+every labelled object against both Rust constructions at the golden tolerance
+and checks slider settings and the primary view directly in the Java reader.
+
+The snapshot also holds the presentation of every object, read through
+GeoGebra's getters (`styles`): visibility, view bits, condition, colour,
+opacity, fill, dynamic colour, background, layer, drawing order, label,
+caption, tooltip, line and point style, the fixed, auxiliary, selection, trace
+and other flags, decoration, end and head styles, text font, rounding and
+placement, angle arcs, slider placement and animation.
+
+For a document opened from a file the test snapshots three archives: the
+source file, the export of its import, and the export of the same document
+without its saved styles. The first two must agree in every property of every
+object. The third gives what the reader makes of an object without the saved
+tag: `WITNESSES` in the test names, per kind, the objects of the style
+fixtures that may prove a property, and a property is proven by the first of
+them whose source value differs from that. The test compares the result with
+`crates/geo-golden/tests/fixtures/export-proof.json` and fails when the file
+is stale; `GEOKERNEL_EXPORT_BLESS=1` rewrites it. A normal `cargo test` reads
+that file and derives the `export` column of `docs/kinds.csv` from it.
+
+`export-snapshot --lenient <directory>` records what GeoGebra reports while
+loading (`reported`) instead of stopping, and writes `{"failed": ...}` for a
+file its reader gives up. The hand-written files of
+`crates/geo-golden/tests/fixtures/export` are read this way: tags GeoGebra
+does not write, such as a line style without a thickness or a fill whose angle
+is no number. `<name>.applied.xml` beside a file the reader gives up is the
+same file with that tag cut down to what the reader had applied by then; the
+export must load without a report and agree with it.
 
 After building the harness, run the ignored
 `geogebra_reloads_exports_and_matches_the_kernel` test in
@@ -271,7 +297,11 @@ algebra processor (so `P = Intersect(f, k)` gives both points), applies the
 `move` and other edit steps, then writes the construction file
 (`golden/ggb/saved/<id>.xml` or `<id>.ggb` when `archive` is true) and what GeoGebra computes in that state
 (`<id>.snapshot`, golden field format, not read by the golden loader). A case
-may set `angle_unit` (`degree` or `radiant`). `crates/geo-import/tests/saved.rs`
+may set `angle_unit` (`degree` or `radiant`). A `style` step sets presentation
+properties through the setters of the element (colour, opacity, line, point
+and fill style, layer, flags, dynamic colour, slider placement and so on);
+the `styles` topic has one fixture per family of kinds for the export oracle.
+A run with topic names (`harness.sh saved styles`) rewrites those cases only. `crates/geo-import/tests/saved.rs`
 imports each file and compares it with its snapshot: this covers, for exactly the states the cases reach, that the
 n-th output slot of a saved `Intersect` or `Tangent` is the n-th object of the
 kernel after points were moved, that angles do not depend on the angle unit,

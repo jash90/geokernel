@@ -419,3 +419,400 @@ fn defined_against_undefined_is_a_mismatch_both_ways() {
            <element type=\"point\" label=\"M\"/>"));
     assert!(r.mismatched.is_empty());
 }
+
+#[test]
+fn presentation_tags_are_kept_as_the_saved_style() {
+    use geo_import::export::{
+        DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SliderAnimation, SliderFlags,
+        SliderLayout,
+    };
+    let r = ok(
+        "<element type=\"numeric\" label=\"r\"><value val=\"0.5\"/></element>\
+         <element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <show object=\"true\" label=\"false\" ev=\"3\"/>\
+         <objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.25\" dynamicr=\"r\" dynamicg=\"\" \
+         dynamicb=\"1 - r\" dynamica=\"r\" colorSpace=\"2\" fillType=\"8\" hatchAngle=\"60\" \
+         hatchDistance=\"12\" fillSymbol=\"*\" inverseFill=\"true\"/>\
+         <bgColor r=\"1\" g=\"2\" b=\"3\" alpha=\"128\"/>\
+         <layer val=\"4\"/><labelMode val=\"3\"/><tooltipMode val=\"2\"/>\
+         <trace val=\"true\"/><decoration type=\"2\"/><ordering val=\"2.5\"/>\
+         <lineStyle thickness=\"7\" type=\"15\" typeHidden=\"2\" opacity=\"99\"/>\
+         <fixed val=\"true\"/><selectionAllowed val=\"false\"/><auxiliary val=\"true\"/>\
+         <caption val=\"Start\"/><pointSize val=\"7\"/><pointStyle val=\"3\"/>\
+         <animation step=\"r\" speed=\"2\" type=\"3\" playing=\"false\"/></element>\
+         <element type=\"numeric\" label=\"a\"><value val=\"1\"/>\
+         <slider min=\"0\" max=\"5\" width=\"150\" x=\"20\" y=\"40\" fixed=\"true\" \
+         horizontal=\"false\" showAlgebra=\"true\" absoluteScreenLocation=\"true\"/></element>\
+         <expression label=\"t\" exp=\"&quot;note&quot;\"/>\
+         <element type=\"text\" label=\"t\"><decimals val=\"4\"/></element>\
+         <element type=\"point\" label=\"B\"><coords x=\"0\" y=\"0\" z=\"1\"/></element>",
+    );
+    assert_eq!(
+        r.object_styles["A"],
+        ObjectStyle {
+            caption: "Start".into(),
+            show_label: Some(false),
+            views: Some(3),
+            ordering: Some(2.5),
+            layer: Some(4),
+            label_mode: Some(3),
+            tooltip_mode: Some(2),
+            color: Some([10, 20, 30]),
+            alpha: Some(0.25),
+            fill: Some(Box::new(Fill {
+                pattern: 8,
+                hatch: Some([60, 12]),
+                symbol: Some("*".into()),
+                inverse: Some(true),
+            })),
+            // An empty channel is 0, as the reference reader fills it in.
+            dynamic_color: Some(Box::new(DynamicColor {
+                red: "r".into(),
+                green: "0".into(),
+                blue: "1 - r".into(),
+                alpha: Some("r".into()),
+                space: 2,
+            })),
+            background: Some([1, 2, 3, 128]),
+            line: Some(LineStyle {
+                kind: 15,
+                thickness: Some(7),
+                hidden_kind: Some(2),
+                opacity: Some(99),
+                draw_arrow: None,
+            }),
+            point_size: Some(7),
+            point_style: Some(3),
+            fixed: Some(true),
+            auxiliary: Some(true),
+            selection_allowed: Some(false),
+            trace: Some(true),
+            decoration: Some(2),
+            animation: Some(Box::new(SliderAnimation {
+                step: Some("r".into()),
+                speed: Some("2".into()),
+                mode: 3,
+                playing: false,
+            })),
+            ..ObjectStyle::default()
+        }
+    );
+    assert_eq!(
+        r.object_styles["a"].slider,
+        Some(Box::new(SliderLayout {
+            absolute: true,
+            position: Some([20.0, 40.0]),
+            width: Some(150.0),
+            flags: Some(SliderFlags {
+                fixed: true,
+                show_algebra: true,
+                horizontal: false,
+            }),
+        }))
+    );
+    assert_eq!(r.object_styles["t"].rounding, Some(Rounding::Decimals(4)));
+    // An object without any tag still has an entry: its tags stay left out.
+    assert_eq!(
+        r.object_styles["B"],
+        ObjectStyle {
+            untagged: true,
+            ..ObjectStyle::default()
+        }
+    );
+    // Without a `<show>` tag there are no view bits.
+    assert_eq!(r.object_styles["a"].views, None);
+    assert!(!r.object_styles["A"].untagged);
+    assert!(r.hidden.is_empty());
+}
+
+#[test]
+fn expressions_the_kernel_does_not_evaluate_are_not_kept() {
+    let r = ok(
+        "<element type=\"point\" label=\"B\"><coords x=\"0\" y=\"0\" z=\"1\"/></element>\
+         <element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0\" \
+         dynamicr=\"Execute[{&quot;Delete[B]&quot;}]\" dynamicg=\"1\" dynamicb=\"missing\"/>\
+         <animation step=\"RunClickScript[A]\" speed=\"x(B) + 1\" type=\"1\"/></element>",
+    );
+    let style = &r.object_styles["A"];
+    assert_eq!(style.color, Some([10, 20, 30]));
+    assert_eq!(style.dynamic_color, None);
+    let animation = style.animation.as_deref().unwrap();
+    assert_eq!(animation.step, None);
+    assert_eq!(animation.speed.as_deref(), Some("x(B) + 1"));
+    let notes = r.notes.join("\n");
+    assert!(notes.contains("dynamic colour of `A`"), "{notes}");
+    assert!(notes.contains("animation step of `A`"), "{notes}");
+}
+
+#[test]
+fn style_arithmetic_over_undefined_inputs_is_kept() {
+    // `a` is negative when the file is read, so `Q` is undefined: the
+    // expressions have no value right now, but the kernel evaluates them.
+    let r = ok(
+        "<element type=\"numeric\" label=\"a\"><value val=\"-1\"/></element>\
+         <expression label=\"Q\" exp=\"(sqrt(a), 0)\" type=\"point\"/>\
+         <element type=\"point\" label=\"Q\"><coords x=\"NaN\" y=\"NaN\" z=\"NaN\"/></element>\
+         <element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0\" \
+         dynamicr=\"x(Q) / 10\" dynamicg=\"sqrt(a)\" dynamicb=\"1\"/>\
+         <animation step=\"sqrt(a)\" speed=\"x(Q) + 1\" type=\"1\"/></element>\
+         <element type=\"point\" label=\"B\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <animation step=\"Sum(Sequence(k, k, 1, 10))\" speed=\"a := 3\" type=\"1\"/></element>",
+    );
+    let style = &r.object_styles["A"];
+    let dynamic = style.dynamic_color.as_deref().unwrap();
+    assert_eq!(
+        [&dynamic.red, &dynamic.green, &dynamic.blue].map(String::as_str),
+        ["x(Q) / 10", "sqrt(a)", "1"]
+    );
+    let animation = style.animation.as_deref().unwrap();
+    assert_eq!(animation.step.as_deref(), Some("sqrt(a)"));
+    assert_eq!(animation.speed.as_deref(), Some("x(Q) + 1"));
+    // A list command the kernel parses without running and an assignment
+    // are still refused.
+    let animation = r.object_styles["B"].animation.as_deref().unwrap();
+    assert_eq!((&animation.step, &animation.speed), (&None, &None));
+    let notes = r.notes.join("\n");
+    assert!(!notes.contains("of `A`"), "{notes}");
+    assert!(notes.contains("animation step of `B`"), "{notes}");
+    assert!(notes.contains("animation speed of `B`"), "{notes}");
+}
+
+/// One styled conic `k` and one slider `n`, with the given tags.
+fn styled(conic: &str, slider: &str) -> Imported {
+    ok(&format!(
+        "{}{}<command name=\"Circle\"><input a0=\"A\" a1=\"B\"/><output a0=\"k\"/></command>\
+         <element type=\"conic\" label=\"k\">{conic}</element>\
+         <element type=\"numeric\" label=\"n\"><value val=\"2\"/>{slider}</element>",
+        free("A", "1", "2"),
+        free("B", "3", "1"),
+    ))
+}
+
+#[test]
+fn a_fill_is_read_up_to_the_number_the_reference_reader_stops_at() {
+    use geo_import::export::Fill;
+    let fill = |tag: &str| {
+        let r = styled(tag, "");
+        let style = r.object_styles["k"].clone();
+        let stops = r
+            .notes
+            .iter()
+            .any(|note| note.contains("`<objColor>` of `k`"));
+        (
+            style.color,
+            style.fill.map(|fill| *fill),
+            style.alpha,
+            stops,
+        )
+    };
+    // The angle is no number: the colour is set, nothing else.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.5\" hatchAngle=\"abc\" hatchDistance=\"7\" fillType=\"2\" inverseFill=\"true\"/>"),
+        (Some([10, 20, 30]), None, None, true)
+    );
+    // The distance is missing: the angle and the inversion are set, the
+    // distance and the pattern keep their defaults, the opacity is not read.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.5\" hatchAngle=\"60\" fillType=\"2\" inverseFill=\"true\"/>"),
+        (
+            Some([10, 20, 30]),
+            Some(Fill {
+                pattern: 0,
+                hatch: Some([60, Fill::DEFAULT_DISTANCE]),
+                symbol: None,
+                inverse: Some(true),
+            }),
+            None,
+            true
+        )
+    );
+    // No pattern has the index -1: the hatch is set, the symbol and the
+    // opacity are not read.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.5\" hatchAngle=\"60\" hatchDistance=\"7\" fillType=\"-1\" fillSymbol=\"x\"/>"),
+        (
+            Some([10, 20, 30]),
+            Some(Fill {
+                pattern: 1,
+                hatch: Some([60, 7]),
+                symbol: None,
+                inverse: None,
+            }),
+            None,
+            true
+        )
+    );
+    // The opacity is no number: the pattern before it is set.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"abc\" fillType=\"3\"/>"),
+        (
+            Some([10, 20, 30]),
+            Some(Fill {
+                pattern: 3,
+                ..Fill::default()
+            }),
+            None,
+            true
+        )
+    );
+    // A complete tag reads everything and stops nothing.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.5\" hatchAngle=\"60\" hatchDistance=\"7\" fillType=\"2\"/>"),
+        (
+            Some([10, 20, 30]),
+            Some(Fill {
+                pattern: 2,
+                hatch: Some([60, 7]),
+                symbol: None,
+                inverse: None,
+            }),
+            Some(0.5),
+            false
+        )
+    );
+}
+
+#[test]
+fn colour_channels_keep_their_low_byte() {
+    let r = styled(
+        "<objColor r=\"300\" g=\"-1\" b=\"256\" alpha=\"0.5\"/>\
+         <bgColor r=\"300\" g=\"20\" b=\"30\" alpha=\"300\"/>",
+        "",
+    );
+    let style = &r.object_styles["k"];
+    assert_eq!(style.color, Some([44, 255, 0]));
+    assert_eq!(style.background, Some([44, 20, 30, 44]));
+    // A channel that is no 32 bit integer leaves the whole tag unread.
+    let r = styled("<objColor r=\"1e2\" g=\"0\" b=\"0\" alpha=\"0.5\"/>", "");
+    assert_eq!(r.object_styles["k"].color, None);
+    assert_eq!(r.object_styles["k"].alpha, None);
+}
+
+#[test]
+fn a_line_style_is_read_pattern_first_and_keeps_any_thickness() {
+    use geo_import::export::LineStyle;
+    let line = |tag: &str| styled(tag, "").object_styles["k"].line;
+    // Without a dash pattern nothing is set, not even the thickness.
+    assert_eq!(line("<lineStyle thickness=\"7\"/>"), None);
+    // The pattern alone is set; the reader stops at the missing thickness.
+    assert_eq!(
+        line("<lineStyle type=\"20\" typeHidden=\"2\" opacity=\"90\"/>"),
+        Some(LineStyle {
+            kind: 20,
+            ..LineStyle::default()
+        })
+    );
+    // The thickness has no upper bound; a negative one is 0.
+    assert_eq!(
+        line("<lineStyle thickness=\"300\" type=\"10\"/>")
+            .unwrap()
+            .thickness,
+        Some(300)
+    );
+    assert_eq!(
+        line("<lineStyle thickness=\"-4\" type=\"10\"/>")
+            .unwrap()
+            .thickness,
+        Some(0)
+    );
+    // A hidden pattern that is no number stops the reader before the opacity.
+    assert_eq!(
+        line("<lineStyle thickness=\"3\" type=\"10\" typeHidden=\"x\" opacity=\"90\" drawArrow=\"true\"/>"),
+        Some(LineStyle {
+            kind: 10,
+            thickness: Some(3),
+            ..LineStyle::default()
+        })
+    );
+    assert_eq!(
+        line("<lineStyle thickness=\"3\" type=\"10\" opacity=\"90\" drawArrow=\"true\"/>"),
+        Some(LineStyle {
+            kind: 10,
+            thickness: Some(3),
+            hidden_kind: None,
+            opacity: Some(90),
+            draw_arrow: Some(true),
+        })
+    );
+}
+
+#[test]
+fn a_slider_tag_is_read_up_to_the_number_the_reference_reader_stops_at() {
+    use geo_import::export::{SliderFlags, SliderLayout};
+    let layout = |tag: &str| *styled("", tag).object_styles["n"].slider.clone().unwrap();
+    // Without a width the flags after it are not read.
+    assert_eq!(
+        layout("<slider min=\"0\" max=\"5\" x=\"10\" y=\"10\" fixed=\"true\" horizontal=\"false\" showAlgebra=\"true\"/>"),
+        SliderLayout {
+            absolute: false,
+            position: Some([10.0, 10.0]),
+            width: None,
+            flags: None,
+        }
+    );
+    // The reference reads `NaN` as a width.
+    let nan = layout("<slider min=\"0\" max=\"5\" x=\"10\" y=\"10\" width=\"NaN\" fixed=\"true\" horizontal=\"false\" showAlgebra=\"true\"/>");
+    assert!(nan.width.is_some_and(f64::is_nan));
+    assert_eq!(
+        nan.flags,
+        Some(SliderFlags {
+            fixed: true,
+            show_algebra: true,
+            horizontal: false,
+        })
+    );
+    // A position without `y` stops the reader before the width.
+    assert_eq!(
+        layout(
+            "<slider min=\"0\" max=\"5\" absoluteScreenLocation=\"true\" x=\"10\" width=\"100\"/>"
+        ),
+        SliderLayout {
+            absolute: true,
+            ..SliderLayout::default()
+        }
+    );
+    // The bounds are read before any of this.
+    let r = styled("", "<slider min=\"0\" max=\"5\" x=\"10\"/>");
+    let c = geo_kernel::script::load(&r.script.join("\n")).unwrap();
+    assert_eq!(c.slider_bounds(c.id("n").unwrap()), [Some(0.0), Some(5.0)]);
+}
+
+#[test]
+fn a_show_tag_shows_only_what_it_says() {
+    // Without `object="true"` the reference reader hides the object and the
+    // label follows `label`; earlier versions of the importer showed an
+    // object unless the tag said `false`.
+    let r = ok("<element type=\"point\" label=\"A\"><show label=\"true\"/>\
+         <coords x=\"1\" y=\"2\" z=\"1\"/></element>\
+         <element type=\"point\" label=\"B\"><show object=\"yes\"/>\
+         <coords x=\"1\" y=\"2\" z=\"1\"/></element>\
+         <element type=\"point\" label=\"C\"><show object=\"true\"/>\
+         <coords x=\"1\" y=\"2\" z=\"1\"/></element>\
+         <element type=\"point\" label=\"D\"><coords x=\"1\" y=\"2\" z=\"1\"/></element>");
+    assert_eq!(r.hidden, ["A", "B"]);
+    assert_eq!(r.object_styles["A"].show_label, Some(true));
+    assert_eq!(r.object_styles["C"].show_label, Some(false));
+    // No tag at all leaves the object visible in the editor.
+    assert!(r.object_styles["D"].untagged);
+}
+
+#[test]
+fn a_style_expression_the_kernel_cannot_evaluate_is_reported() {
+    let r = ok(
+        "<element type=\"numeric\" label=\"n\"><value val=\"2\"/></element>\
+         <element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <animation step=\"n / 4\" speed=\"Limit[x^2, 2]\" type=\"1\" playing=\"false\"/></element>",
+    );
+    let animation = r.object_styles["A"].animation.clone().unwrap();
+    assert_eq!(animation.step.as_deref(), Some("n / 4"));
+    assert_eq!(animation.speed, None);
+    assert!(
+        r.notes
+            .iter()
+            .any(|note| note.starts_with("animation speed of `A`:")),
+        "{:?}",
+        r.notes
+    );
+}

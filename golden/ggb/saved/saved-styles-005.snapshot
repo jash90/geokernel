@@ -1,0 +1,116 @@
+{
+  "schema": 2,
+  "id": "saved-styles-005",
+  "script": [
+    "r = 0.25",
+    "g = 0.5",
+    "b = 0.75",
+    "show = true",
+    "note = \"Dynamic\"",
+    "A = (0, 0)",
+    "B = (4, 0)",
+    "C = (1, 3)",
+    "tri = Polygon(A, B, C)",
+    "sq = Polygon(A, B, 4)",
+    "open = PolyLine(A, B, C)",
+    "open2 = PolyLine(C, A, B)",
+    "nums = {1, 2, 3}",
+    "pts = {A, B, (2, 2)}",
+    "chart = PieChart({1, 2, 3})",
+    "chart2 = PieChart({2, 5})"
+  ],
+  "objects": {
+    "r": { "type": "number", "defined": true, "value": 0.25 },
+    "g": { "type": "number", "defined": true, "value": 0.5 },
+    "b": { "type": "number", "defined": true, "value": 0.75 },
+    "show": { "type": "boolean", "defined": true, "value": true },
+    "note": { "type": "text", "defined": true, "text": "Dynamic" },
+    "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+    "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+    "C": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+    "tri": {
+      "type": "polygon",
+      "defined": true,
+      "vertices": [
+        [0.0, 0.0],
+        [4.0, 0.0],
+        [1.0, 3.0]
+      ],
+      "area": 6.0,
+      "signed_area": 6.0
+    },
+    "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+    "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 1.0, "y2": 3.0 },
+    "b_1": { "type": "segment", "defined": true, "x1": 1.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+    "sq": {
+      "type": "polygon",
+      "defined": true,
+      "vertices": [
+        [0.0, 0.0],
+        [4.0, 0.0],
+        [4.0, 3.999999999999999],
+        [6.661338147750939E-16, 4.0]
+      ],
+      "area": 15.999999999999998,
+      "signed_area": 15.999999999999998
+    },
+    "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+    "h": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 4.0, "y2": 3.999999999999999 },
+    "i": { "type": "segment", "defined": true, "x1": 4.0, "y1": 3.999999999999999, "x2": 6.661338147750939E-16, "y2": 4.0 },
+    "j": { "type": "segment", "defined": true, "x1": 6.661338147750939E-16, "y1": 4.0, "x2": 0.0, "y2": 0.0 },
+    "D": { "type": "point", "defined": true, "x": 4.0, "y": 3.999999999999999 },
+    "E": { "type": "point", "defined": true, "x": 6.661338147750939E-16, "y": 4.0 },
+    "open": {
+      "type": "polyline",
+      "defined": true,
+      "vertices": [
+        [0.0, 0.0],
+        [4.0, 0.0],
+        [1.0, 3.0]
+      ],
+      "length": 8.242640687119284
+    },
+    "open2": {
+      "type": "polyline",
+      "defined": true,
+      "vertices": [
+        [1.0, 3.0],
+        [0.0, 0.0],
+        [4.0, 0.0]
+      ],
+      "length": 7.16227766016838
+    },
+    "nums": {
+      "type": "list",
+      "defined": true,
+      "elements": [
+        { "type": "number", "defined": true, "value": 1.0 },
+        { "type": "number", "defined": true, "value": 2.0 },
+        { "type": "number", "defined": true, "value": 3.0 }
+      ]
+    },
+    "pts": {
+      "type": "list",
+      "defined": true,
+      "elements": [
+        { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+        { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+        { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+      ]
+    },
+    "chart": {
+      "type": "piechart",
+      "defined": true,
+      "center": [0.0, 0.0],
+      "radius": 3.0,
+      "fractions": [0.16666666666666666, 0.3333333333333333, 0.5]
+    },
+    "chart2": {
+      "type": "piechart",
+      "defined": true,
+      "center": [0.0, 0.0],
+      "radius": 3.0,
+      "fractions": [0.2857142857142857, 0.7142857142857143]
+    }
+  }
+}

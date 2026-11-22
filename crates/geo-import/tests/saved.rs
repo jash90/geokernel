@@ -58,6 +58,7 @@ const TEXT_CONIC_STYLE_FIXTURE: &str = "saved-text-conic-styles-001";
 const TEXT_TEMPLATE_FIXTURES: [&str; 2] = ["saved-text-template-001", "saved-text-template-002"];
 
 const INLINE_FIXTURES: [&str; 2] = ["saved-inline-001", "saved-inline-002"];
+const STYLE_FIXTURES: &str = "saved-styles-";
 
 fn fixture(name: &str) -> (Snapshot, geo_import::Imported) {
     let dir = repo_root().join("golden/ggb/saved");
@@ -157,6 +158,60 @@ fn inline_command_inputs_are_live_and_create_only_saved_labels() {
     live.move_point(live.id("A").unwrap(), 4.0, 1.0).unwrap();
     live.set_number(live.id("a").unwrap(), 2.0).unwrap();
     check_review_values(&after, &live, &[]);
+}
+
+#[test]
+fn saved_style_fixtures_import_every_object_with_a_style() {
+    let dir = repo_root().join("golden/ggb/saved");
+    let mut fixtures = 0;
+    for entry in fs::read_dir(&dir).unwrap() {
+        let path = entry.unwrap().path();
+        let name = path.file_name().unwrap().to_string_lossy().into_owned();
+        if !name.starts_with(STYLE_FIXTURES) || name.ends_with(".snapshot") {
+            continue;
+        }
+        fixtures += 1;
+        let imported = within_budget(|| import(&fs::read(&path).unwrap())).unwrap();
+        assert!(
+            imported.skipped.is_empty(),
+            "{name}: {:?}",
+            imported.skipped
+        );
+        assert!(
+            imported.mismatched.is_empty(),
+            "{name}: {:?}",
+            imported.mismatched
+        );
+        // No saved expression of a dynamic colour or an animation was dropped.
+        assert!(
+            !imported
+                .notes
+                .iter()
+                .any(|note| note.contains("dynamic colour") || note.contains("animation")),
+            "{name}: {:?}",
+            imported.notes
+        );
+        let snapshot: serde_json::Value =
+            serde_json::from_slice(&fs::read(path.with_extension("snapshot")).unwrap()).unwrap();
+        for label in snapshot["objects"].as_object().unwrap().keys() {
+            assert!(
+                imported.object_styles.contains_key(label),
+                "{name}: no style for {label}"
+            );
+        }
+        // The helpers of every fixture are there, and something is styled.
+        for helper in ["r", "g", "b", "show", "note"] {
+            assert!(imported.object_styles.contains_key(helper), "{name}");
+        }
+        assert!(
+            imported
+                .object_styles
+                .values()
+                .any(|style| style.color.is_some() && style.layer.is_some()),
+            "{name}"
+        );
+    }
+    assert_eq!(fixtures, 12);
 }
 
 #[test]
@@ -495,6 +550,13 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
         .unwrap()
         .map(|e| e.unwrap().path())
         .filter(|p| p.extension().is_some_and(|e| e == "snapshot"))
+        // The export oracle reloads the style fixtures and compares them.
+        .filter(|p| {
+            !p.file_stem()
+                .unwrap()
+                .to_string_lossy()
+                .starts_with(STYLE_FIXTURES)
+        })
         .filter(|p| {
             !EXPRESSION_FIXTURES
                 .iter()

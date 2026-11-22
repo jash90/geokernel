@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="r" exp="0.25"/>
+<element type="numeric" label="r">
+	<value val="0.25"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="g" exp="0.5"/>
+<element type="numeric" label="g">
+	<value val="0.5"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="b" exp="0.75"/>
+<element type="numeric" label="b">
+	<value val="0.75"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="show" exp="true"/>
+<element type="boolean" label="show">
+	<value val="true"/>
+	<show object="false" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<checkbox fixed="true"/>
+</element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<expression label="n" exp="3.14159265"/>
+<element type="numeric" label="n">
+	<value val="3.14159265"/>
+</element>
+<expression label="P" exp="(2, 1)" type="point"/>
+<element type="point" label="P">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="2" y="1" z="1"/>
+</element>
+<expression label="title" exp="&quot;Styled title&quot;"/>
+<element type="text" label="title">
+	<show object="true" label="false" ev="3"/>
+	<condition showObject="show"/>
+	<objColor r="216" g="152" b="142" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
+	<bgColor r="255" g="240" b="200" alpha="255"/>
+	<layer val="5"/>
+	<ordering val="31.5"/>
+	<labelMode val="0"/>
+	<tooltipMode val="2"/>
+	<algebra labelVisible="false"/>
+	<fixed val="true"/>
+	<fixedSize val="true"/>
+	<selectionAllowed val="false"/>
+	<font serif="true" sizeM="2" size="12" style="1"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
+	<absoluteScreenLocation x="40" y="60"/>
+</element>
+<expression label="value" exp="&quot;n = &quot; + n"/>
+<element type="text" label="value">
+	<show object="true" label="false"/>
+	<objColor r="160" g="0" b="0" alpha="0"/>
+	<bgColor r="10" g="20" b="30" alpha="128"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<font serif="false" sizeM="0.7" size="-4" style="2"/>
+	<startPoint x="-2" y="3" z="1"/>
+</element>
+<expression label="boxed" exp="&quot;Framed&quot;"/>
+<element type="text" label="boxed">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="9"/>
+	<labelMode val="0"/>
+	<isLaTeX val="true"/>
+	<font serif="true" sizeM="1.4" size="5" style="3"/>
+	<startPoint exp="P"/>
+	<labelOffset x="6" y="-4"/>
+</element>
+<expression label="plain" exp="&quot;Plain&quot;"/>
+<element type="text" label="plain">
+	<show object="true" label="false"/>
+	<objColor r="0" g="0" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<expression label="count" exp="4"/>
+<element type="numeric" label="count">
+	<value val="4"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="tally" exp="&quot;count: &quot; + count"/>
+<element type="text" label="tally">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<decimals val="4"/>
+</element>
+<expression label="total" exp="&quot;total: &quot; + ((31 * count))"/>
+<element type="text" label="total">
+	<show object="true" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<significantfigures val="3"/>
+</element>
+<expression label="hiddenText" exp="&quot;Hidden&quot;"/>
+<element type="text" label="hiddenText">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+</construction>
+</geogebra>

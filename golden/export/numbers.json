@@ -1,0 +1,28 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "export-numbers-001",
+      "group": "export",
+      "script": [
+        "n = 400",
+        "m = -37.5",
+        "d = n / 8",
+        "P = (m / 10, d / 10)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 400.0 },
+          "m": { "type": "number", "defined": true, "value": -37.5 },
+          "d": { "type": "number", "defined": true, "value": 50.0 },
+          "P": { "type": "point", "defined": true, "x": -3.75, "y": 5.0 }
+        }
+      ]
+    }
+  ]
+}

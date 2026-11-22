@@ -1,0 +1,4466 @@
+{
+  "Angle": {
+    "algebra_label": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": false,
+      "without": true
+    },
+    "alpha": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 0.7099999785423279,
+      "without": 0.10000000149011612
+    },
+    "angle_style": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 2,
+      "without": 0
+    },
+    "arc_size": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 45,
+      "without": 30
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": "Caption 18",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        0,
+        100,
+        0
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": "show",
+      "without": null
+    },
+    "decoration": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 2,
+      "without": 0
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "emphasize_right_angle": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": false,
+      "without": true
+    },
+    "fill.angle": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 105.0,
+      "without": 45.0
+    },
+    "fill.distance": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 29,
+      "without": 10
+    },
+    "fill.inverse": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": true,
+      "without": false
+    },
+    "fill.symbol": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": "★",
+      "without": ""
+    },
+    "fill.type": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": "SYMBOLS",
+      "without": "STANDARD"
+    },
+    "fixed": {
+      "fixture": "saved-styles-003",
+      "label": "w2",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 3,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": [
+        23,
+        -25
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 1,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 146,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 9,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 20,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 18.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-003",
+      "label": "w2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 1,
+      "without": 0
+    },
+    "views": {
+      "fixture": "saved-styles-003",
+      "label": "w",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "Arc": {
+    "algebra_label": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": false,
+      "without": true
+    },
+    "alpha": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 0.28999999165534973,
+      "without": 0.0
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": "Caption 12",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fill.angle": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 90.0,
+      "without": 45.0
+    },
+    "fill.distance": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 23,
+      "without": 10
+    },
+    "fill.inverse": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "fill.symbol": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": "★",
+      "without": ""
+    },
+    "fill.type": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": "SYMBOLS",
+      "without": "STANDARD"
+    },
+    "fixed": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 1,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": [
+        17,
+        -19
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 4,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 44,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-002",
+      "label": "a2",
+      "saved": 4,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 10,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 12.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-002",
+      "label": "a2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 1,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-002",
+      "label": "a",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "Boolean": {
+    "algebra_label": {
+      "fixture": "saved-styles-003",
+      "label": "flag",
+      "saved": false,
+      "without": true
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": "Caption 19",
+      "without": ""
+    },
+    "checkbox_fixed": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": true,
+      "without": false
+    },
+    "color": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-003",
+      "label": "lock",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": 9,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": [
+        24,
+        -26
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": 2,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": 19.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-003",
+      "label": "flag",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": 2,
+      "without": 0
+    },
+    "views": {
+      "fixture": "saved-styles-003",
+      "label": "check",
+      "saved": 3,
+      "without": 0
+    }
+  },
+  "Button": {
+    "background": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": [
+        0,
+        90,
+        180,
+        255
+      ],
+      "without": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": "Go",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": true,
+      "without": false
+    },
+    "layer": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": 6,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": 32.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-007",
+      "label": "run2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": 3,
+      "without": 0
+    },
+    "views": {
+      "fixture": "saved-styles-007",
+      "label": "run",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "Circle": {
+    "algebra_label": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": false,
+      "without": true
+    },
+    "alpha": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 0.7099999785423279,
+      "without": 0.0
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": "Caption 8",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fill.angle": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 105.0,
+      "without": 45.0
+    },
+    "fill.distance": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 19,
+      "without": 10
+    },
+    "fill.inverse": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": true,
+      "without": false
+    },
+    "fill.symbol": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": "★",
+      "without": ""
+    },
+    "fill.type": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": "SYMBOLS",
+      "without": "STANDARD"
+    },
+    "fixed": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 1,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": [
+        13,
+        -15
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 9,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 176,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 10,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 10,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 8.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-002",
+      "label": "k2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 3,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-002",
+      "label": "k",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "Conic": {
+    "algebra_label": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": false,
+      "without": true
+    },
+    "alpha": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 0.15000000596046448,
+      "without": 0.0
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": "Caption 10",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fill.angle": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 60.0,
+      "without": 45.0
+    },
+    "fill.distance": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 21,
+      "without": 10
+    },
+    "fill.inverse": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": true,
+      "without": false
+    },
+    "fill.symbol": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": "★",
+      "without": ""
+    },
+    "fill.type": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": "SYMBOLS",
+      "without": "STANDARD"
+    },
+    "fixed": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 3,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": [
+        15,
+        -17
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 2,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 210,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 12,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 20,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 10.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-002",
+      "label": "e2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 2,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-002",
+      "label": "e",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "Curve": {
+    "algebra_label": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": false,
+      "without": true
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": "Caption 23",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": 9,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": [
+        28,
+        -30
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": 6,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": 2,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": 231,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-004",
+      "label": "c2",
+      "saved": 12,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": 30,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": 23.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-004",
+      "label": "c2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": 3,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-004",
+      "label": "c",
+      "saved": 3,
+      "without": 0
+    }
+  },
+  "Function": {
+    "algebra_label": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": false,
+      "without": true
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": "Caption 21",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 2,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": [
+        26,
+        -28
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 4,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 2,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 197,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 12,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 15,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 21.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-004",
+      "label": "f2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 1,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-004",
+      "label": "f",
+      "saved": 3,
+      "without": 0
+    }
+  },
+  "FunctionNVar": {
+    "algebra_label": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": false,
+      "without": true
+    },
+    "alpha": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 0.28999999165534973,
+      "without": 0.0
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": "Caption 22",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fill.angle": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 90.0,
+      "without": 45.0
+    },
+    "fill.distance": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 13,
+      "without": 10
+    },
+    "fill.inverse": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": true,
+      "without": false
+    },
+    "fill.symbol": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": "★",
+      "without": ""
+    },
+    "fill.type": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": "SYMBOLS",
+      "without": "STANDARD"
+    },
+    "fixed": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 3,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": [
+        27,
+        -29
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 5,
+      "without": 0
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 2,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 20,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 22.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-004",
+      "label": "j2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 2,
+      "without": 0
+    },
+    "views": {
+      "fixture": "saved-styles-004",
+      "label": "j",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "Image": {
+    "alpha": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": 0.5,
+      "without": 1.0
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": false,
+      "without": true
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": true,
+      "without": false
+    },
+    "condition": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": "note",
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": true,
+      "without": false
+    },
+    "layer": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": 8,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": 34.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-008",
+      "label": "pinned",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": 2,
+      "without": 0
+    },
+    "views": {
+      "fixture": "saved-styles-008",
+      "label": "art",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "ImplicitCurve": {
+    "algebra_label": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": false,
+      "without": true
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": "Caption 38",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 3,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": [
+        43,
+        -45
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 3,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 86,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 7,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 20,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 38.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-010",
+      "label": "q",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 3,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-010",
+      "label": "p",
+      "saved": 6,
+      "without": 4
+    }
+  },
+  "InputBox": {
+    "algebra_label": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": false,
+      "without": true
+    },
+    "background": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": [
+        230,
+        255,
+        230,
+        255
+      ],
+      "without": null
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": "Value",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": true,
+      "without": false
+    },
+    "layer": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": 7,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": 33.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-007",
+      "label": "empty",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": 1,
+      "without": 0
+    },
+    "views": {
+      "fixture": "saved-styles-007",
+      "label": "field",
+      "saved": 3,
+      "without": 0
+    }
+  },
+  "Line": {
+    "algebra_label": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": false,
+      "without": true
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": "Caption 4",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 1,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": [
+        9,
+        -11
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 5,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 108,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 6,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 10,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 4.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-001",
+      "label": "l2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 2,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-001",
+      "label": "l",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "List": {
+    "algebra_label": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": false,
+      "without": true
+    },
+    "alpha": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 0.75,
+      "without": 0.0
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": "Caption 29",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "fill.angle": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 75.0,
+      "without": 45.0
+    },
+    "fill.distance": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 12,
+      "without": 10
+    },
+    "fill.inverse": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": true,
+      "without": false
+    },
+    "fill.symbol": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": "♥",
+      "without": ""
+    },
+    "fill.type": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": "SYMBOLS",
+      "without": "STANDARD"
+    },
+    "fixed": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 2,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": [
+        34,
+        -36
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 3,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 2,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 133,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 9,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 15,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 29.5,
+      "without": "NaN"
+    },
+    "point_size": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 7,
+      "without": 5
+    },
+    "point_style": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 3,
+      "without": 0
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-005",
+      "label": "nums",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 3,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-005",
+      "label": "pts",
+      "saved": 3,
+      "without": 0
+    }
+  },
+  "Locus": {
+    "algebra_label": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": false,
+      "without": true
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": "Caption 24",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 1,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": [
+        29,
+        -31
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 7,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 48,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 4,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 10,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 24.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-004",
+      "label": "path2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 1,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-004",
+      "label": "path",
+      "saved": 6,
+      "without": 4
+    }
+  },
+  "Number": {
+    "algebra_label": {
+      "fixture": "saved-styles-003",
+      "label": "n",
+      "saved": false,
+      "without": true
+    },
+    "animation.mode": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 1,
+      "without": 0
+    },
+    "animation.playing": {
+      "fixture": "saved-styles-003",
+      "label": "a2",
+      "saved": true,
+      "without": false
+    },
+    "animation.speed": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 2.0,
+      "without": 1.0
+    },
+    "animation.step": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 0.25,
+      "without": 0.1
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": "Caption 16",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-003",
+      "label": "n",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 1,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": [
+        21,
+        -23
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 8,
+      "without": 0
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 112,
+      "without": 100
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 7,
+      "without": 3
+    },
+    "ordering": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 16.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-003",
+      "label": "n",
+      "saved": false,
+      "without": true
+    },
+    "slider.absolute": {
+      "fixture": "saved-styles-003",
+      "label": "a2",
+      "saved": false,
+      "without": true
+    },
+    "slider.fixed": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": true,
+      "without": false
+    },
+    "slider.horizontal": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": false,
+      "without": true
+    },
+    "slider.knob_size": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 7.5,
+      "without": 5.0
+    },
+    "slider.position": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": [
+        120.0,
+        80.0
+      ],
+      "without": [
+        30.0,
+        30.0
+      ]
+    },
+    "slider.show_algebra": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": false,
+      "without": true
+    },
+    "slider.width": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 150.0,
+      "without": 100.0
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 2,
+      "without": 0
+    },
+    "views": {
+      "fixture": "saved-styles-003",
+      "label": "a",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "PieChart": {
+    "algebra_label": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": false,
+      "without": true
+    },
+    "alpha": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 0.15000000596046448,
+      "without": 0.0
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": "Caption 30",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fill.angle": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 60.0,
+      "without": 45.0
+    },
+    "fill.distance": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 21,
+      "without": 10
+    },
+    "fill.inverse": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": true,
+      "without": false
+    },
+    "fill.symbol": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": "★",
+      "without": ""
+    },
+    "fill.type": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": "SYMBOLS",
+      "without": "STANDARD"
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 3,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": [
+        35,
+        -37
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 4,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 150,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 10,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 20,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 30.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-005",
+      "label": "chart2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 1,
+      "without": 0
+    },
+    "views": {
+      "fixture": "saved-styles-005",
+      "label": "chart",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "Point": {
+    "algebra_label": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": false,
+      "without": true
+    },
+    "animation.playing": {
+      "fixture": "saved-paths-002",
+      "label": "S",
+      "saved": true,
+      "without": false
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": "Caption 1",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        77,
+        77,
+        255
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": 2,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": [
+        6,
+        -8
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": 2,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": 1.5,
+      "without": "NaN"
+    },
+    "point_size": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": 7,
+      "without": 5
+    },
+    "point_style": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": 2,
+      "without": 0
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": false,
+      "without": true
+    },
+    "show_trimmed": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": true,
+      "without": false
+    },
+    "shown": {
+      "fixture": "saved-styles-001",
+      "label": "B",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": 2,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-001",
+      "label": "A",
+      "saved": 3,
+      "without": 0
+    }
+  },
+  "PolyLine": {
+    "algebra_label": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": false,
+      "without": true
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": "Caption 27",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "end_style": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": "DIAMOND_OUTLINE",
+      "without": "DEFAULT"
+    },
+    "fixed": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 9,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": [
+        32,
+        -34
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 1,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 2,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 99,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 7,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 30,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 27.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-005",
+      "label": "open2",
+      "saved": false,
+      "without": true
+    },
+    "start_style": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": "SQUARE",
+      "without": "DEFAULT"
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 1,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-005",
+      "label": "open",
+      "saved": 11,
+      "without": 8
+    }
+  },
+  "Polygon": {
+    "algebra_label": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": false,
+      "without": true
+    },
+    "alpha": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 0.75,
+      "without": 0.10000000149011612
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": "Caption 25",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        153,
+        51,
+        0
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "fill.angle": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 60.0,
+      "without": 45.0
+    },
+    "fill.distance": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 16,
+      "without": 10
+    },
+    "fill.inverse": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": true,
+      "without": false
+    },
+    "fill.symbol": {
+      "fixture": "saved-styles-005",
+      "label": "sq",
+      "saved": "★",
+      "without": ""
+    },
+    "fill.type": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": "HONEYCOMB",
+      "without": "STANDARD"
+    },
+    "fixed": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 2,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": [
+        30,
+        -32
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 8,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 2,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 65,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 5,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 15,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 25.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-005",
+      "label": "sq",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 2,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-005",
+      "label": "tri",
+      "saved": 3,
+      "without": 0
+    }
+  },
+  "Ray": {
+    "algebra_label": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": false,
+      "without": true
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": "Caption 6",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 3,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": [
+        11,
+        -13
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 7,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 142,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 8,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 20,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 6.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-001",
+      "label": "h2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 1,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-001",
+      "label": "h",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "Sector": {
+    "algebra_label": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": false,
+      "without": true
+    },
+    "alpha": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 0.4300000071525574,
+      "without": 0.0
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": "Caption 14",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": [
+        143,
+        191,
+        96
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 1,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": [
+        "r",
+        "g",
+        "b"
+      ],
+      "without": null
+    },
+    "fill.angle": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 120.0,
+      "without": 45.0
+    },
+    "fill.distance": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 25,
+      "without": 10
+    },
+    "fill.inverse": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": true,
+      "without": false
+    },
+    "fill.symbol": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": "★",
+      "without": ""
+    },
+    "fill.type": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": "SYMBOLS",
+      "without": "STANDARD"
+    },
+    "fixed": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 3,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": [
+        19,
+        -21
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 6,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 0,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 78,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 5,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 20,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 14.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-002",
+      "label": "d2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 3,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-002",
+      "label": "d",
+      "saved": 2,
+      "without": 0
+    }
+  },
+  "Segment": {
+    "algebra_label": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": false,
+      "without": true
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": "Caption 5",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": "show",
+      "without": null
+    },
+    "decoration": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 2,
+      "without": 0
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "end_style": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": "CIRCLE_OUTLINE",
+      "without": "DEFAULT"
+    },
+    "fixed": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": true,
+      "without": false
+    },
+    "label_mode": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 2,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": [
+        10,
+        -12
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 6,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 2,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 125,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 7,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 15,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 5.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-001",
+      "label": "s2",
+      "saved": false,
+      "without": true
+    },
+    "start_style": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": "ARROW",
+      "without": "DEFAULT"
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 3,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-001",
+      "label": "s",
+      "saved": 3,
+      "without": 0
+    }
+  },
+  "Text": {
+    "algebra_label": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": false,
+      "without": true
+    },
+    "background": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": [
+        255,
+        240,
+        200,
+        255
+      ],
+      "without": null
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": true,
+      "without": false
+    },
+    "color": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": "show",
+      "without": null
+    },
+    "decimals": {
+      "fixture": "saved-styles-006",
+      "label": "tally",
+      "saved": 4,
+      "without": -1
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "figures": {
+      "fixture": "saved-styles-006",
+      "label": "total",
+      "saved": 3,
+      "without": -1
+    },
+    "fixed": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": true,
+      "without": false
+    },
+    "font.serif": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": true,
+      "without": false
+    },
+    "font.size": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": 2.0,
+      "without": 1.0
+    },
+    "font.style": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": 1,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": [
+        40,
+        60
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "latex": {
+      "fixture": "saved-styles-006",
+      "label": "boxed",
+      "saved": true,
+      "without": false
+    },
+    "layer": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": 5,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": 31.5,
+      "without": "NaN"
+    },
+    "screen_location": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": true,
+      "without": false
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-006",
+      "label": "hiddenText",
+      "saved": false,
+      "without": true
+    },
+    "start_point": {
+      "fixture": "saved-styles-006",
+      "label": "value",
+      "saved": [
+        -2.0,
+        3.0
+      ],
+      "without": null
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": 2,
+      "without": 0
+    },
+    "views": {
+      "fixture": "saved-styles-006",
+      "label": "title",
+      "saved": 3,
+      "without": 0
+    }
+  },
+  "Vector": {
+    "algebra_label": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": false,
+      "without": true
+    },
+    "auxiliary": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": true,
+      "without": false
+    },
+    "breakpoint": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": true,
+      "without": false
+    },
+    "caption": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": "Caption 7",
+      "without": ""
+    },
+    "color": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": [
+        192,
+        224,
+        160
+      ],
+      "without": [
+        28,
+        28,
+        31
+      ]
+    },
+    "color_space": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 2,
+      "without": null
+    },
+    "condition": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": "show",
+      "without": null
+    },
+    "dynamic_caption": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": "note",
+      "without": null
+    },
+    "dynamic_color": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": [
+        "r",
+        "g",
+        "b",
+        "1 - r"
+      ],
+      "without": null
+    },
+    "fixed": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": true,
+      "without": false
+    },
+    "fixed_size": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": true,
+      "without": false
+    },
+    "head_style": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 1,
+      "without": 0
+    },
+    "label_mode": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 9,
+      "without": 0
+    },
+    "label_offset": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": [
+        12,
+        -14
+      ],
+      "without": [
+        0,
+        0
+      ]
+    },
+    "label_shown": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": false,
+      "without": true
+    },
+    "layer": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 8,
+      "without": 0
+    },
+    "line.hidden_type": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 2,
+      "without": 1
+    },
+    "line.opacity": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 159,
+      "without": 255
+    },
+    "line.thickness": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 9,
+      "without": 3
+    },
+    "line.type": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 30,
+      "without": 0
+    },
+    "ordering": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 7.5,
+      "without": "NaN"
+    },
+    "selection_allowed": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": false,
+      "without": true
+    },
+    "shown": {
+      "fixture": "saved-styles-001",
+      "label": "v2",
+      "saved": false,
+      "without": true
+    },
+    "tooltip_mode": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 2,
+      "without": 0
+    },
+    "trace": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": true,
+      "without": false
+    },
+    "views": {
+      "fixture": "saved-styles-001",
+      "label": "v",
+      "saved": 3,
+      "without": 0
+    }
+  }
+}

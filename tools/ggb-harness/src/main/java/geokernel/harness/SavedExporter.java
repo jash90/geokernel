@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.geogebra.common.awt.GColor;
 import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
@@ -27,11 +28,13 @@ import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
 import org.geogebra.common.kernel.geos.GeoConic;
+import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
 import org.geogebra.common.kernel.geos.GeoInputBox;
 import org.geogebra.common.kernel.geos.GeoLine;
+import org.geogebra.common.kernel.geos.GeoLocus;
 import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
@@ -39,12 +42,20 @@ import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoVector;
+import org.geogebra.common.kernel.geos.HasSegmentStyle;
+import org.geogebra.common.kernel.geos.PointProperties;
+import org.geogebra.common.kernel.geos.SegmentStyle;
+import org.geogebra.common.kernel.geos.Traceable;
+import org.geogebra.common.kernel.geos.VectorHeadStyle;
+import org.geogebra.common.kernel.geos.properties.FillType;
 import org.geogebra.common.kernel.kernelND.GeoCurveCartesianND;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
+import org.geogebra.common.main.App;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.plugin.EventType;
 import org.geogebra.common.plugin.ScriptType;
+import org.geogebra.common.kernel.statistics.GeoPieChart;
 import org.geogebra.common.util.AsyncOperation;
 
 /**
@@ -56,7 +67,8 @@ import org.geogebra.common.util.AsyncOperation;
  * id, optionally an {@code angle_unit} ({@code degree} or {@code radiant}), raw
  * GeoGebra input lines, optional {@code hidden} labels, and {@code move} or
  * {@code set_number} steps. Steps can also enable point animation, set an
- * angle or equation style, position or style a text, or rename an object. The lines are given to the
+ * angle or equation style, position or style a text, rename an object, or set
+ * presentation properties ({@code style}) through the setters of the element. The lines are given to the
  * algebra processor as typed (so a command that makes several objects, such as
  * {@code P = Intersect(f, k)}, gives all of them), the moves are applied, and
  * then, with nothing else done in between, the case is written as
@@ -214,6 +226,8 @@ public final class SavedExporter {
                 } catch (CircularDefinitionException e) {
                     throw new IllegalArgumentException("circular visibility condition", e);
                 }
+            } else if ("style".equals(action)) {
+                applyStyle(kernel, geo, step);
             } else if (geo instanceof GeoText text && action instanceof String name
                     && name.startsWith("text_")) {
                 applyTextStep(kernel, text, name, step);
@@ -266,6 +280,175 @@ public final class SavedExporter {
         }
     }
 
+    /** Sets every listed presentation property through GeoGebra's own setters. */
+    private static void applyStyle(Kernel kernel, GeoElement geo, Map<?, ?> step) {
+        var algebra = kernel.getAlgebraProcessor();
+        for (Map.Entry<?, ?> entry : step.entrySet()) {
+            String key = (String) entry.getKey();
+            Object value = entry.getValue();
+            switch (key) {
+                case "action", "label" -> {
+                }
+                case "color" -> geo.setObjColor(color((List<?>) value));
+                case "alpha" -> geo.setAlphaValue(number(value));
+                case "line" -> {
+                    geo.setLineType(integer(((List<?>) value).get(0)));
+                    geo.setLineThickness(integer(((List<?>) value).get(1)));
+                }
+                case "line_opacity" -> geo.setLineOpacity(integer(value));
+                case "point" -> {
+                    PointProperties point = (PointProperties) geo;
+                    point.setPointSize(integer(((List<?>) value).get(0)));
+                    point.setPointStyle(integer(((List<?>) value).get(1)));
+                }
+                case "fill" -> {
+                    List<?> fill = (List<?>) value;
+                    geo.setFillType(FillType.valueOf((String) fill.get(0)));
+                    geo.setHatchingAngle(integer(fill.get(1)));
+                    geo.setHatchingDistance(integer(fill.get(2)));
+                }
+                case "fill_symbol" -> geo.setFillSymbol((String) value);
+                case "inverse_fill" -> geo.setInverseFill((Boolean) value);
+                case "layer" -> geo.setLayer(integer(value));
+                case "fixed" -> {
+                    geo.setFixed((Boolean) value);
+                    if (geo.isLocked() != (Boolean) value) {
+                        throw new IllegalArgumentException(geo.getLabelSimple() + " cannot be fixed");
+                    }
+                }
+                case "auxiliary" -> geo.setAuxiliaryObject((Boolean) value);
+                case "selection_allowed" -> geo.setSelectionAllowed((Boolean) value);
+                case "dynamic_color" -> geo.setColorFunction(
+                        algebra.evaluateToList("{" + String.join(", ", strings(value)) + "}"));
+                case "color_space" -> geo.setColorSpace(integer(value));
+                case "label_mode" -> geo.setLabelMode(integer(value));
+                case "label_visible" -> geo.setLabelVisible((Boolean) value);
+                case "label_offset" -> {
+                    geo.labelOffsetX = integer(((List<?>) value).get(0));
+                    geo.labelOffsetY = integer(((List<?>) value).get(1));
+                }
+                case "caption" -> geo.setCaption((String) value);
+                case "tooltip_mode" -> geo.setTooltipMode(integer(value));
+                case "trace" -> ((Traceable) geo).setTrace((Boolean) value);
+                case "background" -> {
+                    List<?> rgba = (List<?>) value;
+                    geo.setBackgroundColor(GColor.newColor(integer(rgba.get(0)),
+                            integer(rgba.get(1)), integer(rgba.get(2)), integer(rgba.get(3))));
+                }
+                case "decoration" -> geo.setDecorationType(integer(value));
+                case "line_hidden" -> geo.setLineTypeHidden(integer(value));
+                case "views" -> applyViews(geo, integer(value));
+                case "ordering" -> geo.setOrdering(number(value));
+                case "dynamic_caption" ->
+                        geo.setDynamicCaption((GeoText) kernel.lookupLabel((String) value));
+                case "breakpoint" -> geo.setConsProtocolBreakpoint((Boolean) value);
+                case "algebra_label" -> geo.setAlgebraLabelVisible((Boolean) value);
+                case "fixed_size" -> geo.setFixedSize((Boolean) value);
+                case "show_trimmed" -> geo.setShowTrimmedIntersectionLines((Boolean) value);
+                case "knob_size" -> ((GeoNumeric) geo).setSliderBlobSize(number(value));
+                case "ends" -> {
+                    List<?> ends = (List<?>) value;
+                    HasSegmentStyle styled = (HasSegmentStyle) geo;
+                    styled.setStartStyle(SegmentStyle.valueOf((String) ends.get(0)));
+                    styled.setEndStyle(SegmentStyle.valueOf((String) ends.get(1)));
+                }
+                case "head_style" ->
+                        ((GeoVector) geo).setHeadStyle(VectorHeadStyle.values()[integer(value)]);
+                case "draw_arrows" -> ((GeoLocus) geo).drawAsArrows((Boolean) value);
+                case "decimals" -> ((GeoText) geo).setPrintDecimals(integer(value), true);
+                case "figures" -> ((GeoText) geo).setPrintFigures(integer(value), true);
+                case "arc_size" -> ((GeoAngle) geo).setArcSize(integer(value));
+                case "emphasize_right_angle" -> ((GeoAngle) geo).setEmphasizeRightAngle((Boolean) value);
+                case "checkbox_fixed" -> ((GeoBoolean) geo).setCheckboxFixed((Boolean) value);
+                case "slider" -> applySlider((GeoNumeric) geo, (Map<?, ?>) value);
+                case "animation" -> {
+                    Map<?, ?> animation = (Map<?, ?>) value;
+                    if (animation.get("step") instanceof String step2) {
+                        geo.setAnimationStep(algebra.evaluateToNumeric(step2, null));
+                        if (geo instanceof GeoNumeric n) {
+                            n.setAutoStep(false);
+                        }
+                    }
+                    if (animation.get("speed") instanceof String speed) {
+                        geo.setAnimationSpeedObject(algebra.evaluateToNumeric(speed, null));
+                    }
+                    if (animation.get("mode") != null) {
+                        geo.setAnimationType(integer(animation.get("mode")));
+                    }
+                    if (Boolean.TRUE.equals(animation.get("playing"))) {
+                        geo.setAnimating(true);
+                        if (!geo.isAnimating()) {
+                            throw new IllegalArgumentException(
+                                    geo.getLabelSimple() + " is not animating");
+                        }
+                    }
+                }
+                default -> throw new IllegalArgumentException("unknown style property " + key);
+            }
+            // The headless view keeps drawables; refresh them before the next setter repaints.
+            geo.updateRepaint();
+        }
+    }
+
+    /** The view bits of a saved {@code <show ev=>}, applied as GeoGebra's reader applies them. */
+    private static void applyViews(GeoElement geo, int bits) {
+        if ((bits & 1) == 0) {
+            geo.addView(App.VIEW_EUCLIDIAN);
+        } else {
+            geo.removeView(App.VIEW_EUCLIDIAN);
+        }
+        if ((bits & 2) == 2) {
+            geo.addView(App.VIEW_EUCLIDIAN2);
+        } else {
+            geo.removeView(App.VIEW_EUCLIDIAN2);
+        }
+        if ((bits & 4) == 4) {
+            geo.addViews3D();
+        }
+        if ((bits & 8) == 8) {
+            geo.removeViews3D();
+        }
+        if ((bits & 16) == 16) {
+            geo.setVisibleInViewForPlane(true);
+        }
+        if ((bits & 32) == 32) {
+            geo.setVisibleInViewForPlane(false);
+        }
+    }
+
+    private static void applySlider(GeoNumeric slider, Map<?, ?> value) {
+        for (Map.Entry<?, ?> entry : value.entrySet()) {
+            Object v = entry.getValue();
+            switch ((String) entry.getKey()) {
+                case "absolute" -> slider.setAbsoluteScreenLocActive((Boolean) v);
+                case "position" -> slider.setSliderLocation(number(((List<?>) v).get(0)),
+                        number(((List<?>) v).get(1)), true);
+                case "width" -> slider.setSliderWidth(number(v), true);
+                case "horizontal" -> slider.setSliderHorizontal((Boolean) v);
+                case "fixed" -> slider.setSliderFixed((Boolean) v);
+                case "show_algebra" -> slider.setAVSliderOrCheckboxVisible((Boolean) v);
+                case "blob_size" -> slider.setSliderBlobSize(number(v));
+                default -> throw new IllegalArgumentException("unknown slider property " + entry.getKey());
+            }
+        }
+    }
+
+    private static GColor color(List<?> rgb) {
+        return GColor.newColor(integer(rgb.get(0)), integer(rgb.get(1)), integer(rgb.get(2)));
+    }
+
+    private static int integer(Object value) {
+        return Math.toIntExact((Long) value);
+    }
+
+    private static List<String> strings(Object value) {
+        List<String> out = new ArrayList<>();
+        for (Object item : (List<?>) value) {
+            out.add((String) item);
+        }
+        return out;
+    }
+
     private static void applyTextStep(Kernel kernel, GeoText text, String action, Map<?, ?> step) {
         switch (action) {
             case "text_screen":
@@ -312,6 +495,8 @@ public final class SavedExporter {
         if (geo instanceof GeoBoolean || geo instanceof GeoFunction || geo instanceof GeoVector
                 || geo instanceof GeoList || geo instanceof GeoPolygon || geo instanceof GeoText
                 || geo.isGeoLocus() || geo.isGeoPolyLine() || geo.isGeoCurveCartesian()
+                || geo instanceof GeoConicPart
+                || geo instanceof GeoPieChart
                 || geo.isGeoImplicitCurve()) {
             return Session.describe(geo, Session.typeOf(geo));
         } else if (geo instanceof GeoFunctionNVar) {
