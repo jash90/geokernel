@@ -562,27 +562,39 @@ fn large_chart_frames_stay_within_the_budget() {
     }
     w.settled(1);
     let builds = crate::draw::charts::builds();
-    let start = std::time::Instant::now();
-    let idle = w.frames(1);
-    assert_eq!(crate::draw::charts::builds(), builds);
-    let idle_ms = start.elapsed().as_secs_f64() * 1000.0;
-    w.app.camera.as_mut().unwrap().cx += 0.2;
-    let start = std::time::Instant::now();
-    let pan = w.frames(1);
-    let pan_ms = start.elapsed().as_secs_f64() * 1000.0;
-    println!("charts idle ({idle_ms:.2} ms): {idle:?}; pan ({pan_ms:.2} ms): {pan:?}");
-    for counts in [idle, pan] {
-        assert!(
-            counts.shapes <= 2_600 && counts.texts <= 1_040,
-            "{counts:?}"
-        );
-        assert!(counts.vertices <= 100_000, "{counts:?}");
-        assert!(
-            counts.allocs <= 3_100 && counts.bytes <= 850_000,
-            "{counts:?}"
-        );
-        assert_eq!((counts.rows_formatted, counts.rows_built), (0, 0));
-    }
+    let mut measure = |panning| {
+        let mut times = [0.0_f64; 31];
+        let mut counts = Counts::default();
+        for (i, ms) in times.iter_mut().enumerate() {
+            if panning {
+                let dx = if i % 2 == 0 { 6.0 } else { -6.0 };
+                w.app.camera.as_mut().unwrap().pan_pixels(dx, 0.0);
+            }
+            let start = std::time::Instant::now();
+            counts = w.frames(1);
+            *ms = start.elapsed().as_secs_f64() * 1000.0;
+            assert_eq!(crate::draw::charts::builds(), builds);
+            assert_eq!(counts.raster_quads, 2, "{counts:?}");
+            assert!(
+                counts.shapes <= 2_600 && counts.texts <= 1_040,
+                "{counts:?}"
+            );
+            assert!(counts.vertices <= 100_000, "{counts:?}");
+            assert!(
+                counts.allocs <= 3_100 && counts.bytes <= 850_000,
+                "{counts:?}"
+            );
+            assert_eq!((counts.rows_formatted, counts.rows_built), (0, 0));
+        }
+        times.sort_by(f64::total_cmp);
+        (counts, times[15], times[29])
+    };
+    let (idle, idle_median, idle_p95) = measure(false);
+    let (pan, pan_median, pan_p95) = measure(true);
+    println!(
+        "charts idle (median {idle_median:.2} ms, p95 {idle_p95:.2} ms): {idle:?}; \
+         pan (median {pan_median:.2} ms, p95 {pan_p95:.2} ms): {pan:?}"
+    );
 }
 
 #[test]

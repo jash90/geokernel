@@ -53,7 +53,7 @@ impl Inputs<'_> {
                 groups,
                 height_scale: scale,
             };
-            let data = point_list(stack.dots(50.0));
+            let data = point_list(stack.dots(50.0, 50.0));
             return Some(ChartData {
                 dot_stack: Some(stack),
                 ..data

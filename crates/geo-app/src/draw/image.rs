@@ -118,7 +118,7 @@ pub(crate) fn paint(
     let cache = textures(painter);
     let mut cache = cache.lock().unwrap_or_else(|e| e.into_inner());
     for (id, image) in images {
-        let Some(quad) = c.image_quad(id, view.scale()) else {
+        let Some(quad) = c.image_quad_with_scales(id, view.xscale(), view.yscale()) else {
             continue;
         };
         let positions = quad.map(|[x, y]| {
@@ -244,7 +244,8 @@ mod tests {
 
         let id = w.construction().id("A").unwrap();
         assert!(w.move_point(id, -3.0, 0.0));
-        camera.scale *= 1.25;
+        camera.xscale *= 1.25;
+        camera.yscale *= 1.5;
         camera.cx += 1.0;
         // At this zoom the centered image may need its other sampling mode.
         let (_, _, changed) = frame(&w, camera);

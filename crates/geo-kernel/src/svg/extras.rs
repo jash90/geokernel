@@ -124,7 +124,7 @@ pub(super) fn chart(
             }
         }
     } else {
-        for mark in chart.render_marks(scale) {
+        for mark in chart.render_marks(scale, scale) {
             match mark {
                 ChartMark::Bar {
                     left,

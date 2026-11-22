@@ -150,15 +150,16 @@ pub(crate) fn convert_with_assets(
         let Some(id) = c.kernel.id(&el.label) else {
             continue;
         };
+        let default_style = c.kernel.drawing_style(id);
         let mut style = DrawingStyle {
             layer: el.layer,
-            ..DrawingStyle::default()
+            ..default_style
         };
         if c.kernel.chart(id).is_some() {
             style.show_label = el.label_shown.unwrap_or(style.show_label);
             style.line_thickness = el.thickness.unwrap_or(style.line_thickness);
         }
-        if style != DrawingStyle::default() {
+        if style != default_style {
             c.kernel.set_drawing_style(id, style);
             c.out.script.push(
                 Property::DrawingStyle {

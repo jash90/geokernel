@@ -170,7 +170,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     if let Some(rects) = scene.text_rects {
         rects.borrow_mut().clear();
     }
-    let mut charts = charts::Frame::new(painter, rect, c, t, scene.generation, scene.visible);
+    let charts = charts::Frame::new(painter, rect, c, t, scene.generation);
     let mut curves = None;
     for layer in c.drawing_layers() {
         if c.images().len() != 0 {
@@ -183,7 +183,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             t,
             scene,
             layer,
-            (&mut curves, charts.as_mut()),
+            (&mut curves, charts.as_ref()),
         );
     }
 }
@@ -195,9 +195,9 @@ fn paint_layer<'c>(
     t: &ViewTransform,
     scene: &Scene,
     layer: u8,
-    (curves, mut charts): (
+    (curves, charts): (
         &mut Option<crate::curves::Curves>,
-        Option<&mut charts::Frame<'_>>,
+        Option<&charts::Frame<'_>>,
     ),
 ) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
@@ -232,7 +232,9 @@ fn paint_layer<'c>(
         .filter(|&id| {
             if !(scene.visible)(id)
                 || (layered && c.drawing_style(id).layer != layer)
-                || (has_charts && matches!(c.def(id), geo_kernel::Def::Chart(_)))
+                || (has_charts
+                    && c.kind(id) != Kind::Function
+                    && matches!(c.def(id), geo_kernel::Def::Chart(_)))
             {
                 return false;
             }
@@ -308,30 +310,34 @@ fn paint_layer<'c>(
         }
     }
 
-    let mut paint_charts = |low, high, labels: &mut Vec<Label<'c>>| {
-        let Some(frame) = &mut charts else { return };
+    let paint_chart = |id, chart, labels: &mut Vec<Label<'c>>| {
+        let Some(frame) = charts else {
+            return;
+        };
+        let col = color(id);
+        if let Some(at) = frame.draw(c, id, chart, col) {
+            let local = at - origin;
+            labels.push(label(
+                id,
+                Cow::Borrowed(c.label(id)),
+                (
+                    f64::from(local.x.trunc()),
+                    f64::from(local.y.trunc() + LABEL_FONT),
+                ),
+                col,
+                Align2::LEFT_BOTTOM,
+            ));
+        }
+    };
+    let paint_charts = |low, high, labels: &mut Vec<Label<'c>>| {
         for (id, chart) in c.charts() {
             let (chart_layer, priority, _) = c.drawing_order(id);
-            if chart_layer != layer
-                || !(low..=high).contains(&priority)
-                || !(scene.visible)(id)
-                || !c.value(id).is_defined()
+            if chart_layer == layer
+                && (low..=high).contains(&priority)
+                && (scene.visible)(id)
+                && c.value(id).is_defined()
             {
-                continue;
-            }
-            let col = color(id);
-            if let Some(at) = frame.draw(c, id, chart, col) {
-                let local = at - origin;
-                labels.push(label(
-                    id,
-                    Cow::Borrowed(c.label(id)),
-                    (
-                        f64::from(local.x.trunc()),
-                        f64::from(local.y.trunc() + LABEL_FONT),
-                    ),
-                    col,
-                    Align2::LEFT_BOTTOM,
-                ));
+                paint_chart(id, chart, labels);
             }
         }
     };
@@ -476,17 +482,26 @@ fn paint_layer<'c>(
     for functions in [false, true] {
         if functions {
             paint_charts(70, 89, &mut labels);
-            paint_charts(90, u8::MAX, &mut labels);
         }
-        let Some(curves) = curves.as_ref() else {
-            continue;
-        };
-        for id in ids
-            .iter()
-            .copied()
-            .filter(|&id| is_curve(id) && (c.kind(id) == Kind::Function) == functions)
-        {
-            let Some(drawn) = curves.get(c, id, color(id)) else {
+        for &id in &ids {
+            if (c.kind(id) == Kind::Function) != functions {
+                continue;
+            }
+            if functions && has_charts {
+                if let Some(chart) = c.chart(id) {
+                    if c.value(id).is_defined() {
+                        paint_chart(id, chart, &mut labels);
+                    }
+                    continue;
+                }
+            }
+            if !is_curve(id) {
+                continue;
+            }
+            let Some(drawn) = curves
+                .as_ref()
+                .and_then(|curves| curves.get(c, id, color(id)))
+            else {
                 continue;
             };
             if !drawn.mesh.is_empty() {
@@ -944,9 +959,9 @@ mod tests {
     }
 
     #[test]
-    fn charts_draw_by_layer_then_kind_priority() {
+    fn charts_draw_by_layer_kind_and_construction_order() {
         let wb = crate::Workbench::from_script(
-            "graph = LineGraph({-3, 3}, {0, 0})\npie = PieChart({1, 2})\ndots = DotPlot({-1, 0, 1})\n$drawingStyle(_646f7473, 1, false, 3)",
+            "f(x) = x\ngraph = LineGraph({-3, 3}, {0, 0})\npie = PieChart({1, 2})\ndots = DotPlot({-1, 0, 1})\n$drawingStyle(_646f7473, 1, false, 3)",
         )
         .unwrap();
         let c = wb.construction();
@@ -982,11 +997,11 @@ mod tests {
                 .collect::<Vec<_>>()
         };
 
-        let expected: Vec<_> = ["pie", "graph", "dots"]
+        let expected: Vec<_> = ["pie", "f", "graph", "dots"]
             .into_iter()
             .flat_map(|label| meshes(Some(label)))
             .collect();
-        assert_eq!(expected.len(), 3);
+        assert_eq!(expected.len(), 4);
         let actual = meshes(None);
         assert_eq!(actual.len(), expected.len());
         for (slot, (actual, expected)) in actual.iter().zip(expected).enumerate() {

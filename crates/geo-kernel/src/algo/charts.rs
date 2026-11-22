@@ -243,6 +243,50 @@ pub enum ChartMark {
     Box { x: [f64; 2], y: [f64; 2] },
 }
 
+impl ChartMark {
+    pub fn bounds(marks: &[Self]) -> Option<[f64; 4]> {
+        let mut bounds = [
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        ];
+        let mut include = |(x, y): (f64, f64)| {
+            if x.is_finite() && y.is_finite() {
+                bounds[0] = bounds[0].min(x);
+                bounds[1] = bounds[1].min(y);
+                bounds[2] = bounds[2].max(x);
+                bounds[3] = bounds[3].max(y);
+            }
+        };
+        for &mark in marks {
+            match mark {
+                ChartMark::Bar {
+                    left,
+                    right,
+                    height,
+                } => {
+                    include((left, 0.0));
+                    include((right, height));
+                }
+                ChartMark::Box {
+                    x: [left, right],
+                    y: [bottom, top],
+                } => {
+                    include((left, bottom));
+                    include((right, top));
+                }
+                ChartMark::Segment([a, b]) => {
+                    include(a);
+                    include(b);
+                }
+                ChartMark::Cross(at) | ChartMark::Point { at, .. } => include(at),
+            }
+        }
+        bounds[0].is_finite().then_some(bounds)
+    }
+}
+
 #[derive(Debug)]
 pub struct ChartData {
     revision: u64,
@@ -269,11 +313,6 @@ impl Default for ChartData {
 }
 
 impl ChartData {
-    // GeoGebra's bar charts cap interval rectangles at 10,000. Use the
-    // same ceiling for the other drawing primitives without changing the
-    // computed list, chart value, or function domain.
-    pub const DRAW_LIMIT: usize = 10_000;
-
     pub fn revision(&self) -> u64 {
         self.revision
     }
@@ -284,25 +323,20 @@ impl ChartData {
         self.revision = NEXT.fetch_add(1, Ordering::Relaxed);
     }
 
-    pub fn render_marks(&self, scale: f64) -> impl Iterator<Item = ChartMark> + '_ {
+    pub fn render_marks(&self, xscale: f64, yscale: f64) -> impl Iterator<Item = ChartMark> + '_ {
         self.marks
             .iter()
-            .copied()
             .take(if self.dot_stack.is_some() {
                 0
             } else {
-                Self::DRAW_LIMIT
+                self.marks.len()
             })
-            .chain(
-                self.dot_stack
-                    .iter()
-                    .flat_map(move |stack| {
-                        stack
-                            .dots(scale)
-                            .map(|at| ChartMark::Point { at, open: false })
-                    })
-                    .take(Self::DRAW_LIMIT),
-            )
+            .copied()
+            .chain(self.dot_stack.iter().flat_map(move |stack| {
+                stack
+                    .dots(xscale, yscale)
+                    .map(|at| ChartMark::Point { at, open: false })
+            }))
     }
 
     pub(crate) fn same(&self, other: &Self) -> bool {
@@ -320,53 +354,12 @@ impl ChartData {
 
     /// The world extent used to fit a chart to the initial view.
     pub fn bounds(&self) -> Option<[f64; 4]> {
-        let mut bounds = [
-            f64::INFINITY,
-            f64::INFINITY,
-            f64::NEG_INFINITY,
-            f64::NEG_INFINITY,
-        ];
-        let mut include = |(x, y): (f64, f64)| {
-            if x.is_finite() && y.is_finite() {
-                bounds[0] = bounds[0].min(x);
-                bounds[1] = bounds[1].min(y);
-                bounds[2] = bounds[2].max(x);
-                bounds[3] = bounds[3].max(y);
-            }
-        };
-        for &point in &self.vertices {
-            include(point);
-        }
-        for &mark in &self.marks {
-            match mark {
-                ChartMark::Bar {
-                    left,
-                    right,
-                    height,
-                } => {
-                    include((left, 0.0));
-                    include((right, height));
-                }
-                ChartMark::Box {
-                    x: [left, right],
-                    y: [bottom, top],
-                } => {
-                    include((left, bottom));
-                    include((right, top));
-                }
-                ChartMark::Segment([a, b]) => {
-                    include(a);
-                    include(b);
-                }
-                ChartMark::Cross(at) | ChartMark::Point { at, .. } => include(at),
-            }
-        }
         if let Some(pie) = &self.pie {
             let (x, y) = pie.center;
-            include((x - pie.radius, y - pie.radius));
-            include((x + pie.radius, y + pie.radius));
+            let r = pie.radius.abs();
+            return Some([x - r, y - r, x + r, y + r]);
         }
-        bounds[0].is_finite().then_some(bounds)
+        ChartMark::bounds(&self.marks)
     }
 
     pub(crate) fn function_domain(&self) -> Option<(f64, f64)> {
@@ -536,10 +529,14 @@ impl Inputs<'_> {
             ],
             _ => {
                 let values = self.numbers(data)?;
-                if values.is_empty() || !sort_work(self.work, values.len()) {
+                if values.len() < 2 || !sort_work(self.work, values.len()) {
                     return None;
                 }
-                let weighted = args.get(3).is_some_and(|&id| self.c.kind(id) == Kind::List);
+                let weighted = args.len() == 5;
+                if args.len() == 4 && self.c.kind(args[3]) == Kind::List {
+                    // This signature has no defined result in GeoGebra.
+                    return None;
+                }
                 let weights = if weighted {
                     self.numbers(args[3])?
                 } else {
@@ -733,15 +730,14 @@ impl Pie {
             [59, 28, 50],
             [255, 140, 112],
         ];
-        let tint = 0.6f32.powi((index / COLORS.len()) as i32);
-        COLORS[index % COLORS.len()].map(|c| (255.0 + (f32::from(c) - 255.0) * tint).round() as u8)
+        let tint = 0.6f64.powi((index / COLORS.len()) as i32);
+        COLORS[index % COLORS.len()].map(|c| (255.0 * (1.0 - tint) + f64::from(c) * tint) as u8)
     }
 
     pub fn slices(&self) -> impl Iterator<Item = (usize, f64, f64)> + '_ {
         self.fractions
             .iter()
             .copied()
-            .take(ChartData::DRAW_LIMIT)
             .enumerate()
             .scan(-0.25, |start, (index, fraction)| {
                 let previous = *start;
@@ -770,9 +766,9 @@ pub struct DotStack {
 }
 
 impl DotStack {
-    pub fn dots(&self, view_scale: f64) -> impl Iterator<Item = (f64, f64)> + '_ {
+    pub fn dots(&self, xscale: f64, yscale: f64) -> impl Iterator<Item = (f64, f64)> + '_ {
         let radius = 5.0;
-        let spacing = 2.0 * radius / view_scale;
+        let spacing = 2.0 * radius / xscale;
         self.groups
             .iter()
             .flat_map(|&(x, count)| std::iter::repeat_n(x, count))
@@ -781,7 +777,7 @@ impl DotStack {
                     *stack = x;
                     *count = 0;
                 }
-                let y = (radius + 2.0 * *count as f64 * radius * self.height_scale) / view_scale;
+                let y = (radius + 2.0 * *count as f64 * radius * self.height_scale) / yscale;
                 *count += 1;
                 Some((*stack, y))
             })
@@ -793,17 +789,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn weighted_quartiles_use_the_expanded_sample_count() {
+    fn weighted_box_plots_require_a_value_list_with_at_least_two_entries() {
         let c = crate::script::load(
-            "chart = BoxPlot(0, 1, {5}, {3})\nshort = BoxPlot(0, 1, {5}, {1}, false)",
+            "chart = BoxPlot(0, 1, {5}, {3})\nflagged = BoxPlot(0, 1, {5}, {3}, false)",
         )
         .unwrap();
-        let chart = c.id("chart").unwrap();
-        assert_eq!(c.value(chart), Value::Number(5.0));
-        assert!(c.chart(chart).unwrap().marks.contains(&ChartMark::Box {
-            x: [5.0, 5.0],
-            y: [-1.0, 1.0],
-        }));
-        assert_eq!(c.value(c.id("short").unwrap()), Value::Undefined);
+        for label in ["chart", "flagged"] {
+            assert_eq!(c.value(c.id(label).unwrap()), Value::Undefined);
+        }
     }
 }

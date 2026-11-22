@@ -39,10 +39,14 @@ impl ViewTransform {
     pub fn new(view: View, width: f64, height: f64) -> Self {
         let vw = (view.xmax - view.xmin).max(f64::MIN_POSITIVE);
         let vh = (view.ymax - view.ymin).max(f64::MIN_POSITIVE);
+        Self::with_scales(view, width / vw, height / vh, height)
+    }
+
+    pub(crate) fn with_scales(view: View, xscale: f64, yscale: f64, height: f64) -> Self {
         ViewTransform {
             view,
-            xscale: width / vw,
-            yscale: height / vh,
+            xscale,
+            yscale,
             ox: 0.0,
             oy: 0.0,
             height,

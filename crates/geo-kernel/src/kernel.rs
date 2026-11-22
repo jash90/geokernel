@@ -1212,7 +1212,14 @@ impl Construction {
     }
 
     pub fn drawing_style(&self, id: Id) -> DrawingStyle {
-        self.drawing_styles.get(&id).copied().unwrap_or_default()
+        self.drawing_styles.get(&id).copied().unwrap_or_else(|| {
+            let mut style = DrawingStyle::default();
+            if self.exists(id) && self.kind(id) == Kind::PieChart {
+                style.show_label = false;
+                style.line_thickness = 0;
+            }
+            style
+        })
     }
 
     pub fn set_drawing_style(&mut self, id: Id, mut style: DrawingStyle) {

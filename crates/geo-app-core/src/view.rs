@@ -112,7 +112,7 @@ pub fn content_bounds(c: &Construction) -> Option<Bounds> {
                 if let Some(points) = c
                     .image(id)
                     .filter(|image| !image.placement.is_screen())
-                    .and_then(|_| c.image_quad(id, DEFAULT_SCALE))
+                    .and_then(|_| c.image_quad(id, STANDARD_SCALE))
                 {
                     for [x, y] in points {
                         add(&mut b, x, y);
@@ -316,14 +316,15 @@ impl Camera {
 
     #[inline]
     pub fn transform(&self, width: f64, height: f64) -> ViewTransform {
-        ViewTransform::new(
+        ViewTransform::with_scales(
             View {
                 xmin: self.cx - 0.5 * width / self.xscale,
                 ymin: self.cy - 0.5 * height / self.yscale,
                 xmax: self.cx + 0.5 * width / self.xscale,
                 ymax: self.cy + 0.5 * height / self.yscale,
             },
-            width,
+            self.xscale,
+            self.yscale,
             height,
         )
     }

@@ -567,8 +567,3 @@ mismatches = ["0:g"]
 id = "discrete-upstream-019"
 reason = "The circumcircle test is sensitive to the last bit of cos(6) on approximately cocircular sites. The literal cocircular cases exercise the exact tie rule separately."
 mismatches = ["0:g"]
-
-[[gap]]
-id = "charts-boxplotfrequency-001"
-reason = "The reference quartile algorithms reject a one-entry frequency table before expanding its frequencies. The kernel accepts it when the expanded count is at least two."
-mismatches = ["0:chart"]

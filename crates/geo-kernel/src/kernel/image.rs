@@ -512,6 +512,15 @@ impl Construction {
     /// screen or world coordinates. The view scale is needed only when
     /// the image has fewer than two world anchors.
     pub fn image_quad(&self, id: Id, scale: f64) -> Option<[[f64; 2]; 4]> {
+        self.image_quad_with_scales(id, scale, scale)
+    }
+
+    pub fn image_quad_with_scales(
+        &self,
+        id: Id,
+        xscale: f64,
+        yscale: f64,
+    ) -> Option<[[f64; 2]; 4]> {
         let image = self.image(id)?;
         let [width, height] = image.asset.size.map(f64::from);
         let resolve = |corner: ImageCorner| match corner {
@@ -544,7 +553,7 @@ impl Construction {
                         let u = delta(resolve(d)?, a);
                         ([u[1] * width / height, -u[0] * width / height], u)
                     }
-                    (None, None) => ([width / scale, 0.0], [0.0, height / scale]),
+                    (None, None) => ([width / xscale, 0.0], [0.0, height / yscale]),
                 };
                 if centered {
                     a[0] -= right[0] * 0.5;
