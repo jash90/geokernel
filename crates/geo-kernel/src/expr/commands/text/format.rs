@@ -187,6 +187,7 @@ fn escape_percent(value: String) -> String {
 struct Format {
     latex: bool,
     xml: bool,
+    algebra: bool,
     object_depth: u8,
     simplify_coefficients: bool,
 }
@@ -209,6 +210,7 @@ impl Format {
         Self {
             latex,
             xml: false,
+            algebra: false,
             object_depth: 0,
             simplify_coefficients: false,
         }

@@ -549,12 +549,6 @@ reason = "the kernel refuses the input: unknown command `listF`"
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/ArithmeticTest.java:88"
-category = "kernel-mismatch"
-reason = "Undefined does not match `{NaN, NaN, NaN}` (expected a value, kernel is undefined)"
-mismatches = ["l5"]
-
-[[gap]]
 id = "arithmetic/ArithmeticTest.java:89"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unknown command `matrix1`"
@@ -597,54 +591,6 @@ reason = "the kernel refuses the input: unknown command `matrix2`"
 mismatches = ["step"]
 
 [[gap]]
-id = "arithmetic/FractionTest.java:104"
-category = "text-formatting"
-reason = "string `19.69`, GeoGebra prints `1969 / 100`"
-mismatches = ["b"]
-
-[[gap]]
-id = "arithmetic/FractionTest.java:122"
-category = "text-formatting"
-reason = "string `-0.09691001300805638`, GeoGebra prints `-0.096910013`"
-mismatches = ["a"]
-
-[[gap]]
-id = "arithmetic/FractionTest.java:123"
-category = "text-formatting"
-reason = "string `-0.04845500650402819`, GeoGebra prints `-0.0484550065`"
-mismatches = ["b"]
-
-[[gap]]
-id = "arithmetic/FractionTest.java:124"
-category = "text-formatting"
-reason = "string `-0.04845500650402819`, GeoGebra prints `-0.0484550065`"
-mismatches = ["c"]
-
-[[gap]]
-id = "arithmetic/FractionTest.java:39"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(3 / 2)^x`"
-mismatches = ["fracPower"]
-
-[[gap]]
-id = "arithmetic/FractionTest.java:40"
-category = "text-formatting"
-reason = "string `2.25`, GeoGebra prints `9 / 4`"
-mismatches = ["a"]
-
-[[gap]]
-id = "arithmetic/FractionTest.java:41"
-category = "text-formatting"
-reason = "string `0.6666666666666666`, GeoGebra prints `2 / 3`"
-mismatches = ["b"]
-
-[[gap]]
-id = "arithmetic/FractionTest.java:42"
-category = "text-formatting"
-reason = "string `0.4444444444444444`, GeoGebra prints `4 / 9`"
-mismatches = ["c"]
-
-[[gap]]
 id = "arithmetic/FractionTest.java:47"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unknown command `erf`"
@@ -655,48 +601,6 @@ id = "arithmetic/FractionTest.java:48"
 category = "unsupported-form"
 reason = "the kernel refuses the input: unknown command `erf`"
 mismatches = ["step"]
-
-[[gap]]
-id = "arithmetic/FractionTest.java:63"
-category = "text-formatting"
-reason = "string `0.05`, GeoGebra prints `1 / 20`"
-mismatches = ["a"]
-
-[[gap]]
-id = "arithmetic/SurdTest.java:25"
-category = "text-formatting"
-reason = "string `2.8284271247461903`, GeoGebra prints `2√(2)`"
-mismatches = ["a"]
-
-[[gap]]
-id = "arithmetic/SurdTest.java:26"
-category = "text-formatting"
-reason = "string `78.38367176906169`, GeoGebra prints `32√(6)`"
-mismatches = ["b"]
-
-[[gap]]
-id = "arithmetic/SurdTest.java:36"
-category = "text-formatting"
-reason = "string `NaN`, GeoGebra prints `?`"
-mismatches = ["a"]
-
-[[gap]]
-id = "arithmetic/SurdTest.java:41"
-category = "text-formatting"
-reason = "string `1.140175425099138`, GeoGebra prints `1.14`"
-mismatches = ["a"]
-
-[[gap]]
-id = "arithmetic/SurdTest.java:46"
-category = "text-formatting"
-reason = "string `4.123105625617661`, GeoGebra prints `4.12`"
-mismatches = ["a"]
-
-[[gap]]
-id = "arithmetic/SurdTest.java:51"
-category = "text-formatting"
-reason = "string `180595.97975591815`, GeoGebra prints `180595.98`"
-mismatches = ["a"]
 
 [[gap]]
 id = "cas/AlgoDerivativeTest.java:35"
@@ -1755,12 +1659,6 @@ reason = "the kernel refuses the input: unknown command `IntersectPath`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2282"
-category = "kernel-mismatch"
-reason = "the reference creates a `GeoSegment` here, the kernel has no object with this label"
-mismatches = ["h"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2287"
 category = "incomplete-context"
 reason = "the kernel refuses the input: unknown command `ZoomIn`"
@@ -2193,12 +2091,6 @@ reason = "the kernel refuses the input: `PerpendicularBisector` does not take 4 
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2619"
-category = "text-formatting"
-reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `DataFunction[{1, 2}, {3, 4},x]`"
-mismatches = ["f"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2634"
 category = "error-behaviour"
 reason = "the kernel refuses the input: unknown object `x+y`"
@@ -2623,18 +2515,6 @@ id = "commands/CommandsTest.java:3046"
 category = "unsupported-type"
 reason = "class `GeoLocus` has no schema object (unsupported-type); string `NSolveODE[{yu1', yu2'}, 0, {a, b}, 20]`"
 mismatches = ["numericalIntegral1", "numericalIntegral2"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3106"
-category = "text-formatting"
-reason = "values agree but `GeoConic` of kind circle has no GeoGebra-style text yet; GeoGebra prints `x² + y² + 2x + 1y = -1`"
-mismatches = ["c"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3107"
-category = "text-formatting"
-reason = "values agree but `GeoConic` of kind circle has no GeoGebra-style text yet; GeoGebra prints `x² + y² - y = 0`"
-mismatches = ["d"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3108"

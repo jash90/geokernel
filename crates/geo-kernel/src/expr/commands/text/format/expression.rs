@@ -165,6 +165,8 @@ impl Format {
                     format!("^{{{exponent}}}")
                 } else if self.xml {
                     format!("^({exponent})")
+                } else if self.algebra && matches!(ctx.node(b), Node::Var | Node::VarY) {
+                    format!("^{exponent}")
                 } else if let Some(digits) = superscript(&exponent) {
                     digits
                 } else {

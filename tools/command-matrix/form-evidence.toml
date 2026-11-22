@@ -1206,7 +1206,7 @@ cases = ["geomclip-carrier-001", "geomclip-carrier-002", "geomclip-carrier-005"]
 [[form]]
 command = "IntersectPath"
 form = "polygon,line"
-cases = ["geomclip-carrier-001", "geomclip-carrier-002", "georestclip-longcarrier-001"]
+cases = ["geomclip-carrier-001", "geomclip-carrier-002", "georestclip-longcarrier-001", "georestclip-homogeneous-001"]
 
 [[form]]
 command = "IntersectPath"
@@ -3105,7 +3105,7 @@ cases = ["funcanalysis-forms-013"]
 [[form]]
 command = "OsculatingCircle"
 form = "point,function"
-cases = ["funcanalysis-forms-011"]
+cases = ["funcanalysis-forms-011", "funcanalysis-curvatureupstream-010"]
 
 [[form]]
 command = "OsculatingCircle"

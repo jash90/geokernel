@@ -1,0 +1,250 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "tpairfixes-matrixrow-001",
+      "group": "tpairfixes",
+      "script": [
+        "m = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}",
+        "k = 2",
+        "r = m(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "k", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": -5.0 },
+        { "action": "set_number", "label": "k", "value": 0.0 },
+        { "action": "set_number", "label": "k", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 4.0 },
+                  { "type": "number", "defined": true, "value": 5.0 },
+                  { "type": "number", "defined": true, "value": 6.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 7.0 },
+                  { "type": "number", "defined": true, "value": 8.0 },
+                  { "type": "number", "defined": true, "value": 9.0 }
+                ]
+              }
+            ]
+          },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 },
+              { "type": "number", "defined": true, "value": 6.0 }
+            ]
+          }
+        },
+        {
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 4.0 },
+                  { "type": "number", "defined": true, "value": 5.0 },
+                  { "type": "number", "defined": true, "value": 6.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 7.0 },
+                  { "type": "number", "defined": true, "value": 8.0 },
+                  { "type": "number", "defined": true, "value": 9.0 }
+                ]
+              }
+            ]
+          },
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 7.0 },
+              { "type": "number", "defined": true, "value": 8.0 },
+              { "type": "number", "defined": true, "value": 9.0 }
+            ]
+          }
+        },
+        {
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 4.0 },
+                  { "type": "number", "defined": true, "value": 5.0 },
+                  { "type": "number", "defined": true, "value": 6.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 7.0 },
+                  { "type": "number", "defined": true, "value": 8.0 },
+                  { "type": "number", "defined": true, "value": 9.0 }
+                ]
+              }
+            ]
+          },
+          "k": { "type": "number", "defined": true, "value": -5.0 },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 4.0 },
+                  { "type": "number", "defined": true, "value": 5.0 },
+                  { "type": "number", "defined": true, "value": 6.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 7.0 },
+                  { "type": "number", "defined": true, "value": 8.0 },
+                  { "type": "number", "defined": true, "value": 9.0 }
+                ]
+              }
+            ]
+          },
+          "k": { "type": "number", "defined": true, "value": 0.0 },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 4.0 },
+                  { "type": "number", "defined": true, "value": 5.0 },
+                  { "type": "number", "defined": true, "value": 6.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 7.0 },
+                  { "type": "number", "defined": true, "value": 8.0 },
+                  { "type": "number", "defined": true, "value": 9.0 }
+                ]
+              }
+            ]
+          },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

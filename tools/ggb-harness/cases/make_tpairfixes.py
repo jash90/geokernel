@@ -78,4 +78,14 @@ for rhs in ("a / a", "sqrt(a)", "a / 0", "ln(a) + x", "x / a"):
                      "b = IsDefined(f)"],
          [setn("a", 0), setn("a", -1), setn("a", 2)])
 
+topic("matrixrow")
+case("matrixrow", ["m = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}", "k = 2", "r = m(k)"],
+     [setn("k", -1), setn("k", -5), setn("k", 0), setn("k", 1)])
+
+topic("symbolic")
+case("symbolic", ["f(x) = (3 / 2)^x", "n = 2", "a = f(n)", "b = 5 * 10^(-2)"],
+     [setn("n", -1), setn("n", -2), setn("n", 0)])
+case("symbolic", ["n = 8", "a = sqrt(n)", "b = sqrt(1024 * 2 * 3)"],
+     [setn("n", -3), setn("n", 17), setn("n", 8)])
+
 cases.write()

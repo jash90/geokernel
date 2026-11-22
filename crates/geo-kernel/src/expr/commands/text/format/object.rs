@@ -8,10 +8,11 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::Format;
+use crate::algo::analysis::{AnalysisDef, CurvatureKind};
 use crate::algo::measure::MeasureDef;
 use crate::equation;
 use crate::expr::eval::{Ctx, Env, Lists};
-use crate::expr::{self, Entry, Node};
+use crate::expr::{self, Entry, Node, Un};
 use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, EquationForm, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
@@ -29,6 +30,16 @@ impl Construction {
         format.xml_object_string(self, id, &meter)
     }
 
+    /// A value displayed with the edit template's decimal precision.
+    pub fn edit_value_string(&self, id: Id) -> Option<String> {
+        if let Some(conic) = osculating_circle(self, id) {
+            return Some(equation::conic_equation(&conic, &|value| {
+                fixed_decimal(value, 5)
+            }));
+        }
+        self.xml_value_string(id)
+    }
+
     /// Renders a polynomial stored as an inline list element.
     pub fn xml_inline_polynomial(&self, source: &str) -> Option<String> {
         let parsed = expr::parse::parse(self, source).ok()?;
@@ -36,6 +47,80 @@ impl Construction {
         let meter = Lists::new(Vec::new());
         Format::xml().entry_value::<true>(self, &entry, Some(&meter), false)
     }
+
+    /// Displays a number or function in the symbolic algebra template.
+    pub fn symbolic_value_string(&self, id: Id, source: &str, decimals: usize) -> Option<String> {
+        if let (Kind::Function, Def::Expr(def)) = (self.kind(id), self.def(id)) {
+            let meter = Lists::new(Vec::new());
+            let format = Format {
+                algebra: true,
+                ..Format::new(false)
+            };
+            return format.entry_value::<true>(self, expr::entry(self, def), Some(&meter), false);
+        }
+        let value = match (self.kind(id), self.value(id)) {
+            (Kind::Number, Value::Number(value)) => value,
+            (Kind::Number, Value::Undefined) => return Some("?".into()),
+            _ => return None,
+        };
+        let parsed = expr::parse::parse(self, source).ok();
+        if let Some(parsed) = parsed {
+            let entry = Entry::new(self, parsed, false);
+            if let Node::Un(Un::Sqrt, input) = entry.nodes[entry.root as usize] {
+                if let Some(surd) = simplified_surd(expr::cas::scalar(self, &entry, input)) {
+                    return Some(surd);
+                }
+            } else if let Some(fraction) = expr::cas::scalar(self, &entry, entry.root) {
+                const MAX_PART: i128 = 1_000_000_000_000_000;
+                if (2..MAX_PART).contains(&fraction.den)
+                    && fraction.num.abs() < MAX_PART
+                    && (fraction.to_f64() - value).abs() <= value.abs() * f64::EPSILON
+                {
+                    return Some(format!("{} / {}", fraction.num, fraction.den));
+                }
+            }
+        }
+        if !value.is_finite() || decimals == 2 {
+            return Some(super::super::format_number(value));
+        }
+        Some(fixed_decimal(value, decimals.clamp(1, 15)))
+    }
+}
+
+fn fixed_decimal(value: f64, decimals: usize) -> String {
+    let fixed = format!("{value:.decimals$}");
+    let fixed = fixed.trim_end_matches('0').trim_end_matches('.');
+    if fixed == "-0" { "0" } else { fixed }.into()
+}
+
+fn osculating_circle(c: &Construction, id: Id) -> Option<crate::algo::conic_nd::ConicData> {
+    if matches!(
+        c.def(id),
+        Def::Analysis(AnalysisDef::Curvature {
+            output: CurvatureKind::Circle,
+            ..
+        })
+    ) {
+        return c.conic(id);
+    }
+    None
+}
+
+fn simplified_surd(fraction: Option<crate::cas::Rat>) -> Option<String> {
+    let fraction = fraction.filter(|r| r.den == 1)?;
+    let radicand = u32::try_from(fraction.num).ok()?;
+    if !(2..i32::MAX as u32).contains(&radicand) {
+        return None;
+    }
+    let factor = (2..=radicand.isqrt())
+        .rev()
+        .find(|&factor| radicand.is_multiple_of(factor * factor))?;
+    let rest = radicand / (factor * factor);
+    Some(if rest == 1 {
+        factor.to_string()
+    } else {
+        format!("{factor}\u{221a}({rest})")
+    })
 }
 
 impl Format {
@@ -44,6 +129,11 @@ impl Format {
             return None;
         }
         self.object_depth += 1;
+        if let Some(conic) = osculating_circle(c, id) {
+            return Some(equation::conic_equation(&conic, &|value| {
+                self.number(value)
+            }));
+        }
         let expression = |entry| self.entry_value::<true>(c, entry, Some(meter), true);
         match c.def(id) {
             Def::Expr(def) if matches!(def.kind(), Kind::Function | Kind::FunctionNVar) => {
@@ -62,6 +152,24 @@ impl Format {
             }
             Def::Calculus(_) if c.kind(id) == Kind::Function => {
                 expression(c.calculus_record(id)?.tree.as_ref()?)
+            }
+            Def::Chart(_) if c.kind(id) == Kind::Function => {
+                let vertices = &c.chart(id)?.vertices;
+                if vertices.len() > 16_384 {
+                    return None;
+                }
+                let values = |axis| {
+                    let coordinates: Vec<_> = vertices
+                        .iter()
+                        .map(|&(x, y)| self.number(if axis == 0 { x } else { y }))
+                        .collect();
+                    coordinates.join(", ")
+                };
+                Some(format!(
+                    "DataFunction[{{{}}}, {{{}}},x]",
+                    values(0),
+                    values(1)
+                ))
             }
             Def::Measure(MeasureDef::CartesianCurve { coordinates, .. }) => {
                 let mut coordinates = coordinates

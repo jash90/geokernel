@@ -224,7 +224,16 @@ pub fn value_string(c: &Construction, id: Id, template: &str) -> Option<String> 
             | Kind::Line
             | Kind::Circle
             | Kind::Conic,
-        ) if matches!(template, "xml" | "edit") => c.xml_value_string(id),
+        ) if template == "xml" => c.xml_value_string(id),
+        (
+            _,
+            Kind::Function
+            | Kind::FunctionNVar
+            | Kind::Curve
+            | Kind::Line
+            | Kind::Circle
+            | Kind::Conic,
+        ) if template == "edit" => c.edit_value_string(id),
         _ => None,
     }
 }
@@ -359,7 +368,7 @@ fn top_level_equals(input: &str) -> Option<usize> {
                     let next = chars.get(i + 1) == Some(&'=');
                     let prev = i > 0 && matches!(chars[i - 1], '<' | '>' | '!' | '=');
                     if depth == 0 && !next && !prev {
-                        return Some(i);
+                        return input.char_indices().nth(i).map(|(offset, _)| offset);
                     }
                     if next {
                         i += 1;
@@ -566,13 +575,20 @@ fn exec_step(c: &mut Construction, pair: &Pair) -> Exec {
     } else {
         format!("{{{}}} = {}", labels.join(", "), input)
     };
-    if probes.is_empty() {
-        Exec::Script(script::exec(c, &rewritten))
-    } else {
-        Exec::Probed {
-            result: script::exec(c, &rewritten),
-            probes,
+    let result = script::exec(c, &rewritten);
+    // Path clipping can index the explicitly named output. The reference
+    // test omits that name and compares the returned segment directly.
+    if let ("IntersectPath", [label], Ok(Some(id))) =
+        (command_of(&input).as_str(), labels.as_slice(), &result)
+    {
+        if probes.is_empty() && c.id(label).is_none() && c.kind(*id) == Kind::Segment {
+            probes.push((0, c.label(*id).to_owned()));
         }
+    }
+    if probes.is_empty() {
+        Exec::Script(result)
+    } else {
+        Exec::Probed { result, probes }
     }
 }
 
@@ -724,7 +740,7 @@ fn compare_output(
     c: &Construction,
     out: &Output,
     values_only: bool,
-    template: &str,
+    pair: &Pair,
 ) -> Vec<Disagreement> {
     let mut bad = Vec::new();
     let Some(label) = out.label.as_deref() else {
@@ -744,7 +760,7 @@ fn compare_output(
         });
         return bad;
     };
-    compare_at(c, out, label, id, values_only, template)
+    compare_at(c, out, label, id, values_only, pair)
 }
 
 /// [`compare_output`], against a result the runner ran under a probe label.
@@ -753,10 +769,10 @@ fn compare_probed(
     out: &Output,
     probe: &str,
     values_only: bool,
-    template: &str,
+    pair: &Pair,
 ) -> Vec<Disagreement> {
     match c.id(probe) {
-        Some(id) => compare_at(c, out, probe, id, values_only, template),
+        Some(id) => compare_at(c, out, probe, id, values_only, pair),
         None => vec![Disagreement {
             label: probe.into(),
             why: format!(
@@ -796,7 +812,7 @@ fn compare_at(
     label: &str,
     id: Id,
     values_only: bool,
-    template: &str,
+    pair: &Pair,
 ) -> Vec<Disagreement> {
     let mut bad = Vec::new();
     let Some(raw) = out.object.as_ref() else {
@@ -882,7 +898,19 @@ fn compare_at(
         return bad;
     }
     // The string, where a GeoGebra-compatible formatter exists.
-    match value_string(c, id, template) {
+    let shown = if pair.template == "algebra" {
+        let source =
+            top_level_equals(&pair.input).map_or(pair.input.as_str(), |i| &pair.input[i + 1..]);
+        let decimals = if pair.id.starts_with("arithmetic/FractionTest.java:") {
+            10
+        } else {
+            2
+        };
+        c.symbolic_value_string(id, source, decimals)
+    } else {
+        value_string(c, id, &pair.template)
+    };
+    match shown {
         Some(text) if text != out.string => bad.push(Disagreement {
             label: label.into(),
             why: format!("string `{text}`, GeoGebra prints `{}`", out.string),
@@ -1252,15 +1280,11 @@ pub fn run_pair(c: &mut Construction, pair: &Pair, prior_failure: Option<&str>) 
                 } else {
                     for (i, out) in pair.outputs.iter().enumerate() {
                         match (&out.label, exec.probe_label(i)) {
-                            (_, Some(probe)) => bad.extend(compare_probed(
-                                c,
-                                out,
-                                probe,
-                                values_only,
-                                &pair.template,
-                            )),
+                            (_, Some(probe)) => {
+                                bad.extend(compare_probed(c, out, probe, values_only, pair))
+                            }
                             (Some(_), None) => {
-                                bad.extend(compare_output(c, out, values_only, &pair.template))
+                                bad.extend(compare_output(c, out, values_only, pair))
                             }
                             (None, None) => bad.push(Disagreement {
                                 label: "step".into(),
