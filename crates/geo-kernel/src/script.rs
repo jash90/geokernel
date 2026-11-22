@@ -392,6 +392,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(result) = exec_polyline_flag(c, name, rhs) {
         return result;
     }
+    if let Some(result) = crate::algo::charts::exec(c, name, rhs) {
+        return result.map(Some);
+    }
     if let Some(result) = crate::algo::vector::matrix::exec(c, name, rhs) {
         return result;
     }
@@ -915,6 +918,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     let (func, mut args) = split_call(rhs)?;
     let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
     let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
+        ("Tangent", [f, _]) if is_kind(f, Kind::Function) => &[(1, Kind::Point)],
         ("Tangent", [_, f]) if is_kind(f, Kind::Function) => &[(0, Kind::Number)],
         ("Length", [f, _, _]) if is_kind(f, Kind::Function) || is_kind(f, Kind::Curve) => {
             &[(1, Kind::Number), (2, Kind::Number)]
@@ -1193,6 +1197,7 @@ fn is_finite(v: &Value) -> bool {
         | Value::Button
         | Value::InputBox
         | Value::Image
+        | Value::PieChart
         | Value::Undefined => false,
     }
 }

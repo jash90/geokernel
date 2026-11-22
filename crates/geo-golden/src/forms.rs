@@ -362,6 +362,17 @@ pub fn script_uses_form(
                         _ => {}
                     }
                 }
+                if command == "BarChart" && matches!(args.len(), 6 | 7) {
+                    let variable = args[3].trim();
+                    if variable.chars().next().is_some_and(char::is_alphabetic)
+                        && variable.chars().all(is_ident_char)
+                    {
+                        let mut scope = labels.clone();
+                        scope.insert(variable.to_owned(), Kind::Number);
+                        kinds[2] = arg_kind(&args[2], &scope);
+                        kinds[3] = Some(Kind::Number);
+                    }
+                }
                 // Length's conic overload measures the arc of a conic part.
                 if command == "Length"
                     && form == "conic"

@@ -23,7 +23,7 @@ CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,no,Cartesian coordin
 ImplicitCurve,IMPLICIT_POLY,,no,no,no,no,no,no,no,no,
 FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,no,no,two-variable numeric functions from equation sides
 Image,IMAGE,Image,no,no,yes,no,no,yes,yes,no,PNG and JPEG and first-frame GIF; checked against the saved archive fixtures
-PieChart,PIECHART,,no,no,no,no,no,no,no,no,
+PieChart,PIECHART,PieChart,yes,no,yes,no,no,yes,no,no,Clockwise sectors with a world center and radius
 InputBox,TEXTFIELD,InputBox,no,no,no,no,no,no,yes,no,linked object retained on import
 Button,BUTTON,Button,no,no,no,no,no,no,yes,no,caption and inert scripts retained on import
 PenStroke,PENSTROKE,,no,no,no,no,no,no,no,no,

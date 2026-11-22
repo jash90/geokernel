@@ -213,10 +213,8 @@ impl Lists {
             return self.arena.borrow()[i as usize].clone();
         }
         let id = self.objects.borrow().0[object as usize - 1];
-        let Def::Expr(d) = c.def(id) else {
-            unreachable!("a list object read in place has an expression");
-        };
-        let mut slot = super::entry(c, d).items[(i & OFFSET) as usize].clone();
+        let mut slot =
+            super::list_slots(c, id).expect("readable list slots")[(i & OFFSET) as usize].clone();
         if slot.run().is_some() {
             slot.start |= object << OBJECT_SHIFT;
         }
@@ -285,11 +283,8 @@ impl Lists {
         }
         if start >> OBJECT_SHIFT != 0 {
             let id = self.objects.borrow().0[(start >> OBJECT_SHIFT) as usize - 1];
-            let Def::Expr(d) = c.def(id) else {
-                unreachable!("a list object read in place has an expression");
-            };
             return f(List::from_run(
-                &super::entry(c, d).items,
+                super::list_slots(c, id)?,
                 start & OFFSET,
                 len,
             ));
@@ -913,7 +908,12 @@ impl<const M: bool> Ctx<'_, M> {
     /// substituted into the body.
     fn apply_fast(&self, f: Id, a: u32) -> f64 {
         let Some(e) = function_entry(self.c, f) else {
-            return f64::NAN;
+            return match self.c.def(f) {
+                Def::Chart(_) if !self.stop(32) => {
+                    super::function_value(self.c, f, self.fast(a)).unwrap_or(f64::NAN)
+                }
+                _ => f64::NAN,
+            };
         };
         // the function's nodes are charged to the evaluation with lists
         // this one is part of, if any
@@ -929,6 +929,12 @@ impl<const M: bool> Ctx<'_, M> {
     /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
     fn apply_full(&self, f: Id, a: u32) -> Ex {
         let Some(e) = function_entry(self.c, f) else {
+            if matches!(self.c.def(f), Def::Chart(_)) && !self.stop(32) {
+                let x = self.full_number(a);
+                return Ex::plain(Val::N(
+                    super::function_value(self.c, f, x).unwrap_or(f64::NAN),
+                ));
+            }
             return Ex::plain(
                 if super::function_signature(self.c, f).is_some_and(|f| f.boolean) {
                     Val::B(false, false)
@@ -1310,13 +1316,13 @@ impl<const M: bool> Ctx<'_, M> {
     /// buffer when too many list objects are read in place already.
     fn object_list(&self, id: Id) -> Option<(u32, u32)> {
         let lists = self.lists?;
-        let (Def::Expr(d), Value::List { len }) = (self.c.def(id), self.c.value(id)) else {
+        let Value::List { len } = self.c.value(id) else {
             return None;
         };
         if let Some(start) = lists.object(id) {
             return Some((start, len));
         }
-        let items = &super::entry(self.c, d).items;
+        let items = super::list_slots(self.c, id)?;
         if !lists.build(items.len() as u64) {
             return None;
         }

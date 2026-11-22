@@ -505,6 +505,8 @@ fn text_grade(c: &Construction, id: Id) -> u8 {
     let v = c.value(id);
     if !describe::is_known(&v) {
         0
+    } else if v == Value::PieChart && describe::object_text(c, id) == "PieChart" {
+        2
     } else if describe::object_text(c, id) == format!("{v:?}") {
         1
     } else {
@@ -525,7 +527,9 @@ fn checked_cells_agree_with_the_code() {
             + "\n"
             + &read("crates/geo-app/src/curves/mod.rs")
             + "\n"
-            + &read("crates/geo-app/src/draw/image.rs")),
+            + &read("crates/geo-app/src/draw/image.rs")
+            + "\n"
+            + &read("crates/geo-app/src/draw/charts.rs")),
     );
     let mut errors = Vec::new();
     for r in &rows {

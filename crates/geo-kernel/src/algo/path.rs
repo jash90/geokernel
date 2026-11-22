@@ -639,11 +639,13 @@ impl Geom<'_> {
             Geom::Polygon { n, .. } => (0.0, *n as f64),
             Geom::PolyLine { n, .. } => (0.0, *n as f64 - 1.0),
             Geom::Arc(a) => a.range(),
-            Geom::Function { c, .. } => {
+            Geom::Function { c, id } => {
                 let [min, max, ..] = c
                     .locus_view()
                     .unwrap_or(crate::kernel::locus::HEADLESS_VIEW);
-                (min, max)
+                c.chart(*id)
+                    .and_then(|d| d.function_domain())
+                    .map_or((min, max), |(a, b)| (a.max(min), b.min(max)))
             }
         }
     }
@@ -671,6 +673,11 @@ impl Geom<'_> {
             Geom::Arc(a) => a.point_changed(p),
             Geom::Function { c, id } => {
                 let (x, y) = (p.x / p.z, p.y / p.z);
+                if let Some((a, b)) = c.chart(*id).and_then(|d| d.function_domain()) {
+                    p.t = x.clamp(a, b);
+                    self.path_changed(p);
+                    return;
+                }
                 let at_x = c.function_value(*id, x).unwrap_or(f64::NAN);
                 // A saved point is already on the graph up to rounding.
                 // A drag off a polynomial graph uses the nearest point.
@@ -688,6 +695,9 @@ impl Geom<'_> {
     pub(crate) fn path_changed(&self, p: &mut PathState) {
         match self {
             Geom::Function { c, id } => {
+                if let Some((a, b)) = c.chart(*id).and_then(|d| d.function_domain()) {
+                    p.t = p.t.clamp(a, b);
+                }
                 p.set_coords_2d(p.t, c.function_value(*id, p.t).unwrap_or(f64::NAN), 1.0);
             }
             Geom::Undefined => p.set_coords_2d(f64::NAN, f64::NAN, f64::NAN),
@@ -1313,7 +1323,9 @@ impl Group for PathDef {
     fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>> {
         let path = |label: &str| -> Result<Id, String> {
             let id = object(c, label)?;
-            if PATH.contains(&c.kind(id)) {
+            if PATH.contains(&c.kind(id))
+                || (c.kind(id) == Kind::Function && matches!(c.def(id), Def::Chart(_)))
+            {
                 Ok(id)
             } else {
                 Err(format!(

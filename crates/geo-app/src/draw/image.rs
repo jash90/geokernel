@@ -30,8 +30,10 @@ struct Upload;
 
 impl ComputerMut<TextureKey<'_>, (Weak<RasterAsset>, TextureHandle)> for Upload {
     fn compute(&mut self, key: TextureKey<'_>) -> (Weak<RasterAsset>, TextureHandle) {
-        let image =
-            ColorImage::from_rgba_unmultiplied(key.asset.size.map(|n| n as usize), &key.asset.rgba);
+        let image = ColorImage::from_rgba_unmultiplied(
+            key.asset.size().map(|n| n as usize),
+            key.asset.rgba(),
+        );
         let options = if key.interpolate {
             TextureOptions::LINEAR
         } else {
@@ -85,7 +87,7 @@ pub(crate) fn paint(
         {
             continue;
         }
-        let [w, h] = image.asset.size.map(f64::from);
+        let [w, h] = image.asset.size().map(f64::from);
         let [mut u0, mut v0, mut u1, mut v1] = [0.0, 0.0, 1.0, 1.0];
         if let Some([x, y, width, height]) =
             image.style.crop.filter(|_| !image.placement.is_screen())

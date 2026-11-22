@@ -365,6 +365,7 @@ pub fn render_visible(
             | Value::Button
             | Value::InputBox
             | Value::Image
+            | Value::PieChart
             | Value::Undefined => {}
         }
     }

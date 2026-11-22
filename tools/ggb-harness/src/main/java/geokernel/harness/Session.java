@@ -44,6 +44,7 @@ import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoLocus;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoAngle;
+import org.geogebra.common.kernel.statistics.GeoPieChart;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
 import org.geogebra.common.kernel.geos.GeoPolyLine;
@@ -750,6 +751,9 @@ final class Session {
 
     /** The schema type of a GeoGebra object; the class decides, not the state. */
     static String typeOf(GeoElement geo) {
+        if (geo instanceof GeoPieChart) {
+            return "piechart";
+        }
         if (geo instanceof GeoList) {
             return "list";
         }
@@ -1108,6 +1112,22 @@ final class Session {
                 return "locus";
             case "Curve":
                 return "curve";
+            case "LineGraph":
+                return "function";
+            case "DotPlot":
+            case "NormalQuantilePlot":
+            case "ResidualPlot":
+                return "list";
+            case "PieChart":
+                return "piechart";
+            case "FrequencyPolygon":
+                return "polyline";
+            case "BarChart":
+            case "BoxPlot":
+            case "Histogram":
+            case "HistogramRight":
+            case "StickGraph":
+            case "StepGraph":
             case "Slider":
                 return "number";
             case "Intersect":
@@ -1197,6 +1217,19 @@ final class Session {
     static Map<String, Object> describe(GeoElement geo, String type) {
         Map<String, Object> obj = new LinkedHashMap<>();
         obj.put("type", type);
+        if (geo instanceof GeoPieChart pie) {
+            obj.put("defined", pie.isDefined());
+            if (pie.isDefined()) {
+                obj.put("center", List.of(pie.getCenter().getX(), pie.getCenter().getY()));
+                obj.put("radius", pie.getRadius());
+                List<Object> fractions = new ArrayList<>();
+                for (double fraction : pie.getData()) {
+                    fractions.add(Double.isFinite(fraction) ? fraction : null);
+                }
+                obj.put("fractions", fractions);
+            }
+            return obj;
+        }
         if (geo instanceof GeoBoolean) {
             // GeoBoolean.isDefined is false only for the prover's "unknown"
             // answer of AreCongruent; a boolean has no numeric fields.

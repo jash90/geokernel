@@ -153,6 +153,7 @@ pub enum Kind {
     Button,
     InputBox,
     Image,
+    PieChart,
 }
 
 impl Kind {
@@ -188,6 +189,7 @@ impl fmt::Display for Kind {
             Kind::Button => "button",
             Kind::InputBox => "input box",
             Kind::Image => "image",
+            Kind::PieChart => "pie chart",
         })
     }
 }
@@ -252,6 +254,7 @@ pub enum Value {
     Button,
     InputBox,
     Image,
+    PieChart,
     /// A defined function; its values come from
     /// [`Construction::function_value`].
     Function,
@@ -370,7 +373,9 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
-            Value::Bool(_) | Value::Button | Value::InputBox | Value::Image => true,
+            Value::Bool(_) | Value::Button | Value::InputBox | Value::Image | Value::PieChart => {
+                true
+            }
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
             Value::Arc { length } => length.is_finite(),
@@ -412,6 +417,7 @@ pub enum Def {
     Button,
     InputBox(Option<Id>),
     Image(IdList),
+    Chart(algo::charts::ChartDef),
     /// A free angle in radians, such as `c = 30°`: a number the user can
     /// change that `floor`, `ceil` and `round` treat in whole degrees
     /// (GeoGebra's independent `GeoAngle`).
@@ -603,6 +609,7 @@ impl Def {
             Def::Button => Kind::Button,
             Def::InputBox(_) => Kind::InputBox,
             Def::Image(_) => Kind::Image,
+            Def::Chart(d) => d.kind(),
             Def::Angle(_)
             | Def::Measure(MeasureDef::Angle(..))
             | Def::Polygon(PolygonDef::Angle { .. }) => Kind::Angle,
@@ -637,6 +644,7 @@ impl Def {
     pub fn list(&self) -> Option<IdList> {
         match self {
             Def::Image(list) => Some(*list),
+            Def::Chart(d) => Some(d.args),
             Def::Polygon(d) => d.list(),
             Def::GeneralConic(d) => d.list(),
             _ => None,
@@ -648,6 +656,10 @@ impl Def {
     pub fn with_list(self, list: IdList) -> Def {
         match self {
             Def::Image(_) => Def::Image(list),
+            Def::Chart(mut d) => {
+                d.args = list;
+                Def::Chart(d)
+            }
             Def::Polygon(d) => Def::Polygon(d.with_list(list)),
             Def::GeneralConic(d) => Def::GeneralConic(d.with_list(list)),
             other => other,
@@ -680,6 +692,7 @@ impl Def {
             | Def::Button
             | Def::InputBox(None)
             | Def::Image(_)
+            | Def::Chart(_)
             | Def::Angle(_)
             | Def::Expr(_)
             | Def::Equation(_) => Parents::none(),
@@ -803,6 +816,7 @@ pub struct Construction {
     hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
     images: image::Images,
+    charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
     text_presentations: HashMap<Id, text::TextOverrides>,
     /// Selected equation forms and their display revisions.
     equation_forms: HashMap<Id, (EquationForm, u64)>,
@@ -1165,6 +1179,14 @@ impl Construction {
         }
     }
 
+    pub fn chart(&self, id: Id) -> Option<&algo::charts::ChartData> {
+        self.charts.get(&id)
+    }
+
+    pub fn charts(&self) -> impl ExactSizeIterator<Item = (Id, &algo::charts::ChartData)> {
+        self.charts.iter().map(|(&id, data)| (id, data))
+    }
+
     /// The vertices of a polygon or polyline in order, `None` for a vertex
     /// that is undefined. Nothing for any other object, and nothing for a
     /// regular polygon that is undefined.
@@ -1269,6 +1291,7 @@ impl Construction {
                     .all(|bound| bound.exists_before(at.len))
         });
         self.images.discard_since(at.len, at.image_assets);
+        self.charts.split_off(&Id(at.len));
         self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
@@ -1446,6 +1469,12 @@ impl Construction {
                 if let Some(record) = record {
                     self.conics.push((id.0, record));
                 }
+                value
+            }
+            Def::Chart(d) => {
+                let data = d.compute(self);
+                let value = data.value;
+                self.charts.insert(id, data);
                 value
             }
             Def::Locus(d) => {
@@ -1804,6 +1833,15 @@ impl Construction {
                     if !self.update_equation(i, d) {
                         continue;
                     }
+                }
+                Def::Chart(d) => {
+                    let data = d.compute(self);
+                    let id = Id(i);
+                    if self.chart(id).is_some_and(|old| old.same(&data)) {
+                        continue;
+                    }
+                    self.values[i] = data.value;
+                    self.charts.insert(id, data);
                 }
                 Def::Locus(d) => {
                     if !self.update_locus(i, d) {
@@ -2179,6 +2217,7 @@ impl Construction {
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
             Def::XAxis | Def::YAxis | Def::Boolean(_) | Def::Button | Def::InputBox(None) => Ok(()),
+            Def::Chart(d) => d.check(self),
             Def::Image(list) => self.expect_list(list, POINT),
             Def::InputBox(Some(linked)) => {
                 if self.defs.get(linked.0).is_some() || axis::get(linked).is_some() {
@@ -2314,6 +2353,7 @@ impl Construction {
             Def::Boolean(v) => Some(Value::Bool(v)),
             Def::Button => Some(Value::Button),
             Def::InputBox(_) => Some(Value::InputBox),
+            Def::Chart(d) => Some(d.compute(self).value),
             Def::Image(list) => self
                 .list(list)
                 .iter()

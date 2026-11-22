@@ -45,7 +45,7 @@ fn check_images(c: &Construction, source: &str) {
         assert_eq!(c.kind(id), Kind::Image);
         assert_eq!(c.value(id).is_defined(), expected.defined);
         assert_eq!(&*image.name, expected.file);
-        assert_eq!(image.asset.size, expected.size);
+        assert_eq!(image.asset.size(), expected.size);
         assert_eq!(image.style.background, expected.background);
         assert_eq!(image.style.alpha, expected.alpha);
         assert_eq!(image.style.crop, expected.crop);
@@ -78,13 +78,13 @@ fn saved_raster_images_import_and_replay() {
     let image = |label| c.image(c.id(label).unwrap()).unwrap();
     let png = &image("fixedImage").asset;
     assert!(Arc::ptr_eq(png, &image("anchoredImage").asset));
-    assert_eq!(&png.rgba[..4], &[255, 0, 0, 255]);
-    assert_eq!(&png.rgba[24..28], &[0, 255, 0, 128]);
+    assert_eq!(&png.rgba()[..4], &[255, 0, 0, 255]);
+    assert_eq!(&png.rgba()[24..28], &[0, 255, 0, 128]);
     let gif = &image("animatedImage").asset;
-    assert_eq!(&gif.rgba[..4], &[255, 0, 0, 255]);
-    assert_eq!(&gif.rgba[24..28], &[0, 255, 0, 255]);
+    assert_eq!(&gif.rgba()[..4], &[255, 0, 0, 255]);
+    assert_eq!(&gif.rgba()[24..28], &[0, 255, 0, 255]);
     let jpg = &image("backImage").asset;
-    assert!(jpg.rgba[0] > 200 && jpg.rgba[1] < 30 && jpg.rgba[3] == 255);
+    assert!(jpg.rgba()[0] > 200 && jpg.rgba()[1] < 30 && jpg.rgba()[3] == 255);
     for label in ["A", "D"] {
         let moved = load(MOVED);
         let Value::Point { x, y } = moved.value(moved.id(label).unwrap()) else {

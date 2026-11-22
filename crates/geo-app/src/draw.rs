@@ -32,6 +32,7 @@ const DEPENDENT_POINT_RADIUS: f32 = 4.0;
 pub const CURVE_WIDTH: f32 = 2.5;
 const LABEL_FONT: f32 = 16.0;
 
+mod charts;
 pub(crate) mod image;
 mod text;
 
@@ -211,7 +212,8 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     let mut labels: Vec<Label> = Vec::new();
     // Curved outlines are tessellated and kept between frames.
     let is_curve = |id: Id| match c.value(id) {
-        Value::Conic { .. } | Value::Function | Value::Arc { .. } | Value::Sector { .. } => true,
+        Value::Function => !matches!(c.def(id), geo_kernel::Def::Chart(_)),
+        Value::Conic { .. } | Value::Arc { .. } | Value::Sector { .. } => true,
         Value::Undefined => matches!(c.kind(id), Kind::Arc | Kind::Sector),
         _ => false,
     };
@@ -254,6 +256,8 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             paint_highlight(painter, rect, hl, col, strong);
         }
     }
+
+    charts::paint(painter, rect, c, t, scene.visible, color);
 
     // Angles first: their sectors lie under the lines.
     for (id, angle) in angles {

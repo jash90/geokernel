@@ -345,7 +345,10 @@ fn set_value(row: &mut Row, text: String, free_number: Option<f64>) -> bool {
         let head = format!("{} =", row.label);
         changed |= row.head != head;
         row.head = head;
-    } else if matches!(row.kind, Kind::Function | Kind::FunctionNVar | Kind::Image) {
+    } else if matches!(
+        row.kind,
+        Kind::Function | Kind::FunctionNVar | Kind::Image | Kind::PieChart
+    ) {
         // A function's value is the expression its definition shows.
         changed |= row.value.is_some();
         row.value = None;
@@ -545,7 +548,7 @@ impl Workbench {
                     (format!("{label} ="), None)
                 } else if kind == Kind::Image {
                     (label.clone(), None)
-                } else if matches!(kind, Kind::Function | Kind::FunctionNVar) {
+                } else if matches!(kind, Kind::Function | Kind::FunctionNVar | Kind::PieChart) {
                     let head = match rhs.get(label.as_str()) {
                         Some(rhs) => format!("{label} = {rhs}"),
                         None => label.clone(),

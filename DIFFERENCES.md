@@ -142,3 +142,13 @@ listed in `crates/geo-golden/known-gaps.toml`.
 | Unicode text storage | Java strings can retain isolated UTF-16 surrogate halves. | Unicode commands count and index UTF-16 units. A result containing an isolated surrogate uses `?` for that unit, as the headless harness does when writing UTF-8. | Kernel text is UTF-8. |
 | `SurdText(number, list)` | Uses CAS to format non-integer relations with the supplied constants. | Reproduces the headless harness output. A recognized non-integer relation that requires CAS produces `?`. | Symbolic CAS formatting is unavailable in the kernel. Bounded relation fitting can choose a different candidate from CAS. |
 | TableText cell styling | Uses the input objects' current text and color styles. | Formats the basic table layouts and the default colors of supported labelled cells. | Arbitrary object coloring and table cell formatting require a style model for the source objects. |
+
+## Charts
+
+| Area | GeoGebra | geokernel | Reason |
+| --- | --- | --- | --- |
+| `BarChart(number, number, any, number, number, number)` | Evaluates the expression over the local variable's range and draws one bar per result. | Lowers the range to the existing budgeted `Sequence` implementation. | The command uses the same sequence mechanism for its local variable and range. |
+| `BarChart(number, number, any, number, number, number, number)` | Also accepts an explicit sequence step. | The step is passed to the budgeted `Sequence` implementation. | The step and range follow the same sequence rules as the six-argument form. |
+| `Histogram(boolean, list, list, boolean, number, any)` | Uses the first five arguments. | Uses the first five arguments. | The sixth argument is ignored by the command processor. |
+| `HistogramRight(boolean, list, list, boolean, number, any)` | Uses the first five arguments. | Uses the first five arguments. | The sixth argument is ignored by the command processor. |
+| Stacked dots | Drawing the density plot updates the coordinates of the output list. | The list uses the harness view at 50 pixels per unit. The window adapts the stacked positions to the current camera. | Following the camera in the drawing keeps construction evaluation independent of the viewport. |

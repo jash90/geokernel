@@ -164,6 +164,11 @@ pub enum ExpectedData {
         samples: Vec<Option<f64>>,
     },
     Text(String),
+    Pie {
+        center: (f64, f64),
+        radius: f64,
+        fractions: Vec<Option<f64>>,
+    },
     Relation(Vec<String>),
     /// Two-coordinate values of an equation side.
     FunctionNVar(Vec<(f64, f64, Option<f64>)>),
@@ -496,6 +501,7 @@ impl TryFrom<RawObject> for Expected {
             "text" => (Kind::Text, &["text"]),
             "relation" => (Kind::Text, &["reports"]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
+            "piechart" => (Kind::PieChart, &["center", "radius", "fractions"]),
             "polyline" => (Kind::PolyLine, &["vertices", "length"]),
             "list" => (Kind::List, &["elements"]),
             "conic" => (Kind::Conic, &[]),
@@ -640,6 +646,23 @@ impl TryFrom<RawObject> for Expected {
                 legacy_angle_number: false,
                 kind,
                 data: Some(ExpectedData::List(elements)),
+            });
+        }
+        if kind == Kind::PieChart {
+            let center: [f64; 2] =
+                serde_json::from_value(raw.fields["center"].clone()).map_err(|e| e.to_string())?;
+            let radius = number("radius", &raw.fields["radius"])?;
+            let fractions: Vec<Option<f64>> =
+                serde_json::from_value(raw.fields["fractions"].clone())
+                    .map_err(|e| e.to_string())?;
+            return Ok(Expected {
+                legacy_angle_number: false,
+                kind,
+                data: Some(ExpectedData::Pie {
+                    center: (center[0], center[1]),
+                    radius,
+                    fractions,
+                }),
             });
         }
         let mut nums = BTreeMap::new();

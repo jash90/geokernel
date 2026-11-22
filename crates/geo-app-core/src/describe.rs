@@ -117,6 +117,7 @@ pub fn object_text(c: &Construction, id: Id) -> String {
         Value::Function | Value::FunctionNVar => String::new(),
         Value::Text => c.text(id).unwrap_or_default().to_owned(),
         Value::Image => c.label(id).to_owned(),
+        Value::PieChart => "PieChart".into(),
         v => value_text(&v),
     }
 }
@@ -150,6 +151,7 @@ pub fn is_known(v: &Value) -> bool {
             | Value::FunctionNVar
             | Value::Text
             | Value::Image
+            | Value::PieChart
     )
 }
 

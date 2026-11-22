@@ -16,8 +16,8 @@ const MAX_RASTER_MEMORY: u64 = 128 << 20;
 #[derive(Debug, PartialEq, Eq)]
 pub struct RasterAsset {
     bytes: Vec<u8>,
-    pub size: [u32; 2],
-    pub rgba: Vec<u8>,
+    size: [u32; 2],
+    rgba: Vec<u8>,
 }
 
 impl RasterAsset {
@@ -56,6 +56,14 @@ impl RasterAsset {
             size,
             rgba: pixels.into_raw(),
         })
+    }
+
+    pub fn size(&self) -> [u32; 2] {
+        self.size
+    }
+
+    pub fn rgba(&self) -> &[u8] {
+        &self.rgba
     }
 
     pub fn bytes(&self) -> &[u8] {

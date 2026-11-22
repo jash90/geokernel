@@ -87,6 +87,12 @@ pub fn content_bounds(c: &Construction) -> Option<Bounds> {
             _ => {}
         }
     }
+    for (_, chart) in c.charts() {
+        if let Some([xmin, ymin, xmax, ymax]) = chart.bounds() {
+            add(&mut b, xmin, ymin);
+            add(&mut b, xmax, ymax);
+        }
+    }
     any.then_some(b)
 }
 

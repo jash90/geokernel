@@ -246,6 +246,13 @@ impl IntersectionWork {
         if !self.charge(1) {
             return f64::NAN;
         }
+        if c.chart(id).is_some() {
+            return if self.charge(32) {
+                c.function_value(id, x).unwrap_or(f64::NAN)
+            } else {
+                f64::NAN
+            };
+        }
         let env = Env::Value(x);
         self.context(c, id, &env)
             .map_or(f64::NAN, |ctx| ctx.fast(ctx.e.root))

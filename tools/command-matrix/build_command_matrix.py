@@ -49,6 +49,12 @@ EXCLUDED_ALGEBRA = {
     "PreviousPrime": "AlgoNextPreviousPrime obtains the value from the CAS.",
 }
 
+EXCLUDED_CHARTS = {
+    "StemPlot": "Produces a LaTeX stem-and-leaf table.",
+    "FrequencyTable": "Produces a LaTeX frequency table.",
+    "ContingencyTable": "Produces a LaTeX contingency table, optionally with a test report.",
+}
+
 FORM_NOTES = {
     "CommonDenominator": "Number pairs. The function pair delegates to the CAS (AlgoPolynomialCD).",
     "LeftSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
@@ -283,6 +289,8 @@ def classify(group, command, alias_of):
     """Return (priority, status, notes) for a real command; aliases copy their target."""
     if command in EXCLUDED_ALGEBRA:
         return "", "out_of_scope", EXCLUDED_ALGEBRA[command]
+    if command in EXCLUDED_CHARTS:
+        return "", "out_of_scope", EXCLUDED_CHARTS[command]
     if command in OUT_OF_SCOPE_COMMANDS:
         return "", "out_of_scope", ""
     if command in PARTIAL and not alias_of:
