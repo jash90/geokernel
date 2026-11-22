@@ -139,9 +139,11 @@ fn negate(tree: &mut Entry, i: u32) -> u32 {
     match tree.nodes[i as usize] {
         Node::Num(v) => {
             let lit = &tree.lits[i as usize];
-            let negated = Lit {
-                special: lit.special,
-                dec: lit.dec.as_ref().map(super::decimal::Dec::negated),
+            let negated = match lit {
+                Lit::Special(decimal) => {
+                    Lit::Special(decimal.as_ref().map(super::decimal::Dec::negated))
+                }
+                _ => Lit::Plain,
             };
             push(tree, Node::Num(-v), tree.tys[i as usize], negated)
         }

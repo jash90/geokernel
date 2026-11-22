@@ -108,6 +108,25 @@ pub fn import_notice(imported: &geo_import::Imported) -> Option<String> {
         .count();
     let direct = imported.skipped.len() - dependents;
     let mut parts = Vec::new();
+    if !imported.mismatched.is_empty() {
+        let labels = imported
+            .mismatched
+            .iter()
+            .take(QUOTED)
+            .map(|m| geo_import::convert::quote(&m.label))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let more = imported.mismatched.len().saturating_sub(QUOTED);
+        let extra = if more > 0 {
+            format!(" i {more} więcej")
+        } else {
+            String::new()
+        };
+        parts.push(format!(
+            "Wartości różne od zapisanych w pliku: {} ({labels}{extra})",
+            imported.mismatched.len()
+        ));
+    }
     if direct > 0 {
         parts.push(format!(
             "Pominięte obiekty: {direct} (jądro ich nie obsługuje)"
@@ -115,12 +134,6 @@ pub fn import_notice(imported: &geo_import::Imported) -> Option<String> {
     }
     if dependents > 0 {
         parts.push(format!("zależne od nich: {dependents}"));
-    }
-    if !imported.mismatched.is_empty() {
-        parts.push(format!(
-            "wartości różne od zapisanych w pliku: {}",
-            imported.mismatched.len()
-        ));
     }
     if parts.is_empty() && imported.notes.is_empty() {
         return None;
@@ -931,6 +944,47 @@ mod tests {
     }
 
     #[test]
+    fn imported_path_coordinates_and_angle_styles_survive_a_workbench_snapshot() {
+        let cases = [
+            include_bytes!("../../../../golden/ggb/saved/saved-paths-001.xml").as_slice(),
+            include_bytes!("../../../../golden/ggb/saved/saved-review-001.xml").as_slice(),
+        ];
+        for xml in cases {
+            let mut wb = Workbench::default();
+            wb.load_bytes(xml, "construction.xml").unwrap();
+            assert!(!wb
+                .notice
+                .as_deref()
+                .unwrap_or_default()
+                .starts_with("Wartości różne od zapisanych w pliku"));
+            let c = wb.construction();
+            if let Some(angle) = c.id("reflex") {
+                assert_eq!(
+                    c.angle_style(angle),
+                    Some(geo_kernel::kernel::angle::AngleStyle::Reflex)
+                );
+                assert_eq!(wb.log.rhs_of("A"), Some("(sqrt(2), 1)"));
+            } else {
+                assert!(c.path_state(c.id("F").unwrap()).is_some());
+            }
+            assert_round_trip(&mut wb, "imported construction");
+        }
+    }
+
+    #[test]
+    fn a_saved_value_mismatch_is_named_first_in_the_file_notice() {
+        let mut wb = Workbench::default();
+        let xml = include_bytes!("../../../../golden/ggb/saved/saved-doubletangent-001.xml");
+        wb.load_bytes(xml, "construction.xml").unwrap();
+        assert!(wb
+            .notice
+            .as_deref()
+            .unwrap()
+            .starts_with("Wartości różne od zapisanych w pliku: 1 (P_{2})"));
+        assert!(wb.construction().id("P_{2}").is_some());
+    }
+
+    #[test]
     fn the_notice_counts_skipped_dependents_mismatches_and_notes() {
         use geo_import::{Imported, Mismatch, Skipped};
         let skipped = |label: &str, reason: &str| Skipped {
@@ -957,8 +1011,8 @@ mod tests {
         };
         assert_eq!(
             import_notice(&imported).unwrap(),
-            "Pominięte obiekty: 1 (jądro ich nie obsługuje), zależne od nich: 2, \
-             wartości różne od zapisanych w pliku: 1, wczytane linie: 7. Uwagi: continuity"
+            "Wartości różne od zapisanych w pliku: 1 (d), Pominięte obiekty: 1 (jądro ich nie obsługuje), \
+             zależne od nich: 2, wczytane linie: 7. Uwagi: continuity"
         );
     }
 }

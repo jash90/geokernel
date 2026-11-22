@@ -123,6 +123,10 @@ pub enum Kind {
     Boolean,
     /// A function of `x`, `f(x) = ...`; see [`Construction::function_value`].
     Function,
+    /// Text produced by an expression, read with [`Construction::text`].
+    Text,
+    /// A scalar function of two coordinates, such as one side of an equation.
+    FunctionNVar,
     Polygon,
     PolyLine,
     /// A list of numbers, points, vectors, booleans or lists, such as
@@ -163,6 +167,8 @@ impl fmt::Display for Kind {
             Kind::Ray => "ray",
             Kind::Boolean => "boolean",
             Kind::Function => "function",
+            Kind::Text => "text",
+            Kind::FunctionNVar => "function_nvar",
             Kind::Polygon => "polygon",
             Kind::PolyLine => "polyline",
             Kind::List => "list",
@@ -240,6 +246,8 @@ pub enum Value {
         start: f64,
         end: f64,
     },
+    Text,
+    FunctionNVar,
     /// A polygon with its signed area: positive when the vertices run
     /// counter-clockwise. The vertices are not copied into the value; read
     /// them with [`Construction::vertices`].
@@ -355,6 +363,8 @@ impl Value {
             Value::Sector { area } => area.is_finite(),
             Value::Curve { start, end } => start.is_finite() && end.is_finite(),
             Value::Function
+            | Value::Text
+            | Value::FunctionNVar
             | Value::List { .. }
             | Value::Conic { .. }
             | Value::Locus { .. }
@@ -508,6 +518,7 @@ impl EquationDef {
 #[derive(Clone, Debug, PartialEq)]
 pub struct EquationRecord {
     pub(crate) coeffs: Vec<u32>,
+    pub(crate) sides: [u32; 2],
 }
 
 impl Def {
@@ -1244,6 +1255,15 @@ impl Construction {
 
     /// Adds an object and computes its value.
     pub fn add(&mut self, label: &str, def: Def) -> Result<Id, Error> {
+        self.add_with_path_state(label, def, None)
+    }
+
+    fn add_with_path_state(
+        &mut self,
+        label: &str,
+        def: Def,
+        saved_path: Option<PathState>,
+    ) -> Result<Id, Error> {
         if label.is_empty() {
             return Err(Error::EmptyLabel);
         }
@@ -1273,7 +1293,7 @@ impl Construction {
                 algo::general_conic::value(d.kind(), &data)
             }
             Def::Path(d) if d.has_state() => {
-                let state = d.create(self);
+                let state = saved_path.unwrap_or_else(|| d.create(self));
                 self.paths.push((id.0, state));
                 PathDef::value(&state)
             }
@@ -1685,14 +1705,9 @@ impl Construction {
     /// Kept out of line so that the loop of [`Self::propagate`] stays small.
     #[inline(never)]
     fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
-        if expr::has_lists(self, d) {
-            let (value, changed) = expr::update_lists(self, d);
-            self.values[i] = value;
-            return changed;
-        }
-        let out = expr::evaluate(self, d);
-        self.values[i] = expr::value(d, out.raw);
-        expr::store(self, d, out)
+        let (value, changed) = expr::update(self, d);
+        self.values[i] = value;
+        changed
     }
 
     /// Recomputes the conic record of object `i` from its previous record;
@@ -1881,6 +1896,21 @@ impl Construction {
         }
     }
 
+    pub(crate) fn add_saved_path_point(
+        &mut self,
+        label: &str,
+        path: Id,
+        x: f64,
+        y: f64,
+        bounds: Option<[f64; 2]>,
+    ) -> Result<Id, Error> {
+        if bounds.is_some_and(|[min, max]| min >= max || self.kind(path) != Kind::Function) {
+            return Err(Error::NotFinite);
+        }
+        let state = PathState::saved(self, path, x, y, bounds);
+        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
+    }
+
     /// Gives the point on a path `id` the state `state` read from another
     /// construction with [`Self::path_state`], and recomputes everything
     /// that depends on it. Returns how many dependent objects were
@@ -1955,6 +1985,21 @@ impl Construction {
                 _ => None,
             },
         }
+    }
+
+    /// The current contents of a text object.
+    pub fn text(&self, id: Id) -> Option<&str> {
+        expr::text_value(self, id)
+    }
+
+    /// The current numerical findings of a Relation command.
+    pub fn relation_reports(&self, id: Id) -> Option<Vec<algo::predicate::RelationReport>> {
+        expr::relation_reports(self, id)
+    }
+
+    /// Evaluates a two-variable function at the given coordinates.
+    pub fn function_value_xy(&self, id: Id, x: f64, y: f64) -> Option<f64> {
+        expr::equation::side_value(self, id, x, y)
     }
 
     /// The coefficient entries of the equation object `id` (see

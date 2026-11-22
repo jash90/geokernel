@@ -67,7 +67,9 @@ pub(crate) fn same_value(a: Value, b: Value) -> bool {
         (Value::Bool(p), Value::Bool(q)) => p == q,
         (Value::Polygon { area }, Value::Polygon { area: a2 }) => s(area, a2),
         (Value::PolyLine { length }, Value::PolyLine { length: l2 }) => s(length, l2),
-        (Value::Function, Value::Function) | (Value::Undefined, Value::Undefined) => true,
+        (Value::Function, Value::Function)
+        | (Value::FunctionNVar, Value::FunctionNVar)
+        | (Value::Undefined, Value::Undefined) => true,
         _ => false,
     }
 }
@@ -93,6 +95,14 @@ fn same_key(a: RowKey, b: RowKey) -> bool {
     match (a.0, b.0) {
         (Value::Conic { ty }, Value::Conic { ty: ty2 }) => ty == ty2 && a.1 == b.1,
         _ => same_value(a.0, b.0),
+    }
+}
+
+fn same_row_value(c: &Construction, id: Id, row: &Row, old: RowKey, new: RowKey) -> bool {
+    if matches!((old.0, new.0), (Value::Text, Value::Text)) {
+        row.value.as_deref() == c.text(id)
+    } else {
+        same_key(old, new)
     }
 }
 
@@ -294,7 +304,7 @@ fn still_fits(
         && row.free == free
         && row.angle == (c.kind(id) == Kind::Angle)
         && row.free_number == number
-        && same_key(made_from, key)
+        && same_row_value(c, id, row, made_from, key)
         && row.siblings.iter().eq(siblings(src, &row.label))
         && same_head
 }
@@ -310,7 +320,7 @@ fn set_value(row: &mut Row, text: String, free_number: Option<f64>) -> bool {
         let head = format!("{} =", row.label);
         changed |= row.head != head;
         row.head = head;
-    } else if row.kind == Kind::Function {
+    } else if matches!(row.kind, Kind::Function | Kind::FunctionNVar) {
         // A function's value is the expression its definition shows.
         changed |= row.value.is_some();
         row.value = None;
@@ -374,7 +384,7 @@ impl Workbench {
         for (row, old) in self.rows.iter_mut().zip(&mut self.row_values) {
             let id = row.id;
             let key = row_key(c, id);
-            if same_key(*old, key) {
+            if same_row_value(c, id, row, *old, key) {
                 continue;
             }
             *old = key;
@@ -508,7 +518,7 @@ impl Workbench {
                 };
                 let (head, second) = if free_number.is_some() {
                     (format!("{label} ="), None)
-                } else if kind == Kind::Function {
+                } else if matches!(kind, Kind::Function | Kind::FunctionNVar) {
                     let head = match rhs.get(label.as_str()) {
                         Some(rhs) => format!("{label} = {rhs}"),
                         None => label.clone(),

@@ -1,0 +1,132 @@
+{
+  "schema": 2,
+  "id": "saved-expressions-003",
+  "script": [
+    "A = (1, 2)",
+    "B = (4, -1)",
+    "v_{0x} = 2",
+    "C = (x(A), y(B) + 2)",
+    "s = Segment(A, C)",
+    "φ = x(C) + π",
+    "a = sin(30° + v_{0x}°)",
+    "f(x) = If[-4 < x, v_{0x} ⋅ x² + y(C), x - 1]",
+    "t(x) = If[f(x) > 0 ∧ x > 0, f(x)]",
+    "g(x) = If[x ≤ -2 ∨ x ≥ 2, t(x) + 1, If[x ≠ 0, f(x), a]]",
+    "n = If[x(A) ≥ 0, g(x(A)), φ]",
+    "Q = (n, f(y(A)))",
+    "valid = x(A) ≥ 0",
+    "j_{xy}(x) = f(x) + 1",
+    "d = j_{xy}(y(A))",
+    "ang = (v_{0x} + 30)°",
+    "bad = x(A) + NextPrime(v_{0x})",
+    "lost = bad + 1",
+    "multi(x, y) = x + y",
+    "control = Checkbox()",
+    "button = Button()",
+    "field = InputBox(v_{0x})"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+    "B": { "type": "point", "defined": true, "x": 4.0, "y": -1.0 },
+    "v_{0x}": { "type": "number", "defined": true, "value": 5.0 },
+    "C": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+    "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 1.0, "x2": 2.0, "y2": 1.0 },
+    "φ": { "type": "number", "defined": true, "value": 5.141592653589793 },
+    "a": { "type": "number", "defined": true, "value": 0.5735764363510462 },
+    "f": {
+      "type": "function",
+      "defined": true,
+      "samples": [
+        [-8.0, -9.0],
+        [-4.0, -5.0],
+        [-2.0, 21.0],
+        [-1.0, 6.0],
+        [-0.5, 2.25],
+        [0.0, 1.0],
+        [0.5, 2.25],
+        [1.0, 6.0],
+        [2.0, 21.0],
+        [4.0, 81.0],
+        [8.0, 321.0]
+      ]
+    },
+    "t": {
+      "type": "function",
+      "defined": true,
+      "samples": [
+        [-8.0, null],
+        [-4.0, null],
+        [-2.0, null],
+        [-1.0, null],
+        [-0.5, null],
+        [0.0, null],
+        [0.5, 2.25],
+        [1.0, 6.0],
+        [2.0, 21.0],
+        [4.0, 81.0],
+        [8.0, 321.0]
+      ]
+    },
+    "g": {
+      "type": "function",
+      "defined": true,
+      "samples": [
+        [-8.0, null],
+        [-4.0, null],
+        [-2.0, null],
+        [-1.0, 6.0],
+        [-0.5, 2.25],
+        [0.0, 0.5735764363510462],
+        [0.5, 2.25],
+        [1.0, 6.0],
+        [2.0, 22.0],
+        [4.0, 82.0],
+        [8.0, 322.0]
+      ]
+    },
+    "n": { "type": "number", "defined": true, "value": 22.0 },
+    "Q": { "type": "point", "defined": true, "x": 22.0, "y": 6.0 },
+    "valid": { "type": "boolean", "defined": true, "value": true },
+    "j_{xy}": {
+      "type": "function",
+      "defined": true,
+      "samples": [
+        [-8.0, -8.0],
+        [-4.0, -4.0],
+        [-2.0, 22.0],
+        [-1.0, 7.0],
+        [-0.5, 3.25],
+        [0.0, 2.0],
+        [0.5, 3.25],
+        [1.0, 7.0],
+        [2.0, 22.0],
+        [4.0, 82.0],
+        [8.0, 322.0]
+      ]
+    },
+    "d": { "type": "number", "defined": true, "value": 7.0 },
+    "ang": { "type": "angle", "defined": true, "value": 0.6108652381980153 },
+    "bad": { "type": "number", "defined": false },
+    "lost": { "type": "number", "defined": false },
+    "multi": {
+      "type": "function",
+      "defined": true,
+      "samples": [
+        [-8.0, -8.0],
+        [-4.0, -4.0],
+        [-2.0, -2.0],
+        [-1.0, -1.0],
+        [-0.5, -0.5],
+        [0.0, 0.0],
+        [0.5, 0.5],
+        [1.0, 1.0],
+        [2.0, 2.0],
+        [4.0, 4.0],
+        [8.0, 8.0]
+      ]
+    },
+    "control": { "type": "boolean", "defined": true, "value": true },
+    "button": { "type": "Button", "defined": true },
+    "field": { "type": "TextField", "defined": true }
+  }
+}

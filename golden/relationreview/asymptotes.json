@@ -1,0 +1,184 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "relationreview-asymptotes-001",
+      "group": "relationreview",
+      "script": [
+        "d = 1",
+        "k: x^2-d*y^2 = 1",
+        "h = Asymptote(k)",
+        "g: x-y = 0",
+        "m = Relation(h_{1},k)",
+        "n = Relation(k,h_{2})",
+        "o = Relation(g,k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "d", "value": 4.0 },
+        { "action": "set_number", "label": "d", "value": -1.0 },
+        { "action": "set_number", "label": "d", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "h_{1}": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -0.0 },
+          "h_{2}": { "type": "line", "defined": true, "a": -1.0, "b": -1.0, "c": -0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=null"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=null"
+            ]
+          },
+          "o": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=false"
+            ]
+          }
+        },
+        {
+          "d": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -4.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 0.5],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "h_{1}": { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": -0.0 },
+          "h_{2}": { "type": "line", "defined": true, "a": -0.5, "b": -1.0, "c": -0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=null"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=null"
+            ]
+          },
+          "o": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=false"
+            ]
+          }
+        },
+        {
+          "d": { "type": "number", "defined": true, "value": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "h_{1}": { "type": "line", "defined": false },
+          "h_{2}": { "type": "line", "defined": false },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=null"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=null"
+            ]
+          },
+          "o": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=false"
+            ]
+          }
+        },
+        {
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "h_{1}": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -0.0 },
+          "h_{2}": { "type": "line", "defined": true, "a": -1.0, "b": -1.0, "c": -0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "m": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=null"
+            ]
+          },
+          "n": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=null"
+            ]
+          },
+          "o": {
+            "type": "relation",
+            "defined": true,
+            "reports": [
+              "null=false"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

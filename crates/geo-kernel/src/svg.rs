@@ -338,6 +338,8 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 write_locus(&locus.points, &mut segments, |x, y| (sx(x), sy(y)));
             }
             Value::Number(_)
+            | Value::Text
+            | Value::FunctionNVar
             | Value::Bool(_)
             | Value::List { .. }
             | Value::HomogeneousPoint { .. }

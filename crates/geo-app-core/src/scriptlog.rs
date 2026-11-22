@@ -32,7 +32,9 @@
 
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id};
-use geo_kernel::script::{boundary_slot_owner, restore_boundary_labels, BoundaryOutputs};
+use geo_kernel::script::{
+    boundary_slot_owner, restore_boundary_labels, split_comment, BoundaryOutputs,
+};
 use shared::Chain;
 pub use shared::Labels;
 use std::collections::{BTreeMap, BTreeSet};
@@ -45,12 +47,13 @@ pub const DIRECTIVES: [&str; 3] = ["SetCoords", "SetValue", "SetVisibleInView"];
 /// Starts the list of labels after a definition in a snapshot.
 const LABELS: &str = "# labels: ";
 const MOVE_POINTS: &str = "$movePoints";
+const ANGLE_STYLE: &str = "$angleStyle";
 
 fn has_recorded_growth(src: &str) -> bool {
     src.lines().any(|line| {
-        line.split('#')
-            .next()
-            .and_then(|line| line.split_once('='))
+        split_comment(line)
+            .0
+            .split_once('=')
             .and_then(|(_, rhs)| boundary_slot_owner(rhs.trim()))
             .is_some()
     })
@@ -69,10 +72,12 @@ impl Entry {
     /// line keeps its `:` (`a: 2x + 3y = 6`), so its definition is the
     /// whole equation.
     pub fn rhs(&self) -> &str {
-        self.line
+        let rhs = self
+            .line
             .find([':', '='])
             .and_then(|i| self.line.get(i + 1..))
-            .map_or("", str::trim)
+            .map_or("", str::trim);
+        geo_kernel::script::saved_definition(rhs).unwrap_or(rhs)
     }
 
     fn replay(&self, c: &mut Construction) -> Result<Option<Id>, String> {
@@ -96,6 +101,7 @@ pub(crate) struct GrownOutputs<'a> {
 pub enum Setting {
     Point(f64, f64),
     Number(f64),
+    AngleStyle(geo_kernel::kernel::angle::AngleStyle),
 }
 
 type Position<L> = (L, f64, f64);
@@ -129,7 +135,11 @@ enum Op {
 /// before any `=`; an equation (`f: 2x + 3y = 6`, whose `=` is part of the
 /// definition) keeps its `:`, which the script of the kernel reads.
 pub fn normalize(input: &str) -> String {
-    let line = input.split('#').next().unwrap_or("").trim();
+    normalize_definition(split_comment(input).0)
+}
+
+fn normalize_definition(input: &str) -> String {
+    let line = input.trim();
     let colon = line.find(':');
     let eq = line.find('=');
     match (colon, eq) {
@@ -155,7 +165,7 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     }
     let (name, rest) = line.split_once('(')?;
     let name = name.trim();
-    if name != MOVE_POINTS && !DIRECTIVES.contains(&name) {
+    if name != MOVE_POINTS && name != ANGLE_STYLE && !DIRECTIVES.contains(&name) {
         return None;
     }
     let parse = || -> Option<Directive<'_>> {
@@ -174,6 +184,12 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
                     .map(Directive::MovePoints)
             }
             ("SetValue", [l, v]) => Some(Directive::Set(l, Setting::Number(num(v)?))),
+            (ANGLE_STYLE, [l, style]) => Some(Directive::Set(
+                l,
+                Setting::AngleStyle(geo_kernel::kernel::angle::AngleStyle::from_xml(
+                    style.parse().ok()?,
+                )),
+            )),
             ("SetVisibleInView", [l, "1", shown]) => {
                 Some(Directive::Visible(l, shown.parse().ok()?))
             }
@@ -610,6 +626,7 @@ impl Log {
                     let result = match *to {
                         Setting::Point(x, y) => c.move_point(id, x, y),
                         Setting::Number(v) => c.set_number(id, v),
+                        Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     // A set right after a set of the same object is merged
@@ -732,6 +749,7 @@ impl Log {
                     let result = match *to {
                         Setting::Point(x, y) => c.move_point(id, x, y),
                         Setting::Number(v) => c.set_number(id, v),
+                        Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     kept.push_set(
@@ -847,6 +865,11 @@ impl Log {
                 // until the next locus computation installs a fresh one,
                 // on the line as it is then.
                 Op::Freeze { .. } => Ok(()),
+                Op::Set {
+                    label,
+                    to: Setting::AngleStyle(style),
+                    ..
+                } => writeln!(out, "{ANGLE_STYLE}({label}, {})", style.xml_code()),
                 Op::MovePoints(points) => {
                     let _ = write!(out, "{MOVE_POINTS}(");
                     for (i, (label, x, y)) in points.iter().enumerate() {
@@ -892,9 +915,14 @@ impl Log {
         let result = match to {
             Setting::Point(x, y) => c.move_point(id, x, y),
             Setting::Number(v) => c.set_number(id, v),
+            Setting::AngleStyle(style) => c.set_angle_style(id, style),
         };
         result.map_err(|e| format!("`{label}`: {e}"))?;
-        self.record_update(c, label, to);
+        if matches!(to, Setting::AngleStyle(_)) {
+            self.push_set(label, to, true);
+        } else {
+            self.record_update(c, label, to);
+        }
         Ok(vec![id])
     }
 
@@ -920,11 +948,9 @@ impl Log {
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
         for (i, raw) in src.lines().enumerate() {
-            let (body, listed) = match raw.split_once(LABELS) {
-                Some((body, list)) => (body, Some(list)),
-                None => (raw, None),
-            };
-            let line = normalize(body);
+            let (body, comment) = split_comment(raw);
+            let listed = comment.and_then(|comment| comment.strip_prefix(LABELS));
+            let line = normalize_definition(body);
             if line.is_empty() {
                 continue;
             }
@@ -1022,7 +1048,8 @@ impl Log {
         let mut groups = BoundaryOutputs::default();
         let grow = !has_recorded_growth(src);
         for (i, raw) in src.lines().enumerate() {
-            let line = normalize(raw);
+            let (body, comment) = split_comment(raw);
+            let line = normalize_definition(body);
             if line.is_empty() {
                 continue;
             }
@@ -1036,9 +1063,9 @@ impl Log {
             }
             check_names(&line).map_err(at)?;
             let before = c.len();
-            let labels = raw
-                .split_once(LABELS)
-                .map(|(_, labels)| labels.split(',').map(str::trim).collect::<Vec<_>>());
+            let labels = comment
+                .and_then(|comment| comment.strip_prefix(LABELS))
+                .map(|labels| labels.split(',').map(str::trim).collect::<Vec<_>>());
             let first = labels
                 .as_ref()
                 .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))

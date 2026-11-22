@@ -7,6 +7,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoFocus.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoVertexConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAxes.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoAsymptote.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/CmdAsymptote.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoAxis.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoAxisLength.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoEccentricity.java
@@ -43,7 +45,7 @@
 
 use super::conic_nd::{ConicData, ConicType};
 use super::intersect::{helper_line_conic_points, on_general_conic_by_construction, Pt};
-use super::{line_value, Group, Parents, LINE, POINT};
+use super::{line_value, Group, Parents, CONIC_OBJECTS, LINE, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
 
@@ -68,6 +70,8 @@ pub enum ConicPartDef {
     /// Output `which` of `Axes(k)`; `MajorAxis(k)` (`FirstAxis`) is axis 0
     /// and `MinorAxis(k)` (`SecondAxis`) axis 1.
     Axis { conic: Id, which: u8 },
+    /// Output `which` (0 or 1) of `Asymptote(k)`.
+    Asymptote { conic: Id, which: u8 },
     /// Output `which` (0 or 1) of `Directrix(k)`.
     Directrix { conic: Id, which: u8 },
     /// `FirstAxisLength(k)` (`SemiMajorAxisLength`) for 0,
@@ -100,6 +104,7 @@ impl ConicPartDef {
             | ConicPartDef::Focus { conic, .. }
             | ConicPartDef::Vertex { conic, .. }
             | ConicPartDef::Axis { conic, .. }
+            | ConicPartDef::Asymptote { conic, .. }
             | ConicPartDef::Directrix { conic, .. }
             | ConicPartDef::AxisLength { conic, .. }
             | ConicPartDef::TangentPoint { conic, .. }
@@ -120,6 +125,7 @@ impl ConicPartDef {
             ConicPartDef::IntersectLine { .. }
             | ConicPartDef::Focus { .. }
             | ConicPartDef::Axis { .. }
+            | ConicPartDef::Asymptote { .. }
             | ConicPartDef::Directrix { .. }
             | ConicPartDef::AxisLength { .. }
             | ConicPartDef::TangentPoint { .. }
@@ -135,6 +141,7 @@ impl ConicPartDef {
             | ConicPartDef::Focus { which, .. }
             | ConicPartDef::Vertex { which, .. }
             | ConicPartDef::Axis { which, .. }
+            | ConicPartDef::Asymptote { which, .. }
             | ConicPartDef::Directrix { which, .. }
             | ConicPartDef::AxisLength { which, .. }
             | ConicPartDef::TangentPoint { which, .. }
@@ -153,6 +160,7 @@ impl Group for ConicPartDef {
             | ConicPartDef::Pole { .. }
             | ConicPartDef::Vertex { .. } => Kind::Point,
             ConicPartDef::Axis { .. }
+            | ConicPartDef::Asymptote { .. }
             | ConicPartDef::Directrix { .. }
             | ConicPartDef::TangentPoint { .. }
             | ConicPartDef::TangentLine { .. }
@@ -189,10 +197,10 @@ impl Group for ConicPartDef {
             ConicPartDef::Diameter { direction, .. } => c.expect(direction, DIRECTION)?,
             _ => {}
         }
-        let conics = if matches!(self, Self::Pole { .. }) {
-            CIRCLE_OR_CONIC
-        } else {
-            CONIC
+        let conics = match self {
+            Self::Asymptote { .. } => CONIC_OBJECTS,
+            Self::Pole { .. } => CIRCLE_OR_CONIC,
+            _ => CONIC,
         };
         c.expect(self.conic(), conics)?;
         if self.which() < self.outputs() {
@@ -217,9 +225,12 @@ impl Group for ConicPartDef {
         if let ConicPartDef::IntersectLine { line, conic, which } = *self {
             return super::intersect::line_general_conic(c, line, conic, which);
         }
+        if let ConicPartDef::Asymptote { conic, which } = *self {
+            return asymptote(&super::conic_object(c, conic)?, which);
+        }
         let d = c.conic(self.conic())?;
         match *self {
-            ConicPartDef::IntersectLine { .. } => None,
+            ConicPartDef::IntersectLine { .. } | ConicPartDef::Asymptote { .. } => None,
             ConicPartDef::TangentPoint {
                 point,
                 conic,
@@ -367,16 +378,39 @@ impl Group for ConicPartDef {
             };
         }
         let [arg] = args else { return None };
-        let conic = c.id(arg).filter(|&k| c.kind(k) == Kind::Conic)?;
+        let kinds = if func == "Asymptote" {
+            CONIC_OBJECTS
+        } else {
+            CONIC
+        };
+        let conic = c.id(arg).filter(|&k| kinds.contains(&c.kind(k)))?;
         let (n, make): (u8, fn(Id, u8) -> Self) = match func {
             "Focus" => (2, |conic, which| ConicPartDef::Focus { conic, which }),
             "Vertex" => (4, |conic, which| ConicPartDef::Vertex { conic, which }),
             "Axes" => (2, |conic, which| ConicPartDef::Axis { conic, which }),
             "Directrix" => (2, |conic, which| ConicPartDef::Directrix { conic, which }),
+            "Asymptote" => (2, |conic, which| ConicPartDef::Asymptote { conic, which }),
             _ => return None,
         };
         Some(Ok((0..n).map(|which| make(conic, which)).collect()))
     }
+}
+
+/// `AlgoAsymptote.compute`: the two lines through the centre in the half-axis directions.
+fn asymptote(d: &ConicData, which: u8) -> Option<Value> {
+    if d.ty != ConicType::Hyperbola {
+        return None;
+    }
+    let [e0, e1] = d.eigenvec;
+    let [ax, bx] = d.half_axes;
+    let (vx, vy) = (ax * e0[0], ax * e0[1]);
+    let (wx, wy) = (bx * e1[0], bx * e1[1]);
+    let (a, b) = if which == 0 {
+        (-(wy + vy), wx + vx)
+    } else {
+        (-(wy - vy), wx - vx)
+    };
+    line_value(a, b, -(a * d.midpoint[0] + b * d.midpoint[1]))
 }
 
 /// The tangents from `point` to `conic`. As in the constructor of

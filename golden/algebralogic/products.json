@@ -1,0 +1,208 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "algebralogic-products-001",
+      "group": "algebralogic",
+      "script": [
+        "n = Dot((1,2),(3,4))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 11.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-products-002",
+      "group": "algebralogic",
+      "script": [
+        "n = Dot({1,2},{3,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 11.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-products-003",
+      "group": "algebralogic",
+      "script": [
+        "n = Dot({1,2,3,4},{1,1,1,1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 10.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-products-004",
+      "group": "algebralogic",
+      "script": [
+        "n = Dot({1,2,3},{1,1,1,1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-products-005",
+      "group": "algebralogic",
+      "script": [
+        "n = Cross({1,2},{3,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": -2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-products-006",
+      "group": "algebralogic",
+      "script": [
+        "v = Cross({1,2,3},{4,5,6})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "v": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -3.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": -3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "algebralogic-products-007",
+      "group": "algebralogic",
+      "script": [
+        "A = (1,2)",
+        "B = (2,3)",
+        "v = (3,4)",
+        "w = (4,5)",
+        "a = 2",
+        "b = 3",
+        "r = Dot(A,B)",
+        "s = Dot(A,v)",
+        "t = Dot(v,B)",
+        "u = Dot(v,w)",
+        "d = Dot(a,b)",
+        "n = Dot({1,2,3}, {4,5,6})",
+        "l = Cross({1,2,3}, {4,5,6})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -2.0, "y": 3.0 },
+        { "action": "move", "label": "w", "x": 0.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "w": { "type": "vector", "defined": true, "x": 4.0, "y": 5.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 8.0 },
+          "s": { "type": "number", "defined": true, "value": 11.0 },
+          "t": { "type": "number", "defined": true, "value": 18.0 },
+          "u": { "type": "number", "defined": true, "value": 32.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 },
+          "n": { "type": "number", "defined": true, "value": 32.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -3.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": -3.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "w": { "type": "vector", "defined": true, "x": 4.0, "y": 5.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "s": { "type": "number", "defined": true, "value": 6.0 },
+          "t": { "type": "number", "defined": true, "value": 18.0 },
+          "u": { "type": "number", "defined": true, "value": 32.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 },
+          "n": { "type": "number", "defined": true, "value": 32.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -3.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": -3.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "w": { "type": "vector", "defined": true, "x": 0.0, "y": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "s": { "type": "number", "defined": true, "value": 6.0 },
+          "t": { "type": "number", "defined": true, "value": 18.0 },
+          "u": { "type": "number", "defined": true, "value": 4.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 },
+          "n": { "type": "number", "defined": true, "value": 32.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -3.0 },
+              { "type": "number", "defined": true, "value": 6.0 },
+              { "type": "number", "defined": true, "value": -3.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

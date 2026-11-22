@@ -102,7 +102,8 @@ pub fn object_text(c: &Construction, id: Id) -> String {
             Some(d) => conic_equation(&d),
             None => text::label(Label::Undefined).into(),
         },
-        Value::Function => String::new(),
+        Value::Function | Value::FunctionNVar => String::new(),
+        Value::Text => c.text(id).unwrap_or_default().to_owned(),
         v => value_text(&v),
     }
 }
@@ -133,6 +134,8 @@ pub fn is_known(v: &Value) -> bool {
             | Value::PolyLine { .. }
             | Value::Conic { .. }
             | Value::Function
+            | Value::FunctionNVar
+            | Value::Text
     )
 }
 
