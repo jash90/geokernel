@@ -634,6 +634,20 @@ fn numerator(c: &Construction, builder: &mut Builder, root: u32, kind: BorderTyp
     coefficients
 }
 
+/// A plane polynomial at `(x, y)` that leaves out a coordinate it does
+/// not read, so that a NaN there does not reach the value through `0 * y`.
+fn reading_value(polynomial: &PlanePolynomial, x: f64, y: f64) -> f64 {
+    fn horner(coefficients: impl DoubleEndedIterator<Item = f64>, t: f64) -> f64 {
+        let mut coefficients = coefficients.rev();
+        let first = coefficients.next().unwrap_or(0.0);
+        coefficients.fold(first, |sum, c| sum * t + c)
+    }
+    horner(
+        polynomial.iter().map(|row| horner(row.iter().copied(), x)),
+        y,
+    )
+}
+
 fn is_zero(v: f64) -> bool {
     v.abs() < crate::tol::STANDARD_PRECISION
 }
@@ -849,11 +863,12 @@ impl Tree {
                         1 << u8::from(v > 0.0)
                     });
                 }
-                let v = plane_polynomial::value(&border.polynomial, x, y);
-                if !v.is_finite() {
-                    return None;
-                }
-                if v.abs() < STANDARD_PRECISION {
+                // `Inequality.valueAround`: the normal form reads only the
+                // coordinates it has, and a NaN value reads as false.
+                let v = reading_value(&border.polynomial, x, y);
+                if v.is_nan() {
+                    1
+                } else if v.abs() < STANDARD_PRECISION {
                     3
                 } else {
                     1 << u8::from(v > 0.0)

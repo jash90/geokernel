@@ -68,6 +68,9 @@
     {"id": "corners-review-009", "group": "corners", "script": ["P = Vertex(!(-1 < y < sqrt(x) - 2) && x > -2 && x < 1 && y > 0)"], "steps": [{"action": "initial"}]},
     {"id": "corners-review-010", "group": "corners", "script": ["P = Vertex(x > y^2 && y^2 - 10000000000 > 0)"], "steps": [{"action": "initial"}]},
     {"id": "corners-review-011", "group": "corners", "script": ["P = Vertex((x > 0 \u2295 y > 1) && x < 2 && y < 3)"], "steps": [{"action": "initial"}]},
-    {"id": "corners-review-012", "group": "corners", "script": ["P = Vertex((x > 0 && true) && x < 2 && y > 0 && y < 1)"], "steps": [{"action": "initial"}]}
+    {"id": "corners-review-012", "group": "corners", "script": ["P = Vertex((x > 0 && true) && x < 2 && y > 0 && y < 1)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-review-013", "group": "corners", "script": ["P = Vertex(y > sqrt(x) && x^2 < 4 && y < 3)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-review-014", "group": "corners", "script": ["P = Vertex(y > ln(x) && x^2 > 0)"], "steps": [{"action": "initial"}]},
+    {"id": "corners-review-015", "group": "corners", "script": ["P = Vertex(y > sqrt(x) && x^2 < 4 && x^2 + y^2 < 16)"], "steps": [{"action": "initial"}]}
   ]
 }
