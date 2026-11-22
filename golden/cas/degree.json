@@ -178,6 +178,27 @@
           }
         }
       ]
+    },
+    {
+      "id": "cas-degree-004",
+      "group": "cas",
+      "script": [
+        "result = Solve(x^3+y=0, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

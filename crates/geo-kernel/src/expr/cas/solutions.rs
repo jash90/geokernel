@@ -1,5 +1,5 @@
 use super::input::{read, variables};
-use super::single::{self, solution, Mode, Nesting};
+use super::single::{self, dense_at, solution, Mode, Nesting};
 use super::{Poly, Rat, Slot, Work};
 use crate::cas::{affine_system, systems, Root, SystemRoots};
 use crate::expr::{eval::Ctx, Node};
@@ -42,7 +42,7 @@ pub(super) fn list<const M: bool>(
                 }
                 for k in 0..list.len() {
                     work.spend(1)?;
-                    polynomials.push(object_equation(ctx.c, list.object(k)?)?);
+                    polynomials.push(object_equation(ctx.c, list.object(k)?, work)?);
                 }
             }
             Node::Obj(id)
@@ -62,7 +62,7 @@ pub(super) fn list<const M: bool>(
                     Kind::Line | Kind::Conic | Kind::Circle | Kind::ImplicitCurve
                 ) =>
             {
-                polynomials.push(object_equation(ctx.c, id)?);
+                polynomials.push(object_equation(ctx.c, id, work)?);
             }
             _ => polynomials.push(read(ctx.c, ctx.e, i, vars, work)?),
         }
@@ -78,22 +78,29 @@ pub(super) fn list<const M: bool>(
     if single {
         if rows && approximate {
             // A list of variables sends one equation to the numeric system
-            // solver, which answers a linear equation in that variable
-            // alone and nothing else.
+            // solver, which starts at 0 (`Ggb2giac`, before `NSolutions.1`)
+            // and answers whatever its search reaches: `(x - 2)^2` gives 2,
+            // `(x - 2)^3` and `x^3 + 1` nothing, `x^2 - 4x + 3` only 1
+            // (golden/cas/shape.json). Only a linear equation, whose one
+            // root every search finds, has a determined answer.
             let equation = polynomials.pop()?;
             let axis = usize::from(axes[0]);
-            let linear = equation.denominator.scalar().is_some()
+            let alone = equation.denominator.scalar().is_some()
                 && equation
                     .numerator
                     .0
                     .keys()
-                    .all(|p| p[axis] <= 1 && (0..3).all(|j| j == axis || p[j] == 0))
-                && equation.numerator.0.keys().any(|p| p[axis] == 1);
-            if !linear {
+                    .all(|p| (0..3).all(|j| j == axis || p[j] == 0));
+            if !alone {
                 return None;
             }
-            let mode = mode(Nesting::Flat);
-            return single::univariate(ctx, equation, axis, axes[0], mode, None, work);
+            let coefficients = dense_at(&equation.numerator, axis);
+            if coefficients.len() != 2 {
+                return None;
+            }
+            let root = crate::cas::unique_real_root(&coefficients, work)?;
+            let slot = solution(root, assignments, true, axes[0]);
+            return ctx.cas_slots(std::iter::once(slot));
         }
         // A list of variables after one equation gives one row per value.
         let nesting = if rows && !assignments {
@@ -216,6 +223,12 @@ pub(super) fn list<const M: bool>(
             Some((start, count))
         }
         SystemRoots::Infinite => {
+            if approximate {
+                // The numeric system solver answers one point of a family,
+                // the one its search ends on (`NSolutions(x + y = 1, {x, y})`
+                // gives `{0.5, 0.5}`), which the family does not determine.
+                return None;
+            }
             let families = affine_families(&equations, width, work)?;
             let lists = ctx.lists?;
             let count = families.len().try_into().ok()?;
@@ -283,94 +296,65 @@ fn affine_families(
     Some(families)
 }
 
-fn object_equation(c: &crate::Construction, id: crate::Id) -> Option<crate::cas::Quotient> {
-    match c.kind(id) {
+/// The equation of a line, a conic or an implicit curve as the reference
+/// sends it to its CAS (`AlgoSolve.printCAS`): the definition as it was
+/// typed where the object has one, otherwise the object's coefficients.
+/// Coefficients are taken exactly, every one of them; one that has no
+/// exact rational form makes the equation unknown.
+fn object_equation(
+    c: &crate::Construction,
+    id: crate::Id,
+    work: &mut Work<'_>,
+) -> Option<crate::cas::Quotient> {
+    if !c.value(id).is_defined() {
+        return None;
+    }
+    let side = |left| crate::expr::equation::side_entry(c, id, left);
+    if let (Some(left), Some(right)) = (side(true), side(false)) {
+        let vars = &variables();
+        let lhs = read(c, left, left.root, vars, work)?;
+        let rhs = read(c, right, right.root, vars, work)?;
+        return lhs.sub(rhs, work);
+    }
+    let terms: Vec<([u8; 3], f64)> = match c.kind(id) {
         Kind::Line => {
             let Value::Line { a, b, c } = c.value(id) else {
                 return None;
             };
-            as_equation(&[([1, 0, 0], a), ([0, 1, 0], b), ([0, 0, 0], c)])
+            vec![([1, 0, 0], a), ([0, 1, 0], b), ([0, 0, 0], c)]
         }
         Kind::Conic | Kind::Circle => {
             let [xx, yy, c, xy, x, y] = c.conic(id)?.matrix;
-            as_equation(&[
+            vec![
                 ([2, 0, 0], xx),
                 ([0, 2, 0], yy),
                 ([0, 0, 0], c),
                 ([1, 1, 0], 2.0 * xy),
                 ([1, 0, 0], 2.0 * x),
                 ([0, 1, 0], 2.0 * y),
-            ])
+            ]
         }
         Kind::ImplicitCurve => {
             // Rows are the powers of x, columns the powers of y.
             let matrix = c.implicit_coefficients(id)?;
-            let terms: Vec<([u8; 3], f64)> = matrix
-                .iter()
-                .enumerate()
-                .flat_map(|(i, row)| {
-                    row.iter().enumerate().map(move |(j, &v)| {
-                        Some(([u8::try_from(i).ok()?, u8::try_from(j).ok()?, 0], v))
-                    })
-                })
-                .collect::<Option<_>>()?;
-            as_equation(&terms)
+            let mut terms = Vec::new();
+            for (i, row) in matrix.iter().enumerate() {
+                work.spend(row.len())?;
+                for (j, &v) in row.iter().enumerate() {
+                    terms.push(([u8::try_from(i).ok()?, u8::try_from(j).ok()?, 0], v));
+                }
+            }
+            terms
         }
-        _ => None,
-    }
-}
-
-fn as_equation(terms: &[([u8; 3], f64)]) -> Option<crate::cas::Quotient> {
-    // What a cancellation leaves of a coefficient that is zero, a few units
-    // in the last place of the largest one, is zero.
-    let largest = terms.iter().fold(0.0_f64, |m, (_, v)| m.max(v.abs()));
+        _ => return None,
+    };
+    work.spend(terms.len())?;
     let coefficients = terms
-        .iter()
-        .filter(|(_, v)| v.abs() > largest * 1e-13)
-        .map(|&(p, v)| Some((p, fraction(v)?)))
+        .into_iter()
+        .filter(|&(_, v)| v != 0.0)
+        .map(|(p, v)| Some((p, Rat::from_value(v)?)))
         .collect::<Option<_>>()?;
     Some(crate::cas::Quotient::polynomial(Poly(coefficients)))
-}
-
-/// The coefficient of an object as the CAS reads it. The reference sends
-/// the equation of a line or a conic as it was entered, so `x y / 3` holds
-/// one third and not its nearest double: a fraction within a few units in
-/// the last place is that number, found by continued fractions. Its
-/// denominator `q` is kept so small that a number that is no fraction is
-/// not taken for one: fractions up to `q` lie `1 / q^2` apart, and the
-/// window around the double is a hundred million times narrower. Any other
-/// double is the decimal of its 15 significant digits, which is what the
-/// reference prints for the CAS.
-fn fraction(value: f64) -> Option<Rat> {
-    let magnitude = value.abs();
-    let tolerance = magnitude * 4.0 * f64::EPSILON;
-    let (mut p0, mut q0, mut p1, mut q1) = (0_i128, 1_i128, 1_i128, 0_i128);
-    let mut rest = magnitude;
-    // The denominators at least double every second term.
-    for _ in 0..40 {
-        let whole = rest.floor();
-        if whole.is_nan() || whole >= 1e15 {
-            break;
-        }
-        let term = whole as i128;
-        let (p, q) = (term * p1 + p0, term * q1 + q0);
-        if q > 1 && (q as f64) * (q as f64) * tolerance > 1e-8 {
-            break;
-        }
-        if (p as f64 / q as f64 - magnitude).abs() <= tolerance {
-            return Rat::new(if value < 0.0 { -p } else { p }, q);
-        }
-        (p0, q0, p1, q1) = (p1, q1, p, q);
-        let part = rest - whole;
-        if part <= 0.0 {
-            break;
-        }
-        rest = part.recip();
-    }
-    let text = format!("{value:.14e}");
-    let (mantissa, exponent) = text.split_once('e')?;
-    let digits = mantissa.replace('.', "").parse().ok()?;
-    Rat::decimal(digits, exponent.parse::<i64>().ok()? - 14)
 }
 
 pub(super) fn identity(axis: u8) -> Slot {
@@ -432,33 +416,5 @@ pub(super) fn exact(root: Root) -> Option<String> {
             Some(affine(offset, scale, power(radicand, degree)))
         }
         Root::Numeric(_) => None,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{fraction, Rat};
-
-    #[test]
-    fn a_coefficient_near_a_simple_fraction_is_that_fraction() {
-        let rat = |n, d| Rat::new(n, d);
-        assert_eq!(fraction(1.0 / 3.0), rat(1, 3));
-        assert_eq!(fraction(1.0 / 3.0 - 0.5), rat(-1, 6));
-        assert_eq!(fraction(0.1 + 0.2), rat(3, 10));
-        assert_eq!(fraction(-2.5), rat(-5, 2));
-        assert_eq!(fraction(7.0), rat(7, 1));
-        assert_eq!(fraction(0.0), rat(0, 1));
-        assert_eq!(fraction(0.3333), rat(3333, 10000));
-        // No fraction: 15 significant digits.
-        assert_eq!(
-            fraction(std::f64::consts::SQRT_2),
-            rat(141_421_356_237_310, 100_000_000_000_000)
-        );
-        // A convergent with a large denominator that happens to be close
-        // is no evidence of a fraction.
-        let close = -108_212_005.0 / 265_251.0;
-        assert_eq!(fraction(close).map(|r| r.den > 265_251), Some(true));
-        assert_eq!(fraction(f64::NAN), None);
-        assert_eq!(fraction(f64::INFINITY), None);
     }
 }

@@ -250,6 +250,13 @@ impl Parser<'_> {
             return Err(bad());
         }
         let width = names.len() as u8;
+        if list && names == ["t"] {
+            // `t` is a variable of its own beside `x` and `y`, so that
+            // `Solutions(f, {t})` of a function of `x` solves for a
+            // variable the function does not hold.
+            names = vec!["x".into(), "y".into(), "t".into()];
+            axes[0] = 2;
+        }
         if !list {
             if guess && command == "Solve" && names[0] != "z" && self.object_at(first).is_none() {
                 // `Solve` takes `name = value` for an assumption and solves

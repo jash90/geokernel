@@ -1679,6 +1679,273 @@
           }
         }
       ]
+    },
+    {
+      "id": "cas-shape-027",
+      "group": "cas",
+      "script": [
+        "f(x) = (x-2)^2",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 100.0],
+              [-4.0, 36.0],
+              [-2.0, 16.0],
+              [-1.0, 9.0],
+              [-0.5, 6.25],
+              [0.0, 4.0],
+              [0.5, 2.25],
+              [1.0, 1.0],
+              [2.0, 0.0],
+              [4.0, 4.0],
+              [8.0, 36.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.999999999999 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.999999999999 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-shape-028",
+      "group": "cas",
+      "script": [
+        "f(x) = (x-2)^3",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1000.0],
+              [-4.0, -216.0],
+              [-2.0, -64.0],
+              [-1.0, -27.0],
+              [-0.5, -15.625],
+              [0.0, -8.0],
+              [0.5, -3.375],
+              [1.0, -1.0],
+              [2.0, 0.0],
+              [4.0, 8.0],
+              [8.0, 216.0]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-shape-029",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3+1",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -511.0],
+              [-4.0, -63.0],
+              [-2.0, -7.0],
+              [-1.0, 0.0],
+              [-0.5, 0.875],
+              [0.0, 1.0],
+              [0.5, 1.125],
+              [1.0, 2.0],
+              [2.0, 9.0],
+              [4.0, 65.0],
+              [8.0, 513.0]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-shape-030",
+      "group": "cas",
+      "script": [
+        "f(x) = x^2+1",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-shape-031",
+      "group": "cas",
+      "script": [
+        "f(x) = x^2-4x+3",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 99.0],
+              [-4.0, 35.0],
+              [-2.0, 15.0],
+              [-1.0, 8.0],
+              [-0.5, 5.25],
+              [0.0, 3.0],
+              [0.5, 1.25],
+              [1.0, 0.0],
+              [2.0, -1.0],
+              [4.0, 3.0],
+              [8.0, 35.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-shape-032",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-2x+2",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -494.0],
+              [-4.0, -54.0],
+              [-2.0, -2.0],
+              [-1.0, 3.0],
+              [-0.5, 2.875],
+              [0.0, 2.0],
+              [0.5, 1.125],
+              [1.0, 1.0],
+              [2.0, 6.0],
+              [4.0, 58.0],
+              [8.0, 498.0]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-shape-033",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "r1 = NSolutions(g, {x, y})",
+        "r2 = NSolve(g, {x, y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -0.5 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -0.5 }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

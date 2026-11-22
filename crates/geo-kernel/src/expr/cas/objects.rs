@@ -97,6 +97,47 @@ fn equation(c: &mut Construction, label: &str, source: &str) -> Result<Id, Strin
 /// function that is nowhere defined; any other conic is undefined.
 pub(super) fn as_function(c: &Construction, id: Id, work: &mut Work<'_>) -> Option<FunctionResult> {
     let nowhere = Some(FunctionResult::Number(f64::NAN));
+    if !c.value(id).is_defined() && matches!(c.kind(id), Kind::Line) {
+        return nowhere;
+    }
+    let side = |left| crate::expr::equation::side_entry(c, id, left);
+    if let (Some(left), Some(right)) = (side(true), side(false)) {
+        // An equation as typed is read as typed (`Equation.asFunction`),
+        // so `y = x / 3` keeps its third.
+        let vars = &super::input::variables();
+        let lhs = super::input::read(c, left, left.root, vars, work)?;
+        let rhs = super::input::read(c, right, right.root, vars, work)?;
+        let equation = lhs.sub(rhs, work)?;
+        let divisor = equation.denominator.scalar()?;
+        let mut slope = None;
+        let mut rest = Poly(Default::default());
+        for (&power, &coefficient) in &equation.numerator.0 {
+            work.spend(1)?;
+            match power {
+                [_, 0, 0] => {
+                    rest.0.insert(power, coefficient.div(divisor)?);
+                }
+                [0, 1, 0] => slope = Some(coefficient.div(divisor)?),
+                // `x y`, `y^2` or a third variable: no function of `x`.
+                _ => return None,
+            }
+        }
+        let Some(slope) = slope else {
+            // A vertical line is the function that is nowhere defined; a
+            // conic without a `y` term is no function.
+            return if matches!(c.kind(id), Kind::Line) {
+                nowhere
+            } else {
+                None
+            };
+        };
+        let factor = Rat::ONE.neg()?.div(slope)?;
+        for coefficient in rest.0.values_mut() {
+            *coefficient = coefficient.mul(factor)?;
+        }
+        let function = Quotient::polynomial(rest);
+        return transform(Op::Simplify, function, None, work).map(FunctionResult::Exact);
+    }
     // `y = (c2 x^2 + c1 x + c0) / divisor`
     let (coefficients, divisor) = match c.kind(id) {
         Kind::Line | Kind::Segment | Kind::Ray => {

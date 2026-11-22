@@ -11,6 +11,11 @@
 # The test fails when a listed case disagrees anywhere else, or agrees where
 # the list says it does not, so an entry can neither hide a new difference
 # nor go stale.
+#
+# An entry may also state what the kernel answers at every listed mismatch:
+# `undefined = true` (the kernel's value is undefined) or
+# `failure = "error text"` (the kernel refuses the line with exactly this
+# error). The test fails when the kernel answers anything else there.
 
 # conic
 
@@ -716,314 +721,1342 @@ reason = "GeoGebra lists the solution families of a product equation in the orde
 mismatches = ["0:result"]
 
 [[gap]]
+id = "cas-coefficient-001"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-coefficient-002"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-coefficient-004"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-012"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-014"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-015"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-016"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-017"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-018"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-019"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-020"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-021"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-022"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-023"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-024"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-025"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-026"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-027"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-028"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-031"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-032"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-033"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-034"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-035"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-036"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-037"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-040"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-041"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-042"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-043"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-044"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-045"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-046"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-047"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-048"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-049"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-056"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "4:r1", "4:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-057"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-058"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r4"]
+undefined = true
+
+[[gap]]
 id = "cas-conic-060"
 reason = "Solve(k, y) of the parabola y = x^2 + x answers the conic y = x^2 + x itself in GeoGebra. A kernel list holds numbers, points, lines, functions and texts, not a conic that is no named object, so the kernel answers an undefined list. Solving a proper conic for x answers implicit curves, which neither a kernel list nor the harness can record."
 mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-007"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-008"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-016"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-018"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-019"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-020"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-021"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-022"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-023"
+reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS, which may rewrite a coordinate that is no rational function into something that evaluates differently: exp(t) exp(-t) becomes 1 where the input overflows at t = 750, (t^65 - 1) / (t - 1) loses its pole, sqrt(t)^2 becomes t. The kernel rewrites rational coordinates only and answers an undefined curve for any other, also where GeoGebra keeps the coordinate as it is."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-degree-001"
+reason = "Solutions(x^3 + y = 0, x) needs a cube root, which GeoGebra's CAS answers as a function; the bounded polynomial CAS has no cube roots and answers an undefined list."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-degree-002"
+reason = "Solutions(x y^2 + y = 1, y) answers the two roots (+-sqrt(4x + 1) - 1) / (2x) in GeoGebra. Two branches are listed in the order the CAS chooses for their normal forms, which no EUPL source states, so the kernel answers an undefined list."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-degree-004"
+reason = "Solve(x^3 + y = 0, x) needs a cube root, which GeoGebra's CAS answers as a function; the bounded polynomial CAS has no cube roots and answers an undefined list."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-017"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-018"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-019"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6", "0:r7"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-020"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-022"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-023"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "1:r1", "3:r1", "4:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-024"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:result", "1:result", "2:result"]
+undefined = true
 
 [[gap]]
 id = "cas-hint-028"
 reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 3 has two roots."
 mismatches = ["0:result"]
+undefined = true
 
 [[gap]]
 id = "cas-hint-029"
 reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 3 has two roots."
 mismatches = ["0:result"]
-
-[[gap]]
-id = "cas-plot-023"
-reason = "PlotSolve of a proper conic answers one parametric curve per root in GeoGebra: the real and imaginary part of +-sqrt(4 - y^2) over the parameter interval from -10 to 10. A kernel list holds numbers, points, lines, functions and texts, not a curve that is no named object, and the curve needs the complex square root of a negative number. The kernel answers an undefined list."
-mismatches = ["0:result"]
-
-[[gap]]
-id = "cas-plot-024"
-reason = "PlotSolve of a hyperbola x y = 1 answers the parametric curve (1 / y, 0) in GeoGebra. A kernel list cannot hold a curve that is no named object, so the kernel answers an undefined list."
-mismatches = ["0:result"]
-
-[[gap]]
-id = "cas-plot-025"
-reason = "GeoGebra's CAS solves sin(x) = 0 symbolically as n pi and PlotSolve shows the point for n = 0. The bounded polynomial CAS reads polynomials and rational functions only, so the kernel answers an undefined list for a transcendental equation."
-mismatches = ["0:result"]
-
-[[gap]]
-id = "cas-hint-018"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From 0.6, 0.57 and 0.58 the first Newton step of x^3 - x overshoots and lowers the residual only after four or more halvings. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r3", "0:r4", "0:r5"]
-
-[[gap]]
-id = "cas-hint-019"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From -1 and 0.9 the first Newton step of x^5 - 3x + 1 overshoots and needs more than one halving. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r3", "0:r4"]
-
-[[gap]]
-id = "cas-hint-020"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From 1.6 the first Newton step of x^4 - 5x^2 + 4 overshoots to 7.45 and needs more than one halving. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r3"]
-
-[[gap]]
-id = "cas-hint-022"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). x^2 has the double root 0, which Newton's method approaches at a linear rate; GeoGebra stops at 4.5e-13. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1"]
-
-[[gap]]
-id = "cas-hint-023"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). With a = 0 the function is x^2 with the double root 0, which Newton's method approaches at a linear rate; GeoGebra stops at 4.5e-13. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["3:r1"]
-
-[[gap]]
-id = "cas-start-007"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From -0.01, 0, 1e-17, 1e30 and 1e300 the iteration for x^2 - 2 needs many halvings, has no slope, or needs more steps than the budget. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
-
-[[gap]]
-id = "cas-start-008"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From these start values near 0 or far away the iteration for x^2 - 3 needs eleven or more halvings or more steps than the budget. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6"]
-
-[[gap]]
-id = "cas-start-009"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). Newton's method for x^3 - 2x + 2 cycles between 0 and 1 and overshoots from -1 and 0.5; GeoGebra still finds the one real root. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-
-[[gap]]
-id = "cas-start-010"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). x^3 + 1 has no slope at the start value 0; GeoGebra still finds the one real root. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1"]
-
-[[gap]]
-id = "cas-start-011"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). Newton's method for x^5 - x + 3 from 0 and 1 overshoots and needs more than one halving; GeoGebra still finds the one real root. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1", "0:r2"]
-
-[[gap]]
-id = "cas-start-012"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). x^4 - x^2 - 1 has no slope at 0, and from 0.1 and -0.1 the first step needs two halvings. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1", "0:r2", "0:r3"]
-
-[[gap]]
-id = "cas-start-013"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From 0.193392 the iteration for x^4 + 5x^3 + 2x^2 - 4x + 2 creeps along a local minimum of the residual with repeated halvings. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1"]
-
-[[gap]]
-id = "cas-start-014"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From -1 the first Newton step of x^4 + x^3 - 4x^2 - 5x + 5 needs two halvings. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1"]
-
-[[gap]]
-id = "cas-start-015"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From -2.752 Newton's method approaches the double root -1 of (x + 1)^2 (x - 4) at a linear rate; GeoGebra answers the simple root 4. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1"]
-
-[[gap]]
-id = "cas-start-016"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). Newton's method approaches the triple root 3 of (x - 3)^3 at a linear rate; GeoGebra stops at 3.000000000004. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1"]
-
-[[gap]]
-id = "cas-start-017"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). Newton's method approaches the double root 0 of x^2 at a linear rate; GeoGebra stops at 4.5e-13. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1"]
-
-[[gap]]
-id = "cas-start-018"
-reason = "NSolutions, NSolve and Solutions with a start value run the numeric solver of GeoGebra's CAS. Where Newton's method from the start value lowers the residual with every step, halved at most once, and ends on a simple root within 48 steps, the kernel answers that root (cas-start-001 to cas-start-006). From 100000 Newton's method for this quintic needs more than 48 steps. There the CAS searches on in a way the start value does not explain (x^2 - 3 from -0.0003 ends on -sqrt(3), from -0.00029 on sqrt(3)), so the kernel answers an undefined list rather than a root that may be the wrong one."
-mismatches = ["0:r1"]
-
-[[gap]]
-id = "cas-start-019"
-reason = "The numeric solver of GeoGebra's CAS is not bound to polynomials and answers 4 for sqrt(x) - 2 from the start values 1 and -1. The bounded polynomial CAS reads polynomials and rational functions only, so the kernel answers an undefined list for an equation with a square root."
-mismatches = ["0:r1", "0:r2"]
-
-[[gap]]
-id = "cas-shape-014"
-reason = "A start value after a list of equations goes to the system solver of GeoGebra's CAS, which does not follow it: NSolutions({x^2 = 4}, x = 3) and x = -0.5 both answer {2}, {x^2 - 5x + 6 = 0} answers {3} from 0 where Newton's method reaches 2, and an odd degree answers nothing (cas-shape-015). Solve({x^2 = 4}, x = 3) and Solutions({x^4 - 5x^2 + 4 = 0}, x = -3) even answered different roots in different harness runs and are not recorded. No rule reproduces the chosen root, so the kernel answers an undefined list for every start value after a list."
-mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
-
-[[gap]]
-id = "cas-shape-016"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 4 has two roots."
-mismatches = ["0:r1", "0:r2"]
-
-[[gap]]
-id = "cas-shape-019"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^3 - x has three roots."
-mismatches = ["0:r1", "0:r2"]
-
-[[gap]]
-id = "cas-shape-024"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here the circle x^2 + y^2 = 4 has two branches for y."
-mismatches = ["0:r1", "0:r2"]
-
-[[gap]]
-id = "cas-shape-025"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 = 4 has two roots."
-mismatches = ["0:r1", "0:r2"]
-
-[[gap]]
-id = "cas-shape-026"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - y^2 = 0 has two lines for y."
-mismatches = ["0:r1", "0:r2"]
+undefined = true
 
 [[gap]]
 id = "cas-hintobject-001"
 reason = "AlgoSolve.printHint prints a point into the CAS call, which then fails with an error, and Solve answers an undefined list. What the CAS makes of an object that is no number follows no rule (cas-hintobject-002 answers an empty list for Solutions with the same point), so the kernel refuses an object other than a number as the solving argument."
 mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Solve`"
 
 [[gap]]
 id = "cas-hintobject-002"
 reason = "AlgoSolve.printHint prints a point into the CAS call, and Solutions answers an empty list where Solve answers an undefined one (cas-hintobject-001). What the CAS makes of an object that is no number follows no rule, so the kernel refuses an object other than a number as the solving argument."
 mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Solutions`"
 
 [[gap]]
 id = "cas-hintobject-003"
 reason = "After a list of equations a number is printed as its value into the system solver of the CAS, which answers one row with an undefined number for Solutions({x^2 = 4}, b) (and makes the reference throw while it reads the answer of NSolve(f, b) back). The kernel refuses a number as the solving argument after a list."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Solutions`"
 
 [[gap]]
 id = "cas-implicit-001"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. GeoGebra's CAS answers the real cube root of 1 - y^3 for x (and of 1 - x^3 for y) as a function, Solve the implicit curves x = ... inside a list and PlotSolve a parametric curve."
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. GeoGebra's CAS answers the real cube root of 1 - y^3 for x (and of 1 - x^3 for y) as a function, Solve the implicit curves x = ... inside a list and PlotSolve a parametric curve. Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
 mismatches = ["0:r1", "0:r2", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]
+undefined = true
+
+[[gap]]
+id = "cas-implicit-003"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r11", "0:r14", "0:r17"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-004"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. For y^3 = x GeoGebra's CAS answers the cube root of x for y, and Solve for x the curve x - y^3 = 0 itself as an implicit curve inside a list; PlotSolve answers a parametric curve."
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. For y^3 = x GeoGebra's CAS answers the cube root of x for y, and Solve for x the curve x - y^3 = 0 itself as an implicit curve inside a list; PlotSolve answers a parametric curve. Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
 mismatches = ["0:r1", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r18"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-005"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. For x^2 y = 1 GeoGebra's CAS answers +-1 / sqrt(y) for x, where the leading coefficient y depends on the parameter; Solve answers two undefined implicit curves inside a list and PlotSolve two parametric curves."
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. For x^2 y = 1 GeoGebra's CAS answers +-1 / sqrt(y) for x, where the leading coefficient y depends on the parameter; Solve answers two undefined implicit curves inside a list and PlotSolve two parametric curves. Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
 mismatches = ["0:r1", "0:r2", "0:r5", "0:r7", "0:r8", "0:r10", "0:r18", "0:r19"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-006"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. x^3 - x y^2 = 0 has degree three in x: GeoGebra's CAS answers the three lines x = y, x = -y and x = 0 in that order (Solutions the functions y, -y and the number 0); for y the leading coefficient -x depends on the parameter. PlotSolve answers two lines and a point."
-mismatches = ["0:r1", "0:r2", "0:r5", "0:r7", "0:r8", "0:r10", "0:r18", "0:r19"]
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. x^3 - x y^2 = 0 has degree three in x: GeoGebra's CAS answers the three lines x = y, x = -y and x = 0 in that order (Solutions the functions y, -y and the number 0); for y the leading coefficient -x depends on the parameter. PlotSolve answers two lines and a point. Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
+mismatches = ["0:r1", "0:r2", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-007"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. For (x + y)^3 = 1 GeoGebra's CAS takes the real cube root and answers the line x + y = 1 for either variable."
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. For (x + y)^3 = 1 GeoGebra's CAS takes the real cube root and answers the line x + y = 1 for either variable. Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
 mismatches = ["0:r1", "0:r2", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-008"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. x^4 + y^4 = 1 has degree four in each variable: GeoGebra's CAS answers the two real fourth roots as functions, Solve for x two undefined implicit curves inside a list, PlotSolve two parametric curves."
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. x^4 + y^4 = 1 has degree four in each variable: GeoGebra's CAS answers the two real fourth roots as functions, Solve for x two undefined implicit curves inside a list, PlotSolve two parametric curves. Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
 mismatches = ["0:r1", "0:r2", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-009"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. x^3 + x y = 2 has degree three in x, for which GeoGebra's CAS answers no solution at all (an empty list)."
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. x^3 + x y = 2 has degree three in x, for which GeoGebra's CAS answers no solution at all (an empty list). Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
 mismatches = ["0:r1", "0:r2", "0:r7", "0:r8", "0:r10", "0:r18", "0:r19"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-010"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. y^2 = x^3 - x is no conic: GeoGebra's CAS answers +-sqrt(x^3 - x) for y and solves the cubic for x with cube roots."
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. y^2 = x^3 - x is no conic: GeoGebra's CAS answers +-sqrt(x^3 - x) for y and solves the cubic for x with cube roots. Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
 mismatches = ["0:r1", "0:r2", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-011"
-reason = "With a = 0 the curve is x^3 = 0, whose triple root Newton's method approaches at a linear rate; the numeric solver of GeoGebra's CAS stops short of 0 at its own tolerance (cas-start-016), and the kernel answers an undefined list for a start value that does not end on a simple root."
-mismatches = ["2:r6"]
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r6", "1:r6", "2:r6", "4:r6"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-012"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. a x^3 + x^2 y = 4 has degree three in x, and with a = 0 the leading coefficient y of x^2 y = 4 depends on the parameter; GeoGebra's CAS answers the roots as functions."
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. a x^3 + x^2 y = 4 has degree three in x, and with a = 0 the leading coefficient y of x^2 y = 4 depends on the parameter; GeoGebra's CAS answers the roots as functions. Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
 mismatches = ["0:r4", "1:r4", "2:r4", "3:r4"]
+undefined = true
 
 [[gap]]
 id = "cas-implicit-013"
-reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. GeoGebra's CAS answers the real cube root of 1 - y^3 for x as a function, Solve an implicit curve x = ... inside a list and PlotSolve a parametric curve."
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. GeoGebra's CAS answers the real cube root of 1 - y^3 for x as a function, Solve an implicit curve x = ... inside a list and PlotSolve a parametric curve. Two branches, also of a conic-shaped quadratic, are undefined as well: their order is chosen by the CAS."
 mismatches = ["0:r1", "0:r2", "0:r5"]
+undefined = true
 
 [[gap]]
 id = "cas-implicitrewrite-001"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
 
 [[gap]]
 id = "cas-implicitrewrite-002"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Factor`"
 
 [[gap]]
 id = "cas-implicitrewrite-003"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `IFactor`"
 
 [[gap]]
 id = "cas-implicitrewrite-004"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
 
 [[gap]]
 id = "cas-implicitrewrite-005"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
 
 [[gap]]
 id = "cas-implicitrewrite-006"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Factor`"
 
 [[gap]]
 id = "cas-implicitrewrite-007"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `IFactor`"
 
 [[gap]]
 id = "cas-implicitrewrite-008"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
 
 [[gap]]
 id = "cas-implicitrewrite-009"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
 
 [[gap]]
 id = "cas-implicitrewrite-010"
-reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
 mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Factor`"
+
+[[gap]]
+id = "cas-implicitrewrite-011"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `IFactor`"
+
+[[gap]]
+id = "cas-implicitrewrite-012"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor of an irreducible polynomial is undefined). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-name-003"
+reason = "Solutions(t^2 = 4, t = 1) and NSolutions with the same start have two real roots to choose from: A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise. Solutions(t^2 = x, t) solves to two branches, whose order the CAS chooses, and is undefined too."
+mismatches = ["0:r3", "0:r4", "0:r5"]
+undefined = true
 
 [[gap]]
 id = "cas-name-013"
-reason = "Solve(k, y = 1) reads y = 1 as an assumption. With it GeoGebra's CAS can decide the sign of terms in y and lists the two lines of x^2 - y^2 = 0 by their values (x = -y before x = y) and not by their printed form as Solve(k) does. The kernel does not reproduce the order under an assumption and answers an undefined list when an equation with an assumption about the other variable has two branches."
-mismatches = ["0:r1"]
+reason = "Solve(k, y = 1) of x^2 - y^2 = 0 solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r3"]
+undefined = true
 
 [[gap]]
-id = "cas-curve-008"
-reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS. A coordinate that is no rational function keeps its input in the kernel only where it is defined for every parameter (sums and products of numbers, the parameter and the sine, cosine or exponential of such terms), because anywhere else the CAS may cancel a pole or widen a domain: Simplify turns sqrt(t)^2 into t, defined for negative t (cas-curve-020). sqrt(t) is no such coordinate, so the kernel answers an undefined curve where GeoGebra keeps sqrt(t)."
+id = "cas-order-001"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-002"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2", "3:r1", "3:r2", "4:r1", "4:r2", "5:r1", "5:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-order-003"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-order-004"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-005"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6"]
+undefined = true
+
+[[gap]]
+id = "cas-order-006"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-007"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6"]
+undefined = true
+
+[[gap]]
+id = "cas-order-008"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-009"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-010"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-011"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-012"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-013"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-014"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-015"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-016"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-017"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-018"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-019"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-020"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-021"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-022"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-023"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-024"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-025"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-026"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-027"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-028"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-029"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-030"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-031"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-032"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-033"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-034"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-035"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-036"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-037"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-038"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-039"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-040"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-041"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-042"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-043"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-044"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-045"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-046"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-047"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-048"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-049"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-050"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-051"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-052"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-053"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-054"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-055"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-056"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-057"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-058"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-059"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-060"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-061"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-062"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-063"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-064"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-065"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-066"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-067"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-068"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-069"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-070"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-071"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-072"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-073"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-074"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-075"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-076"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-077"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-078"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-079"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-080"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-081"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-082"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-083"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-084"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-085"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
 mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
 
 [[gap]]
-id = "cas-curve-016"
-reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS. A coordinate that is no rational function keeps its input in the kernel only where it is defined for every parameter (sums and products of numbers, the parameter and the sine, cosine or exponential of such terms), because anywhere else the CAS may cancel a pole or widen a domain: Simplify turns sqrt(t)^2 into t, defined for negative t (cas-curve-020). sqrt(t) is no such coordinate, so the kernel answers an undefined curve where GeoGebra keeps sqrt(t)."
-mismatches = ["0:r2"]
+id = "cas-order-086"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
 
 [[gap]]
-id = "cas-curve-018"
-reason = "GeoGebra's CAS cancels the pole of (t^65 - 1) / (t - 1) at t = 1 and answers the polynomial of degree 64. The bounded polynomial CAS expands up to total degree 64 and the numerator has degree 65, so the kernel cannot cancel the pole; keeping the input would be a curve with a hole at t = 1 that GeoGebra's curve does not have, so the kernel answers an undefined curve."
-mismatches = ["0:r1", "0:r2"]
+id = "cas-order-087"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
 
 [[gap]]
-id = "cas-curve-019"
-reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS. A coordinate that is no rational function keeps its input in the kernel only where it is defined for every parameter (sums and products of numbers, the parameter and the sine, cosine or exponential of such terms), because anywhere else the CAS may cancel a pole or widen a domain: Simplify turns sqrt(t)^2 into t, defined for negative t (cas-curve-020). GeoGebra's CAS cancels the pole of (t^2 - 1) / (t - 1) inside a sum or a product with sin(t); the kernel rewrites rational functions only and answers an undefined curve."
-mismatches = ["0:r1", "0:r2"]
+id = "cas-order-088"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
 
 [[gap]]
-id = "cas-curve-020"
-reason = "Expand, Factor, IFactor and Simplify of a curve send each coordinate to GeoGebra's CAS. A coordinate that is no rational function keeps its input in the kernel only where it is defined for every parameter (sums and products of numbers, the parameter and the sine, cosine or exponential of such terms), because anywhere else the CAS may cancel a pole or widen a domain: Simplify turns sqrt(t)^2 into t, defined for negative t (cas-curve-020). GeoGebra keeps sin(t) / t with its pole at 0 and turns sqrt(t)^2 into t; neither coordinate is defined for every parameter, so the kernel answers an undefined curve for both."
-mismatches = ["0:r1", "0:r2"]
+id = "cas-order-089"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
 
 [[gap]]
-id = "cas-degree-001"
-reason = "Solutions(x^3 + y = 0, x) answers the cube root (-y)^(1/3) as a function in GeoGebra. The kernel solves one equation with a parameter for a variable of degree one or two only, so it answers an undefined list."
+id = "cas-order-090"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-092"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "2:r1", "2:r2", "2:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3", "5:r1", "5:r2", "5:r3", "6:r1", "6:r2", "6:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-093"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2", "3:r1", "3:r2", "4:r1", "4:r2", "5:r1", "5:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-order-094"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "2:r1", "2:r2", "2:r3", "3:r1", "3:r2", "3:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-095"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-096"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-order-097"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-098"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-099"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1", "0:r2", "2:r1", "2:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-plot-014"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
 mismatches = ["0:result"]
+undefined = true
 
 [[gap]]
-id = "cas-degree-002"
-reason = "Solutions(x y^2 + y = 1, y) answers the two roots (+-sqrt(4x + 1) - 1) / (2x) in GeoGebra. The kernel solves a quadratic with a parameter only when its leading coefficient is a number, so it answers an undefined list."
+id = "cas-plot-016"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
 mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-plot-017"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-plot-018"
+reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-plot-023"
+reason = "PlotSolve of a proper conic answers one parametric curve per root in GeoGebra: the real and imaginary part of +-sqrt(4 - y^2) over the parameter interval from -10 to 10. A kernel list holds numbers, points, lines, functions and texts, not a curve that is no named object, and the curve needs the complex square root of a negative number. The kernel answers an undefined list."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-plot-024"
+reason = "PlotSolve of a hyperbola x y = 1 answers the parametric curve (1 / y, 0) in GeoGebra. A kernel list cannot hold a curve that is no named object, so the kernel answers an undefined list."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-plot-025"
+reason = "GeoGebra's CAS solves sin(x) = 0 symbolically as n pi and PlotSolve shows the point for n = 0. The bounded polynomial CAS reads polynomials and rational functions only, so the kernel answers an undefined list for a transcendental equation."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-009"
+reason = "Solutions({x^2 = y}, x) solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-014"
+reason = "A start value after a list of equations goes to the system solver of GeoGebra's CAS, which does not follow it: NSolutions({x^2 = 4}, x = 3) and x = -0.5 both answer {2}, {x^2 - 5x + 6 = 0} answers {3} from 0 where Newton's method reaches 2, and an odd degree answers nothing (cas-shape-015). Solve({x^2 = 4}, x = 3) and Solutions({x^4 - 5x^2 + 4 = 0}, x = -3) even answered different roots in different harness runs and are not recorded. No rule reproduces the chosen root, so the kernel answers an undefined list for every start value after a list."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-016"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 4 has two roots."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-019"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^3 - x has three roots."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-024"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here the circle x^2 + y^2 = 4 has two branches for y."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-025"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 = 4 has two roots."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-026"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - y^2 = 0 has two lines for y."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-027"
+reason = "One equation with a list of variables goes to the numeric system solver, which starts at 0 (Ggb2giac) and answers whatever its search reaches: (x - 2)^2 gives 2, x^2 - 4x + 3 only 1, (x - 2)^3, x^3 + 1 and x^3 - 2x + 2 nothing (cas-shape-027 to cas-shape-032). The kernel answers only a linear equation, whose one root every search finds, and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-031"
+reason = "One equation with a list of variables goes to the numeric system solver, which starts at 0 (Ggb2giac) and answers whatever its search reaches: (x - 2)^2 gives 2, x^2 - 4x + 3 only 1, (x - 2)^3, x^3 + 1 and x^3 - 2x + 2 nothing (cas-shape-027 to cas-shape-032). The kernel answers only a linear equation, whose one root every search finds, and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-033"
+reason = "NSolutions(x + y = 1, {x, y}) answers the one point {0.5, 0.5} that the numeric system solver reaches on the line of solutions. The point is the solver's choice, not determined by the equation, so the kernel answers an undefined list for a family of solutions in the numeric commands."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-start-001"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
+undefined = true
+
+[[gap]]
+id = "cas-start-003"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
+undefined = true
+
+[[gap]]
+id = "cas-start-004"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-start-005"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-start-006"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:result", "1:result", "2:result", "4:result"]
+undefined = true
+
+[[gap]]
+id = "cas-start-007"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5"]
+undefined = true
+
+[[gap]]
+id = "cas-start-008"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6"]
+undefined = true
+
+[[gap]]
+id = "cas-start-012"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-start-013"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-start-014"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-start-015"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-start-016"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-start-017"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-start-018"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-start-019"
+reason = "The numeric solver of GeoGebra's CAS is not bound to polynomials and answers 4 for sqrt(x) - 2 from the start values 1 and -1. The bounded polynomial CAS reads polynomials and rational functions only, so the kernel answers an undefined list for an equation with a square root."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-start-020"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-start-021"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-start-022"
+reason = "A start value runs the numeric solver of GeoGebra's CAS, whose root depends on its search when the equation has several real roots or a multiple one (x^3 - x from 0.52 ends on 0, the quartic with roots 4 and 6 from 5.8 on 4, x^2 - 3 from -0.0003 on -sqrt(3) and from -0.00029 on sqrt(3)). The kernel answers a start value only for an equation with exactly one real root, which is simple (every recorded start agrees there, up to 10^300), and an undefined list otherwise."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
 
 [[gap]]
 id = "georestintersect-spline-001"

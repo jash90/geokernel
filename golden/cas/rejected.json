@@ -16,14 +16,14 @@
       ],
       "steps": [
         { "action": "initial" },
-        { "action": "reject", "line": "r = Expand(g)" },
-        { "action": "reject", "line": "r = Expand(k)" },
-        { "action": "reject", "line": "r = Expand(l)" },
-        { "action": "reject", "line": "r = Expand(s)" },
-        { "action": "reject", "line": "r = Expand(x+y=1)" },
-        { "action": "reject", "line": "r = Expand(x^2+y^2=4)" },
-        { "action": "reject", "line": "r = Expand({1, 2})" },
-        { "action": "reject", "line": "r = Expand({x^2-1, (x+1)^2})" }
+        { "action": "reject", "line": "r = Expand(g)", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand(k)", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand(l)", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand(s)", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand(x+y=1)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = Expand(x^2+y^2=4)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = Expand({1, 2})", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand({x^2-1, (x+1)^2})", "error": "invalid arguments to `Expand`" }
       ],
       "snapshots": [
         {
@@ -275,14 +275,14 @@
       ],
       "steps": [
         { "action": "initial" },
-        { "action": "reject", "line": "r = Factor(g)" },
-        { "action": "reject", "line": "r = Factor(k)" },
-        { "action": "reject", "line": "r = Factor(l)" },
-        { "action": "reject", "line": "r = Factor(s)" },
-        { "action": "reject", "line": "r = Factor(x+y=1)" },
-        { "action": "reject", "line": "r = Factor(x^2+y^2=4)" },
-        { "action": "reject", "line": "r = Factor({1, 2})" },
-        { "action": "reject", "line": "r = Factor({x^2-1, (x+1)^2})" }
+        { "action": "reject", "line": "r = Factor(g)", "error": "invalid arguments to `Factor`" },
+        { "action": "reject", "line": "r = Factor(k)", "error": "invalid arguments to `Factor`" },
+        { "action": "reject", "line": "r = Factor(l)", "error": "`Factor` needs a function" },
+        { "action": "reject", "line": "r = Factor(s)", "error": "invalid arguments to `Factor`" },
+        { "action": "reject", "line": "r = Factor(x+y=1)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = Factor(x^2+y^2=4)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = Factor({1, 2})", "error": "`Factor` needs a function" },
+        { "action": "reject", "line": "r = Factor({x^2-1, (x+1)^2})", "error": "invalid arguments to `Factor`" }
       ],
       "snapshots": [
         {
@@ -534,14 +534,14 @@
       ],
       "steps": [
         { "action": "initial" },
-        { "action": "reject", "line": "r = IFactor(g)" },
-        { "action": "reject", "line": "r = IFactor(k)" },
-        { "action": "reject", "line": "r = IFactor(l)" },
-        { "action": "reject", "line": "r = IFactor(s)" },
-        { "action": "reject", "line": "r = IFactor(x+y=1)" },
-        { "action": "reject", "line": "r = IFactor(x^2+y^2=4)" },
-        { "action": "reject", "line": "r = IFactor({1, 2})" },
-        { "action": "reject", "line": "r = IFactor({x^2-1, (x+1)^2})" }
+        { "action": "reject", "line": "r = IFactor(g)", "error": "invalid arguments to `IFactor`" },
+        { "action": "reject", "line": "r = IFactor(k)", "error": "invalid arguments to `IFactor`" },
+        { "action": "reject", "line": "r = IFactor(l)", "error": "`IFactor` needs a function" },
+        { "action": "reject", "line": "r = IFactor(s)", "error": "invalid arguments to `IFactor`" },
+        { "action": "reject", "line": "r = IFactor(x+y=1)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = IFactor(x^2+y^2=4)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = IFactor({1, 2})", "error": "`IFactor` needs a function" },
+        { "action": "reject", "line": "r = IFactor({x^2-1, (x+1)^2})", "error": "invalid arguments to `IFactor`" }
       ],
       "snapshots": [
         {
@@ -792,11 +792,11 @@
       ],
       "steps": [
         { "action": "initial" },
-        { "action": "reject", "line": "r = Simplify(l)" },
-        { "action": "reject", "line": "r = Simplify({1, 2})" },
-        { "action": "reject", "line": "r = Simplify({x^2-1, (x+1)^2})" },
-        { "action": "reject", "line": "r = Simplify(A)" },
-        { "action": "reject", "line": "r = Simplify(p)" }
+        { "action": "reject", "line": "r = Simplify(l)", "error": "invalid arguments to `Simplify`" },
+        { "action": "reject", "line": "r = Simplify({1, 2})", "error": "invalid arguments to `Simplify`" },
+        { "action": "reject", "line": "r = Simplify({x^2-1, (x+1)^2})", "error": "invalid arguments to `Simplify`" },
+        { "action": "reject", "line": "r = Simplify(A)", "error": "invalid arguments to `Simplify`" },
+        { "action": "reject", "line": "r = Simplify(p)", "error": "invalid arguments to `Simplify`" }
       ],
       "snapshots": [
         {

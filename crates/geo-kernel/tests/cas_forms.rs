@@ -54,31 +54,42 @@ fn a_proper_conic_solved_for_x_is_undefined() {
     // A parabola solved for its linear variable is the conic itself.
     let c = build(&["k: y=x^2+x", "r = Solve(k, y)"]);
     assert!(c.elements(id(&c, "r")).is_none());
-    // Solving for y gives functions, also through `Solve`.
-    let c = build(&["k: x^2+y^2=4", "r = Solve(k, y)"]);
-    assert_eq!(samples(&c, "r", 0, &[0.0]), [-2.0]);
-    assert_eq!(samples(&c, "r", 1, &[0.0]), [2.0]);
+    // Two branches come in an order the reference's CAS chooses: undefined.
+    let c = build(&["k: x^2+y^2=4", "r = Solve(k, y)", "s = Solutions(k, y)"]);
+    assert!(c.elements(id(&c, "r")).is_none());
+    assert!(c.elements(id(&c, "s")).is_none());
+    // One branch is answered.
+    let c = build(&["k: x*y=1", "r = Solve(k, y)", "s = Solutions(k, y)"]);
+    assert_eq!(samples(&c, "r", 0, &[4.0]), [0.25]);
+    assert_eq!(samples(&c, "s", 0, &[4.0]), [0.25]);
 }
 
 #[test]
-fn the_branches_of_a_conic_show_their_closed_form() {
-    let c = build(&["k: x^2+y^2=4", "r = Solutions(k)"]);
-    let list = c.elements(id(&c, "r")).unwrap();
-    assert_eq!(list.symbolic_at(0).as_deref(), Some("-sqrt(-y^2 + 4)"));
-    assert_eq!(list.symbolic_at(1).as_deref(), Some("sqrt(-y^2 + 4)"));
-    let c = build(&["k: x^2+x*y+y^2=3", "r = Solutions(k)"]);
-    let list = c.elements(id(&c, "r")).unwrap();
-    assert_eq!(
-        list.symbolic_at(0).as_deref(),
-        Some("(-y - sqrt(-3*y^2 + 12))/(2)")
-    );
+fn the_branch_of_a_conic_shows_its_closed_form() {
     let c = build(&["k: x*y=1", "r = Solutions(k, y)"]);
     let list = c.elements(id(&c, "r")).unwrap();
     assert_eq!(list.symbolic_at(0).as_deref(), Some("(1)/(x)"));
-    // Irrational slopes of a degenerate conic.
-    let c = build(&["k: x^2-2y^2=0", "r = Solutions(k)"]);
+    // `(x - y)^2 = 0` has the one branch `x = y`.
+    let c = build(&["k: (x-y)^2=0", "r = Solutions(k)"]);
     let list = c.elements(id(&c, "r")).unwrap();
-    assert_eq!(list.symbolic_at(0).as_deref(), Some("(y)*sqrt(2)"));
+    assert_eq!(list.len(), 1);
+    assert_eq!(list.function_sample_at(&c, 0, 3.0), Some(3.0));
+}
+
+#[test]
+fn a_product_of_lines_is_answered_only_with_one_branch() {
+    let mut c = build(&[
+        "a = 3",
+        "k: (13*x-10*y-10)*(a*x-5*y+2)=0",
+        "r = Solutions(k, x)",
+    ]);
+    assert!(c.elements(id(&c, "r")).is_none());
+    // With a = 0 the second factor holds no x: x = (10 y + 10) / 13.
+    c.set_number(id(&c, "a"), 0.0).unwrap();
+    assert_eq!(c.elements(id(&c, "r")).unwrap().len(), 1);
+    assert!((samples(&c, "r", 0, &[0.0])[0] - 10.0 / 13.0).abs() < 1e-15);
+    c.set_number(id(&c, "a"), 6.5).unwrap();
+    assert!(c.elements(id(&c, "r")).is_none());
 }
 
 #[test]
@@ -89,42 +100,42 @@ fn a_conic_follows_its_parents_through_every_type() {
         "r = Solutions(k)",
         "n = NSolutions(k)",
     ]);
-    assert_eq!(samples(&c, "r", 1, &[0.0]), [2.0]);
-    // An empty conic and a single point have no solution, then it recovers.
+    // Two branches: undefined.
+    assert!(c.elements(id(&c, "r")).is_none());
+    // An empty conic and a single point have no solution, then it is
+    // undefined again.
     for value in [-1.0, 0.0] {
         c.set_number(id(&c, "a"), value).unwrap();
         assert_eq!(c.elements(id(&c, "r")).unwrap().len(), 0);
         assert!(c.elements(id(&c, "n")).is_none());
     }
     c.set_number(id(&c, "a"), 9.0).unwrap();
-    assert_eq!(samples(&c, "r", 0, &[0.0]), [-3.0]);
-    assert!(samples(&c, "r", 0, &[4.0])[0].is_nan());
+    assert!(c.elements(id(&c, "r")).is_none());
 }
 
 #[test]
 fn an_initial_value_selects_one_root() {
     let mut c = build(&[
         "b = 2",
-        "f(x) = x^2-3",
+        "f(x) = x^3+x-b",
+        "g(x) = x^2-3",
         "r = NSolutions(f, x=b)",
         "s = Solve(f, x=b)",
+        "u = NSolutions(g, x=b)",
     ]);
-    let root = 3.0_f64.sqrt();
     let single = |c: &Construction| {
         let [value] = numbers(c, "r").expect("a defined list")[..] else {
             panic!("expected one root");
         };
         value
     };
-    assert!((single(&c) - root).abs() < 1e-12);
-    assert_eq!(c.elements(id(&c, "s")).unwrap().len(), 2);
-    c.set_number(id(&c, "b"), -2.0).unwrap();
-    assert!((single(&c) + root).abs() < 1e-12);
-    // The derivative vanishes at the start: undefined, and defined again.
-    c.set_number(id(&c, "b"), 0.0).unwrap();
-    assert!(numbers(&c, "r").is_none());
-    c.set_number(id(&c, "b"), 1.0).unwrap();
-    assert!((single(&c) - root).abs() < 1e-12);
+    // The only real root of x^3 + x - 2 is 1, from any start.
+    assert!((single(&c) - 1.0).abs() < 1e-12);
+    assert_eq!(c.elements(id(&c, "s")).unwrap().len(), 1);
+    c.set_number(id(&c, "b"), 10.0).unwrap();
+    assert!((single(&c) - 2.0).abs() < 1e-12);
+    // Two real roots: the root depends on the search, undefined.
+    assert!(numbers(&c, "u").is_none());
 }
 
 #[test]
@@ -143,7 +154,8 @@ fn an_implicit_curve_is_solved_like_its_equation() {
     ]);
     assert_eq!(c.kind(id(&c, "k")), Kind::ImplicitCurve);
     assert_eq!(numbers(&c, "r1").unwrap(), [-1.0, 0.0, 1.0]);
-    assert_eq!(numbers(&c, "r2").unwrap(), [1.0]);
+    // Three real roots: a start value does not decide which one.
+    assert!(numbers(&c, "r2").is_none());
     assert_eq!(c.elements(id(&c, "r3")).unwrap().len(), 1);
     assert_eq!(c.elements(id(&c, "r4")).unwrap().len(), 0);
     assert_eq!(samples(&c, "r5", 0, &[2.0]), [0.25]);
@@ -293,32 +305,40 @@ fn a_text_with_an_equals_sign_is_a_text() {
 
 #[test]
 fn a_coordinate_the_kernel_cannot_rewrite_like_the_reference_is_undefined() {
-    // The expansion of the numerator has degree 65, past the bound; the
-    // reference cancels the pole, so keeping the input would differ.
+    // The reference's CAS rewrites these coordinates (a cancelled pole past
+    // the degree bound, sqrt(t)^2 to t, exp(t) exp(-t) to 1); the kernel
+    // rewrites rational coordinates only.
     let c = build(&[
         "k = Curve((t^65-1)/(t-1), t, t, 0, 2)",
         "e = Expand(k)",
         "j = Curve(sqrt(t)^2, t, t, -1, 1)",
         "s = Simplify(j)",
-        "i = Curve(sin(t)/t, t, t, -1, 1)",
+        "i = Curve(exp(t)*exp(-t), t, t, 700, 800)",
         "u = Simplify(i)",
+        "h = Curve(sin(t)^2+t, cos(t)*t^2, t, 0, 2)",
+        "v = Factor(h)",
     ]);
-    for label in ["e", "s", "u"] {
+    for label in ["e", "s", "u", "v"] {
         assert_eq!(c.value(id(&c, label)), Value::Undefined, "{label}");
         assert_eq!(curve_point(&c, label, 0.5), None, "{label}");
     }
-    // A coordinate that is defined everywhere keeps its values.
-    let c = build(&[
-        "k = Curve(sin(t)^2+t, cos(t)*t^2, t, 0, 2)",
-        "e = Factor(k)",
-    ]);
-    assert_eq!(
-        curve_point(&c, "e", 1.0),
-        Some((1.0_f64.sin().powi(2) + 1.0, 1.0_f64.cos()))
-    );
-    // A polynomial past the bound of the expansion is still itself.
+    // A polynomial past the bound of the expansion is no exact rewrite
+    // either.
     let c = build(&["k = Curve(t^70, t, t, 0, 1)", "e = Expand(k)"]);
-    assert_eq!(curve_point(&c, "e", 0.5), Some((0.5_f64.powi(70), 0.5)));
+    assert_eq!(curve_point(&c, "e", 0.5), None);
+}
+
+#[test]
+fn simplify_reads_a_typed_line_as_typed() {
+    let c = build(&[
+        "g: y=x/3",
+        "r = Simplify(g)",
+        "h: 3y=x+1",
+        "s = Simplify(h)",
+    ]);
+    let r = id(&c, "r");
+    assert_eq!(c.function_value(r, 1.0), Some(1.0 / 3.0));
+    assert_eq!(c.function_value(id(&c, "s"), 1.0), Some(2.0 / 3.0));
 }
 
 #[test]
@@ -355,18 +375,16 @@ fn hints_that_are_no_variable_or_value_are_refused() {
 
 #[test]
 fn solving_stays_within_its_budget() {
-    // A start nearby follows the iteration, one too far away for the step
-    // budget is undefined; a degree past the bound and a third variable are
-    // undefined, not slow.
+    // A start far away answers the only real root without iterating; a
+    // degree past the bound and a third variable are undefined, not slow.
     let c = build(&[
-        "f(x) = x^3-x",
-        "r = NSolutions(f, x=1000)",
-        "s = NSolutions(f, x=1000000000000)",
-        "t = NSolutions(f, x=10^300)",
+        "f(x) = x^3+1",
+        "g(x) = x^3-x",
+        "r = NSolutions(f, x=10^300)",
+        "s = NSolutions(g, x=1000)",
     ]);
-    assert_eq!(numbers(&c, "r").unwrap(), [1.0]);
+    assert_eq!(numbers(&c, "r").unwrap(), [-1.0]);
     assert!(numbers(&c, "s").is_none());
-    assert!(numbers(&c, "t").is_none());
     let c = build(&["r = Solutions(x^3+y^3=1, x)", "s = Solutions(x+y+z=1, x)"]);
     assert!(c.elements(id(&c, "r")).is_none());
     assert!(c.elements(id(&c, "s")).is_none());
@@ -379,15 +397,15 @@ fn curve_point(c: &Construction, label: &str, t: f64) -> Option<(f64, f64)> {
 #[test]
 fn a_rewritten_curve_keeps_its_points_and_loses_removable_poles() {
     let c = build(&[
-        "k = Curve((t^2-1)/(t-1), sin(t), t, 0, 2)",
+        "k = Curve((t^2-1)/(t-1), t^2, t, 0, 2)",
         "e = Expand(k)",
         "f = Factor(k)",
         "i = IFactor(k)",
     ]);
     assert_eq!(curve_point(&c, "k", 1.0), None);
     for label in ["e", "f", "i"] {
-        assert_eq!(curve_point(&c, label, 1.0), Some((2.0, 1.0_f64.sin())));
-        assert_eq!(curve_point(&c, label, 0.5), Some((1.5, 0.5_f64.sin())));
+        assert_eq!(curve_point(&c, label, 1.0), Some((2.0, 1.0)));
+        assert_eq!(curve_point(&c, label, 0.5), Some((1.5, 0.25)));
         assert_eq!(c.value(id(&c, label)), c.value(id(&c, "k")));
     }
 }
@@ -396,16 +414,16 @@ fn a_rewritten_curve_keeps_its_points_and_loses_removable_poles() {
 fn a_rewritten_curve_follows_its_source() {
     let mut c = build(&[
         "a = 2",
-        "k = Curve(a*t^2, cos(a*t), t, 0, a)",
+        "k = Curve(a*t^2, (t+a)^2, t, 0, a)",
         "e = Expand(k)",
     ]);
-    assert_eq!(curve_point(&c, "e", 1.0), Some((2.0, 2.0_f64.cos())));
+    assert_eq!(curve_point(&c, "e", 1.0), Some((2.0, 9.0)));
     // An interval that ends before it starts: undefined with its source.
     c.set_number(id(&c, "a"), -1.0).unwrap();
     assert_eq!(c.value(id(&c, "e")), Value::Undefined);
     assert_eq!(curve_point(&c, "e", 0.0), None);
     c.set_number(id(&c, "a"), 3.0).unwrap();
-    assert_eq!(curve_point(&c, "e", 1.0), Some((3.0, 3.0_f64.cos())));
+    assert_eq!(curve_point(&c, "e", 1.0), Some((3.0, 16.0)));
     assert_eq!(
         c.value(id(&c, "e")),
         Value::Curve {
@@ -594,7 +612,7 @@ fn equations_typed_in_place_solve_like_named_objects() {
         "u = Solutions(2x+3y=6, y)",
     ]);
     assert_eq!(samples(&c, "r", 0, &[0.0, 3.0]), [1.0, -2.0]);
-    assert_eq!(samples(&c, "s", 1, &[0.0]), [2.0]);
+    assert!(c.elements(id(&c, "s")).is_none());
     assert_eq!(numbers(&c, "t").unwrap(), [-2.0, 2.0]);
     assert_eq!(samples(&c, "u", 0, &[3.0]), [0.0]);
 }

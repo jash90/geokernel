@@ -300,8 +300,53 @@ def curve_case(script, steps=()):
     c.cases[-1]["sample_curves"] = True
 
 
+# The kernel's exact failure for each refused line, asserted by the replay.
+ERRORS = {
+    "r = Expand(g)": "invalid arguments to `Expand`",
+    "r = Expand(k)": "invalid arguments to `Expand`",
+    "r = Expand(l)": "invalid arguments to `Expand`",
+    "r = Expand(s)": "invalid arguments to `Expand`",
+    "r = Expand(x+y=1)": "`y` needs arguments",
+    "r = Expand(x^2+y^2=4)": "`y` needs arguments",
+    "r = Expand({1, 2})": "invalid arguments to `Expand`",
+    "r = Expand({x^2-1, (x+1)^2})": "invalid arguments to `Expand`",
+    "r = Factor(g)": "invalid arguments to `Factor`",
+    "r = Factor(k)": "invalid arguments to `Factor`",
+    "r = Factor(l)": "`Factor` needs a function",
+    "r = Factor(s)": "invalid arguments to `Factor`",
+    "r = Factor(x+y=1)": "`y` needs arguments",
+    "r = Factor(x^2+y^2=4)": "`y` needs arguments",
+    "r = Factor({1, 2})": "`Factor` needs a function",
+    "r = Factor({x^2-1, (x+1)^2})": "invalid arguments to `Factor`",
+    "r = IFactor(g)": "invalid arguments to `IFactor`",
+    "r = IFactor(k)": "invalid arguments to `IFactor`",
+    "r = IFactor(l)": "`IFactor` needs a function",
+    "r = IFactor(s)": "invalid arguments to `IFactor`",
+    "r = IFactor(x+y=1)": "`y` needs arguments",
+    "r = IFactor(x^2+y^2=4)": "`y` needs arguments",
+    "r = IFactor({1, 2})": "`IFactor` needs a function",
+    "r = IFactor({x^2-1, (x+1)^2})": "invalid arguments to `IFactor`",
+    "r = NSolutions(u^2=4, u)": "undefined variable `u`",
+    "r = PlotSolve(2)": "invalid arguments to `PlotSolve`",
+    "r = PlotSolve(f, x)": "invalid arguments to `PlotSolve`",
+    "r = PlotSolve(f, x=1)": "invalid arguments to `PlotSolve`",
+    "r = PlotSolve(g, y)": "invalid arguments to `PlotSolve`",
+    "r = PlotSolve(x, y)": "invalid arguments to `PlotSolve`",
+    "r = Simplify(\"\")": "`Simplify` needs a text that is not empty",
+    "r = Simplify(A)": "invalid arguments to `Simplify`",
+    "r = Simplify(l)": "invalid arguments to `Simplify`",
+    "r = Simplify(p)": "invalid arguments to `Simplify`",
+    "r = Simplify(t)": "`Simplify` needs a text that is not empty",
+    "r = Simplify({1, 2})": "invalid arguments to `Simplify`",
+    "r = Simplify({x^2-1, (x+1)^2})": "invalid arguments to `Simplify`",
+    "r = Solutions(a^2=4, a)": "undefined variable `a`",
+    "r = Solutions(f, a)": "undefined variable `a`",
+    "r = Solve(f, abc)": "undefined variable `abc`",
+}
+
+
 def reject(line):
-    return {"action": "reject", "line": line}
+    return {"action": "reject", "line": line, "error": ERRORS[line]}
 
 
 # Expand, Factor and IFactor rewrite a curve coordinate by coordinate.
@@ -372,7 +417,7 @@ for k, text in enumerate([
 c.case("text", ["a = 2", 't = "x+" + a', "result = Simplify(t)"],
        [setn("a", -3), setn("a", 1), setn("a", -1)])
 c.case("text", ['t = "1"', 'u = t + "x-x"', "result = Simplify(u)"], [])
-c.case("text", ['t = ""'], [reject("r = Simplify(t)"), reject('r = Simplify("")')])
+c.case("text", ['t = ""'], [reject("r = Simplify(t)")])
 
 c.case("rejected", ["l = {1, 2}", "A = (0, 1)", "B = (1, 0)", "C = (2, 3)", "p = Polygon(A, B, C)"],
        [reject(f"r = Simplify({argument})") for argument in
@@ -689,14 +734,61 @@ c.case("implicit", ["a = 1", "k: a*x^3+x^2*y=4", "r1 = Solutions(k, y)", "r2 = S
        [setn("a", 0), setn("a", -2), setn("a", 1)])
 c.case("implicit", results([f"{command}(x^3+y^3=1)" for command in SOLVERS + ("PlotSolve",)]
                            + [f"{command}(x^3-x=0)" for command in SOLVERS + ("PlotSolve",)]), [])
+# A product of two lines solved for x: two branches, whose order the CAS
+# chooses; with a = 0 one factor holds no x and one branch is left.
+c.case("order", ["a = 3", "k: (13*x-10*y-10)*(a*x-5*y+2)=0", "r1 = Solutions(k, x)",
+                 "r2 = Solutions(k)", "r3 = Solve(k, x)"],
+       [setn("a", 6.5), setn("a", 0), setn("a", -1), setn("a", 3)])
+c.case("order", ["a = 1", "k: a*x^2+x*y=0", "r1 = Solutions(k)", "r2 = Solve(k)"],
+       [setn("a", 0), setn("a", 2), setn("a", 0)])
+
+# Large coefficients of an object: every term counts.
+c.case("coefficient", ["k: x^2+10^14*y^2=10^14", "r1 = Solutions(k, y)", "r2 = NSolutions(k, y)",
+                       "r3 = Solutions(k, x)"], [])
+c.case("coefficient", ["k: x^3+10^14*y^3=10^14", "r1 = NSolutions(k, y)", "r2 = Solutions(k, x)"],
+       [])
+c.case("coefficient", ["A = (1/3, 2/7)", "B = (5/11, 1/13)", "g = Line(A, B)",
+                       "r1 = Solutions(g, y)", "r2 = Solutions(g, x)", "r3 = Solve(g, y)"],
+       [mv("B", 0.3, 0.7)])
+c.case("coefficient", ["g: y=x/3+1/7", "k: y=x^2/3-2/7", "r1 = Solutions(g, y)",
+                       "r2 = Solutions(k, y)", "r3 = Solve(g, y)", "r4 = Solutions(k, x)"], [])
+
+# A start value: the root depends on the search unless the equation has
+# exactly one real root.
+c.case("start", ["f(x) = x^3-x", "r1 = NSolutions(f, x=0.52)"], [])
+c.case("start", ["f(x) = x^4-24*x^3+213*x^2-826*x+1176", "r1 = NSolutions(f, x=5.8)"], [])
+c.case("start", ["f(x) = x^2-2", "r1 = NSolutions(f, x=1.2*10^13)", "r2 = NSolutions(f, x=1.3*10^13)"],
+       [])
+for function in ["x^3-2x+2", "x^3+1", "x^5+x+1", "2x-7"]:
+    c.case("start", [f"f(x) = {function}"] + results(
+        [f"NSolutions(f, x={start})" for start in ["0", "-7", "10^13", "-10^13", "10^300"]]
+        + ["NSolve(f, x=3)", "Solutions(f, x=3)"]), [])
+
+# One equation and a list of variables in the numeric solver.
+for function in ["(x-2)^2", "(x-2)^3", "x^3+1", "x^2+1", "x^2-4x+3", "x^3-2x+2"]:
+    c.case("shape", [f"f(x) = {function}", "r1 = NSolutions(f, {x})", "r2 = NSolve(f, {x})"], [])
+c.case("shape", ["g: x+y=1", "r1 = NSolutions(g, {x, y})", "r2 = NSolve(g, {x, y})"], [])
+
+# A list of one variable the function does not hold.
+c.case("name", ["f(x) = x^2-9", "r1 = Solutions(f, {t})", "r2 = Solve(f, {t})",
+                "r3 = NSolutions(f, {t})"], [])
+
+# A rewrite the kernel cannot perform.
+curve_case(["k = Curve(exp(t)*exp(-t), t, t, 700, 800)", "r1 = Simplify(k)"])
+
+# Solve of a cubic variable itself.
+c.case("degree", ["result = Solve(x^3+y=0, x)"], [])
 c.write()
 
 # Expand, Factor, IFactor and Simplify of an implicit curve answer an
-# implicit curve, which the kernel does not compute: it refuses them.
+# implicit curve, which the kernel does not compute: it refuses them. One
+# refusal per case, so that each one is checked.
 reference = Cases("cas")
-for equation in IMPLICIT:
-    reference.case("implicitrewrite", [f"k: {equation}"] + results(
-        f"{command}(k)" for command in REWRITES + ("Simplify",)), [])
+for equation in ["x^3+y^3=1", "x^3-x=0", "(x+y)^3=1"]:
+    for command in REWRITES + ("Simplify",):
+        reference.case("implicitrewrite", [f"k: {equation}", f"r = {command}(k)"], [])
+# An empty text is refused by the kernel and the reference alike.
+reference.case("textrefusal", [], [reject('r = Simplify("")')])
 
 # A point as the solving argument and a number after a list: the
 # reference prints them into its CAS and answers whatever comes back.

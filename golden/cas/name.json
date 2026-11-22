@@ -544,10 +544,10 @@
       ],
       "steps": [
         { "action": "initial" },
-        { "action": "reject", "line": "r = Solutions(f, a)" },
-        { "action": "reject", "line": "r = Solve(f, abc)" },
-        { "action": "reject", "line": "r = Solutions(a^2=4, a)" },
-        { "action": "reject", "line": "r = NSolutions(u^2=4, u)" }
+        { "action": "reject", "line": "r = Solutions(f, a)", "error": "undefined variable `a`" },
+        { "action": "reject", "line": "r = Solve(f, abc)", "error": "undefined variable `abc`" },
+        { "action": "reject", "line": "r = Solutions(a^2=4, a)", "error": "undefined variable `a`" },
+        { "action": "reject", "line": "r = NSolutions(u^2=4, u)", "error": "undefined variable `u`" }
       ],
       "snapshots": [
         {
@@ -870,6 +870,51 @@
               { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 }
             ]
           }
+        }
+      ]
+    },
+    {
+      "id": "cas-name-014",
+      "group": "cas",
+      "script": [
+        "f(x) = x^2-9",
+        "r1 = Solutions(f, {t})",
+        "r2 = Solve(f, {t})",
+        "r3 = NSolutions(f, {t})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 55.0],
+              [-4.0, 7.0],
+              [-2.0, -5.0],
+              [-1.0, -8.0],
+              [-0.5, -8.75],
+              [0.0, -9.0],
+              [0.5, -8.75],
+              [1.0, -8.0],
+              [2.0, -5.0],
+              [4.0, 7.0],
+              [8.0, 55.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": { "type": "list", "defined": false }
         }
       ]
     }

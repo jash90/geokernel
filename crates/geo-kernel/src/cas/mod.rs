@@ -7,12 +7,14 @@ mod polynomial;
 mod rational;
 mod solve;
 
-pub(crate) use algebraic::{Algebraic, Radical};
+pub(crate) use algebraic::Algebraic;
 pub(crate) use factor::{divide_exact as polynomial_quotient, gcd as polynomial_gcd};
 pub(crate) use polynomial::{Poly, Quotient};
 pub(crate) use rational::gcd as integer_gcd;
 pub(crate) use rational::Rat;
-pub(crate) use solve::{affine_system, guided_root, real_roots, systems, Root, Roots, SystemRoots};
+pub(crate) use solve::{
+    affine_system, guided_root, real_roots, systems, unique_real_root, Root, Roots, SystemRoots,
+};
 mod projection;
 pub(crate) use projection::{project_plane, rounded_numerator, PlanePolynomial, PLANE_X, PLANE_Y};
 

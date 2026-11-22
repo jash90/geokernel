@@ -473,13 +473,9 @@
       ],
       "steps": [
         { "action": "initial" },
-        { "action": "reject", "line": "r = Simplify(t)" },
-        { "action": "reject", "line": "r = Simplify(\"\")" }
+        { "action": "reject", "line": "r = Simplify(t)", "error": "`Simplify` needs a text that is not empty" }
       ],
       "snapshots": [
-        {
-          "t": { "type": "text", "defined": true, "text": "" }
-        },
         {
           "t": { "type": "text", "defined": true, "text": "" }
         },

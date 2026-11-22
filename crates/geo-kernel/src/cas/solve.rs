@@ -77,95 +77,44 @@ pub(crate) fn real_roots(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Ro
     Some(Roots::Finite(roots))
 }
 
-/// Most Newton steps of one guided solve. The reference still follows the
-/// iteration after 59 steps and leaves it from 60 on.
-const GUIDED_STEPS: usize = 48;
-/// Most halvings of one Newton step. With two the reference already goes
-/// its own way.
-const GUIDED_HALVINGS: usize = 1;
-
 /// The real root the numeric solver answers for the start value `start`
 /// (`fsolve(equation, variable = start)`), or `None` where that root is not
-/// determined.
+/// determined by the equation alone.
 ///
-/// Newton's method runs from the start value, and a step that does not
-/// lower the residual is halved once ([Dennis and Schnabel, Numerical
-/// Methods for Unconstrained Optimization and Nonlinear Equations, section
-/// 6.3](https://doi.org/10.1137/1.9781611971200)). The answer is the
-/// isolated root the iteration ends on, when that root is simple.
-///
-/// Everything else is `None`: the reference then searches on in a way the
-/// start value does not explain (golden/cas/start.json), so a vanishing
-/// derivative, a step that needs more halving, a slow approach to a
-/// multiple root or a start too far away have no answer here.
+/// Which root a search from a start value ends on depends on the path of
+/// the reference's numeric backend, which no EUPL source describes
+/// (golden/cas/start.json records starts a step apart that end on
+/// different roots). The answer is therefore given only where it does not
+/// depend on the path: the polynomial has exactly one real root, and that
+/// root is simple, so every successful search ends on it.
 pub(crate) fn guided_root(coefficients: &[Rat], start: f64, work: &mut Work<'_>) -> Option<f64> {
+    if !start.is_finite() {
+        return None;
+    }
+    unique_real_root(coefficients, work).map(Root::value)
+}
+
+/// The only real root of the polynomial, `None` when it has none, several,
+/// infinitely many, or when the one root is multiple.
+pub(crate) fn unique_real_root(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Root> {
     let exact = trim(coefficients);
-    if exact.len() < 2 || !start.is_finite() {
+    if exact.len() < 2 {
         return None;
     }
     let Roots::Finite(roots) = real_roots(exact, work)? else {
         return None;
     };
-    let roots: Vec<f64> = roots.into_iter().map(Root::value).collect();
-    let coefficients: Vec<f64> = exact.iter().map(|c| c.to_f64()).collect();
-    let evaluate = |x: f64| {
-        coefficients
-            .iter()
-            .rev()
-            .fold((0.0, 0.0), |(value, slope): (f64, f64), &c| {
-                (value * x + c, slope * x + value)
-            })
+    let [root] = roots[..] else {
+        return None;
     };
-    let mut x = start;
-    let (mut value, mut slope) = evaluate(x);
-    for _ in 0..GUIDED_STEPS {
-        work.spend(coefficients.len())?;
-        if !value.is_finite() || !slope.is_finite() {
-            return None;
-        }
-        let step = if value == 0.0 { 0.0 } else { value / slope };
-        if step.abs() <= 1e-13 * x.abs().max(1.0) {
-            return simple_root(exact, &roots, x - step, work);
-        }
-        if !step.is_finite() {
-            return None;
-        }
-        let mut accepted = None;
-        for halvings in 0..=GUIDED_HALVINGS {
-            work.spend(coefficients.len())?;
-            let candidate = x - step / f64::from(1 << halvings);
-            let (v, s) = evaluate(candidate);
-            if v.abs() < value.abs() {
-                accepted = Some((candidate, v, s));
-                break;
-            }
-        }
-        (x, value, slope) = accepted?;
-    }
-    None
-}
-
-/// The isolated root next to where the iteration ended, unless it is a
-/// multiple root: the reference stops short of those at its own tolerance.
-fn simple_root(exact: &[Rat], roots: &[f64], end: f64, work: &mut Work<'_>) -> Option<f64> {
-    let nearest = |roots: &[f64]| {
-        roots
-            .iter()
-            .copied()
-            .min_by(|a, b| (a - end).abs().total_cmp(&(b - end).abs()))
-    };
-    let root = nearest(roots)?;
+    // A real root of the common factor of the polynomial and its
+    // derivative is a multiple root, which can only be the one real root.
     let slope = factor::derivative(exact, work)?;
     let common = factor::gcd(exact, &slope, work)?;
     if common.len() > 1 {
-        let Roots::Finite(multiple) = real_roots(&common, work)? else {
-            return None;
-        };
-        let multiple: Vec<f64> = multiple.into_iter().map(Root::value).collect();
-        if let Some(other) = nearest(&multiple) {
-            if (other - root).abs() <= 1e-9 * root.abs().max(1.0) {
-                return None;
-            }
+        match real_roots(&common, work)? {
+            Roots::Finite(multiple) if multiple.is_empty() => {}
+            _ => return None,
         }
     }
     Some(root)
