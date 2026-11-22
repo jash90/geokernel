@@ -222,6 +222,16 @@ cases.case("polyline", ["c: x^4 + y^4 = 1"] + zigzag
            + ["s = PolyLine(" + ", ".join(f"A_{{{i + 1}}}" for i in range(len(zigzag))) + ")",
               "P = Intersect(c, s)"], [])
 
+scalene = ["P = (-1, 1)", "Q = (4, 0)", "R = (1, 3)"]
+for indices in ((1, 2, 3, 4, 10, 42, 42.9), (29, 30, 31, 129, -129, -400, 400),
+                (300, 401, 500, 550, 600, 656, 657)):
+    first, *rest = indices
+    cases.case("cubics", scalene + [f"n = {first}", "c = Cubic(P, Q, R, n)"],
+               [setn("n", n) for n in rest] + [setn("n", first), mv("R", 1.5, 0.5),
+                                              mv("R", 1, 3), mv("P", -2, 1)])
+cases.case("cubics", ["c = Cubic((1,1), (2,1/2), (3,1/3), 42)"], [])
+
+
 cases.write()
 
 reference = Cases("implicit")

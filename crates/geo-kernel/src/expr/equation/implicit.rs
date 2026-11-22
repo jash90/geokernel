@@ -1,6 +1,7 @@
 // Licensed under the EUPL 1.2.
 
 use super::{build_normal, Builder, Entry, NotPolynomial};
+use crate::algo::implicit::barycentric;
 use crate::algo::{conic_nd::ConicData, general_conic};
 use crate::expr::{eval, parse, shift_children, Element, Lit, Node, Raw, Ty};
 use crate::{Construction, Def, Error, Id, Kind, Value};
@@ -25,6 +26,7 @@ enum Source {
     Matrix,
     Function(Id),
     Points(Id),
+    Cubic([Id; 4]),
 }
 
 impl Record {
@@ -153,6 +155,7 @@ pub(crate) fn parents(c: &Construction, index: u32) -> Vec<Id> {
             parents.dedup();
         }
         Source::Function(id) | Source::Points(id) => parents.push(id),
+        Source::Cubic(inputs) => parents.extend(inputs),
         Source::Matrix => {}
     }
     parents
@@ -264,6 +267,12 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
         }
         Source::Points(id) => {
             let Some(coefficients) = through_points(c, id) else {
+                return Value::Undefined;
+            };
+            (Kind::ImplicitCurve, coefficients)
+        }
+        Source::Cubic(inputs) => {
+            let Some(coefficients) = barycentric::cubic(c, inputs) else {
                 return Value::Undefined;
             };
             (Kind::ImplicitCurve, coefficients)
@@ -400,12 +409,22 @@ pub(crate) fn command(
     label: &str,
     input: &str,
 ) -> Option<Result<Id, String>> {
-    let ("ImplicitCurve", args) = crate::script::split_call(input)? else {
+    let (command @ ("ImplicitCurve" | "Cubic"), args) = crate::script::split_call(input)? else {
         return None;
     };
     let start = c.checkpoint();
     let result = (|| {
-        let source = if let [argument] = args.as_slice() {
+        let source = if command == "Cubic" {
+            let [a, b, d, n] = args.as_slice() else {
+                return Err("Cubic needs three points and a number".into());
+            };
+            Source::Cubic([
+                barycentric::argument(c, a, Kind::Point)?,
+                barycentric::argument(c, b, Kind::Point)?,
+                barycentric::argument(c, d, Kind::Point)?,
+                barycentric::argument(c, n, Kind::Number)?,
+            ])
+        } else if let [argument] = args.as_slice() {
             let hidden = format!("\0implicit{}", c.len());
             match c.id(argument) {
                 Some(id) if c.kind(id) == Kind::List => Source::Points(id),

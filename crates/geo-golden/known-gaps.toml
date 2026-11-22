@@ -793,11 +793,6 @@ mismatches = [
 ]
 
 [[gap]]
-id = "implicit-barycentric-001"
-reason = "The numbered triangle cubic catalogue and its coefficient substitution have no kernel implementation."
-mismatches = ["0:script line 5"]
-
-[[gap]]
 id = "implicit-barycentric-002"
 reason = "The kernel has no scoped binding and substitution of the three barycentric coordinates in the command equation."
 mismatches = ["0:script line 4"]
