@@ -1,0 +1,284 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "commontangents-conics-001",
+      "group": "commontangents",
+      "script": [
+        "a = 6",
+        "c = Conic({1, 4, -4, 0, 0, 0})",
+        "d = Conic({1, 4, a^2 - 4, 0, -2a, 0})",
+        "t = Tangent(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 6.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, 32.0, 0.0, -6.0, 0.0],
+            "midpoint": [6.0, -0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": -4.0, "c": -4.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "t_{3}": { "type": "line", "defined": true, "a": 1.333333333333333, "b": -2.981423969999718, "c": -4.0 },
+          "t_{4}": { "type": "line", "defined": true, "a": 1.333333333333333, "b": 2.981423969999718, "c": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, 21.0, 0.0, -5.0, 0.0],
+            "midpoint": [5.0, -0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": -4.0, "c": -4.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "t_{3}": { "type": "line", "defined": true, "a": 1.6, "b": -2.4, "c": -4.0 },
+          "t_{4}": { "type": "line", "defined": true, "a": 1.6, "b": 2.4, "c": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, 5.0, 0.0, -3.0, 0.0],
+            "midpoint": [3.0, -0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "t_{1}": { "type": "line", "defined": true, "a": 2.220446049250313E-16, "b": -4.0, "c": -4.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "t_{3}": { "type": "line", "defined": false },
+          "t_{4}": { "type": "line", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -4.0, 0.0, -0.0, 0.0],
+            "midpoint": [0.0, -0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "t_{1}": { "type": "line", "defined": false },
+          "t_{2}": { "type": "line", "defined": false },
+          "t_{3}": { "type": "line", "defined": false },
+          "t_{4}": { "type": "line", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, 32.0, 0.0, -6.0, 0.0],
+            "midpoint": [6.0, -0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": -4.0, "c": -4.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": -4.0 },
+          "t_{3}": { "type": "line", "defined": true, "a": 1.333333333333333, "b": -2.981423969999718, "c": -4.0 },
+          "t_{4}": { "type": "line", "defined": true, "a": 1.333333333333333, "b": 2.981423969999718, "c": -4.0 }
+        }
+      ]
+    },
+    {
+      "id": "commontangents-conics-002",
+      "group": "commontangents",
+      "script": [
+        "c = Conic({1, 0, 0, 0, 0, -1})",
+        "d = Conic({4, 1, 15, 0, 0, 8})",
+        "t = Tangent(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, 0.0, 0.0, 0.0, -0.5],
+            "vertex": [-0.0, 0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "d": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [4.0, 1.0, 15.0, 0.0, 0.0, 4.0],
+            "midpoint": [0.0, -4.0],
+            "half_axes": [1.0, 0.5],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          },
+          "t_{1}": { "type": "line", "defined": true, "a": -2.6060099476935843, "b": -0.5, "c": -3.395643923738959 },
+          "t_{2}": { "type": "line", "defined": true, "a": 2.606009947693584, "b": -0.5, "c": -3.395643923738958 },
+          "t_{3}": { "type": "line", "defined": true, "a": -1.486173661629784, "b": -0.5, "c": -1.1043560762610398 },
+          "t_{4}": { "type": "line", "defined": true, "a": 1.4861736616297838, "b": -0.5, "c": -1.1043560762610396 }
+        }
+      ]
+    },
+    {
+      "id": "commontangents-conics-003",
+      "group": "commontangents",
+      "script": [
+        "c = Conic({1, 4, -4, 0, 0, 0})",
+        "A = (4, 3)",
+        "r = 1",
+        "d = Circle(A, r)",
+        "t = Tangent(d, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 5.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "circle", "defined": true, "cx": 4.0, "cy": 3.0, "r": 1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.6845081827413892, "b": -0.7290051767711327, "c": -1.5510172006521579 },
+          "t_{2}": { "type": "line", "defined": true, "a": -0.5394035629195391, "b": 0.8420473836481075, "c": -1.3685278992661658 },
+          "t_{3}": { "type": "line", "defined": true, "a": -0.955222341861361, "b": 0.29588896162006995, "c": 1.9332224825852364 },
+          "t_{4}": { "type": "line", "defined": true, "a": 0.21552312744477042, "b": -0.9764987360647508, "c": 1.0674036984151698 }
+        },
+        {
+          "c": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "circle", "defined": true, "cx": 5.0, "cy": 3.0, "r": 1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.5734357988168481, "b": -0.8192505017703273, "c": -1.409427488773261 },
+          "t_{2}": { "type": "line", "defined": true, "a": -0.4711101984491002, "b": 0.8820743624735861, "c": -1.2906720951752533 },
+          "t_{3}": { "type": "line", "defined": true, "a": -0.8628882600816086, "b": 0.5053947473278719, "c": 1.7982570584244257 },
+          "t_{4}": { "type": "line", "defined": true, "a": 0.1805813687882214, "b": -0.9835600486295171, "c": 1.0477733019474442 }
+        }
+      ]
+    }
+  ]
+}

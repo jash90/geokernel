@@ -17,14 +17,15 @@
 mod conic_coefficients;
 #[path = "../../algo/conic_interval.rs"]
 mod conic_interval;
+mod function_roots;
 
 use crate::algo::intersect::Hint;
 use crate::algo::vector::{matrix, VectorDef};
-use crate::expr::eval::{combine, number_of, slot_val, Ctx, Env, Val};
+use crate::expr::eval::{combine, number_of, slot_val, Ctx, Val};
 use crate::expr::list::Slot;
 use crate::expr::parse::{list_form, Parser};
-use crate::expr::{self, math, Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
-use crate::kernel::{Construction, Def, Id, Kind, Value};
+use crate::expr::{self, Bin, Elem, Entry, IfMode, ListOp, Node, Raw, Ty, Un, NONE};
+use crate::kernel::{Construction, Def, Id, Kind};
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &[
@@ -502,148 +503,32 @@ fn matrix_number<const M: bool>(ctx: &Ctx<'_, M>, op: ListOp, matrix: u32) -> Op
     })
 }
 
-type Polynomial = [f64; 5];
-
 impl Construction {
-    /// Coefficients in ascending degree for a polynomial function of degree
-    /// at most four. Coefficients can read other construction objects.
-    pub(crate) fn function_polynomial(&self, id: Id) -> Option<Polynomial> {
-        let ctx = function_context(self, id, &Env::None)?;
-        let p = polynomial(&ctx, ctx.e.root)?;
-        p.iter().all(|x| x.is_finite()).then_some(p)
+    /// Store an argument tree without creating a labelled construction object.
+    pub(crate) fn store_intersection_argument(
+        &mut self,
+        text: &str,
+    ) -> Result<(u32, Kind), String> {
+        let parsed = crate::expr::parse::parse(self, text)?;
+        let kind = match (parsed.uses_var, parsed.tys[parsed.root as usize]) {
+            (false, Ty::Num(1)) => Kind::Angle,
+            (false, Ty::Num(_)) => Kind::Number,
+            (false, Ty::Vec) => Kind::Point,
+            _ => return Err(format!("invalid intersection argument `{text}`")),
+        };
+        let index = u32::try_from(self.exprs.entries.len())
+            .map_err(|_| "too many expression arguments".to_string())?;
+        self.exprs.entries.push(Entry::new(parsed, false));
+        Ok((index, kind))
     }
 
-    /// The derivative at a seed for Newton iteration, when the expression
-    /// tree consists of operations with scalar differentiation rules.
-    pub(crate) fn function_derivative(&self, id: Id, x: f64) -> Option<f64> {
-        let env = Env::Value(x);
-        let ctx = function_context(self, id, &env)?;
-        derivative(&ctx, ctx.e.root).filter(|d| d.is_finite())
+    pub(crate) fn intersection_argument_parents(&self, index: u32) -> Option<&[Id]> {
+        Some(&self.exprs.entries.get(index as usize)?.parents)
     }
-}
 
-fn function_context<'a>(
-    c: &'a Construction,
-    id: Id,
-    env: &'a Env<'a, false>,
-) -> Option<Ctx<'a, false>> {
-    let (Def::Expr(def), Value::Function) = (c.def(id), c.value(id)) else {
-        return None;
-    };
-    Some(Ctx {
-        c,
-        e: expr::entry(c, def),
-        env,
-        lists: None,
-        meter: None,
-        locals: None,
-    })
-}
-
-fn scalar_polynomial(x: f64) -> Polynomial {
-    [x, 0.0, 0.0, 0.0, 0.0]
-}
-
-fn product(a: Polynomial, b: Polynomial) -> Option<Polynomial> {
-    let mut out = [0.0; 5];
-    for (i, x) in a.into_iter().enumerate().filter(|&(_, x)| x != 0.0) {
-        for (j, y) in b.into_iter().enumerate().filter(|&(_, y)| y != 0.0) {
-            *out.get_mut(i + j)? += x * y;
-        }
+    pub(crate) fn intersection_argument_value(&self, index: u32) -> Option<Raw> {
+        let entry = self.exprs.entries.get(index as usize)?;
+        let lists = entry.lists.then(|| expr::eval::Lists::new(Vec::new()));
+        Some(expr::eval::root(self, entry, lists.as_ref()).0)
     }
-    Some(out)
-}
-
-fn has_variable(ctx: &Ctx<'_, false>, i: u32) -> bool {
-    let node = ctx.node(i);
-    matches!(node, Node::Var) || expr::children(&node).any(|child| has_variable(ctx, child))
-}
-
-fn polynomial(ctx: &Ctx<'_, false>, i: u32) -> Option<Polynomial> {
-    if !has_variable(ctx, i) {
-        return Some(scalar_polynomial(ctx.full_number(i)));
-    }
-    match ctx.node(i) {
-        Node::Var => Some([0.0, 1.0, 0.0, 0.0, 0.0]),
-        Node::Bin(op, a, b) => {
-            let a = polynomial(ctx, a)?;
-            let b = polynomial(ctx, b)?;
-            let b_is_scalar = b[1..].iter().all(|&x| x == 0.0);
-            match op {
-                Bin::Add => Some(std::array::from_fn(|i| a[i] + b[i])),
-                Bin::Sub => Some(std::array::from_fn(|i| a[i] - b[i])),
-                Bin::Mul => product(a, b),
-                Bin::Div if b_is_scalar => Some(a.map(|x| x / b[0])),
-                Bin::Pow if b_is_scalar && (0.0..=4.0).contains(&b[0]) && b[0].fract() == 0.0 => (0
-                    ..b[0] as usize)
-                    .try_fold(scalar_polynomial(1.0), |power, _| product(power, a)),
-                _ => None,
-            }
-        }
-        Node::Apply(f, arg) => {
-            let a = polynomial(ctx, arg)?;
-            let p = ctx.c.function_polynomial(f)?;
-            let degree = p.iter().rposition(|&x| x != 0.0).unwrap_or(0);
-            let mut out = scalar_polynomial(p[degree]);
-            for &constant in p[..degree].iter().rev() {
-                out = product(out, a)?;
-                out[0] += constant;
-            }
-            Some(out)
-        }
-        _ => None,
-    }
-}
-
-fn derivative(ctx: &Ctx<'_, false>, i: u32) -> Option<f64> {
-    if !has_variable(ctx, i) {
-        return Some(0.0);
-    }
-    Some(match ctx.node(i) {
-        Node::Var => 1.0,
-        Node::Apply(f, arg) => {
-            derivative(ctx, arg)? * ctx.c.function_derivative(f, ctx.full_number(arg))?
-        }
-        Node::Bin(op, a, b) => {
-            let (da, db) = (derivative(ctx, a)?, derivative(ctx, b)?);
-            match op {
-                Bin::Add => da + db,
-                Bin::Sub => da - db,
-                _ => {
-                    let (a, b) = (ctx.full_number(a), ctx.full_number(b));
-                    match op {
-                        Bin::Mul => da * b + a * db,
-                        Bin::Div => (da * b - a * db) / (b * b),
-                        Bin::Pow if db == 0.0 => b * a.powf(b - 1.0) * da,
-                        Bin::Pow => a.powf(b) * (db * a.ln() + b * da / a),
-                        _ => return None,
-                    }
-                }
-            }
-        }
-        Node::Un(op, arg) => {
-            let x = ctx.full_number(arg);
-            let factor = match op {
-                Un::Sin => math::cos(x),
-                Un::Cos => -math::sin(x),
-                Un::Tan => 1.0 / math::cos(x).powi(2),
-                Un::Sinh => x.cosh(),
-                Un::Cosh => x.sinh(),
-                Un::Tanh => 1.0 / x.cosh().powi(2),
-                Un::Asin => 1.0 / (1.0 - x * x).sqrt(),
-                Un::Acos => -1.0 / (1.0 - x * x).sqrt(),
-                Un::Atan => 1.0 / (1.0 + x * x),
-                Un::Sqrt => 0.5 / x.sqrt(),
-                Un::Cbrt => 1.0 / (3.0 * x.cbrt().powi(2)),
-                Un::Abs => x / x.abs(),
-                Un::Exp => x.exp(),
-                Un::Ln => x.recip(),
-                Un::Log2 => 1.0 / (x * std::f64::consts::LN_2),
-                Un::Log10 => 1.0 / (x * std::f64::consts::LN_10),
-                _ => return None,
-            };
-            factor * derivative(ctx, arg)?
-        }
-        _ => return None,
-    })
 }

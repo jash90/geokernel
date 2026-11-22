@@ -47,8 +47,16 @@ use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 
 #[path = "intersect_boundary.rs"]
 pub(crate) mod boundary;
+#[path = "intersect_common_tangents.rs"]
+pub(crate) mod common_tangents;
 #[path = "intersect_conics.rs"]
 mod conics;
+#[path = "intersect_function_roots.rs"]
+mod function_roots;
+#[path = "intersect_functions.rs"]
+pub(crate) mod functions;
+#[path = "intersect_growth.rs"]
+pub(crate) mod growth;
 #[path = "intersect_pair.rs"]
 pub(crate) mod pair;
 
@@ -82,6 +90,16 @@ pub(crate) fn parse_lines(
 
 /// Output slots for an unindexed line/conic intersection in either order.
 pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option<Vec<Def>> {
+    if let Some(defs) = common_tangents::parse_multi(c, name, args) {
+        return Some(defs);
+    }
+    if let Some(defs) = functions::FunctionIntersection::multi(c, name, args) {
+        return Some(
+            defs.into_iter()
+                .map(boundary::BoundaryDef::function)
+                .collect(),
+        );
+    }
     if let Some(def) = pair::PairDef::multi(c, name, args) {
         return Some(
             (0..4)
@@ -199,6 +217,22 @@ pub(crate) fn exec_selected(
     let [first, second, tail @ ..] = args.as_slice() else {
         return None;
     };
+    let checkpoint = c.checkpoint();
+    if let Some(defs) = functions::FunctionIntersection::selected(c, &args) {
+        let result = defs.and_then(|defs| {
+            crate::script::add_outputs(
+                c,
+                label,
+                defs.into_iter()
+                    .map(boundary::BoundaryDef::function)
+                    .collect(),
+            )
+        });
+        if result.is_err() {
+            c.discard_since(checkpoint);
+        }
+        return Some(result.map(Some));
+    }
     let (first_id, second_id) = (c.id(first)?, c.id(second)?);
     let (a, b) = (c.kind(first_id), c.kind(second_id));
     if let [selector] = tail {
@@ -381,7 +415,7 @@ fn defined_as_tangent(line_def: Def, circle: Id) -> bool {
         Def::Lines(
             LineDef::TangentPoint { circle: k, .. } | LineDef::TangentLine { circle: k, .. }
         ) if k == circle
-    )
+    ) || matches!(line_def, Def::Lines(LineDef::CommonTangent(d)) if d.first == circle)
 }
 
 /// Points that an intersection reads besides its line and circles.
@@ -420,11 +454,20 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
                 Def::Lines(LineDef::TangentLine {
                     line: g, circle: k, ..
                 }) if k == circle => push(Some(g)),
+                Def::Lines(LineDef::CommonTangent(d)) if d.first == circle => {
+                    push(Some(d.second));
+                }
                 _ => {}
             }
         }
         Def::ConicPart(ConicPartDef::IntersectLine { line, conic, .. }) => {
-            push(existing_line_conic_point(c, line, c.def(line), conic));
+            let line_def = c.def(line);
+            push(existing_line_conic_point(c, line, line_def, conic));
+            if let Def::Lines(LineDef::CommonTangent(d)) = line_def {
+                if d.first == conic {
+                    push(Some(d.second));
+                }
+            }
         }
         Def::IntersectCircles { c1, c2, .. } if c1 == c2 => push(first_point_on(c, c1)),
         Def::IntersectCircles { c1, c2, .. } => {
@@ -572,12 +615,14 @@ pub(crate) fn line_general_conic(
     which: u8,
 ) -> Option<Value> {
     let line_def = c.def(line);
-    if let Def::ConicPart(d) = line_def {
-        // A tangent of this conic has one point, the tangent algorithm's
-        // own (`isDefinedAsTangent`).
-        if let Some(t) = super::conic_parts::tangent_point_on(c, d, conic) {
-            return if which == 0 { to_value(t) } else { None };
-        }
+    // A tangent of this conic has one point, the tangent algorithm's own.
+    let tangent = match line_def {
+        Def::ConicPart(d) => super::conic_parts::tangent_point_on(c, d, conic),
+        Def::Lines(d @ LineDef::CommonTangent(_)) => lines::tangent_point_on(c, d, conic),
+        _ => None,
+    };
+    if let Some(point) = tangent {
+        return if which == 0 { to_value(point) } else { None };
     }
     let q = match (c.raw_line(line), c.conic(conic)) {
         (Some((a, b, cc)), Some(data)) if data.defined => {

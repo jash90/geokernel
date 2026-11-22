@@ -473,7 +473,7 @@ cases = ["intersections-boundary-002", "intersectconics-lineboundary-002"]
 [[form]]
 command = "Intersect"
 form = "line,polygon"
-cases = ["intersections-boundary-003", "intersectconics-lineboundary-003"]
+cases = ["intersections-boundary-003", "intersectconics-lineboundary-003", "intersectreview-growth-001", "intersectgrowth-slider-001"]
 
 [[form]]
 command = "Intersect"
@@ -483,7 +483,7 @@ cases = ["intersections-boundary-004", "intersectconics-lineboundary-004"]
 [[form]]
 command = "Intersect"
 form = "polyline,polyline"
-cases = ["intersections-boundary-005", "intersectconics-pathboundary-001"]
+cases = ["intersections-boundary-005", "intersectconics-pathboundary-001", "intersectreview-growth-004"]
 
 [[form]]
 command = "Intersect"
@@ -498,7 +498,7 @@ cases = ["intersections-boundary-007", "intersectconics-pathboundary-003"]
 [[form]]
 command = "Intersect"
 form = "polygon,polygon"
-cases = ["intersections-boundary-008", "intersectconics-pathboundary-004"]
+cases = ["intersections-boundary-008", "intersectconics-pathboundary-004", "intersectreview-growth-005"]
 
 [[form]]
 command = "Intersect"
@@ -559,6 +559,76 @@ cases = ["intersections-boundaryseed-003", "intersections-boundaryseed-007"]
 command = "Intersect"
 form = "function,polygon,point"
 cases = ["intersections-boundaryseed-004", "intersections-boundaryseed-008"]
+
+[[form]]
+command = "Intersect"
+form = "function,conic"
+cases = ["intersections-functionconic-001", "intersectfunctions-conic-001", "intersectfunctions-conic-006", "intersectfunctions-degenerate-001", "intersectfunctions-tangency-001"]
+
+[[form]]
+command = "Intersect"
+form = "conic,function"
+cases = ["intersections-functionconic-002", "intersectfunctions-conic-002"]
+
+[[form]]
+command = "Intersect"
+form = "function,line"
+cases = ["intersections-functionline-001", "intersections-functionline-009", "intersectfunctions-line-003"]
+
+[[form]]
+command = "Intersect"
+form = "line,function"
+cases = ["intersections-functionline-002", "intersections-functionline-007", "intersectfunctions-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "function,function"
+cases = ["intersections-functions-001", "intersections-functions-004", "intersections-functions-005"]
+
+[[form]]
+command = "Intersect"
+form = "function,line,number"
+cases = ["intersections-functionline-003", "intersectfunctions-line-004"]
+
+[[form]]
+command = "Intersect"
+form = "line,function,number"
+cases = ["intersections-functionline-004", "intersectfunctions-line-007"]
+
+[[form]]
+command = "Intersect"
+form = "function,function,number"
+cases = ["intersections-functions-002", "intersectfunctions-pair-004"]
+
+[[form]]
+command = "Intersect"
+form = "function,conic,number"
+cases = ["intersections-functionconic-003", "intersectfunctions-conic-003"]
+
+[[form]]
+command = "Intersect"
+form = "conic,function,number"
+cases = ["intersections-functionconic-004", "intersectfunctions-conic-004"]
+
+[[form]]
+command = "Intersect"
+form = "function,line,point"
+cases = ["intersections-functionline-005", "intersections-functionline-010", "intersectfunctions-line-005"]
+
+[[form]]
+command = "Intersect"
+form = "line,function,point"
+cases = ["intersections-functionline-006", "intersectfunctions-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "function,function,point"
+cases = ["intersections-functions-003", "intersections-functions-006", "intersectfunctions-pair-005"]
+
+[[form]]
+command = "Intersect"
+form = "function,function,number,number"
+cases = ["intersections-interval-001", "intersectfunctions-interval-001", "intersectfunctions-interval-002"]
 
 [[form]]
 command = "Join"
@@ -978,6 +1048,11 @@ cases = ["lists-objects-029", "lists-objects-031", "lists-stats-015"]
 command = "Sum"
 form = "list,number"
 cases = ["lists-objects-030", "lists-stats-018", "lists-sum-005"]
+
+[[form]]
+command = "Tangent"
+form = "conic,conic"
+cases = ["commontangents-conics-001", "commontangents-conics-002"]
 
 [[form]]
 command = "Tangent"

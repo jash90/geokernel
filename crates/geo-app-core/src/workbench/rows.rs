@@ -20,7 +20,7 @@
 
 use super::{Row, Workbench};
 use crate::describe;
-use crate::scriptlog::Log;
+use crate::scriptlog::{GrownOutputs, Log};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 #[cfg(test)]
 use std::collections::HashMap;
@@ -116,7 +116,12 @@ struct Source<'a> {
 /// over the journal and as a search of it by label finds them: the
 /// definition of the newest line that names the object, and the labels of
 /// the oldest line with several outputs that names it.
-fn sources<'a>(c: &Construction, log: &'a Log, from: usize) -> Vec<Source<'a>> {
+fn sources<'a>(
+    c: &Construction,
+    log: &'a Log,
+    grown: &'a [GrownOutputs<'a>],
+    from: usize,
+) -> Vec<Source<'a>> {
     let mut out = vec![Source::default(); c.len().saturating_sub(from)];
     for e in log.entries_rev() {
         let multi = e.labels.len() > 1;
@@ -133,6 +138,18 @@ fn sources<'a>(c: &Construction, log: &'a Log, from: usize) -> Vec<Source<'a>> {
             }
             if multi {
                 s.group = Some(e.labels.as_slice());
+            }
+        }
+    }
+    for command in grown {
+        for label in &command.labels {
+            if let Some(src) = c
+                .id(label)
+                .and_then(|id| id.index().checked_sub(from))
+                .and_then(|i| out.get_mut(i))
+            {
+                src.rhs = Some(command.rhs);
+                src.group = Some(&command.labels);
             }
         }
     }
@@ -368,7 +385,8 @@ impl Workbench {
         // Rows of new objects.
         let from = self.rows.last().map_or(0, |row| row.id.index() + 1);
         if from < c.len() {
-            let sources = sources(c, &self.log, from);
+            let grown = self.log.grown_groups();
+            let sources = sources(c, &self.log, &grown, from);
             for (id, src) in c.ids().skip(from).zip(sources) {
                 if crate::scriptlog::is_internal(c, id) {
                     continue;
@@ -402,7 +420,8 @@ impl Workbench {
                 kept[id.index()].1 = j;
             }
         }
-        let sources = sources(c, &self.log, 0);
+        let grown = self.log.grown_groups();
+        let sources = sources(c, &self.log, &grown, 0);
         let mut last = None;
         let mut count = 0;
         for ((id, k), &src) in kept.iter_mut().zip(&sources) {
@@ -463,8 +482,16 @@ impl Workbench {
     #[cfg(test)]
     pub(crate) fn rows_reference(&self) -> Vec<Row> {
         let c = &self.construction;
-        let rhs: HashMap<&str, &str> = self.log.definitions().collect();
-        let groups: Vec<&[String]> = self.log.multi_output().collect();
+        let grown = self.log.grown_groups();
+        let mut rhs: HashMap<&str, &str> = self.log.definitions().collect();
+        for group in &grown {
+            rhs.extend(group.labels.iter().map(|label| (label.as_str(), group.rhs)));
+        }
+        let groups: Vec<&[String]> = grown
+            .iter()
+            .map(|group| group.labels.as_slice())
+            .chain(self.log.multi_output())
+            .collect();
         self.object_ids()
             .map(|id| {
                 let value = c.value(id);

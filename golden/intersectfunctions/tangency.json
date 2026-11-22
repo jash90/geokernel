@@ -1,0 +1,251 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersectfunctions-tangency-001",
+      "group": "intersectfunctions",
+      "script": [
+        "a = 0.9999999999",
+        "f(x) = a",
+        "k = Conic({1, 1, -1, 0, 0, 0})",
+        "R = Intersect(f, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.999 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 1.001 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.9999999999 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.9999999999],
+              [-4.0, 0.9999999999],
+              [-2.0, 0.9999999999],
+              [-1.0, 0.9999999999],
+              [-0.5, 0.9999999999],
+              [0.0, 0.9999999999],
+              [0.5, 0.9999999999],
+              [1.0, 0.9999999999],
+              [2.0, 0.9999999999],
+              [4.0, 0.9999999999],
+              [8.0, 0.9999999999]
+            ]
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.9999999999 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.999 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.999],
+              [-4.0, 0.999],
+              [-2.0, 0.999],
+              [-1.0, 0.999],
+              [-0.5, 0.999],
+              [0.0, 0.999],
+              [0.5, 0.999],
+              [1.0, 0.999],
+              [2.0, 0.999],
+              [4.0, 0.999],
+              [8.0, 0.999]
+            ]
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": -0.04471017781221601, "y": 0.999 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.001 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.001],
+              [-4.0, 1.001],
+              [-2.0, 1.001],
+              [-1.0, 1.001],
+              [-0.5, 1.001],
+              [0.0, 1.001],
+              [0.5, 1.001],
+              [1.0, 1.001],
+              [2.0, 1.001],
+              [4.0, 1.001],
+              [8.0, 1.001]
+            ]
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-tangency-002",
+      "group": "intersectfunctions",
+      "script": [
+        "a = 0.999",
+        "f(x) = a",
+        "O = (0.01, 0)",
+        "r = 1",
+        "k = Circle(O, r)",
+        "R = Intersect(f, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.9999999999 },
+        { "action": "set_number", "label": "a", "value": 1.001 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.999 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.999],
+              [-4.0, 0.999],
+              [-2.0, 0.999],
+              [-1.0, 0.999],
+              [-0.5, 0.999],
+              [0.0, 0.999],
+              [0.5, 0.999],
+              [1.0, 0.999],
+              [2.0, 0.999],
+              [4.0, 0.999],
+              [8.0, 0.999]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 0.01, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.01, "cy": 0.0, "r": 1.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -0.034710177812216136, "y": 0.999 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.05471017781221613, "y": 0.999 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.9999999999 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.9999999999],
+              [-4.0, 0.9999999999],
+              [-2.0, 0.9999999999],
+              [-1.0, 0.9999999999],
+              [-0.5, 0.9999999999],
+              [0.0, 0.9999999999],
+              [0.5, 0.9999999999],
+              [1.0, 0.9999999999],
+              [2.0, 0.9999999999],
+              [4.0, 0.9999999999],
+              [8.0, 0.9999999999]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 0.01, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.01, "cy": 0.0, "r": 1.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.009985857863401655, "y": 0.9999999999 },
+          "R_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.001 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.001],
+              [-4.0, 1.001],
+              [-2.0, 1.001],
+              [-1.0, 1.001],
+              [-0.5, 1.001],
+              [0.0, 1.001],
+              [0.5, 1.001],
+              [1.0, 1.001],
+              [2.0, 1.001],
+              [4.0, 1.001],
+              [8.0, 1.001]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 0.01, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.01, "cy": 0.0, "r": 1.0 },
+          "R_{1}": { "type": "point", "defined": false },
+          "R_{2}": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

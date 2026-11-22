@@ -1,0 +1,52 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersectfunctions-degenerate-001",
+      "group": "intersectfunctions",
+      "script": [
+        "f(x) = (x - 1)^2 + 1",
+        "k = Conic({1, -1, 0, 0, 0, 0})",
+        "R = Intersect(f, k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 82.0],
+              [-4.0, 26.0],
+              [-2.0, 10.0],
+              [-1.0, 5.0],
+              [-0.5, 3.25],
+              [0.0, 2.0],
+              [0.5, 1.25],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 10.0],
+              [8.0, 50.0]
+            ]
+          },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 1.0, -0.0],
+              [1.0, 1.0, 0.0]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -78,6 +78,24 @@ mod eval;
 mod inverse;
 #[doc(hidden)]
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
+
+/// Shared expression-work allowance for one intersection solve.
+pub(crate) struct IntersectionWork(eval::Lists);
+
+impl IntersectionWork {
+    pub(crate) fn new() -> Self {
+        Self(eval::Lists::new(Vec::new()))
+    }
+
+    pub(crate) fn charge(&self, units: u64) -> bool {
+        self.0.charge(units)
+    }
+
+    pub(crate) fn exhausted(&self) -> bool {
+        self.0.over()
+    }
+}
+
 mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
