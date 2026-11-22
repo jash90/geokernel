@@ -311,7 +311,8 @@ public final class SavedExporter {
         boolean ok = geo.isDefined();
         if (geo instanceof GeoBoolean || geo instanceof GeoFunction || geo instanceof GeoVector
                 || geo instanceof GeoList || geo instanceof GeoPolygon || geo instanceof GeoText
-                || geo.isGeoLocus() || geo.isGeoPolyLine() || geo.isGeoCurveCartesian()) {
+                || geo.isGeoLocus() || geo.isGeoPolyLine() || geo.isGeoCurveCartesian()
+                || geo.isGeoImplicitCurve()) {
             return Session.describe(geo, Session.typeOf(geo));
         } else if (geo instanceof GeoFunctionNVar) {
             return Session.describe(geo, "function");

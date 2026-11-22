@@ -15,6 +15,7 @@
 
 pub mod conic;
 pub mod function;
+pub mod implicit;
 
 #[cfg(test)]
 mod conic_tests;

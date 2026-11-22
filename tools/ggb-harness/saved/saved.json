@@ -146,6 +146,7 @@
     {"id": "saved-curve-intersections-001", "script": ["A = (-2, 1)", "B = (2, 1)", "g = Line(A, B)", "q = Curve(t, t^2, t, -2, 2)", "r = Curve(s, 1, s, -2, 2)", "P = Intersect(g, q)", "Q = Intersect(q, r, -1.5, 0)"], "steps": []},
     {"id": "saved-curve-intersections-002", "script": ["A = (-2, 1)", "B = (2, 1)", "g = Line(A, B)", "q = Curve(t, t^2, t, -2, 2)", "r = Curve(s, 1, s, -2, 2)", "P = Intersect(g, q)", "Q = Intersect(q, r, -1.5, 0)"], "steps": [{"action": "move", "label": "A", "x": -2.0, "y": 0.0}, {"action": "move", "label": "B", "x": 2.0, "y": 0.0}]},
     {"id": "saved-conic-clip-001", "script": ["O = (0, 0)", "k = Circle(O, 2)", "A = (-4, 0)", "B = (4, 0)", "C = (4, 1)", "D = (-4, 1)", "p = PolyLine(A, B, C, D)", "s = Segment(A, B)", "q = IntersectPath(p, k)", "t = IntersectPath(k, s)"], "steps": []},
-    {"id": "saved-conic-clip-002", "script": ["O = (0, 0)", "k = Circle(O, 2)", "A = (-4, 0)", "B = (4, 0)", "C = (4, 1)", "D = (-4, 1)", "p = PolyLine(A, B, C, D)", "s = Segment(A, B)", "q = IntersectPath(p, k)", "t = IntersectPath(k, s)"], "steps": [{"action": "move", "label": "O", "x": 0.0, "y": 2.0}]}
+    {"id": "saved-conic-clip-002", "script": ["O = (0, 0)", "k = Circle(O, 2)", "A = (-4, 0)", "B = (4, 0)", "C = (4, 1)", "D = (-4, 1)", "p = PolyLine(A, B, C, D)", "s = Segment(A, B)", "q = IntersectPath(p, k)", "t = IntersectPath(k, s)"], "steps": [{"action": "move", "label": "O", "x": 0.0, "y": 2.0}]},
+    {"id": "saved-implicit-001", "script": ["a = 2", "p: x^3/a + y^3 = 1", "q: x^4 + y^4 = 2"], "steps": []}
   ]
 }

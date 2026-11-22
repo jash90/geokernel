@@ -2079,18 +2079,6 @@ reason = "the kernel refuses the input: unknown command `IFactor`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2064"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ImplicitCurve`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2068"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ImplicitCurve`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2073"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Incircle` does not take 6 argument(s)"

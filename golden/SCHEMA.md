@@ -375,3 +375,8 @@ What the importer reads, and where GeoGebra writes it (`MyXMLHandler`,
   counted and reported as notes; no value depends on them.
 - `<kernel>`: `<continuous val=>`, `<decimals val=>`, `<angleUnit val=>`.
 - `<show object=>` of an element: `false` for an object that is hidden.
+
+
+An `implicit` object records the polynomial coefficient matrix in ascending
+powers of x (rows) and y (columns), its equation text, and whether the input
+form is selected.

@@ -184,11 +184,14 @@ pub(in crate::expr) fn iteration_type(
 
 impl<const M: bool> Ctx<'_, M> {
     pub(crate) fn function_asymptotes(&self, source: u32) -> Option<(u32, u32)> {
-        let Node::Apply(f, _) = self.node(source) else {
-            return None;
-        };
-        let values = crate::algo::analysis::asymptotes(self.c, f)?;
         let lists = self.lists?;
+        let values = match self.node(source) {
+            Node::Apply(f, _) => crate::algo::analysis::asymptotes(self.c, f)?,
+            Node::Obj(curve) => {
+                crate::algo::implicit::asymptotes(self.c, curve, &|n| lists.charge(n))?
+            }
+            _ => return None,
+        };
         let len = values.len() as u32;
         let start = lists.reserve(len)?;
         for (i, line) in values.into_iter().enumerate() {

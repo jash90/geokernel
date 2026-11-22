@@ -190,6 +190,20 @@ impl Format {
         meter: Option<&Lists>,
     ) -> Option<String> {
         let kind = c.kind(id);
+        if kind == Kind::ImplicitCurve {
+            if !c.value(id).is_defined() {
+                return Some("?".into());
+            }
+            if c.equation_form(id) == Some(&EquationForm::User) {
+                if let Some(text) = self.user_equation::<M>(c, id, meter, false) {
+                    return Some(text);
+                }
+            }
+            return Some(expr::equation::implicit::raw_equation(
+                c.implicit_coefficients(id)?,
+                |v| self.number(v),
+            ));
+        }
         if !matches!(kind, Kind::Line | Kind::Ray | Kind::Circle | Kind::Conic) {
             return None;
         }

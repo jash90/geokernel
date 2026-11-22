@@ -1229,6 +1229,10 @@ impl Converter {
                     Err("the value is not finite".into())
                 }
             }
+            "implicitpoly" => Ok(format!(
+                "$implicitCoefficients({label}, {})",
+                el.implicit_coefficients.as_deref().unwrap_or("[]")
+            )),
             "angle" => match el.value.as_deref().and_then(num) {
                 Some(radians) if radians.is_finite() => Ok(format!(
                     "{label} = $saved({radians} rad, {}°)",
@@ -1307,6 +1311,7 @@ fn expression_kind(saved_type: &str) -> Result<Kind, String> {
         "text" => Kind::Text,
         "line" => Kind::Line,
         "conic" => Kind::Conic,
+        "implicitpoly" => Kind::ImplicitCurve,
         other => return Err(unsupported_element(other)),
     })
 }
@@ -1391,9 +1396,16 @@ fn object_expression(label: &str, kind: Kind, exp: &str) -> Result<String, Strin
         };
         return Ok(format!("{label}({parameter}) = {}", expression_line(body)?));
     }
+    let exp = if kind == Kind::ImplicitCurve {
+        exp.strip_prefix(label)
+            .and_then(|s| s.strip_prefix(":="))
+            .unwrap_or(exp)
+    } else {
+        exp
+    };
     let rhs = expression_line(exp)?;
     Ok(match kind {
-        Kind::Line | Kind::Conic => format!("{label}: {rhs}"),
+        Kind::Line | Kind::Conic | Kind::ImplicitCurve => format!("{label}: {rhs}"),
         Kind::Point if is_vector_label(label) => format!("{label} = $point({rhs})"),
         Kind::Vector if !is_vector_label(label) => format!("{label} = $vector({rhs})"),
         _ => format!("{label} = {rhs}"),
@@ -1880,6 +1892,7 @@ fn kind_agrees(saved: &str, actual: Kind) -> bool {
         "text" => Kind::Text,
         "locus" => Kind::Locus,
         "curvecartesian" => Kind::Curve,
+        "implicitpoly" => Kind::ImplicitCurve,
         _ => return true,
     };
     expected == actual

@@ -107,6 +107,8 @@ pub enum LineDef {
         point: Id,
         curve: Id,
     },
+    /// A tangent line to an implicit polynomial.
+    ImplicitTangent(crate::algo::implicit::tangent::Tangent),
     /// A common tangent of two conics, in outer-then-inner order.
     CommonTangent(CommonTangentDef),
     /// Polar line of a point with respect to a circle (`Polar(P, c)`).
@@ -141,6 +143,7 @@ impl Group for LineDef {
             },
             LineDef::TangentFunctionPoint { function, point } => Parents::of(&[function, point]),
             LineDef::TangentCurvePoint { point, curve } => Parents::of(&[point, curve]),
+            LineDef::ImplicitTangent(d) => d.parents(),
             LineDef::CommonTangent(d) => Parents::of(&[d.first, d.second]),
         }
     }
@@ -188,6 +191,7 @@ impl Group for LineDef {
                 c.expect(circle, CIRCLE)?;
                 check_index(which)
             }
+            LineDef::ImplicitTangent(d) => d.check(c),
             LineDef::CommonTangent(d) => {
                 c.expect(d.first, super::CONIC_OBJECTS)?;
                 c.expect(d.second, super::CONIC_OBJECTS)?;
@@ -272,6 +276,7 @@ impl Group for LineDef {
                 let (dx, dy) = curve.first(t);
                 line_value(-dy, dx, x * dy - dx * y)
             }
+            LineDef::ImplicitTangent(d) => d.value(c),
             LineDef::CommonTangent(d) => d.value(c),
             LineDef::Polar { point, circle } => {
                 let (px, py) = c.point(point)?;
