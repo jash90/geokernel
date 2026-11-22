@@ -140,10 +140,13 @@ cases.case(
 cases.cases[-1]["track_boundary_growth"] = True
 cases.case("tangents", ["c: x^4 + y^4 = 1", "A = (1, 1)", "t = Tangent(A, c)"], [])
 
+cases.write()
+
+reference = Cases("implicit")
 triangle = ["P = (1, 1)", "Q = (2, 0.5)", "R = (3, 1/3)"]
-cases.case("barycentric", triangle + ["n = 42", "c = Cubic(P, Q, R, n)"],
+reference.case("barycentric", triangle + ["n = 42", "c = Cubic(P, Q, R, n)"],
            [setn("n", 0), setn("n", 42), mv("Q", 1, 1), mv("Q", 2, 0.5)])
-cases.case("barycentric", triangle + ["c = TriangleCurve(P, Q, R, A+B=C)"],
+reference.case("barycentric", triangle + ["c = TriangleCurve(P, Q, R, A+B=C)"],
            [mv("Q", 1, 1), mv("Q", 2, 0.5)])
 
-cases.write()
+reference.write("reference")

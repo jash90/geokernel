@@ -481,6 +481,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     {
         return result;
     }
+    let before = c.len();
     let start = c.checkpoint();
     if let Some(result) = define_inline_region(c, name, rhs) {
         if result.is_err() {
@@ -514,7 +515,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             c.remember_construction_source(*id, rhs);
         }
     }
-    if result.is_err() {
+    if result.is_err() || (matches!(result, Ok(None)) && c.len() > before) {
         c.discard_since(start);
     }
     result
@@ -522,11 +523,11 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
 
 /// Lowers an imported argument within its owning definition. Each temporary
 /// object is anonymous and shares the lifetime of that definition's replay.
-fn with_saved_arguments<T>(
+fn with_saved_arguments(
     c: &mut Construction,
     rhs: &str,
-    run: impl FnOnce(&mut Construction, &str) -> Result<T, String>,
-) -> Option<Result<T, String>> {
+    run: impl FnOnce(&mut Construction, &str) -> Result<Option<Id>, String>,
+) -> Option<Result<Option<Id>, String>> {
     if !rhs.contains("$arg(") {
         return None;
     }
@@ -548,7 +549,7 @@ fn with_saved_arguments<T>(
             .collect::<Result<Vec<_>, String>>()?;
         run(c, &format!("{command}({})", args.join(", ")))
     })();
-    if result.is_err() {
+    if result.is_err() || (matches!(result, Ok(None)) && c.len() > before) {
         c.discard_since(start);
     } else {
         let source = saved::command_with_inline_arguments(rhs).map(|(source, _)| source);
@@ -2142,6 +2143,16 @@ pub(crate) fn add_named_outputs(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn an_empty_implicit_tangent_discards_inline_arguments() {
+        let mut c = load("f(x,y) = x^2 + y^2 - 1\nc = ImplicitCurve(f)").unwrap();
+        let before = c.len();
+        for line in ["t = Tangent((0, 0), c)", "t = Tangent($arg((0, 0)), c)"] {
+            assert_eq!(exec(&mut c, line), Ok(None));
+            assert_eq!(c.len(), before);
+        }
+    }
+
     #[test]
     fn saved_curve_intersections_reject_overlong_output_lists() {
         let mut c = super::load("q = Curve(t, t^2, t, -2, 2)\ng: y = 100").unwrap();
