@@ -125,12 +125,13 @@ impl LocusData {
     fn same(&self, o: &LocusData) -> bool {
         let b = |a: f64, b: f64| a.to_bits() == b.to_bits();
         self.defined == o.defined
-            && self.points.len() == o.points.len()
-            && self
-                .points
-                .iter()
-                .zip(o.points.iter())
-                .all(|(p, q)| b(p.x, q.x) && b(p.y, q.y) && p.line_to == q.line_to)
+            && (Arc::ptr_eq(&self.points, &o.points)
+                || self.points.len() == o.points.len()
+                    && self
+                        .points
+                        .iter()
+                        .zip(o.points.iter())
+                        .all(|(p, q)| b(p.x, q.x) && b(p.y, q.y) && p.line_to == q.line_to))
     }
 }
 
@@ -138,7 +139,9 @@ impl Construction {
     /// The points of the locus `id`; `None` for any other object.
     pub fn locus(&self, id: Id) -> Option<&LocusData> {
         match self.defs.get(id.0)? {
-            Def::Locus(_) => self.locus_slot(id.0).map(|slot| &self.loci[slot].1),
+            Def::Locus(_) | Def::Discrete(_) => {
+                self.locus_slot(id.0).map(|slot| &self.loci[slot].1)
+            }
             _ => None,
         }
     }
@@ -176,7 +179,9 @@ impl Construction {
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
         for &(i, _) in &self.loci {
-            dirty.insert(i);
+            if matches!(self.defs[i], Def::Locus(_)) {
+                dirty.insert(i);
+            }
         }
         for (i, def) in self.defs.iter().enumerate() {
             if matches!(
@@ -189,6 +194,12 @@ impl Construction {
         self.propagate_dirty(dirty, 0);
     }
 
+    pub(super) fn store_locus(&mut self, id: Id, data: LocusData) -> Value {
+        let value = data.value();
+        self.loci.push((id.0, data));
+        value
+    }
+
     fn locus_slot(&self, i: usize) -> Option<usize> {
         self.loci.binary_search_by_key(&i, |&(owner, _)| owner).ok()
     }
@@ -196,11 +207,15 @@ impl Construction {
     /// Recomputes the points of the locus `i`; tells whether its children
     /// must follow: whether the points changed, bit for bit.
     #[inline(never)]
-    pub(super) fn update_locus(&mut self, i: usize, d: LocusDef) -> bool {
+    pub(super) fn update_locus(
+        &mut self,
+        i: usize,
+        record: impl FnOnce(&mut Self) -> LocusData,
+    ) -> bool {
         let Some(slot) = self.locus_slot(i) else {
             return false;
         };
-        let new = record(self, d, Id(i));
+        let new = record(self);
         if new.same(&self.loci[slot].1) {
             return false;
         }
@@ -349,6 +364,7 @@ struct Saved {
     paths: Vec<(usize, PathState)>,
     conics: Vec<(usize, crate::algo::conic_nd::ConicData)>,
     arcs: Vec<(usize, crate::algo::arc::ArcData)>,
+    discrete: Vec<(usize, LocusData)>,
 }
 
 impl Saved {
@@ -359,6 +375,7 @@ impl Saved {
             paths: Vec::new(),
             conics: Vec::new(),
             arcs: Vec::new(),
+            discrete: Vec::new(),
         };
         for &i in ids {
             s.values.push((i, c.values[i]));
@@ -371,6 +388,10 @@ impl Saved {
             }
             if let Some(slot) = c.arc_slot(i) {
                 s.arcs.push((slot, c.arcs[slot].1));
+            }
+            if matches!(c.defs[i], Def::Discrete(_)) {
+                let slot = c.locus_slot(i).expect("recorded discrete locus");
+                s.discrete.push((slot, c.loci[slot].1.clone()));
             }
         }
         s
@@ -390,8 +411,13 @@ impl Saved {
         for &(i, v) in &self.values {
             c.values[i] = v;
         }
+        for (slot, data) in self.discrete {
+            c.loci[slot].1 = data;
+        }
         for &i in chain {
-            recompute(c, i);
+            if !matches!(c.defs[i], Def::Discrete(_)) {
+                recompute(c, i);
+            }
         }
         for (i, v) in self.values {
             c.values[i] = v;
@@ -426,6 +452,9 @@ fn recompute(c: &mut Construction, i: usize) {
         }
         // a locus is never between a moving object and the point of a locus
         Def::Locus(_) => {}
+        Def::Discrete(d) => {
+            c.update_locus(i, |c| d.record(c, c.locus(Id(i))));
+        }
         _ => c.values[i] = c.compute(def, i),
     }
 }
@@ -1228,7 +1257,7 @@ fn sample<M: Moving>(
     locus_from_points(run.points)
 }
 
-fn locus_from_points(points: Vec<LocusPoint>) -> LocusData {
+pub(crate) fn locus_from_points(points: Vec<LocusPoint>) -> LocusData {
     let mut bounds: Option<[f64; 4]> = None;
     for p in &points {
         if p.x.is_finite() && p.y.is_finite() {

@@ -18,7 +18,7 @@ List,LIST,List,yes,no,no,no,no,no,partial,no,Saved lists with supported expressi
 Axis,AXIS,,no,no,no,no,no,no,no,no,the window draws the axes from the view settings
 Text,TEXT,Text,yes,no,yes,no,no,yes,yes,no,Static and dependent texts with saved world or pixel placement. LaTeX markup is drawn as plain text.
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
-Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,no,Tracing loci and integral curves from slopes
+Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,no,Tracing loci and integral curves from slopes. Discrete geometry commands also produce loci.
 CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,no,Cartesian coordinates and parameter interval for Length
 ImplicitCurve,IMPLICIT_POLY,,no,no,no,no,no,no,no,no,
 FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,no,no,two-variable numeric functions from equation sides
