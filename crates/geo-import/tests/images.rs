@@ -96,6 +96,45 @@ fn saved_raster_images_import_and_replay() {
 }
 
 #[test]
+fn image_vertices_agree_after_import_and_anchor_edits() {
+    use geo_golden::{compare::compare, model::Expected, repo_root};
+
+    let directory = repo_root().join("golden/ggb/saved");
+    let mut live = None;
+    for index in 1..=3 {
+        let fixture = directory.join(format!("saved-vertex-image-{index:03}"));
+        let archive = std::fs::read(fixture.with_extension("ggb")).unwrap();
+        let saved = load(&archive);
+        let snapshot: Snapshot =
+            serde_json::from_slice(&std::fs::read(fixture.with_extension("snapshot")).unwrap())
+                .unwrap();
+        let c: &mut Construction = live.get_or_insert_with(|| load(&archive));
+        for label in ["A", "B", "D"] {
+            let id = saved.id(label).unwrap();
+            let Value::Point { x, y } = saved.value(id) else {
+                panic!("missing anchor {label}");
+            };
+            c.move_point(c.id(label).unwrap(), x, y).unwrap();
+        }
+        let Value::Number(n) = saved.value(saved.id("n").unwrap()) else {
+            panic!("missing corner index");
+        };
+        c.set_number(c.id("n").unwrap(), n).unwrap();
+        for label in ["P", "Q", "R", "S", "T", "U"] {
+            let expected: Expected =
+                serde_json::from_value(snapshot.objects[label].clone()).unwrap();
+            for construction in [&saved, &*c] {
+                let id = construction
+                    .id(label)
+                    .unwrap_or_else(|| panic!("missing {label}"));
+                compare(&expected, construction.kind(id), &construction.value(id))
+                    .unwrap_or_else(|why| panic!("{label}: {why}"));
+            }
+        }
+    }
+}
+
+#[test]
 fn an_absent_or_unusable_asset_leaves_other_objects_available() {
     let xml = r#"<geogebra><construction>
       <element type="image" label="picture"><file name="missing.png"/></element>

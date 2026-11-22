@@ -26,9 +26,10 @@ const FUNCTION: &[Kind] = &[Kind::Function];
 type Point = (f64, f64);
 type Line = (f64, f64, f64);
 
+use super::curves::CurveIntersection;
 use super::functions::FunctionIntersection;
 
-/// One output slot of an intersection with a graph or polygonal boundary.
+/// One output slot of an intersection with a graph, curve or polygonal boundary.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BoundaryDef(Intersection);
 
@@ -36,11 +37,21 @@ pub struct BoundaryDef(Intersection);
 enum Intersection {
     Edges(EdgeIntersection),
     Function(FunctionIntersection),
+    Cartesian(CurveIntersection),
 }
 
 impl BoundaryDef {
     pub(super) fn function(def: FunctionIntersection) -> Def {
         Def::IntersectBoundary(Self(Intersection::Function(def)))
+    }
+
+    pub(super) fn cartesian(def: CurveIntersection) -> Self {
+        Self(Intersection::Cartesian(def))
+    }
+
+    /// Cartesian carrier intersections label slots even when out of domain.
+    pub(crate) fn labels_all_indexed(self) -> bool {
+        matches!(self.0, Intersection::Cartesian(d) if d.is_line())
     }
 
     pub(crate) fn with_root(self, value: Value) -> Option<Self> {
@@ -56,6 +67,7 @@ impl BoundaryDef {
         match self.0 {
             Intersection::Edges(d) => d.labels_indexed(),
             Intersection::Function(d) => d.labels_indexed(),
+            Intersection::Cartesian(d) => d.labels_indexed(),
         }
     }
 
@@ -63,6 +75,7 @@ impl BoundaryDef {
         match self.0 {
             Intersection::Edges(d) => d.hidden_parents(c),
             Intersection::Function(d) => d.hidden_parents(c),
+            Intersection::Cartesian(d) => d.hidden_parents(c),
         }
     }
 
@@ -81,9 +94,13 @@ impl BoundaryDef {
 
     pub(super) fn can_grow(self) -> bool {
         self.growth_anchor().is_some()
+            || matches!(self.0, Intersection::Cartesian(d) if d.can_grow())
     }
 
     pub(super) fn grown_size(self, c: &Construction) -> Option<usize> {
+        if let Intersection::Cartesian(d) = self.0 {
+            return d.can_grow().then(|| d.root_count(c));
+        }
         let mut count = 0;
         self.growth_anchor()?.points(c, |_| {
             count += 1;
@@ -93,6 +110,9 @@ impl BoundaryDef {
     }
 
     pub(super) fn grown_slot(self, which: usize) -> Option<Self> {
+        if let Intersection::Cartesian(d) = self.0 {
+            return d.grown_slot(which).map(Self::cartesian);
+        }
         let def = self.growth_anchor()?;
         Some(Self(Intersection::Edges(EdgeIntersection { which, ..def })))
     }
@@ -107,6 +127,7 @@ impl Group for BoundaryDef {
         match &self.0 {
             Intersection::Edges(d) => d.parents(),
             Intersection::Function(d) => d.parents(),
+            Intersection::Cartesian(d) => d.parents(),
         }
     }
 
@@ -114,6 +135,7 @@ impl Group for BoundaryDef {
         match &self.0 {
             Intersection::Edges(d) => d.check(c),
             Intersection::Function(d) => d.check(c),
+            Intersection::Cartesian(d) => d.check(c),
         }
     }
 
@@ -121,10 +143,14 @@ impl Group for BoundaryDef {
         match &self.0 {
             Intersection::Edges(d) => d.compute(c),
             Intersection::Function(d) => d.compute(c),
+            Intersection::Cartesian(d) => d.compute(c),
         }
     }
 
     fn parse(c: &Construction, name: &str, args: &[&str]) -> Option<Result<Self, String>> {
+        if let Some(def) = CurveIntersection::parse(c, name, args) {
+            return Some(def.map(Self::cartesian));
+        }
         EdgeIntersection::parse(c, name, args).map(|d| d.map(|d| Self(Intersection::Edges(d))))
     }
 }
@@ -313,6 +339,9 @@ impl Group for EdgeIntersection {
 }
 
 pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option<Vec<BoundaryDef>> {
+    if let Some(defs) = CurveIntersection::multi(c, name, args) {
+        return Some(defs);
+    }
     let ("Intersect", [first, second]) = (name, args) else {
         return None;
     };

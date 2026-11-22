@@ -22,6 +22,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTangentLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoAxes.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoCurveCartesian.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
@@ -69,6 +70,7 @@ pub(crate) const PATH: &[Kind] = &[
     Kind::PolyLine,
     Kind::Arc,
     Kind::Sector,
+    Kind::Curve,
 ];
 const NUMBER: &[Kind] = &[Kind::Number];
 
@@ -463,6 +465,12 @@ pub(crate) enum Geom<'a> {
         c: &'a Construction,
         id: Id,
     },
+    Curve {
+        c: &'a Construction,
+        id: Id,
+        start: f64,
+        end: f64,
+    },
 }
 
 /// A `GeoSegment`: its line through the start and end point
@@ -639,6 +647,7 @@ impl Geom<'_> {
             Geom::Polygon { n, .. } => (0.0, *n as f64),
             Geom::PolyLine { n, .. } => (0.0, *n as f64 - 1.0),
             Geom::Arc(a) => a.range(),
+            Geom::Curve { start, end, .. } => (*start, *end),
             Geom::Function { c, id } => {
                 let [min, max, ..] = c
                     .locus_view()
@@ -671,6 +680,12 @@ impl Geom<'_> {
             &Geom::Polygon { c, id, n } => polygonal_point_changed(c, id, n, true, p),
             &Geom::PolyLine { c, id, n } => polygonal_point_changed(c, id, n, false, p),
             Geom::Arc(a) => a.point_changed(p),
+            Geom::Curve { c, id, .. } => {
+                if let Some(curve) = super::curve::Cartesian::new(c, *id) {
+                    p.t = curve.closest_from((p.x / p.z, p.y / p.z), p.t);
+                }
+                self.path_changed(p);
+            }
             Geom::Function { c, id } => {
                 let (x, y) = (p.x / p.z, p.y / p.z);
                 if let Some((a, b)) = c.chart(*id).and_then(|d| d.function_domain()) {
@@ -694,6 +709,11 @@ impl Geom<'_> {
     /// `Path.pathChanged`: puts the point at its parameter.
     pub(crate) fn path_changed(&self, p: &mut PathState) {
         match self {
+            Geom::Curve { c, id, start, end } => {
+                p.t = p.t.clamp(*start, *end);
+                let (x, y) = c.curve_point(*id, p.t).unwrap_or((f64::NAN, f64::NAN));
+                p.set_coords_2d(x, y, 1.0);
+            }
             Geom::Function { c, id } => {
                 if let Some((a, b)) = c.chart(*id).and_then(|d| d.function_domain()) {
                     p.t = p.t.clamp(a, b);
@@ -893,6 +913,9 @@ fn defined_line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
         Def::Lines(d @ LineDef::TangentLine { circle, .. }) => {
             hom(super::lines::tangent_point_on(c, d, circle).flatten())
         }
+        Def::Lines(LineDef::TangentCurvePoint { point, curve }) => {
+            hom(super::lines::curve_tangent_contact(c, point, curve))
+        }
         Def::ConicPart(d @ ConicPartDef::TangentLine { conic, .. }) => {
             hom(super::conic_parts::tangent_point_on(c, d, conic).flatten())
         }
@@ -1025,6 +1048,12 @@ pub(crate) fn geom(c: &Construction, path: Id) -> Geom<'_> {
         {
             Geom::Function { c, id: path }
         }
+        (Kind::Curve, Value::Curve { start, end }) => Geom::Curve {
+            c,
+            id: path,
+            start,
+            end,
+        },
         _ => Geom::Undefined,
     }
 }
@@ -1329,8 +1358,8 @@ impl Group for PathDef {
                 Ok(id)
             } else {
                 Err(format!(
-                    "`Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc \
-                     or sector, and `{label}` is a {}",
+                    "`Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc, \
+                     sector or curve, and `{label}` is a {}",
                     c.kind(id)
                 ))
             }

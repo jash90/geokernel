@@ -1,4 +1,4 @@
-//! Label allocation for polygonal intersections whose output count can grow.
+//! Label allocation for intersections whose output count can grow.
 
 use super::boundary;
 use crate::kernel::{Construction, Def, Id};
@@ -15,7 +15,7 @@ struct Outputs {
     dependencies: BTreeSet<Id>,
 }
 
-/// Tracks each unindexed line–boundary or boundary–boundary invocation.
+/// Tracks each unindexed line–curve, line–boundary or boundary–boundary invocation.
 /// Callers keep the definitions returned by `grow` in the same journal as
 /// the edit that produced them.
 #[derive(Debug, Default)]

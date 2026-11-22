@@ -66,6 +66,7 @@ const TRANSFORMABLE: &[Kind] = &[
     Kind::Polygon,
     Kind::PolyLine,
 ];
+const DILATABLE_CURVE: &[Kind] = &[Kind::Curve];
 const VECTOR: &[Kind] = &[Kind::Vector];
 pub(crate) fn shear_axis(shear: bool) -> &'static [Kind] {
     if shear {
@@ -768,7 +769,20 @@ impl Group for TransformDef {
                 center,
             } => {
                 c.expect(src, of_kind(kind))?;
-                c.expect(src, TRANSFORMABLE)?;
+                c.expect(
+                    src,
+                    if matches!(
+                        self,
+                        Self::Dilate {
+                            kind: Kind::Curve,
+                            ..
+                        }
+                    ) {
+                        DILATABLE_CURVE
+                    } else {
+                        TRANSFORMABLE
+                    },
+                )?;
                 c.expect(second, NUMBER_OR_ANGLE)?;
                 match center {
                     Some(q) => c.expect(q, POINT),
@@ -783,6 +797,15 @@ impl Group for TransformDef {
             let p = c.point(src)?;
             let (x, y) = invert_point(p, c.circle(circle)?)?;
             return Some(Value::Point { x, y });
+        }
+        if let Self::Dilate {
+            kind: Kind::Curve,
+            src,
+            ..
+        } = *self
+        {
+            // A dilation maps the coordinates and retains the parameter range.
+            return Some(c.value(src));
         }
         let map = self.map(c);
         if let (Kind::Point, Some(Map::Dilate { r, sx, sy })) = (self.kind(), map) {
@@ -1001,7 +1024,17 @@ pub(crate) fn parse_transform_for(
 }
 
 fn parse_transform(c: &Construction, func: &str, args: &[&str]) -> Result<TransformDef, String> {
-    parse_transform_for(c, func, args, TRANSFORMABLE)
+    let kinds = if func == "Dilate"
+        && args
+            .first()
+            .and_then(|label| c.id(label))
+            .is_some_and(|id| c.kind(id) == Kind::Curve)
+    {
+        DILATABLE_CURVE
+    } else {
+        TRANSFORMABLE
+    };
+    parse_transform_for(c, func, args, kinds)
 }
 
 #[cfg(test)]
