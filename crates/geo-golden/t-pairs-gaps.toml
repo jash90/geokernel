@@ -1287,12 +1287,6 @@ reason = "the kernel refuses the input: unknown command `Coefficients`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1182"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Coefficients`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1183"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Coefficients`"
@@ -1300,12 +1294,6 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1184"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Coefficients`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1185"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Coefficients`"
 mismatches = ["step"]
@@ -1512,24 +1500,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:1302"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `IsDefined`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1307"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Degree`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1308"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Degree`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1309"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Degree`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3802,9 +3772,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2950"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `NIntegral`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `NIntegral[x^(2)]`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2951"
@@ -3939,52 +3909,16 @@ reason = "string `1.6666666666666667`, GeoGebra prints `1.66666666666667`"
 mismatches = ["frac"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2989"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2990"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2991"
 category = "text-formatting"
 reason = "string `-1.6666666666666667`, GeoGebra prints `-1.66666666666667`"
 mismatches = ["frac2"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2992"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2993"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2994"
 category = "text-formatting"
 reason = "string `1.6666666666666667`, GeoGebra prints `1.66666666666667`"
 mismatches = ["frac3"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2995"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Numerator`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2996"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Denominator`"
-mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2997"
@@ -4630,39 +4564,39 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3348"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3349"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2) - x + 1`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3350"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(-x^(3)) + x`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3351"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(8 * x^(3)) + (36 * x^(2)) + (54 * x) + 27`"
+mismatches = ["p"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3352"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2)`"
+mismatches = ["q"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3353"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Polynomial`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `x^(2) - x`"
+mismatches = ["r"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3358"
@@ -7810,9 +7744,9 @@ mismatches = ["A"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:80"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Derivative`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(2 * x)`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:81"
@@ -7834,9 +7768,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:84"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Derivative`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(3 * x^(2))`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:85"
@@ -7846,15 +7780,15 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:90"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Integral`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(1 / 2 * x^(2))`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:91"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Integral`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(1 / 3 * x^(3))`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:92"
