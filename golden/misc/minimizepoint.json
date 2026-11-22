@@ -1,0 +1,143 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "misc-minimizepoint-001",
+      "group": "misc",
+      "script": [
+        "C = (3, 4)",
+        "c = Circle(C, 5)",
+        "P = Point(c)",
+        "a = y(P)",
+        "M = Minimize(a, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 8.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 8.881784197001252E-16, "y": -8.881784197001252E-16 },
+          "a": { "type": "number", "defined": true, "value": -8.881784197001252E-16 },
+          "M": { "type": "point", "defined": true, "x": 2.9999999942609166, "y": -1.0 }
+        },
+        {
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 3.0, "cy": 4.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 8.0, "y": 4.0 },
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "M": { "type": "point", "defined": true, "x": 2.9999999942609166, "y": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-minimizepoint-002",
+      "group": "misc",
+      "script": [
+        "A = (0, 0)",
+        "B = (10, 0)",
+        "s = Segment(A, B)",
+        "P = Point(s)",
+        "n = 3",
+        "f = If(n != 0, (x(P) - n)^2)",
+        "M = Minimize(f, P)",
+        "w = x(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 7.0 },
+        { "action": "move", "label": "B", "x": 14.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 10.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 10.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "f": { "type": "number", "defined": true, "value": 9.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 10.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 10.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": false },
+          "M": { "type": "point", "defined": true, "x": 3.819660112501051, "y": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 10.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 10.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 7.0 },
+          "f": { "type": "number", "defined": true, "value": 49.0 },
+          "M": { "type": "point", "defined": true, "x": 7.0, "y": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 14.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 14.0, "y2": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 7.0 },
+          "f": { "type": "number", "defined": true, "value": 49.0 },
+          "M": { "type": "point", "defined": true, "x": 7.0, "y": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-minimizepoint-003",
+      "group": "misc",
+      "script": [
+        "P = (2, 3)",
+        "M = Minimize(y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 4.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "M": { "type": "point", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "M": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "misc-minimizepoint-004",
+      "group": "misc",
+      "script": [
+        "c = Curve(t, t^2, t, -4, 4)",
+        "P = Point(c, 0.75)",
+        "M = Minimize((x(P) + 1)^2, P)",
+        "w = x(P)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "curve", "defined": true, "start": -4.0, "end": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "M": { "type": "point", "defined": true, "x": -0.9999999999999999, "y": 0.9999999999999998 },
+          "w": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    }
+  ]
+}
