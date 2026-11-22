@@ -1998,13 +1998,18 @@ cases = ["calculus-curvederivative-012"]
 
 [[form]]
 command = "NDerivative"
+form = "curve,function"
+difference = "calculus-commands: `NDerivative(function, function)`, `NDerivative(curve, function)` and `Derivative(function, function)`"
+
+[[form]]
+command = "NDerivative"
 form = "function,function,number"
 cases = ["calculus-curvederivative-011"]
 
 [[form]]
 command = "NDerivative"
 form = "function,function"
-difference = "calculus-commands: `NDerivative(function, function)` and `Derivative(function, function)`"
+difference = "calculus-commands: `NDerivative(function, function)`, `NDerivative(curve, function)` and `Derivative(function, function)`"
 
 [[form]]
 command = "Integral"
