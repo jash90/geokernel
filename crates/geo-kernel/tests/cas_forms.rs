@@ -280,9 +280,11 @@ fn a_list_of_variables_answers_at_most_one_solution() {
         "r5 = Solve(g, {x})",
         "r6 = Solutions(h, {x})",
     ]);
-    for label in ["r1", "r2", "r3"] {
+    for label in ["r1", "r3"] {
         assert!(c.elements(id(&c, label)).is_none(), "{label}");
     }
+    // `Solve` keeps main's ascending assignments.
+    assert_eq!(c.elements(id(&c, "r2")).unwrap().len(), 2);
     let rows = c.elements(id(&c, "r4")).unwrap();
     assert_eq!(rows.len(), 1);
     assert_eq!(c.elements(id(&c, "r5")).unwrap().len(), 1);
@@ -746,6 +748,36 @@ fn the_fifth_round_edges_are_undefined_or_follow_the_reference() {
         "r = Solutions(g)",
     ]);
     assert_eq!(numbers(&c, "r").unwrap(), [0.0]);
+    // The sixth round: a list of one variable in the numeric solver answers
+    // numbers, also for `y`; a constructed line with whole coefficients is
+    // read as printed; ties of the 15 printed digits round up.
+    let c = build(&[
+        "r = NSolutions(x-1, {x})",
+        "e = Element(r, 1)",
+        "s = NSolutions(y-1, {y})",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "g = Line(A, B)",
+        "h: x=2",
+        "u = NSolutions({g, h})",
+        "a = 1.000030517578125",
+        "b = 1.000091552734375",
+        "f(x) = x+10^8*(b-a-0.00006103515625)",
+        "v = Solutions(f, x)",
+        "p(x) = (0.1000000001-0.1)*x-0.0000001",
+        "w = NSolutions(p, x=0)",
+    ]);
+    assert_eq!(c.value(id(&c, "e")), Value::Number(1.0));
+    assert_eq!(numbers(&c, "s").unwrap(), [1.0]);
+    assert_eq!(c.elements(id(&c, "u")).unwrap().len(), 1);
+    assert_eq!(numbers(&c, "v").unwrap(), [0.0]);
+    assert!(c.elements(id(&c, "w")).is_none());
+    // A simplified polynomial curve is evaluated like its printed form.
+    let c = build(&[
+        "k = Curve(t^2-10^8*t-99999999, t, t, 10^8, 10^8+2)",
+        "s = Simplify(k)",
+    ]);
+    assert_eq!(curve_point(&c, "s", 1e8 + 1.0), Some((1.0, 1e8 + 1.0)));
     // A rational curve coordinate is not simplified.
     let c = build(&[
         "k = Curve((t^2-10^8*t-99999999)/(t-10^8), t, t, 10^8, 10^8+2)",

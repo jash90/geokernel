@@ -92,7 +92,8 @@ pub(super) fn list<const M: bool>(
         points,
         nesting,
         assumed: width == 1 && axes[1] == single::NO_VARIABLE,
-        unordered: single && rows,
+        // `Solve` with a list of variables keeps main's ascending order.
+        unordered: single && rows && !assignments,
         constants,
     };
     if single {
@@ -103,15 +104,16 @@ pub(super) fn list<const M: bool>(
             // `(x - 2)^3` and `x^3 + 1` nothing, `x^2 - 4x + 3` only 1
             // (golden/cas/shape.json). Only a linear equation, whose one
             // root every search finds, has a determined answer.
+            // The variable is the one the equation holds: a listed name is
+            // read into the first slot, an object keeps its own axes.
             let equation = polynomials.pop()?;
-            let axis = usize::from(axes[0]);
-            let alone = equation.denominator.scalar().is_some()
-                && equation
-                    .numerator
-                    .0
-                    .keys()
-                    .all(|p| (0..3).all(|j| j == axis || p[j] == 0));
-            if !alone {
+            let held: Vec<usize> = (0..3)
+                .filter(|&j| equation.numerator.0.keys().any(|p| p[j] != 0))
+                .collect();
+            let [axis] = held[..] else {
+                return None;
+            };
+            if equation.denominator.scalar().is_none() {
                 return None;
             }
             let coefficients = dense_at(&equation.numerator, axis);
@@ -262,10 +264,11 @@ pub(super) fn list<const M: bool>(
 /// (`GeoLine.toValueString`, `Kernel.buildImplicitEquation`,
 /// `Kernel.buildExplicitEquation`), which drops coefficients below the
 /// kernel's precision and rounds the rest. That printing is reproduced only
-/// for a line whose other coefficient is exactly zero: it prints as
-/// `x = v` or `y = v`, with `v` in 15 significant digits. Any other object
-/// without a typed definition gives no equation (`Line((0, 1), (1, 1 +
-/// 10^-9))` prints as `y = 1`).
+/// for a line whose other coefficient is exactly zero, which prints as
+/// `x = v` or `y = v` with `v` in 15 significant digits, and for a line with
+/// whole coefficients, which prints as itself (`-x + y = 0`). Any other
+/// object without a typed definition gives no equation (`Line((0, 1), (1,
+/// 1 + 10^-9))` prints as `y = 1`).
 fn object_equation(
     c: &crate::Construction,
     id: crate::Id,
@@ -280,21 +283,37 @@ fn object_equation(
     let Value::Line { a, b, c: constant } = c.value(id) else {
         return None;
     };
+    work.spend(3)?;
     // `DoubleUtil.isZero` of the remaining coefficient decides the form, so
     // it must be clearly nonzero.
-    let (axis, coefficient) = match (a == 0.0, b == 0.0) {
-        (true, false) if b.abs() >= 1e-8 => (1, b),
-        (false, true) if a.abs() >= 1e-8 => (0, a),
-        _ => return None,
+    let axis_parallel = match (a == 0.0, b == 0.0) {
+        (true, false) if b.abs() >= 1e-8 => Some((1, b)),
+        (false, true) if a.abs() >= 1e-8 => Some((0, a)),
+        _ => None,
     };
-    work.spend(2)?;
-    let value = Rat::printed(-constant / coefficient)?;
-    let mut power = [0u8; 3];
-    power[axis] = 1;
     let mut terms = std::collections::BTreeMap::new();
-    terms.insert(power, Rat::ONE);
-    if value != Rat::ZERO {
-        terms.insert([0, 0, 0], value.neg()?);
+    if let Some((axis, coefficient)) = axis_parallel {
+        // `x = v` or `y = v` (`Kernel.buildExplicitEquation`).
+        let value = Rat::printed(-constant / coefficient)?;
+        let mut power = [0u8; 3];
+        power[axis] = 1;
+        terms.insert(power, Rat::ONE);
+        if value != Rat::ZERO {
+            terms.insert([0, 0, 0], value.neg()?);
+        }
+        return Some(crate::cas::Quotient::polynomial(Poly(terms)));
+    }
+    // Whole coefficients, both of x and y clearly nonzero, are printed as
+    // they are after dividing by their common divisor
+    // (`Kernel.buildImplicitEquation` with `cancelDown`): the same line.
+    let whole = |v: f64| v.fract() == 0.0 && v.abs() < 1e15;
+    if !(whole(a) && whole(b) && whole(constant)) || a.abs() < 1e-8 || b.abs() < 1e-8 {
+        return None;
+    }
+    for (power, v) in [([1, 0, 0], a), ([0, 1, 0], b), ([0, 0, 0], constant)] {
+        if v != 0.0 {
+            terms.insert(power, Rat::new(v as i128, 1)?);
+        }
     }
     Some(crate::cas::Quotient::polynomial(Poly(terms)))
 }

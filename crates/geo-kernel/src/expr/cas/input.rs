@@ -339,6 +339,27 @@ fn mul_abs(a: &[f64], b: &[f64]) -> Option<Vec<f64>> {
     Some(out)
 }
 
+/// Whether a sum or difference of two constants with a fractional operand
+/// cancels to below a millionth of the larger one.
+fn cancels(
+    c: &Construction,
+    e: &Entry,
+    a: u32,
+    b: u32,
+    op: Bin,
+    work: &mut Work<'_>,
+) -> Option<bool> {
+    let vars = &variables();
+    let x = read(c, e, a, vars, work)?.scalar()?;
+    let y = read(c, e, b, vars, work)?.scalar()?;
+    if x.den == 1 && y.den == 1 {
+        return Some(false);
+    }
+    let result = if op == Bin::Add { x.add(y)? } else { x.sub(y)? };
+    let largest = x.to_f64().abs().max(y.to_f64().abs());
+    Some(result.to_f64().abs() < 1e-6 * largest)
+}
+
 fn bound_at(
     c: &Construction,
     e: &Entry,
@@ -377,7 +398,14 @@ fn bound_at(
             let left = bound_at(c, e, a, variable, largest, work, depth + 1)?;
             let right = bound_at(c, e, b, variable, largest, work, depth + 1)?;
             match op {
-                Bin::Add | Bin::Sub => add_abs(&left, &right),
+                Bin::Add | Bin::Sub => {
+                    if left.len() == 1 && right.len() == 1 && cancels(c, e, a, b, op, work)? {
+                        // The reference evaluates the typed subtraction in
+                        // doubles, which loses what cancels.
+                        return None;
+                    }
+                    add_abs(&left, &right)
+                }
                 Bin::Mul => mul_abs(&left, &right)?,
                 Bin::Div => {
                     // Only a division by a number keeps a polynomial.

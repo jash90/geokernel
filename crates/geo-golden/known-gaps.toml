@@ -1066,6 +1066,17 @@ mismatches = ["1:r1", "1:r3"]
 undefined = true
 
 [[gap]]
+id = "cas-edge-007"
+reason = "The coefficient (0.1000000001 - 0.1) is evaluated in doubles by GeoGebra's numeric solver, which answers 999.9999173 where the exact root is 1000. The kernel does not model that evaluation: a sum or difference of typed constants with a fractional operand that cancels to below a millionth makes the start-value and the numeric list path undefined."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-edge-012"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
+mismatches = ["0:r2", "0:r3"]
+
+[[gap]]
 id = "cas-family-001"
 reason = "The solutions form one or more families from factoring a nonlinear equation (or a system with two free variables). GeoGebra lists several families in an order its CAS chooses and parametrises even one family by a variable it chooses (Solve((x - y)^2 = 0, {x, y}) keeps x free, Solve(x + y = 1, {x, y}) keeps y free); the kernel answers an undefined list for every system with a free variable."
 mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2"]
@@ -1200,18 +1211,17 @@ undefined = true
 [[gap]]
 id = "cas-hint-027"
 reason = "The object has no typed definition, so the reference prints its coefficients into the CAS call (GeoLine.toValueString, Kernel.buildImplicitEquation), dropping coefficients below the printing precision and rounding the rest: Line((0, 1), (1, 1 + 10^-9)) is sent as y = 1. That printing is not reproduced, so the kernel answers an undefined list for a constructed line, conic or implicit curve."
-mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3"]
+mismatches = ["3:r1", "3:r2", "3:r3"]
 undefined = true
 
 [[gap]]
 id = "cas-hint-028"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 3 has two roots."
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
 mismatches = ["0:result"]
-undefined = true
 
 [[gap]]
 id = "cas-hint-029"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 3 has two roots."
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
 mismatches = ["0:result"]
 undefined = true
 
@@ -2044,12 +2054,6 @@ mismatches = ["0:r1", "0:r2", "2:r1", "2:r2"]
 undefined = true
 
 [[gap]]
-id = "cas-plot-008"
-reason = "The object has no typed definition, so the reference prints its coefficients into the CAS call (GeoLine.toValueString, Kernel.buildImplicitEquation), dropping coefficients below the printing precision and rounding the rest: Line((0, 1), (1, 1 + 10^-9)) is sent as y = 1. That printing is not reproduced, so the kernel answers an undefined list for a constructed line, conic or implicit curve."
-mismatches = ["0:result", "1:result", "4:result"]
-undefined = true
-
-[[gap]]
 id = "cas-plot-014"
 reason = "The conic solves to two branches. GeoGebra lists them in the order in which its CAS sorts their normal forms (ggbsort(normal(solve(...))) in Ggb2giac); no EUPL source states that order, and the recorded cases show it follows the printed form of the expressions (with a = 3, (13x - 10y - 10)(a x - 5y + 2) = 0 lists 10/13 first at y = 0, while the slopes alone would put -2/3 first). The kernel answers a conic or curve that solves to one branch and an undefined list for two."
 mismatches = ["0:result"]
@@ -2145,15 +2149,13 @@ undefined = true
 
 [[gap]]
 id = "cas-shape-016"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 4 has two roots."
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
 mismatches = ["0:r1", "0:r2"]
-undefined = true
 
 [[gap]]
 id = "cas-shape-019"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^3 - x has three roots."
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
 mismatches = ["0:r1", "0:r2"]
-undefined = true
 
 [[gap]]
 id = "cas-shape-022"
@@ -2163,19 +2165,18 @@ undefined = true
 
 [[gap]]
 id = "cas-shape-024"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here the circle x^2 + y^2 = 4 has two branches for y."
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
 mismatches = ["0:r1", "0:r2"]
 undefined = true
 
 [[gap]]
 id = "cas-shape-025"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 = 4 has two roots."
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
 mismatches = ["0:r1", "0:r2"]
-undefined = true
 
 [[gap]]
 id = "cas-shape-026"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - y^2 = 0 has two lines for y."
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in an order without rule (x^2 = 4 gives 2 before -2, x^4 = 16 gives -2 before 2, x^3 - x gives 0, 1, -1). Solutions with a list of variables answers no solution or one and an undefined list for several; Solve keeps main's ascending assignments, which agree for x^4 = 16 and differ where the CAS lists another order, as on main."
 mismatches = ["0:r1", "0:r2"]
 undefined = true
 

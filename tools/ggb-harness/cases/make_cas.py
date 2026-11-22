@@ -835,6 +835,18 @@ for equation in ["x^2=4", "x^2=9", "x^3-x=0", "(x-1)*(x-2)*(x+3)=0", "x^4-5x^2+4
                  "(x+1)*(x+2)=0", "x^4=16", "(x-5)*(x+7)*(x-1)*(x+2)=0"]:
     c.case("rows", [f"r1 = Solutions({{{equation}}})", f"r2 = Solve({{{equation}}})",
                     f"r3 = Solutions({{{equation}}}, {{x}})"], [])
+# Sixth round: the reproducers of the final review.
+c.case("edge", ["f(x) = (0.1000000001-0.1)*x-0.0000001", "r1 = NSolutions(f, x=0)", "r2 = NSolutions(f, {x})"], [])
+c.case("edge", ["f(x) = 0.5x-1", "g(x) = x^3-0.3", "h(x) = 0.25x+0.75", "r1 = NSolutions(f, x=0)",
+                "r2 = NSolutions(g, x=1)", "r3 = NSolutions(f, {x})", "r4 = NSolutions(h, x=3)"], [])
+c.case("edge", ["a = 1.000030517578125", "b = 1.000091552734375", "f(x) = x+10^8*(b-a-0.00006103515625)",
+                "r1 = Solutions(f, x)"], [])
+c.case("edge", ["r = NSolutions(x-1, {x})", "e = Element(r, 1)", "s = NSolutions(y-1, {y})",
+                "t = NSolve(y-1, {y})"], [])
+c.case("edge", ["A = (0, 0)", "B = (1, 1)", "g = Line(A, B)", "h: x=2", "r1 = NSolutions({g, h})",
+                "r2 = Solutions({g, h})", "r3 = Solve(g, y)", "r4 = Solutions(g, x)"], [mv("B", 2, 3), mv("B", 1, 1)])
+c.case("edge", ["r1 = Solve(x^4=16, {x})", "r2 = Solve(x^2=4, {x})", "r3 = Solve(x^3-x=0, {x})"], [])
+curve_case(["k = Curve(t^2-10^8*t-99999999, t, t, 10^8, 10^8+2)", "r1 = Simplify(k)", "r2 = Expand(k)"])
 c.write()
 
 # Expand, Factor, IFactor and Simplify of an implicit curve answer an

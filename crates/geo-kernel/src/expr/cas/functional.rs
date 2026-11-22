@@ -10,6 +10,12 @@ type Product = (Rat, Vec<(Poly, u32)>);
 #[derive(Clone, Debug, PartialEq)]
 enum Form {
     Expanded,
+    /// The expanded form evaluated as the reference evaluates its printed
+    /// expression: term by term from the highest power, each term the
+    /// coefficient times the power, summed left to right (the printed
+    /// `t^2 - 100000000t - 99999999` at `t = 10^8 + 1` is 1, Horner's scheme
+    /// gives 2).
+    Printed,
     Product {
         numerator: Product,
         denominator: Product,
@@ -40,6 +46,16 @@ impl Function {
     pub(in crate::expr) fn value(&self, x: f64, y: f64) -> f64 {
         match &self.form {
             Form::Expanded => self.expanded.value(x, y),
+            Form::Printed => {
+                let sum = |p: &Poly| {
+                    let mut terms: Vec<_> = p.0.iter().collect();
+                    terms.sort_by(|u, v| v.0.cmp(u.0));
+                    terms.iter().fold(0.0, |acc, (power, c)| {
+                        acc + c.to_f64() * x.powi(i32::from(power[0])) * y.powi(i32::from(power[1]))
+                    })
+                };
+                sum(&self.expanded.numerator) / sum(&self.expanded.denominator)
+            }
             Form::Product {
                 numerator,
                 denominator,
@@ -188,6 +204,17 @@ pub(in crate::expr) fn evaluate<const M: bool>(
         }
         other => other,
     };
+    // A rewritten curve coordinate is evaluated like the expression the
+    // reference prints for it.
+    let exact = exact.map(|mut f| {
+        if ctx.e.curve_parameter.is_some()
+            && matches!(op, Op::Expand | Op::Simplify)
+            && f.form == Form::Expanded
+        {
+            f.form = Form::Printed;
+        }
+        f
+    });
     // A curve coordinate that is no rational function is beyond this
     // kernel: `AlgoCasBaseSingleArgument.applyCasCommand` sends it to the
     // CAS, which may rewrite it into something that evaluates differently
@@ -522,7 +549,7 @@ impl fmt::Display for Function {
             }
         };
         match &self.form {
-            Form::Expanded => quotient(
+            Form::Expanded | Form::Printed => quotient(
                 f,
                 print_poly(&self.expanded.numerator),
                 print_poly(&self.expanded.denominator),

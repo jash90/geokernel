@@ -132,14 +132,18 @@ impl Op {
                 system,
                 assignments,
                 rows,
+                approximate,
+                width,
                 ..
-            } => Ty::List(if system || (rows && !assignments) {
-                Elem::List
-            } else if assignments {
-                Elem::Any
-            } else {
-                Elem::Num
-            }),
+            } => Ty::List(
+                if system || (rows && !assignments && !(approximate && width == 1)) {
+                    Elem::List
+                } else if assignments {
+                    Elem::Any
+                } else {
+                    Elem::Num
+                },
+            ),
             Self::Coefficients if numeric(a) || a == Ty::Object => Ty::List(Elem::Num),
             Self::Degree if numeric(a) => Ty::Num(0),
             Self::Factors if numeric(a) => Ty::List(Elem::Any),
