@@ -172,9 +172,6 @@ Join,list,2,"list | list,list,..."
 Flatten,list,1,list
 Insert,list,1,"any,list,number"
 Sequence,list,5,"number | number,number | number,number,number | any,number,number,number | any,number,number,number,number"
-SelectedElement,list,1,list
-SelectedIndex,list,1,list
-RandomElement,list,3,"list | number,number,... | point,point,..."
 Product,list,4,"list | list,number | list,list | any,number,number,number"
 Frequency,list,8,"list | boolean,list | list,list | boolean,list,list | list,list,boolean | boolean,list,list,boolean | list,list,boolean,number | boolean,list,list,boolean,number"
 Unique,list,1,list

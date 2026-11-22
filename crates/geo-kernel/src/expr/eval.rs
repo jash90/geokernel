@@ -66,7 +66,7 @@ use super::commands;
 use super::decimal::Dec;
 use super::list::{copy_tree, List, Slot};
 use super::math::{self, PI_180};
-use super::{Bin, Elem, Entry, ListOp, Node, Raw, Ty, Un};
+use super::{Bin, CallOp, Elem, Entry, ListOp, Node, Raw, Ty, Un};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
@@ -322,6 +322,29 @@ impl Lists {
         });
     }
 
+    /// Sorts `len` text elements from `start` in place, accent-insensitively
+    /// first, then by the plain string (`GeoText.getComparator`); an
+    /// undefined text reads as the empty string (`getTextStringSafe`).
+    pub(super) fn sort_texts(&self, start: u32, len: u32) {
+        let mut arena = self.arena.borrow_mut();
+        let run = &mut arena[start as usize..(start + len) as usize];
+        let keys: Vec<(String, String)> = run
+            .iter()
+            .map(|s| {
+                let text = s.text_value().unwrap_or("").to_owned();
+                (super::commands::text::strings::remove_accents(&text), text)
+            })
+            .collect();
+        let mut order: Vec<u32> = (0..len).collect();
+        order.sort_unstable_by(|&a, &b| {
+            let (x, y) = (&keys[a as usize], &keys[b as usize]);
+            super::commands::text::strings::java_cmp(&x.0, &y.0)
+                .then_with(|| super::commands::text::strings::java_cmp(&x.1, &y.1))
+        });
+        let sorted: Vec<Slot> = order.iter().map(|&k| run[k as usize].clone()).collect();
+        run.clone_from_slice(&sorted);
+    }
+
     /// Counts `n` more elements; false past [`MAX_ELEMENTS`].
     fn build(&self, n: u64) -> bool {
         let built = self.built.get().saturating_add(n);
@@ -380,11 +403,15 @@ impl Lists {
     }
 }
 
-/// The value of the variable of a `Sequence`, inside those around it.
+/// The element the variable of a `Sequence` or `Zip` holds, inside those
+/// around it.
 pub(super) struct Local<'a> {
     pub(super) depth: u32,
     pub(super) value: Val,
     pub(super) run: Option<(u32, u32)>,
+    /// whether the element is a vector: a `Zip` binds the element itself
+    /// (`updateLocalVar`), which keeps its class
+    pub(super) vector: bool,
     pub(super) up: Option<&'a Local<'a>>,
 }
 
@@ -409,7 +436,7 @@ impl Val {
 }
 
 /// `MyBoolean.getDouble`.
-fn bool_number(b: bool) -> f64 {
+pub(super) fn bool_number(b: bool) -> f64 {
     if b {
         1.0
     } else {
@@ -685,6 +712,7 @@ pub(super) fn system_locals(ctx: &Ctx<'_, true>, root: u32, depth: u32, values: 
             depth,
             value: Val::N(x),
             run: None,
+            vector: false,
             up: ctx.locals,
         };
         system_locals(
@@ -843,12 +871,14 @@ impl<const M: bool> Ctx<'_, M> {
             }
             Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
             Node::Item(a) | Node::Vector(a) => self.full(a),
-            // the variable of a `Sequence` is a `GeoNumeric`
+            // the variable of a `Sequence` is a `GeoNumeric`; the variable
+            // of a `Zip` is the element it walks (`createTemplateElement`)
             Node::Local(depth, _) => Ex {
                 obj: true,
                 ..Ex::plain(self.local(depth).map_or(N(f64::NAN), |local| local.value))
             },
             Node::ListOp(op, l, n) => self.list_command(i, op, l, n),
+            Node::Call(op, first, len) => self.call_command(op, first, len),
             Node::Algebra(op, a, _) if !op.makes_list() => Ex::plain(self.algebra_number(op, a)),
             Node::TextCmd(op, first, count) => Ex::plain(N(self.text_number(op, first, count))),
             Node::Algebra(..)
@@ -1213,7 +1243,8 @@ impl<const M: bool> Ctx<'_, M> {
 
 /// Lists: built in the scratch buffer, read by the list commands.
 impl<const M: bool> Ctx<'_, M> {
-    /// The value of the variable of the `Sequence` of `depth`.
+    /// The element the variable of `depth` holds: a number for a `Sequence`
+    /// (`AlgoSequence`), any element for a `Zip` (`updateLocalVar`).
     #[inline(never)]
     fn local(&self, depth: u32) -> Option<&Local<'_>> {
         let mut local = self.locals;
@@ -1226,7 +1257,7 @@ impl<const M: bool> Ctx<'_, M> {
         None
     }
 
-    fn is_list(&self, i: u32) -> bool {
+    pub(super) fn is_list(&self, i: u32) -> bool {
         matches!(self.e.tys[i as usize], Ty::List(_))
     }
 
@@ -1268,6 +1299,7 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Algebra(op, a, b) => self.algebra_list(op, a, b),
             Node::TextCmd(op, first, count) => self.text_list(op, first, count),
             Node::Seq(e, from, to, step, depth) => self.sequence(e, from, to, step, depth),
+            Node::Call(op, first, len) => self.call_list(op, first, len),
             Node::Filter {
                 keep: true,
                 list,
@@ -1296,6 +1328,31 @@ impl<const M: bool> Ctx<'_, M> {
     /// what is there and kept; anything else is evaluated, and what that
     /// built is dropped.
     pub(super) fn element(&self, i: u32) -> Slot {
+        if let Node::Local(depth, _) = self.node(i) {
+            // the variable of a `Zip` holds the element itself; a number
+            // keeps the ordinary path, so that its work is charged as
+            // before
+            if let Some(local) = self.local(depth) {
+                if local.run.is_some() || !matches!(local.value, Val::N(_)) {
+                    return match local.run {
+                        Some((start, len)) => Slot::list(start, len),
+                        None => match local.value {
+                            Val::V(x, y) => Slot::coords(
+                                if local.vector {
+                                    Kind::Vector
+                                } else {
+                                    Kind::Point
+                                },
+                                x,
+                                y,
+                            ),
+                            Val::B(b, _) => Slot::boolean(b),
+                            Val::N(v) => Slot::number(v),
+                        },
+                    };
+                }
+            }
+        }
         let i = match self.node(i) {
             Node::Item(a) => a,
             Node::ItemObject(id) => return Slot::object(self.c, id),
@@ -1346,11 +1403,21 @@ impl<const M: bool> Ctx<'_, M> {
                     slot
                 }
             }
-            Val::V(x, y) => Slot::coords(
-                super::types::vec_kind(self.c, &self.e.nodes, &self.e.tys, i),
-                x,
-                y,
-            ),
+            Val::V(x, y) => {
+                // a `Zip` binds the element itself (`updateLocalVar`),
+                // which keeps its class
+                let kind = match self.node(i) {
+                    Node::Local(depth, _) => {
+                        if self.local(depth).is_some_and(|local| local.vector) {
+                            Kind::Vector
+                        } else {
+                            Kind::Point
+                        }
+                    }
+                    _ => super::types::vec_kind(self.c, &self.e.nodes, &self.e.tys, i),
+                };
+                Slot::coords(kind, x, y)
+            }
             Val::B(false, false)
                 if matches!(self.node(i), Node::Algebra(super::AlgebraOp::IsPrime, ..)) =>
             {
@@ -1505,6 +1572,22 @@ impl<const M: bool> Ctx<'_, M> {
         };
         let mark = lists.len();
         let val = commands::list_value(self, i, op, l, n);
+        lists.truncate(mark);
+        Ex {
+            obj: true,
+            ..Ex::plain(val)
+        }
+    }
+
+    /// A command of more arguments than a [`Node::ListOp`] holds that gives
+    /// a number (see [`commands::list::call_value`]).
+    #[inline(never)]
+    fn call_command(&self, op: CallOp, first: u32, len: u32) -> Ex {
+        let Some(lists) = self.lists else {
+            return Ex::plain(Val::N(f64::NAN));
+        };
+        let mark = lists.len();
+        let val = commands::call_value(self, op, first, len).unwrap_or(Val::N(f64::NAN));
         lists.truncate(mark);
         Ex {
             obj: true,
