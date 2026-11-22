@@ -93,4 +93,31 @@ def alias_cases(topic, command):
 alias_cases("region", "IntersectRegion")
 alias_cases("paths", "IntersectionPaths")
 
+for command in ("IntersectPath", "IntersectRegion", "IntersectionPaths"):
+    for shape in ("Arc", "Sector"):
+        for base in (circle, [
+            pt("F", -3, 0), pt("G", 3, 0), pt("H", 0, 2), "k = Ellipse(F, G, H)",
+        ]):
+            for path in ("Segment(A, B)", "PolyLine(A, B, C)", "Polygon(A, B, C)"):
+                cases.case("conicpart", base + [
+                    num("t", 0.5), f"a = {shape}(k, t, 2.5)",
+                    pt("A", 0, 0), pt("B", 0, 3), pt("C", -4, 3),
+                    f"p = {path}", f"q = {command}(p, a)", f"u = {command}(a, p)",
+                ], [mv("B", 0, -3), setn("t", 3), mv("B", 0, 3), setn("t", 0.5)])
+
+cases.case("segment", circle + [
+    "A = (-4, 1.99999999)", "B = (4, 1.99999999)",
+    "s = Segment(A, B)", "q = IntersectPath(s, k)",
+], [mv("O", 0, -0.01), mv("O", 0, 0.01), mv("O", 0, 0)])
+cases.case("segment", circle + [
+    pt("A", -4, 0), pt("B", 1.999995, 0),
+    "s = Segment(A, B)", "q = IntersectPath(s, k)",
+], [mv("B", 1.99, 0), mv("B", -3, 0), mv("B", 1.999995, 0)])
+
+cases.case("longcarrier", [
+    "p = Polygon(Sequence((j, If(j < 6999, 0, 3)), j, 0, 6999))",
+    pt("A", 3500.5, -1), pt("B", 3500.5, 3), "g = Line(A, B)",
+    "s = IntersectPath(p, g)",
+], [])
+
 cases.write()

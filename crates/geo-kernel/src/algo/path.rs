@@ -31,6 +31,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPolyLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec3D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicPartParameters.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
@@ -1583,8 +1584,16 @@ pub(crate) fn part_contains(a: &ArcData, p: (f64, f64)) -> bool {
         let t = positive((ha * state.y).atan2(hb * state.x));
         positive(t - a.start) <= a.extent + STANDARD_PRECISION
     } else {
-        let start = part_end(a, a.start);
-        let end = part_end(a, a.end);
+        let [u, v] = a.conic.eigenvec;
+        let unit = |t: f64| {
+            let (s, c) = t.sin_cos();
+            (u[0] * c + v[0] * s, u[1] * c + v[1] * s)
+        };
+        let start = unit(a.start);
+        let end = unit(a.end);
+        let [mx, my] = a.conic.midpoint;
+        let r = a.conic.half_axes[1];
+        let p = ((p.0 - mx) / r, (p.1 - my) / r);
         cross(sub(end, start), sub(p, start)) <= STANDARD_PRECISION
     }
 }

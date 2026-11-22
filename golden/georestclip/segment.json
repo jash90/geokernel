@@ -512,6 +512,124 @@
           "q_{1}": { "type": "segment", "defined": false }
         }
       ]
+    },
+    {
+      "id": "georestclip-segment-005",
+      "group": "georestclip",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "A = (-4, 1.99999999)",
+        "B = (4, 1.99999999)",
+        "s = Segment(A, B)",
+        "q = IntersectPath(s, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "O", "x": 0.0, "y": -0.01 },
+        { "action": "move", "label": "O", "x": 0.0, "y": 0.01 },
+        { "action": "move", "label": "O", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.99999999 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.99999999 },
+          "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 1.99999999, "x2": 4.0, "y2": 1.99999999 },
+          "q": { "type": "segment", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": -0.01 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": -0.01, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.99999999 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.99999999 },
+          "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 1.99999999, "x2": 4.0, "y2": 1.99999999 },
+          "q": { "type": "segment", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.01 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.01, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.99999999 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.99999999 },
+          "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 1.99999999, "x2": 4.0, "y2": 1.99999999 },
+          "q": { "type": "segment", "defined": true, "x1": -0.19974994317896455, "y1": 1.99999999, "x2": 0.19974994317896455, "y2": 1.99999999 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.99999999 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.99999999 },
+          "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 1.99999999, "x2": 4.0, "y2": 1.99999999 },
+          "q": { "type": "segment", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "georestclip-segment-006",
+      "group": "georestclip",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "A = (-4, 0)",
+        "B = (1.999995, 0)",
+        "s = Segment(A, B)",
+        "q = IntersectPath(s, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.99, "y": 0.0 },
+        { "action": "move", "label": "B", "x": -3.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.999995, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.999995, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 0.0, "x2": 1.999995, "y2": 0.0 },
+          "q_{1}": { "type": "segment", "defined": true, "x1": -2.0000000000000004, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "q_{2}": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 1.999995, "y2": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.99, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 0.0, "x2": 1.99, "y2": 0.0 },
+          "q_{1}": { "type": "segment", "defined": true, "x1": -1.9999999999999998, "y1": 0.0, "x2": 1.99, "y2": 0.0 },
+          "q_{2}": { "type": "segment", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 0.0, "x2": -3.0, "y2": 0.0 },
+          "q_{1}": { "type": "segment", "defined": false },
+          "q_{2}": { "type": "segment", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.999995, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 0.0, "x2": 1.999995, "y2": 0.0 },
+          "q_{1}": { "type": "segment", "defined": true, "x1": -2.0000000000000004, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "q_{2}": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 1.999995, "y2": 0.0 }
+        }
+      ]
     }
   ]
 }

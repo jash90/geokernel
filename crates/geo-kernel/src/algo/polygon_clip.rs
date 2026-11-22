@@ -9,11 +9,14 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use super::path::{conic_contains, part_contains, part_end, polygon_contains};
+use super::conic_nd::ConicType;
+use super::intersect::conics::on_part;
+use super::intersect::{line_conic_points, normalized_coefficients};
+use super::path::{conic_contains, part_contains, polygon_contains};
 use super::{conic_object, polygon, Parents, CARRIERS, CONIC_OBJECTS};
 use crate::expr::IntersectionWork;
 use crate::script::object;
-use crate::tol::STANDARD_PRECISION;
+use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
 use crate::{Construction, Error, Id, Kind, Value};
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -353,18 +356,15 @@ fn restrict(cuts: &mut Vec<f64>, min: f64, max: f64) {
 fn carrier_segments(c: &Construction, polygon: Id, line: Id) -> Option<Vec<Edge>> {
     let vertices = c.vertices(polygon);
     let count = vertices.size_hint().0 as u64;
-    // An edge supplies at most two cuts and each resulting interval can
-    // require a full containment scan. Include the endpoint cuts as well.
-    let cuts = count.saturating_mul(2).saturating_add(2);
     let work = IntersectionWork::new();
-    if !work.charge(count.saturating_add(1).saturating_mul(cuts)) {
+    if !work.charge(count.saturating_mul(3)) {
         return None;
     }
     let vertices = vertices.collect::<Option<Vec<_>>>()?;
-    Some(carrier(c.value(line), &vertices))
+    carrier(c.value(line), &vertices, &work)
 }
 
-fn carrier(line: Value, polygon: &[XY]) -> Vec<Edge> {
+fn carrier(line: Value, polygon: &[XY], work: &IntersectionWork) -> Option<Vec<Edge>> {
     let (origin, dir, min, max) = match line {
         Value::Line { a, b, c } => {
             let origin = if a.abs() > b.abs() {
@@ -376,16 +376,23 @@ fn carrier(line: Value, polygon: &[XY]) -> Vec<Edge> {
         }
         Value::Ray { x, y, a, b, .. } => ((x, y), (b, -a), 0.0, f64::INFINITY),
         Value::Segment { x1, y1, x2, y2 } => ((x1, y1), (x2 - x1, y2 - y1), 0.0, 1.0),
-        _ => return Vec::new(),
+        _ => return Some(Vec::new()),
     };
     if dir == (0.0, 0.0) {
-        return Vec::new();
+        return Some(Vec::new());
     }
     let mut cuts = vec![min, max];
     for edge in edges(polygon) {
         cuts_on_line(origin, dir, edge, &mut cuts);
     }
+    let count = cuts.len() as u64;
+    if !work.charge(count * u64::from(count.ilog2() + 1)) {
+        return None;
+    }
     restrict(&mut cuts, min, max);
+    if !work.charge(cuts.len().saturating_sub(1) as u64 * (polygon.len() as u64 + 1)) {
+        return None;
+    }
     let mut segments: Vec<Edge> = Vec::new();
     let along = |t| add(origin, scale(dir, t));
     for interval in cuts.windows(2) {
@@ -402,7 +409,7 @@ fn carrier(line: Value, polygon: &[XY]) -> Vec<Edge> {
             segments.push((start, end));
         }
     }
-    segments
+    Some(segments)
 }
 
 fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
@@ -411,7 +418,6 @@ fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
     };
     let arc = c.arc(id);
     let inside = |p| conic_contains(&d, p) && arc.as_ref().is_none_or(|a| part_contains(a, p));
-    let [xx, yy, z, xy, xz, yz] = d.matrix;
     let mut result = Vec::new();
     let kind = c.kind(path);
     let work = IntersectionWork::new();
@@ -451,7 +457,8 @@ fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
         }
         _ => return result,
     };
-    let mut cuts = Vec::with_capacity(6);
+    let mut cuts = Vec::with_capacity(4);
+    let mut closure = Vec::with_capacity(2);
     for (p, end) in path_edges {
         let dir = sub(end, p);
         if dir == (0.0, 0.0) {
@@ -460,46 +467,90 @@ fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
             }
             continue;
         }
-        let (x, y) = p;
         let (u, v) = dir;
-        let qa = xx * u * u + yy * v * v + 2.0 * xy * u * v;
-        let qb = u * (xx * x + xy * y + xz) + v * (xy * x + yy * y + yz);
-        let qc = xx * x * x + yy * y * y + 2.0 * (xy * x * y + xz * x + yz * y) + z;
-        cuts.clear();
-        cuts.extend([0.0, 1.0]);
-        let discriminant = qb * qb - qa * qc;
-        let rounding = 8.0 * f64::EPSILON * (qb * qb + (qa * qc).abs());
-        if qa.abs() < STANDARD_PRECISION {
-            if qb.abs() >= STANDARD_PRECISION {
-                cuts.push(-qc / (2.0 * qb));
-            }
-        } else if discriminant.abs() <= rounding {
-            cuts.push(-qb / qa);
-        } else if discriminant > 0.0 {
-            let root = discriminant.sqrt();
-            cuts.extend([(-qb - root) / qa, (-qb + root) / qa]);
-        }
-        if let Some(arc) = &arc {
-            let a = part_end(arc, arc.start);
-            let b = part_end(arc, arc.end);
-            if arc.sector {
-                let [cx, cy] = d.midpoint;
-                cuts_on_line(p, dir, ((cx, cy), a), &mut cuts);
-                cuts_on_line(p, dir, ((cx, cy), b), &mut cuts);
+        let line = normalized_coefficients([-v, u, cross(p, end)]);
+        let parameter = |q| {
+            let (x, y) = sub(q, p);
+            if u.abs() > v.abs() {
+                x / u
             } else {
-                cuts_on_line(p, dir, (a, b), &mut cuts);
+                y / v
             }
-        }
-        restrict(&mut cuts, 0.0, 1.0);
+        };
         let along = |t| add(p, scale(dir, t));
-        for interval in cuts.windows(2) {
-            let (a, b) = (interval[0], interval[1]);
-            if inside(along(a.midpoint(b))) {
-                result.push((along(a), along(b)));
+        cuts.clear();
+        cuts.extend(
+            line_conic_points(
+                line,
+                &d.matrix,
+                d.ty == ConicType::DoubleLine,
+                MIN_PRECISION,
+            )
+            .into_iter()
+            .flatten()
+            .filter(|&q| {
+                arc.as_ref()
+                    .map_or_else(|| d.on_full_conic(q, MIN_PRECISION), |a| on_part(a, q))
+            })
+            .map(parameter)
+            .filter(|t| (-MIN_PRECISION..=1.0 + MIN_PRECISION).contains(t)),
+        );
+        if let Some(arc) = arc.as_ref().filter(|_| d.ty == ConicType::Circle) {
+            let [cx, cy] = d.midpoint;
+            let r = d.half_axes[0];
+            let endpoint = |t: f64| (cx + r * t.cos(), cy + r * t.sin());
+            let a = endpoint(arc.start);
+            let b = endpoint(arc.end);
+            closure.clear();
+            if arc.sector {
+                closure_cut(p, dir, ((cx, cy), a), &mut closure);
+                closure_cut(p, dir, ((cx, cy), b), &mut closure);
+            } else {
+                closure_cut(p, dir, (a, b), &mut closure);
             }
+            closure.retain(|&t| {
+                let q = along(t);
+                cuts.iter().all(|&root| {
+                    let delta = sub(along(root), q);
+                    dot(delta, delta) >= STANDARD_PRECISION
+                })
+            });
+            cuts.extend(closure.iter().copied());
+        }
+        // Keep the input endpoints in place even when a root accepted with
+        // endpoint slack lies just outside the segment.
+        cuts.sort_by(f64::total_cmp);
+        let cut_count = cuts.len();
+        let mut start = 0.0;
+        for t in cuts.iter().copied().chain(std::iter::once(1.0)) {
+            let (a, b) = (along(start), along(t));
+            let (dx, dy) = sub(b, a);
+            if (cut_count == 0 || dx.hypot(dy) >= STANDARD_PRECISION)
+                && inside(along(start.midpoint(t)))
+            {
+                result.push((a, b));
+                if cut_count == 1 {
+                    break;
+                }
+            }
+            start = t;
         }
     }
     result
+}
+
+fn closure_cut(origin: XY, dir: XY, (a, b): Edge, cuts: &mut Vec<f64>) {
+    let edge = sub(b, a);
+    let offset = sub(a, origin);
+    let denominator = cross(dir, edge);
+    let t = cross(offset, edge) / denominator;
+    let u = cross(offset, dir) / denominator;
+    let on_segment = |t: f64, (x, y): XY| {
+        t.is_finite() && (t - t.clamp(0.0, 1.0)).abs() * x.hypot(y) < STANDARD_PRECISION
+    };
+    if on_segment(t, dir) && on_segment(u, edge) {
+        cuts.push(t);
+    }
 }
 
 fn contains(vertices: &[XY], p: XY) -> bool {
