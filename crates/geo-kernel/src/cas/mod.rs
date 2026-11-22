@@ -39,6 +39,15 @@ pub(crate) fn factor_poly(poly: &Poly, work: &mut Work<'_>) -> Option<(Rat, Vec<
     Some(result)
 }
 
+/// The greatest common divisor of two polynomials in up to three
+/// variables; a constant when they share no factor.
+pub(crate) fn poly_gcd(left: &Poly, right: &Poly, work: &mut Work<'_>) -> Option<Poly> {
+    if let (Some(a), Some(b)) = (left.coefficients(), right.coefficients()) {
+        return Some(Poly::dense(&factor::gcd(&a, &b, work)?));
+    }
+    multivariate::gcd(&left.0, &right.0, work).map(Poly)
+}
+
 pub(crate) struct Work<'a> {
     remaining: usize,
     charge: &'a dyn Fn(usize) -> bool,

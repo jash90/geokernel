@@ -88,7 +88,7 @@ impl Parser<'_> {
                 guess: false,
             },
             // `CmdSolve.process`: the plotted solve takes one argument.
-            [comma] if !points => self.solution_hint(comma + 1)?,
+            [comma] if !points => self.solution_hint(comma + 1, name)?,
             _ => return Err(format!("invalid arguments to `{name}`")),
         };
         let (outer_x, outer_y) = (self.uses_var, self.uses_y);
@@ -123,6 +123,12 @@ impl Parser<'_> {
         if let [comma] = commas[..] {
             if self.pos != comma {
                 return Err("expected a list of solving variables".into());
+            }
+            let listed = is_list || matches!(equations[..], [arg] if self.is_list(arg));
+            if listed && !hint.list && hint.axes[0] == crate::expr::cas::NO_VARIABLE {
+                // The reference prints the value of the number into its
+                // system solver and reads garbage back.
+                return Err(format!("invalid arguments to `{name}`"));
             }
             if hint.guess {
                 // `variable = value`: the value is an ordinary number.
@@ -206,10 +212,11 @@ impl Parser<'_> {
 
     /// The second argument of a solve: one variable, `variable = value` as
     /// the initial value of a numeric solve, or a list of variables.
-    fn solution_hint(&self, mut i: usize) -> Result<Hint, String> {
+    fn solution_hint(&self, mut i: usize, command: &str) -> Result<Hint, String> {
         let bad = || "expected up to three distinct solving variables".to_owned();
         let list = self.toks.get(i).is_some_and(|t| t.tok == Tok::LBrace);
         i += usize::from(list);
+        let first = i;
         let mut names = Vec::new();
         let mut axes = [0; 3];
         loop {
@@ -240,10 +247,40 @@ impl Parser<'_> {
             return Err(bad());
         }
         let width = names.len() as u8;
-        if !list && matches!(names[0].as_str(), "x" | "y" | "z") {
-            // One of the coordinate names keeps its own axis, so that the
-            // other names of the equation stay the other variables.
-            names = vec!["x".into(), "y".into(), "z".into()];
+        if !list {
+            if guess && command == "Solve" && names[0] != "z" && self.object_at(first).is_none() {
+                // `Solve` takes `name = value` for an assumption and solves
+                // for `x`, whatever the name is. An assumption about the
+                // other variable is marked in the unused second axis.
+                if names[0] != "x" {
+                    axes[1] = crate::expr::cas::NO_VARIABLE;
+                }
+                names = vec!["x".into(), "y".into(), "z".into()];
+                axes[0] = 0;
+            } else if matches!(names[0].as_str(), "x" | "y" | "z") {
+                // A coordinate name keeps its own axis, so that the other
+                // names of the equation stay the other variables.
+                names = vec!["x".into(), "y".into(), "z".into()];
+            } else if let Some(id) = self.object_at(first) {
+                // `AlgoSolve.printHint` prints the value of an object: a
+                // number is no variable to solve for, and `NSolve` then
+                // reads an answer back that the reference cannot parse.
+                // What the CAS makes of any other object follows no rule.
+                let number = matches!(self.c.kind(id), crate::Kind::Number | crate::Kind::Angle);
+                if !number || (command == "NSolve" && !guess) {
+                    return Err(format!("invalid arguments to `{command}`"));
+                }
+                names = vec!["x".into(), "y".into(), "z".into()];
+                axes[0] = crate::expr::cas::NO_VARIABLE;
+            } else if names[0] == "t" {
+                // The parameter name is a variable of its own, beside `x`
+                // and `y`.
+                names = vec!["x".into(), "y".into(), "t".into()];
+                axes[0] = 2;
+            } else {
+                // The reference knows no other free name.
+                return Err(format!("undefined variable `{}`", names[0]));
+            }
         }
         Ok(Hint {
             names,

@@ -128,6 +128,118 @@ fn an_initial_value_selects_one_root() {
 }
 
 #[test]
+fn the_second_argument_names_what_it_names() {
+    let mut c = build(&["f(x) = x^2-9", "g: x+y=1", "b = 2", "P = (1, 2)"]);
+    // `t` is a variable of its own, which the function does not hold.
+    for (line, label) in [("r1 = Solutions(f, t)", "r1"), ("r2 = Solve(f, t)", "r2")] {
+        script::exec(&mut c, line).unwrap();
+        assert_eq!(c.elements(id(&c, label)).unwrap().len(), 0, "{line}");
+    }
+    for (line, label) in [
+        ("r3 = NSolutions(f, t)", "r3"),
+        ("r4 = NSolve(f, t)", "r4"),
+        ("r5 = Solutions(f, t=1)", "r5"),
+    ] {
+        script::exec(&mut c, line).unwrap();
+        assert!(c.elements(id(&c, label)).is_none(), "{line}");
+    }
+    // An equation in `t` is solved for it.
+    script::exec(&mut c, "r6 = Solutions(t^2=4, t)").unwrap();
+    assert_eq!(numbers(&c, "r6").unwrap(), [-2.0, 2.0]);
+    script::exec(&mut c, "r7 = Solve(t^2=4, t)").unwrap();
+    let lines = c.elements(id(&c, "r7")).unwrap();
+    assert_eq!(lines.len(), 2);
+    assert!(lines
+        .iter()
+        .all(|e| matches!(e, Element::Value(Kind::Line, Value::Undefined))));
+    // A number is printed as its value, which is no variable.
+    for (line, label) in [("s1 = Solve(f, b)", "s1"), ("s2 = Solutions(g, b)", "s2")] {
+        script::exec(&mut c, line).unwrap();
+        assert_eq!(c.elements(id(&c, label)).unwrap().len(), 0, "{line}");
+    }
+    for (line, label) in [
+        ("s3 = NSolutions(f, b)", "s3"),
+        ("s4 = Solve(f, b=1)", "s4"),
+    ] {
+        script::exec(&mut c, line).unwrap();
+        assert!(c.elements(id(&c, label)).is_none(), "{line}");
+    }
+    // `Solve` reads `name = value` as an assumption and solves for x.
+    script::exec(&mut c, "u = Solve(f, y=1)").unwrap();
+    assert_eq!(c.elements(id(&c, "u")).unwrap().len(), 2);
+    // Any other name or object is refused.
+    for line in [
+        "r = Solutions(f, a)",
+        "r = Solve(f, abc)",
+        "r = Solutions(a^2=4, a)",
+        "r = Solve(f, P)",
+        "r = NSolve(f, b)",
+        "r = Solutions({x^2=4}, b)",
+    ] {
+        rejected(&mut c, line);
+    }
+}
+
+#[test]
+fn a_list_of_equations_with_one_variable_gives_one_row() {
+    let c = build(&[
+        "r1 = Solutions({x^2=4}, x)",
+        "r2 = Solutions({2x=4}, x)",
+        "r3 = Solutions({x^2=-1}, x)",
+        "r4 = Solutions({x^2=4, x=2}, x)",
+        "r5 = Solutions({x+y=3, x-y=1}, x)",
+        "r6 = NSolutions({x^2=4}, x)",
+        "r7 = NSolve({x^2=4}, x)",
+        "r8 = NSolutions({x^2=4}, y)",
+    ]);
+    let rows = c.elements(id(&c, "r1")).unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(numbers(&c, "r2").unwrap(), [2.0]);
+    assert_eq!(c.elements(id(&c, "r3")).unwrap().len(), 0);
+    assert_eq!(numbers(&c, "r4").unwrap(), [2.0]);
+    assert_eq!(c.elements(id(&c, "r5")).unwrap().len(), 0);
+    assert_eq!(c.elements(id(&c, "r6")).unwrap().len(), 0);
+    assert!(c.elements(id(&c, "r7")).is_none());
+    assert!(c.elements(id(&c, "r8")).is_none());
+    // The system solver of the reference does not follow a start value
+    // after a list, and no rule gives the root it answers: undefined.
+    let c = build(&[
+        "s1 = NSolutions({x^2=4}, x=3)",
+        "s2 = NSolve({x^2=4}, x=3)",
+        "s3 = Solve({x^2=4}, x=3)",
+        "s4 = Solutions({x^2=4}, x=3)",
+    ]);
+    for label in ["s1", "s2", "s3", "s4"] {
+        assert!(c.elements(id(&c, label)).is_none(), "{label}");
+    }
+}
+
+#[test]
+fn a_list_of_variables_answers_at_most_one_solution() {
+    // The reference lists several solutions in the order of its CAS, which
+    // follows no rule; one solution or none is answered.
+    let c = build(&[
+        "f(x) = x^2-4",
+        "g(x) = 2x-4",
+        "h(x) = x^2+1",
+        "k: x^2+y^2=4",
+        "r1 = Solutions(f, {x})",
+        "r2 = Solve(f, {x})",
+        "r3 = Solutions(k, {y})",
+        "r4 = Solutions(g, {x})",
+        "r5 = Solve(g, {x})",
+        "r6 = Solutions(h, {x})",
+    ]);
+    for label in ["r1", "r2", "r3"] {
+        assert!(c.elements(id(&c, label)).is_none(), "{label}");
+    }
+    let rows = c.elements(id(&c, "r4")).unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(c.elements(id(&c, "r5")).unwrap().len(), 1);
+    assert_eq!(c.elements(id(&c, "r6")).unwrap().len(), 0);
+}
+
+#[test]
 fn a_text_with_an_equals_sign_is_a_text() {
     let c = build(&[
         "r1 = Simplify(\"\u{3b1}=\u{3b2}\")",

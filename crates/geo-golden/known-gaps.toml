@@ -722,12 +722,12 @@ mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-hint-028"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists the solutions in the order its CAS returns them (Solve(f, {x}) of x^2 - 3 answers x = sqrt(3) before x = -sqrt(3), while Solve(f, x) answers them ascending). The kernel always answers the roots in ascending order, so the solution sets agree while the order differs."
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 3 has two roots."
 mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-hint-029"
-reason = "A list of variables after one equation runs GeoGebra's system solver, which lists the rows in the order its CAS returns them ({sqrt(3)} before {-sqrt(3)} for Solutions(f, {x}) of x^2 - 3). The kernel always answers the rows in ascending order, so the solution sets agree while the order differs."
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 3 has two roots."
 mismatches = ["0:result"]
 
 [[gap]]
@@ -834,6 +834,41 @@ mismatches = ["0:r1"]
 id = "cas-start-019"
 reason = "The numeric solver of GeoGebra's CAS is not bound to polynomials and answers 4 for sqrt(x) - 2 from the start values 1 and -1. The bounded polynomial CAS reads polynomials and rational functions only, so the kernel answers an undefined list for an equation with a square root."
 mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-014"
+reason = "A start value after a list of equations goes to the system solver of GeoGebra's CAS, which does not follow it: NSolutions({x^2 = 4}, x = 3) and x = -0.5 both answer {2}, {x^2 - 5x + 6 = 0} answers {3} from 0 where Newton's method reaches 2, and an odd degree answers nothing (cas-shape-015). Solve({x^2 = 4}, x = 3) and Solutions({x^4 - 5x^2 + 4 = 0}, x = -3) even answered different roots in different harness runs and are not recorded. No rule reproduces the chosen root, so the kernel answers an undefined list for every start value after a list."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-016"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - 4 has two roots."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-019"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^3 - x has three roots."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-024"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here the circle x^2 + y^2 = 4 has two branches for y."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-025"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 = 4 has two roots."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-026"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists several solutions in the order its CAS returns them; ggbsort keeps nested rows as they come and that order follows no rule across inputs (Solutions(f, {x}) answers {2}, {-2} for x^2 - 4 but {0}, {1}, {-1} for x^3 - x, and Solutions(k, {y}) of a circle the positive branch first). The kernel answers no solution and a single one like the reference and an undefined list when there are several. Here x^2 - y^2 = 0 has two lines for y."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-name-013"
+reason = "Solve(k, y = 1) reads y = 1 as an assumption. With it GeoGebra's CAS can decide the sign of terms in y and lists the two lines of x^2 - y^2 = 0 by their values (x = -y before x = y) and not by their printed form as Solve(k) does. The kernel does not reproduce the order under an assumption and answers an undefined list when an equation with an assumption about the other variable has two branches."
+mismatches = ["0:r1"]
 
 [[gap]]
 id = "cas-curve-008"

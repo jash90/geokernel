@@ -530,6 +530,81 @@ c.case("order", ["F = (1, 1)", "g: x+y=-1", "k = Parabola(F, g)", "P = (0, 0)", 
                  "r1 = Solutions(k)", "r2 = Solutions(k, y)", "r3 = Solutions(h)",
                  "r4 = Solutions(h, y)"], [])
 
+# A list of equations with one variable: the solutions of all of them, as
+# one row when there are several.
+for equations in ["{x^2=4}", "{2x=4}", "{x^2=-1}", "{x^3-x=0}", "{x^2=4, x=2}",
+                  "{x^2-1=0, x^2-3x+2=0}", "{x+y=3, x-y=1}", "{x^2=4, x=3}"]:
+    c.case("shape", results(f"{command}({equations}, x)" for command in SOLVERS), [])
+c.case("shape", ["r1 = Solutions({x^2=y}, x)", "r2 = Solutions({x+y=3}, x)",
+                 "r3 = Solve({x+y=3}, x)", "r4 = Solutions({x*y=1}, y)"], [])
+c.case("shape", results([f"{command}({{x^2=4}}, y)" for command in SOLVERS]
+                        + [f"{command}({{y^2=4}}, y)" for command in SOLVERS]), [])
+c.case("shape", ["g: x=3", "h: x+y=1", "m = {g}", "n = {g, h}", "r1 = Solutions(m, x)",
+                 "r2 = Solve(m, x)", "r3 = NSolutions(m, x)", "r4 = Solutions(n, x)"], [])
+c.case("shape", ["a = 4", "r1 = Solutions({x^2=a}, x)", "r2 = Solve({x^2=a}, x)",
+                 "r3 = NSolutions({x^2=a}, x)"],
+       [setn("a", 0), setn("a", -1), setn("a", 9), setn("a", 2)])
+c.case("shape", ["r1 = Solutions({(x-y)*(x-1)=0, (x-y)*(x+2)=0}, x)",
+                 "r2 = Solve({(x-y)*(x-1)=0, (x-y)*(x+2)=0}, x)",
+                 "r3 = Solutions({x*y=1, x*y=1}, x)", "r4 = Solutions({x^2-y^2=0, x-y=0}, x)",
+                 "r5 = Solutions({x^2-y^2=0, x^2-2x*y+y^2=0}, y)"], [])
+# A start value after a list goes to the system solver, which does not
+# follow it. `Solve({x^2=4}, x=3)` and `Solutions({x^4-5x^2+4=0}, x=-3)`
+# answered differently from one harness run to the next, so they are not
+# recorded.
+c.case("shape", results(["NSolutions({x^2=4}, x=3)", "NSolutions({x^2=4}, x=-0.5)",
+                        "NSolutions({x^2-5x+6=0}, x=0)", "NSolve({x^2=4}, x=3)"]), [])
+c.case("shape", results(["NSolutions({x^3-x=0}, x=2)", "NSolutions({2x=4}, x=1)",
+                        "NSolutions({x^5-3x+1=0}, x=0)"]), [])
+# A list of variables after one equation: the system solver.
+c.case("shape", ["f(x) = x^2-4"] + results(f"{command}(f, {{x}})" for command in SOLVERS), [])
+c.case("shape", ["f(x) = x^2-3", "r1 = NSolve(f, {x})", "r2 = NSolutions(f, {x})"], [])
+c.case("shape", ["f(x) = 2x-4"] + results(f"{command}(f, {{x}})" for command in SOLVERS), [])
+c.case("shape", ["f(x) = x^3-x", "r1 = Solutions(f, {x})", "r2 = Solve(f, {x})"], [])
+c.case("shape", ["f(x) = x^2+1", "r1 = Solutions(f, {x})", "r2 = Solve(f, {x})"], [])
+c.case("shape", ["g: x+y=1"] + results(
+    [f"{command}(g, {{x}})" for command in SOLVERS] + ["Solve(g, {y})", "Solutions(g, {y})"]), [])
+c.case("shape", ["g: x+y=1", "r1 = Solve(g, {x, y})", "r2 = Solutions(g, {x, y})"], [])
+c.case("shape", ["g: x=3"] + results(f"{command}(g, {{x}})" for command in SOLVERS), [])
+c.case("shape", ["k: x^2+y^2=4", "r1 = Solutions(k, {y})", "r2 = Solve(k, {y})",
+                 "r3 = NSolve(k, {y})", "r4 = NSolutions(k, {y})"], [])
+c.case("shape", ["k: x^2=4", "r1 = Solve(k, {x})", "r2 = Solutions(k, {x})",
+                 "r3 = NSolve(k, {x})", "r4 = NSolutions(k, {x})"], [])
+c.case("shape", ["k: x^2-y^2=0", "r1 = Solutions(k, {y})", "r2 = Solve(k, {y})"], [])
+
+# The second argument is bound to the name it names. `t` is a variable of
+# its own; a number is printed as its value, which is no variable.
+c.case("name", ["f(x) = x^2-9"] + results(f"{command}(f, t)" for command in SOLVERS), [])
+c.case("name", ["f(x) = x^2-9", "r1 = Solutions(f, t=1)", "r2 = NSolutions(f, t=1)",
+                "r3 = Solve(f, t=1)"], [])
+c.case("name", results(["Solutions(t^2=4, t)", "NSolutions(t^2=4, t)", "Solutions(t^2=4, t=1)",
+                        "NSolutions(t^2=4, t=1)", "Solutions(t^2=x, t)", "Solutions(x^2+t=4, t)",
+                        "Solutions(2t=x, t)"]), [])
+c.case("name", ["r1 = Solve(t^2=4, t)", "r2 = NSolve(t^2=4, t)"], [])
+c.case("name", ["g: x+y=1"] + results(f"{command}(g, t)" for command in SOLVERS), [])
+c.case("name", ["k: x^2+y^2=4"] + results(f"{command}(k, t)" for command in SOLVERS), [])
+c.case("name", ["k: x^2=4"] + results(f"{command}(k, t)" for command in SOLVERS), [])
+c.case("name", ["b = 2", "f(x) = x^2-9", "r1 = Solve(f, b)", "r2 = Solutions(f, b)",
+                "r3 = NSolutions(f, b)", "r4 = Solve(x^2=b, b)", "r5 = Solutions(f, b=1)",
+                "r6 = NSolutions(f, b=1)", "r7 = Solve(f, b=1)", "r8 = NSolve(f, b=1)"],
+       [setn("b", 3)])
+c.case("name", ["b = 2", "g: x+y=1", "k: x^2+y^2=4", "r1 = Solve(g, b)", "r2 = Solutions(g, b)",
+                "r3 = NSolutions(g, b)", "r4 = Solve(k, b)", "r5 = Solutions(k, b)",
+                "r6 = NSolutions(k, b)"], [])
+c.case("name", ["b = 2", "f(x) = x^2-9", "g: x+y=1"],
+       [reject("r = Solutions(f, a)"),
+        reject("r = Solve(f, abc)"), reject("r = Solutions(a^2=4, a)"),
+        reject("r = NSolutions(u^2=4, u)")])
+c.case("name", ["f(x) = x^2-9", "r1 = Solutions(f, x)", "r2 = Solutions(f, y)",
+                "r3 = Solutions(f, z)", "r4 = NSolutions(f, y)", "r5 = NSolve(f, z)"], [])
+# `Solve` reads `name = value` as an assumption and solves for x.
+c.case("name", ["f(x) = x^2-9", "g: x+y=1", "r1 = Solve(f, y=1)", "r2 = Solve(g, y=1)",
+                "r3 = Solve(g, t=1)", "r4 = Solve(x^2=4, t=1)", "r5 = Solve(y^2=4, y=1)",
+                "r6 = Solve(y=2x+1, y=1)", "r7 = Solve(f, z=1)", "r8 = Solve(y^2=4, x=1)",
+                "r9 = Solve(g, x=1)"], [])
+c.case("name", ["k: x^2-y^2=0", "j: y^2=4", "r1 = Solve(k, y=1)", "r2 = Solve(j, y=1)",
+                "r3 = Solve(k, x=1)"], [])
+
 # The numeric solver from a start value: Newton's method where every step
 # lowers the residual, at most halved once, and ends on a simple root.
 c.case("start", ["f(x) = x^2-2"] + results(

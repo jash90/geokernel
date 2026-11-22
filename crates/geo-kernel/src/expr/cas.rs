@@ -15,6 +15,7 @@ use crate::{Construction, Kind};
 pub(super) use functional::{evaluate as function_at, function, print_poly, FunctionResult};
 use input::read;
 pub(crate) use objects::define_object;
+pub(in crate::expr) use single::NO_VARIABLE;
 
 pub(super) const NAMES: &[&str] = &[
     "Expand",

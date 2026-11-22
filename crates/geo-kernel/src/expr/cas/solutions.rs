@@ -67,8 +67,29 @@ pub(super) fn list<const M: bool>(
         approximate,
         points,
         nesting,
+        assumed: width == 1 && axes[1] == single::NO_VARIABLE,
+        unordered: single && rows,
     };
     if single {
+        if rows && approximate {
+            // A list of variables sends one equation to the numeric system
+            // solver, which answers a linear equation in that variable
+            // alone and nothing else.
+            let equation = polynomials.pop()?;
+            let axis = usize::from(axes[0]);
+            let linear = equation.denominator.scalar().is_some()
+                && equation
+                    .numerator
+                    .0
+                    .keys()
+                    .all(|p| p[axis] <= 1 && (0..3).all(|j| j == axis || p[j] == 0))
+                && equation.numerator.0.keys().any(|p| p[axis] == 1);
+            if !linear {
+                return None;
+            }
+            let mode = mode(Nesting::Flat);
+            return single::univariate(ctx, equation, axis, axes[0], mode, None, work);
+        }
         // A list of variables after one equation gives one row per value.
         let nesting = if rows && !assignments {
             Nesting::Rows
@@ -77,12 +98,58 @@ pub(super) fn list<const M: bool>(
         };
         let guess = (guess != crate::expr::NONE).then(|| ctx.full_number(guess));
         let hint = (width == 1).then_some(axes[0]);
-        return single::solve(ctx, polynomials.pop()?, hint, mode(nesting), guess, work);
+        let mode = mode(nesting);
+        return single::solve(ctx, polynomials.pop()?, hint, mode, guess, work);
     }
     if points {
         // `PlotSolve` of a list passes the variables as a second argument,
         // which the command does not take.
         return None;
+    }
+    if guess != crate::expr::NONE {
+        // The reference hands a list and a start value to its system
+        // solver, whose answer does not follow the start value
+        // (golden/cas/shape.json): from 3 and from -0.5 the root 2 of
+        // `x^2 = 4`, nothing for an odd degree.
+        return None;
+    }
+    if system && width == 1 && !rows {
+        // A list of equations and one variable: what solves all of them is
+        // what solves their common factor.
+        let axis = usize::from(axes[0]);
+        let mut common: Option<Poly> = None;
+        let mut alone = true;
+        for equation in polynomials {
+            equation.denominator.scalar()?;
+            alone &= equation
+                .numerator
+                .0
+                .keys()
+                .all(|p| (0..3).all(|j| j == axis || p[j] == 0))
+                && equation.numerator.0.keys().any(|p| p[axis] != 0);
+            common = Some(match common {
+                None => equation.numerator,
+                Some(g) => crate::cas::poly_gcd(&g, &equation.numerator, work)?,
+            });
+        }
+        if approximate {
+            // The numeric system solver gives no values for one variable:
+            // `NSolutions` answers no solution when every equation holds
+            // that variable alone, and everything else is undefined.
+            return if alone && !assignments {
+                ctx.cas_slots(std::iter::empty())
+            } else {
+                None
+            };
+        }
+        let common = common?;
+        if common.0.keys().all(|p| p.iter().all(|&e| e == 0)) && !common.0.is_empty() {
+            // Nothing solves all of the equations.
+            return ctx.cas_slots(std::iter::empty());
+        }
+        let equation = crate::cas::Quotient::polynomial(common);
+        let mode = mode(Nesting::RowIfSeveral);
+        return single::solve(ctx, equation, Some(axes[0]), mode, None, work);
     }
     let active = |j| {
         polynomials.iter().any(|eq| {
@@ -103,7 +170,8 @@ pub(super) fn list<const M: bool>(
             Nesting::Rows
         };
         let equation = polynomials.pop()?;
-        return single::univariate(ctx, equation, axis, coordinate, mode(nesting), None, work);
+        let mode = mode(nesting);
+        return single::univariate(ctx, equation, axis, coordinate, mode, None, work);
     }
     let width = if width == 0 {
         used.last().copied().map_or(1, |j| j + 1)

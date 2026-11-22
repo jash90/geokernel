@@ -31,6 +31,10 @@ pub(super) enum Nesting {
     OneRow,
     /// `{{a}, {b}}`: one row per solution.
     Rows,
+    /// A list of equations solved for one variable: `{}`, `{a}` or
+    /// `{{a, b}}` (`AlgoSolve.compute` nests the answers of a list only
+    /// when there are several).
+    RowIfSeveral,
 }
 
 #[derive(Clone, Copy)]
@@ -42,7 +46,21 @@ pub(super) struct Mode {
     /// `PlotSolve`: points `(value, 0)`.
     pub(super) points: bool,
     pub(super) nesting: Nesting,
+    /// `Solve(equation, name = value)` with a name other than `x`: the CAS
+    /// then knows the sign of terms in that name and orders two branches
+    /// by it, in a way that is not reproduced here.
+    pub(super) assumed: bool,
+    /// A list of variables after one equation: the system solver of the
+    /// reference lists several solutions in the order its CAS returns them,
+    /// which follows no rule (golden/cas/shape.json), so only an answer
+    /// with at most one solution is given.
+    pub(super) unordered: bool,
 }
+
+/// The second argument of a solve names something that is no variable of
+/// an equation: an existing number (`AlgoSolve.printHint` prints its
+/// value).
+pub(in crate::expr) const NO_VARIABLE: u8 = 3;
 
 /// Solves `equation = 0` for the variable `hint`, or without one for `x`
 /// when the equation holds it and for its first variable otherwise
@@ -65,6 +83,18 @@ pub(super) fn solve<const M: bool>(
                 .any(|p| p[j] != 0)
         })
         .collect();
+    // With an initial value every command but `Solve` runs the numeric
+    // solver, which leaves any other variable unresolved.
+    let numeric = mode.approximate || (guess.is_some() && !mode.assignments);
+    if hint == Some(NO_VARIABLE) {
+        // Solving for a number: no solution, and nothing for the numeric
+        // solver to start from.
+        return if numeric || mode.points || guess.is_some() {
+            None
+        } else {
+            ctx.cas_slots(std::iter::empty())
+        };
+    }
     let variable = match hint {
         Some(axis) => usize::from(axis),
         None if used.contains(&0) => 0,
@@ -74,9 +104,7 @@ pub(super) fn solve<const M: bool>(
     if others.is_empty() {
         return univariate(ctx, equation, variable, variable as u8, mode, guess, work);
     }
-    // With an initial value every command but `Solve` runs the numeric
-    // solver, which leaves a second variable unresolved.
-    if mode.approximate || (guess.is_some() && !mode.assignments) {
+    if numeric {
         return None;
     }
     let branches = if used.contains(&variable) {
@@ -84,7 +112,11 @@ pub(super) fn solve<const M: bool>(
             return None;
         };
         equation.denominator.scalar()?;
-        parametric(&equation.numerator, variable, parameter, work)?
+        let branches = parametric(&equation.numerator, variable, parameter, work)?;
+        if mode.assumed && branches.len() > 1 {
+            return None;
+        }
+        branches
             .into_iter()
             .map(|branch| branch.slot(variable, parameter, mode))
             .collect::<Option<Vec<_>>>()?
@@ -161,11 +193,15 @@ fn emit<const M: bool>(ctx: &Ctx<'_, M>, slots: Vec<Slot>, mode: Mode) -> Option
         // `PlotSolve.1` reads the first solution: none is an error.
         return None;
     }
-    if mode.nesting == Nesting::Flat || slots.is_empty() {
+    if mode.unordered && slots.len() > 1 {
+        return None;
+    }
+    let single = mode.nesting == Nesting::RowIfSeveral && slots.len() == 1;
+    if mode.nesting == Nesting::Flat || slots.is_empty() || single {
         return ctx.cas_slots(slots.into_iter());
     }
     let lists = ctx.lists?;
-    if mode.nesting == Nesting::OneRow {
+    if matches!(mode.nesting, Nesting::OneRow | Nesting::RowIfSeveral) {
         let (inner, len) = ctx.cas_slots(slots.into_iter())?;
         return ctx.cas_slots(std::iter::once(Slot::list(inner, len)));
     }
