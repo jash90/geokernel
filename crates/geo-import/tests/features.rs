@@ -545,6 +545,40 @@ fn expressions_the_kernel_does_not_evaluate_are_not_kept() {
     assert!(notes.contains("animation step of `A`"), "{notes}");
 }
 
+#[test]
+fn style_arithmetic_over_undefined_inputs_is_kept() {
+    // `a` is negative when the file is read, so `Q` is undefined: the
+    // expressions have no value right now, but the kernel evaluates them.
+    let r = ok(
+        "<element type=\"numeric\" label=\"a\"><value val=\"-1\"/></element>\
+         <expression label=\"Q\" exp=\"(sqrt(a), 0)\" type=\"point\"/>\
+         <element type=\"point\" label=\"Q\"><coords x=\"NaN\" y=\"NaN\" z=\"NaN\"/></element>\
+         <element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0\" \
+         dynamicr=\"x(Q) / 10\" dynamicg=\"sqrt(a)\" dynamicb=\"1\"/>\
+         <animation step=\"sqrt(a)\" speed=\"x(Q) + 1\" type=\"1\"/></element>\
+         <element type=\"point\" label=\"B\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <animation step=\"Sum(Sequence(k, k, 1, 10))\" speed=\"a := 3\" type=\"1\"/></element>",
+    );
+    let style = &r.object_styles["A"];
+    let dynamic = style.dynamic_color.as_deref().unwrap();
+    assert_eq!(
+        [&dynamic.red, &dynamic.green, &dynamic.blue].map(String::as_str),
+        ["x(Q) / 10", "sqrt(a)", "1"]
+    );
+    let animation = style.animation.as_deref().unwrap();
+    assert_eq!(animation.step.as_deref(), Some("sqrt(a)"));
+    assert_eq!(animation.speed.as_deref(), Some("x(Q) + 1"));
+    // A list command the kernel parses without running and an assignment
+    // are still refused.
+    let animation = r.object_styles["B"].animation.as_deref().unwrap();
+    assert_eq!((&animation.step, &animation.speed), (&None, &None));
+    let notes = r.notes.join("\n");
+    assert!(!notes.contains("of `A`"), "{notes}");
+    assert!(notes.contains("animation step of `B`"), "{notes}");
+    assert!(notes.contains("animation speed of `B`"), "{notes}");
+}
+
 /// One styled conic `k` and one slider `n`, with the given tags.
 fn styled(conic: &str, slider: &str) -> Imported {
     ok(&format!(

@@ -309,21 +309,22 @@ impl StyleExpressions {
     }
 
     /// A saved numeric expression in the kernel's syntax, when the kernel
-    /// evaluates it over the construction as it stands.
+    /// evaluates it as arithmetic over the construction. Its current value
+    /// does not matter: an expression whose inputs are undefined right now
+    /// is kept, as the reference reader keeps it.
     pub fn number(&mut self, c: &Construction, source: &str) -> Result<String, String> {
         if self.used >= self.budget {
             return Err("the style expressions of the file exceed the evaluation budget".into());
         }
         let line = expression_line(source)?;
         let before = geo_kernel::expr::work_done();
-        let value = c.numeric_value(&line);
+        let value = c.arithmetic_value(&line);
         // A parsed expression costs at least one unit, so that a file of
         // many cheap ones is bounded as well.
         self.used += (geo_kernel::expr::work_done() - before).max(1);
-        // Only a value the kernel computed counts: a command it parses
-        // without running gives no number.
+        // A command the kernel parses without running it is refused by
+        // the kernel itself, whatever value it would give.
         value
-            .filter(|value| !value.is_nan())
             .map(|_| line)
             .ok_or_else(|| format!("`{source}` is not a number of the construction"))
     }

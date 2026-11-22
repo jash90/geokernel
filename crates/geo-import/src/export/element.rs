@@ -427,6 +427,8 @@ impl Writer<'_> {
         }
         // Channels reach the reader's command processor, so only arithmetic
         // the kernel itself evaluates is written, in the kernel's syntax.
+        // Inputs that are undefined right now do not drop them; an object
+        // they name that is gone does.
         let dynamic = saved
             .and_then(|style| style.dynamic_color.as_deref())
             .and_then(|dynamic| self.expressions.dynamic_color(c, dynamic).ok());
@@ -515,7 +517,9 @@ impl Writer<'_> {
     }
 
     /// `<animation>` of a saved object. The step and the speed are numeric
-    /// expressions; one the kernel cannot evaluate any more is left out.
+    /// expressions; one that is no arithmetic over the construction any more
+    /// (an object it names is gone) is left out, one whose inputs are
+    /// undefined right now is kept.
     fn animation(&mut self, animation: &SliderAnimation) -> Result<(), ExportError> {
         let c = self.c;
         let mut numeric = |source: &Option<String>| {

@@ -623,6 +623,18 @@ style_case([
      st("n", slider={"width": 150}, label_visible=False)],
 ])
 
+# Dynamic colour channels and an animation step and speed whose inputs are
+# undefined when the file is saved: the intersection `Q` is gone after the
+# move and `sqrt(a)` has no value once `a` is negative.
+style_case([
+    "A = (0, 0)", "B = (4, 0)", "C = (2, 0.5)", "l = Line(A, B)", "k = Circle(C, 1)",
+    "Q = Intersect(l, k, 1)", "a = 1", "P = (1, 2)", "n = Slider(0, 10, 1)",
+], [
+    [st("P", dynamic_color=["x(Q) / 10", "sqrt(a)", "b"], color_space=0),
+     st("n", animation={"step": "sqrt(a)", "speed": "x(Q) + 1", "mode": 1})],
+    [{"action": "set_number", "label": "a", "value": -1}, mv("C", 2, 5)],
+], hidden=["a"])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

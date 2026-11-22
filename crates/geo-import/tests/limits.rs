@@ -438,6 +438,8 @@ fn the_style_expressions_of_a_document_share_one_budget() {
     assert!(StyleExpressions::default()
         .number(&c, "Sum(Sequence(k, k, 1, 1000000))")
         .is_err());
+    // An expression without a value right now is still arithmetic.
+    assert!(StyleExpressions::default().number(&c, "sqrt(-a)").is_ok());
 }
 
 #[test]

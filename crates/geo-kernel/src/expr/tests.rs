@@ -715,3 +715,29 @@ fn histogram_respects_the_work_allowance_for_named_lists() {
     assert_eq!(c.value(id), crate::Value::Undefined);
     assert!(super::work_done() - before <= 600);
 }
+
+#[test]
+fn arithmetic_is_told_from_trees_the_evaluation_does_not_run() {
+    let c = load("a = -1\nA = (2, 3)\nQ = (sqrt(a), 0)\nl = {1, 2}").unwrap();
+    // Arithmetic over the construction, with or without a value right now.
+    assert_eq!(c.arithmetic_value("x(A) / 2 + 1"), Some(2.0));
+    assert!(c.arithmetic_value("sqrt(a)").unwrap().is_nan());
+    assert!(c.arithmetic_value("x(Q) / 10").unwrap().is_nan());
+    assert!(c.arithmetic_value("If(a > 0, 1, ?)").unwrap().is_nan());
+    // Trees the evaluation of a single number leaves undefined whatever the
+    // inputs, and what does not parse as a number at all.
+    for source in [
+        "Sum(Sequence(k, k, 1, 10))",
+        "Length(l)",
+        "Sum(l)",
+        "x",
+        "A",
+        "SetValue(a, 3)",
+        "a := 3",
+        "missing + 1",
+    ] {
+        assert_eq!(c.arithmetic_value(source), None, "{source}");
+    }
+    // The value is the one `numeric_value` gives.
+    assert_eq!(c.numeric_value("x(A) / 2 + 1"), Some(2.0));
+}

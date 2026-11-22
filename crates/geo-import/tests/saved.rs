@@ -211,7 +211,7 @@ fn saved_style_fixtures_import_every_object_with_a_style() {
             "{name}"
         );
     }
-    assert_eq!(fixtures, 11);
+    assert_eq!(fixtures, 12);
 }
 
 #[test]

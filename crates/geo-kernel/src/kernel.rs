@@ -1282,6 +1282,16 @@ impl Construction {
         expr::argument_number(self, source)
     }
 
+    /// Whether the kernel evaluates `source` as numeric arithmetic over the
+    /// objects of the construction, and its current value: `None` when the
+    /// text is no such expression or holds anything the kernel parses
+    /// without evaluating it (a list, a text, a command of the computer
+    /// algebra code); otherwise `Some`, with `NaN` while an input is
+    /// undefined.
+    pub fn arithmetic_value(&self, source: &str) -> Option<f64> {
+        expr::arithmetic_number(self, source)
+    }
+
     /// The value of the function `id` at `x`, evaluated as GeoGebra's
     /// `GeoFunction.value` does; it may be infinite or `NaN` where the
     /// function is not defined. `None` when `id` is not a defined function.

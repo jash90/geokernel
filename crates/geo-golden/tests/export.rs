@@ -81,6 +81,9 @@ const SAVED_CASES: &[&str] = &[
     "saved-styles-009.xml",
     "saved-styles-010.xml",
     "saved-styles-011.xml",
+    // Dynamic colour channels, a step and a speed over objects that are
+    // undefined in the saved state.
+    "saved-styles-012.xml",
 ];
 
 const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
@@ -511,6 +514,9 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                     labels_of(&source).eq(labels_of(&stripped)),
                     "{name}: the export without saved styles has other labels"
                 );
+                if name == "saved-styles-012" {
+                    undefined_inputs_as_the_reference_reads_them(&source["styles"]);
+                }
                 saved_styles.insert(name, (source["styles"].clone(), stripped["styles"].clone()));
             }
             Origin::Hand { applied, .. } => {
@@ -728,6 +734,24 @@ fn compare_presentation(name: &str, wb: &Workbench, before: &Value, after: &Valu
             );
         }
     }
+}
+
+/// What the reference reader makes of style expressions whose inputs are
+/// undefined in the saved file (`saved-styles-012`): it keeps the channels
+/// of the dynamic colour as written, an undefined channel gives 0, and an
+/// undefined step and speed stay with the slider, the speed reported as 0.
+/// The comparison with the export shows that the export keeps all of them.
+fn undefined_inputs_as_the_reference_reads_them(styles: &Value) {
+    let point = &styles["P"];
+    assert_eq!(
+        point["dynamic_color"],
+        json!(["x(Q) / 10", "sqrt(a)", "b"]),
+        "{point}"
+    );
+    assert_eq!(point["color"], json!([0, 0, 191]), "{point}");
+    let animation = &styles["n"]["animation"];
+    assert_eq!(animation["step"], Value::Null, "{animation}");
+    assert_eq!(animation["speed"], json!(0.0), "{animation}");
 }
 
 /// The objects whose saved presentation proves the properties of a kind:
@@ -1297,7 +1321,13 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
                 };
                 let speed = animation.and_then(|a| a.speed.as_deref()).or(Some("1"));
                 assert_json(&step, &moving["step"], &format!("{where_}.step"));
-                assert_json(&number_or_reference(c, speed), &moving["speed"], &where_);
+                // The reference reports the speed of an undefined
+                // expression as 0 (`GeoElement.getAnimationSpeed`).
+                let speed = match number_or_reference(c, speed) {
+                    Value::Null => json!(0.0),
+                    speed => speed,
+                };
+                assert_json(&speed, &moving["speed"], &where_);
                 assert_json(
                     &json!(animation.map_or(0, |a| a.mode)),
                     &moving["mode"],
@@ -1377,7 +1407,8 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
 }
 
 fn number_or_reference(c: &Construction, source: Option<&str>) -> Value {
-    // A step or a speed is a number or arithmetic over the construction.
+    // A step or a speed is a number or arithmetic over the construction. An
+    // undefined value is null, as in the reference snapshot.
     source.map_or(Value::Null, |source| {
         let value = c
             .numeric_value(source)
@@ -1612,6 +1643,44 @@ fn an_undefined_object_keeps_its_saved_style_and_recovers_after_export() {
         assert!(element.contains(tag), "{tag} in\n{element}");
     }
     assert!(!element.contains("NaN"), "{element}");
+}
+
+#[test]
+fn a_style_expression_over_undefined_inputs_is_imported_and_written() {
+    let source = fs::read(repo_root().join("golden/ggb/saved/saved-styles-012.xml")).unwrap();
+    let notes = geo_import::import(&source).unwrap().notes;
+    assert!(
+        !notes
+            .iter()
+            .any(|note| note.contains("dynamic colour") || note.contains("animation")),
+        "{notes:?}"
+    );
+    let mut wb = Workbench::default();
+    wb.load_for_export(&source, "undefined-inputs").unwrap();
+    let written = [
+        r#"dynamicr="x(Q) / 10" dynamicg="sqrt(a)" dynamicb="b""#,
+        r#"step="sqrt(a)""#,
+        r#"speed="x(Q) + 1""#,
+    ];
+    let check = |wb: &Workbench, state: &str| {
+        let xml = exported_xml(wb);
+        for attribute in written {
+            assert!(xml.contains(attribute), "{state}: {attribute} in\n{xml}");
+        }
+    };
+    check(&wb, "as saved");
+    // The inputs become defined, then undefined again: the expressions are
+    // written in every state.
+    let id = |wb: &Workbench, label: &str| wb.construction().id(label).unwrap();
+    let (center, a, q) = (id(&wb, "C"), id(&wb, "a"), id(&wb, "Q"));
+    assert!(wb.move_point(center, 2.0, 0.5));
+    assert!(wb.set_number(a, 4.0));
+    assert!(wb.construction().value(q).is_defined());
+    check(&wb, "defined");
+    assert!(wb.move_point(center, 2.0, 5.0));
+    assert!(wb.set_number(a, -1.0));
+    assert!(!wb.construction().value(q).is_defined());
+    check(&wb, "undefined again");
 }
 
 /// Without the Java reader: a file with a tag the reference gives up at is
