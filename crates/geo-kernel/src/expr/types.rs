@@ -301,8 +301,10 @@ fn type_node(
         }
         Node::FunctionAsymptotes(a) => {
             let a = a as usize;
-            if !matches!(state.tys[a], Ty::Num(_)) {
-                return Err("Asymptote needs a real function".into());
+            if !(matches!(state.tys[a], Ty::Num(_))
+                || matches!(nodes[a], Node::Obj(id) if c.kind(id) == Kind::ImplicitCurve))
+            {
+                return Err("Asymptote needs a real function or implicit curve".into());
             }
             (
                 Ty::List(Elem::Object),

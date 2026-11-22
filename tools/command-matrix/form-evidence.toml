@@ -3548,3 +3548,183 @@ cases = ["corners-dilate-001", "corners-dilate-002", "corners-dilate-003", "corn
 command = "ApplyMatrix"
 form = "list,image"
 cases = ["corners-matrix-001", "corners-matrix-002", "corners-matrix-003", "corners-matrix-004"]
+
+[[form]]
+command = "ImplicitCurve"
+form = "list"
+cases = ["implicit-constructors-001", "implicit-constructors-005", "implicit-constructors-006"]
+
+[[form]]
+command = "ImplicitCurve"
+form = "function"
+cases = ["implicit-constructors-003", "implicit-constructors-004"]
+
+[[form]]
+command = "ImplicitCurve"
+form = "point,point,point,point,point,..."
+cases = ["implicit-constructors-002"]
+
+[[form]]
+command = "LeftSide"
+form = "implicit"
+cases = ["implicit-sides-001", "implicit-sides-002"]
+
+[[form]]
+command = "RightSide"
+form = "implicit"
+cases = ["implicit-sides-001", "implicit-sides-002"]
+
+[[form]]
+command = "Asymptote"
+form = "implicit"
+cases = ["implicit-asymptotes-001", "implicit-asymptotes-002", "implicit-asymptotes-003", "implicit-asymptotes-004", "implicit-asymptotes-005"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,line"
+cases = ["implicit-line-001", "implicit-line-002", "implicit-line-003", "implicit-line-004", "implicit-line-005"]
+
+[[form]]
+command = "Intersect"
+form = "line,implicit"
+cases = ["implicit-line-001"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,polyline"
+cases = ["implicit-polyline-001"]
+
+[[form]]
+command = "Intersect"
+form = "polyline,implicit"
+cases = ["implicit-polyline-002"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,function"
+cases = ["implicit-graph-001", "implicit-graph-002"]
+
+[[form]]
+command = "Intersect"
+form = "function,implicit"
+cases = ["implicit-graph-001"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,conic"
+cases = ["implicit-conic-001", "implicit-conic-002", "implicit-conic-003"]
+
+[[form]]
+command = "Intersect"
+form = "conic,implicit"
+cases = ["implicit-conic-004"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,line,number"
+cases = ["implicit-line-001", "implicit-line-004"]
+
+[[form]]
+command = "Intersect"
+form = "line,implicit,number"
+cases = ["implicit-line-001"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,function,number"
+cases = ["implicit-graph-001"]
+
+[[form]]
+command = "Intersect"
+form = "function,implicit,number"
+cases = ["implicit-graph-001"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,conic,number"
+cases = ["implicit-conic-001"]
+
+[[form]]
+command = "Tangent"
+form = "line,implicit"
+cases = ["implicit-tangents-003", "implicit-tangents-007"]
+
+[[form]]
+command = "Tangent"
+form = "point,implicit"
+cases = ["implicit-tangents-001", "implicit-tangents-004", "implicit-tangents-005"]
+
+[[form]]
+command = "Tangent"
+form = "implicit,point"
+cases = ["implicit-tangents-002", "implicit-tangents-006"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,segment"
+cases = ["implicit-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "segment,implicit"
+cases = ["implicit-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,segment,number"
+cases = ["implicit-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "segment,implicit,number"
+cases = ["implicit-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,ray"
+cases = ["implicit-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "ray,implicit"
+cases = ["implicit-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,ray,number"
+cases = ["implicit-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "ray,implicit,number"
+cases = ["implicit-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,arc"
+cases = ["implicit-conic-007"]
+
+[[form]]
+command = "Intersect"
+form = "arc,implicit"
+cases = ["implicit-conic-007"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,arc,number"
+cases = ["implicit-conic-007"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,sector"
+cases = ["implicit-conic-010"]
+
+[[form]]
+command = "Intersect"
+form = "sector,implicit"
+cases = ["implicit-conic-010"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,sector,number"
+cases = ["implicit-conic-010"]

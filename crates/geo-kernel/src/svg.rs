@@ -410,6 +410,14 @@ fn render_geometry(
                     );
                 }
             }
+            Value::ImplicitCurve => {
+                if let Some(coefficients) = c.implicit_coefficients(id) {
+                    write_paths(
+                        &mut segments,
+                        &crate::plot::implicit::plot(coefficients, &frame),
+                    );
+                }
+            }
             Value::Function => {
                 let mut f = |x: f64| c.function_value(id, x).unwrap_or(f64::NAN);
                 let drawn = crate::plot::function::plot(&mut f, &frame);

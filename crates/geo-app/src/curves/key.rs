@@ -25,6 +25,7 @@ pub(super) enum Data {
     /// The bits of a conic's matrix, its type and its two lines.
     Conic([u64; 6], u8, [u64; 6]),
     Part([u64; 11]),
+    Implicit(u64),
     /// The fingerprints of a function's definitions ([`Closure::prints`]),
     /// then the bits of the values it depends on.
     Function(Vec<u64>),

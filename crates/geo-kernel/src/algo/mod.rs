@@ -31,6 +31,7 @@ pub(crate) mod curve;
 pub mod discrete;
 pub(crate) mod elliptic;
 pub mod general_conic;
+pub(crate) mod implicit;
 pub mod intersect;
 mod kimberling;
 pub mod lines;

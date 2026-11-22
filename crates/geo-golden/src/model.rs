@@ -120,6 +120,11 @@ impl Expected {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExpectedData {
+    Implicit {
+        coefficients: Vec<Vec<f64>>,
+        equation: String,
+        input_form: bool,
+    },
     Point {
         x: f64,
         y: f64,
@@ -516,6 +521,10 @@ impl TryFrom<RawObject> for Expected {
             "arc" => (Kind::Arc, &[]),
             "sector" => (Kind::Sector, &[]),
             "locus" => (Kind::Locus, &["points"]),
+            "implicit" => (
+                Kind::ImplicitCurve,
+                &["coefficients", "equation", "input_form"],
+            ),
             "curve" => (Kind::Curve, &["start", "end"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
@@ -564,6 +573,28 @@ impl TryFrom<RawObject> for Expected {
                 kind,
                 data: Some(ExpectedData::FunctionNVar(samples)),
                 legacy_angle_number: false,
+            });
+        }
+        if kind == Kind::ImplicitCurve {
+            let field = |name| {
+                raw.fields
+                    .get(name)
+                    .cloned()
+                    .ok_or_else(|| format!("missing {name}"))
+            };
+            let coefficients =
+                serde_json::from_value(field("coefficients")?).map_err(|e| e.to_string())?;
+            let equation = serde_json::from_value(field("equation")?).map_err(|e| e.to_string())?;
+            let input_form =
+                serde_json::from_value(field("input_form")?).map_err(|e| e.to_string())?;
+            return Ok(Expected {
+                legacy_angle_number: false,
+                kind,
+                data: Some(ExpectedData::Implicit {
+                    coefficients,
+                    equation,
+                    input_form,
+                }),
             });
         }
         if kind == Kind::Conic {
@@ -870,6 +901,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
     }
     let mut previous_keys: Option<BTreeSet<String>> = None;
     let mut boundary_prefixes = BTreeSet::new();
+    let mut tangent_prefixes = BTreeSet::new();
     let mut has_point_list = false;
     let mut has_root_interval = false;
     for (i, snap) in case.snapshots.iter().enumerate() {
@@ -900,6 +932,19 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     )) = command_args(line)
                     {
                         clip_prefixes.insert(label_prefix(label));
+                    }
+                    if let Some((label, kind)) = implicit_output(line, snap) {
+                        let prefix = label_prefix(label);
+                        if kind == Kind::Line {
+                            tangent_prefixes.insert(prefix);
+                        } else {
+                            boundary_prefixes.insert(prefix);
+                        }
+                        if !keys.contains(label)
+                            && !keys.iter().any(|key| indexed_prefix(key) == Some(prefix))
+                        {
+                            outputs.remove(label);
+                        }
                     }
                     if let Some((label, "Intersect", args)) = command_args(line) {
                         let kind = |name: &str| snap.get(name).map(|o| o.kind);
@@ -989,11 +1034,16 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 // These algorithms retain their earlier outputs and can
                 // publish new point labels on a move.
                 if !previous.is_subset(&keys)
-                    || keys.difference(previous).any(|key| {
-                        snap[key].kind != Kind::Point
-                            || !(indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
+                    || keys.difference(previous).any(|key| match snap[key].kind {
+                        Kind::Point => {
+                            !(indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
                                 || (has_point_list || has_root_interval)
                                     && POINT_LABELS.contains(&label_prefix(key)))
+                        }
+                        Kind::Line => {
+                            !indexed_prefix(key).is_some_and(|p| tangent_prefixes.contains(p))
+                        }
+                        _ => true,
                     })
                 {
                     return Err(format!("snapshot {i} labels differ from snapshot 0"));
@@ -1008,13 +1058,13 @@ fn validate_case(case: &Case) -> Result<(), String> {
 
 /// The part of a label before its first `_`, which GeoGebra numbers when a
 /// command creates several objects (`t` -> `t_{1}`, `t_{2}`).
-fn label_prefix(label: &str) -> &str {
+pub(crate) fn label_prefix(label: &str) -> &str {
     label.split('_').next().unwrap_or(label)
 }
 
 /// `Some(prefix)` when `key` has the form `prefix_{n}` with `n` a positive
 /// integer written without leading zeros.
-fn indexed_prefix(key: &str) -> Option<&str> {
+pub(crate) fn indexed_prefix(key: &str) -> Option<&str> {
     let (prefix, rest) = key.split_once("_{")?;
     let n = rest.strip_suffix('}')?;
     let digits = !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit());
@@ -1220,6 +1270,42 @@ fn command_args(line: &str) -> Option<(&str, &str, Vec<&str>)> {
     let (name, inner) = rhs.trim().split_once('(')?;
     let args = inner.strip_suffix(')')?.split(',').map(str::trim).collect();
     Some((label.trim(), name.trim(), args))
+}
+
+pub(crate) fn implicit_output<'a>(
+    line: &'a str,
+    snapshot: &BTreeMap<String, Expected>,
+) -> Option<(&'a str, Kind)> {
+    let (label, command, args) = command_args(line)?;
+    let [a, b] = args.as_slice() else { return None };
+    let (a, b) = (snapshot.get(*a)?.kind, snapshot.get(*b)?.kind);
+    if command == "Tangent" {
+        return matches!(
+            (a, b),
+            (Kind::Point | Kind::Line, Kind::ImplicitCurve) | (Kind::ImplicitCurve, Kind::Point)
+        )
+        .then_some((label, Kind::Line));
+    }
+    if command != "Intersect" {
+        return None;
+    }
+    let partner = |k| {
+        matches!(
+            k,
+            Kind::Line
+                | Kind::Segment
+                | Kind::Ray
+                | Kind::PolyLine
+                | Kind::Function
+                | Kind::Conic
+                | Kind::Circle
+                | Kind::Arc
+                | Kind::Sector
+                | Kind::ImplicitCurve
+        )
+    };
+    (a == Kind::ImplicitCurve && partner(b) || b == Kind::ImplicitCurve && partner(a))
+        .then_some((label, Kind::Point))
 }
 
 /// The transformed object of a script line `name = Mirror(p, ...)` and the

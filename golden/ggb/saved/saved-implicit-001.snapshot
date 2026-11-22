@@ -1,0 +1,37 @@
+{
+  "schema": 2,
+  "id": "saved-implicit-001",
+  "script": [
+    "a = 2",
+    "p: x^3/a + y^3 = 1",
+    "q: x^4 + y^4 = 2"
+  ],
+  "objects": {
+    "a": { "type": "number", "defined": true, "value": 2.0 },
+    "p": {
+      "type": "implicit",
+      "defined": true,
+      "coefficients": [
+        [-1.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0],
+        [0.5, 0.0, 0.0, 0.0]
+      ],
+      "equation": "x^(3) / a + y^(3) = 1",
+      "input_form": true
+    },
+    "q": {
+      "type": "implicit",
+      "defined": true,
+      "coefficients": [
+        [-2.0, 0.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0, 0.0]
+      ],
+      "equation": "x^(4) + y^(4) = 2",
+      "input_form": true
+    }
+  }
+}

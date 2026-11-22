@@ -77,7 +77,7 @@ FORM_NOTES = {
     "NSolutions": "Bounded real polynomial equations and systems with optional variable binding.",
     "NextPrime": "Integer inputs within the exact integer range of the numeric object.",
     "PreviousPrime": "Integer inputs within the exact integer range of the numeric object.",
-    "Asymptote": "Conics and rational functions have reference evidence. Implicit polynomials are pending.",
+    "Asymptote": "Conics, functions and implicit polynomials.",
     "RemovableDiscontinuity": "Rational holes have reference evidence. Other expressions use a bounded numerical estimate.",
     "Factors": "Polynomial factors or integer prime factors, each paired with its exponent.",
     "Root": "Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending.",
@@ -88,8 +88,8 @@ FORM_NOTES = {
     "ComplexRoot": "Numeric polynomial roots, returned as points with real and imaginary coordinates.",
 
     "CommonDenominator": "Number pairs and rational-function pairs.",
-    "LeftSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
-    "RightSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
+    "LeftSide": "Lines, conics and implicit polynomial equations.",
+    "RightSide": "Lines, conics and implicit polynomial equations.",
     "If": "Scalar, coordinate, boolean, text, list and numeric-function branches, and named alternatives of a single line, segment, ray, circle or conic kind.",
     "Relation": "Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.",
 }
@@ -112,10 +112,10 @@ PARTIAL = {
     "OrthogonalLine": "OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)",
     "Circle": "Circle(centre, point); Circle(centre, radius); Circle(centre, segment); "
               "Circle(point, point, point)",
-    "Intersect": "Carrier, conic, function and polygonal boundary forms. Cartesian curves with lines and polynomial or seeded curve pairs. Path and point incidence.",
+    "Intersect": "Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence.",
     "LineBisector": "LineBisector(point, point); LineBisector(segment)",
     "AngularBisector": "AngularBisector(point, point, point); AngularBisector(line, line)",
-    "Tangent": "Tangents to conics, functions and Cartesian curves. Implicit curve forms are pending.",
+    "Tangent": "Tangents to conics, functions, Cartesian curves and implicit polynomials.",
     "Polar": "Polar(point, circle or conic)",
     "Incircle": "Incircle(point, point, point)",
     "Center": "Center(circle or conic); Center(segment)",

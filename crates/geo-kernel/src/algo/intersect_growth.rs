@@ -1,7 +1,7 @@
-//! Label allocation for growing intersections and inequality vertices.
+//! Label allocation for growing intersections, tangents and inequality vertices.
 
 use super::boundary::{self, BoundaryDef};
-use crate::algo::point::PointDef;
+use crate::algo::{implicit::tangent::Tangent, lines::LineDef, point::PointDef};
 use crate::expr::inequality;
 use crate::kernel::{Construction, Def, Id};
 use crate::script;
@@ -19,6 +19,7 @@ struct Outputs {
 
 enum GrowthAnchor {
     Intersection(BoundaryDef),
+    Tangent(Tangent),
     Inequality(Id),
 }
 
@@ -26,6 +27,7 @@ impl GrowthAnchor {
     fn from_def(def: Def) -> Option<Self> {
         match def {
             Def::IntersectBoundary(d) if d.can_grow() => Some(Self::Intersection(d)),
+            Def::Lines(LineDef::ImplicitTangent(d)) if d.can_grow() => Some(Self::Tangent(d)),
             Def::Point(PointDef::InequalityVertex { source, slot: 0 }) => {
                 Some(Self::Inequality(source))
             }
@@ -36,6 +38,7 @@ impl GrowthAnchor {
     fn size(&self, c: &Construction) -> Option<usize> {
         match *self {
             Self::Intersection(d) => d.grown_size(c),
+            Self::Tangent(d) => d.grown_size(c),
             Self::Inequality(source) => Some(inequality::vertices(c, source).len()),
         }
     }
@@ -43,6 +46,7 @@ impl GrowthAnchor {
     fn slot(&self, slot: usize) -> Option<Def> {
         match *self {
             Self::Intersection(d) => d.grown_slot(slot).map(Def::IntersectBoundary),
+            Self::Tangent(d) => d.grown_slot(slot),
             Self::Inequality(source) if slot < inequality::MAX_VERTICES => {
                 Some(Def::Point(PointDef::InequalityVertex {
                     source,
@@ -54,7 +58,7 @@ impl GrowthAnchor {
     }
 }
 
-/// Tracks unindexed intersections and inequality vertex commands.
+/// Tracks unindexed intersections, implicit tangents and inequality vertices.
 /// Callers keep the definitions returned by `grow` in the same journal as
 /// the edit that produced them.
 #[derive(Debug, Default)]
@@ -63,10 +67,11 @@ pub struct BoundaryOutputs {
 }
 
 impl BoundaryOutputs {
-    /// Whether a definition can start a group of growing point outputs.
+    /// Whether a definition can start a group of growing outputs.
     pub fn is_command(rhs: &str) -> bool {
-        rhs.split_once('(')
-            .is_some_and(|(name, _)| matches!(name.trim(), "Intersect" | "Vertex" | "Corner"))
+        rhs.split_once('(').is_some_and(|(name, _)| {
+            matches!(name.trim(), "Intersect" | "Tangent" | "Vertex" | "Corner")
+        })
     }
 
     /// Rebuilds the registry from a definition that has already executed.
@@ -93,7 +98,7 @@ impl BoundaryOutputs {
         }
     }
 
-    /// Adds points revealed by an edit and passes their definitions to
+    /// Adds outputs revealed by an edit and passes their definitions to
     /// `record`. Slots that were already labelled stay in the construction.
     pub fn grow(
         &mut self,
@@ -215,16 +220,20 @@ pub fn restore_boundary_labels(
     }) {
         return None;
     }
-    if command == "Intersect" {
-        let defs = boundary::parse_multi(c, command, &args)?;
-        if defs.len() != labels.len() || !defs.first().is_some_and(|def| def.can_grow()) {
-            return None;
-        }
-        return Some(script::add_named_outputs(
-            c,
-            labels,
-            defs.into_iter().map(Def::IntersectBoundary).collect(),
-        ));
+    if matches!(command, "Intersect" | "Tangent") {
+        let defs = if command == "Intersect" {
+            boundary::parse_multi(c, command, &args)?
+                .into_iter()
+                .map(Def::IntersectBoundary)
+                .collect()
+        } else {
+            Tangent::multi(c, command, &args)?
+        };
+        return (defs.len() == labels.len()
+            && defs
+                .first()
+                .is_some_and(|&def| GrowthAnchor::from_def(def).is_some()))
+        .then(|| script::add_named_outputs(c, labels, defs));
     }
     let start = c.checkpoint();
     let source = PointDef::inequality_source(c, command, &args)

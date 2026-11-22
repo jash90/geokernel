@@ -17,16 +17,16 @@ Divisors,,algebra,P2,done,1,1,
 DivisorsList,,algebra,P2,done,1,1,
 DivisorsSum,,algebra,P2,done,1,1,
 IsPrime,,algebra,P2,done,1,1,
-LeftSide,,algebra,P2,partial,3,2,Lines and conics. The implicit-curve form needs an implicit curve object.
+LeftSide,,algebra,P2,done,3,3,"Lines, conics and implicit polynomial equations."
 NextPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of the numeric object.
-RightSide,,algebra,P2,partial,3,2,Lines and conics. The implicit-curve form needs an implicit curve object.
+RightSide,,algebra,P2,done,3,3,"Lines, conics and implicit polynomial equations."
 PreviousPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of the numeric object.
 IsFactored,,algebra,P2,done,2,2,Number and univariate polynomial inputs with the reference degree limit.
 Line,,geometry,P0,done,5,5,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
 Ray,,geometry,P1,done,2,2,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
 OrthogonalLine,,geometry,P0,done,5,5,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
-Tangent,,geometry,P1,partial,11,8,"Tangents to conics, functions and Cartesian curves. Implicit curve forms are pending."
+Tangent,,geometry,P1,done,11,11,"Tangents to conics, functions, Cartesian curves and implicit polynomials."
 Segment,,geometry,P0,done,3,3,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
 Slope,,geometry,P1,done,2,2,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
@@ -35,7 +35,7 @@ Direction,,geometry,P1,done,2,2,"Direction(line, segment or ray)"
 Point,,geometry,P1,done,4,4,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
 Midpoint,,geometry,P0,done,4,4,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
-Intersect,,geometry,P0,partial,65,50,"Carrier, conic, function and polygonal boundary forms. Cartesian curves with lines and polynomial or seeded curve pairs. Path and point incidence."
+Intersect,,geometry,P0,partial,79,77,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
 IntersectPath,,geometry,P1,done,9,9,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
 IntersectRegion,,english,P2,done,9,9,
 Distance,,geometry,P0,done,4,4,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
@@ -139,13 +139,13 @@ SolveODE,,function,P2,partial,7,3,"Numeric first-order, parametric and second-or
 SlopeField,,function,P2,done,4,4,
 Iteration,,function,P2,done,3,3,
 PathParameter,,function,P2,done,1,1,PathParameter(point on a path)
-Asymptote,,function,P2,partial,3,2,Conics and rational functions have reference evidence. Implicit polynomials are pending.
+Asymptote,,function,P2,done,3,3,"Conics, functions and implicit polynomials."
 CurvatureVector,,function,P2,done,3,3,
 Curvature,,function,P2,done,3,3,
 OsculatingCircle,,function,P2,done,3,3,
 IterationList,,function,P2,done,3,3,
 RootList,,function,P2,done,3,3,
-ImplicitCurve,,function,P2,todo,3,0,
+ImplicitCurve,,function,P2,done,3,3,
 ImplicitDerivative,,function,,out_of_scope,,,The implicit derivative command uses the CAS.
 NSolveODE,,function,P2,done,1,1,
 Spline,,function,P2,done,4,4,

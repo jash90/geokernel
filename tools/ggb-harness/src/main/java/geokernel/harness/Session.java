@@ -63,6 +63,12 @@ import org.geogebra.common.kernel.geos.GeoRay;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoVector;
 import org.geogebra.common.kernel.geos.GeoCurveCartesian;
+import org.geogebra.common.kernel.implicit.GeoImplicitCurve;
+import org.geogebra.common.kernel.implicit.AlgoIntersectImplicitpolyParametric;
+import org.geogebra.common.kernel.implicit.AlgoIntersectImplicitpolyPolyLine;
+import org.geogebra.common.kernel.implicit.AlgoIntersectImplicitPolynomials;
+import org.geogebra.common.kernel.implicit.AlgoTangentImplicitpoly;
+import org.geogebra.common.kernel.StringTemplate;
 import org.geogebra.common.kernel.kernelND.GeoConicND;
 import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
@@ -286,7 +292,12 @@ final class Session {
             if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLineCurve
                     || parent instanceof AlgoIntersectCurveCurve
                     || parent instanceof AlgoIntersectLinePolyLine
-                    || parent instanceof AlgoIntersectPolyLines || parent instanceof AlgoVertexIneq)) {
+                    || parent instanceof AlgoIntersectPolyLines
+                    || parent instanceof AlgoVertexIneq
+                    || parent instanceof AlgoIntersectImplicitpolyParametric
+                    || parent instanceof AlgoIntersectImplicitpolyPolyLine
+                    || parent instanceof AlgoIntersectImplicitPolynomials
+                    || parent instanceof AlgoTangentImplicitpoly)) {
                 growingPoints.put(parent, label.split("_", 2)[0] + "_{");
                 recordGrowingPoints();
                 return first;
@@ -295,6 +306,12 @@ final class Session {
         if ((out == null || out.length == 0) && definition.startsWith("Segment(")
                 && definition.chars().filter(ch -> ch == ',').count() == 2) {
             return null;
+        }
+        if (out != null && out.length == 0 && definition.startsWith("Intersect(")) {
+            List<String> inputs = arguments(definition);
+            if (inputs.size() == 2 && inputs.stream().anyMatch(a -> objects.get(a) instanceof GeoImplicitCurve)) {
+                return null;
+            }
         }
         if (out != null && out.length == 2 && definition.startsWith("Segment(")) {
             return runFixedSegment(line, label, out);
@@ -314,6 +331,11 @@ final class Session {
         if (out != null && out.length == 2 && definition.startsWith("Angle(")
                 && out[1].toGeoElement() instanceof GeoPoint) {
             return runFixedAngle(line, label, out);
+        }
+        if (out != null && out.length > 0 && definition.startsWith("Tangent(")
+                && out[0].toGeoElement().getParentAlgorithm() instanceof AlgoTangentImplicitpoly
+                && (out.length > 1 || !label.equals(out[0].getLabelSimple()))) {
+            return runMulti(line, expected, out);
         }
         if (out != null && ((out.length == 2 && isMultiOutput(definition))
                 || (out.length == 4 && definition.startsWith("Tangent(")))) {
@@ -381,13 +403,12 @@ final class Session {
         boolean planeInequality = geo instanceof GeoFunctionNVar f && f.isBooleanFunction()
                 && f.getFunctionVariables().length == 2;
         if (equationLine) {
-            // an equation makes a line, a conic or (of `y = ...` alone) a
-            // function, and every conic of one is recorded as a general conic
+            // Every conic defined by an equation is recorded as a general conic.
             String type = geo instanceof GeoConic && !(geo instanceof GeoConicPart)
                     ? "conic" : typeOf(geo);
-            if (!type.equals("line") && !type.equals("conic") && !type.equals("function")
+            if (!Set.of("line", "conic", "function", "implicit").contains(type)
                     && !planeInequality) {
-                throw new IllegalStateException("expected a line, a conic or a function from '"
+                throw new IllegalStateException("expected a planar equation from '"
                         + line + "', got " + geo.getClass().getSimpleName());
             }
             expected = type;
@@ -713,8 +734,14 @@ final class Session {
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             GeoElement geo = e.getValue();
+            GeoElement replacement = kernel.lookupLabel(e.getKey());
+            if (replacement != null && schemaType(geo).equals("implicit") && replacement != geo) {
+                geo = replacement;
+            }
+            String type = replacement != null && replacement != e.getValue() && geo instanceof GeoConic
+                    ? "conic" : schemaType(geo);
             Map<String, Object> object = solutionSets.contains(geo) && geo instanceof GeoList list
-                    ? describeSolutions(list) : describe(geo, schemaType(geo), sampleCurves);
+                    ? describeSolutions(list) : describe(geo, type, sampleCurves);
             snap.put(e.getKey(), object);
         }
         for (Map.Entry<String, List<GeoElement>> e : relations.entrySet()) {
@@ -763,8 +790,9 @@ final class Session {
                 if (!geo.isLabelSet() || label == null || !label.startsWith(entry.getValue())) {
                     continue;
                 }
-                if (!(geo instanceof GeoPoint)) {
-                    throw new IllegalStateException("expected a growing point output: " + label);
+                if (!(geo instanceof GeoPoint)
+                        && !(entry.getKey() instanceof AlgoTangentImplicitpoly && geo instanceof GeoLine)) {
+                    throw new IllegalStateException("unexpected growing output: " + label);
                 }
                 GeoElement previous = objects.putIfAbsent(label, geo);
                 if (previous != null && previous != geo) {
@@ -954,6 +982,9 @@ final class Session {
         }
         if (geo instanceof GeoFunction) {
             return "function";
+        }
+        if (geo instanceof GeoImplicitCurve) {
+            return "implicit";
         }
         if (geo instanceof GeoCurveCartesian) {
             return "curve";
@@ -1284,8 +1315,12 @@ final class Session {
             case "SecondAxis":
             case "Directrix":
                 return "line";
+            case "ImplicitCurve":
+            case "Cubic":
+            case "TriangleCurve":
+                return "implicit";
             case "Asymptote":
-                return first instanceof GeoFunction ? "list" : "line";
+                return first instanceof GeoFunction || first instanceof GeoImplicitCurve ? "list" : "line";
             case "Segment":
                 return "segment";
             case "ConvexHull":
@@ -1752,6 +1787,22 @@ final class Session {
                 }
                 f.put("vertices", vertices);
                 f.put("length", poly.getLength());
+                return f;
+            }
+            case "implicit": {
+                GeoImplicitCurve curve = (GeoImplicitCurve) geo;
+                double[][] coefficients = curve.getCoeff();
+                if (coefficients == null) {
+                    return null;
+                }
+                List<List<Double>> rows = new ArrayList<>();
+                for (double[] row : coefficients) {
+                    rows.add(Arrays.stream(row).boxed().toList());
+                }
+                f.put("coefficients", rows);
+                f.put("equation", curve.toValueString(curve.isInputForm()
+                        ? StringTemplate.xmlTemplate : StringTemplate.defaultTemplate));
+                f.put("input_form", curve.isInputForm());
                 return f;
             }
             case "curve": {

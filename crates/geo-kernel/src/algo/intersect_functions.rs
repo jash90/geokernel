@@ -59,11 +59,21 @@ pub(crate) struct FunctionRootCache {
     graphs: Mutex<HashMap<FunctionIntersection, Vec<Point>>>,
     cartesian_pairs: Mutex<HashMap<[Id; 2], super::curves::CurveRoots>>,
     inequalities: Mutex<HashMap<Id, Vertices>>,
+    implicit_pairs: Mutex<HashMap<[Id; 2], super::curves::CurveRoots>>,
+    implicit_tangents: Mutex<HashMap<[Id; 2], Vec<Value>>>,
 }
 
 impl FunctionRootCache {
     pub(crate) fn clear(&mut self) {
         self.graphs.get_mut().expect("function root cache").clear();
+        self.implicit_tangents
+            .get_mut()
+            .expect("implicit tangent cache")
+            .clear();
+        self.implicit_pairs
+            .get_mut()
+            .expect("implicit intersection cache")
+            .clear();
         self.cartesian_pairs
             .get_mut()
             .expect("curve root cache")
@@ -111,6 +121,52 @@ impl FunctionRootCache {
             .lock()
             .expect("curve root cache")
             .insert(key, points);
+        result
+    }
+
+    pub(in crate::algo) fn implicit<T>(
+        &self,
+        pair: [Id; 2],
+        solve: impl FnOnce() -> super::curves::CurveRoots,
+        read: impl FnOnce(&[Option<Point>]) -> T,
+    ) -> T {
+        if let Some(points) = self
+            .implicit_pairs
+            .lock()
+            .expect("implicit intersection cache")
+            .get(&pair)
+        {
+            return read(points);
+        }
+        let points = solve();
+        let result = read(&points);
+        self.implicit_pairs
+            .lock()
+            .expect("implicit intersection cache")
+            .insert(pair, points);
+        result
+    }
+
+    pub(in crate::algo) fn implicit_tangents<T>(
+        &self,
+        inputs: [Id; 2],
+        solve: impl FnOnce() -> Vec<Value>,
+        read: impl FnOnce(&[Value]) -> T,
+    ) -> T {
+        if let Some(lines) = self
+            .implicit_tangents
+            .lock()
+            .expect("implicit tangent cache")
+            .get(&inputs)
+        {
+            return read(lines);
+        }
+        let lines = solve();
+        let result = read(&lines);
+        self.implicit_tangents
+            .lock()
+            .expect("implicit tangent cache")
+            .insert(inputs, lines);
         result
     }
 

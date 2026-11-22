@@ -1251,8 +1251,12 @@ fn reparse(
                 }
             }
             Node::Side(eq, left) => {
-                (eq.0 < c.len() && matches!(c.kind(eq), Kind::Line | Kind::Circle | Kind::Conic))
-                    .then_some(())?;
+                (eq.0 < c.len()
+                    && matches!(
+                        c.kind(eq),
+                        Kind::Line | Kind::Circle | Kind::Conic | Kind::ImplicitCurve
+                    ))
+                .then_some(())?;
                 read(eq, true);
                 for &id in equation::side_parents(c, eq, left) {
                     read(id, true);
@@ -1375,6 +1379,14 @@ fn evaluate_lists(
 /// and whether it changed (see [`store`]).
 pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) {
     let e = entry(c, d);
+    if matches!(e.nodes[e.root as usize], Node::FunctionAsymptotes(a) if matches!(e.nodes[a as usize], Node::Obj(_)))
+        && c.exists(id)
+        && c.value(id) == Value::Undefined
+    {
+        // The implicit asymptote algorithm leaves its list undefined once
+        // its input becomes undefined, even if it later computes new lines.
+        return (Value::Undefined, false);
+    }
     if let (Kind::Function | Kind::FunctionNVar, Some((_, op, a, b))) = (d.kind, e.cas_root()) {
         let result = cas::function(c, e, op, a, b);
         let e = &mut c.exprs.entries[d.index as usize];
