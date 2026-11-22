@@ -95,4 +95,14 @@ case("svd", "n = 2\nl = Sequence({k, 0}, k, 1, n)\ns = SVD(l)",
 case("svd", "s = SVD({})\nt = SVD({{}, {}})\nu = SVD({{1, 2}, {3}})\nv = SVD({1, 2})",
      [reject("r = SVD(1)"), reject("r = SVD({{1}}, {{2}})")])
 
+# ------------------------------------------------------------- IsVertexForm
+cases.topic("vertexform")
+case("vertexform", "f(x) = 4(x + 1)^2 + 3\na = IsVertexForm(f)\nb = IsVertexForm(4(-3/7 + x)^2 + 3/7 + sqrt(2))\nc = IsVertexForm(4(x - 3/7)^2 + 3/7 + sqrt(2))")
+case("vertexform", "a = IsVertexForm(x^2)\nb = IsVertexForm(4(-x - 3/7)^2 + 3/7 + sqrt(2))\nc = IsVertexForm((2x + 2)^2 + 3)")
+case("vertexform", "a = IsVertexForm((1 - x)^2)\nb = IsVertexForm(x^2 / 3)\nc = IsVertexForm(x^2 + x)\nd = IsVertexForm((x + 1)^(1 + 1))")
+case("vertexform", "n = 2\nf(x) = (x+1)^n\ng(x) = n*(x+1)^2\nh(x) = 4*(x+1)^2 + n\na = IsVertexForm(f)\nb = IsVertexForm(g)\nc = IsVertexForm(h)",
+     [setn("n", 0), setn("n", 2)])
+case("vertexform", "n = 1\nf(x) = (x+1)^2 + 0/n\ng = IsVertexForm(f)\nh = IsVertexForm(Function())",
+     [setn("n", 0), setn("n", 2), reject("a = IsVertexForm()"), reject("a = IsVertexForm({1,2})")])
+
 cases.write()

@@ -885,6 +885,7 @@ impl<const M: bool> Ctx<'_, M> {
                 }
             }
             Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
+            Node::VertexForm(a) => Ex::plain(self.vertex_form(a)),
             Node::Item(a) | Node::Vector(a) => self.full(a),
             // the variable of a `Sequence` is a `GeoNumeric`; the variable
             // of a `Zip` is the element it walks (`createTemplateElement`)

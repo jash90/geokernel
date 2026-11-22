@@ -2649,42 +2649,6 @@ reason = "the kernel refuses the input: unknown object `x+y=17`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2499"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2500"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2501"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2502"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2503"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2504"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2543"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `DataFunction`"

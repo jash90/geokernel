@@ -9,11 +9,11 @@
 mod svd;
 
 use crate::expr::{
-    eval::{number_of, slot_val, Ctx, Env, Local, Val, MAX_ELEMENTS},
+    eval::{function_entry, number_of, slot_val, Ctx, Env, Local, Val, MAX_ELEMENTS},
     lex::Tok,
     parse::{list_form, Parser},
     types::{elem_of, ty_of},
-    Elem, IterationMode, ListOp, Node, Slot, Ty, NONE,
+    Bin, Elem, Entry, IterationMode, ListOp, Node, Slot, Ty, NONE,
 };
 use crate::{Kind, Value};
 
@@ -26,10 +26,20 @@ pub(super) const NAMES: &[&str] = &[
     "Asymptote",
     "Normalize",
     "SVD",
+    "IsVertexForm",
 ];
 
 pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, String> {
     let node = match name {
+        "IsVertexForm" => {
+            let uses_var = p.uses_var;
+            let result = p.function_command(|_, args, _| match args {
+                [a] => Ok(Some(Node::VertexForm(*a))),
+                _ => Err("IsVertexForm needs a function".into()),
+            });
+            p.uses_var = uses_var;
+            return result;
+        }
         "SVD" => {
             return p
                 .list_command(|_, args, lists| list_form(name, ListOp::Svd, false, args, lists));
@@ -91,6 +101,73 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
         _ => return Ok(None),
     };
     Ok(Some(p.push(node)))
+}
+
+impl<const M: bool> Ctx<'_, M> {
+    pub(in crate::expr) fn vertex_form(&self, root: u32) -> Val {
+        match self.node(root) {
+            Node::Apply(f, x) if matches!(self.node(x), Node::Var) => {
+                let source = function_entry(self.c, f).or_else(|| {
+                    self.c
+                        .calculus_record(f)
+                        .filter(|_| self.c.value(f) == Value::Function)?
+                        .tree
+                        .as_ref()
+                });
+                source.map_or(Val::B(false, true), |entry| {
+                    self.vertex_expression(entry, entry.root)
+                })
+            }
+            _ => self.vertex_expression(self.e, root),
+        }
+    }
+
+    fn vertex_expression(&self, entry: &Entry, root: u32) -> Val {
+        if self.stop(4 * (u64::from(root) + 1)) {
+            return Val::B(false, false);
+        }
+        // Children precede their parents, so a subtree shared by several
+        // branches is classified once.
+        let mut constants = Vec::with_capacity(root as usize + 1);
+        for node in &entry.nodes[..=root as usize] {
+            let constant = match *node {
+                Node::Num(_) | Node::MinusOne | Node::Degree | Node::Bool(_) => true,
+                Node::Bin(op, a, b) if !op.is_command() => {
+                    constants[a as usize] && constants[b as usize]
+                }
+                Node::Un(_, a) => constants[a as usize],
+                _ => false,
+            };
+            constants.push(constant);
+        }
+        let node = |i: u32| entry.nodes[i as usize];
+        let strip = |mut i, ops: &[Bin]| {
+            for _ in 0..=root {
+                let Node::Bin(op, a, b) = node(i) else {
+                    break;
+                };
+                if !ops.contains(&op) {
+                    break;
+                }
+                i = match (constants[a as usize], constants[b as usize]) {
+                    (true, _) => b,
+                    (_, true) => a,
+                    _ => break,
+                };
+            }
+            i
+        };
+        let add = [Bin::Add, Bin::Sub];
+        let term = strip(strip(root, &add), &[Bin::Mul]);
+        let result = match node(term) {
+            Node::Bin(Bin::Pow, base, exponent) => {
+                matches!(node(exponent), Node::Num(2.0))
+                    && matches!(node(strip(base, &add)), Node::Var)
+            }
+            _ => false,
+        };
+        Val::B(result, true)
+    }
 }
 
 fn point_argument(p: &Parser<'_>, node: u32) -> bool {

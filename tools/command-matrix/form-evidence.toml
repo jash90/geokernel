@@ -3687,3 +3687,8 @@ cases = ["funcrest-normalize-002"]
 command = "Normalize"
 form = "point,point,..."
 cases = ["funcrest-normalize-002", "funcrest-normalize-003"]
+
+[[form]]
+command = "IsVertexForm"
+form = "function"
+cases = ["funcrest-vertexform-001", "funcrest-vertexform-004", "funcrest-vertexform-005"]

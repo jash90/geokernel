@@ -247,6 +247,7 @@ pub(crate) enum Node {
     Extremum(bool, u32, u32, u32),
     RootList(u32),
     FunctionAsymptotes(u32),
+    VertexForm(u32),
     Iteration {
         mode: IterationMode,
         collect: bool,
@@ -951,6 +952,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         Node::Defined(a)
         | Node::RootList(a)
         | Node::FunctionAsymptotes(a)
+        | Node::VertexForm(a)
         | Node::SystemFunction(_, a) => fixed[0] = a,
         Node::Iteration {
             formula,
@@ -1016,6 +1018,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
         Node::Defined(a)
         | Node::RootList(a)
         | Node::FunctionAsymptotes(a)
+        | Node::VertexForm(a)
         | Node::SystemFunction(_, a) => shift(a),
         Node::Iteration {
             formula,
@@ -1057,6 +1060,7 @@ fn is_list_node(node: &Node) -> bool {
             | Node::Extremum(..)
             | Node::RootList(..)
             | Node::FunctionAsymptotes(..)
+            | Node::VertexForm(..)
             | Node::Iteration { .. }
             | Node::Base { .. }
             | Node::Apply2(..)

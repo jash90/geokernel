@@ -309,6 +309,20 @@ fn type_node(
                 0,
             )
         }
+        Node::VertexForm(a) => {
+            let a = a as usize;
+            let function =
+                matches!(nodes[a], Node::Apply(_, x) if matches!(nodes[x as usize], Node::Var));
+            if !matches!(state.tys[a], Ty::Num(_) | Ty::Bool) || (state.vars[a] == 0 && !function) {
+                return Err("IsVertexForm needs a function".into());
+            }
+            (
+                Ty::Bool,
+                state.depth[a] + 1,
+                state.cost[a].saturating_add(1),
+                0,
+            )
+        }
         Node::RootList(a) => {
             let a = a as usize;
             if !matches!(state.tys[a], Ty::List(_)) || state.vars[a] != 0 {

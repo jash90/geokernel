@@ -45,6 +45,14 @@ pub(super) fn exec(c: &mut Construction, label: &str, rhs: &str) -> Option<Resul
                     .map_err(|e| e.to_string())
             }));
         }
+        "IsVertexForm" if matches!(&args[..], [arg] if arg.starts_with("Function(")) => {
+            return Some((|| {
+                let hidden = format!("\0arg{}", c.len());
+                let id = exec(c, &hidden, args[0]).ok_or("IsVertexForm needs a function")??;
+                let input = format!("IsVertexForm({})", c.label(id));
+                expr::define(c, label, &input, false)
+            })());
+        }
         "$functionInterval" => return Some(restrict(c, label, &args, true)),
         "Root" if args.len() == 2 && args.iter().all(|arg| is_function(c, arg)) => {
             return Some(

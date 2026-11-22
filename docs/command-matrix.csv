@@ -551,7 +551,7 @@ TrigCombine,,function,,out_of_scope,,,Symbolic trigonometric combination uses th
 nCr,,english,P2,done,1,1,
 nPr,,english,P2,done,1,1,
 CASLoaded,,geogebra,,out_of_scope,,,"Reports whether the CAS view is part of the app, which the kernel has no view of."
-IsVertexForm,,function,P2,todo,1,0,
+IsVertexForm,,function,P2,done,1,1,
 TableToChart,,english,,out_of_scope,,,
 ExtendedGCD,,cas,,out_of_scope,,,
 ModularExponent,,cas,,out_of_scope,,,
