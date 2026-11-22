@@ -55,6 +55,13 @@
 	<labelMode val="0"/>
 	<checkbox fixed="true"/>
 </element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
 <expression label="M" exp="(0, 0)" type="point"/>
 <element type="point" label="M">
 	<show object="true" label="true"/>
@@ -104,19 +111,24 @@
 	<output a0="k"/>
 </command>
 <element type="conic" label="k">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="64" g="78" b="172" alpha="0.71" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1" fillType="8" hatchAngle="105" hatchDistance="19" fillSymbol="★" inverseFill="true"/>
 	<layer val="9"/>
+	<ordering val="8.5"/>
 	<labelOffset x="13" y="-15"/>
 	<labelMode val="1"/>
 	<tooltipMode val="3"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 8"/>
-	<lineStyle thickness="10" type="10" typeHidden="1" opacity="176"/>
+	<lineStyle thickness="10" type="10" typeHidden="0" opacity="176"/>
 	<eqnStyle style="specific"/>
 	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
 	<matrix A0="1" A1="1" A2="-16" A3="0" A4="0" A5="0"/>
@@ -130,7 +142,7 @@
 	<objColor r="28" g="28" b="31" alpha="0.78" fillType="3" hatchAngle="120" hatchDistance="20" inverseFill="true"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
-	<lineStyle thickness="11" type="15" typeHidden="1" opacity="193"/>
+	<lineStyle thickness="11" type="15" typeHidden="2" opacity="193"/>
 	<eqnStyle style="specific"/>
 	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
 	<matrix A0="1" A1="1" A2="-4" A3="0" A4="0" A5="0"/>
@@ -145,19 +157,24 @@
 	<output a0="e"/>
 </command>
 <element type="conic" label="e">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="144" g="218" b="136" alpha="0.15" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1" fillType="8" hatchAngle="60" hatchDistance="21" fillSymbol="★" inverseFill="true"/>
 	<layer val="2"/>
+	<ordering val="10.5"/>
 	<labelOffset x="15" y="-17"/>
 	<labelMode val="3"/>
 	<tooltipMode val="2"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 10"/>
-	<lineStyle thickness="12" type="20" typeHidden="1" opacity="210"/>
+	<lineStyle thickness="12" type="20" typeHidden="0" opacity="210"/>
 	<eqnStyle style="implicit"/>
 	<eigenvectors x0="1" y0="0" z0="1" x1="0" y1="1" z1="1"/>
 	<matrix A0="1040" A1="1296" A2="-84240" A3="0" A4="0" A5="0"/>
@@ -171,7 +188,7 @@
 	<objColor r="28" g="28" b="31" alpha="0.22" fillType="5" hatchAngle="75" hatchDistance="22" inverseFill="true"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
-	<lineStyle thickness="2" type="30" typeHidden="1" opacity="227"/>
+	<lineStyle thickness="2" type="30" typeHidden="2" opacity="227"/>
 	<eqnStyle style="implicit"/>
 	<eigenvectors x0="0.7071067811865475" y0="-0.7071067811865475" z0="1" x1="0.7071067811865475" y1="0.7071067811865475" z1="1"/>
 	<matrix A0="1232" A1="1232" A2="-84240" A3="64" A4="-2592" A5="-2592"/>
@@ -181,19 +198,24 @@
 	<output a0="a"/>
 </command>
 <element type="conicpart" label="a">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="224" g="102" b="100" alpha="0.29" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1" fillType="8" hatchAngle="90" hatchDistance="23" fillSymbol="★" inverseFill="true"/>
 	<layer val="4"/>
+	<ordering val="12.5"/>
 	<labelOffset x="17" y="-19"/>
 	<labelMode val="1"/>
 	<tooltipMode val="1"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 12"/>
-	<lineStyle thickness="3" type="10" typeHidden="1" opacity="44"/>
+	<lineStyle thickness="3" type="10" typeHidden="0" opacity="44"/>
 	<eqnStyle style="specific"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -209,7 +231,7 @@
 	<objColor r="28" g="28" b="31" alpha="0.36" fillType="7" hatchAngle="105" hatchDistance="24" inverseFill="true"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
-	<lineStyle thickness="4" type="15" typeHidden="1" opacity="61"/>
+	<lineStyle thickness="4" type="15" typeHidden="2" opacity="61"/>
 	<eqnStyle style="specific"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -221,19 +243,24 @@
 	<output a0="d"/>
 </command>
 <element type="conicpart" label="d">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="48" g="242" b="64" alpha="0.43" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1" fillType="8" hatchAngle="120" hatchDistance="25" fillSymbol="★" inverseFill="true"/>
 	<layer val="6"/>
+	<ordering val="14.5"/>
 	<labelOffset x="19" y="-21"/>
 	<labelMode val="3"/>
 	<tooltipMode val="3"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 14"/>
-	<lineStyle thickness="5" type="20" typeHidden="1" opacity="78"/>
+	<lineStyle thickness="5" type="20" typeHidden="0" opacity="78"/>
 	<eqnStyle style="specific"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -249,7 +276,7 @@
 	<objColor r="153" g="51" b="0" alpha="0.5" fillType="2" hatchAngle="60" hatchDistance="26" inverseFill="true"/>
 	<layer val="0"/>
 	<labelMode val="0"/>
-	<lineStyle thickness="6" type="30" typeHidden="1" opacity="95"/>
+	<lineStyle thickness="6" type="30" typeHidden="2" opacity="95"/>
 	<eqnStyle style="specific"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>

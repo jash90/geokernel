@@ -133,9 +133,45 @@ fn labelled(c: &Construction) -> BTreeMap<&str, Id> {
         .collect()
 }
 
+/// Where a document comes from.
+enum Origin {
+    /// A script of the golden corpus, replayed.
+    Script,
+    /// A file the reference application reads without reporting anything.
+    File(Vec<u8>),
+    /// A hand-written file with tags the reference application does not
+    /// write. It may make the reader report a problem and read on, or give
+    /// up the whole file; `applied` is then the same file with the tag it
+    /// gives up at cut down to what it had applied by then.
+    Hand {
+        source: Vec<u8>,
+        applied: Option<Vec<u8>>,
+    },
+}
+
 /// A document to export: its name, the live workbench, the view of a golden
-/// case, and the bytes of the file it was opened from.
-type Case = (String, Workbench, Option<FileView>, Option<Vec<u8>>);
+/// case, and where it comes from.
+type Case = (String, Workbench, Option<FileView>, Origin);
+
+/// Hand-written files: `<name>.xml`, and `<name>.applied.xml` beside it.
+fn hand_written() -> Vec<(String, Vec<u8>, Option<Vec<u8>>)> {
+    let dir = repo_root().join("crates/geo-golden/tests/fixtures/export");
+    let mut names: Vec<String> = fs::read_dir(&dir)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .filter(|name| name.ends_with(".xml") && !name.ends_with(".applied.xml"))
+        .collect();
+    names.sort();
+    names
+        .into_iter()
+        .map(|file| {
+            let stem = file.strip_suffix(".xml").unwrap();
+            let source = fs::read(dir.join(&file)).unwrap();
+            let applied = fs::read(dir.join(format!("{stem}.applied.xml"))).ok();
+            (format!("hand-{stem}"), source, applied)
+        })
+        .collect()
+}
 
 fn corpus() -> Vec<Case> {
     let mut cases: BTreeMap<_, _> = load_all(&repo_root())
@@ -178,18 +214,28 @@ fn corpus() -> Vec<Case> {
             scale: [sx, sy],
             ..FileView::default()
         });
-        out.push((name.into(), wb, view, None));
+        out.push((name.into(), wb, view, Origin::Script));
     }
     for &file in SAVED_CASES {
         let mut wb = Workbench::default();
         let bytes = fs::read(repo_root().join("golden/ggb/saved").join(file)).unwrap();
         wb.load_for_export(&bytes, file).unwrap();
         let name = file.split_once('.').unwrap().0;
-        out.push((name.into(), wb, None, Some(bytes)));
+        out.push((name.into(), wb, None, Origin::File(bytes)));
+    }
+    for (name, source, applied) in hand_written() {
+        let mut wb = Workbench::default();
+        wb.load_for_export(&source, &name).unwrap();
+        out.push((name, wb, None, Origin::Hand { source, applied }));
     }
     let mut styled = Workbench::default();
     styled.load_for_export(STYLED_FILE, "styled").unwrap();
-    out.push(("styled".into(), styled, None, Some(STYLED_FILE.to_vec())));
+    out.push((
+        "styled".into(),
+        styled,
+        None,
+        Origin::File(STYLED_FILE.to_vec()),
+    ));
     let mut matrix = Workbench::default();
     matrix
         .load_for_export(IMPLICIT_MATRIX_FILE, "implicit-matrix")
@@ -204,7 +250,7 @@ fn corpus() -> Vec<Case> {
         "implicit-matrix".into(),
         matrix,
         None,
-        Some(IMPLICIT_MATRIX_FILE.to_vec()),
+        Origin::File(IMPLICIT_MATRIX_FILE.to_vec()),
     ));
     out
 }
@@ -303,9 +349,10 @@ fn round_trip(name: &str, wb: &Workbench, view: Option<FileView>) -> (Vec<u8>, W
     );
     if !before.object_styles.is_empty() {
         for (label, style) in &before.object_styles {
+            // By their text: a width read as NaN equals itself here.
             assert_eq!(
-                Some(style),
-                after.object_styles.get(label),
+                format!("{:?}", Some(style)),
+                format!("{:?}", after.object_styles.get(label)),
                 "{name}: {label}"
             );
         }
@@ -361,41 +408,70 @@ fn archive_preserves_view_kernel_settings_and_application_edits() {
 
 /// The CI oracle job supplies the pinned source checkout and built harness.
 /// Run locally with the same environment and `cargo test --test export -- --ignored`.
+///
+/// It also derives the proof of every presentation property and compares it
+/// with `tests/fixtures/export-proof.json`, which the always-run test of the
+/// kind table reads. `GEOKERNEL_EXPORT_BLESS=1` rewrites that file.
 #[test]
 #[ignore = "requires the GeoGebra Java harness"]
 fn geogebra_reloads_exports_and_matches_the_kernel() {
-    let dir = Scratch::new("valid");
-    // The files the documents were opened from, read by the same reader.
+    // Exports and files the reference application must read without a report.
+    let exports = Scratch::new("exports");
     let sources = Scratch::new("sources");
-    // The same documents without their saved presentation, as a construction
-    // made in the application exports. A property is proven where the source
-    // differs from this and agrees with the export.
+    // The documents of the files without their saved presentation, as a
+    // construction made in the application exports.
     let plain = Scratch::new("plain");
+    // Hand-written files and their exports, read with the reports recorded.
+    let hand = Scratch::new("hand");
+    let zipped = |bytes: &[u8]| {
+        if geo_import::archive::is_zip(bytes) {
+            bytes.to_vec()
+        } else {
+            archive(bytes, None)
+        }
+    };
     let constructions: Vec<_> = corpus()
         .into_iter()
-        .map(|(name, wb, view, source)| {
+        .map(|(name, wb, view, origin)| {
             let (bytes, again) = round_trip(&name, &wb, view);
-            fs::write(dir.0.join(format!("{name}.ggb")), bytes).unwrap();
-            if let Some(source) = &source {
-                let zipped = if geo_import::archive::is_zip(source) {
-                    source.clone()
-                } else {
-                    archive(source, None)
-                };
-                fs::write(sources.0.join(format!("{name}.ggb")), zipped).unwrap();
-                let mut stripped = Workbench::default();
-                let rejected = stripped.restore_text(&wb.snapshot_text()).unwrap();
-                assert!(rejected.is_empty(), "{name}: {rejected:?}");
-                let bytes = stripped
-                    .export_ggb(view.or(wb.file_view()))
-                    .unwrap_or_else(|e| panic!("{name}: {e}"));
-                fs::write(plain.0.join(format!("{name}.ggb")), bytes).unwrap();
+            let write = |scratch: &Scratch, file: &str, bytes: &[u8]| {
+                fs::write(scratch.0.join(format!("{file}.ggb")), bytes).unwrap();
+            };
+            match &origin {
+                Origin::Script => write(&exports, &name, &bytes),
+                Origin::File(source) => {
+                    write(&exports, &name, &bytes);
+                    write(&sources, &name, &zipped(source));
+                    let mut stripped = Workbench::default();
+                    let rejected = stripped.restore_text(&wb.snapshot_text()).unwrap();
+                    assert!(rejected.is_empty(), "{name}: {rejected:?}");
+                    let bytes = stripped
+                        .export_ggb(view.or(wb.file_view()))
+                        .unwrap_or_else(|e| panic!("{name}: {e}"));
+                    write(&plain, &name, &bytes);
+                }
+                Origin::Hand { source, applied } => {
+                    write(&hand, &name, &zipped(source));
+                    write(&hand, &format!("{name}.export"), &bytes);
+                    if let Some(applied) = applied {
+                        write(&sources, &name, &zipped(applied));
+                    }
+                }
             }
-            (name, wb, again, view, source.is_some())
+            (name, wb, again, view, origin, bytes)
         })
         .collect();
-    for scratch in [&dir, &sources, &plain] {
-        let output = java_snapshots(&scratch.0);
+    for (scratch, lenient) in [
+        (&exports, false),
+        (&sources, false),
+        (&plain, false),
+        (&hand, true),
+    ] {
+        let output = if lenient {
+            lenient_java_snapshots(&scratch.0)
+        } else {
+            java_snapshots(&scratch.0)
+        };
         assert!(
             output.status.success(),
             "Java export oracle failed:\n{}\n{}",
@@ -403,57 +479,70 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
             String::from_utf8_lossy(&output.stderr)
         );
     }
+    let read = |scratch: &Scratch, file: &str| -> Value {
+        let path = scratch.0.join(format!("{file}.ggb.snapshot"));
+        serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
+    };
 
-    let mut covered = BTreeSet::new();
     let mut count = 0;
-    let mut properties: BTreeSet<(String, String)> = BTreeSet::new();
-    for (name, live, imported, view, from_file) in &constructions {
-        let read = |scratch: &Scratch| -> Value {
-            let path = scratch.0.join(format!("{name}.ggb.snapshot"));
-            serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
+    let mut gave_up = Vec::new();
+    // Per fixture: the styles of the source and of the export without the
+    // saved presentation, for the witnesses.
+    let mut saved_styles: BTreeMap<&str, (Value, Value)> = BTreeMap::new();
+    for (name, live, imported, view, origin, bytes) in &constructions {
+        let snap = match origin {
+            Origin::Hand { .. } => read(&hand, &format!("{name}.export")),
+            _ => read(&exports, name),
         };
-        let snap = read(&dir);
         let snapshot = snap["objects"].as_object().unwrap();
         check_styles(name, live, *view, &snap);
-        if *from_file {
-            // The reference application reads the source file and the
-            // export of its import to the same presentation, property by
-            // property, for every object.
-            let source = read(&sources);
-            let stripped = read(&plain);
-            let (before, after) = (&source["styles"], &snap["styles"]);
-            assert!(
-                before
-                    .as_object()
-                    .unwrap()
-                    .keys()
-                    .eq(after.as_object().unwrap().keys()),
-                "{name}: labels differ from the source"
-            );
-            for (label, style) in before.as_object().unwrap() {
-                let (mut style, mut exported) = (style.clone(), after[label].clone());
-                // `check_styles` compares the bounds with the kernel.
-                for style in [&mut style, &mut exported] {
-                    if let Some(slider) = style.get_mut("slider").and_then(Value::as_object_mut) {
-                        slider.remove("min");
-                        slider.remove("max");
+        match origin {
+            Origin::Script => {}
+            Origin::File(_) => {
+                // The reference application reads the source file and the
+                // export of its import to the same presentation, property
+                // by property, for every object.
+                let source = read(&sources, name);
+                compare_presentation(name, live, &source, &snap, bytes);
+                assert_json(&source["settings"], &snap["settings"], name);
+                let stripped = read(&plain, name);
+                // A witness needs the same object in the stripped export.
+                assert!(
+                    labels_of(&source).eq(labels_of(&stripped)),
+                    "{name}: the export without saved styles has other labels"
+                );
+                saved_styles.insert(name, (source["styles"].clone(), stripped["styles"].clone()));
+            }
+            Origin::Hand { applied, .. } => {
+                let source = read(&hand, name);
+                if source.get("failed").is_some() {
+                    // The reference gives up the file at the tag. The export
+                    // loads without a report and holds what the tag had
+                    // applied by then, which the twin spells out.
+                    assert!(
+                        applied.is_some(),
+                        "{name}: the reference gives up the file ({}); add the twin",
+                        source["failed"]
+                    );
+                    assert_eq!(snap["reported"], json!([]), "{name}");
+                    compare_presentation(name, live, &read(&sources, name), &snap, bytes);
+                    gave_up.push(name.as_str());
+                } else {
+                    assert!(applied.is_none(), "{name}: the reference reads the file");
+                    // The export makes the reader report nothing that the
+                    // source did not: a tag that set nothing is not written,
+                    // a tag read halfway is written as far as it was read.
+                    let mut reports = source["reported"].as_array().unwrap().clone();
+                    for report in snap["reported"].as_array().unwrap() {
+                        let at = reports
+                            .iter()
+                            .position(|known| known == report)
+                            .unwrap_or_else(|| panic!("{name}: the export reports {report}"));
+                        reports.remove(at);
                     }
-                }
-                assert_json(&style, &exported, &format!("{name}: {label}"));
-                let c = live.construction();
-                let kind = format!("{:?}", c.kind(c.id(label).unwrap()));
-                let (mut saved, mut unsaved) = (BTreeMap::new(), BTreeMap::new());
-                flatten("", &style, &mut saved);
-                flatten("", &stripped["styles"][label], &mut unsaved);
-                for (property, value) in saved {
-                    if unsaved.get(&property) != Some(&value)
-                        || new_object(&kind, &property).is_some_and(|new| new != value)
-                    {
-                        properties.insert((kind.clone(), property));
-                    }
+                    compare_presentation(name, live, &source, &snap, bytes);
                 }
             }
-            assert_json(&source["settings"], &snap["settings"], name);
         }
         let c = live.construction();
         let labels = labelled(c);
@@ -479,66 +568,296 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                 }
             }
             count += 1;
-            if c.value(id).is_defined() {
-                covered.insert(format!("{kind:?}"));
+        }
+    }
+    // The files of `HAND_GIVEN_UP`, and no other, stop the reference reader.
+    assert_eq!(gave_up, HAND_GIVEN_UP);
+
+    // The proof: for every kind and property an object of a named fixture
+    // whose source value differs from what the reader gives the same object
+    // without the saved tag.
+    let mut proof: BTreeMap<&str, BTreeMap<&str, Value>> = BTreeMap::new();
+    for &(kind, objects) in WITNESSES {
+        for property in kind_properties(kind) {
+            let witness = objects.iter().find_map(|&(fixture, label)| {
+                let (source, stripped) = saved_styles
+                    .get(fixture)
+                    .unwrap_or_else(|| panic!("{fixture} is no file of the corpus"));
+                let live = &constructions
+                    .iter()
+                    .find(|case| case.0 == fixture)
+                    .unwrap()
+                    .1;
+                let c = live.construction();
+                let id = c
+                    .id(label)
+                    .unwrap_or_else(|| panic!("{fixture} has no {label}"));
+                assert_eq!(format!("{:?}", c.kind(id)), kind, "{fixture}: {label}");
+                let (mut saved, mut unsaved) = (BTreeMap::new(), BTreeMap::new());
+                flatten("", &source[label], &mut saved);
+                flatten("", &stripped[label], &mut unsaved);
+                let value = saved.get(property)?;
+                // What the reader gives the object without its saved tag:
+                // the stripped export, or, for a property the document keeps
+                // in its own state, the value of a new object.
+                let without =
+                    new_object(kind, property).or_else(|| unsaved.get(property).cloned())?;
+                (without != *value).then(|| {
+                    json!({
+                        "fixture": fixture,
+                        "label": label,
+                        "saved": value,
+                        "without": without,
+                    })
+                })
+            });
+            if let Some(witness) = witness {
+                proof.entry(kind).or_default().insert(property, witness);
             }
         }
     }
-    let table = fs::read_to_string(repo_root().join("docs/kinds.csv")).unwrap();
-    let matrix = geo_golden::table::Table::parse(&table, "docs/kinds.csv").unwrap();
-    let exported: BTreeSet<_> = matrix
-        .records()
-        .into_iter()
-        .filter_map(|row| (row["export"] != "no").then(|| row["kernel_kind"].to_owned()))
-        .collect();
-    assert_eq!(
-        covered, exported,
-        "every claimed export kind needs a defined example"
-    );
-    let mut proven: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
-    for (kind, property) in &properties {
-        proven.entry(kind).or_default().insert(property);
-    }
-    // `yes` in the kind matrix means: every property of the kind is proven.
-    let mut disagreements = Vec::new();
-    for row in matrix.records() {
-        let kind = row["kernel_kind"];
-        if row["export"] == "no" {
-            continue;
-        }
-        let have = proven.get(kind).cloned().unwrap_or_default();
-        let missing: Vec<_> = kind_properties(kind)
-            .into_iter()
-            .filter(|property| !have.contains(property))
-            .collect();
-        println!(
-            "{kind}: {} of {} properties{}",
-            kind_properties(kind).len() - missing.len(),
-            kind_properties(kind).len(),
-            if missing.is_empty() {
-                String::new()
-            } else {
-                format!(", not proven: {}", missing.join(", "))
-            }
-        );
-        if (row["export"] == "yes") != missing.is_empty() {
-            disagreements.push(format!(
-                "{kind} is `{}`, not proven: {missing:?}",
-                row["export"]
-            ));
-        }
+    let proof = serde_json::to_string_pretty(&proof).unwrap() + "\n";
+    let path = proof_path();
+    if std::env::var_os("GEOKERNEL_EXPORT_BLESS").is_some() {
+        fs::write(&path, &proof).unwrap();
     }
     assert!(
-        disagreements.is_empty(),
-        "docs/kinds.csv export column: {disagreements:#?}"
+        fs::read_to_string(&path).unwrap_or_default() == proof,
+        "tests/fixtures/export-proof.json is stale; rerun with GEOKERNEL_EXPORT_BLESS=1"
     );
+    let pairs = serde_json::from_str::<BTreeMap<String, BTreeMap<String, Value>>>(&proof)
+        .unwrap()
+        .values()
+        .map(BTreeMap::len)
+        .sum::<usize>();
     println!(
-        "{} exported files, {count} objects, {} kinds, {} kind and property pairs",
+        "{} exported files, {count} objects, {} kinds, {pairs} proven kind and property pairs, \
+         {} files the reference gives up",
         constructions.len(),
-        covered.len(),
-        properties.len()
+        WITNESSES.len(),
+        gave_up.len()
     );
 }
+
+fn proof_path() -> PathBuf {
+    repo_root().join("crates/geo-golden/tests/fixtures/export-proof.json")
+}
+
+fn labels_of(snapshot: &Value) -> impl Iterator<Item = &String> {
+    snapshot["styles"].as_object().unwrap().keys()
+}
+
+/// Hand-written files at which the reference reader gives up the whole file.
+const HAND_GIVEN_UP: &[&str] = &[
+    "hand-fill-alpha-not-a-number",
+    "hand-fill-angle-not-a-number",
+    "hand-fill-distance-missing",
+    "hand-fill-pattern-negative",
+];
+
+/// Properties that differ between a source and its export on purpose:
+/// fixture, label, property and the reason.
+const KNOWN_LOSSES: &[(&str, &str, &str, &str)] = &[(
+    "hand-animation-speed",
+    "A",
+    "animation.speed",
+    "the kernel has no limit command, so the speed is dropped with an import note",
+)];
+
+/// Every property of every object of `before` (the reference application's
+/// reading of a source) against `after` (its reading of the export).
+fn compare_presentation(name: &str, wb: &Workbench, before: &Value, after: &Value, export: &[u8]) {
+    assert!(
+        labels_of(before).eq(labels_of(after)),
+        "{name}: labels differ from the source"
+    );
+    let c = wb.construction();
+    let xml = geo_import::archive::extract_xml(export).unwrap();
+    // Whether the export defines the object by an expression or a command.
+    let defined = |label: &str| {
+        xml.contains(&format!("<expression label=\"{label}\""))
+            || xml
+                .lines()
+                .any(|line| line.starts_with("<output") && line.contains(&format!("=\"{label}\"")))
+    };
+    for (label, style) in before["styles"].as_object().unwrap() {
+        let (mut source, mut exported) = (BTreeMap::new(), BTreeMap::new());
+        flatten("", style, &mut source);
+        flatten("", &after["styles"][label], &mut exported);
+        assert!(
+            source.keys().eq(exported.keys()),
+            "{name}: {label}: other properties"
+        );
+        let [min, max] = c.slider_bounds(c.id(label).unwrap());
+        for (property, value) in &source {
+            // A file that gives a visible slider one endpoint only: the
+            // reference fills in the other when it reads its own file. The
+            // export keeps the interval of the saved state, which
+            // `check_styles` compares with the kernel.
+            let open_end = match property.as_str() {
+                "slider.min" => min.is_none() && max.is_some(),
+                "slider.max" => max.is_none() && min.is_some(),
+                _ => false,
+            };
+            let known = KNOWN_LOSSES
+                .iter()
+                .any(|&(file, object, lost, _)| (file, object, lost) == (name, label, property));
+            if known {
+                assert_ne!(value, &exported[property], "{name}: {label}.{property}");
+                continue;
+            }
+            if open_end && *value != exported[property] {
+                assert_eq!(
+                    exported[property],
+                    Value::Null,
+                    "{name}: {label}.{property}"
+                );
+                continue;
+            }
+            // The reference shows the algebra label again when it names an
+            // object that only its element tag creates. The writer saves a
+            // free object that way, whatever its file did.
+            if property == "algebra_label" && !defined(label) && *value != exported[property] {
+                assert_eq!(exported[property], json!(true), "{name}: {label}");
+                continue;
+            }
+            assert_json(
+                value,
+                &exported[property],
+                &format!("{name}: {label}.{property}"),
+            );
+        }
+    }
+}
+
+/// The objects whose saved presentation proves the properties of a kind:
+/// fixture and label. Only these count, so that a property is never proven by
+/// an object that happens to differ for another reason.
+const WITNESSES: &[(&str, &[(&str, &str)])] = &[
+    (
+        "Point",
+        &[
+            ("saved-styles-001", "A"),
+            ("saved-styles-001", "P"),
+            ("saved-styles-001", "B"),
+            ("saved-paths-002", "S"),
+        ],
+    ),
+    (
+        "Line",
+        &[("saved-styles-001", "l"), ("saved-styles-001", "l2")],
+    ),
+    (
+        "Segment",
+        &[("saved-styles-001", "s"), ("saved-styles-001", "s2")],
+    ),
+    (
+        "Ray",
+        &[("saved-styles-001", "h"), ("saved-styles-001", "h2")],
+    ),
+    (
+        "Vector",
+        &[("saved-styles-001", "v"), ("saved-styles-001", "v2")],
+    ),
+    (
+        "Circle",
+        &[("saved-styles-002", "k"), ("saved-styles-002", "k2")],
+    ),
+    (
+        "Conic",
+        &[("saved-styles-002", "e"), ("saved-styles-002", "e2")],
+    ),
+    (
+        "Arc",
+        &[("saved-styles-002", "a"), ("saved-styles-002", "a2")],
+    ),
+    (
+        "Sector",
+        &[("saved-styles-002", "d"), ("saved-styles-002", "d2")],
+    ),
+    (
+        "Number",
+        &[
+            ("saved-styles-003", "a"),
+            ("saved-styles-003", "a2"),
+            ("saved-styles-003", "n"),
+        ],
+    ),
+    (
+        "Angle",
+        &[("saved-styles-003", "w"), ("saved-styles-003", "w2")],
+    ),
+    (
+        "Boolean",
+        &[
+            ("saved-styles-003", "check"),
+            ("saved-styles-003", "flag"),
+            ("saved-styles-003", "lock"),
+        ],
+    ),
+    (
+        "Function",
+        &[("saved-styles-004", "f"), ("saved-styles-004", "f2")],
+    ),
+    (
+        "Polygon",
+        &[("saved-styles-005", "tri"), ("saved-styles-005", "sq")],
+    ),
+    (
+        "PolyLine",
+        &[("saved-styles-005", "open"), ("saved-styles-005", "open2")],
+    ),
+    (
+        "List",
+        &[("saved-styles-005", "pts"), ("saved-styles-005", "nums")],
+    ),
+    (
+        "Text",
+        &[
+            ("saved-styles-006", "title"),
+            ("saved-styles-006", "value"),
+            ("saved-styles-006", "boxed"),
+            ("saved-styles-006", "tally"),
+            ("saved-styles-006", "total"),
+            ("saved-styles-006", "hiddenText"),
+        ],
+    ),
+    (
+        "Locus",
+        &[("saved-styles-004", "path"), ("saved-styles-004", "path2")],
+    ),
+    (
+        "Curve",
+        &[("saved-styles-004", "c"), ("saved-styles-004", "c2")],
+    ),
+    (
+        "ImplicitCurve",
+        &[("saved-styles-010", "p"), ("saved-styles-010", "q")],
+    ),
+    (
+        "FunctionNVar",
+        &[("saved-styles-004", "j"), ("saved-styles-004", "j2")],
+    ),
+    (
+        "Image",
+        &[("saved-styles-008", "art"), ("saved-styles-008", "pinned")],
+    ),
+    (
+        "PieChart",
+        &[
+            ("saved-styles-005", "chart"),
+            ("saved-styles-005", "chart2"),
+        ],
+    ),
+    (
+        "InputBox",
+        &[("saved-styles-007", "field"), ("saved-styles-007", "empty")],
+    ),
+    (
+        "Button",
+        &[("saved-styles-007", "run"), ("saved-styles-007", "run2")],
+    ),
+];
 
 /// Properties the document keeps in its own state instead of the saved
 /// style, with the value an object made in the application exports. They
@@ -569,28 +888,33 @@ fn new_object(kind: &str, property: &str) -> Option<Value> {
 
 /// The presentation properties an object of a kernel kind keeps in the
 /// reference application, by the names of the style snapshot. A property is
-/// left out where the reference application itself does not keep it: it
-/// refuses to fix a chart, reads no dash pattern for a number, saves no line
-/// opacity for a function of two variables, and does not save the auxiliary
-/// flag of a text, a locus, a button or an input box.
-///
-/// `chart.slices` stands for the colour and filling of single slices, which
-/// the importer does not read: no snapshot has it, so a pie chart stays
-/// `partial`.
+/// left out where the reference application itself does not keep it; the
+/// comments say which.
 fn kind_properties(kind: &str) -> Vec<&'static str> {
     const SHARED: &[&str] = &[
         "shown",
+        "views",
         "layer",
+        "ordering",
         "color",
         "condition",
         "dynamic_color",
         "color_space",
         "selection_allowed",
         "tooltip_mode",
+        "dynamic_caption",
+        "breakpoint",
+        "algebra_label",
+        "fixed_size",
     ];
     const FLAGS: &[&str] = &["fixed", "auxiliary"];
     const LABEL: &[&str] = &["label_shown", "label_mode", "caption", "label_offset"];
-    const LINE: &[&str] = &["line.type", "line.thickness", "line.opacity"];
+    const LINE: &[&str] = &[
+        "line.type",
+        "line.thickness",
+        "line.opacity",
+        "line.hidden_type",
+    ];
     const FILL: &[&str] = &[
         "alpha",
         "fill.type",
@@ -604,13 +928,33 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
             SHARED,
             FLAGS,
             LABEL,
-            &["point_size", "point_style", "trace"],
+            &[
+                "point_size",
+                "point_style",
+                "trace",
+                "show_trimmed",
+                "animation.playing",
+            ],
         ],
-        "Line" | "Ray" | "Vector" | "PolyLine" | "Function" | "Curve" | "ImplicitCurve" => {
+        "Line" | "Ray" | "Function" | "Curve" | "ImplicitCurve" => {
             &[SHARED, FLAGS, LABEL, LINE, &["trace"]]
         }
-        "Locus" => &[SHARED, &["fixed"], LABEL, LINE, &["trace"]],
-        "Segment" => &[SHARED, FLAGS, LABEL, LINE, &["trace", "decoration"]],
+        "PolyLine" => &[
+            SHARED,
+            FLAGS,
+            LABEL,
+            LINE,
+            &["trace", "start_style", "end_style"],
+        ],
+        "Vector" => &[SHARED, FLAGS, LABEL, LINE, &["trace", "head_style"]],
+        "Locus" => &[SHARED, &["fixed"], LABEL, LINE, &["trace", "draw_arrows"]],
+        "Segment" => &[
+            SHARED,
+            FLAGS,
+            LABEL,
+            LINE,
+            &["trace", "decoration", "start_style", "end_style"],
+        ],
         "Circle" | "Conic" | "Arc" | "Sector" | "Polygon" => {
             &[SHARED, FLAGS, LABEL, LINE, FILL, &["trace"]]
         }
@@ -623,7 +967,7 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
             &["point_size", "point_style", "trace"],
         ],
         "FunctionNVar" => &[SHARED, FLAGS, LABEL, FILL, &["line.type", "line.thickness"]],
-        "PieChart" => &[SHARED, &["auxiliary"], LABEL, LINE, FILL, &["chart.slices"]],
+        "PieChart" => &[SHARED, &["auxiliary"], LABEL, LINE, FILL],
         "Number" => &[
             SHARED,
             FLAGS,
@@ -633,6 +977,7 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
                 "line.opacity",
                 "slider.position",
                 "slider.width",
+                "slider.knob_size",
                 "slider.horizontal",
                 "slider.fixed",
                 "slider.absolute",
@@ -640,6 +985,7 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
                 "animation.step",
                 "animation.speed",
                 "animation.mode",
+                "animation.playing",
             ],
         ],
         "Angle" => &[
@@ -672,14 +1018,40 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
                 "label_offset",
             ],
         ],
-        "Button" | "InputBox" => &[SHARED, &["fixed", "caption", "background"]],
+        "InputBox" => &[SHARED, &["fixed", "caption", "background"]],
+        // The reference shows the algebra label again when it names an
+        // object that only its element tag creates, as a button and an image
+        // are, so it does not keep that flag for them.
+        "Button" => &[&[
+            "shown",
+            "views",
+            "layer",
+            "ordering",
+            "color",
+            "condition",
+            "dynamic_color",
+            "color_space",
+            "selection_allowed",
+            "tooltip_mode",
+            "dynamic_caption",
+            "breakpoint",
+            "fixed_size",
+            "fixed",
+            "caption",
+            "background",
+        ]],
         "Image" => &[
             &[
                 "shown",
+                "views",
                 "layer",
+                "ordering",
                 "condition",
                 "selection_allowed",
                 "tooltip_mode",
+                "dynamic_caption",
+                "breakpoint",
+                "fixed_size",
                 "alpha",
             ],
             FLAGS,
@@ -691,6 +1063,27 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
         .flat_map(|group| group.iter().copied())
         .collect()
 }
+
+/// What the reference application saves for a kind and the importer does not
+/// read. A kind with an entry stays `partial`.
+const NOT_KEPT: &[(&str, &str)] = &[
+    ("Point", "polar and complex coordinate style and the vertical increment are not kept"),
+    ("Vector", "the start point and the coordinate style are not kept"),
+    ("Segment", "the outlying-intersection and keep-type flags are not kept"),
+    ("Ray", "the outlying-intersection and keep-type flags are not kept"),
+    ("Arc", "the outlying-intersection and keep-type flags are not kept"),
+    ("Sector", "the outlying-intersection and keep-type flags are not kept"),
+    ("Number", "the symbolic mode and the slope triangle size are not kept"),
+    ("Boolean", "the position of the check box is not kept"),
+    ("Function", "the show-on-axis and simplify flags and the table column are not kept"),
+    ("Polygon", "the mask flag is not kept"),
+    ("List", "the drop-down display with its selected index and the font and rounding of a list are not kept"),
+    ("Text", "the symbolic mode is not kept"),
+    ("FunctionNVar", "the level of detail is not kept"),
+    ("PieChart", "the colour and filling of single slices are not kept"),
+    ("InputBox", "the font and size and position and the length and symbolic mode and alignment and typed text are not kept"),
+    ("Button", "the font and size and position and the image are not kept"),
+];
 
 /// The leaves of a style snapshot by their path (`line.type`). A list is one leaf.
 fn flatten(path: &str, value: &Value, out: &mut BTreeMap<String, Value>) {
@@ -711,9 +1104,115 @@ fn flatten(path: &str, value: &Value, out: &mut BTreeMap<String, Value>) {
     }
 }
 
+/// Whether the export of every object of a kind is written from its own
+/// stored data: the archive is the same when the journal line that made the
+/// object is replaced by a form no writer knows. `None` for a kind without
+/// an object in the corpus.
+fn journal_independence() -> BTreeMap<String, bool> {
+    let mut independent: BTreeMap<String, bool> = BTreeMap::new();
+    for (name, wb, view, _) in corpus() {
+        let whole = wb
+            .export_ggb(view)
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+        let c = wb.construction();
+        for (label, id) in labelled(c) {
+            if !c.value(id).is_defined() {
+                continue;
+            }
+            let same = wb
+                .export_ggb_without_definition(view, label)
+                .is_ok_and(|bytes| bytes == whole);
+            *independent
+                .entry(format!("{:?}", c.kind(id)))
+                .or_insert(true) &= same;
+        }
+    }
+    independent
+}
+
+/// The `export` column of `docs/kinds.csv`, derived in a normal test run.
+///
+/// `yes` needs all of: every object of the kind in the corpus is exported
+/// from its own stored data, whatever its journal line says (a construction
+/// kind also depends on a saved form of its definition and on the command
+/// history); the recorded proof of the reload oracle has a witness for every
+/// property of the kind; and nothing the reference application saves for the
+/// kind is known not to be kept. Otherwise the cell is `partial` and the
+/// note says why. A kind without a defined example in the corpus is `no`.
+#[test]
+fn the_export_column_follows_the_journal_rule_and_the_recorded_proof() {
+    let proof: BTreeMap<String, BTreeMap<String, Value>> =
+        serde_json::from_str(&fs::read_to_string(proof_path()).unwrap()).unwrap();
+    let independent = journal_independence();
+    let table = fs::read_to_string(repo_root().join("docs/kinds.csv")).unwrap();
+    let matrix = geo_golden::table::Table::parse(&table, "docs/kinds.csv").unwrap();
+    let mut errors = Vec::new();
+    for row in matrix.records() {
+        let kind = row["kernel_kind"];
+        let Some(&own_data) = independent.get(kind) else {
+            if row["export"] != "no" {
+                errors.push(format!("{kind}: no defined example is exported"));
+            }
+            continue;
+        };
+        let proven = proof.get(kind);
+        let mut reasons = Vec::new();
+        if !own_data {
+            reasons.push("its definition needs a saved form".to_owned());
+        }
+        let missing: Vec<_> = kind_properties(kind)
+            .into_iter()
+            .filter(|property| proven.is_none_or(|proven| !proven.contains_key(*property)))
+            .collect();
+        if !missing.is_empty() {
+            reasons.push(format!("no witness for {}", missing.join(" and ")));
+        }
+        reasons.extend(
+            NOT_KEPT
+                .iter()
+                .filter(|(lossy, _)| *lossy == kind)
+                .map(|(_, loss)| (*loss).to_owned()),
+        );
+        let (cell, note) = if reasons.is_empty() {
+            ("yes", String::new())
+        } else {
+            ("partial", format!("Export: {}.", reasons.join("; ")))
+        };
+        println!(
+            "{kind}: {cell}, {} of {} properties proven. {note}",
+            kind_properties(kind).len() - missing.len(),
+            kind_properties(kind).len()
+        );
+        if row["export"] != cell {
+            errors.push(format!(
+                "{kind}: export is `{}`, derived `{cell}`. {note}",
+                row["export"]
+            ));
+        } else if !row["notes"].ends_with(&note)
+            || (note.is_empty() && row["notes"].contains("Export:"))
+        {
+            errors.push(format!("{kind}: the note must end with `{note}`"));
+        }
+    }
+    assert!(
+        errors.is_empty(),
+        "docs/kinds.csv export column:\n{}",
+        errors.join("\n")
+    );
+}
+
 fn java_snapshots(dir: &std::path::Path) -> std::process::Output {
     Command::new(repo_root().join("tools/ggb-harness/harness.sh"))
         .arg("export-snapshot")
+        .arg(dir)
+        .output()
+        .expect("run Java harness")
+}
+
+/// Snapshots that record what the reader reports instead of stopping at it.
+fn lenient_java_snapshots(dir: &std::path::Path) -> std::process::Output {
+    Command::new(repo_root().join("tools/ggb-harness/harness.sh"))
+        .args(["export-snapshot", "--lenient"])
         .arg(dir)
         .output()
         .expect("run Java harness")
@@ -789,8 +1288,11 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
                         ("Slider", [_, _, step]) => Some(*step),
                         _ => None,
                     });
+                let from_file = presentation.object_styles.contains_key(label);
                 let step = match animation {
                     Some(animation) => number_or_reference(c, animation.step.as_deref()),
+                    // A file slider without the tag steps automatically.
+                    None if from_file => Value::Null,
                     None => number_or_reference(c, command_step.or(Some("0.1"))),
                 };
                 let speed = animation.and_then(|a| a.speed.as_deref()).or(Some("1"));

@@ -193,12 +193,32 @@ pub(crate) fn convert_with_assets(
         }
         if let Some(fill) = saved_style.fill.as_deref_mut() {
             if fill.pattern > crate::export::Fill::MAX_PATTERN {
-                c.out.notes.push(format!(
-                    "fill pattern {} of `{label}` is not supported",
-                    fill.pattern
-                ));
+                c.out
+                    .notes
+                    .push(format!("the image fill of `{label}` is not kept"));
                 fill.pattern = 0;
             }
+        }
+        // A caption taken from a text that is not there is dropped, as the
+        // reference reader drops it.
+        if let Some(caption) = saved_style.dynamic_caption.take() {
+            if c.kernel
+                .id(&caption)
+                .is_some_and(|text| c.kernel.kind(text) == Kind::Text)
+            {
+                saved_style.dynamic_caption = Some(caption);
+            } else {
+                c.out.notes.push(format!(
+                    "dynamic caption of `{label}`: `{}` is not a text",
+                    quote(&caption)
+                ));
+            }
+        }
+        for tag in &el.reader_stops {
+            c.out.notes.push(format!(
+                "`<{tag}>` of `{label}` has a number the reference reader cannot read; \
+                 it gives up the file there, and what the tag had not yet set is not kept"
+            ));
         }
         if let Some(mut animation) = el.slider_animation.clone() {
             for (text, what) in [

@@ -68,6 +68,10 @@ pub struct ObjectStyle {
     pub show_label: Option<bool>,
     /// The file had no `<show>` tag, so its reader decides the visibility.
     pub untagged: bool,
+    /// View membership (`<show ev=>`): bit 0 leaves the first view, bit 1
+    /// joins the second, 4 and 8 switch the 3D view on and off, 16 and 32
+    /// the view of a plane.
+    pub views: Option<i32>,
     /// `<layer val=>`. The reader gives an object without the tag the layer
     /// of the object before it, so its absence is kept.
     pub layer: Option<u8>,
@@ -99,6 +103,25 @@ pub struct ObjectStyle {
     pub trace: Option<bool>,
     /// `<decoration type=>`: ticks and arcs of segments and angles.
     pub decoration: Option<i32>,
+    /// `<ordering val=>`: the drawing order within a layer.
+    pub ordering: Option<f64>,
+    /// `<dynamicCaption val=>`: the label of the text shown as the caption.
+    pub dynamic_caption: Option<String>,
+    /// `<pointSize val=>` of a number: the size of the knob of its slider.
+    pub knob_size: Option<f64>,
+    /// `<fixedSize val=>`.
+    pub fixed_size: Option<bool>,
+    /// `<showTrimmed val=>`: only the parts of the intersecting lines near
+    /// an intersection point are drawn.
+    pub show_trimmed: Option<bool>,
+    /// `<breakpoint val=>` of the construction protocol.
+    pub breakpoint: Option<bool>,
+    /// `<algebra labelVisible=>`.
+    pub algebra_label: Option<bool>,
+    /// `<startStyle val=>` and `<endStyle val=>` of a segment or a broken line.
+    pub ends: [Option<SegmentEnd>; 2],
+    /// `<headStyle val=>` of a vector: 0 plain, 1 arrow.
+    pub head_style: Option<u8>,
     /// Rounding of one text (`<decimals>` or `<significantfigures>`).
     pub rounding: Option<Rounding>,
     /// `<arcSize val=>` of an angle, in pixels.
@@ -113,19 +136,26 @@ pub struct ObjectStyle {
     pub animation: Option<Box<SliderAnimation>>,
 }
 
-/// `<lineStyle thickness= type= typeHidden= opacity=>`.
+/// `<lineStyle type= thickness= typeHidden= opacity= drawArrow=>`.
+///
+/// The reference reader applies the attributes in this order and stops at
+/// the first one it cannot read, so a later field is only set when every
+/// earlier attribute was read.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct LineStyle {
-    pub thickness: u8,
     /// Dash pattern code: 0 full, 10 and 15 dashed, 20 dotted, 30 dash-dotted.
     pub kind: i32,
+    /// Any value of 0 or more.
+    pub thickness: Option<i32>,
     pub hidden_kind: Option<i32>,
     /// Stroke opacity from 0 to 255.
-    pub opacity: Option<u8>,
+    pub opacity: Option<i32>,
+    /// A locus drawn as arrows (a slope field).
+    pub draw_arrow: Option<bool>,
 }
 
 /// The fill attributes of `<objColor>`.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Fill {
     /// Index of the pattern (`fillType`): 0 plain, 1 hatched, 2 cross-hatched,
     /// 3 chessboard, 4 dotted, 5 honeycomb, 6 brick, 7 weaving, 8 symbols.
@@ -141,6 +171,59 @@ pub struct Fill {
 impl Fill {
     /// The last pattern the writer supports; an image fill needs an asset.
     pub const MAX_PATTERN: u8 = 8;
+    /// The index of the image fill.
+    pub const IMAGE_PATTERN: u8 = 9;
+    /// The distance of a hatch whose distance the reader never set.
+    pub const DEFAULT_DISTANCE: i32 = 10;
+}
+
+/// The decoration of one end of a segment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SegmentEnd {
+    Default,
+    Line,
+    Arrow,
+    CrowsFoot,
+    ArrowOutline,
+    ArrowFilled,
+    CircleOutline,
+    Circle,
+    SquareOutline,
+    Square,
+    DiamondOutline,
+    Diamond,
+}
+
+impl SegmentEnd {
+    const NAMES: [(&'static str, SegmentEnd); 12] = [
+        ("default", Self::Default),
+        ("line", Self::Line),
+        ("arrow", Self::Arrow),
+        ("crows_foot", Self::CrowsFoot),
+        ("arrow_outline", Self::ArrowOutline),
+        ("arrow_filled", Self::ArrowFilled),
+        ("circle_outline", Self::CircleOutline),
+        ("circle", Self::Circle),
+        ("square_outline", Self::SquareOutline),
+        ("square", Self::Square),
+        ("diamond_outline", Self::DiamondOutline),
+        ("diamond", Self::Diamond),
+    ];
+
+    /// The saved name, in any letter case.
+    pub fn from_xml(name: &str) -> Option<Self> {
+        Self::NAMES
+            .iter()
+            .find(|(known, _)| known.eq_ignore_ascii_case(name))
+            .map(|&(_, end)| end)
+    }
+
+    pub fn xml_name(self) -> &'static str {
+        Self::NAMES
+            .iter()
+            .find(|&&(_, end)| end == self)
+            .map_or("default", |&(name, _)| name)
+    }
 }
 
 /// Colour channels computed from numeric expressions (`dynamicr`, ...).
@@ -170,16 +253,26 @@ pub enum Rounding {
     SignificantFigures(i32),
 }
 
-/// Where and how a slider is drawn.
-#[derive(Clone, Debug, PartialEq)]
+/// Where and how a slider is drawn (`<slider>` without its bounds).
+///
+/// The reference reader applies the placement mode, the position, the width
+/// and then the flags, and stops at the first attribute it cannot read.
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct SliderLayout {
+    pub absolute: bool,
     /// Pixels when `absolute`, otherwise world coordinates.
     pub position: Option<[f64; 2]>,
+    /// `None` when the reader stopped at or before the width.
     pub width: Option<f64>,
-    pub absolute: bool,
-    pub horizontal: bool,
+    /// `fixed`, `showAlgebra` and `horizontal`, read after the width.
+    pub flags: Option<SliderFlags>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SliderFlags {
     pub fixed: bool,
     pub show_algebra: bool,
+    pub horizontal: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]

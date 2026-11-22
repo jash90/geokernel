@@ -55,6 +55,13 @@
 	<labelMode val="0"/>
 	<checkbox fixed="true"/>
 </element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
 <element type="numeric" label="n">
 	<value val="30"/>
 	<slider min="0" max="100" absoluteScreenLocation="true" width="150" x="38" y="58" fixed="false" horizontal="true" showAlgebra="true"/>

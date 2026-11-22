@@ -55,22 +55,34 @@
 	<labelMode val="0"/>
 	<checkbox fixed="true"/>
 </element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
 <expression label="p" exp="x^(3) + y^(3) = 1" type="implicitpoly"/>
 <element type="implicitpoly" label="p">
-	<show object="true" label="false" ev="4"/>
+	<show object="true" label="false" ev="6"/>
 	<condition showObject="show"/>
 	<objColor r="240" g="130" b="144" alpha="0" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1"/>
 	<layer val="3"/>
+	<ordering val="38.5"/>
 	<labelOffset x="43" y="-45"/>
 	<labelMode val="3"/>
 	<tooltipMode val="3"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<animation step="0.1" type="0" playing="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 38"/>
-	<lineStyle thickness="7" type="20" typeHidden="1" opacity="86"/>
+	<lineStyle thickness="7" type="20" typeHidden="0" opacity="86"/>
 	<userinput show="true"/>
 	<coefficients rep="array" data="[[-1.0,0.0,0.0,1.0],[0.0,0.0,0.0,0.0],[0.0,0.0,0.0,0.0],[1.0,0.0,0.0,0.0]]"/>
 </element>

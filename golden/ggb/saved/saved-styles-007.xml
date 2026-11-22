@@ -56,6 +56,13 @@
 	<labelMode val="0"/>
 	<checkbox fixed="true"/>
 </element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
 <element type="numeric" label="a">
 	<value val="0"/>
 	<slider min="0" max="8" absoluteScreenLocation="true" width="200" x="38" y="58" fixed="false" horizontal="true" showAlgebra="true"/>
@@ -67,18 +74,24 @@
 	<animation step="0.5" type="0" playing="false"/>
 </element>
 <element type="button" label="run">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="0" g="222" b="252" alpha="0" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1"/>
 	<bgColor r="0" g="90" b="180" alpha="255"/>
 	<layer val="6"/>
+	<ordering val="32.5"/>
 	<labelMode val="0"/>
 	<tooltipMode val="3"/>
+	<algebra labelVisible="false"/>
 	<animation step="0.1" type="0" playing="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Go"/>
+	<dimensions width="62" height="24"/>
 </element>
 <element type="button" label="run2">
 	<show object="false" label="true"/>
@@ -95,17 +108,23 @@
 	<output a0="field"/>
 </command>
 <element type="textfield" label="field">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="3"/>
 	<condition showObject="show"/>
 	<objColor r="40" g="36" b="106" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
 	<bgColor r="230" g="255" b="230" alpha="255"/>
 	<layer val="7"/>
+	<ordering val="33.5"/>
 	<labelOffset x="30" y="30"/>
 	<labelMode val="0"/>
 	<tooltipMode val="1"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Value"/>
+	<dimensions width="40" height="30"/>
 	<symbolic val="true"/>
 	<contentSerif val="true"/>
 </element>

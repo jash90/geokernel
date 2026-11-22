@@ -55,22 +55,34 @@
 	<labelMode val="0"/>
 	<checkbox fixed="true"/>
 </element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
 <expression label="f" exp="f(x) = x^(2) - 2" type="function"/>
 <element type="function" label="f">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="3"/>
 	<condition showObject="show"/>
 	<objColor r="72" g="220" b="66" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
 	<layer val="4"/>
+	<ordering val="21.5"/>
 	<labelOffset x="26" y="-28"/>
 	<labelMode val="2"/>
 	<tooltipMode val="1"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<animation step="0.1" type="0" playing="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 21"/>
-	<lineStyle thickness="12" type="15" typeHidden="1" opacity="197"/>
+	<lineStyle thickness="12" type="15" typeHidden="2" opacity="197"/>
 	<simplifyCoefficients val="true"/>
 </element>
 <expression label="f2" exp="f2(x) = sin(x)" type="function"/>
@@ -86,19 +98,24 @@
 </element>
 <expression label="j" exp="j(x, y) = x + y" type="function"/>
 <element type="functionnvar" label="j">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="112" g="34" b="176" alpha="0.29" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1" fillType="8" hatchAngle="90" hatchDistance="13" fillSymbol="★" inverseFill="true"/>
 	<layer val="5"/>
+	<ordering val="22.5"/>
 	<labelOffset x="27" y="-29"/>
 	<labelMode val="3"/>
 	<tooltipMode val="2"/>
+	<algebra labelVisible="false"/>
 	<animation step="0.1" type="0" playing="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 22"/>
-	<lineStyle thickness="2" type="20" typeHidden="1"/>
+	<lineStyle thickness="2" type="20" typeHidden="0"/>
 </element>
 <expression label="j2" exp="j2(x, y) = (x * y)" type="function"/>
 <element type="functionnvar" label="j2">
@@ -114,19 +131,24 @@
 	<output a0="c"/>
 </command>
 <element type="curvecartesian" label="c">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="3"/>
 	<condition showObject="show"/>
 	<objColor r="152" g="104" b="30" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
 	<layer val="6"/>
+	<ordering val="23.5"/>
 	<labelOffset x="28" y="-30"/>
 	<labelMode val="9"/>
 	<tooltipMode val="3"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 23"/>
-	<lineStyle thickness="3" type="30" typeHidden="1" opacity="231"/>
+	<lineStyle thickness="3" type="30" typeHidden="2" opacity="231"/>
 </element>
 <command name="CurveCartesian">
 	<input a0="t" a1="t^(3)" a2="t" a3="-1" a4="1"/>
@@ -214,18 +236,23 @@
 	<output a0="path"/>
 </command>
 <element type="locus" label="path">
-	<show object="true" label="false" ev="4"/>
+	<show object="true" label="false" ev="6"/>
 	<condition showObject="show"/>
 	<objColor r="192" g="174" b="140" alpha="0" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1"/>
 	<layer val="7"/>
+	<ordering val="24.5"/>
 	<labelOffset x="29" y="-31"/>
 	<labelMode val="1"/>
 	<tooltipMode val="1"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 24"/>
-	<lineStyle thickness="4" type="10" typeHidden="1" opacity="48"/>
+	<lineStyle thickness="4" type="10" typeHidden="0" opacity="48"/>
 </element>
 <expression label="R" exp="(y(P), x(P))" type="point"/>
 <element type="point" label="R">

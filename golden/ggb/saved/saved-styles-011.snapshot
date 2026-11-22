@@ -6,6 +6,7 @@
     "g = 0.5",
     "b = 0.75",
     "show = true",
+    "note = \"Dynamic\"",
     "n = Slider(0, 100, 1)",
     "m = Slider(-200, -100, 10)",
     "P = (n / 10, m / 100)"
@@ -15,6 +16,7 @@
     "g": { "type": "number", "defined": true, "value": 0.5 },
     "b": { "type": "number", "defined": true, "value": 0.75 },
     "show": { "type": "boolean", "defined": true, "value": true },
+    "note": { "type": "text", "defined": true, "text": "Dynamic" },
     "n": { "type": "number", "defined": true, "value": 30.0 },
     "m": { "type": "number", "defined": true, "value": -170.0 },
     "P": { "type": "point", "defined": true, "x": 3.0, "y": -1.7 }

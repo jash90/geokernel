@@ -129,6 +129,8 @@ pub enum ImportError {
     TooManyEntries(usize),
     /// The construction has more than [`xml::MAX_ITEMS`] items.
     TooManyItems,
+    /// Tags nest deeper than [`xml::MAX_DEPTH`].
+    TooDeep,
     /// A command lists more than [`xml::MAX_ARGUMENTS`] inputs or outputs.
     TooManyArguments(String),
     /// An attribute value is longer than [`xml::MAX_ATTRIBUTE_BYTES`].
@@ -161,6 +163,9 @@ impl fmt::Display for ImportError {
                 "the archive lists {n} entries, more than the {} allowed",
                 archive::MAX_ZIP_ENTRIES
             ),
+            ImportError::TooDeep => {
+                write!(f, "the tags nest deeper than {} levels", xml::MAX_DEPTH)
+            }
             ImportError::TooManyItems => {
                 write!(f, "the construction has more than {} items", xml::MAX_ITEMS)
             }

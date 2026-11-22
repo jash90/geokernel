@@ -6,6 +6,7 @@
     "g = 0.5",
     "b = 0.75",
     "show = true",
+    "note = \"Dynamic\"",
     "f(x) = x^2 - 2",
     "f2(x) = sin(x)",
     "j(x, y) = x + y",
@@ -27,6 +28,7 @@
     "g": { "type": "number", "defined": true, "value": 0.5 },
     "b": { "type": "number", "defined": true, "value": 0.75 },
     "show": { "type": "boolean", "defined": true, "value": true },
+    "note": { "type": "text", "defined": true, "text": "Dynamic" },
     "f": {
       "type": "function",
       "defined": true,

@@ -31,11 +31,12 @@
 //!
 //! At most [`MAX_ITEMS`] items (an item counts once, plus once per output of
 //! a command) are read, a command lists at most [`MAX_ARGUMENTS`] inputs and
-//! as many outputs, and an attribute value has at most
-//! [`MAX_ATTRIBUTE_BYTES`] bytes.
+//! as many outputs, an attribute value has at most [`MAX_ATTRIBUTE_BYTES`]
+//! bytes, and tags nest at most [`MAX_DEPTH`] deep.
 
 use crate::export::{
-    DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SliderAnimation, SliderLayout,
+    DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SegmentEnd, SliderAnimation, SliderFlags,
+    SliderLayout,
 };
 use crate::{ImportError, Settings};
 use geo_kernel::kernel::control::ControlScript;
@@ -55,6 +56,10 @@ pub const MAX_ARGUMENTS: usize = 10_000;
 /// The longest value one attribute may have, in bytes.
 pub const MAX_ATTRIBUTE_BYTES: usize = 1 << 20;
 
+/// The deepest nesting of tags. A saved file nests five levels (a macro,
+/// its construction, an element, a tag).
+pub const MAX_DEPTH: usize = 32;
+
 /// An element of the construction that GeoGebra wrote.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Element {
@@ -63,6 +68,9 @@ pub struct Element {
     pub label: String,
     /// `<show object=>`; `None` without the tag.
     pub shown: Option<bool>,
+    /// Tags at which the reference reader gives up the whole file: a number
+    /// it reads outside any guard is missing or malformed.
+    pub reader_stops: Vec<&'static str>,
     pub layer: u8,
     pub label_shown: Option<bool>,
     pub label_offset: Option<[i32; 2]>,
@@ -155,6 +163,9 @@ pub struct Document {
     pub function_path_bounds: Option<[f64; 2]>,
     /// Base font size used by older text elements with an additive size.
     pub gui_font_size: Option<f64>,
+    /// The file format is 3.19 or older: its reader ignores the opacity of
+    /// a list.
+    pub legacy_list_alpha: bool,
 }
 
 #[derive(Default)]
@@ -378,14 +389,116 @@ fn read_text_style(el: &mut Element, name: &str, e: &BytesStart) -> Result<(), I
     Ok(())
 }
 
-/// The opacity, dynamic channels and fill pattern of an `<objColor>` tag whose
-/// colour was accepted. The reference reader skips the whole tag otherwise.
-fn read_fill(style: &mut ObjectStyle, e: &BytesStart) -> Result<(), ImportError> {
+/// `Integer.parseInt`: a sign and decimal digits that fit 32 bits.
+fn java_int(text: &str) -> Option<i32> {
+    text.parse().ok()
+}
+
+/// `Double.parseDouble`: white space around the number and a type suffix
+/// are allowed, and the infinities and NaN have one spelling each.
+fn java_double(text: &str) -> Option<f64> {
+    let text = text.trim_matches(|ch: char| ch <= ' ');
+    let text = text.strip_suffix(['f', 'F', 'd', 'D']).unwrap_or(text);
+    let unsigned = text.trim_start_matches(['+', '-']);
+    let named = unsigned
+        .chars()
+        .next()
+        .is_some_and(|ch| ch.is_ascii_alphabetic());
+    if named && !matches!(unsigned, "NaN" | "Infinity") {
+        return None;
+    }
+    text.parse().ok()
+}
+
+/// The number parser of the reference for sizes and positions, which also
+/// takes `undefined` and `null` for NaN.
+fn reference_double(text: &str) -> Option<f64> {
+    match text {
+        "NaN" | "undefined" | "null" => Some(f64::NAN),
+        "Infinity" => Some(f64::INFINITY),
+        "-Infinity" => Some(f64::NEG_INFINITY),
+        other => java_double(other),
+    }
+}
+
+/// A colour channel: any 32 bit integer, of which the low byte counts.
+fn color_channel(text: &str) -> Option<u8> {
+    java_int(text).map(|value| (value & 0xff) as u8)
+}
+
+/// `<lineStyle>`: the dash pattern first, then the thickness, the hidden
+/// pattern, the opacity and the arrows of a locus. The reference reader
+/// keeps what it set before the first attribute it cannot read, and sets
+/// nothing without a dash pattern.
+fn read_line_style(e: &BytesStart) -> Result<Option<LineStyle>, ImportError> {
+    let Some(kind) = attr(e, "type")?.and_then(|v| java_int(&v)) else {
+        return Ok(None);
+    };
+    let mut line = LineStyle {
+        kind,
+        ..LineStyle::default()
+    };
+    let Some(thickness) = attr(e, "thickness")?.and_then(|v| java_int(&v)) else {
+        return Ok(Some(line));
+    };
+    line.thickness = Some(thickness.max(0));
+    if let Some(text) = attr(e, "typeHidden")? {
+        let Some(hidden) = java_int(&text) else {
+            return Ok(Some(line));
+        };
+        line.hidden_kind = Some(hidden);
+    }
+    if let Some(text) = attr(e, "opacity")? {
+        let Some(opacity) = java_int(&text) else {
+            return Ok(Some(line));
+        };
+        line.opacity = Some(opacity);
+    }
+    line.draw_arrow = attr(e, "drawArrow")?.map(|v| v == "true");
+    Ok(Some(line))
+}
+
+/// The placement of `<slider>`: the mode, the position, the width and then
+/// the flags, up to the first number the reference reader cannot read.
+fn read_slider_layout(e: &BytesStart) -> Result<SliderLayout, ImportError> {
+    let mut layout = SliderLayout {
+        absolute: attr(e, "absoluteScreenLocation")?.is_some_and(|v| v == "true"),
+        ..SliderLayout::default()
+    };
+    if let Some(x) = attr(e, "x")? {
+        let y = attr(e, "y")?;
+        let (Some(x), Some(y)) = (
+            reference_double(&x),
+            y.as_deref().and_then(reference_double),
+        ) else {
+            return Ok(layout);
+        };
+        layout.position = Some([x, y]);
+    }
+    let Some(width) = attr(e, "width")?.and_then(|v| reference_double(&v)) else {
+        return Ok(layout);
+    };
+    layout.width = Some(width);
+    let flag = |key| attr(e, key).map(|v| v.is_some_and(|v| v == "true"));
+    layout.flags = Some(SliderFlags {
+        fixed: flag("fixed")?,
+        show_algebra: flag("showAlgebra")?,
+        horizontal: flag("horizontal")?,
+    });
+    Ok(layout)
+}
+
+/// The dynamic channels, fill pattern and opacity of an `<objColor>` tag
+/// whose colour was accepted, in the order of the reference reader: dynamic
+/// colour, hatch angle, inversion, hatch distance, pattern, symbol, opacity.
+/// It reads the numbers of the fill outside any guard: `false` tells that it
+/// gives up the file at this tag, and what it had not yet set is not kept.
+fn read_fill(
+    style: &mut ObjectStyle,
+    e: &BytesStart,
+    read_alpha: bool,
+) -> Result<bool, ImportError> {
     let read = |key| attr(e, key);
-    let integer = |key| read(key).map(|v| v.and_then(|v| v.parse::<i32>().ok()));
-    style.alpha = read("alpha")?
-        .and_then(|v| v.parse::<f64>().ok())
-        .filter(|v| (0.0..=1.0).contains(v));
     if let (Some(red), Some(green), Some(blue)) =
         (read("dynamicr")?, read("dynamicg")?, read("dynamicb")?)
     {
@@ -397,28 +510,70 @@ fn read_fill(style: &mut ObjectStyle, e: &BytesStart) -> Result<(), ImportError>
                 green: channel(green),
                 blue: channel(blue),
                 alpha: read("dynamica")?.filter(|text| !text.is_empty()),
-                space: integer("colorSpace")?.unwrap_or(0),
+                // A colour space that is no number leaves the default.
+                space: read("colorSpace")?.and_then(|v| java_int(&v)).unwrap_or(0),
             }));
         }
     }
-    let angle = integer("hatchAngle")?;
-    let hatch = angle.zip(integer("hatchDistance")?).map(|(a, d)| [a, d]);
-    // A hatch angle without a pattern is the hatched fill of older files.
-    let pattern = match read("fillType")? {
-        Some(index) => index.parse::<u8>().ok(),
-        None => angle.map(|_| 1),
-    };
-    let symbol = read("fillSymbol")?;
-    let inverse = read("inverseFill")?.map(|v| v == "true");
-    if pattern.is_some() || hatch.is_some() || symbol.is_some() || inverse.is_some() {
-        style.fill = Some(Box::new(Fill {
-            pattern: pattern.unwrap_or(0),
-            hatch,
-            symbol,
-            inverse,
-        }));
+    let mut fill = Fill::default();
+    let mut touched = false;
+    let complete = (|| -> Result<bool, ImportError> {
+        let angle = match read("hatchAngle")? {
+            Some(text) => {
+                let Some(angle) = java_int(&text) else {
+                    return Ok(false);
+                };
+                // The distance keeps its default until it is read.
+                fill.hatch = Some([angle, Fill::DEFAULT_DISTANCE]);
+                touched = true;
+                Some(angle)
+            }
+            None => None,
+        };
+        if let Some(inverse) = read("inverseFill")? {
+            fill.inverse = Some(inverse == "true");
+            touched = true;
+        }
+        if let Some(angle) = angle {
+            let Some(distance) = read("hatchDistance")?.and_then(|v| java_int(&v)) else {
+                return Ok(false);
+            };
+            fill.hatch = Some([angle, distance]);
+            // A hatch angle without a pattern is the hatched fill of older files.
+            fill.pattern = 1;
+        }
+        if let Some(text) = read("fillType")? {
+            let Some(index) = java_int(&text).filter(|i| (0..=9).contains(i)) else {
+                return Ok(false);
+            };
+            fill.pattern = index as u8;
+            touched = true;
+        }
+        if let Some(symbol) = read("fillSymbol")? {
+            fill.symbol = Some(symbol);
+            touched = true;
+        }
+        if read("image")?.is_some() {
+            fill.pattern = Fill::IMAGE_PATTERN;
+            touched = true;
+        }
+        if read_alpha {
+            if let Some(text) = read("alpha")? {
+                let Some(alpha) = java_double(&text) else {
+                    return Ok(false);
+                };
+                // A value outside 0 to 1 is ignored; NaN passes that test.
+                if !(alpha < 0.0 || alpha > 1.0) {
+                    style.alpha = Some(alpha);
+                }
+            }
+        }
+        Ok(true)
+    })()?;
+    if touched {
+        style.fill = Some(Box::new(fill));
     }
-    Ok(())
+    Ok(complete)
 }
 
 /// The attributes `a0`, `a1`, ... of an `<input>` or `<output>` tag, which
@@ -474,6 +629,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
     let mut in_kernel = false;
     let mut in_gui = false;
     let mut view = None;
+    let mut depth = 0usize;
     loop {
         let event = reader.read_event().map_err(bad)?;
         let (start, empty) = match &event {
@@ -481,9 +637,25 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
             Event::Empty(e) => (Some(e), true),
             _ => (None, false),
         };
+        match &event {
+            Event::Start(_) => {
+                depth += 1;
+                if depth > MAX_DEPTH {
+                    return Err(ImportError::TooDeep);
+                }
+            }
+            Event::End(_) => depth = depth.saturating_sub(1),
+            _ => {}
+        }
         if let Some(e) = start {
             let name = e.name().as_ref().to_string();
             match name.as_str() {
+                "geogebra" if depth <= 1 => {
+                    // The reader of a format up to 3.19 ignores list opacity.
+                    doc.legacy_list_alpha = attr(e, "format")?
+                        .and_then(|format| reference_double(&format))
+                        .is_some_and(|format| format <= 3.19);
+                }
                 "construction" if !in_construction => {
                     in_construction = !empty;
                     seen_construction = true;
@@ -562,6 +734,15 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     // Only `true` shows the object, as in the reference reader.
                     el.shown = Some(attr(e, "object")?.is_some_and(|object| object == "true"));
                     el.label_shown = Some(attr(e, "label")?.is_some_and(|label| label == "true"));
+                    // The views change only when the bits are a number.
+                    match attr(e, "ev")? {
+                        None => el.object_style.views = Some(0),
+                        Some(bits) => {
+                            if let Some(bits) = java_int(&bits) {
+                                el.object_style.views = Some(bits);
+                            }
+                        }
+                    }
                 }
                 "layer" if element.is_some() => {
                     if let Some(layer) = attr(e, "val")?.and_then(|v| v.parse::<i32>().ok()) {
@@ -572,29 +753,68 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 }
                 "lineStyle" if element.is_some() => {
                     let el = element.as_mut().expect("checked above");
-                    let integer = |key| attr(e, key).map(|v| v.and_then(|v| v.parse::<i32>().ok()));
-                    el.thickness = integer("thickness")?.map(|v| v.clamp(0, 255) as u8);
-                    // The reader sets nothing unless both numbers parse.
-                    if let (Some(thickness), Some(kind)) = (el.thickness, integer("type")?) {
-                        el.object_style.line = Some(LineStyle {
-                            thickness,
-                            kind,
-                            hidden_kind: integer("typeHidden")?,
-                            opacity: integer("opacity")?.map(|v| v.clamp(0, 255) as u8),
-                        });
+                    if let Some(line) = read_line_style(e)? {
+                        el.thickness = line.thickness.map(|v| v.clamp(0, 255) as u8);
+                        el.object_style.line = Some(line);
+                    }
+                }
+                "ordering" if element.is_some() => {
+                    // `Double.parseDouble`, ignored when it fails.
+                    if let Some(order) = attr(e, "val")?.and_then(|v| java_double(&v)) {
+                        element
+                            .as_mut()
+                            .expect("checked above")
+                            .object_style
+                            .ordering = Some(order);
+                    }
+                }
+                "dynamicCaption" if element.is_some() => {
+                    element
+                        .as_mut()
+                        .expect("checked above")
+                        .object_style
+                        .dynamic_caption = attr(e, "val")?;
+                }
+                "startStyle" | "endStyle" if element.is_some() => {
+                    // An unknown name clears the style in the reference, which
+                    // then cannot save the segment; it is not kept here.
+                    let end = attr(e, "val")?.and_then(|v| SegmentEnd::from_xml(&v));
+                    let ends = &mut element.as_mut().expect("checked above").object_style.ends;
+                    ends[usize::from(name == "endStyle")] = end;
+                }
+                "headStyle" if element.is_some() => {
+                    if let Some(index) = attr(e, "val")?
+                        .and_then(|v| java_int(&v))
+                        .filter(|index| (0..=1).contains(index))
+                    {
+                        element
+                            .as_mut()
+                            .expect("checked above")
+                            .object_style
+                            .head_style = Some(index as u8);
                     }
                 }
                 "labelMode" | "tooltipMode" | "pointSize" | "pointStyle" | "arcSize"
                     if element.is_some() =>
                 {
-                    let style = &mut element.as_mut().expect("checked above").object_style;
-                    let value = attr(e, "val")?.and_then(|v| v.parse::<i32>().ok());
+                    let el = element.as_mut().expect("checked above");
+                    let text = attr(e, "val")?;
+                    let value = text.as_deref().and_then(java_int);
+                    let style = &mut el.object_style;
                     match name.as_str() {
-                        "labelMode" => style.label_mode = value,
-                        "tooltipMode" => style.tooltip_mode = value,
-                        "pointSize" => style.point_size = value,
-                        "pointStyle" => style.point_style = value,
-                        _ => style.arc_size = value,
+                        "labelMode" => style.label_mode = value.or(style.label_mode),
+                        "tooltipMode" => style.tooltip_mode = value.or(style.tooltip_mode),
+                        // On a number the tag is the size of the slider knob.
+                        "pointSize" if matches!(el.kind.as_str(), "numeric" | "angle") => {
+                            match text.as_deref().map(reference_double) {
+                                Some(Some(size)) => style.knob_size = Some(size),
+                                // The number is read outside any guard.
+                                _ => el.reader_stops.push("pointSize"),
+                            }
+                        }
+                        "pointSize" => style.point_size = value.or(style.point_size),
+                        "pointStyle" => style.point_style = value.or(style.point_style),
+                        _ => style.arc_size = value.or(style.arc_size),
                     }
                 }
                 "decoration" if element.is_some() => {
@@ -612,6 +832,24 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         "trace" => style.trace = on,
                         _ => style.emphasize_right_angle = on,
                     }
+                }
+                "fixedSize" | "showTrimmed" | "breakpoint" if element.is_some() => {
+                    let style = &mut element.as_mut().expect("checked above").object_style;
+                    let on = attr(e, "val")?.map(|v| v == "true");
+                    match name.as_str() {
+                        "fixedSize" => style.fixed_size = on,
+                        "showTrimmed" => style.show_trimmed = on,
+                        _ => style.breakpoint = on,
+                    }
+                }
+                "algebra" if element.is_some() => {
+                    // Anything but `false` shows the label.
+                    element
+                        .as_mut()
+                        .expect("checked above")
+                        .object_style
+                        .algebra_label =
+                        Some(attr(e, "labelVisible")?.is_none_or(|v| v != "false"));
                 }
                 "checkbox" if element.is_some() => {
                     element
@@ -634,8 +872,8 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     }
                 }
                 "bgColor" if element.is_some() => {
-                    let channel = |key| -> Result<Option<i32>, ImportError> {
-                        Ok(attr(e, key)?.and_then(|v| v.parse().ok()))
+                    let channel = |key| -> Result<Option<u8>, ImportError> {
+                        Ok(attr(e, key)?.and_then(|v| color_channel(&v)))
                     };
                     // All four channels are required, as in the reference reader.
                     if let (Some(r), Some(g), Some(b), Some(a)) = (
@@ -648,7 +886,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                             .as_mut()
                             .expect("checked above")
                             .object_style
-                            .background = Some([r, g, b, a].map(|v| v.clamp(0, 255) as u8));
+                            .background = Some([r, g, b, a]);
                     }
                 }
                 "curveParam" if element.is_some() => {
@@ -719,23 +957,9 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         });
                 }
                 "slider" if element.is_some() => {
-                    let number = |key| {
-                        attr(e, key).map(|v| {
-                            v.and_then(|v| v.parse::<f64>().ok())
-                                .filter(|v| v.is_finite())
-                        })
-                    };
-                    let flag = |key| attr(e, key).map(|v| v.is_some_and(|v| v == "true"));
                     let el = element.as_mut().expect("checked above");
                     el.slider = Some([attr(e, "min")?, attr(e, "max")?]);
-                    el.object_style.slider = Some(Box::new(SliderLayout {
-                        position: number("x")?.zip(number("y")?).map(|(x, y)| [x, y]),
-                        width: number("width")?,
-                        absolute: flag("absoluteScreenLocation")?,
-                        horizontal: flag("horizontal")?,
-                        fixed: flag("fixed")?,
-                        show_algebra: flag("showAlgebra")?,
-                    }));
+                    el.object_style.slider = Some(Box::new(read_slider_layout(e)?));
                 }
                 "file"
                 | "inBackground"
@@ -754,13 +978,17 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         read_image(el, &name, e)?;
                     }
                     let channel = |key| -> Result<Option<u8>, ImportError> {
-                        Ok(attr(e, key)?.and_then(|v| v.parse().ok()))
+                        Ok(attr(e, key)?.and_then(|v| color_channel(&v)))
                     };
                     if let (Some(r), Some(g), Some(b)) =
                         (channel("r")?, channel("g")?, channel("b")?)
                     {
                         el.object_style.color = Some([r, g, b]);
-                        read_fill(&mut el.object_style, e)?;
+                        // Before format 3.2 the opacity of a list is not read.
+                        let read_alpha = !(el.kind == "list" && doc.legacy_list_alpha);
+                        if !read_fill(&mut el.object_style, e, read_alpha)? {
+                            el.reader_stops.push("objColor");
+                        }
                     }
                 }
                 "labelOffset" if element.as_ref().is_some_and(|el| el.kind != "text") => {

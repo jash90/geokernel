@@ -55,6 +55,13 @@
 	<labelMode val="0"/>
 	<checkbox fixed="true"/>
 </element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
 <expression label="A" exp="(0, 0)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
@@ -93,18 +100,23 @@
 	<output a0="tri" a1="c" a2="a" a3="b_1"/>
 </command>
 <element type="polygon" label="tri">
-	<lineStyle thickness="5" type="15" typeHidden="1" opacity="65"/>
-	<show object="true" label="false"/>
+	<lineStyle thickness="5" type="15" typeHidden="2" opacity="65"/>
+	<show object="true" label="false" ev="3"/>
 	<condition showObject="show"/>
 	<objColor r="232" g="244" b="250" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2" fillType="5" hatchAngle="60" hatchDistance="16" inverseFill="true"/>
 	<layer val="8"/>
+	<ordering val="25.5"/>
 	<labelOffset x="30" y="-32"/>
 	<labelMode val="2"/>
 	<tooltipMode val="2"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 25"/>
 </element>
 <element type="segment" label="c">
@@ -113,7 +125,7 @@
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<auxiliary val="false"/>
-	<lineStyle thickness="5" type="15" typeHidden="1" opacity="65"/>
+	<lineStyle thickness="5" type="15" typeHidden="2" opacity="65"/>
 	<eqnStyle style="implicit"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -127,7 +139,7 @@
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<auxiliary val="false"/>
-	<lineStyle thickness="5" type="15" typeHidden="1" opacity="65"/>
+	<lineStyle thickness="5" type="15" typeHidden="2" opacity="65"/>
 	<eqnStyle style="implicit"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -141,7 +153,7 @@
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<auxiliary val="false"/>
-	<lineStyle thickness="5" type="15" typeHidden="1" opacity="65"/>
+	<lineStyle thickness="5" type="15" typeHidden="2" opacity="65"/>
 	<eqnStyle style="implicit"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -154,7 +166,7 @@
 	<output a0="sq" a1="f" a2="h" a3="i" a4="j" a5="D" a6="E"/>
 </command>
 <element type="polygon" label="sq">
-	<lineStyle thickness="6" type="20" typeHidden="1" opacity="82"/>
+	<lineStyle thickness="6" type="20" typeHidden="0" opacity="82"/>
 	<show object="false" label="false"/>
 	<objColor r="153" g="51" b="0" alpha="0.57" fillType="8" hatchAngle="75" hatchDistance="17" fillSymbol="★" inverseFill="true"/>
 	<layer val="0"/>
@@ -166,7 +178,7 @@
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<auxiliary val="false"/>
-	<lineStyle thickness="6" type="20" typeHidden="1" opacity="82"/>
+	<lineStyle thickness="6" type="20" typeHidden="0" opacity="82"/>
 	<eqnStyle style="implicit"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -180,7 +192,7 @@
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<auxiliary val="true"/>
-	<lineStyle thickness="6" type="20" typeHidden="1" opacity="82"/>
+	<lineStyle thickness="6" type="20" typeHidden="0" opacity="82"/>
 	<eqnStyle style="implicit"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -194,7 +206,7 @@
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<auxiliary val="true"/>
-	<lineStyle thickness="6" type="20" typeHidden="1" opacity="82"/>
+	<lineStyle thickness="6" type="20" typeHidden="0" opacity="82"/>
 	<eqnStyle style="implicit"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -208,7 +220,7 @@
 	<layer val="0"/>
 	<labelMode val="0"/>
 	<auxiliary val="true"/>
-	<lineStyle thickness="6" type="20" typeHidden="1" opacity="82"/>
+	<lineStyle thickness="6" type="20" typeHidden="0" opacity="82"/>
 	<eqnStyle style="implicit"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -241,21 +253,26 @@
 	<output a0="open"/>
 </command>
 <element type="polyline" label="open">
-	<lineStyle thickness="7" type="30" typeHidden="1" opacity="99"/>
-	<show object="true" label="false"/>
+	<lineStyle thickness="7" type="30" typeHidden="2" opacity="99"/>
+	<show object="true" label="false" ev="3"/>
 	<condition showObject="show"/>
 	<objColor r="56" g="128" b="214" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
 	<layer val="1"/>
+	<ordering val="27.5"/>
 	<labelOffset x="32" y="-34"/>
 	<labelMode val="9"/>
 	<tooltipMode val="1"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 27"/>
-	<startStyle val="default"/>
-	<endStyle val="default"/>
+	<startStyle val="square"/>
+	<endStyle val="diamond_outline"/>
 </element>
 <command name="PolyLine">
 	<input a0="C" a1="A" a2="B"/>
@@ -275,10 +292,14 @@
 	<condition showObject="show"/>
 	<objColor r="96" g="198" b="68" alpha="0.10000000149011612" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1"/>
 	<labelOffset x="33" y="-35"/>
+	<algebra labelVisible="false"/>
 	<animation step="0.1" type="0" playing="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 28"/>
 	<lineStyle thickness="5" type="0" typeHidden="1"/>
 	<pointSize val="5"/>
@@ -287,19 +308,25 @@
 </element>
 <expression label="pts" exp="{A, B, (2, 2)}" type="list"/>
 <element type="list" label="pts">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="3"/>
+	<showTrimmed val="true"/>
 	<condition showObject="show"/>
 	<objColor r="136" g="12" b="178" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2" fillType="8" hatchAngle="75" hatchDistance="12" fillSymbol="♥" inverseFill="true"/>
 	<layer val="3"/>
+	<ordering val="29.5"/>
 	<labelOffset x="34" y="-36"/>
 	<labelMode val="2"/>
 	<tooltipMode val="3"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 29"/>
-	<lineStyle thickness="9" type="15" typeHidden="1" opacity="133"/>
+	<lineStyle thickness="9" type="15" typeHidden="2" opacity="133"/>
 	<pointSize val="7"/>
 	<pointStyle val="3"/>
 	<angleStyle val="0"/>
@@ -309,17 +336,22 @@
 	<output a0="chart"/>
 </command>
 <element type="piechart" label="chart">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="176" g="82" b="32" alpha="0.15" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1" fillType="8" hatchAngle="60" hatchDistance="21" fillSymbol="★" inverseFill="true"/>
 	<layer val="4"/>
+	<ordering val="30.5"/>
 	<labelOffset x="35" y="-37"/>
 	<labelMode val="3"/>
 	<tooltipMode val="1"/>
+	<algebra labelVisible="false"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 30"/>
-	<lineStyle thickness="10" type="20" typeHidden="1" opacity="150"/>
+	<lineStyle thickness="10" type="20" typeHidden="0" opacity="150"/>
 	<tags>
 		<tag key="barColor" barNumber="1" value="rgba(101,87,210,1.0)"/>
 		<tag key="barColor" barNumber="2" value="rgba(224,191,0,1.0)"/>

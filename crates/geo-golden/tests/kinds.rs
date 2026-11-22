@@ -32,15 +32,16 @@
 //! * `import`, `no` versus the rest: a file of `golden/ggb` imports to an
 //!   object of the kind; `yes` or `partial` is declared.
 //!
-//! * `export`, exact: `yes` when the reference application reloads an
-//!   exported object of the kind with every presentation property its source
-//!   file had; the Java oracle (`tests/export.rs`) proves the list of each
-//!   kind and fails when this column disagrees with it. `partial` when a
-//!   named property is not kept: a pie chart loses the colour and filling of
-//!   single slices. `no` for kinds without a writer. The oracle also checks a
-//!   defined example of each `yes` and `partial` kind. A definition the
-//!   writer has no saved form for is refused, never dropped (`DIFFERENCES.md`,
-//!   "Command forms and history").
+//! * `export`, exact, derived by `tests/export.rs`
+//!   (`the_export_column_follows_the_journal_rule_and_the_recorded_proof`,
+//!   part of every `cargo test`): `yes` for editor objects serialized from
+//!   their own stored data and references, whatever the journal says, whose
+//!   every presentation property the reload oracle has proven and of which
+//!   nothing the reference application saves is known to be lost. `partial`
+//!   for construction kinds, whose export also depends on supported journal
+//!   forms and command history, and for a kind with a named loss; the note
+//!   of the row says which. `no` for kinds without a writer. The Java oracle
+//!   checks a defined example of each `yes` and `partial` kind.
 //!
 //! Tool coverage is declared in the table.
 //! A row without a kernel kind is `no` in every column.
@@ -1013,21 +1014,6 @@ fn every_kernel_kind_and_upstream_kind_has_a_row() {
             errors.push(format!(
                 "row `{}`: `{}` is no 2D upstream class",
                 r["kind"], r["upstream"]
-            ));
-        }
-        let export = match kk.as_str() {
-            "" => "no",
-            "Image" | "Button" | "InputBox" | "Point" | "Line" | "Segment" | "Ray" | "Vector"
-            | "Circle" | "Conic" | "Arc" | "Sector" | "Number" | "Angle" | "Boolean"
-            | "Function" | "Polygon" | "PolyLine" | "List" | "Text" | "Locus" | "Curve"
-            | "ImplicitCurve" | "FunctionNVar" => "yes",
-            "PieChart" => "partial",
-            _ => "no",
-        };
-        if r["export"] != export {
-            errors.push(format!(
-                "row `{}`: export is `{}`, expected `{export}`",
-                r["kind"], r["export"]
             ));
         }
         for col in CELLS {

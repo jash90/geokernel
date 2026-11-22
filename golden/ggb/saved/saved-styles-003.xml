@@ -55,6 +55,13 @@
 	<labelMode val="0"/>
 	<checkbox fixed="true"/>
 </element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
 <expression label="A" exp="(0, 0)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
@@ -91,17 +98,23 @@
 <element type="numeric" label="a">
 	<value val="0"/>
 	<slider min="-3" max="3" absoluteScreenLocation="true" width="150" x="120" y="80" fixed="true" horizontal="false" showAlgebra="false"/>
-	<lineStyle thickness="7" type="10" typeHidden="1" opacity="112"/>
-	<show object="true" label="false"/>
+	<pointSize val="7.5"/>
+	<lineStyle thickness="7" type="10" typeHidden="0" opacity="112"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="128" g="126" b="28" alpha="0.10000000149011612" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1"/>
 	<layer val="8"/>
+	<ordering val="16.5"/>
 	<labelOffset x="21" y="-23"/>
 	<labelMode val="1"/>
 	<tooltipMode val="2"/>
+	<algebra labelVisible="false"/>
 	<animation step="0.25" speed="speed" type="1" playing="false"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 16"/>
 </element>
 <element type="numeric" label="a2">
@@ -112,20 +125,24 @@
 	<objColor r="28" g="28" b="31" alpha="0.10000000149011612"/>
 	<layer val="0"/>
 	<labelMode val="9"/>
-	<animation step="0.125" speed="0.5" type="3" playing="false"/>
+	<animation step="0.125" speed="speed / 4" type="3" playing="true"/>
 </element>
 <expression label="n" exp="4"/>
 <element type="numeric" label="n">
 	<value val="4"/>
-	<show object="false" label="false"/>
+	<show object="false" label="false" ev="3"/>
 	<condition showObject="show"/>
 	<objColor r="168" g="196" b="138" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
 	<labelOffset x="22" y="-24"/>
 	<labelMode val="2"/>
 	<tooltipMode val="3"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 17"/>
 </element>
 <expression label="speed" exp="2"/>
@@ -141,18 +158,23 @@
 	<angleStyle val="2"/>
 	<emphasizeRightAngle val="false"/>
 	<value val="5.497787143782138"/>
-	<lineStyle thickness="9" type="20" typeHidden="2" opacity="146"/>
+	<lineStyle thickness="9" type="20" typeHidden="0" opacity="146"/>
 	<arcSize val="45"/>
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="208" g="10" b="248" alpha="0.71" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1" fillType="8" hatchAngle="105" hatchDistance="29" fillSymbol="★" inverseFill="true"/>
 	<layer val="1"/>
+	<ordering val="18.5"/>
 	<labelOffset x="23" y="-25"/>
 	<labelMode val="3"/>
 	<tooltipMode val="1"/>
 	<decoration type="2"/>
+	<algebra labelVisible="false"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 18"/>
 </element>
 <command name="Angle">
@@ -179,31 +201,41 @@
 </element>
 <element type="boolean" label="check">
 	<value val="true"/>
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="3"/>
 	<condition showObject="show"/>
 	<objColor r="248" g="80" b="102" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
 	<layer val="2"/>
+	<ordering val="19.5"/>
 	<labelOffset x="24" y="-26"/>
 	<labelMode val="9"/>
 	<tooltipMode val="2"/>
+	<algebra labelVisible="false"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
 	<checkbox fixed="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 19"/>
 </element>
 <expression label="flag" exp="true"/>
 <element type="boolean" label="flag">
 	<value val="true"/>
-	<show object="false" label="false"/>
+	<show object="false" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="32" g="150" b="212" alpha="0" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1"/>
 	<layer val="3"/>
+	<ordering val="20.5"/>
 	<labelOffset x="25" y="-27"/>
 	<labelMode val="1"/>
 	<tooltipMode val="3"/>
+	<algebra labelVisible="false"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
 	<checkbox fixed="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 20"/>
 </element>
 <expression label="lock" exp="false"/>

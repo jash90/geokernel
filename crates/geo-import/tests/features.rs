@@ -423,18 +423,19 @@ fn defined_against_undefined_is_a_mismatch_both_ways() {
 #[test]
 fn presentation_tags_are_kept_as_the_saved_style() {
     use geo_import::export::{
-        DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SliderAnimation, SliderLayout,
+        DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SliderAnimation, SliderFlags,
+        SliderLayout,
     };
     let r = ok(
         "<element type=\"numeric\" label=\"r\"><value val=\"0.5\"/></element>\
          <element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
-         <show object=\"true\" label=\"false\"/>\
+         <show object=\"true\" label=\"false\" ev=\"3\"/>\
          <objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.25\" dynamicr=\"r\" dynamicg=\"\" \
          dynamicb=\"1 - r\" dynamica=\"r\" colorSpace=\"2\" fillType=\"8\" hatchAngle=\"60\" \
          hatchDistance=\"12\" fillSymbol=\"*\" inverseFill=\"true\"/>\
          <bgColor r=\"1\" g=\"2\" b=\"3\" alpha=\"128\"/>\
          <layer val=\"4\"/><labelMode val=\"3\"/><tooltipMode val=\"2\"/>\
-         <trace val=\"true\"/><decoration type=\"2\"/>\
+         <trace val=\"true\"/><decoration type=\"2\"/><ordering val=\"2.5\"/>\
          <lineStyle thickness=\"7\" type=\"15\" typeHidden=\"2\" opacity=\"99\"/>\
          <fixed val=\"true\"/><selectionAllowed val=\"false\"/><auxiliary val=\"true\"/>\
          <caption val=\"Start\"/><pointSize val=\"7\"/><pointStyle val=\"3\"/>\
@@ -451,6 +452,8 @@ fn presentation_tags_are_kept_as_the_saved_style() {
         ObjectStyle {
             caption: "Start".into(),
             show_label: Some(false),
+            views: Some(3),
+            ordering: Some(2.5),
             layer: Some(4),
             label_mode: Some(3),
             tooltip_mode: Some(2),
@@ -472,10 +475,11 @@ fn presentation_tags_are_kept_as_the_saved_style() {
             })),
             background: Some([1, 2, 3, 128]),
             line: Some(LineStyle {
-                thickness: 7,
                 kind: 15,
+                thickness: Some(7),
                 hidden_kind: Some(2),
                 opacity: Some(99),
+                draw_arrow: None,
             }),
             point_size: Some(7),
             point_style: Some(3),
@@ -496,12 +500,14 @@ fn presentation_tags_are_kept_as_the_saved_style() {
     assert_eq!(
         r.object_styles["a"].slider,
         Some(Box::new(SliderLayout {
+            absolute: true,
             position: Some([20.0, 40.0]),
             width: Some(150.0),
-            absolute: true,
-            horizontal: false,
-            fixed: true,
-            show_algebra: true,
+            flags: Some(SliderFlags {
+                fixed: true,
+                show_algebra: true,
+                horizontal: false,
+            }),
         }))
     );
     assert_eq!(r.object_styles["t"].rounding, Some(Rounding::Decimals(4)));
@@ -513,6 +519,8 @@ fn presentation_tags_are_kept_as_the_saved_style() {
             ..ObjectStyle::default()
         }
     );
+    // Without a `<show>` tag there are no view bits.
+    assert_eq!(r.object_styles["a"].views, None);
     assert!(!r.object_styles["A"].untagged);
     assert!(r.hidden.is_empty());
 }
@@ -535,4 +543,204 @@ fn expressions_the_kernel_does_not_evaluate_are_not_kept() {
     let notes = r.notes.join("\n");
     assert!(notes.contains("dynamic colour of `A`"), "{notes}");
     assert!(notes.contains("animation step of `A`"), "{notes}");
+}
+
+/// One styled conic `k` and one slider `n`, with the given tags.
+fn styled(conic: &str, slider: &str) -> Imported {
+    ok(&format!(
+        "{}{}<command name=\"Circle\"><input a0=\"A\" a1=\"B\"/><output a0=\"k\"/></command>\
+         <element type=\"conic\" label=\"k\">{conic}</element>\
+         <element type=\"numeric\" label=\"n\"><value val=\"2\"/>{slider}</element>",
+        free("A", "1", "2"),
+        free("B", "3", "1"),
+    ))
+}
+
+#[test]
+fn a_fill_is_read_up_to_the_number_the_reference_reader_stops_at() {
+    use geo_import::export::Fill;
+    let fill = |tag: &str| {
+        let r = styled(tag, "");
+        let style = r.object_styles["k"].clone();
+        let stops = r
+            .notes
+            .iter()
+            .any(|note| note.contains("`<objColor>` of `k`"));
+        (
+            style.color,
+            style.fill.map(|fill| *fill),
+            style.alpha,
+            stops,
+        )
+    };
+    // The angle is no number: the colour is set, nothing else.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.5\" hatchAngle=\"abc\" hatchDistance=\"7\" fillType=\"2\" inverseFill=\"true\"/>"),
+        (Some([10, 20, 30]), None, None, true)
+    );
+    // The distance is missing: the angle and the inversion are set, the
+    // distance and the pattern keep their defaults, the opacity is not read.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.5\" hatchAngle=\"60\" fillType=\"2\" inverseFill=\"true\"/>"),
+        (
+            Some([10, 20, 30]),
+            Some(Fill {
+                pattern: 0,
+                hatch: Some([60, Fill::DEFAULT_DISTANCE]),
+                symbol: None,
+                inverse: Some(true),
+            }),
+            None,
+            true
+        )
+    );
+    // No pattern has the index -1: the hatch is set, the symbol and the
+    // opacity are not read.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.5\" hatchAngle=\"60\" hatchDistance=\"7\" fillType=\"-1\" fillSymbol=\"x\"/>"),
+        (
+            Some([10, 20, 30]),
+            Some(Fill {
+                pattern: 1,
+                hatch: Some([60, 7]),
+                symbol: None,
+                inverse: None,
+            }),
+            None,
+            true
+        )
+    );
+    // The opacity is no number: the pattern before it is set.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"abc\" fillType=\"3\"/>"),
+        (
+            Some([10, 20, 30]),
+            Some(Fill {
+                pattern: 3,
+                ..Fill::default()
+            }),
+            None,
+            true
+        )
+    );
+    // A complete tag reads everything and stops nothing.
+    assert_eq!(
+        fill("<objColor r=\"10\" g=\"20\" b=\"30\" alpha=\"0.5\" hatchAngle=\"60\" hatchDistance=\"7\" fillType=\"2\"/>"),
+        (
+            Some([10, 20, 30]),
+            Some(Fill {
+                pattern: 2,
+                hatch: Some([60, 7]),
+                symbol: None,
+                inverse: None,
+            }),
+            Some(0.5),
+            false
+        )
+    );
+}
+
+#[test]
+fn colour_channels_keep_their_low_byte() {
+    let r = styled(
+        "<objColor r=\"300\" g=\"-1\" b=\"256\" alpha=\"0.5\"/>\
+         <bgColor r=\"300\" g=\"20\" b=\"30\" alpha=\"300\"/>",
+        "",
+    );
+    let style = &r.object_styles["k"];
+    assert_eq!(style.color, Some([44, 255, 0]));
+    assert_eq!(style.background, Some([44, 20, 30, 44]));
+    // A channel that is no 32 bit integer leaves the whole tag unread.
+    let r = styled("<objColor r=\"1e2\" g=\"0\" b=\"0\" alpha=\"0.5\"/>", "");
+    assert_eq!(r.object_styles["k"].color, None);
+    assert_eq!(r.object_styles["k"].alpha, None);
+}
+
+#[test]
+fn a_line_style_is_read_pattern_first_and_keeps_any_thickness() {
+    use geo_import::export::LineStyle;
+    let line = |tag: &str| styled(tag, "").object_styles["k"].line;
+    // Without a dash pattern nothing is set, not even the thickness.
+    assert_eq!(line("<lineStyle thickness=\"7\"/>"), None);
+    // The pattern alone is set; the reader stops at the missing thickness.
+    assert_eq!(
+        line("<lineStyle type=\"20\" typeHidden=\"2\" opacity=\"90\"/>"),
+        Some(LineStyle {
+            kind: 20,
+            ..LineStyle::default()
+        })
+    );
+    // The thickness has no upper bound; a negative one is 0.
+    assert_eq!(
+        line("<lineStyle thickness=\"300\" type=\"10\"/>")
+            .unwrap()
+            .thickness,
+        Some(300)
+    );
+    assert_eq!(
+        line("<lineStyle thickness=\"-4\" type=\"10\"/>")
+            .unwrap()
+            .thickness,
+        Some(0)
+    );
+    // A hidden pattern that is no number stops the reader before the opacity.
+    assert_eq!(
+        line("<lineStyle thickness=\"3\" type=\"10\" typeHidden=\"x\" opacity=\"90\" drawArrow=\"true\"/>"),
+        Some(LineStyle {
+            kind: 10,
+            thickness: Some(3),
+            ..LineStyle::default()
+        })
+    );
+    assert_eq!(
+        line("<lineStyle thickness=\"3\" type=\"10\" opacity=\"90\" drawArrow=\"true\"/>"),
+        Some(LineStyle {
+            kind: 10,
+            thickness: Some(3),
+            hidden_kind: None,
+            opacity: Some(90),
+            draw_arrow: Some(true),
+        })
+    );
+}
+
+#[test]
+fn a_slider_tag_is_read_up_to_the_number_the_reference_reader_stops_at() {
+    use geo_import::export::{SliderFlags, SliderLayout};
+    let layout = |tag: &str| *styled("", tag).object_styles["n"].slider.clone().unwrap();
+    // Without a width the flags after it are not read.
+    assert_eq!(
+        layout("<slider min=\"0\" max=\"5\" x=\"10\" y=\"10\" fixed=\"true\" horizontal=\"false\" showAlgebra=\"true\"/>"),
+        SliderLayout {
+            absolute: false,
+            position: Some([10.0, 10.0]),
+            width: None,
+            flags: None,
+        }
+    );
+    // The reference reads `NaN` as a width.
+    let nan = layout("<slider min=\"0\" max=\"5\" x=\"10\" y=\"10\" width=\"NaN\" fixed=\"true\" horizontal=\"false\" showAlgebra=\"true\"/>");
+    assert!(nan.width.is_some_and(f64::is_nan));
+    assert_eq!(
+        nan.flags,
+        Some(SliderFlags {
+            fixed: true,
+            show_algebra: true,
+            horizontal: false,
+        })
+    );
+    // A position without `y` stops the reader before the width.
+    assert_eq!(
+        layout(
+            "<slider min=\"0\" max=\"5\" absoluteScreenLocation=\"true\" x=\"10\" width=\"100\"/>"
+        ),
+        SliderLayout {
+            absolute: true,
+            ..SliderLayout::default()
+        }
+    );
+    // The bounds are read before any of this.
+    let r = styled("", "<slider min=\"0\" max=\"5\" x=\"10\"/>");
+    let c = geo_kernel::script::load(&r.script.join("\n")).unwrap();
+    assert_eq!(c.slider_bounds(c.id("n").unwrap()), [Some(0.0), Some(5.0)]);
 }

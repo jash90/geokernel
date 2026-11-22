@@ -98,12 +98,12 @@ impl Writer<'_> {
         // The reference shows a number by giving it an interval around its
         // current value, so the value, and the slider with its bounds, come
         // before `<show>`, as in the files of the reference application.
-        let number = matches!(object_kind, Kind::Number | Kind::Angle);
+        let is_number = matches!(object_kind, Kind::Number | Kind::Angle);
         // Only a number or an angle takes the tag in the reference reader.
         let layout = saved
             .and_then(|style| style.slider.as_deref())
-            .filter(|_| number);
-        if number {
+            .filter(|_| is_number);
+        if is_number {
             self.angle(id, saved)?;
             self.value(id)?;
             if bounded || layout.is_some() {
@@ -118,13 +118,18 @@ impl Writer<'_> {
             None => shown && !bounded && matches!(c.def(id), Def::Number(_)),
         };
         if !reader_decides {
-            self.xml.tag(
-                "show",
-                &[
-                    ("object", flag(shown)),
-                    ("label", flag(label_shown.unwrap_or(style.show_label))),
-                ],
-            )?;
+            let views = saved
+                .and_then(|style| style.views)
+                .filter(|&views| views != 0)
+                .map(|views| views.to_string());
+            let mut attrs = vec![
+                ("object", flag(shown)),
+                ("label", flag(label_shown.unwrap_or(style.show_label))),
+            ];
+            if let Some(views) = &views {
+                attrs.push(("ev", views));
+            }
+            self.xml.tag("show", &attrs)?;
         }
         if let Some(condition) = self.presentation.conditions.get(label) {
             self.xml.tag("condition", &[("showObject", condition)])?;
@@ -160,18 +165,50 @@ impl Writer<'_> {
             self.xml
                 .tag("decoration", &[("type", &decoration.to_string())])?;
         }
+        if let Some(order) = saved.and_then(|style| style.ordering) {
+            self.xml.val("ordering", &number(order))?;
+        }
+        // The caption text must still be a text of the construction.
+        if let Some(caption) = saved
+            .and_then(|style| style.dynamic_caption.as_deref())
+            .filter(|caption| c.id(caption).is_some_and(|id| c.kind(id) == Kind::Text))
+        {
+            self.xml.val("dynamicCaption", caption)?;
+        }
+        if matches!(object_kind, Kind::Segment | Kind::PolyLine) {
+            let ends = saved.map_or([None; 2], |style| style.ends);
+            for (tag, end) in ["startStyle", "endStyle"].into_iter().zip(ends) {
+                if let Some(end) = end {
+                    self.xml.val(tag, end.xml_name())?;
+                }
+            }
+        }
+        if object_kind == Kind::Vector {
+            if let Some(head) = saved.and_then(|style| style.head_style) {
+                self.xml.val("headStyle", &head.to_string())?;
+            }
+        }
+        if is_number {
+            if let Some(size) = saved.and_then(|style| style.knob_size) {
+                self.xml.val("pointSize", &number(size))?;
+            }
+        }
         match saved {
             Some(saved) => {
                 if let Some(line) = saved.line {
-                    let mut attrs = vec![
-                        ("thickness", line.thickness.to_string()),
-                        ("type", line.kind.to_string()),
-                    ];
+                    // A tag the reader left early is written as far as it got.
+                    let mut attrs = vec![("type", line.kind.to_string())];
+                    if let Some(thickness) = line.thickness {
+                        attrs.push(("thickness", thickness.to_string()));
+                    }
                     if let Some(hidden) = line.hidden_kind {
                         attrs.push(("typeHidden", hidden.to_string()));
                     }
                     if let Some(opacity) = line.opacity {
                         attrs.push(("opacity", opacity.to_string()));
+                    }
+                    if let Some(arrows) = line.draw_arrow.filter(|_| object_kind == Kind::Locus) {
+                        attrs.push(("drawArrow", flag(arrows).to_owned()));
                     }
                     let attrs: Vec<_> = attrs.iter().map(|(k, v)| (*k, v.as_str())).collect();
                     self.xml.tag("lineStyle", &attrs)?;
@@ -206,7 +243,7 @@ impl Writer<'_> {
         {
             self.xml.pixels("labelOffset", x, y)?;
         }
-        if !number {
+        if !is_number {
             self.angle(id, saved)?;
         }
         if object_kind == Kind::Angle {
@@ -232,8 +269,21 @@ impl Writer<'_> {
         if let Some(fixed) = saved.and_then(|style| style.fixed) {
             self.xml.val("fixed", flag(fixed))?;
         }
+        if let Some(fixed) = saved.and_then(|style| style.fixed_size) {
+            self.xml.val("fixedSize", flag(fixed))?;
+        }
         if let Some(allowed) = saved.and_then(|style| style.selection_allowed) {
             self.xml.val("selectionAllowed", flag(allowed))?;
+        }
+        if let Some(trimmed) = saved.and_then(|style| style.show_trimmed) {
+            self.xml.val("showTrimmed", flag(trimmed))?;
+        }
+        if let Some(breakpoint) = saved.and_then(|style| style.breakpoint) {
+            self.xml.val("breakpoint", flag(breakpoint))?;
+        }
+        if let Some(visible) = saved.and_then(|style| style.algebra_label) {
+            self.xml
+                .tag("algebra", &[("labelVisible", flag(visible))])?;
         }
         if let Some(auxiliary) = saved.and_then(|style| style.auxiliary) {
             self.xml.val("auxiliary", flag(auxiliary))?;
@@ -290,7 +340,7 @@ impl Writer<'_> {
             }
         }
 
-        if !number {
+        if !is_number {
             self.value(id)?;
         }
         let animation = self
@@ -311,6 +361,8 @@ impl Writer<'_> {
                 });
             match animation {
                 Some(animation) => self.animation(animation)?,
+                // The file of the slider had no such tag.
+                None if saved.is_some() => {}
                 None => self.xml.tag(
                     "animation",
                     &[
@@ -411,21 +463,24 @@ impl Writer<'_> {
         bounds: [Option<&str>; 2],
         layout: Option<&SliderLayout>,
     ) -> Result<(), ExportError> {
-        let (x, y, width);
-        let mut attrs = Vec::new();
-        let (absolute, fixed, horizontal, show_algebra) = match layout {
+        let mut attrs: Vec<(&str, String)> = Vec::new();
+        match layout {
+            // A tag the reader left early is written as far as it got.
             Some(layout) => {
-                if let Some([px, py]) = layout.position {
-                    (x, y) = (number(px), number(py));
-                    attrs.extend([("x", x.as_str()), ("y", y.as_str())]);
+                attrs.push(("absoluteScreenLocation", flag(layout.absolute).into()));
+                if let Some([x, y]) = layout.position {
+                    attrs.extend([("x", number(x)), ("y", number(y))]);
                 }
-                width = number(layout.width.unwrap_or(100.0));
-                (
-                    layout.absolute,
-                    layout.fixed,
-                    layout.horizontal,
-                    layout.show_algebra,
-                )
+                if let Some(width) = layout.width {
+                    attrs.push(("width", number(width)));
+                }
+                if let Some(flags) = layout.flags {
+                    attrs.extend([
+                        ("fixed", flag(flags.fixed).into()),
+                        ("showAlgebra", flag(flags.show_algebra).into()),
+                        ("horizontal", flag(flags.horizontal).into()),
+                    ]);
+                }
             }
             None => {
                 // Stack sliders in rows, with another column as the view fills.
@@ -433,29 +488,29 @@ impl Writer<'_> {
                     .unwrap_or(usize::MAX)
                     .saturating_sub(1)
                     .max(1);
-                x = (30 + 130 * (self.sliders / rows)).to_string();
-                y = (30 + 40 * (self.sliders % rows)).to_string();
+                let x = 30 + 130 * (self.sliders / rows);
+                let y = 30 + 40 * (self.sliders % rows);
                 self.sliders += 1;
-                width = "100".to_owned();
-                attrs.extend([("x", x.as_str()), ("y", y.as_str())]);
-                (true, false, true, true)
+                attrs.extend([
+                    ("absoluteScreenLocation", "true".into()),
+                    ("x", x.to_string()),
+                    ("y", y.to_string()),
+                    ("width", "100".into()),
+                    ("fixed", "false".into()),
+                    ("showAlgebra", "true".into()),
+                    ("horizontal", "true".into()),
+                ]);
             }
-        };
-        attrs.extend([
-            ("width", width.as_str()),
-            ("fixed", flag(fixed)),
-            ("horizontal", flag(horizontal)),
-            ("showAlgebra", flag(show_algebra)),
-            ("absoluteScreenLocation", flag(absolute)),
-        ]);
+        }
         if bounds.iter().any(Option::is_some) {
             // The reader supplies default bounds for visible sliders
             // before reading this tag. An undefined endpoint clears it.
             attrs.extend([
-                ("min", bounds[0].unwrap_or("0 / 0")),
-                ("max", bounds[1].unwrap_or("0 / 0")),
+                ("min", bounds[0].unwrap_or("0 / 0").into()),
+                ("max", bounds[1].unwrap_or("0 / 0").into()),
             ]);
         }
+        let attrs: Vec<_> = attrs.iter().map(|(k, v)| (*k, v.as_str())).collect();
         self.xml.tag("slider", &attrs)
     }
 

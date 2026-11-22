@@ -55,6 +55,13 @@
 	<labelMode val="0"/>
 	<checkbox fixed="true"/>
 </element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
 <expression label="n" exp="3.14159265"/>
 <element type="numeric" label="n">
 	<value val="3.14159265"/>
@@ -72,16 +79,21 @@
 </element>
 <expression label="title" exp="&quot;Styled title&quot;"/>
 <element type="text" label="title">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="3"/>
 	<condition showObject="show"/>
 	<objColor r="216" g="152" b="142" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
 	<bgColor r="255" g="240" b="200" alpha="255"/>
 	<layer val="5"/>
+	<ordering val="31.5"/>
 	<labelMode val="0"/>
 	<tooltipMode val="2"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<font serif="true" sizeM="2" size="12" style="1"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<absoluteScreenLocation x="40" y="60"/>
 </element>
 <expression label="value" exp="&quot;n = &quot; + n"/>

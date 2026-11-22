@@ -34,6 +34,7 @@ import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
 import org.geogebra.common.kernel.geos.GeoInputBox;
 import org.geogebra.common.kernel.geos.GeoLine;
+import org.geogebra.common.kernel.geos.GeoLocus;
 import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
@@ -41,11 +42,15 @@ import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoVector;
+import org.geogebra.common.kernel.geos.HasSegmentStyle;
 import org.geogebra.common.kernel.geos.PointProperties;
+import org.geogebra.common.kernel.geos.SegmentStyle;
 import org.geogebra.common.kernel.geos.Traceable;
+import org.geogebra.common.kernel.geos.VectorHeadStyle;
 import org.geogebra.common.kernel.geos.properties.FillType;
 import org.geogebra.common.kernel.kernelND.GeoCurveCartesianND;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
+import org.geogebra.common.main.App;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.plugin.EventType;
@@ -331,6 +336,25 @@ public final class SavedExporter {
                             integer(rgba.get(1)), integer(rgba.get(2)), integer(rgba.get(3))));
                 }
                 case "decoration" -> geo.setDecorationType(integer(value));
+                case "line_hidden" -> geo.setLineTypeHidden(integer(value));
+                case "views" -> applyViews(geo, integer(value));
+                case "ordering" -> geo.setOrdering(number(value));
+                case "dynamic_caption" ->
+                        geo.setDynamicCaption((GeoText) kernel.lookupLabel((String) value));
+                case "breakpoint" -> geo.setConsProtocolBreakpoint((Boolean) value);
+                case "algebra_label" -> geo.setAlgebraLabelVisible((Boolean) value);
+                case "fixed_size" -> geo.setFixedSize((Boolean) value);
+                case "show_trimmed" -> geo.setShowTrimmedIntersectionLines((Boolean) value);
+                case "knob_size" -> ((GeoNumeric) geo).setSliderBlobSize(number(value));
+                case "ends" -> {
+                    List<?> ends = (List<?>) value;
+                    HasSegmentStyle styled = (HasSegmentStyle) geo;
+                    styled.setStartStyle(SegmentStyle.valueOf((String) ends.get(0)));
+                    styled.setEndStyle(SegmentStyle.valueOf((String) ends.get(1)));
+                }
+                case "head_style" ->
+                        ((GeoVector) geo).setHeadStyle(VectorHeadStyle.values()[integer(value)]);
+                case "draw_arrows" -> ((GeoLocus) geo).drawAsArrows((Boolean) value);
                 case "decimals" -> ((GeoText) geo).setPrintDecimals(integer(value), true);
                 case "figures" -> ((GeoText) geo).setPrintFigures(integer(value), true);
                 case "arc_size" -> ((GeoAngle) geo).setArcSize(integer(value));
@@ -351,11 +375,44 @@ public final class SavedExporter {
                     if (animation.get("mode") != null) {
                         geo.setAnimationType(integer(animation.get("mode")));
                     }
+                    if (Boolean.TRUE.equals(animation.get("playing"))) {
+                        geo.setAnimating(true);
+                        if (!geo.isAnimating()) {
+                            throw new IllegalArgumentException(
+                                    geo.getLabelSimple() + " is not animating");
+                        }
+                    }
                 }
                 default -> throw new IllegalArgumentException("unknown style property " + key);
             }
             // The headless view keeps drawables; refresh them before the next setter repaints.
             geo.updateRepaint();
+        }
+    }
+
+    /** The view bits of a saved {@code <show ev=>}, applied as GeoGebra's reader applies them. */
+    private static void applyViews(GeoElement geo, int bits) {
+        if ((bits & 1) == 0) {
+            geo.addView(App.VIEW_EUCLIDIAN);
+        } else {
+            geo.removeView(App.VIEW_EUCLIDIAN);
+        }
+        if ((bits & 2) == 2) {
+            geo.addView(App.VIEW_EUCLIDIAN2);
+        } else {
+            geo.removeView(App.VIEW_EUCLIDIAN2);
+        }
+        if ((bits & 4) == 4) {
+            geo.addViews3D();
+        }
+        if ((bits & 8) == 8) {
+            geo.removeViews3D();
+        }
+        if ((bits & 16) == 16) {
+            geo.setVisibleInViewForPlane(true);
+        }
+        if ((bits & 32) == 32) {
+            geo.setVisibleInViewForPlane(false);
         }
     }
 

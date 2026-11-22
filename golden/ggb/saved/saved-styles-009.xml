@@ -55,6 +55,13 @@
 	<labelMode val="0"/>
 	<checkbox fixed="true"/>
 </element>
+<expression label="note" exp="&quot;Dynamic&quot;"/>
+<element type="text" label="note">
+	<show object="false" label="false"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
 <expression label="A" exp="(0, 0)" type="point"/>
 <element type="point" label="A">
 	<show object="true" label="true"/>
@@ -119,17 +126,23 @@
 	<output a0="Q"/>
 </command>
 <element type="point" label="Q">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="3"/>
+	<showTrimmed val="true"/>
 	<condition showObject="show"/>
 	<objColor r="120" g="176" b="70" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
 	<layer val="9"/>
+	<ordering val="35.5"/>
 	<labelOffset x="40" y="-42"/>
 	<labelMode val="9"/>
 	<tooltipMode val="3"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 35"/>
 	<pointSize val="9"/>
 	<pointStyle val="9"/>
@@ -140,20 +153,25 @@
 	<output a0="s"/>
 </command>
 <element type="segment" label="s">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="2"/>
 	<condition showObject="show"/>
 	<objColor r="160" g="246" b="180" alpha="0" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1"/>
 	<layer val="1"/>
+	<ordering val="36.5"/>
 	<labelOffset x="41" y="-43"/>
 	<labelMode val="1"/>
 	<tooltipMode val="1"/>
 	<trace val="true"/>
 	<decoration type="3"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 36"/>
-	<lineStyle thickness="5" type="10" typeHidden="1" opacity="52"/>
+	<lineStyle thickness="5" type="10" typeHidden="0" opacity="52"/>
 	<eqnStyle style="implicit"/>
 	<outlyingIntersections val="false"/>
 	<keepTypeOnTransform val="true"/>
@@ -166,17 +184,23 @@
 	<output a0="M"/>
 </command>
 <element type="point" label="M">
-	<show object="true" label="false"/>
+	<show object="true" label="false" ev="3"/>
+	<showTrimmed val="true"/>
 	<condition showObject="show"/>
 	<objColor r="200" g="60" b="34" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
 	<layer val="2"/>
+	<ordering val="37.5"/>
 	<labelOffset x="42" y="-44"/>
 	<labelMode val="2"/>
 	<tooltipMode val="2"/>
 	<trace val="true"/>
+	<algebra labelVisible="false"/>
 	<fixed val="true"/>
+	<fixedSize val="true"/>
 	<selectionAllowed val="false"/>
 	<auxiliary val="true"/>
+	<breakpoint val="true"/>
+	<dynamicCaption val="note"/>
 	<caption val="Caption 37"/>
 	<pointSize val="7"/>
 	<pointStyle val="2"/>

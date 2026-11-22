@@ -393,10 +393,11 @@ def st(label, **properties):
 
 # Presentation properties of every exported kind, set through the reference
 # application's own setters, for the export round trip. Every fixture has the
-# hidden numbers `r`, `g`, `b` for dynamic colours and the boolean `show` for
-# conditions. `styled` gives an object one value of each property of the
-# named groups; the values change from object to object.
-STYLE_HELPERS = ["r = 0.25", "g = 0.5", "b = 0.75", "show = true"]
+# hidden numbers `r`, `g`, `b` for dynamic colours, the boolean `show` for
+# conditions and the text `note` for dynamic captions. `styled` gives an
+# object one value of each property of the named groups; the values change
+# from object to object.
+STYLE_HELPERS = ["r = 0.25", "g = 0.5", "b = 0.75", "show = true", 'note = "Dynamic"']
 PATTERNS = ["HATCH", "CROSSHATCHED", "CHESSBOARD", "DOTTED", "HONEYCOMB", "BRICK", "WEAVING"]
 styled_objects = 0
 
@@ -413,13 +414,16 @@ def styled(label, groups, **extra):
             layer=1 + n % 9, fixed=True, auxiliary=True, selection_allowed=False,
             tooltip_mode=1 + n % 3,
             dynamic_color=["r", "g", "b"] + (["1 - r"] if n % 2 else []),
-            color_space=1 + n % 2)
+            color_space=1 + n % 2,
+            # In both graphics views, or in the second one only.
+            views=2 + n % 2, ordering=0.5 + n, dynamic_caption="note",
+            breakpoint=True, algebra_label=False, fixed_size=True)
     if "common" in words:
         props.update(label_mode=[1, 2, 3, 9][n % 4], caption=f"Caption {n}",
                      label_visible=False, label_offset=[5 + n, -7 - n])
     if "line" in words:
         props.update(line=[[10, 15, 20, 30][n % 4], 2 + n % 11],
-                     line_opacity=40 + (17 * n) % 200)
+                     line_opacity=40 + (17 * n) % 200, line_hidden=2 * (n % 2))
     if "fill" in words:
         # Every pattern keeps its angle and distance; only the symbol fill
         # keeps a symbol.
@@ -430,7 +434,7 @@ def styled(label, groups, **extra):
         if symbol:
             props["fill_symbol"] = "\u2605"
     if "point" in words:
-        props.update(point=[1 + n % 4 + 5, 1 + n % 9])
+        props.update(point=[1 + n % 4 + 5, 1 + n % 9], show_trimmed=True)
     if "trace" in words:
         props["trace"] = True
     props.update(extra)
@@ -442,7 +446,7 @@ def styled(label, groups, **extra):
 
 def style_case(script, steps, hidden=(), **options):
     case("styles", STYLE_HELPERS + script, [step for group in steps for step in group],
-         hidden=["r", "g", "b", "show"] + list(hidden), **options)
+         hidden=["r", "g", "b", "show", "note"] + list(hidden), **options)
 
 
 # Points and straight objects. A second object of each kind is hidden.
@@ -457,9 +461,9 @@ style_case([
     styled("Q", "common point trace"),
     [st("M", point=[3, 10], trace=True, label_mode=2)],
     styled("l", "common line trace"),
-    styled("s", "common line trace", decoration=2),
+    styled("s", "common line trace", decoration=2, ends=["ARROW", "CIRCLE_OUTLINE"]),
     styled("h", "common line trace"),
-    styled("v", "common line trace"),
+    styled("v", "common line trace", head_style=1),
     [st("l2", line=[0, 13], line_opacity=255), st("s2", decoration=5)],
 ], hidden=["B", "l2", "s2", "h2", "v2"])
 
@@ -493,9 +497,11 @@ style_case([
     styled("a", "common line", fixed=None,
            slider={"position": [120, 80], "width": 150, "horizontal": False,
                    "fixed": True, "show_algebra": False},
-           animation={"speed": "speed", "mode": 1}),
+           animation={"speed": "speed", "mode": 1}, knob_size=7.5),
+    # The speed is arithmetic over the construction and the slider is playing.
     [st("a2", slider={"absolute": False, "position": [2, -3], "width": 4.5},
-        animation={"step": "0.125", "speed": "0.5", "mode": 3}, label_mode=9)],
+        animation={"step": "0.125", "speed": "speed / 4", "mode": 3, "playing": True},
+        label_mode=9)],
     styled("n", "common"),
     styled("w", "common line fill", fixed=None, arc_size=45,
            emphasize_right_angle=False, decoration=2),
@@ -532,7 +538,7 @@ style_case([
 ], [
     styled("tri", "common line fill trace"),
     styled("sq", "line fill"),
-    styled("open", "common line trace"),
+    styled("open", "common line trace", ends=["SQUARE", "DIAMOND_OUTLINE"]),
     styled("nums", "common"),
     styled("pts", "common line fill point trace", fill=["SYMBOLS", 75, 12],
            fill_symbol="\u2665"),
