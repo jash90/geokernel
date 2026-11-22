@@ -216,7 +216,10 @@ impl CatalogueEntry {
 }
 
 fn side_powers(side: f64) -> [f64; 21] {
-    let mut powers = [1.0; 21];
+    // Exponents the catalogue never fills stay non-finite, so a symbol that asks for one is
+    // rejected as an invalid catalogue weight instead of evaluating to one.
+    let mut powers = [f64::NAN; 21];
+    powers[0] = 1.0;
     powers[1] = side;
     for (power, a, b) in [
         (2, 1, 1),
