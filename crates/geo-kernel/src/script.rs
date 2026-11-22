@@ -879,10 +879,8 @@ fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> 
     }
 }
 
-/// `Sum` of three or more points or vectors folds to a point: `CmdSum`
-/// wraps the arguments in a list of points, whatever the label says (the
-/// first argument decides; a folded expression that is not a literal or an
-/// object keeps the rule of the label).
+/// `Sum` of three or more point arguments folds to a point, independently
+/// of the output label.
 fn sum_fold_point(c: &Construction, rhs: &str) -> bool {
     let Some(("Sum", args)) = split_call(rhs) else {
         return false;
@@ -891,8 +889,7 @@ fn sum_fold_point(c: &Construction, rhs: &str) -> bool {
         && ({
             let first = args[0].trim();
             matches!(parse_def(c, first), Ok(Def::FreePoint { .. }))
-                || c.id(first)
-                    .is_some_and(|id| matches!(c.kind(id), Kind::Point | Kind::Vector))
+                || c.id(first).is_some_and(|id| c.kind(id) == Kind::Point)
         })
 }
 

@@ -3692,3 +3692,8 @@ cases = ["funcrest-normalize-002", "funcrest-normalize-003"]
 command = "IsVertexForm"
 form = "function"
 cases = ["funcrest-vertexform-001", "funcrest-vertexform-004", "funcrest-vertexform-005"]
+
+[[form]]
+command = "Sum"
+form = "vector,..."
+difference = "list-commands: `Sum(vector, ...)`"

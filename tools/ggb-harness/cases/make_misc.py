@@ -269,6 +269,20 @@ cases.case("sum", [
     "p = Product(x^2, x, 1.2, 3.9)", "q = Product(x^2, x, 1, 3)",
 ], [])
 
+# Direct vector arguments are refused. A list of vectors does fold.
+cases.case("sum", [
+    "A = (0, 0)", "u = (1, 2)", "v = (-3, 5)", "w = (2, -7)",
+    "d = IsDefined(Sum({u, v, w}))",
+], [{"action": "reject", "line": "s1 = Sum(u)"},
+    {"action": "reject", "line": "s2 = Sum(u, v)"},
+    {"action": "reject", "line": "s3 = Sum(u, v, w)"},
+    {"action": "reject", "line": "s4 = Sum(u, v, w, u)"},
+    {"action": "reject", "line": "s5 = Sum(A, v, w)"}])
+cases.case("sum", [
+    "n = 1", "A = (0, 0)", "B = (1/n, n)", "u = Vector(A, B)",
+    "v = (-1, 2)", "w = (3, -4)", "d = IsDefined(Sum({u, v, w}))",
+], [setn("n", 0), setn("n", 2)])
+
 # The deprecated IntersectPath aliases.
 cases.case("alias", [
     pt("A", 0, 0), pt("B", 4, 0), pt("C", 0, 3), pt("D", 4, 3),

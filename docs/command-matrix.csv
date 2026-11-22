@@ -215,7 +215,7 @@ StepGraph,,charts,P2,done,6,6,
 LineGraph,,charts,P2,done,1,1,
 PieChart,,charts,P2,done,3,3,
 ContingencyTable,,charts,,out_of_scope,,,"Produces a LaTeX contingency table, optionally with a test report."
-Sum,,statistics,P2,partial,8,7,"Sum(list); Sum(list, number of elements); numbers, points or vectors"
+Sum,,statistics,P2,done,8,8,"Sum(list); Sum(list, number of elements); numbers, points or vectors"
 Mean,mean,statistics,,out_of_scope,,,
 mean,,statistics,,out_of_scope,,,
 Variance,,statistics,,out_of_scope,,,

@@ -1219,6 +1219,12 @@ impl Parser<'_> {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::Vec))
     }
 
+    pub(super) fn coordinate_kind(&self, i: u32) -> Option<Kind> {
+        let (types, ..) = check(self.c, &self.nodes, i).ok()?;
+        (types[i as usize] == Ty::Vec)
+            .then(|| super::types::vec_kind(self.c, &self.nodes, &types, i))
+    }
+
     pub(super) fn checked_type(&self, i: u32) -> Result<Ty, String> {
         let (types, ..) = check(self.c, &self.nodes, i)?;
         Ok(types[i as usize])
