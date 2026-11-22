@@ -193,7 +193,11 @@ impl Expected {
             Some(ExpectedData::FunctionNVar(samples)) => samples.iter().any(|s| infinite(&s.2)),
             Some(ExpectedData::Curve { samples, .. }) => samples.iter().any(|s| nonfinite(&s.1)),
             Some(ExpectedData::Pie { fractions, .. }) => fractions.iter().any(infinite),
-            Some(ExpectedData::Locus(points)) => points.iter().any(|p| nonfinite(&p.0)),
+            // the harness writes each locus coordinate on its own in every
+            // schema, so a single null (NaN) is legacy output too
+            Some(ExpectedData::Locus(points)) => points
+                .iter()
+                .any(|p| p.0.is_some_and(|(x, y)| x.is_infinite() || y.is_infinite())),
             Some(ExpectedData::List(elements)) => elements.iter().any(Self::records_signed_samples),
             _ => false,
         }
@@ -1625,6 +1629,10 @@ pub fn load_all(root: &Path) -> Result<Vec<Case>, String> {
 /// equal within the golden tolerance (the rounding of another platform),
 /// the same infinity, or both NaN.
 fn drift_agrees(p: f64, q: f64) -> bool {
+    if p == 0.0 && q == 0.0 {
+        // a signed zero can decide the sign of a later infinity
+        return p.is_sign_negative() == q.is_sign_negative();
+    }
     crate::compare::numbers_agree(p, q) || (p.is_nan() && q.is_nan())
 }
 
@@ -1655,22 +1663,17 @@ fn restore_sample(old: &mut Option<f64>, new: Option<f64>, signed: bool) -> Resu
     }
 }
 
-/// A coordinate pair of a legacy curve or locus checked against the
-/// recording. A legacy `None` stands for coordinates that are not all
-/// finite; `needs_both` (a locus, whose legacy `null` covers both
-/// coordinates) requires both recorded coordinates to be non-finite.
-fn restore_pair(
+/// A coordinate pair of a legacy curve checked against the recording. A
+/// legacy `None` stands for coordinates that are not all finite.
+fn restore_curve_pair(
     old: &mut Option<(f64, f64)>,
     new: Option<(f64, f64)>,
     signed: bool,
-    needs_both: bool,
 ) -> Result<usize, String> {
     let finite = |(x, y): (f64, f64)| x.is_finite() && y.is_finite();
     match (*old, new) {
-        (None, None) => Ok(usize::from(signed && needs_both)),
-        (None, Some((x, y)))
-            if signed && !finite((x, y)) && (!needs_both || (!x.is_finite() && !y.is_finite())) =>
-        {
+        (None, None) => Ok(0),
+        (None, Some(q)) if signed && !finite(q) => {
             *old = new;
             Ok(1)
         }
@@ -1680,6 +1683,38 @@ fn restore_pair(
         }
         _ => Err(format!("coordinates {old:?} are recorded as {new:?}")),
     }
+}
+
+/// A legacy locus point checked against the recording coordinate by
+/// coordinate: the harness writes each coordinate on its own, `null` (NaN
+/// here, both for a `None` point) where it is not finite. Each legacy
+/// `null` takes a recorded infinity (`signed`) or is verified as NaN.
+fn restore_locus_point(
+    old: &mut Option<(f64, f64)>,
+    new: Option<(f64, f64)>,
+    signed: bool,
+) -> Result<usize, String> {
+    let (ox, oy) = old.unwrap_or((f64::NAN, f64::NAN));
+    let (nx, ny) = new.unwrap_or((f64::NAN, f64::NAN));
+    let mut count = 0;
+    let mut coordinate = |o: f64, n: f64| -> Result<f64, String> {
+        if o.is_nan() && n.is_nan() {
+            count += usize::from(signed);
+            Ok(o)
+        } else if o.is_nan() && signed && n.is_infinite() {
+            count += 1;
+            Ok(n)
+        } else if o.is_finite() && n.is_finite() {
+            check_drift("coordinate", o, n).map(|()| o)
+        } else {
+            Err(format!("locus point {old:?} is recorded as {new:?}"))
+        }
+    };
+    let (x, y) = (coordinate(ox, nx)?, coordinate(oy, ny)?);
+    if old.is_some() || !x.is_nan() || !y.is_nan() {
+        *old = Some((x, y));
+    }
+    Ok(count)
 }
 
 /// The numbers, names and flags of an object that has no samples, in a
@@ -1856,15 +1891,18 @@ fn restore_data(old: &mut ExpectedData, new: &ExpectedData, signed: bool) -> Res
             check_drift("curve start", *start, *s)?;
             check_drift("curve end", *end, *e)?;
             each(a, b, |o, n| {
-                check_drift("curve parameter", o.0, n.0)?;
-                restore_pair(&mut o.1, n.1, signed, false)
+                // a sign moves only between identical parameters
+                if o.0.to_bits() != n.0.to_bits() {
+                    return Err(format!("curve parameter {} is recorded as {}", o.0, n.0));
+                }
+                restore_curve_pair(&mut o.1, n.1, signed)
             })
         }
         (ExpectedData::Locus(a), ExpectedData::Locus(b)) => each(a, b, |o, n| {
             if o.1 != n.1 {
                 return Err("locus lineTo differs".into());
             }
-            restore_pair(&mut o.0, n.0, signed, true)
+            restore_locus_point(&mut o.0, n.0, signed)
         }),
         (ExpectedData::List(_), _) | (_, ExpectedData::List(_)) => Err("list shapes differ".into()),
         (old, new) if std::mem::discriminant(old) == std::mem::discriminant(new) => {
@@ -1922,6 +1960,15 @@ fn restore_object(old: &mut Expected, new: &Expected, signed: bool) -> Result<us
     }
 }
 
+/// Whether two cases run the same input bit for bit: a step that sets +0
+/// instead of -0 flips the sign of a later infinity, and `==` on numbers
+/// treats them alike. The `Debug` form of an `f64` keeps its sign and bits.
+fn same_inputs(a: &Case, b: &Case) -> bool {
+    a.script == b.script
+        && format!("{:?}", a.view) == format!("{:?}", b.view)
+        && format!("{:?}", a.steps) == format!("{:?}", b.steps)
+}
+
 /// Checks every object of every legacy snapshot against the recording of
 /// the same input and restores what the recording supplies. Returns the
 /// positions verified.
@@ -1970,10 +2017,7 @@ fn restore_legacy_infinities(cases: &mut [Case]) -> Result<(), String> {
         if recording.schema < 3 || recording.generator != "ggb-harness" {
             return Err(format!("unexpected formats in legacy infinity pair {pair}"));
         }
-        if legacy.script != recording.script
-            || legacy.view != recording.view
-            || legacy.steps != recording.steps
-        {
+        if !same_inputs(legacy, recording) {
             return Err(format!("inputs differ in legacy infinity pair {pair}"));
         }
         // A legacy file re-recorded in schema 4 carries its own signs.
@@ -2148,6 +2192,13 @@ mod tests {
         assert!(matches!(points[0].0, Some((x, y)) if x.is_nan() && y == f64::INFINITY));
         assert!(matches!(points[1].0, Some((x, y)) if x == 1.0 && y.is_nan()));
         assert!(parse_file(&file_with(3, single), "t").is_err());
+        // the harness writes a single null coordinate in legacy files too
+        let legacy_single = r#"{"type":"locus","defined":true,"points":[[null,1.0,false]]}"#;
+        let file = parse_file(&file_with(2, legacy_single), "t").unwrap();
+        let Some(ExpectedData::Locus(points)) = &file.cases[0].snapshots[0]["f"].data else {
+            panic!("not a locus");
+        };
+        assert!(matches!(points[0].0, Some((x, y)) if x.is_nan() && y == 1.0));
 
         // list replay compares a curve element by its bounds only
         let list = r#"{"type":"list","defined":true,"elements":[{"type":"curve",
@@ -2220,6 +2271,10 @@ mod tests {
         let other = curve(&[(1.0, Some((f64::INFINITY, 2.0))), (1.0, Some((1.0, 1.0)))]);
         assert!(restore_object(&mut moved, &other, true).is_err());
         // nor between curves of other bounds
+        // a parameter shifted within the tolerance is still another point
+        let mut shifted_t = curve(&[(-5e-10, None)]);
+        let at_zero = curve(&[(0.0, Some((f64::INFINITY, 2.0)))]);
+        assert!(restore_object(&mut shifted_t, &at_zero, true).is_err());
         let mut bounds = curve(&[(0.0, None)]);
         let mut shifted = curve(&[(0.0, Some((f64::INFINITY, 0.0)))]);
         if let Some(ExpectedData::Curve { end, .. }) = &mut shifted.data {
@@ -2262,6 +2317,28 @@ mod tests {
             Ok(0)
         );
         assert!(restore_object(&mut point(1.0), &point(1.1), true).is_err());
+        // a signed zero decides the sign of a later infinity
+        assert_eq!(restore_object(&mut point(-0.0), &point(-0.0), true), Ok(0));
+        assert!(restore_object(&mut point(0.0), &point(-0.0), true).is_err());
+    }
+
+    #[test]
+    fn pair_inputs_must_agree_bit_for_bit() {
+        let case = |value: &str| {
+            let text = format!(
+                r#"{{"schema":2,"generator":"format-sample","upstream_commit":null,
+                  "cases":[{{"id":"x","group":"g","script":["a = 1","r = 1 / a"],
+                  "steps":[{{"action":"initial"}},
+                    {{"action":"set_number","label":"a","value":{value}}}],
+                  "snapshots":[{{"a":{{"type":"number","defined":true,"value":1.0}},
+                    "r":{{"type":"number","defined":true,"value":1.0}}}},
+                  {{"a":{{"type":"number","defined":true,"value":{value}}},
+                    "r":{{"type":"number","defined":false}}}}]}}]}}"#
+            );
+            parse_file(&text, "t").unwrap().cases.remove(0)
+        };
+        assert!(same_inputs(&case("0.0"), &case("0.0")));
+        assert!(!same_inputs(&case("0.0"), &case("-0.0")));
     }
 
     #[test]
@@ -2277,11 +2354,20 @@ mod tests {
             (Some((1.0, 2.0)), true),
         ]);
         let mut legacy = locus(vec![(None, true), (None, false), (Some((1.0, 2.0)), true)]);
-        assert_eq!(restore_object(&mut legacy, &recorded, true), Ok(2));
+        // one restored and three verified null coordinates
+        assert_eq!(restore_object(&mut legacy, &recorded, true), Ok(4));
         let Some(ExpectedData::Locus(points)) = &legacy.data else {
             panic!("not a locus");
         };
         assert!(matches!(points[0].0, Some((x, y)) if x == f64::INFINITY && y.is_nan()));
+        // a legacy point with one null coordinate keeps its finite one
+        let mut single = locus(vec![(Some((f64::NAN, 1.0)), false)]);
+        let infinite = locus(vec![(Some((f64::NEG_INFINITY, 1.0)), false)]);
+        assert_eq!(restore_object(&mut single, &infinite, true), Ok(1));
+        assert_eq!(single, infinite);
+        let mut single = locus(vec![(Some((f64::NAN, 1.0)), false)]);
+        let finite = locus(vec![(Some((2.0, 1.0)), false)]);
+        assert!(restore_object(&mut single, &finite, true).is_err());
         // a legacy null point covers both coordinates, and lineTo must match
         for bad in [
             locus(vec![
