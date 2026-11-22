@@ -1920,6 +1920,206 @@ form = "conic"
 cases = ["relationreview-asymptotes-001"]
 
 [[form]]
+command = "Coefficients"
+form = "function"
+cases = ["calculus-coefficients-001", "calculus-coefficients-011"]
+
+[[form]]
+command = "Degree"
+form = "function"
+cases = ["calculus-degree-001", "calculus-degree-009"]
+
+[[form]]
+command = "Denominator"
+form = "function"
+cases = ["calculus-fraction-013"]
+
+[[form]]
+command = "Denominator"
+form = "number"
+cases = ["calculus-fraction-001"]
+
+[[form]]
+command = "Derivative"
+form = "function"
+cases = ["calculus-derivative-001"]
+
+[[form]]
+command = "Derivative"
+form = "function,number"
+cases = ["calculus-derivative-002"]
+
+[[form]]
+command = "Derivative"
+form = "function,any"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "Derivative"
+form = "function,any,number"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "Integral"
+form = "function"
+cases = ["calculus-integral-001"]
+
+[[form]]
+command = "Integral"
+form = "function,number"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "Integral"
+form = "function,number,number"
+cases = ["calculus-integral-002"]
+
+[[form]]
+command = "Integral"
+form = "function,number,number,boolean"
+cases = ["calculus-integral-002"]
+
+[[form]]
+command = "Integral"
+form = "function,number,number,number"
+cases = ["calculus-integral-008"]
+
+[[form]]
+command = "Integral"
+form = "function,function,number,number"
+cases = ["calculus-integral-006"]
+
+[[form]]
+command = "Integral"
+form = "function,function,number,number,boolean"
+cases = ["calculus-integral-007"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function"
+cases = ["calculus-integral-016"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,number"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "IntegralBetween"
+form = "function,number,number"
+cases = ["calculus-between-007"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,number,number,boolean"
+cases = ["calculus-between-007"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,number,number,number"
+cases = ["calculus-integral-017"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,function,number,number"
+cases = ["calculus-between-001"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,function,number,number,boolean"
+cases = ["calculus-between-002"]
+
+[[form]]
+command = "LeftSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001"]
+
+[[form]]
+command = "LowerSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001"]
+
+[[form]]
+command = "NDerivative"
+form = "function"
+cases = ["calculus-derivative-001"]
+
+[[form]]
+command = "NDerivative"
+form = "function,number"
+cases = ["calculus-derivative-003"]
+
+[[form]]
+command = "NIntegral"
+form = "function"
+cases = ["calculus-integral-001"]
+
+[[form]]
+command = "NIntegral"
+form = "function,number"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "NIntegral"
+form = "function,number,number"
+cases = ["calculus-integral-010"]
+
+[[form]]
+command = "NIntegral"
+form = "function,number,number,boolean"
+cases = ["calculus-integral-011"]
+
+[[form]]
+command = "NIntegral"
+form = "function,number,number,number"
+cases = ["calculus-integral-017"]
+
+[[form]]
+command = "NIntegral"
+form = "function,function,number,number,boolean"
+cases = ["calculus-integral-017"]
+
+[[form]]
+command = "Numerator"
+form = "function"
+cases = ["calculus-fraction-013"]
+
+[[form]]
+command = "Numerator"
+form = "number"
+cases = ["calculus-fraction-001"]
+
+[[form]]
+command = "Polynomial"
+form = "function"
+cases = ["calculus-polynomial-001"]
+
+[[form]]
+command = "Polynomial"
+form = "list"
+cases = ["calculus-polynomial-010"]
+
+[[form]]
+command = "Polynomial"
+form = "point,point,..."
+cases = ["calculus-polynomial-006"]
+
+[[form]]
+command = "RectangleSum"
+form = "function,number,number,number,number"
+cases = ["calculus-sums-001"]
+
+[[form]]
+command = "TrapezoidalSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001"]
+
+[[form]]
+command = "UpperSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001"]
+
+[[form]]
 command = "Text"
 form = "any"
 cases = ["textformat-signatures-001"]

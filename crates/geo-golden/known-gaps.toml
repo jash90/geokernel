@@ -609,6 +609,13 @@ id = "discrete-upstream-019"
 reason = "The circumcircle test is sensitive to the last bit of cos(6) on approximately cocircular sites. The literal cocircular cases exercise the exact tie rule separately."
 mismatches = ["0:g"]
 
+# Calculus
+
+[[gap]]
+id = "calculus-degree-010"
+reason = "The reference exhausts its heap expanding the coefficient trees of (a x + b)^300 (its `power` deep-copies the shared trees, which grows without bound; at the harness's 4 GB it fails from about the 65th power on) and answers undefined. The kernel reads each shared coefficient subtree once, a memo over the builder's arena, and answers within its budget."
+mismatches = ["0:d", "1:d", "2:d", "3:d"]
+
 # Numerical function analysis
 
 [[gap]]
