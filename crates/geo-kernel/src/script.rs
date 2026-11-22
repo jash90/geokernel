@@ -716,6 +716,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if rhs.starts_with("Vertex") || rhs.starts_with("Corner") {
         if let Some((func @ ("Vertex" | "Corner"), args)) = split_call(rhs) {
             if let Some(source) = PointDef::inequality_source(c, func, &args) {
+                if crate::expr::inequality::fails(c, source) {
+                    return Err(INEQUALITY_FAILURE.into());
+                }
                 let count = crate::expr::inequality::vertices(c, source).len().max(1);
                 return add_outputs(c, name, PointDef::inequality_slots(source, count)).map(Some);
             }
@@ -1493,6 +1496,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         return Some(Ok(defs));
     }
     if let Some(source) = PointDef::inequality_source(c, func, &args) {
+        if crate::expr::inequality::fails(c, source) {
+            return Some(Err(INEQUALITY_FAILURE.into()));
+        }
         let count = crate::expr::inequality::vertices(c, source).len().max(1);
         return Some(Ok(PointDef::inequality_slots(source, count)));
     }
@@ -1669,6 +1675,10 @@ fn rotated_point_label(c: &Construction, from: Id, angle: &str) -> String {
     }
     unreachable!("the label sequence is infinite")
 }
+
+/// The error of a vertex command whose inequality cannot test its
+/// candidates (see [`crate::expr::inequality::fails`]).
+const INEQUALITY_FAILURE: &str = "an inequality border is neither polynomial nor a function";
 
 /// `Construction.buildIndexedLabel`: the first `p_{n}` that is free, where
 /// for `n < 10` the short form `p_n` must be free too.

@@ -135,6 +135,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         exhausted: false,
         coefficient_locals: None,
         expansion_work: None,
+        expansion_spent: false,
         max_degree: u32::MAX,
     };
 
@@ -367,6 +368,9 @@ pub(crate) struct Builder {
     pub(crate) abort_at: u64,
     pub(crate) exhausted: bool,
     expansion_work: Option<u64>,
+    /// Whether an expansion stopped because `expansion_work` ran out,
+    /// rather than at a nonpolynomial operation.
+    expansion_spent: bool,
     max_degree: u32,
     coefficient_locals: Option<[f64; 9]>,
 }
@@ -406,6 +410,7 @@ impl Builder {
             abort_at: u64::MAX,
             exhausted: false,
             expansion_work: None,
+            expansion_spent: false,
             max_degree: u32::MAX,
             coefficient_locals: None,
         }
@@ -423,6 +428,7 @@ impl Builder {
             abort_at: u64::MAX,
             exhausted: false,
             expansion_work: None,
+            expansion_spent: false,
             max_degree: u32::MAX,
             coefficient_locals: None,
         }
@@ -434,11 +440,18 @@ impl Builder {
 
     fn charge_expansion(&mut self, units: u64) -> Result<(), NotPolynomial> {
         if let Some(left) = &mut self.expansion_work {
-            *left = left
-                .checked_sub(units)
-                .ok_or(NotPolynomial::ImplicitCurve)?;
+            let Some(rest) = left.checked_sub(units) else {
+                self.expansion_spent = true;
+                return Err(NotPolynomial::ImplicitCurve);
+            };
+            *left = rest;
         }
         Ok(())
+    }
+
+    /// Whether a failed expansion ran out of its work allowance.
+    pub(crate) fn expansion_spent(&self) -> bool {
+        self.expansion_spent
     }
 
     fn coefficient_local(&self, index: u32) -> Option<f64> {

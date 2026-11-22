@@ -105,8 +105,15 @@ impl BoundaryDef {
         }
     }
 
+    /// Interval roots (`AlgoRoots`) name revealed points with default
+    /// point labels instead of indexing the command's label.
+    pub(super) fn grows_with_default_labels(self) -> bool {
+        matches!(self.0, Intersection::Function(d) if d.is_interval_anchor())
+    }
+
     pub(super) fn can_grow(self) -> bool {
         self.growth_anchor().is_some()
+            || self.grows_with_default_labels()
             || matches!(self.0, Intersection::Cartesian(d) if d.can_grow())
             || matches!(self.0, Intersection::Implicit(d) if d.can_grow())
     }
@@ -117,6 +124,9 @@ impl BoundaryDef {
         }
         if let Intersection::Implicit(d) = self.0 {
             return d.can_grow().then(|| d.count(c));
+        }
+        if let Intersection::Function(d) = self.0 {
+            return d.is_interval_anchor().then(|| d.root_count(c));
         }
         let mut count = 0;
         self.growth_anchor()?.points(c, |_| {
@@ -132,6 +142,11 @@ impl BoundaryDef {
         }
         if let Intersection::Implicit(d) = self.0 {
             return d.slot(which).map(Self::implicit);
+        }
+        if let Intersection::Function(d) = self.0 {
+            return d
+                .interval_slot(which)
+                .map(|d| Self(Intersection::Function(d)));
         }
         let def = self.growth_anchor()?;
         Some(Self(Intersection::Edges(EdgeIntersection { which, ..def })))

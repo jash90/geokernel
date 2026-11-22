@@ -146,7 +146,7 @@ fn resultant(
     Some(determinant)
 }
 
-fn real_roots(coefficients: &[f64], work: &IntersectionWork) -> Vec<f64> {
+pub(crate) fn real_roots(coefficients: &[f64], work: &IntersectionWork) -> Vec<f64> {
     let scale = coefficients.iter().fold(0.0_f64, |m, c| m.max(c.abs()));
     if scale == 0.0 || !scale.is_finite() {
         return Vec::new();

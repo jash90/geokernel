@@ -170,4 +170,37 @@ cases.case("inequality", [
     "a: y >= x^2", "b = a(0, 0)", "P = Vertex(a)",
 ], [])
 
+# Nonpolynomial borders: a function border meets one-variable borders at
+# their zeros, and every border takes part in the Boolean test.
+for script, steps in (
+    (["k = 0", "q(x,y) = y > sin(x) + k && x > -1 && x < 2 && y < 1.5"],
+     [setn("k", 2), setn("k", -3), setn("k", 0)]),
+    (["q(x,y) = y < 1/x && x > 0.5 && x < 4 && y > 0"], []),
+    (["q(x,y) = x < exp(y) && y > -1 && y < 1 && x > 0"], []),
+    (["q(x,y) = y > cos(x) && x^2 > 0"], []),
+    (["q(x,y) = y > cos(x) && x^2 >= 0 && x < 1"], []),
+    (["q(x,y) = x^2 < 4 && y > sqrt(x + 3) && y < 5"], []),
+    (["k = 1", "q(x,y) = y > sqrt(x - k) && x > 0 && x < 3"],
+     [setn("k", 5), setn("k", -1), setn("k", 1)]),
+    (["q(x,y) = sin(x y) > -2 && x > 0 && y > 0 && x + y < 2"], []),
+    (["q(x,y) = x y + sin(y) > 1 && x > 0 && y > 0 && x < 2 && y < 2"], []),
+    (["q(x,y) = y > sin(x) || x < -1 || x > 1"], []),
+    (["q(x,y) = y >= 2^x && x > -2 && x < 2 && y < 3"], []),
+    (["q(x,y) = y > sin(x) && y < 2 - x^2 && x > -1"], []),
+    (["q(x,y) = !(y < 2^x) && x > -2 && x < 2 && y < 3"], []),
+    (["k = 2", "q(x,y) = x > 0 && sin(x y) > k"], [setn("k", -2)]),
+):
+    cases.case("vertex", script + ["P = Vertex(q)"], steps)
+    cases.cases[-1]["track_boundary_growth"] = True
+cases.case("inequality", ["k = 1", "q(x,y) = x > ln(y) + k && y > 0.5 && y < 3",
+                          "P = Corner(q)"], [setn("k", -1), setn("k", 1)])
+cases.cases[-1]["track_boundary_growth"] = True
+# A border that is neither polynomial nor a function of one coordinate
+# stops building the inequality tree; testing a vertex then fails.
+for border in ("x + y < 2 && sin(x y) > -2", "x + y < 2 && x y + sin(x) > 5",
+               "x + y < 2 && (sin(x y) > -2 || x > 5)"):
+    cases.case("inequality", ["q(x,y) = x > 0 && y > 0 && " + border],
+               [{"action": "reject", "line": "P = Vertex(q)"},
+                {"action": "reject", "line": "Q = Corner(q)"}])
+
 cases.write()

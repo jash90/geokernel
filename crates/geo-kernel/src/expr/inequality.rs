@@ -1,11 +1,11 @@
-//! Boolean combinations of polynomial borders in two coordinates.
+//! Boolean combinations of borders in two coordinates.
 
 // Border classification and dispatch follow Inequality.java and AlgoVertexIneq.java
 // at upstream revision 112919f2d450ec7430a5cd3b65dba226fdc43b74.
 // Licensed under the EUPL 1.2.
 
 use super::equation::Builder;
-use super::{entry, Bin, IntersectionWork, Node, Ty, Un};
+use super::{entry, Bin, Entry, IntersectionWork, Node, Ty, Un};
 use crate::algo::conic_nd::ConicData;
 use crate::algo::intersect::boundary::line_crossing;
 use crate::algo::intersect::helper_line_conic_points;
@@ -30,11 +30,29 @@ pub(crate) fn is_inequality(c: &Construction, id: Id) -> bool {
 }
 
 pub(crate) fn vertices(c: &Construction, source: Id) -> Arc<[(f64, f64)]> {
-    c.function_roots
-        .inequality(source, || compute(c, source).unwrap_or_default().into())
+    c.function_roots.inequality(source, || {
+        compute(c, source)
+            .filter(|outcome| !outcome.fails)
+            .map(|outcome| outcome.vertices)
+            .unwrap_or_default()
+            .into()
+    })
 }
 
-fn compute(c: &Construction, source: Id) -> Option<Vec<(f64, f64)>> {
+/// Whether `AlgoVertexIneq` fails on this inequality: a border that is
+/// neither polynomial nor a function of one coordinate stops building
+/// the inequality tree (`FunctionNVar.initIneqs`), and testing a vertex
+/// candidate then reads the missing part of the tree.
+pub(crate) fn fails(c: &Construction, source: Id) -> bool {
+    compute(c, source).is_some_and(|outcome| outcome.fails)
+}
+
+struct Outcome {
+    vertices: Vec<(f64, f64)>,
+    fails: bool,
+}
+
+fn compute(c: &Construction, source: Id) -> Option<Outcome> {
     let Def::Expr(def) = c.def(source) else {
         return None;
     };
@@ -53,15 +71,24 @@ fn compute(c: &Construction, source: Id) -> Option<Vec<(f64, f64)>> {
         };
     }
     let mut borders = Vec::new();
-    let tree = Tree::build(c, &mut builder, root, &mut borders, &work)?;
+    let mut stopped = false;
+    let tree = Tree::build(c, &mut builder, root, &mut borders, &mut stopped, &work)?;
+    let at = Plane { c, e, work: &work };
     let mut vertices = Vec::new();
     for (i, a) in borders.iter().enumerate() {
         for b in &borders[i + 1..] {
             if !work.charge(1) {
                 return None;
             }
-            for (x, y) in a.intersections(b, &work)? {
-                if tree.truth(&borders, x, y, &work)? == 3 {
+            let candidates = a.intersections(b, &at)?;
+            if stopped && !candidates.is_empty() {
+                return Some(Outcome {
+                    vertices: Vec::new(),
+                    fails: true,
+                });
+            }
+            for (x, y) in candidates {
+                if tree.truth(&borders, x, y, &at)? == 3 {
                     if vertices.len() >= MAX_VERTICES {
                         return None;
                     }
@@ -70,7 +97,35 @@ fn compute(c: &Construction, source: Id) -> Option<Vec<(f64, f64)>> {
             }
         }
     }
-    Some(vertices)
+    Some(Outcome {
+        vertices,
+        fails: false,
+    })
+}
+
+/// The function and work meter for evaluating nonpolynomial borders.
+struct Plane<'a> {
+    c: &'a Construction,
+    e: &'a Entry,
+    work: &'a IntersectionWork,
+}
+
+impl Plane<'_> {
+    fn charge(&self, units: u64) -> bool {
+        self.work.charge(units)
+    }
+
+    /// `Inequality.normal` (`lhs - rhs`, oriented so that the region is
+    /// positive) at `(x, y)`.
+    fn normal(&self, expression: &Expression, x: f64, y: f64) -> f64 {
+        let at = |i: u32| {
+            if i as usize >= self.e.nodes.len() {
+                return f64::NAN;
+            }
+            self.work.sample_plane(self.c, self.e, i, x, y)
+        };
+        at(expression.positive) - at(expression.negative)
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -82,16 +137,119 @@ enum BorderType {
     OneVariableX,
     OneVariableY,
     Implicit,
+    /// `INEQUALITY_INVALID`: a border without intersections that only
+    /// takes part in the Boolean test.
+    Invalid,
+}
+
+/// A border that does not expand to a polynomial, kept as the two sides of
+/// its comparison in the input tree.
+#[derive(Clone, Copy)]
+struct Expression {
+    positive: u32,
+    negative: u32,
+    /// For a parametric border, `-coefficient` of the linear coordinate
+    /// (`Inequality.coef`), which divides the border function.
+    divisor: f64,
 }
 
 struct Border {
     kind: BorderType,
     polynomial: PlanePolynomial,
     evaluation_cost: u64,
+    expression: Option<Expression>,
+    strict: bool,
 }
 
 impl Border {
-    fn new(terms: Vec<(usize, usize, f64)>) -> Self {
+    /// `Inequality.update` for a border whose normal form is not a
+    /// polynomial: only `y = f(x)` and `x = f(y)` borders keep a function.
+    fn nonpolynomial(
+        c: &Construction,
+        builder: &Builder,
+        positive: u32,
+        negative: u32,
+        strict: bool,
+    ) -> Self {
+        let normal = |var| {
+            let a = coefficient(c, builder, positive, var)?;
+            let b = coefficient(c, builder, negative, var)?;
+            Some(a - b)
+        };
+        let usable = |c: Option<f64>| c.filter(|c| !is_zero(*c) && !c.is_nan());
+        let (coef_x, coef_y) = (normal(Node::Var), normal(Node::VarY));
+        let (kind, coefficient) = match (usable(coef_x), usable(coef_y)) {
+            (None, Some(y)) if coef_x.is_none() => (BorderType::ParametricY, y),
+            (Some(x), None) if coef_y.is_none() => (BorderType::ParametricX, x),
+            _ => (BorderType::Invalid, f64::NAN),
+        };
+        Self {
+            kind,
+            polynomial: Vec::new(),
+            evaluation_cost: 1,
+            expression: Some(Expression {
+                positive,
+                negative,
+                divisor: -coefficient,
+            }),
+            strict,
+        }
+    }
+
+    /// The border function of a nonpolynomial parametric border at `t`
+    /// (`Inequality.funBorder`: the normal form with the other coordinate
+    /// replaced by 0, divided by `-coef`).
+    fn border_value(&self, at: &Plane<'_>, t: f64) -> f64 {
+        let Some(expression) = &self.expression else {
+            return f64::NAN;
+        };
+        let value = if self.kind == BorderType::ParametricX {
+            at.normal(expression, 0.0, t)
+        } else {
+            at.normal(expression, t, 0.0)
+        };
+        value / expression.divisor
+    }
+
+    /// `Inequality.rootMultiple` of a one-variable polynomial border: its
+    /// real roots, a root twice where the border touches without a sign
+    /// change and the closed side is the inside.
+    fn zeros(&self, work: &IntersectionWork) -> Option<Vec<f64>> {
+        let coefficients: Vec<f64> = if self.kind == BorderType::OneVariableX {
+            self.polynomial.first().cloned().unwrap_or_default()
+        } else {
+            self.polynomial
+                .iter()
+                .map(|row| row.first().copied().unwrap_or_default())
+                .collect()
+        };
+        let mut roots = plane_polynomial::real_roots(&coefficients, work);
+        roots.sort_by(f64::total_cmp);
+        if !work.charge((roots.len() * (coefficients.len() + 1)) as u64) {
+            return None;
+        }
+        let value = |t: f64| coefficients.iter().rev().fold(0.0, |v, c| v * t + c);
+        let mut zeros = Vec::with_capacity(roots.len());
+        for (i, &root) in roots.iter().enumerate() {
+            let before = if i == 0 {
+                root - 1.0
+            } else {
+                (root + roots[i - 1]) / 2.0
+            };
+            let after = roots
+                .get(i + 1)
+                .map_or(root + 1.0, |next| (root + next) / 2.0);
+            let (sign_before, sign_after) = (value(before).signum(), value(after).signum());
+            if sign_before != sign_after {
+                zeros.push(root);
+            } else if (sign_before > 0.0) ^ !self.strict {
+                zeros.extend([root, root]);
+            }
+        }
+        Some(zeros)
+    }
+
+    fn new(terms: Vec<(usize, usize, f64)>, strict: bool) -> Self {
         use BorderType::*;
         let mut degree = 0;
         let mut degrees = [0, 0];
@@ -117,6 +275,8 @@ impl Border {
             kind,
             polynomial,
             evaluation_cost,
+            expression: None,
+            strict,
         }
     }
 
@@ -128,13 +288,17 @@ impl Border {
             .unwrap_or_default()
     }
 
-    fn intersections(&self, other: &Self, work: &IntersectionWork) -> Option<Vec<(f64, f64)>> {
+    fn intersections(&self, other: &Self, at: &Plane<'_>) -> Option<Vec<(f64, f64)>> {
         use BorderType::*;
+        let work = at.work;
         let (a, b) = if self.kind <= other.kind {
             (self, other)
         } else {
             (other, self)
         };
+        if a.expression.is_some() || b.expression.is_some() {
+            return Self::nonpolynomial_intersections(a, b, at);
+        }
         match (a.kind, b.kind) {
             (_, Implicit) | (OneVariableY, OneVariableY) => Some(Vec::new()),
             (Line, Line) => {
@@ -188,6 +352,96 @@ impl Border {
             _ => plane_polynomial::intersections(&a.polynomial, &b.polynomial, work),
         }
     }
+
+    fn is_one_variable_nonlinear(&self) -> bool {
+        match self.kind {
+            BorderType::OneVariableX => self.polynomial.first().is_some_and(|row| row.len() > 2),
+            BorderType::OneVariableY => self.polynomial.len() > 2,
+            _ => false,
+        }
+    }
+
+    /// The pairs of `AlgoVertexIneq` with a nonpolynomial border, ordered
+    /// so that `a.kind <= b.kind`. Only a one-variable border meets a
+    /// nonpolynomial function border (`intParamYX`, `intParamXY`); the
+    /// other pairs use Newton helpers that start from an undefined point
+    /// and so never yield a vertex.
+    fn nonpolynomial_intersections(a: &Self, b: &Self, at: &Plane<'_>) -> Option<Vec<(f64, f64)>> {
+        use BorderType::*;
+        match (a.kind, b.kind) {
+            // A border linear in its coordinate is `INEQUALITY_LINEAR`.
+            (ParametricY, OneVariableX) | (ParametricX, OneVariableY)
+                if a.expression.is_some() && b.is_one_variable_nonlinear() =>
+            {
+                let zeros = b.zeros(at.work)?;
+                if !at.charge(zeros.len() as u64) {
+                    return None;
+                }
+                Some(
+                    zeros
+                        .into_iter()
+                        .map(|zero| {
+                            let value = a.border_value(at, zero);
+                            if a.kind == ParametricY {
+                                (zero, value)
+                            } else {
+                                (value, zero)
+                            }
+                        })
+                        .collect(),
+                )
+            }
+            // `intParamParam` with a polynomial border intersects the two
+            // functions as polynomials; the nonpolynomial difference has
+            // no polynomial factors, so it has no roots.
+            _ => Some(Vec::new()),
+        }
+    }
+}
+
+/// `ExpressionNode.getCoefficient`: the coefficient of `var` in the
+/// subtree `i` when the subtree is linear in it, `None` otherwise.
+fn coefficient(c: &Construction, builder: &Builder, i: u32, var: Node) -> Option<f64> {
+    let node = builder.node(i);
+    let reads = |j: u32| {
+        let mut pending = vec![j];
+        let mut budget = 10_000;
+        while let Some(k) = pending.pop() {
+            budget -= 1;
+            if budget == 0 {
+                return true;
+            }
+            let n = builder.node(k);
+            if n == var {
+                return true;
+            }
+            pending.extend(super::children(&n));
+        }
+        false
+    };
+    match node {
+        Node::Bin(op @ (Bin::Add | Bin::Sub | Bin::Mul | Bin::Div), a, b) => {
+            let left = coefficient(c, builder, a, var)?;
+            let right = coefficient(c, builder, b, var)?;
+            let constant = |j| builder.number_value(c, j);
+            match op {
+                Bin::Add => Some(left + right),
+                Bin::Sub => Some(left - right),
+                Bin::Mul if !builder.contains_var(b) => Some(left * constant(b)?),
+                Bin::Mul if !builder.contains_var(a) => Some(right * constant(a)?),
+                Bin::Div if !builder.contains_var(b) => Some(left / constant(b)?),
+                _ => (!reads(a) && !reads(b)).then_some(0.0),
+            }
+        }
+        node if super::children(&node).next().is_none() => {
+            Some(if node == var { 1.0 } else { 0.0 })
+        }
+        _ => (!reads(i)).then_some(0.0),
+    }
+}
+
+fn is_zero(v: f64) -> bool {
+    v.abs() < crate::tol::STANDARD_PRECISION
 }
 
 fn rewrite_abs(builder: &mut Builder, a: u32, b: u32) -> (u32, u32) {
@@ -209,6 +463,8 @@ fn rewrite_abs(builder: &mut Builder, a: u32, b: u32) -> (u32, u32) {
 }
 
 enum Tree {
+    /// A part of the tree that `initIneqs` never reached.
+    Empty,
     Border(usize),
     Constant(bool),
     Not(Box<Tree>),
@@ -221,18 +477,24 @@ impl Tree {
         builder: &mut Builder,
         root: u32,
         borders: &mut Vec<Border>,
+        stopped: &mut bool,
         work: &IntersectionWork,
     ) -> Option<Self> {
+        if *stopped {
+            return Some(Self::Empty);
+        }
         if !work.charge(1) {
             return None;
         }
         let tree = match builder.node(root) {
             Node::Bin(op, a, b) if op.is_logic() => Self::Pair(
                 op,
-                Box::new(Self::build(c, builder, a, borders, work)?),
-                Box::new(Self::build(c, builder, b, borders, work)?),
+                Box::new(Self::build(c, builder, a, borders, stopped, work)?),
+                Box::new(Self::build(c, builder, b, borders, stopped, work)?),
             ),
-            Node::Un(Un::Not, a) => Self::Not(Box::new(Self::build(c, builder, a, borders, work)?)),
+            Node::Un(Un::Not, a) => Self::Not(Box::new(Self::build(
+                c, builder, a, borders, stopped, work,
+            )?)),
             Node::Bin(
                 op @ (Bin::Greater | Bin::GreaterEqual | Bin::Less | Bin::LessEqual),
                 a,
@@ -243,9 +505,28 @@ impl Tree {
                 } else {
                     (a, b)
                 };
+                let strict = matches!(op, Bin::Greater | Bin::Less);
+                let (positive, negative) = (a, b);
                 let (a, b) = rewrite_abs(builder, a, b);
                 let root = builder.push(Node::Bin(Bin::Sub, a, b));
-                let polynomial = builder.expand(c, root).ok()?;
+                let polynomial = match builder.expand(c, root) {
+                    Ok(polynomial) => polynomial,
+                    Err(super::equation::NotPolynomial::ImplicitCurve)
+                        if !builder.expansion_spent() =>
+                    {
+                        let border = Border::nonpolynomial(c, builder, positive, negative, strict);
+                        if border.kind == BorderType::Invalid {
+                            *stopped = true;
+                            return Some(Self::Empty);
+                        }
+                        if borders.len() == MAX_BORDERS {
+                            return None;
+                        }
+                        borders.push(border);
+                        return Some(Self::Border(borders.len() - 1));
+                    }
+                    Err(_) => return None,
+                };
                 if polynomial.degree() > MAX_BORDER_DEGREE {
                     return None;
                 }
@@ -278,6 +559,7 @@ impl Tree {
                     let index = borders.len();
                     borders.push(Border::new(
                         terms.into_iter().filter(|&(_, _, v)| v != 0.0).collect(),
+                        strict,
                     ));
                     Self::Border(index)
                 }
@@ -293,15 +575,30 @@ impl Tree {
     }
 
     /// Bit 0 allows false, bit 1 allows true. At a border both are possible.
-    fn truth(&self, borders: &[Border], x: f64, y: f64, work: &IntersectionWork) -> Option<u8> {
+    fn truth(&self, borders: &[Border], x: f64, y: f64, at: &Plane<'_>) -> Option<u8> {
+        let work = at.work;
         if !work.charge(1) {
             return None;
         }
         let mask = match self {
+            Self::Empty => return None,
             Self::Border(index) => {
                 let border = &borders[*index];
                 if !work.charge(border.evaluation_cost) {
                     return None;
+                }
+                if let Some(expression) = &border.expression {
+                    // `Inequality.valueAround`: NaN is neither zero nor
+                    // positive, so it reads as false.
+                    let v = at.normal(expression, x, y);
+                    if work.exhausted() {
+                        return None;
+                    }
+                    return Some(if is_zero(v) {
+                        3
+                    } else {
+                        1 << u8::from(v > 0.0)
+                    });
                 }
                 let v = plane_polynomial::value(&border.polynomial, x, y);
                 if !v.is_finite() {
@@ -315,12 +612,12 @@ impl Tree {
             }
             Self::Constant(v) => 1 << u8::from(*v),
             Self::Not(a) => {
-                let a = a.truth(borders, x, y, work)?;
+                let a = a.truth(borders, x, y, at)?;
                 (a >> 1) | ((a & 1) << 1)
             }
             Self::Pair(op, a, b) => {
-                let a = a.truth(borders, x, y, work)?;
-                let b = b.truth(borders, x, y, work)?;
+                let a = a.truth(borders, x, y, at)?;
+                let b = b.truth(borders, x, y, at)?;
                 let mut result = 0;
                 for u in [false, true] {
                     for v in [false, true] {

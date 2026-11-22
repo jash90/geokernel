@@ -43,6 +43,12 @@ impl GrowthAnchor {
         }
     }
 
+    /// `AlgoGeoPointsFunction.updateLabels`: a point beyond the command's
+    /// own labels gets the next default point label.
+    fn default_labels(&self) -> bool {
+        matches!(self, Self::Intersection(d) if d.grows_with_default_labels())
+    }
+
     fn slot(&self, slot: usize) -> Option<Def> {
         match *self {
             Self::Intersection(d) => d.grown_slot(slot).map(Def::IntersectBoundary),
@@ -130,7 +136,11 @@ impl BoundaryOutputs {
                 let Some(output) = anchor.slot(slot) else {
                     break;
                 };
-                let label = script::index_label(c, &group.prefix);
+                let label = if anchor.default_labels() {
+                    crate::algo::polygon::default_point_label(c)
+                } else {
+                    script::index_label(c, &group.prefix)
+                };
                 let Ok(id) = c.add_output(&label, output, group.first) else {
                     break;
                 };
