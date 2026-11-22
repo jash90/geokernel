@@ -84,7 +84,9 @@ impl Layer {
         raster.render(&mut pixmap, &mut Resources::new());
         let pixels = pixmap
             .data_as_u8_slice()
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .map(|px| Color32::from_rgba_premultiplied(px[0], px[1], px[2], px[3]))
             .collect();
         let image = ColorImage::new([usize::from(width), usize::from(height)], pixels);
