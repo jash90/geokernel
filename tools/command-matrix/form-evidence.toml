@@ -2717,7 +2717,7 @@ cases = ["charts-stepgraph-013"]
 [[form]]
 command = "LineGraph"
 form = "list,list"
-cases = ["charts-linegraph-009"]
+cases = ["charts-linegraph-009", "charts-linegraph-010"]
 
 [[form]]
 command = "PieChart"
@@ -3105,7 +3105,7 @@ cases = ["funcanalysis-forms-013"]
 [[form]]
 command = "OsculatingCircle"
 form = "point,function"
-cases = ["funcanalysis-forms-011", "funcanalysis-curvatureupstream-010"]
+cases = ["funcanalysis-forms-011"]
 
 [[form]]
 command = "OsculatingCircle"
