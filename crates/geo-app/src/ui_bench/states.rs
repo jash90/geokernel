@@ -101,8 +101,15 @@ fn algebra_scrolled(r: &mut Runner, n: usize) {
     let area = adapter::algebra(&r.app, r.screen);
     let rows = r.app.wb.rows().to_vec();
     let mid = rows.len() / 2;
-    let above: f32 = rows[..mid].iter().map(adapter::row_height).sum();
-    let offset = (above - area.height() / 2.0 + adapter::row_height(&rows[mid]) / 2.0).max(0.0);
+    let painter = r.ctx.layer_painter(eframe::egui::LayerId::background());
+    let c = r.app.wb.construction();
+    let mut formulas = None;
+    let mut height = |row: &crate::workbench::Row| {
+        let math = crate::algebra::row_math(c, &painter, row, &mut formulas);
+        crate::algebra::row_height(row, math.as_ref())
+    };
+    let above: f32 = rows[..mid].iter().map(&mut height).sum();
+    let offset = (above - area.height() / 2.0 + height(&rows[mid]) / 2.0).max(0.0);
     let at = area.center();
     r.step(vec![moved(at)]);
     r.step(vec![moved(at), wheel(-offset)]);

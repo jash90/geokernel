@@ -450,3 +450,41 @@ fn a_tap_on_the_tool_hint_places_no_point_under_it() {
     tap(&mut h, Pos2::new(hint.x, card_top - 12.0));
     assert_eq!(labels(&h), ["A"]);
 }
+
+#[test]
+fn formula_text_and_functions_paint_on_their_normal_surfaces() {
+    use eframe::egui::Shape;
+    use geo_kernel::script::text::literal;
+
+    let source = format!(
+        "f(x) = x^2 / 7\nt = {}\n$textProperties(t, true, -, -, -, -, screen, 60, 65)\n",
+        literal(r"\begin{bmatrix}a&b\\c&d\\e&f\end{bmatrix}")
+    );
+    let h = harness(&source);
+    let output = h.output();
+    let canvas = h.state().view.unwrap().0;
+    let (mut matrix_fences, mut fraction) = (0, false);
+    for clipped in &output.shapes {
+        match &clipped.shape {
+            Shape::Text(text) if clipped.clip_rect.left() >= canvas.min.x => {
+                if matches!(text.galley.text(), "[" | "]") {
+                    matrix_fences += 1;
+                    assert!(text.galley.mesh_bounds.height() > 30.0);
+                }
+                assert!(!text.galley.text().contains(r"\begin{bmatrix}"));
+            }
+            Shape::Text(text) if clipped.clip_rect.right() < canvas.min.x => {
+                assert!(!text.galley.text().contains("x^2 / 7"));
+                if text.galley.text() == "7" {
+                    fraction = true;
+                }
+            }
+            _ => {}
+        }
+    }
+    assert_eq!(matrix_fences, 2);
+    assert!(
+        fraction,
+        "the algebra row paints the denominator as a glyph run"
+    );
+}

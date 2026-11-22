@@ -9,7 +9,7 @@ use crate::algebra;
 use crate::app::App;
 use crate::geom::ToEgui;
 use crate::tools::{Tool, GROUPS};
-use eframe::egui::{accesskit, pos2, vec2, Context, Id, Rect, Role, WidgetRect};
+use eframe::egui::{accesskit, pos2, vec2, Context, Id, LayerId, Rect, Role, WidgetRect};
 use geo_app_core::text::{self, Label};
 use std::collections::HashMap;
 
@@ -241,8 +241,11 @@ fn rows(ctx: &Context, app: &App, out: &mut Vec<Widget>) {
     let rects = clickable(ctx);
     let by_id: HashMap<Id, &WidgetRect> = rects.iter().map(|w| (w.id, w)).collect();
     let mut top = list.origin.y;
+    let painter = ctx.layer_painter(LayerId::background());
+    let mut formulas = None;
     for row in app.wb.current_rows() {
-        let height = algebra::row_height(row);
+        let math = algebra::row_math(app.wb.construction(), &painter, row, &mut formulas);
+        let height = algebra::row_height(row, math.as_ref());
         let rect = Rect::from_min_size(pos2(list.origin.x, top), vec2(list.width, height));
         top += height;
         let id = algebra::row_id(&row.label);

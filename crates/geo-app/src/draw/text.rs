@@ -10,10 +10,11 @@
 use super::{Scene, LABEL_FONT};
 use crate::geom::ToCore;
 use crate::interact::ViewTransform;
+use crate::latex::{self, FormulaCache};
 use eframe::egui::epaint::text::{Galley, LayoutJob, TextFormat};
 use eframe::egui::{Color32, FontId, Painter, Pos2, Rect, Stroke, StrokeKind};
-use geo_kernel::kernel::text::{TextPosition, TextPresentation};
-use geo_kernel::{Construction, Id, Value};
+use geo_kernel::kernel::text::TextPresentation;
+use geo_kernel::{Construction, Id};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -62,64 +63,18 @@ impl Layout {
         }
     }
 
-    fn at(&self, mut anchor: Pos2, style: TextPresentation) -> Pos2 {
-        if style.horizontal.is_some() || style.vertical.is_some() {
-            let size = self.galley.size();
-            anchor.x += match style.horizontal {
-                Some(-1) => 1.0 - size.x,
-                Some(0) => 3.0 - (size.x / 2.0).floor(),
-                _ => 6.0,
-            };
-            let remaining = size.y - self.first_height;
-            anchor.y += match (style.latex, style.vertical) {
-                (true, Some(-1)) => 6.0,
-                (true, Some(0)) => 7.0 - size.y / 2.0,
-                (true, _) => -size.y,
-                (false, Some(-1)) => self.first_height + 6.0,
-                (false, Some(0)) => remaining / 2.0,
-                (false, _) => -remaining,
-            };
-            anchor.x = anchor.x.trunc();
-            anchor.y = anchor.y.trunc();
-        }
-        if !style.latex {
-            anchor.y -= self.baseline;
-        }
-        anchor
+    fn at(&self, anchor: Pos2, style: TextPresentation) -> Pos2 {
+        Pos2::from(style.aligned_top_left(
+            [anchor.x, anchor.y],
+            self.galley.size().into(),
+            self.first_height,
+            self.baseline,
+        ))
     }
 }
 
 fn position(c: &Construction, style: TextPresentation, t: &ViewTransform) -> Option<(f64, f64)> {
-    let offset = |x, y| {
-        (
-            x + f64::from(style.offset[0]),
-            y + f64::from(style.offset[1]),
-        )
-    };
-    let world = |x, y| {
-        let (sx, sy) = t.world_to_screen(x, y);
-        // toScreenCoordX/Y use Math.round (halfway values go up).
-        offset((sx + 0.5).floor(), (sy + 0.5).floor())
-    };
-    Some(match style.position {
-        TextPosition::Origin => {
-            let (x, y) = t.world_to_screen(0.0, 0.0);
-            offset(x.trunc(), y.trunc())
-        }
-        TextPosition::World { x, y } => world(x, y),
-        TextPosition::Screen { x, y } => (x.trunc(), y.trunc()),
-        TextPosition::Point(point) | TextPosition::ScreenPoint(point) => {
-            let Value::Point { x, y } = c.value(point) else {
-                return None;
-            };
-            if matches!(style.position, TextPosition::ScreenPoint(_)) {
-                (x.trunc(), y.trunc())
-            } else {
-                world(x, y)
-            }
-        }
-        TextPosition::Undefined => return None,
-    })
+    style.pixel_anchor(c, |x, y| t.world_to_screen(x, y))
 }
 
 pub(super) fn paint(
@@ -155,6 +110,7 @@ pub(super) fn paint(
         cache.entries.clear();
     }
     let mut text_rects = scene.text_rects.map(|r| r.borrow_mut());
+    let mut formulas = None;
     for id in texts {
         let Some((text, style)) = c
             .text(id)
@@ -178,24 +134,50 @@ pub(super) fn paint(
         {
             continue;
         }
-        let size = (f64::from(LABEL_FONT) * style.size)
-            .floor()
-            .clamp(4.0, 256.0) as f32;
-        let entry = cache
-            .entries
-            .entry(id)
-            .or_insert_with(|| Layout::new(painter, text, size, style.italic));
-        if entry.size != size || entry.italic != style.italic || entry.galley.text() != text {
-            *entry = Layout::new(painter, text, size, style.italic);
-        }
-        let at = rect.min + entry.at(anchor, style).to_vec2();
-        let bounds = Rect::from_min_size(at, entry.galley.size());
+        let size = style.drawing_size(LABEL_FONT);
+        let (at, size, plain, formula) = if style.latex {
+            let cache = formulas.get_or_insert_with(|| FormulaCache::new(painter));
+            let formula = cache.get(
+                painter,
+                text,
+                size,
+                geo_latex::Style::Display,
+                latex::face(style),
+            );
+            let at = Pos2::from(style.aligned_top_left(
+                [anchor.x, anchor.y],
+                formula.size.into(),
+                0.0,
+                0.0,
+            ));
+            (at, formula.size, None, Some(formula))
+        } else {
+            let entry = cache
+                .entries
+                .entry(id)
+                .or_insert_with(|| Layout::new(painter, text, size, style.italic));
+            if entry.size != size || entry.italic != style.italic || entry.galley.text() != text {
+                *entry = Layout::new(painter, text, size, style.italic);
+            }
+            (
+                entry.at(anchor, style),
+                entry.galley.size(),
+                Some(&entry.galley),
+                None,
+            )
+        };
+        let at = rect.min + at.to_vec2();
+        let bounds = Rect::from_min_size(at, size);
         if rect.intersects(bounds) {
             if let Some(text_rects) = &mut text_rects {
                 text_rects.push((id, bounds.translate(-rect.min.to_vec2()).core()));
             }
             let color = color(id);
-            painter.galley(at, entry.galley.clone(), color);
+            if let Some(formula) = formula {
+                formula.paint(painter, at, color);
+            } else if let Some(galley) = plain {
+                painter.galley(at, galley.clone(), color);
+            }
             let highlight = if scene.selected == Some(id) {
                 0.75
             } else if scene.hovered == Some(id) {
@@ -216,6 +198,7 @@ pub(super) fn paint(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use geo_kernel::kernel::text::TextPosition;
     use geo_kernel::svg::View;
 
     #[test]

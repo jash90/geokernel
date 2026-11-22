@@ -21,6 +21,65 @@ impl Construction {
     pub fn formatted_equation(&self, id: Id) -> Option<String> {
         Format::new(false).equation::<false>(self, id, None)
     }
+
+    /// Mathematical definitions and rectangular numeric list values for the algebra panel.
+    pub fn algebra_formula(&self, id: Id) -> Option<String> {
+        let format = Format::new(true);
+        match self.def(id) {
+            Def::Expr(def) if matches!(def.kind(), Kind::Function | Kind::FunctionNVar) => {
+                let entry = expr::entry(self, def);
+                let meter = Lists::new(Vec::new());
+                let body = format.entry_value::<true>(self, entry, Some(&meter), false)?;
+                let variables = if def.kind() == Kind::FunctionNVar {
+                    "x,y"
+                } else {
+                    entry
+                        .curve_parameter
+                        .as_deref()
+                        .unwrap_or(if entry.function_of_y { "y" } else { "x" })
+                };
+                Some(format!(
+                    r"{}\left({variables}\right) = {body}",
+                    Format::label(self.label(id), true)
+                ))
+            }
+            _ if self.kind(id) == Kind::List => {
+                let rows = self.elements(id)?;
+                let expr::Element::List(first) = rows.get(0)? else {
+                    return None;
+                };
+                let columns = first.len();
+                if columns == 0 || columns > 128 || rows.len().saturating_mul(columns) > 512 {
+                    return None;
+                }
+                let mut out = String::from(r"\begin{pmatrix}");
+                for (i, row) in rows.iter().enumerate() {
+                    let expr::Element::List(row) = row else {
+                        return None;
+                    };
+                    if row.len() != columns {
+                        return None;
+                    }
+                    if i != 0 {
+                        out.push_str(r"\\");
+                    }
+                    for (i, item) in row.iter().enumerate() {
+                        let expr::Element::Value(kind @ (Kind::Number | Kind::Angle), value) = item
+                        else {
+                            return None;
+                        };
+                        if i != 0 {
+                            out.push('&');
+                        }
+                        out.push_str(&format.shown(kind, value));
+                    }
+                }
+                out.push_str(r"\end{pmatrix}");
+                Some(out)
+            }
+            _ => None,
+        }
+    }
 }
 
 impl Format {

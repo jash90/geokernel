@@ -3,6 +3,7 @@
 use crate::app::App;
 use crate::geom::ToEgui;
 use crate::icons::{self, Icon};
+use crate::latex::{self, Formula, FormulaCache};
 use crate::style;
 use crate::theme;
 use crate::workbench::Row;
@@ -11,7 +12,8 @@ use eframe::egui::{
     Sense, Stroke, Ui,
 };
 use geo_app_core::text::{self, Label};
-use geo_kernel::kernel::{Def, Id, Kind, Value};
+use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
+use std::sync::Arc;
 
 /// Row heights: one line for a free object, two for a dependent one.
 const ROW_FREE: f32 = 50.0;
@@ -57,13 +59,15 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             let rows = app.wb.current_rows();
             let (mut top, mut skipped) = (0.0, 0.0);
             let mut keep = None;
+            let mut formulas = None;
             for row in rows {
-                let height = row_height(row);
+                let math = row_math(app.wb.construction(), ui.painter(), row, &mut formulas);
+                let height = row_height(row, math.as_ref());
                 let in_view = top + height > viewport.min.y && top < viewport.max.y;
                 if all || in_view || kept.as_deref() == Some(row.label.as_str()) {
                     ui.add_space(skipped);
                     skipped = 0.0;
-                    if paint_row(app, ui, row, &mut actions) {
+                    if paint_row(app, ui, row, math.as_ref(), height, &mut actions) {
                         keep = Some(row.label.clone());
                     }
                 } else {
@@ -118,8 +122,49 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
 }
 
-pub(crate) fn row_height(row: &Row) -> f32 {
-    if row.free {
+pub(crate) struct RowMath {
+    formula: Arc<Formula>,
+    show_definition: bool,
+    show_label: bool,
+}
+
+pub(crate) fn row_math(
+    c: &Construction,
+    painter: &egui::Painter,
+    row: &Row,
+    cache: &mut Option<FormulaCache>,
+) -> Option<RowMath> {
+    let (source, face, show_definition, show_label) = if row.kind == Kind::Text {
+        let presentation = c.text_presentation(row.id).filter(|style| style.latex)?;
+        let source = c.text(row.id).filter(|text| !text.is_empty())?;
+        (source, latex::face(presentation), !row.free, row.free)
+    } else {
+        let source = row.formula.as_deref()?;
+        let function = matches!(row.kind, Kind::Function | Kind::FunctionNVar);
+        (
+            source,
+            geo_latex::Face::default(),
+            !function && !row.free,
+            !function && row.free,
+        )
+    };
+    let cache = cache.get_or_insert_with(|| FormulaCache::new(painter));
+    Some(RowMath {
+        formula: cache.get(painter, source, FONT, geo_latex::Style::Text, face),
+        show_definition,
+        show_label,
+    })
+}
+
+pub(crate) fn row_height(row: &Row, math: Option<&RowMath>) -> f32 {
+    if let Some(math) = math {
+        let block = math.formula.size.y + 20.0;
+        if math.show_definition {
+            ROW_DEPENDENT.max(48.0 + block)
+        } else {
+            ROW_FREE.max(block)
+        }
+    } else if row.free {
         ROW_FREE
     } else {
         ROW_DEPENDENT
@@ -197,8 +242,14 @@ fn lay_out_all_rows() -> bool {
 
 /// Lays out one row; returns whether it holds the keyboard focus or an
 /// open menu.
-fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) -> bool {
-    let height = row_height(row);
+fn paint_row(
+    app: &App,
+    ui: &mut Ui,
+    row: &Row,
+    math: Option<&RowMath>,
+    height: f32,
+    actions: &mut Actions,
+) -> bool {
     let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), height), Sense::hover());
     let id = row_id(&row.label);
     let [(_, body), (_, cell), (_, kebab_rect)] = row_parts(row, rect);
@@ -260,6 +311,8 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) -> bool {
             ),
         );
         keep |= paint_control(app, ui, row, id, contents, actions);
+    } else if let Some(math) = math {
+        paint_math(&painter, row, math, rect, kebab_rect.left());
     } else {
         keep |= paint_value(ui, &painter, row, id, rect, actions);
     }
@@ -299,6 +352,46 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) -> bool {
         }
     });
     keep || menu.is_some()
+}
+
+fn paint_math(painter: &egui::Painter, row: &Row, math: &RowMath, rect: Rect, right: f32) {
+    let x = rect.left() + TEXT_X;
+    let mut start = x;
+    let y = if math.show_definition {
+        painter.text(
+            Pos2::new(x, rect.top() + 30.0),
+            Align2::LEFT_CENTER,
+            &row.head,
+            FontId::proportional(FONT),
+            theme::TEXT,
+        );
+        rect.top() + 48.0 + (rect.height() - 48.0) / 2.0
+    } else {
+        rect.center().y
+    };
+    if math.show_label || math.show_definition {
+        let label = if math.show_label {
+            format!("{} =", row.label)
+        } else {
+            "=".into()
+        };
+        let placed = painter.text(
+            Pos2::new(x, y),
+            Align2::LEFT_CENTER,
+            label,
+            FontId::proportional(FONT),
+            theme::TEXT,
+        );
+        start = placed.right() + 7.0;
+    }
+    if start < right {
+        let clip = Rect::from_min_max(rect.min, Pos2::new(right, rect.bottom()));
+        math.formula.paint(
+            &painter.with_clip_rect(clip),
+            Pos2::new(start, y - math.formula.size.y / 2.0),
+            theme::TEXT,
+        );
+    }
 }
 
 fn paint_value(

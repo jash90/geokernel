@@ -1109,3 +1109,50 @@ fn curve_frames_stay_within_the_budget() {
     w.step(vec![Event::PointerGone]);
     w.settled(1);
 }
+
+#[test]
+fn a_thousand_visible_formulas_reuse_their_layouts() {
+    use geo_kernel::script::text::literal;
+    use std::fmt::Write;
+
+    let mut script = String::new();
+    for i in 0..1000 {
+        let formula = literal(&format!(r"\frac{{{i}}}{{x^2}}"));
+        writeln!(script, "t{i} = {formula}").unwrap();
+        // Every anchor is inside the viewport. Use screen anchors to avoid
+        // fit-to-content hiding most of the load being measured.
+        writeln!(
+            script,
+            "$textProperties(t{i}, true, 0.65, 0, -, -, screen, {}, {})",
+            8 + i % 25 * 39,
+            8 + i / 25 * 19
+        )
+        .unwrap();
+    }
+    let mut w = Window::with(&script, String::new());
+    assert_eq!(w.app.wb.construction().len(), 1000);
+    let idle = w.settled(5);
+    let built = crate::latex::layouts_built();
+    let mut elapsed = Vec::new();
+    for _ in 0..15 {
+        let start = std::time::Instant::now();
+        let counts = w.step(Vec::new());
+        elapsed.push(start.elapsed().as_secs_f64() * 1000.0);
+        assert_eq!((counts.rows_formatted, counts.rows_built), (0, 0));
+        assert!(!counts.immediate);
+    }
+    elapsed.sort_by(f64::total_cmp);
+    println!(
+        "formula frame median {:.3} ms, p95 {:.3} ms, {idle:?}",
+        elapsed[7], elapsed[14]
+    );
+    assert_eq!(crate::latex::layouts_built(), built);
+    assert!(
+        idle.vertices >= 14_000 && idle.vertices <= 40_000,
+        "{idle:?}"
+    );
+    assert!(
+        idle.shapes <= 4700 && idle.allocs <= 450 && idle.bytes <= 600_000,
+        "{idle:?}"
+    );
+}
