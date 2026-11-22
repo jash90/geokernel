@@ -27,7 +27,7 @@
 //! and `Q` into a macro construction and moves the copy (`AlgoLocusND`). This
 //! kernel moves the object itself: it saves what sampling changes (the
 //! moving object and the objects between it and `Q`), recomputes those
-//! objects for each sample in creation order, and puts everything back
+//! objects for each sample in dependency order, and puts everything back
 //! afterwards, so no other object sees a sample.
 //!
 //! The samples are taken as upstream takes them: a parameter runs over the
@@ -218,7 +218,7 @@ impl Construction {
                 dirty.insert(i);
             }
         }
-        self.propagate_dirty(dirty, 0);
+        self.propagate_dirty(dirty, 0, false);
     }
 
     /// The graphics window the view-dependent objects read.
@@ -258,7 +258,7 @@ impl Construction {
         for &i in &self.view_readers {
             dirty.insert(i);
         }
-        self.propagate_dirty(dirty, 0);
+        self.propagate_dirty(dirty, 0, false);
         true
     }
 
@@ -393,7 +393,7 @@ pub(crate) fn chain(c: &Construction, q: Id, mover: Id) -> Vec<usize> {
     let last = c.evaluation_rank(q);
     let mut stack = vec![mover];
     while let Some(id) = stack.pop() {
-        for &child in c.children(id) {
+        for child in c.children(id) {
             if c.evaluation_rank(child) <= last && !desc[child.0] {
                 desc[child.0] = true;
                 stack.push(child);

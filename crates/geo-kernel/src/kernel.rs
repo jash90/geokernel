@@ -69,7 +69,7 @@ use crate::algo::{
 };
 use crate::expr::{self, ExprDef};
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BTreeSet, BinaryHeap, HashMap};
 use std::fmt;
 
 /// Handle of an object inside one [`Construction`].
@@ -902,12 +902,15 @@ pub struct Construction {
     values: Vec<Value>,
     labels: Vec<String>,
     /// For each object, the objects that read it directly.
-    children: Vec<Vec<Id>>,
+    children: Vec<Children>,
     /// Empty while creation order is also evaluation order.
     evaluation_order: EvaluationOrder,
     /// For each object, what its rule needs from the definitions of other
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
+    /// Permutations restored from the positions of existing intersections
+    /// when the construction is rebuilt by a redefinition.
+    intersection_swaps: BTreeSet<(Id, Id)>,
     by_label: HashMap<String, Id>,
     replacement_label: Option<String>,
     images: image::Images,
@@ -992,6 +995,57 @@ pub struct Construction {
     saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
     controls: Vec<(Id, control::Control)>,
     pub(crate) object_scripts: HashMap<String, Vec<control::ControlScript>>,
+}
+
+// Small adjacency lists are cheap to iterate and append to. Large families
+// use a tree so moving a child to another parent costs logarithmic work.
+#[derive(Clone, Debug, Default, PartialEq)]
+struct Children {
+    small: Vec<Id>,
+    large: Option<Box<BTreeSet<Id>>>,
+}
+
+impl Children {
+    fn iter(&self) -> impl DoubleEndedIterator<Item = Id> + '_ {
+        self.small.iter().copied().chain(
+            self.large
+                .iter()
+                .flat_map(|children| children.iter().copied()),
+        )
+    }
+
+    fn is_empty(&self) -> bool {
+        self.small.is_empty()
+            && self
+                .large
+                .as_ref()
+                .is_none_or(|children| children.is_empty())
+    }
+
+    fn insert(&mut self, id: Id) {
+        const SMALL_LIMIT: usize = 64;
+        if let Some(children) = &mut self.large {
+            children.insert(id);
+        } else {
+            if self.small.last().is_none_or(|&last| last < id) {
+                self.small.push(id);
+            } else if let Err(slot) = self.small.binary_search(&id) {
+                self.small.insert(slot, id);
+            }
+            if self.small.len() > SMALL_LIMIT {
+                self.large = Some(Box::new(self.small.iter().copied().collect()));
+                self.small = Vec::new();
+            }
+        }
+    }
+
+    fn remove(&mut self, id: Id) {
+        if let Some(children) = &mut self.large {
+            children.remove(&id);
+        } else if let Ok(slot) = self.small.binary_search(&id) {
+            self.small.remove(slot);
+        }
+    }
 }
 
 #[derive(Default)]
@@ -1126,6 +1180,10 @@ impl Construction {
         self.defs.len()
     }
 
+    pub(crate) fn definition_revision(&self) -> u64 {
+        self.generation
+    }
+
     pub fn is_empty(&self) -> bool {
         self.defs.is_empty()
     }
@@ -1139,6 +1197,24 @@ impl Construction {
         self.by_label
             .get(label)
             .copied()
+            .or_else(|| {
+                let (base, subscript) = label.rsplit_once('_')?;
+                let alternate = if let Some(index) = subscript
+                    .strip_prefix('{')
+                    .and_then(|index| index.strip_suffix('}'))
+                {
+                    if index.is_empty() || !index.bytes().all(|b| b.is_ascii_digit()) {
+                        return None;
+                    }
+                    format!("{base}_{index}")
+                } else {
+                    if subscript.is_empty() || !subscript.bytes().all(|b| b.is_ascii_digit()) {
+                        return None;
+                    }
+                    format!("{base}_{{{subscript}}}")
+                };
+                self.by_label.get(&alternate).copied()
+            })
             .or_else(|| axis::lookup(label))
     }
 
@@ -1428,8 +1504,20 @@ impl Construction {
     }
 
     /// The objects computed from `id`.
-    pub(crate) fn children(&self, id: Id) -> &[Id] {
-        self.children.get(id.0).map_or(&[], Vec::as_slice)
+    pub(crate) fn children(&self, id: Id) -> impl DoubleEndedIterator<Item = Id> + '_ {
+        self.children.get(id.0).into_iter().flat_map(Children::iter)
+    }
+
+    pub(crate) fn children_slice(&self, id: Id) -> Option<&[Id]> {
+        self.children
+            .get(id.0)
+            .filter(|children| children.large.is_none())
+            .map(|children| children.small.as_slice())
+    }
+
+    /// The IDs whose current rules read this object.
+    pub fn direct_dependents(&self, id: Id) -> impl Iterator<Item = Id> + '_ {
+        self.children(id)
     }
 
     /// Checks a definition and computes the value it would have if it were
@@ -1531,11 +1619,8 @@ impl Construction {
             let id = self.defs.len() - 1;
             let def = self.defs[id];
             for parent in self.read_ids(&def) {
-                // Children are linked in creation order: the newest are last.
                 if let Some(children) = self.children.get_mut(parent.0) {
-                    while children.last().is_some_and(|c| c.0 >= id) {
-                        children.pop();
-                    }
+                    children.remove(Id(id));
                 }
             }
             self.defs.pop();
@@ -1639,7 +1724,7 @@ impl Construction {
             }
             let def = self.defs[id.0];
             for parent in def.parents().as_slice() {
-                self.children[parent.0].retain(|&child| child != id);
+                self.children[parent.0].remove(id);
             }
             if let Some(slot) = self.path_slot(id.0) {
                 self.paths.remove(slot);
@@ -1675,12 +1760,24 @@ impl Construction {
                     | Def::FreePoint { .. }
                     | Def::Vector(VectorDef::Free { .. })
                     | Def::Expr(_)
+                    | Def::Measure(MeasureDef::Slope(_))
                     | Def::Path(PathDef::On { .. } | PathDef::OnParam { .. })
             )
         };
         let old = self.def(id);
+        let dependents = self.replacement_dependents(id).map_err(refuse)?;
+        let old_reads: Vec<_> = dependents
+            .into_iter()
+            .map(|child| {
+                let mut parents = self.read_ids(&self.defs[child.0]);
+                parents.sort_unstable();
+                parents.dedup();
+                (child, parents)
+            })
+            .collect();
 
         let checkpoint = self.checkpoint();
+        let scripts = self.object_scripts.remove(&label);
         self.by_label.remove(&label);
         self.replacement_label = Some(label.clone());
         let result = define(self);
@@ -1702,10 +1799,14 @@ impl Construction {
             {
                 return Err(refuse("this definition cannot be replaced in place"));
             }
-            if self.len() != checkpoint.len + 1 || self.by_label.get(&label) != Some(&new) {
-                return Err(refuse(
-                    "a replacement must have one output and no new auxiliary objects",
-                ));
+            if new.0 < checkpoint.len
+                || self.len() != new.0 + 1
+                || self.by_label.get(&label) != Some(&new)
+                || self.labels[checkpoint.len..new.0]
+                    .iter()
+                    .any(|aux| !aux.starts_with('\0'))
+            {
+                return Err(refuse("a replacement must have one visible output"));
             }
             let def = self.defs[new.0];
             if !supported(def) {
@@ -1721,7 +1822,7 @@ impl Construction {
             let order = parents
                 .iter()
                 .any(|&parent| self.evaluation_rank(parent) >= self.evaluation_rank(id))
-                .then(|| self.replacement_order(id, &parents, checkpoint.len))
+                .then(|| self.replacement_order(id, &parents, new.0))
                 .transpose()
                 .map_err(refuse)?;
             Ok((new, def, parents, order))
@@ -1731,6 +1832,9 @@ impl Construction {
             Ok(staged) => staged,
             Err(error) => {
                 self.discard_since(checkpoint);
+                if let Some(scripts) = scripts {
+                    self.object_scripts.insert(label.clone(), scripts);
+                }
                 self.by_label.insert(label, id);
                 return Err(error);
             }
@@ -1747,28 +1851,23 @@ impl Construction {
             source = Some("?".into());
         }
         let decimal = expr::free_decimal(self, new).cloned();
-        let kept = Checkpoint {
-            lists: self.lists.len(),
-            exprs: if matches!(def, Def::Expr(_)) {
-                self.exprs.len()
-            } else {
-                checkpoint.exprs
-            },
-            ..checkpoint
-        };
+        let mut kept = self.checkpoint();
+        kept.len = new.0;
+        kept.step = checkpoint.step;
         self.discard_since(kept);
+        if let Some(scripts) = scripts {
+            self.object_scripts.insert(label.clone(), scripts);
+        }
         self.by_label.insert(label, id);
 
         for parent in self.read_ids(&old) {
             if let Some(children) = self.children.get_mut(parent.0) {
-                children.retain(|&child| child != id);
+                children.remove(id);
             }
         }
         for parent in parents {
             if let Some(children) = self.children.get_mut(parent.0) {
-                if let Err(slot) = children.binary_search(&id) {
-                    children.insert(slot, id);
-                }
+                children.insert(id);
             }
         }
         let slot = self.paths.partition_point(|(owner, _)| *owner < id.0);
@@ -1788,15 +1887,54 @@ impl Construction {
         if let Some(order) = order {
             self.evaluation_order = order;
         }
+        for (child, old) in old_reads {
+            let mut new = self.read_ids(&self.defs[child.0]);
+            new.sort_unstable();
+            new.dedup();
+            for &parent in &old {
+                if new.binary_search(&parent).is_err() {
+                    if let Some(children) = self.children.get_mut(parent.0) {
+                        children.remove(child);
+                    }
+                }
+            }
+            for parent in new {
+                if old.binary_search(&parent).is_err()
+                    && self.evaluation_rank(parent) < self.evaluation_rank(child)
+                {
+                    if let Some(children) = self.children.get_mut(parent.0) {
+                        children.insert(child);
+                    }
+                }
+            }
+        }
         expr::replace_free_decimal(self, id, decimal);
         self.construction_sources.remove(&id);
         if let Some(source) = source {
             self.remember_construction_source(id, &source);
         }
-        self.propagate(id);
+        self.propagate_from(id, true);
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;
         Ok(Some(id))
+    }
+
+    fn replacement_dependents(&self, start: Id) -> Result<BTreeSet<Id>, &'static str> {
+        const MAX_EDGES: usize = 1_000_000;
+        let mut remaining = MAX_EDGES;
+        let mut pending = vec![start];
+        let mut seen = BTreeSet::new();
+        while let Some(id) = pending.pop() {
+            for child in self.children(id) {
+                remaining = remaining
+                    .checked_sub(1)
+                    .ok_or("the dependent objects exceed the redefinition budget")?;
+                if seen.insert(child) {
+                    pending.push(child);
+                }
+            }
+        }
+        Ok(seen)
     }
 
     /// Prepares a replacement's order before any existing object is changed.
@@ -1833,8 +1971,7 @@ impl Construction {
         let successors = |i: usize| {
             self.children[i]
                 .iter()
-                .chain(&locus_inputs[i])
-                .copied()
+                .chain(locus_inputs[i].iter().copied())
                 .filter(|&child| child.0 < len && child != target)
                 .chain(parents.binary_search(&Id(i)).is_ok().then_some(target))
         };
@@ -2023,7 +2160,7 @@ impl Construction {
         parents.dedup();
         for parent in parents {
             if let Some(children) = self.children.get_mut(parent.0) {
-                children.push(id);
+                children.insert(id);
             }
         }
         self.defs.push(def);
@@ -2032,7 +2169,7 @@ impl Construction {
             self.register_transformed_image(id, def);
         }
         self.labels.push(label.to_string());
-        self.children.push(Vec::new());
+        self.children.push(Children::default());
         if !self.evaluation_order.ids.is_empty() {
             self.evaluation_order.ids.push(id.0);
             self.evaluation_order.ranks.push(id.0);
@@ -2137,7 +2274,7 @@ impl Construction {
         for &i in &self.protocol {
             dirty.insert(self.evaluation_rank(Id(i)));
         }
-        self.propagate_dirty(dirty, 0);
+        self.propagate_dirty(dirty, 0, false);
     }
 
     /// Installs rigid constraints on existing free points after all outputs
@@ -2152,8 +2289,7 @@ impl Construction {
             self.defs[id.0] = def;
             for parent in def.parents().as_slice() {
                 let children = &mut self.children[parent.0];
-                let slot = children.partition_point(|&child| child < id);
-                children.insert(slot, id);
+                children.insert(id);
             }
             if let Def::Path(path) = def {
                 let slot = self.paths.partition_point(|&(other, _)| other < id.0);
@@ -2161,7 +2297,7 @@ impl Construction {
             }
             dirty.insert(self.evaluation_rank(id));
         }
-        self.propagate_dirty(dirty, 0);
+        self.propagate_dirty(dirty, 0, false);
     }
 
     /// The elements of the list object `id`; `None` when it is not a list
@@ -2314,11 +2450,11 @@ impl Construction {
             self.defs[id.0] = Def::FreePoint { x, y };
             self.values[id.0] = Value::Point { x, y };
             first = first.min(self.evaluation_rank(id));
-            for &child in &self.children[id.0] {
+            for child in self.children[id.0].iter() {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
-        Ok(self.propagate_dirty(dirty, first))
+        Ok(self.propagate_dirty(dirty, first, false))
     }
 
     /// [`Self::move_point`] for a point made by `Point(path)`:
@@ -2361,7 +2497,7 @@ impl Construction {
             }),
             _ => return Err(Error::NotFree(self.labels[id.0].clone())),
         };
-        if !v.is_finite() {
+        if v.is_nan() || (!matches!(new_def, Def::Number(_)) && !v.is_finite()) {
             return Err(Error::NotFinite);
         }
         // A slider keeps its value in its active interval.
@@ -2412,27 +2548,45 @@ impl Construction {
     /// taking cost a few bit operations, which matters when a point has tens
     /// of thousands of children.
     fn propagate(&mut self, start: Id) -> usize {
+        self.propagate_from(start, false)
+    }
+
+    fn propagate_from(&mut self, start: Id, refresh_definitions: bool) -> usize {
         // Taken out so that `compute` can borrow `self`. If `compute` panics
         // the set is lost, and `fit` gives a clean one on the next update.
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
-        for &child in &self.children[start.0] {
+        for child in self.children[start.0].iter() {
             dirty.insert(self.evaluation_rank(child));
         }
-        self.propagate_dirty(dirty, self.evaluation_rank(start))
+        self.propagate_dirty(dirty, self.evaluation_rank(start), refresh_definitions)
     }
 
-    fn propagate_dirty(&mut self, mut dirty: DirtySet, mut from: usize) -> usize {
+    fn propagate_dirty(
+        &mut self,
+        mut dirty: DirtySet,
+        mut from: usize,
+        refresh_definitions: bool,
+    ) -> usize {
         self.last_update_changed_automatic_root = false;
         self.function_roots.clear();
         self.clips.clear();
         self.analysis.clear();
         let mut recomputed = 0;
+        let mut restored_pairs = BTreeSet::new();
         while let Some(rank) = dirty.pop_first(from) {
             from = rank + 1;
             let i = self.evaluation_id(rank);
-            let def = self.defs[i];
+            let mut def = self.defs[i];
             recomputed += 1;
+            if refresh_definitions {
+                // A rule can use the structure of an ancestor even when
+                // intermediate objects have exactly the same value.
+                for child in self.children[i].iter() {
+                    dirty.insert(self.evaluation_rank(child));
+                }
+                def = self.refresh_intersection_definition(i, def, &mut restored_pairs);
+            }
             match def {
                 Def::Expr(d) => {
                     if !self.update_expr(i, d) {
@@ -2445,7 +2599,7 @@ impl Construction {
                     }
                 }
                 Def::IntersectConics(d) => {
-                    if !self.update_conic_intersection(i, d) {
+                    if !self.update_conic_intersection(i, d, refresh_definitions) {
                         continue;
                     }
                 }
@@ -2535,13 +2689,124 @@ impl Construction {
                     self.values[i] = new;
                 }
             }
-            for &child in &self.children[i] {
-                dirty.insert(self.evaluation_rank(child));
+            if !refresh_definitions {
+                for child in self.children[i].iter() {
+                    dirty.insert(self.evaluation_rank(child));
+                }
             }
         }
 
         self.dirty = dirty;
         recomputed
+    }
+
+    fn refresh_intersection_definition(
+        &mut self,
+        i: usize,
+        def: Def,
+        restored_pairs: &mut BTreeSet<(Id, Id)>,
+    ) -> Def {
+        use algo::intersect::{circles, circles_special_point};
+        let (def, key, swap) = match def {
+            Def::IntersectLineCircle {
+                line,
+                circle,
+                which,
+            } => {
+                let previous = self.hints[i];
+                let hint = algo::intersect::hint(self, &def);
+                self.hints[i] = hint;
+                let key = (line, circle);
+                let swap = (!restored_pairs.contains(&key))
+                    .then(|| self.restored_line_circle_swap(i, previous, hint, key, which))
+                    .flatten();
+                (def, key, swap)
+            }
+            Def::IntersectCircles { c1, c2, which, .. } => {
+                let hint = self.hints[i];
+                let shared = circles_special_point(self, c1, c2, hint);
+                let special = shared.is_some();
+                let key = (c1, c2);
+                let swap = if restored_pairs.contains(&key) {
+                    None
+                } else if let Some(point) = shared {
+                    // The rebuild restores the labelled slot from the file.
+                    // A different point in slot one sends the shared point
+                    // to slot two even when it is closer to slot one.
+                    (which == 0 && c1 != c2).then(|| {
+                        self.point(Id(i)).zip(self.point(point)).is_some_and(
+                            |((x, y), (px, py))| {
+                                (x - px).hypot(y - py) > crate::tol::STANDARD_PRECISION
+                            },
+                        )
+                    })
+                } else {
+                    self.closest_restored_slot(i, key, |slot| {
+                        circles(self, c1, c2, which ^ slot, false, hint)
+                    })
+                };
+                (
+                    Def::IntersectCircles {
+                        c1,
+                        c2,
+                        which,
+                        special: Some(special),
+                    },
+                    key,
+                    swap,
+                )
+            }
+            _ => return def,
+        };
+        if let Some(swap) = swap {
+            restored_pairs.insert(key);
+            if swap {
+                self.intersection_swaps.insert(key);
+            } else {
+                self.intersection_swaps.remove(&key);
+            }
+        }
+        self.defs[i] = def;
+        def
+    }
+
+    fn restored_line_circle_swap(
+        &self,
+        i: usize,
+        previous: algo::intersect::Hint,
+        hint: algo::intersect::Hint,
+        key: (Id, Id),
+        which: u8,
+    ) -> Option<bool> {
+        use algo::intersect::{line_circle, Hint};
+        let (line, circle) = key;
+        if matches!(hint, Hint::Point(_)) && previous.keeps_line_circle_point(self, circle) {
+            // Both old and new hints describe points on the circle. Keep
+            // the same named intersection if dependency order picks the
+            // other point first after the rebuild.
+            return Some(self.intersection_swaps.contains(&key) ^ (previous != hint));
+        }
+        self.closest_restored_slot(i, key, |slot| {
+            line_circle(self, line, circle, which ^ slot, hint)
+        })
+    }
+
+    fn closest_restored_slot(
+        &self,
+        i: usize,
+        key: (Id, Id),
+        candidate: impl Fn(u8) -> Option<Value>,
+    ) -> Option<bool> {
+        let (x, y) = self.point(Id(i))?;
+        let distance = |value: Value| {
+            let Value::Point { x: px, y: py } = value.cartesian() else {
+                return None;
+            };
+            Some((x - px).hypot(y - py))
+        };
+        let a = candidate(0).and_then(distance)?;
+        let b = candidate(1).and_then(distance)?;
+        Some(b < a || a == b && self.intersection_swaps.contains(&key))
     }
 
     /// Recomputes the expression object `i`; tells whether its children
@@ -2616,7 +2881,12 @@ impl Construction {
     }
 
     #[inline(never)]
-    fn update_conic_intersection(&mut self, i: usize, d: PairDef) -> bool {
+    fn update_conic_intersection(
+        &mut self,
+        i: usize,
+        d: PairDef,
+        refresh_definitions: bool,
+    ) -> bool {
         let Some(slot) = self.conic_intersection_slot(i) else {
             return false;
         };
@@ -2630,6 +2900,9 @@ impl Construction {
             .unwrap_or(slot);
         let mut parent = std::mem::take(&mut self.conic_intersections[latest].1);
         parent.refresh(d, self, self.continuous_conic_intersections);
+        if refresh_definitions {
+            parent.refresh_definition(d, self);
+        }
         let new = if latest == slot {
             parent.value(d, self)
         } else {
@@ -3088,6 +3361,11 @@ impl Construction {
     /// parsed; it stands for the entry in `hints` that an object has.
     #[inline(never)]
     pub(crate) fn command_value(&self, def: Def, hint: algo::intersect::Hint) -> Option<Value> {
+        let hint = if matches!(def, Def::IntersectLineCircle { .. }) {
+            algo::intersect::Hint::Lookup
+        } else {
+            hint
+        };
         self.try_compute(def, |_| hint).map(Value::cartesian)
     }
 
@@ -3127,13 +3405,32 @@ impl Construction {
                 line,
                 circle,
                 which,
-            } => algo::intersect::line_circle(self, line, circle, which, hint(self)),
+            } => {
+                let swapped = self.intersection_swaps.contains(&(line, circle));
+                algo::intersect::line_circle(
+                    self,
+                    line,
+                    circle,
+                    which ^ u8::from(swapped),
+                    hint(self),
+                )
+            }
             Def::IntersectCircles {
                 c1,
                 c2,
                 which,
                 special,
-            } => algo::intersect::circles(self, c1, c2, which, special == Some(true), hint(self)),
+            } => {
+                let swapped = self.intersection_swaps.contains(&(c1, c2));
+                algo::intersect::circles(
+                    self,
+                    c1,
+                    c2,
+                    which ^ u8::from(swapped),
+                    special == Some(true),
+                    hint(self),
+                )
+            }
             Def::IntersectConics(d) => d.compute(self),
             Def::IntersectBoundary(d) => d.compute(self),
             Def::Lines(d) => d.compute(self),
@@ -3221,6 +3518,69 @@ impl Construction {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn replacement_preserves_scripts_and_saved_presentation() {
+        use crate::control::{encode_text, ControlScript};
+        use crate::script::{self, saved::Property};
+
+        let caption = encode_text("Keep this caption");
+        let mut c =
+            script::load(&format!("b = $checkBox(true, {caption})\nt = \"first\"")).unwrap();
+        let b = c.id("b").unwrap();
+        let t = c.id("t").unwrap();
+        let scripts = vec![ControlScript {
+            language: "script".into(),
+            event: "update".into(),
+            text: "SetValue(n, 2)".into(),
+        }];
+        Property::ObjectScripts {
+            label: "b".into(),
+            scripts: scripts.clone(),
+        }
+        .apply(&mut c)
+        .unwrap();
+        let style = super::DrawingStyle {
+            layer: 4,
+            show_label: false,
+            line_thickness: 6,
+        };
+        c.set_drawing_style(b, style);
+        script::exec(&mut c, "$textProperties(t, true, 20, 1, 4, 5, world, 2, 3)").unwrap();
+        let presentation = c.text_presentation(t).unwrap();
+
+        assert_eq!(script::exec(&mut c, "b = false"), Ok(Some(b)));
+        assert_eq!(script::exec(&mut c, r#"t = "second""#), Ok(Some(t)));
+        assert!(script::exec(&mut c, "b = b").is_err());
+        assert!(script::exec(&mut c, r#"t = t + "third""#).is_err());
+        assert_eq!(c.object_scripts("b"), scripts);
+        assert_eq!(c.drawing_style(b), style);
+        assert_eq!(c.control(b).unwrap().caption, "Keep this caption");
+        assert_eq!(c.text_presentation(t), Some(presentation));
+        assert_eq!(c.text(t), Some("second"));
+    }
+
+    #[test]
+    fn redefinition_moves_edges_in_a_large_child_family() {
+        use crate::script;
+
+        let mut c = script::load("b = 1\na = 2").unwrap();
+        let a = c.id("a").unwrap();
+        let b = c.id("b").unwrap();
+        for i in 0..256 {
+            script::exec(&mut c, &format!("v{i} = a + 1")).unwrap();
+        }
+        for i in 0..256 {
+            script::exec(&mut c, &format!("v{i} = b + 2")).unwrap();
+        }
+        assert_eq!(c.children(a).count(), 0);
+        assert_eq!(c.children(b).count(), 256);
+        let v = c.id("v255").unwrap();
+        c.set_number(a, 0.0).unwrap();
+        assert_eq!(c.value(v), super::Value::Number(3.0));
+        c.set_number(b, 4.0).unwrap();
+        assert_eq!(c.value(v), super::Value::Number(6.0));
+    }
+
     use super::*;
     use crate::algo::length;
 
@@ -3605,8 +3965,8 @@ mod tests {
             .add_with_list("a", &[p[0], p[1], p[2], p[1], p[4], p[5]], area)
             .unwrap();
         assert_eq!(c.lists.len(), 6);
-        assert_eq!(c.children(p[1]), &[k, a]);
-        assert_eq!(c.children(p[3]), &[] as &[Id]);
+        assert_eq!(c.children(p[1]).collect::<Vec<_>>(), &[k, a]);
+        assert_eq!(c.children(p[3]).collect::<Vec<_>>(), Vec::<Id>::new());
         let list = c.def(a).list().unwrap();
         assert_eq!(list.len(), 6);
         assert_eq!(c.list(list), &[p[0], p[1], p[2], p[1], p[4], p[5]]);
@@ -3617,12 +3977,12 @@ mod tests {
         // a handle this construction did not give out
         let mut other = Construction::new();
         pt(&mut other, "Q", 0.0, 0.0);
-        assert_eq!(other.list(list), &[] as &[Id]);
+        assert_eq!(other.list(list), Vec::<Id>::new());
         assert_eq!(other.add("a", c.def(a)), Err(Error::UnknownObject));
         // a copy in the same construction may share the list
         let b = c.add("b", c.def(a)).unwrap();
         assert_eq!(c.value(b), c.value(a));
-        assert_eq!(c.children(p[1]), &[k, a, b]);
+        assert_eq!(c.children(p[1]).collect::<Vec<_>>(), &[k, a, b]);
     }
 
     #[test]
@@ -3660,7 +4020,7 @@ mod tests {
     struct Snapshot {
         labels: Vec<String>,
         by_label: Vec<(String, Id)>,
-        children: Vec<Vec<Id>>,
+        children: Vec<Children>,
         lists: Vec<Id>,
         values: Vec<Value>,
     }
@@ -3706,7 +4066,10 @@ mod tests {
         assert_eq!(c.id("q"), None);
         // the construction still works after a rollback
         let t = c.add("t", Def::Segment(p[3], p[4])).unwrap();
-        assert_eq!(c.children(p[3]), &[c.id("a").unwrap(), t]);
+        assert_eq!(
+            c.children(p[3]).collect::<Vec<_>>(),
+            &[c.id("a").unwrap(), t]
+        );
         assert_eq!(c.move_point(p[3], 1.0, 1.0).unwrap(), 2);
     }
 

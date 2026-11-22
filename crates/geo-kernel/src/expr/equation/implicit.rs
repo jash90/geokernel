@@ -271,7 +271,7 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
     };
     let owner = Id(*owner);
     let replacing = record.kind != kind;
-    if replacing && !c.children(owner).is_empty() {
+    if replacing && c.children(owner).next().is_some() {
         return Value::Undefined;
     }
     if replacing && c.exists(owner) {

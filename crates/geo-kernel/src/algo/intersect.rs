@@ -40,6 +40,7 @@ use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::lines::{self, LineDef};
+use crate::algo::path::PathDef;
 use crate::algo::point::PointDef;
 use crate::algo::{conic::ConicDef, Group};
 use crate::kernel::{point_at_infinity, Construction, Def, Id, Kind, Value};
@@ -369,7 +370,7 @@ pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
     else {
         return def;
     };
-    for &s in c.children(c1) {
+    for s in c.children(c1) {
         if let Def::IntersectCircles {
             c1: a,
             c2: b,
@@ -387,14 +388,7 @@ pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
             }
         }
     }
-    let special = given.unwrap_or_else(|| match (c.circle(c1), c.circle(c2)) {
-        (Some((x1, y1, r1)), Some((x2, y2, r2))) => {
-            let a = Conic::new(x1, y1, r1);
-            let b = Conic::new(x2, y2, r2);
-            shared_circles_point(c, c1, c2, &a, &b, Hint::Lookup).is_some()
-        }
-        _ => false,
-    });
+    let special = given.unwrap_or_else(|| circles_special_point(c, c1, c2, Hint::Lookup).is_some());
     Def::IntersectCircles {
         c1,
         c2,
@@ -403,10 +397,17 @@ pub(crate) fn prepare(c: &Construction, def: Def) -> Def {
     }
 }
 
-/// What an intersection needs from the definitions of other objects. It depends only on definitions, which keep their variant and
-/// their parents for good once created, so [`hint`] decides it once in
-/// [`Construction::add`] and every update reuses it instead of walking the
-/// definitions again.
+pub(crate) fn circles_special_point(c: &Construction, c1: Id, c2: Id, hint: Hint) -> Option<Id> {
+    let (x1, y1, r1) = c.circle(c1)?;
+    let (x2, y2, r2) = c.circle(c2)?;
+    let a = Conic::new(x1, y1, r1);
+    let b = Conic::new(x2, y2, r2);
+    shared_circles_point(c, c1, c2, &a, &b, hint)
+}
+
+/// What an intersection needs from the definitions of other objects.
+/// Ordinary moves reuse the hint. A redefinition refreshes the hints of
+/// affected line intersections before recomputing their slots.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) enum Hint {
     /// Nothing to remember: not an intersection, or one without a tangent
@@ -422,6 +423,13 @@ pub(crate) enum Hint {
     Point(u32),
     /// Decided on every update, for a point whose index does not fit `Point`.
     Lookup,
+}
+
+impl Hint {
+    /// Whether a previously selected intersection is still incident.
+    pub(crate) fn keeps_line_circle_point(self, c: &Construction, circle: Id) -> bool {
+        matches!(self, Hint::Point(i) if on_circle_by_construction(c, Id(i as usize), circle))
+    }
 }
 
 /// Decides the [`Hint`] of a new object.
@@ -490,7 +498,13 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         Def::IntersectBoundary(d) => return d.hidden_parents(c),
         Def::IntersectLineCircle { line, circle, .. } => {
             let line_def = c.def(line);
-            push(existing_line_circle_point(c, line, line_def, circle));
+            let (first, second) = line_points(line_def);
+            push(first);
+            push(second);
+            push(start_point(line_def));
+            for point in circle_points(c, circle) {
+                push(point);
+            }
             match line_def {
                 // the tangent point is computed from these (see
                 // `lines::tangent_point_on`)
@@ -1241,12 +1255,15 @@ fn circle_points(c: &Construction, circle: Id) -> [Option<Id>; 3] {
 
 /// Whether `s` lies on `circle` by construction.
 fn on_circle_by_construction(c: &Construction, s: Id, circle: Id) -> bool {
-    circle_points(c, circle).contains(&Some(s)) || intersection_on_circle(c, s, circle)
+    circle_points(c, circle).contains(&Some(s))
+        || intersection_on_circle(c, s, circle)
+        || matches!(c.def(s),
+            Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if path == circle)
 }
 
 /// The point that `AlgoIntersectLineConic.handleSpecialCase` makes
 /// intersection 1: the first point on the circle by construction (the points
-/// it was drawn through, then its intersection points in creation order)
+/// it was drawn through, then other incident points in dependency order)
 /// that also lies on the line by construction. The intersection points of
 /// this line and this circle themselves belong to this intersection and are
 /// never chosen.
@@ -1257,11 +1274,10 @@ fn existing_line_circle_point(c: &Construction, line: Id, line_def: Def, circle:
             return Some(t);
         }
     }
-    // Any other point on both is an intersection point of the circle that
-    // the line was drawn through.
-    let on = |s: Option<Id>| s.filter(|&s| intersection_on_circle(c, s, circle));
+    // Also consider points placed directly on the circle.
+    let on = |s: Option<Id>| s.filter(|&s| on_circle_by_construction(c, s, circle));
     let drawn_through = match (on(p), on(q)) {
-        (Some(p), Some(q)) => Some(p.min(q)),
+        (Some(p), Some(q)) => [p, q].into_iter().min_by_key(|&id| c.evaluation_rank(id)),
         (p, q) => p.or(q),
     };
     // handleSpecialCasePoint(g.getStartPoint()): a labelled point the line
@@ -1312,7 +1328,7 @@ fn existing_line_conic_point(c: &Construction, line: Id, line_def: Def, conic: I
     }
     let on = |s: Option<Id>| s.filter(|&s| intersection_on_general_conic(c, s, conic));
     let drawn_through = match (on(p), on(q)) {
-        (Some(p), Some(q)) => Some(p.min(q)),
+        (Some(p), Some(q)) => [p, q].into_iter().min_by_key(|&id| c.evaluation_rank(id)),
         (p, q) => p.or(q),
     };
     drawn_through.or_else(|| {
@@ -1335,7 +1351,7 @@ fn start_point(line_def: Def) -> Option<Id> {
 
 /// The points on circle `a` whose incidence list contains circle `b`, in the
 /// order of `a`'s points on the conic: the points `a` was drawn through that
-/// lie on `b` by construction, then, in creation order, the points `b` was
+/// lie on `b` by construction, then, in dependency order, the points `b` was
 /// drawn through that are intersection points of `a`.
 fn points_on_both(c: &Construction, a: Id, b: Id) -> [Option<Id>; 6] {
     let mut out = [None; 6];
@@ -1350,7 +1366,7 @@ fn points_on_both(c: &Construction, a: Id, b: Id) -> [Option<Id>; 6] {
     for t in later.iter_mut() {
         *t = t.filter(|&t| intersection_on_circle(c, t, a) && !out[..n].contains(&Some(t)));
     }
-    later.sort_by_key(|t| t.map_or(usize::MAX, |t| t.0));
+    later.sort_by_key(|t| t.map_or(usize::MAX, |id| c.evaluation_rank(id)));
     for t in later.into_iter().flatten() {
         out[n] = Some(t);
         n += 1;
@@ -1362,14 +1378,14 @@ fn points_on_both(c: &Construction, a: Id, b: Id) -> [Option<Id>; 6] {
 /// `AlgoIntersectConics.getPointFrom1on2(A, A)` checks for a circle
 /// intersected with itself: every point on the circle has the circle in its
 /// incidence list. Those are the points the circle was drawn through, then
-/// the intersection points of the circle in creation order
+/// the intersection points of the circle in dependency order
 /// (`AlgoIntersectSingle` adds its point to the conic).
 fn first_point_on(c: &Construction, circle: Id) -> Option<Id> {
     circle_points(c, circle)[0].or_else(|| {
         c.children(circle)
-            .iter()
-            .copied()
-            .find(|&s| intersection_on_circle(c, s, circle))
+            .take(250_000)
+            .filter(|&s| intersection_on_circle(c, s, circle))
+            .min_by_key(|&s| c.evaluation_rank(s))
     })
 }
 
@@ -1667,7 +1683,7 @@ mod tests {
         assert_eq!(xy(&c, "Z"), None);
         // the line is the tangent's hidden parent
         let (g, x) = (c.id("g").unwrap(), c.id("X").unwrap());
-        assert!(c.children(g).contains(&x));
+        assert!(c.children(g).any(|child| child == x));
         mv(&mut c, "C", 1.0, 3.0);
         mv(&mut c, "B", -1.0, 3.0);
         assert!(close(xy(&c, "X"), 0.0, 5.0) || close(xy(&c, "X"), 0.0, -5.0));
@@ -1681,7 +1697,7 @@ mod tests {
         )
         .unwrap();
         let (p, x) = (c.id("P").unwrap(), c.id("X").unwrap());
-        assert!(c.children(p).contains(&x));
+        assert!(c.children(p).any(|child| child == x));
     }
 
     #[test]

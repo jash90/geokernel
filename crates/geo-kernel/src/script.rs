@@ -133,6 +133,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if line.is_empty() {
         return Ok(None);
     }
+    if let Some(id) = c.id(line) {
+        return Ok(Some(id));
+    }
     if let Some(property) = saved::parse(line) {
         return property?.apply(c).map(|()| None);
     }
@@ -167,8 +170,15 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return Ok(None);
     }
     let (name, rhs, colon) = assignment(line).ok_or("expected `name = definition`")?;
-    if let Some(id) = definition_label(name).and_then(|label| c.id(label)) {
-        return c.redefine(id, |c| define_assignment(c, name, rhs, colon));
+    if let Some(label) = definition_label(name) {
+        if let Some(id) = c.id(label) {
+            let original = c.label(id);
+            if label != original {
+                let name = format!("{original}{}", &name[label.len()..]);
+                return c.redefine(id, |c| define_assignment(c, &name, rhs, colon));
+            }
+            return c.redefine(id, |c| define_assignment(c, name, rhs, colon));
+        }
     }
     define_assignment(c, name, rhs, colon)
 }

@@ -489,6 +489,9 @@ impl Workbench {
                                 self.construction.len() - before,
                             );
                         }
+                        if let Some(first) = first.filter(|_| replaced) {
+                            self.grow_boundary_outputs(std::iter::once(first));
+                        }
                     }
                     step_changed |= moved_step;
                     redefined |= replaced;

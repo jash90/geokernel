@@ -64,6 +64,7 @@ impl GrowthAnchor {
 #[derive(Debug, Default)]
 pub struct BoundaryOutputs {
     groups: Vec<Outputs>,
+    revision: u64,
 }
 
 impl BoundaryOutputs {
@@ -116,6 +117,14 @@ impl BoundaryOutputs {
         changed: impl Iterator<Item = Id> + Clone,
         mut record: impl FnMut(&Construction, Id, &str),
     ) {
+        let revision = c.definition_revision();
+        if self.revision != revision {
+            self.groups.retain(|group| group.first.index() < c.len());
+            for group in &mut self.groups {
+                group.dependencies = dependencies(c, group.first);
+            }
+            self.revision = revision;
+        }
         for group in &mut self.groups {
             if !changed.clone().any(|id| group.dependencies.contains(&id)) {
                 continue;
@@ -147,13 +156,21 @@ impl BoundaryOutputs {
 }
 
 fn dependencies(c: &Construction, first: Id) -> BTreeSet<Id> {
+    const MAX_EDGES: usize = 1_000_000;
     let mut dependencies = BTreeSet::new();
-    let mut pending = c.read_ids(&c.def(first));
+    let mut remaining = MAX_EDGES;
+    let mut pending = vec![first];
     while let Some(id) = pending.pop() {
         if dependencies.insert(id) {
-            pending.extend(c.read_ids(&c.def(id)));
+            let reads = c.read_ids(&c.def(id));
+            let Some(next) = remaining.checked_sub(reads.len()) else {
+                return BTreeSet::new();
+            };
+            remaining = next;
+            pending.extend(reads);
         }
     }
+    dependencies.remove(&first);
     dependencies
 }
 

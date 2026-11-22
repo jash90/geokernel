@@ -1357,27 +1357,50 @@ impl<const M: bool> Ctx<'_, M> {
         if op == ListOp::Index && k < 0 {
             k += i64::from(len) + 1;
         }
-        if (0..i64::from(len)).contains(&k) {
-            return Some(lists.read(self.c, start + k as u32));
-        }
-        if op != ListOp::Index || len == 0 {
-            return None;
-        }
-        // A missing row of a numeric matrix is a row of undefined numbers.
-        // The shape is read again on each evaluation because the matrix can change.
-        let (_, width) = lists.read(self.c, start).run()?;
-        if width == 0 || !lists.charge(u64::from(len) * (u64::from(width) + 1)) {
-            return None;
-        }
-        for i in 0..len {
-            let (row, cols) = lists.read(self.c, start + i).run()?;
-            if cols != width || (0..cols).any(|j| lists.read(self.c, row + j).kind != Kind::Number)
-            {
+        let present = (0..i64::from(len)).contains(&k);
+        let selected = if present {
+            lists.read(self.c, start + k as u32)
+        } else {
+            if op != ListOp::Index || len == 0 || !lists.charge(u64::from(len)) {
                 return None;
             }
+            // A missing element copies the last compatible template, then
+            // undefines it. Rows can have different lengths and kinds.
+            let mut template = lists.read(self.c, start);
+            for i in 1..len {
+                let next = lists.read(self.c, start + i);
+                if next.kind != template.kind {
+                    break;
+                }
+                template = next;
+            }
+            template
+        };
+        if op != ListOp::Index {
+            return Some(selected);
         }
-        // New scratch slots are initialized to undefined numbers.
-        Some(Slot::list(lists.reserve(width)?, width))
+        let Some((row, width)) = selected.run() else {
+            return present.then_some(selected);
+        };
+        if !lists.charge(u64::from(width)) {
+            return None;
+        }
+        if present && (0..width).all(|j| lists.read(self.c, row + j).kind != Kind::Boolean) {
+            return Some(selected);
+        }
+        let result = lists.reserve(width)?;
+        for j in 0..width {
+            let element = lists.read(self.c, row + j);
+            let value = if let Value::Bool(value) = element.value {
+                Slot::number(f64::from(present && value))
+            } else if present || element.object_id().is_some() {
+                element
+            } else {
+                Slot::undefined(element.kind)
+            };
+            lists.set(result + j, value);
+        }
+        Some(Slot::list(result, width))
     }
 
     /// A list command whose result is a list, built at the end of the

@@ -319,21 +319,7 @@ impl Parser<'_> {
 
     /// The object named `label`, if the construction has it.
     pub(super) fn lookup(&self, label: &str) -> Option<Id> {
-        self.c.id(label).or_else(|| {
-            let (base, index) = label.rsplit_once('_')?;
-            let alias = match index.strip_prefix('{').and_then(|s| s.strip_suffix('}')) {
-                Some(digits)
-                    if !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit()) =>
-                {
-                    format!("{base}_{digits}")
-                }
-                None if !index.is_empty() && index.bytes().all(|b| b.is_ascii_digit()) => {
-                    format!("{base}_{{{index}}}")
-                }
-                _ => return None,
-            };
-            self.c.id(&alias)
-        })
+        self.c.id(label)
     }
 
     pub(super) fn read(&mut self, id: Id, input: bool) {
