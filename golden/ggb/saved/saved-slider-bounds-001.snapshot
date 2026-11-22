@@ -1,0 +1,18 @@
+{
+  "schema": 2,
+  "id": "saved-slider-bounds-001",
+  "script": [
+    "n = Slider(0, 10)",
+    "m = Slider(0, 10)",
+    "k = Slider(0, 10)",
+    "a = 2",
+    "q = 2n"
+  ],
+  "objects": {
+    "n": { "type": "number", "defined": true, "value": 9.0 },
+    "m": { "type": "number", "defined": true, "value": 0.0 },
+    "k": { "type": "number", "defined": true, "value": 0.0 },
+    "a": { "type": "number", "defined": true, "value": 2.0 },
+    "q": { "type": "number", "defined": true, "value": 18.0 }
+  }
+}

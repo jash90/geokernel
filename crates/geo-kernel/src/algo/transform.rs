@@ -106,6 +106,7 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
         Kind::Curve => &[Kind::Curve],
+        Kind::Button | Kind::InputBox => &[],
     }
 }
 
@@ -367,6 +368,8 @@ impl Map {
             | Value::Locus { .. }
             | Value::HomogeneousPoint { .. }
             | Value::Curve { .. }
+            | Value::Button
+            | Value::InputBox
             | Value::Undefined => None,
         }
     }

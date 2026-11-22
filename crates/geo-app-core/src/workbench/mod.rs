@@ -239,12 +239,26 @@ impl Workbench {
         hidden: &[String],
         notice: Option<String>,
     ) -> Result<(), String> {
-        self.load_script(src)?;
+        self.load_imported_with_conditions(src, hidden, &[], notice)
+    }
+
+    fn load_imported_with_conditions(
+        &mut self,
+        src: &str,
+        hidden: &[String],
+        conditions: &[(String, String)],
+        notice: Option<String>,
+    ) -> Result<(), String> {
+        let (mut c, mut log) = Log::load(src)?;
         for label in hidden {
-            if self.construction.id(label).is_some() {
-                self.log.hidden.insert(label.clone());
+            if c.id(label).is_some() {
+                log.hidden.insert(label.clone());
             }
         }
+        for (target, source) in conditions {
+            log.set_condition(&mut c, target, source)?;
+        }
+        self.replace(c, log);
         self.notice = notice;
         Ok(())
     }
@@ -692,7 +706,17 @@ impl Workbench {
             return true;
         }
         let label = self.construction.label(id);
-        !crate::scriptlog::is_internal_label(label) && !self.log.hidden.contains(label)
+        if crate::scriptlog::is_internal_label(label) {
+            return false;
+        }
+        if let Some(condition) = self
+            .log
+            .condition(label)
+            .and_then(|label| self.construction.id(label))
+        {
+            return self.construction.value(condition) == Value::Bool(true);
+        }
+        !self.log.hidden.contains(label)
     }
 
     /// Shows or hides an object in the drawing, as one undo step.
@@ -944,6 +968,29 @@ impl Workbench {
         let label = self.construction.label(id).to_owned();
         self.log
             .record_update(&self.construction, &label, Setting::Number(v));
+        if recomputed > 0 {
+            self.grow_boundary_outputs(std::iter::once(id));
+        }
+        self.version += 1;
+        true
+    }
+
+    pub fn set_boolean(&mut self, id: Id, value: bool) -> bool {
+        if id.index() >= self.construction.len()
+            || self.construction.value(id) == Value::Bool(value)
+        {
+            return false;
+        }
+        if self.tool_use_pending() {
+            self.cancel_tool_use();
+        }
+        let Ok(recomputed) = self.construction.set_boolean(id, value) else {
+            return false;
+        };
+        self.note_change();
+        let label = self.construction.label(id).to_owned();
+        self.log
+            .record_update(&self.construction, &label, Setting::Boolean(value));
         if recomputed > 0 {
             self.grow_boundary_outputs(std::iter::once(id));
         }

@@ -224,6 +224,7 @@ example the archives of another zip step) and prints each one as `pruned <path>`
 
 ```sh
 tools/ggb-harness/harness.sh saved
+tools/ggb-harness/harness.sh saved inline controls elements
 python3 tools/ggb-harness/saved/make_saved.py   # rewrite saved/saved.json
 ```
 

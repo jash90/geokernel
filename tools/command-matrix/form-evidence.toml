@@ -2040,3 +2040,8 @@ cases = ["textnumbers-continuedlong-001"]
 command = "ContinuedFraction"
 form = "number,number,boolean"
 cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "CurveCartesian"
+form = "number,number,number,number,number"
+cases = ["importgaps-curve-001"]

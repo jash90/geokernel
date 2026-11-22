@@ -219,6 +219,30 @@ case("coordinates", ["a = 2", "b = 3", "P = $point(a, b)",
                      "Q = $point(1/2, 3)", "v = $vector(a, b)",
                      "w = $vector(1/2, 3)"], [])
 
+inline = ["A = (1, 2)", "u = (2, -1)", "a = 3", "v = Vector(A, (4, 1))",
+          "s = Segment(A, A + (2, 0))", "w = Vector(2u)",
+          "d = UnitVector(2u)", "c = Circle(A, 2a)", "t = Tangent(a, x^2 + a)",
+          "e1 = Segment(A, (x(u), y(u)))", "e2 = Segment(A, A + u)",
+          # CommandsTest.cmdCircle
+          "k = Circle((1, 1), 42)", "j = Circle((1, 1), (2, 1/2))"]
+case("inline", inline, [])
+case("inline", inline, [mv("A", 4, 1), {"action": "set_number", "label": "a", "value": 2}])
+
+controls = ["A = (2, 1)", "B = (4, 3)", "a = Slider(0, 8, 0.5)",
+            "s = Segment(A, B)", "check = Checkbox(\"Show\", {A, s})",
+            "run = Button(\"Apply\")", "field = InputBox(a)", "empty = InputBox()",
+            "pos = a > 2"]
+edits = [{"action": "set_number", "label": "a", "value": 3},
+         {"action": "condition", "label": "B", "expression": "a > 2"},
+         {"action": "click_script", "label": "run", "text": "SetValue(a, 7)\nSetValue(a, 6)"}]
+case("controls", controls, edits)
+case("controls", controls, edits + [{"action": "set_boolean", "label": "check", "value": False}])
+
+case("elements", ["A = (0, 0)", "B = (3, 0)", "C = (4, 2)",
+                  "p = PolyLine({A, B, C})", "P = Point(p)", "Q = (x(P), y(P)^2)",
+                  "trace = Locus(Q, P)", "f = Curve(cos(t), sin(t), t, 0, 2)",
+                  "n = Length(f, 0, 1)"], [])
+
 texts = [
     'marker = "Anchor label"',
     "P = (1.235, -2.246)", "a = 4.1256", "theta = 30.1256°",
@@ -286,6 +310,23 @@ latex = {"action": "text_font", "label": "t", "latex": True, "size": 1, "style":
 case("text-template", text_template, [latex])
 case("text-template", text_template,
      [latex, {"action": "set_number", "label": "a", "value": 3.141592653589793}])
+
+case("slider-bounds", ["n = Slider(0, 10)", "m = Slider(0, 10)", "k = Slider(0, 10)", "a = 2", "q = 2n"],
+     [{"action": "set_number", "label": "n", "value": 9},
+      {"action": "slider_bounds", "label": "n", "max": "a + 3"},
+      {"action": "slider_bounds", "label": "m", "min": "a - 1"},
+      {"action": "slider_bounds", "label": "k", "min": "-3", "max": "NextPrime(a)"}])
+
+case("object-scripts", ["A = (1, 2)", "check = false", "a = 2"],
+     [{"action": "condition", "label": "A", "expression": "check"},
+      {"action": "click_script", "label": "A", "text": "SetValue(a, 7)"},
+      {"action": "object_script", "label": "A", "event": "UPDATE",
+       "language": "GGBSCRIPT", "text": "SetValue(a, 8)"},
+      {"action": "object_script", "label": "A", "event": "DRAG_END",
+       "language": "JAVASCRIPT", "text": 'ggbApplet.setValue("a", 9);'},
+      {"action": "object_script", "label": "A", "event": "EDITOR_KEY_TYPED",
+       "language": "JAVASCRIPT", "text": 'ggbApplet.setValue("a", 10);'}],
+     hidden=["check"])
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)

@@ -16,12 +16,13 @@
 //!   `<show object=/>`.
 //! * `<kernel>`: `Kernel.getKernelXML` (decimals, angle unit, continuity).
 //!
-//! * `<matrix A0= .. A5=>` of a conic, its `<eqnStyle>`, and the flags `<fixed>`,
-//!   `<auxiliary>`, `<condition>`, and non-text `<startPoint>` (counted for a note).
+//! * Conic `<matrix A0= .. A5=>` and `<eqnStyle>`, numeric `<slider>` bounds,
+//!   captions, object scripts, and `<condition showObject=>` visibility rules.
+//! * `<fixed>`, `<auxiliary>`, and non-text `<startPoint>` are counted for a note.
 //! * Text placement and style: `<startPoint>`, `<absoluteScreenLocation>`,
 //!   `<labelOffset>`, `<font>`, and `<isLaTeX>`.
 //!
-//! Everything else (the user interface, styles, scripts) is ignored.
+//! Other UI properties and styles are ignored.
 //!
 //! At most [`MAX_ITEMS`] items (an item counts once, plus once per output of
 //! a command) are read, a command lists at most [`MAX_ARGUMENTS`] inputs and
@@ -29,6 +30,7 @@
 //! [`MAX_ATTRIBUTE_BYTES`] bytes.
 
 use crate::{ImportError, Settings};
+use geo_kernel::kernel::control::ControlScript;
 use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::kernel::EquationForm;
 use quick_xml::events::{BytesStart, Event};
@@ -66,8 +68,10 @@ pub struct Element {
     pub fixed: bool,
     /// `<auxiliary val="true">`: not used, counted for a note.
     pub auxiliary: bool,
-    /// A `<condition>` (conditional visibility): not used, counted for a note.
-    pub conditional: bool,
+    pub condition: Option<String>,
+    pub caption: String,
+    pub scripts: Vec<ControlScript>,
+    pub slider: Option<[Option<String>; 2]>,
     /// A `<startPoint>` of a vector: not used, counted for a note.
     pub start_point: bool,
     pub text: Option<Box<TextStyle>>,
@@ -388,7 +392,32 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     }
                 }
                 "condition" if element.is_some() => {
-                    element.as_mut().expect("checked above").conditional = true;
+                    element.as_mut().expect("checked above").condition = attr(e, "showObject")?;
+                }
+                "caption" if element.is_some() => {
+                    element.as_mut().expect("checked above").caption =
+                        attr(e, "val")?.unwrap_or_default();
+                }
+                "ggbscript" | "javascript" if element.is_some() => {
+                    let scripts = &mut element.as_mut().expect("checked above").scripts;
+                    for (attribute, event) in [
+                        ("val", "click"),
+                        ("onUpdate", "update"),
+                        ("onDragEnd", "dragEnd"),
+                        ("onChange", "change"),
+                    ] {
+                        if let Some(text) = attr(e, attribute)? {
+                            scripts.push(ControlScript {
+                                language: name.clone(),
+                                event: event.into(),
+                                text,
+                            });
+                        }
+                    }
+                }
+                "slider" if element.is_some() => {
+                    element.as_mut().expect("checked above").slider =
+                        Some([attr(e, "min")?, attr(e, "max")?]);
                 }
                 "startPoint" | "absoluteScreenLocation" | "labelOffset" | "isLaTeX" | "font"
                     if element.as_ref().is_some_and(|el| el.kind == "text") =>
