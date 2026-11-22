@@ -137,6 +137,11 @@ pub enum CalculusDef {
         order: Option<u32>,
         numeric: bool,
     },
+    /// `Derivative(curve[, order])` and `NDerivative` of a curve
+    /// (`GeoCurveCartesianND.setDerivative`): both coordinate functions
+    /// differentiated on the fast no-CAS path, with the parent's parameter
+    /// interval.
+    CurveDerivative { curve: u32, order: Option<u32> },
     /// `NIntegral(f, a, b, c)` (`AlgoIntegralNumericInterval`): the
     /// antiderivative the rules build, shifted through `(a, b)` and cut
     /// to `[a, c]`.
@@ -164,6 +169,7 @@ impl CalculusDef {
             self,
             CalculusDef::IndefiniteIntegral { .. }
                 | CalculusDef::Derivative { .. }
+                | CalculusDef::CurveDerivative { .. }
                 | CalculusDef::NumericInterval { .. }
                 | CalculusDef::PolynomialPoints { .. }
         )
@@ -188,6 +194,9 @@ impl CalculusDef {
 
 pub(crate) struct CalcRecord {
     pub(crate) tree: Option<Entry>,
+    /// The second coordinate tree of a curve derivative (`None` for every
+    /// other record-backed object).
+    pub(crate) tree2: Option<Entry>,
 }
 
 /// Initializes the record of a record-backed calculus object and its
@@ -199,13 +208,25 @@ pub(crate) fn initialize(c: &Construction, d: &CalculusDef) -> (Value, CalcRecor
 /// Recomputes the record of a record-backed calculus object and its
 /// value.
 pub(crate) fn refresh(c: &Construction, d: &CalculusDef) -> (Value, CalcRecord) {
-    let tree = build_record(c, d);
-    let value = match &tree {
-        // an undefined tree: the rules failed, or the command needs the CAS
-        Some(entry) if expr::tree_defined(c, entry) => Value::Function,
+    let (tree, tree2) = build_record(c, d);
+    let defined = |entry: &Option<Entry>| {
+        entry
+            .as_ref()
+            .is_some_and(|entry| expr::tree_defined(c, entry))
+    };
+    let value = match *d {
+        // the curve keeps its parent's interval; it is defined when both
+        // coordinates differentiated
+        CalculusDef::CurveDerivative { curve, .. } => match c.value(gid(curve)) {
+            Value::Curve { start, end } if defined(&tree) && defined(&tree2) => {
+                Value::Curve { start, end }
+            }
+            _ => Value::Undefined,
+        },
+        _ if defined(&tree) => Value::Function,
         _ => Value::Undefined,
     };
-    (value, CalcRecord { tree })
+    (value, CalcRecord { tree, tree2 })
 }
 
 impl Group for CalculusDef {
@@ -218,6 +239,7 @@ impl Group for CalculusDef {
             | CalculusDef::Derivative { .. }
             | CalculusDef::NumericInterval { .. }
             | CalculusDef::PolynomialPoints { .. } => Kind::Function,
+            CalculusDef::CurveDerivative { .. } => Kind::Curve,
         }
     }
 
@@ -260,6 +282,10 @@ impl Group for CalculusDef {
             } => match order {
                 Some(order) => Parents::of(&[gid(function), gid(order)]),
                 None => Parents::of(&[gid(function)]),
+            },
+            CalculusDef::CurveDerivative { curve, order } => match order {
+                Some(order) => Parents::of(&[gid(curve), gid(order)]),
+                None => Parents::of(&[gid(curve)]),
             },
             CalculusDef::NumericInterval {
                 function, a, b, c, ..
@@ -324,6 +350,12 @@ impl Group for CalculusDef {
             | CalculusDef::Derivative { function, .. } => {
                 c.expect(gid(function), &[Kind::Function])?;
             }
+            CalculusDef::CurveDerivative { curve, order } => {
+                c.expect(gid(curve), &[Kind::Curve])?;
+                if let Some(order) = order {
+                    number(gid(order))?;
+                }
+            }
             CalculusDef::NumericInterval {
                 function,
                 a,
@@ -352,12 +384,17 @@ impl Group for CalculusDef {
             // this path only decides whether they are defined
             CalculusDef::IndefiniteIntegral { .. }
             | CalculusDef::Derivative { .. }
+            | CalculusDef::CurveDerivative { .. }
             | CalculusDef::NumericInterval { .. }
             | CalculusDef::PolynomialPoints { .. } => {
-                let tree = build_record(c, self);
-                match &tree {
-                    Some(entry) if expr::tree_defined(c, entry) => Some(Value::Function),
-                    _ => None,
+                // the record-backed objects answer through their record;
+                // this path only decides whether they are defined
+                let (value, record) = refresh(c, self);
+                match (&value, &record.tree) {
+                    // an undefined tree: the rules failed, or the command
+                    // needs the CAS
+                    (&Value::Undefined, _) | (_, None) => None,
+                    _ => Some(value),
                 }
             }
         }
@@ -2513,6 +2550,13 @@ pub(crate) fn poly_from_coefficients(
     b: &mut Builder,
     cof: &[f64],
 ) -> Option<Parsed> {
+    let root = poly_terms(b, cof)?;
+    b.finish(c, root).ok()
+}
+
+/// The tree of `poly_from_coefficients` as a node of the builder's arena,
+/// for trees that embed the polynomial (a spline piece).
+fn poly_terms(b: &mut Builder, cof: &[f64]) -> Option<u32> {
     let n = cof.len();
     let mut poly: Option<u32> = None;
     for k in (0..n).rev() {
@@ -2560,55 +2604,68 @@ pub(crate) fn poly_from_coefficients(
             Some(p) => b.push(Node::Bin(Bin::Add, p, part)),
         });
     }
-    let root = poly.unwrap_or_else(|| b.push(Node::Num(0.0)));
-    b.finish(c, root).ok()
+    Some(poly.unwrap_or_else(|| b.push(Node::Num(0.0))))
 }
 
 // ------------------------------------------------------------- the records
 
 /// Builds the tree a record-backed calculus function samples; `None` when
 /// the command has no answer without the CAS.
-fn build_record(c: &Construction, d: &CalculusDef) -> Option<Entry> {
-    match *d {
+fn build_record(c: &Construction, d: &CalculusDef) -> (Option<Entry>, Option<Entry>) {
+    let tree = match *d {
         CalculusDef::Derivative {
             function,
             order,
             numeric,
         } => {
-            let entry = source_entry(c, gid(function))?;
+            let Some(entry) = source_entry(c, gid(function)) else {
+                return (None, None);
+            };
             // the order rounds like Math.round; a negative order is
             // undefined, order zero a copy of the function
-            let order = match order {
-                Some(id) => (number(c, gid(id)) + 0.5).floor(),
-                None => 1.0,
+            let Some(order) = derivative_order(c, order) else {
+                return (None, None);
             };
-            if !(order.is_finite() && order >= 0.0) {
-                return None;
-            }
-            let order = order as u32;
             if order == 0 {
-                return Some(expr::function_entry(c, expr::parsed_of(entry)));
+                return (Some(expr::function_entry(c, expr::parsed_of(entry))), None);
             }
             // `Function.getDerivative`: the factor check runs only inside
             // the polynomial branch, so a non-polynomial never routes
             // around it; without the CAS such a derivative is undefined
             // and only `NDerivative` (and the factor path, which returns
             // `getDerivativeNoCAS`) walks the rules
-            if let Some(p) = polynomial_derivative(c, entry, order) {
-                if has_high_power(c, entry) {
-                    rule_derivative(c, entry, order).map(|p| expr::function_entry(c, p))
-                } else {
-                    Some(expr::function_entry(c, p))
-                }
-            } else if numeric {
-                rule_derivative(c, entry, order).map(|p| expr::function_entry(c, p))
-            } else {
-                // the CAS answers; without it the derivative is undefined
-                None
+            derivative_tree(c, entry, order, !numeric).map(|p| expr::function_entry(c, p))
+        }
+        CalculusDef::CurveDerivative { curve, order } => {
+            let Some((x, y)) = curve_coordinates(c, gid(curve)) else {
+                return (None, None);
+            };
+            let Some(order) = derivative_order(c, order) else {
+                return (None, None);
+            };
+            if order == 0 {
+                return (
+                    Some(expr::function_entry(c, expr::parsed_of(&x))),
+                    Some(expr::function_entry(c, expr::parsed_of(&y))),
+                );
             }
+            // a curve always differentiates through the fast no-CAS path
+            // (`setDerivative` calls `getDerivative(n, true)`)
+            let (Some(x), Some(y)) = (
+                derivative_tree(c, &x, order, false),
+                derivative_tree(c, &y, order, false),
+            ) else {
+                return (None, None);
+            };
+            return (
+                Some(expr::function_entry(c, x)),
+                Some(expr::function_entry(c, y)),
+            );
         }
         CalculusDef::IndefiniteIntegral { function, numeric } => {
-            let entry = source_entry(c, gid(function))?;
+            let Some(entry) = source_entry(c, gid(function)) else {
+                return (None, None);
+            };
             if numeric {
                 rule_integral(c, entry).map(|p| expr::function_entry(c, p))
             } else {
@@ -2622,7 +2679,107 @@ fn build_record(c: &Construction, d: &CalculusDef) -> Option<Entry> {
             polynomial_points_tree(c, d).map(|p| expr::function_entry(c, p))
         }
         _ => None,
+    };
+    (tree, None)
+}
+
+/// `Math.round` of the order object's value; `None` (an undefined
+/// derivative) for a negative or infinite order.
+fn derivative_order(c: &Construction, order: Option<u32>) -> Option<u32> {
+    let order = match order {
+        Some(id) => (number(c, gid(id)) + 0.5).floor(),
+        None => 1.0,
+    };
+    if !(order.is_finite() && order >= 0.0) {
+        return None;
     }
+    Some(order as u32)
+}
+
+/// `Function.getDerivative(n, fast)`: the polynomial path with its factor
+/// check, and the rule tree where the polynomial path does not answer.
+/// `cas_gated` marks the forms that need the CAS for a non-polynomial (the
+/// derivative of a function; a curve is always fast).
+fn derivative_tree(c: &Construction, entry: &Entry, order: u32, cas_gated: bool) -> Option<Parsed> {
+    if let Some(p) = polynomial_derivative(c, entry, order) {
+        if has_high_power(c, entry) {
+            rule_derivative(c, entry, order)
+        } else {
+            Some(p)
+        }
+    } else if cas_gated {
+        // the CAS answers; without it the derivative is undefined
+        None
+    } else {
+        rule_derivative(c, entry, order)
+    }
+}
+
+/// The two coordinate functions of the curve `id` as owned trees:
+/// the coordinate objects of a Cartesian curve, the record of a curve
+/// derivative, or the piece polynomials of a spline. `None` for a curve
+/// the kernel keeps in another form (a transformed curve), whose
+/// derivative stays undefined.
+fn curve_coordinates(c: &Construction, id: Id) -> Option<(Entry, Entry)> {
+    match c.def(id) {
+        Def::Measure(super::measure::MeasureDef::CartesianCurve {
+            coordinates: [x, y],
+            ..
+        }) => {
+            let entry = |id: u32| match c.def(Id(id as usize)) {
+                Def::Expr(d) => Some(expr::parsed_of(expr::source_entry(c, d))),
+                _ => None,
+            };
+            Some((
+                expr::function_entry(c, entry(x)?),
+                expr::function_entry(c, entry(y)?),
+            ))
+        }
+        Def::Calculus(CalculusDef::CurveDerivative { .. }) => {
+            let record = c.calculus_record(id)?;
+            let (x, y) = (record.tree.as_ref()?, record.tree2.as_ref()?);
+            Some((
+                expr::function_entry(c, expr::parsed_of(x)),
+                expr::function_entry(c, expr::parsed_of(y)),
+            ))
+        }
+        Def::Analysis(super::analysis::AnalysisDef::Spline(input)) => spline_coordinates(c, input),
+        _ => None,
+    }
+}
+
+/// The coordinate functions of a spline (`AlgoSpline.compute`): one
+/// `IF_LIST` chain over the piece polynomials, per coordinate, with the
+/// condition `t < limit` between the pieces and the last piece as the
+/// trailing else.
+fn spline_coordinates(
+    c: &Construction,
+    input: super::analysis::SplineInput,
+) -> Option<(Entry, Entry)> {
+    let spline = c.analysis.spline(c, input)?;
+    let pieces: Vec<_> = spline
+        .pieces()
+        .map(|(_, right, row)| (right, row))
+        .collect();
+    let coordinate = |axis: usize| -> Option<Entry> {
+        let mut b = Builder::empty();
+        let mut payloads = Vec::with_capacity(pieces.len());
+        for &(_, row) in &pieces {
+            let coefficients: Vec<f64> = row.iter().rev().map(|&pair| pair[axis]).collect();
+            payloads.push(poly_terms(&mut b, &coefficients)?);
+        }
+        // the last piece is the trailing else of the `IF_LIST` chain
+        let last = pieces.len() - 1;
+        let mut root = payloads.pop()?;
+        for (i, &(right, _)) in pieces[..last].iter().enumerate().rev() {
+            let limit = b.push(Node::Num(right));
+            let var = b.push(Node::Var);
+            let cond = b.push(Node::Bin(Bin::Less, var, limit));
+            root = b.push(Node::If(IfMode::List, cond, payloads[i], root));
+        }
+        b.finish(c, root).ok().map(|p| expr::function_entry(c, p))
+    };
+    Some((coordinate(0)?, coordinate(1)?))
 }
 
 /// `Function.getDerivative`'s factor check: any power whose base is not a
@@ -2679,9 +2836,6 @@ pub(crate) fn exec(
             .map(Some)
             .map_err(|e| e.to_string())
     };
-    // the variable of the variable forms: the function variable, which
-    // this kernel's functions always name `x`
-    let var = |arg: &str| -> Option<()> { (arg == "x").then_some(()) };
     let result = match (func, args.as_slice()) {
         ("LowerSum", [f, a, b, n]) => sum(c, name, Sum::Lower, [f, a, b, n], None),
         ("UpperSum", [f, a, b, n]) => sum(c, name, Sum::Upper, [f, a, b, n], None),
@@ -2706,7 +2860,9 @@ pub(crate) fn exec(
         ("Integral", [f, x]) | ("NIntegral", [f, x]) | ("IntegralBetween", [f, x]) => {
             // the variable form `Integral(f, x)`
             let function = function_argument(c, f)?;
-            var(x)?;
+            if let Err(e) = variable(c, x, None) {
+                return Some(Err(e));
+            }
             add(
                 c,
                 CalculusDef::IndefiniteIntegral {
@@ -2795,6 +2951,9 @@ pub(crate) fn exec(
             integral_between(c, name, f, g, a, b, Some(evaluate))
         }
         ("Derivative", [f]) | ("NDerivative", [f]) => {
+            if let Some(curve) = curve_argument(c, f) {
+                return Some(add(c, CalculusDef::CurveDerivative { curve, order: None }));
+            }
             let function = function_argument(c, f)?;
             add(
                 c,
@@ -2806,6 +2965,23 @@ pub(crate) fn exec(
             )
         }
         ("Derivative", [f, order]) | ("NDerivative", [f, order]) => {
+            if let Some(curve) = curve_argument(c, f) {
+                if let Some(order) = number_argument(c, order) {
+                    return Some(add(
+                        c,
+                        CalculusDef::CurveDerivative {
+                            curve,
+                            order: Some(order),
+                        },
+                    ));
+                }
+                // the parameter name is the only variable a curve reads
+                // (`resArgsLocalNumVar` checks it against the curve's own)
+                if let Err(e) = variable(c, order, curve_parameter(c, f).as_deref()) {
+                    return Some(Err(e));
+                }
+                return Some(add(c, CalculusDef::CurveDerivative { curve, order: None }));
+            }
             let function = function_argument(c, f)?;
             if let Some(order) = number_argument(c, order) {
                 add(
@@ -2817,7 +2993,9 @@ pub(crate) fn exec(
                     },
                 )
             } else {
-                var(order)?;
+                if let Err(e) = variable(c, order, None) {
+                    return Some(Err(e));
+                }
                 add(
                     c,
                     CalculusDef::Derivative {
@@ -2828,10 +3006,25 @@ pub(crate) fn exec(
                 )
             }
         }
+        // the three-argument form reads any name or label as the variable
+        // (`getVariableName` accepts a variable, a labelled object or the
+        // function variable) and ignores it: a number literal or an
+        // expression in that place is an error
         ("Derivative", [f, x, order]) | ("NDerivative", [f, x, order]) => {
-            let function = function_argument(c, f)?;
-            var(x)?;
+            if !(crate::script::is_identifier(x) || c.id(x).is_some()) {
+                return Some(Err(format!("`{x}` is not a variable name")));
+            }
             let order = number_argument(c, order)?;
+            if let Some(curve) = curve_argument(c, f) {
+                return Some(add(
+                    c,
+                    CalculusDef::CurveDerivative {
+                        curve,
+                        order: Some(order),
+                    },
+                ));
+            }
+            let function = function_argument(c, f)?;
             add(
                 c,
                 CalculusDef::Derivative {
@@ -2876,6 +3069,38 @@ pub(crate) fn exec(
         _ => return None,
     };
     Some(result)
+}
+
+/// The curve argument of a calculus command: the label of a curve object.
+fn curve_argument(c: &Construction, arg: &str) -> Option<u32> {
+    crate::script::object(c, arg)
+        .ok()
+        .filter(|&id| c.kind(id) == Kind::Curve)
+        .map(|id| id.0 as u32)
+}
+
+/// The parameter name of a Cartesian curve (`getFunctionVariables` of a
+/// curve reads its first coordinate function).
+fn curve_parameter(c: &Construction, arg: &str) -> Option<String> {
+    let id = crate::script::object(c, arg).ok()?;
+    match c.def(id) {
+        Def::Measure(super::measure::MeasureDef::CartesianCurve {
+            coordinates: [x, _],
+            ..
+        }) => match c.def(Id(x as usize)) {
+            Def::Expr(d) => expr::curve_parameter(expr::source_entry(c, d)).map(String::from),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+/// Whether `arg` names the variable `expect` (`x` for a function); the
+/// message is the command processor's own.
+fn variable(_c: &Construction, arg: &str, expect: Option<&str>) -> Result<(), String> {
+    (arg == expect.unwrap_or("x"))
+        .then_some(())
+        .ok_or_else(|| format!("`{arg}` is not a variable name"))
 }
 
 /// The function argument of a calculus command: the label of a function

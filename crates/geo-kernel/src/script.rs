@@ -1324,6 +1324,12 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         ("Derivative" | "NDerivative", [f, _, order]) if is_kind(f, Kind::Function) => {
             &[(2, Kind::Number)]
         }
+        ("Derivative" | "NDerivative", [f, order]) if is_kind(f, Kind::Curve) => {
+            &[(1, Kind::Number)]
+        }
+        ("Derivative" | "NDerivative", [f, _, order]) if is_kind(f, Kind::Curve) => {
+            &[(2, Kind::Number)]
+        }
         _ => return None,
     };
     // the calculus commands keep their numbers as live objects; the
@@ -1665,7 +1671,7 @@ fn is_letter(c: u16) -> bool {
         | 0xffa1..=0xffdc)
 }
 
-fn is_identifier(s: &str) -> bool {
+pub(crate) fn is_identifier(s: &str) -> bool {
     let mut chars = s.chars();
     match chars.next() {
         Some(ch) if ch.is_alphabetic() || ch == '_' => {}

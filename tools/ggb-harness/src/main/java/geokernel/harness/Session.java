@@ -36,6 +36,7 @@ import org.geogebra.common.kernel.algos.AlgoSemicircle;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
+import org.geogebra.common.kernel.geos.GeoCurveCartesian;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
 import org.geogebra.common.kernel.geos.GeoFunctionNVar;
@@ -1204,9 +1205,12 @@ final class Session {
             case "Voronoi":
             case "Locus":
             case "SlopeField":
-            case "SolveODE":
             case "NSolveODE":
                 return "locus";
+            case "SolveODE":
+                // the one- and two-argument symbolic forms make a function
+                // (undefined without a CAS), the numeric forms a locus
+                return arguments(definition).size() < 3 ? "function" : "locus";
             case "Curve":
             case "CurveCartesian":
             case "Spline":
@@ -1222,6 +1226,10 @@ final class Session {
             case "Function":
             case "NInvert":
                 return "function";
+            case "Derivative":
+            case "NDerivative":
+                // a curve input differentiates componentwise to a curve
+                return first instanceof GeoCurveCartesian ? "curve" : "function";
             case "LineGraph":
                 return "function";
             case "DotPlot":
@@ -1300,12 +1308,22 @@ final class Session {
             case "Payment":
             case "FutureValue":
             case "PresentValue":
-            case "Maximize":
-            case "Minimize":
             case "AxisStepX":
             case "AxisStepY":
             case "ConstructionStep":
                 return "number";
+            case "Maximize":
+            case "Minimize":
+                // the result is a copy of the independent object
+                List<String> optimizerArgs = arguments(definition);
+                GeoElement independent = optimizerArgs.size() > 1
+                        ? objects.get(optimizerArgs.get(1).trim()) : null;
+                return independent instanceof GeoPoint ? "point" : "number";
+            case "SVD":
+            case "Normalize":
+                return "list";
+            case "IsVertexForm":
+                return "boolean";
             case "Sum":
                 // folding points or vectors sums to a point (`CmdSum` wraps
                 // them in a list of points), functions to a function, texts

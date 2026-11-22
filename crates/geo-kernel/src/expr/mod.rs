@@ -1782,6 +1782,12 @@ fn constant_literals(e: &Entry, root: u32) -> Vec<f64> {
 
 /// The parsed tree of an entry again, for the copy an order-zero
 /// derivative is.
+/// The parameter name a Cartesian curve's coordinate function uses, for
+/// the variable forms of the derivative commands.
+pub(crate) fn curve_parameter(e: &Entry) -> Option<&str> {
+    e.curve_parameter.as_deref()
+}
+
 pub(crate) fn parsed_of(e: &Entry) -> parse::Parsed {
     parse::Parsed {
         root: e.root,
