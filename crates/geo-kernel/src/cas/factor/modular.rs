@@ -118,7 +118,16 @@ fn integer_divides(dividend: &[i128], divisor: &[i128], work: &mut Work<'_>) -> 
         }
         let quotient = remainder[end] / lead;
         for (value, &term) in remainder[shift..end].iter_mut().zip(divisor) {
-            *value = value.checked_sub(quotient.checked_mul(term)?)?;
+            // An exact division keeps the running remainder within the
+            // quotient's coefficients, far below `i128`; only a non-divisor
+            // explodes, which says "does not divide" rather than a limit.
+            let Some(product) = quotient.checked_mul(term) else {
+                return Some(false);
+            };
+            let Some(difference) = value.checked_sub(product) else {
+                return Some(false);
+            };
+            *value = difference;
         }
     }
     Some(remainder[..divisor.len() - 1].iter().all(|&x| x == 0))
@@ -149,22 +158,46 @@ fn square_free_reduction(
     Some((field.gcd(reduced.clone(), derivative, work)?.len() == 1).then_some(reduced))
 }
 
-fn best_reduction(polynomial: &[i128], work: &mut Work<'_>) -> Option<(Field, IntegerFactors)> {
+/// The reduction to lift from: `None` when some prime proves the polynomial
+/// irreducible (an irreducible reduction can only come from an irreducible
+/// integer polynomial, by Gauss's lemma).
+enum Reduction {
+    Irreducible,
+    Factors(Field, IntegerFactors),
+}
+
+/// How many primes to factor completely before settling for the one with the
+/// fewest factors. Recombination from any complete modular factorization
+/// reconstructs every rational factor, so more primes only lower the cost of
+/// the subset search — never its outcome.
+const SCANNED_PRIMES: usize = 8;
+
+fn best_reduction(polynomial: &[i128], work: &mut Work<'_>) -> Option<Reduction> {
     let mut best = None;
     let mut fewest_factors = polynomial.len();
+    let mut scanned = 0;
     for prime in PRIMES {
+        if scanned == SCANNED_PRIMES {
+            break;
+        }
         let field = Field(prime);
         let Some(reduced) = square_free_reduction(polynomial, field, work)? else {
             continue;
         };
+        scanned += 1;
         let factors = field.irreducible_factors(reduced, work)?;
+        if factors.len() == 1 {
+            return Some(Reduction::Irreducible);
+        }
         if factors.len() <= 2 {
             // At most one partition into two nonconstant factors.
-            return Some((field, factors));
+            return Some(Reduction::Factors(field, factors));
         }
-        if factors.len() < fewest_factors {
+        if factors.len() <= fewest_factors {
+            // Among equals keep the later, larger prime: fewer Hensel steps
+            // reach the reconstruction bound.
             fewest_factors = factors.len();
-            best = Some((field, factors));
+            best = Some(Reduction::Factors(field, factors));
         }
     }
     best
@@ -302,6 +335,54 @@ fn lift_factor(
     .reconstruct(work)
 }
 
+/// The constant coefficients a subset product may carry: an integer factor
+/// takes a constant term dividing the polynomial's and a leading coefficient
+/// dividing its, so the subset's constant residue must match `d * e^-1` for
+/// divisors `d` and `e` of the two, up to sign. `None` when a term is too
+/// large to enumerate divisors of.
+fn allowed_constants(polynomial: &[i128], field: Field, work: &mut Work<'_>) -> Option<Vec<i128>> {
+    let constant = polynomial.first().copied()?.checked_abs()?;
+    let leading = polynomial.last().copied()?.checked_abs()?;
+    if constant == 0 || leading > 1_000_000_000 {
+        return None;
+    }
+    let mut divisors = |n: i128| -> Option<Vec<i128>> {
+        if n > 100_000_000 {
+            return None;
+        }
+        let mut small = vec![1_i128];
+        let mut d = 2_i128;
+        while d.checked_mul(d).is_some_and(|square| square <= n) {
+            work.spend(1)?;
+            if n % d == 0 {
+                small.push(d);
+            }
+            d += 1;
+        }
+        let mut all = Vec::with_capacity(2 * small.len());
+        for e in small {
+            all.push(e);
+            all.push(n.checked_div(e)?);
+        }
+        all.sort();
+        all.dedup();
+        Some(all)
+    };
+    let divisors_of_constant = divisors(constant)?;
+    let mut allowed = Vec::new();
+    for &e in divisors(leading)?.iter() {
+        let inverse = field.inverse(e.rem_euclid(field.0));
+        for &d in divisors_of_constant.iter() {
+            for sign in [1_i128, -1_i128] {
+                allowed.push((sign * (d % field.0) * inverse).rem_euclid(field.0));
+            }
+        }
+    }
+    allowed.sort_unstable();
+    allowed.dedup();
+    Some(allowed)
+}
+
 fn partitions(
     polynomial: &[i128],
     field: Field,
@@ -309,16 +390,31 @@ fn partitions(
     work: &mut Work<'_>,
 ) -> Option<Option<Vec<i128>>> {
     let degree = polynomial.len() - 1;
+    let allowed = allowed_constants(polynomial, field, work);
     for mask in 1..(1_usize << factors.len()) - 1 {
         work.spend(factors.len())?;
-        let left_degree = factors
+        let chosen = factors
             .iter()
             .enumerate()
             .filter(|(i, _)| mask & (1 << i) != 0)
+            .collect::<Vec<_>>();
+        let left_degree = chosen
+            .iter()
             .map(|(_, factor)| factor.len() - 1)
             .sum::<usize>();
         if 2 * left_degree > degree || (2 * left_degree == degree && mask & 1 == 0) {
             continue;
+        }
+        if let Some(allowed) = &allowed {
+            // A leading coefficient of the candidate divides the polynomial's,
+            // so the chosen constants may only combine to `d / e` above.
+            let mut residue = 1_i128;
+            for (_, factor) in &chosen {
+                residue = residue * factor[0] % field.0;
+            }
+            if allowed.binary_search(&residue).is_err() {
+                continue;
+            }
         }
         let mut pair = [vec![1], vec![1]];
         for (i, factor) in factors.iter().enumerate() {
@@ -405,6 +501,13 @@ pub(super) fn proper_factor(coefficients: &[Rat], work: &mut Work<'_>) -> Option
             None => None,
         });
     }
+    // Rational roots peel off by single linear lifts, long before the modular
+    // factorization: a product of many linear factors would otherwise blow
+    // the budget in the subset recombination.
+    let roots = rational_roots(coefficients, work)?;
+    if let Some(&root) = roots.first() {
+        return Some(Some(vec![root.neg()?, Rat::ONE]));
+    }
     let leading = *polynomial.last()?;
     let lower = &polynomial[..polynomial.len() - 1];
     for prime in PRIMES {
@@ -417,9 +520,14 @@ pub(super) fn proper_factor(coefficients: &[Rat], work: &mut Work<'_>) -> Option
             return Some(None);
         }
     }
-    let (field, factors) = best_reduction(&polynomial, work)?;
-    let Some(factor) = partitions(&polynomial, field, &factors, work)? else {
-        return Some(None);
+    let factor = match best_reduction(&polynomial, work)? {
+        Reduction::Irreducible => return Some(None),
+        Reduction::Factors(field, factors) => {
+            let Some(factor) = partitions(&polynomial, field, &factors, work)? else {
+                return Some(None);
+            };
+            factor
+        }
     };
     let factor_lead = *factor.last()?;
     Some(Some(

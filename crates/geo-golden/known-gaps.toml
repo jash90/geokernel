@@ -670,3 +670,25 @@ mismatches = ["0:R"]
 id = "funcanalysis-discontinuity-006"
 reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole at (1, 0)."
 mismatches = ["0:R"]
+
+# cas
+
+[[gap]]
+id = "cas-solve-013"
+reason = "GeoGebra lists the solutions of a system in the order its CAS returns them, which follows no rule across inputs (Solutions({x^2=1},{x}) answers {1},{-1} while Solutions({x^4-16=0},{x}) answers {-2},{2}). The kernel always answers rows in ascending order of the first coordinate, so the solution multisets agree while the order may differ."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-solve-040"
+reason = "GeoGebra lists the solutions of a system in the order its CAS returns them, which follows no rule across inputs (Solutions({x^2=1},{x}) answers {1},{-1} while Solutions({x^4-16=0},{x}) answers {-2},{2}). The kernel always answers rows in ascending order of the first coordinate, so the solution multisets agree while the order may differ."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-solve-041"
+reason = "GeoGebra lists the assignments of a system solve in the order its CAS returns the roots, which follows no rule across inputs. The kernel lists the same lines in ascending order of the solved coordinate, so the line sets agree while the order may differ."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-solve-045"
+reason = "GeoGebra lists the solution families of a product equation in the order its CAS factors it (the y = 0 family of x*y = 0 before x = 0), which follows no rule. The kernel lists the family whose first coordinate is constant first, so the families agree while the order differs."
+mismatches = ["0:result"]

@@ -3,7 +3,8 @@
 use std::cmp::Ordering;
 use std::collections::{btree_map::Entry, BTreeMap};
 
-use super::{factor, isolate, real_roots, scaled_value, Rat, Root, Roots, Work};
+use super::extended::{isolate_approximate, scaled_residual};
+use super::{factor, real_roots, Rat, Root, Roots, Work};
 
 mod quadratic;
 
@@ -410,13 +411,13 @@ fn numeric_specialization(
         if let Some(root) = quadratic::linear_solution(polynomials, variable, row, work) {
             vec![root]
         } else {
-            isolate(shortest, true, work)?
+            isolate_approximate(shortest, true, work)?
                 .into_iter()
                 .map(Root::Numeric)
                 .collect()
         }
     } else {
-        isolate(shortest, true, work)?
+        isolate_approximate(shortest, true, work)?
             .into_iter()
             .map(Root::Numeric)
             .collect()
@@ -426,7 +427,7 @@ fn numeric_specialization(
         let mut passes = true;
         for polynomial in &constraints {
             work.spend(polynomial.len())?;
-            let (residual, envelope) = scaled_value(polynomial, root.value());
+            let (residual, envelope) = scaled_residual(polynomial, root.value());
             passes &= residual.abs() <= 1e-11 * envelope;
         }
         if passes {

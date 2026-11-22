@@ -164,7 +164,7 @@ impl<const M: bool> Ctx<'_, M> {
             Op::NextPrime | Op::PreviousPrime => {
                 let n = self.full_number(a);
                 Ex::plain(N(
-                    neighboring_prime(n, op == Op::NextPrime, work).map_or(f64::NAN, |n| n as f64)
+                    neighboring_prime(n, op == Op::NextPrime, work).unwrap_or(f64::NAN)
                 ))
             }
             Op::Degree => {
@@ -223,31 +223,71 @@ impl<const M: bool> Ctx<'_, M> {
     }
 }
 
-fn neighboring_prime(n: f64, next: bool, work: &mut Work<'_>) -> Option<u64> {
-    const MAX_EXACT_INTEGER: u64 = 1 << 53;
-    if !n.is_finite() || n.fract() != 0.0 || n.abs() > MAX_EXACT_INTEGER as f64 {
+fn neighboring_prime(n: f64, next: bool, work: &mut Work<'_>) -> Option<f64> {
+    // `AlgoNextPreviousPrime.compute` gives undefined only above the largest
+    // integer a double holds exactly; every other input reaches the CAS.
+    const LARGEST_INTEGER: f64 = 9007199254740992.0;
+    if !n.is_finite() || n > LARGEST_INTEGER {
         return None;
     }
-    if next && n < 2.0 {
-        return Some(2);
-    }
-    if !next && n <= 2.0 {
-        return None;
-    }
-    let mut candidate = if next {
-        n.floor() as u64 + 1
-    } else {
-        n.ceil() as u64 - 1
-    };
-    loop {
-        if candidate > MAX_EXACT_INTEGER {
+    let x = cas_input(n);
+    if next {
+        // The CAS runs `nextprime(x)`, which answers 2 below 2 whatever the
+        // fractional part is and refuses a non-integer from 2 up.
+        if x < 2.0 {
+            return Some(2.0);
+        }
+        if x.fract() != 0.0 {
             return None;
         }
-        work.spend(1)?;
-        if super::commands::prime(candidate, |units| work.spend(units as usize).is_none())? {
-            return Some(candidate);
+        if x > LARGEST_INTEGER {
+            // Above the largest integer the next prime rounds back to the
+            // input when the CAS prints it with 15 significant digits.
+            return Some(x);
         }
-        candidate = if next { candidate + 1 } else { candidate - 1 };
+        search_prime(x as u64, 1, work).map(|prime| prime as f64)
+    } else {
+        // The CAS runs `if (x > 2) then prevprime(x) else 0/0`.
+        if x <= 2.0 {
+            return None;
+        }
+        if x.fract() != 0.0 {
+            return None;
+        }
+        if x > LARGEST_INTEGER {
+            return Some(x);
+        }
+        search_prime(x as u64, -1, work).map(|prime| prime as f64)
+    }
+}
+
+/// The value `init.toValueString(maxPrecision)` hands to the CAS. Integers
+/// below 10^15 pass through; between 10^15 and the largest integer only a
+/// 15-digit mantissa that is a power of ten survives, every other value is
+/// scaled by 10^11 (recorded in golden/cas/prime.json).
+fn cas_input(n: f64) -> f64 {
+    const LARGEST_INTEGER: f64 = 9007199254740992.0;
+    let magnitude = n.abs();
+    if n.fract() != 0.0 || !(1e15..=LARGEST_INTEGER).contains(&magnitude) {
+        return n;
+    }
+    let mantissa = (magnitude as u64 + 5) / 10;
+    if mantissa == 100_000_000_000_000 {
+        return n.signum() * 1e15;
+    }
+    n.signum() * (mantissa as f64 * 1e11)
+}
+
+fn search_prime(from: u64, step: i64, work: &mut Work<'_>) -> Option<u64> {
+    let mut candidate = from as i64 + step;
+    loop {
+        work.spend(1)?;
+        if super::commands::prime(candidate.unsigned_abs(), |units| {
+            work.spend(units as usize).is_none()
+        })? {
+            return Some(candidate as u64);
+        }
+        candidate += step;
     }
 }
 
@@ -291,4 +331,63 @@ fn display_list(list: super::List<'_>) -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!("{{{contents}}}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn next(n: f64) -> Option<f64> {
+        neighboring_prime(n, true, &mut Work::new(&|_| true))
+    }
+
+    fn previous(n: f64) -> Option<f64> {
+        neighboring_prime(n, false, &mut Work::new(&|_| true))
+    }
+
+    #[test]
+    fn prime_neighbors_follow_the_recorded_cas_edge_cases() {
+        // CommandsTest.cmdNextPrime plus the values recorded in
+        // golden/cas/prime.json with the Giac oracle.
+        assert_eq!(next(3.0), Some(5.0));
+        assert_eq!(next(2.0), Some(3.0));
+        assert_eq!(next(1.0), Some(2.0));
+        assert_eq!(next(-7.0), Some(2.0));
+        assert_eq!(next(-2.5), Some(2.0));
+        assert_eq!(next(3.4), None);
+        assert_eq!(next(1e12), Some(1e12 + 39.0));
+        assert_eq!(previous(5.0), Some(3.0));
+        assert_eq!(previous(2.0), None);
+        assert_eq!(previous(1.0), None);
+        assert_eq!(previous(-7.0), None);
+        assert_eq!(previous(-2.5), None);
+        assert_eq!(next(f64::NAN), None);
+    }
+
+    #[test]
+    fn prime_neighbors_answer_the_fifteen_digit_cas_input() {
+        // Between 10^15 and the largest exact integer GeoGebra hands the CAS a
+        // 15-digit mantissa times 10^11, where neighboring primes are
+        // indistinguishable, so both commands answer that value. Above the
+        // largest integer AlgoNextPreviousPrime answers undefined.
+        let largest = 9007199254740992.0;
+        let mangled = 9.00719925474099e25;
+        assert_eq!(next(largest - 1.0), Some(mangled));
+        assert_eq!(next(largest), Some(mangled));
+        assert_eq!(previous(largest), Some(mangled));
+        assert_eq!(next(9007199254741990.0), None);
+        assert_eq!(previous(9007199254741990.0), None);
+    }
+
+    #[test]
+    fn cas_input_rounds_the_mantissa_like_the_display() {
+        assert_eq!(cas_input(3.0), 3.0);
+        assert_eq!(cas_input(3.4), 3.4);
+        assert_eq!(cas_input(-10.0), -10.0);
+        assert_eq!(cas_input(1e15), 1e15);
+        assert_eq!(cas_input(-1e15), -1e15);
+        assert_eq!(cas_input(2e15), 2.0e25);
+        assert_eq!(cas_input(9007199254740991.0), 9.00719925474099e25);
+        assert_eq!(cas_input(9007199254741990.0), 9007199254741990.0);
+    }
 }

@@ -6,6 +6,7 @@ mod polynomial;
 mod rational;
 mod solve;
 
+pub(crate) use factor::{divide_exact as polynomial_quotient, gcd as polynomial_gcd};
 pub(crate) use polynomial::{Poly, Quotient};
 pub(crate) use rational::gcd as integer_gcd;
 pub(crate) use rational::Rat;

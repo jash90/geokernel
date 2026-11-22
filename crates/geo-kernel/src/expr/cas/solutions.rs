@@ -60,8 +60,19 @@ pub(super) fn list<const M: bool>(
         let axis = used.first().copied().unwrap_or(0);
         let coordinate = if width == 1 { axes[0] } else { axis as u8 };
         let equation = polynomials.pop()?;
-        let coefficients = dense_at(&equation.numerator, axis);
-        let denominator = dense_at(&equation.denominator, axis);
+        let mut coefficients = dense_at(&equation.numerator, axis);
+        let mut denominator = dense_at(&equation.denominator, axis);
+        if approximate && denominator.len() > 1 {
+            // The numeric path simplifies the equation first, so a root the
+            // numerator and the denominator share survives: NSolutions(x^2/x)
+            // answers {0}, while Solutions(x^2/x = 0) answers {}.
+            if let Some(common) = crate::cas::polynomial_gcd(&coefficients, &denominator, work) {
+                if common.len() > 1 {
+                    coefficients = crate::cas::polynomial_quotient(&coefficients, &common, work)?;
+                    denominator = crate::cas::polynomial_quotient(&denominator, &common, work)?;
+                }
+            }
+        }
         if coefficients.len() == 1 {
             // At this entry point GeoGebra treats constant false equations as
             // Boolean input and reports an undefined list.

@@ -7054,25 +7054,25 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:154"
-category = "kernel-mismatch"
+category = "dummy-cas-expectation"
 reason = "List { len: 3 } does not match `?` (expected undefined, kernel has a value)"
 mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:160"
-category = "kernel-mismatch"
+category = "dummy-cas-expectation"
 reason = "List { len: 3 } does not match `?` (expected undefined, kernel has a value)"
 mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:166"
-category = "kernel-mismatch"
+category = "dummy-cas-expectation"
 reason = "List { len: 3 } does not match `?` (expected undefined, kernel has a value)"
 mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:172"
-category = "kernel-mismatch"
+category = "dummy-cas-expectation"
 reason = "List { len: 3 } does not match `?` (expected undefined, kernel has a value)"
 mismatches = ["l1"]
 
@@ -7162,13 +7162,13 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:63"
-category = "kernel-mismatch"
+category = "dummy-cas-expectation"
 reason = "Number(5.0) does not match `NaN` (expected undefined, kernel has a value)"
 mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:69"
-category = "kernel-mismatch"
+category = "dummy-cas-expectation"
 reason = "Number(3.0) does not match `NaN` (expected undefined, kernel has a value)"
 mismatches = ["a"]
 

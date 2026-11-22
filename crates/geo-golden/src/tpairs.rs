@@ -490,6 +490,11 @@ pub enum Category {
     /// command: a bug to fix, the reason the lane exists.
     #[serde(rename = "kernel-mismatch")]
     KernelMismatch,
+    /// The recorded GeoGebra value comes from the harness without a CAS
+    /// backend (its dummy CAS answers nothing), while the upstream test
+    /// expects a mocked CAS value; the kernel's own answer is the real one.
+    #[serde(rename = "dummy-cas-expectation")]
+    DummyCasExpectation,
     /// The method does something between the steps that the replay cannot
     /// (a move, a settings change, Java-side state), so later steps may
     /// legitimately differ.
@@ -533,6 +538,7 @@ impl Category {
             Category::TextFormatting => "text-formatting",
             Category::ThreeD => "3d",
             Category::KernelMismatch => "kernel-mismatch",
+            Category::DummyCasExpectation => "dummy-cas-expectation",
             Category::IncompleteContext => "incomplete-context",
             Category::Redefine => "redefine",
             Category::UnsupportedType => "unsupported-type",
@@ -978,6 +984,10 @@ fn classify(
     if bad.iter().any(|d| d.why.contains("(unsupported-type)")) {
         return Category::UnsupportedType;
     }
+    let mocked_cas = pair
+        .note
+        .as_deref()
+        .is_some_and(|note| note.contains("mocked CAS"));
     if bad
         .iter()
         .any(|d| d.why.contains("the kernel has no object with this label"))
@@ -985,7 +995,11 @@ fn classify(
         return Category::KernelMismatch;
     }
     if bad.iter().any(|d| d.why.contains("does not match")) {
-        return Category::KernelMismatch;
+        return if mocked_cas {
+            Category::DummyCasExpectation
+        } else {
+            Category::KernelMismatch
+        };
     }
     if bad
         .iter()

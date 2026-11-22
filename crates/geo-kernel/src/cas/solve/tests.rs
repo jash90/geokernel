@@ -262,3 +262,87 @@ fn large_coefficients_keep_tiny_roots_and_large_exact_radicands() {
     assert!((roots[0].value() / 1e38 + 1.0).abs() < 1e-9);
     assert!((roots[1].value() * 1e38 + 1.0).abs() < 1e-9);
 }
+
+#[test]
+#[allow(clippy::excessive_precision)] // exact f64 bit patterns of the roots
+fn wilkinson_products_stay_correct_to_the_last_double_bit() {
+    // product(x - i, i = 1..n) + 1: the reference harness answers every root
+    // as the 12-digit rounding of these values, so anything but full double
+    // precision (the roots sit up to 4.1e-13 away from the integers) shows.
+    for (degree, expected) in [
+        (
+            18_usize,
+            &[
+                1.000_000_000_000_002_9,
+                1.999_999_999_999_952_3,
+                3.000_000_000_000_382_4,
+                3.999_999_999_998_088_2,
+                5.000_000_000_006_691_5,
+                5.999_999_999_982_602_4,
+                7.000_000_000_034_794_4,
+                7.999_999_999_945_322_8,
+                9.000_000_000_068_347_1,
+                9.999_999_999_931_652_9,
+                11.000_000_000_054_678,
+                11.999_999_999_965_205,
+                13.000_000_000_017_398,
+                13.999_999_999_993_308,
+                15.000_000_000_001_911,
+                15.999_999_999_999_618,
+                17.000_000_000_000_046,
+                17.999_999_999_999_996,
+            ][..],
+        ),
+        (
+            20,
+            &[
+                1.0,
+                1.999_999_999_999_999_8,
+                3.000_000_000_000_001_3,
+                3.999_999_999_999_992,
+                5.000_000_000_000_032,
+                5.999_999_999_999_904_1,
+                7.000_000_000_000_222_9,
+                7.999_999_999_999_586_1,
+                9.000_000_000_000_621_7,
+                9.999_999_999_999_239_7,
+                11.000_000_000_000_76,
+                11.999_999_999_999_378,
+                13.000_000_000_000_414,
+                13.999_999_999_999_776,
+                15.000_000_000_000_096,
+                15.999_999_999_999_968,
+                17.000_000_000_000_007,
+                18.0,
+                19.0,
+                20.0,
+            ][..],
+        ),
+    ] {
+        let scale = |value: i128| rational(value, 1);
+        let mut polynomial = vec![Rat::ONE];
+        for root in 1..=degree {
+            let mut next = vec![Rat::ZERO; polynomial.len() + 1];
+            for (i, &coefficient) in polynomial.iter().enumerate() {
+                next[i] = next[i]
+                    .add(coefficient.mul(scale(-(root as i128))).unwrap())
+                    .unwrap();
+                next[i + 1] = next[i + 1].add(coefficient).unwrap();
+            }
+            polynomial = next;
+        }
+        polynomial[0] = polynomial[0].add(Rat::ONE).unwrap();
+        let mut work = Work::new(&|_| true);
+        let Some(Roots::Finite(roots)) = real_roots(&polynomial, &mut work) else {
+            panic!("expected {degree} numeric roots");
+        };
+        assert_eq!(roots.len(), expected.len());
+        for (root, exact) in roots.iter().zip(expected) {
+            assert!(
+                (root.value() - exact).abs() <= 4.0 * f64::EPSILON * exact.abs().max(1.0),
+                "root {} is not {exact} to double precision",
+                root.value()
+            );
+        }
+    }
+}

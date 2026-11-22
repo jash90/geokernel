@@ -1317,15 +1317,13 @@ final class Session {
         if (!list.isDefined()) {
             return result;
         }
-        List<GeoElement> ordered = new ArrayList<>();
-        for (int i = 0; i < list.size(); i++) {
-            ordered.add(list.get(i));
-        }
-        ordered.sort(Session::compareSolution);
         List<Object> elements = new ArrayList<>();
-        for (GeoElement e : ordered) {
+        for (int i = 0; i < list.size(); i++) {
+            GeoElement e = list.get(i);
             // For a system in a single variable Solve nests all assignments
-            // in one list. Sort that multiset without reordering tuple axes.
+            // in one list. Describe that nested list without reordering it,
+            // exactly as the outer one: the recorded order is the order
+            // GeoGebra answers, which `Element(Solutions(...), k)` reads.
             if (e instanceof GeoList row && sameCoordinateAssignments(row)) {
                 elements.add(describeSolutions(row));
             } else {
@@ -1353,45 +1351,6 @@ final class Session {
             }
         }
         return true;
-    }
-
-    private static int compareSolution(GeoElement a, GeoElement b) {
-        if (a instanceof GeoList as && b instanceof GeoList bs) {
-            for (int i = 0; i < Math.min(as.size(), bs.size()); i++) {
-                int cmp = compareSolution(as.get(i), bs.get(i));
-                if (cmp != 0) {
-                    return cmp;
-                }
-            }
-            return Integer.compare(as.size(), bs.size());
-        }
-        int rank = Boolean.compare(a instanceof GeoFunction, b instanceof GeoFunction);
-        if (rank != 0) {
-            return rank;
-        }
-        int coordinate = Double.compare(solutionCoordinate(a, 0), solutionCoordinate(b, 0));
-        if (coordinate == 0 && a instanceof GeoFunction && b instanceof GeoFunction) {
-            return Double.compare(solutionCoordinate(a, 1), solutionCoordinate(b, 1));
-        }
-        return coordinate;
-    }
-
-    private static double solutionCoordinate(GeoElement element, int sample) {
-        if (element instanceof GeoFunction function) {
-            return function.value(SAMPLES[sample]);
-        }
-        if (element instanceof GeoNumeric n) {
-            return n.getDouble();
-        }
-        if (element instanceof GeoLine line && line.isDefined()) {
-            if (line.getY() == 0) {
-                return -line.getZ() / line.getX();
-            }
-            if (line.getX() == 0) {
-                return -line.getZ() / line.getY();
-            }
-        }
-        return Double.NaN;
     }
 
     static Map<String, Object> describe(GeoElement geo, String type) {

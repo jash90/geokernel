@@ -106,4 +106,91 @@ c.case("projection", ["p = Numerator(123456/789012)", "q = Denominator(123456/78
 c.case("projection", ["a = 123456/789012", "p = Numerator(a)", "q = Denominator(a)"], [])
 c.case("solve", ["result = Solutions({x*y=0},{x,y})"], [])
 c.case("solve", ["result = Solutions({x^2-y^2=0},{x,y})"], [])
+
+
+def times(a, b):
+    """Product of two polynomials given by ascending coefficients."""
+    out = [0] * (len(a) + len(b) - 1)
+    for i, x in enumerate(a):
+        for j, y in enumerate(b):
+            out[i + j] += x * y
+    return out
+
+
+def linear_product(roots):
+    polynomial = [1]
+    for root in roots:
+        polynomial = times(polynomial, [-root, 1])
+    return polynomial
+
+
+def polynomial(polynomial):
+    """GeoGebra input of a polynomial given by ascending coefficients."""
+    terms = []
+    for exponent, coefficient in enumerate(polynomial):
+        if coefficient == 0:
+            continue
+        if exponent == 0:
+            terms.append(str(coefficient))
+        elif exponent == 1:
+            terms.append("x" if coefficient == 1 else f"{coefficient}*x")
+        else:
+            power = f"x^{exponent}"
+            terms.append(power if coefficient == 1 else f"{coefficient}*{power}")
+    return "+".join(terms).replace("+-", "-")
+
+
+def shifted(constant):
+    return [c + 1 if i == 0 else c for i, c in enumerate(constant)]
+
+
+# Wilkinson-style products: the exact coefficients dwarf f64 precision, so a
+# solver that rounds them first cannot return the roots to full precision.
+for degree in (18, 20):
+    expression = polynomial(shifted(linear_product(range(1, degree + 1))))
+    c.case("solve", [f"result = Solutions({expression} = 0)"], [])
+    c.case("solve", [f"result = NSolutions({expression})"], [])
+c.case("solve", [f"result = Solve({polynomial(shifted(linear_product(range(1, 21))))} = 0)"], [])
+
+# A root shared by the numerator and the denominator must cancel, not drop.
+for expression in ["x^2/x", "(x-1)^2/(x-1)"]:
+    c.case("solve", [f"result = Solutions({expression} = 0)"], [])
+    c.case("solve", [f"result = Solve({expression} = 0)"], [])
+    c.case("solve", [f"result = NSolutions({expression})"], [])
+
+# The order of the solutions decides every Element(..., k).
+for expression, count in [
+    ("x^2-3", 2), ("x^3-x", 3), ("x^4-5*x^2+4", 4),
+]:
+    script = [f"e{k} = Element(Solutions({expression}), {k})" for k in range(1, count + 1)]
+    c.case("solve", script, [])
+c.case("solve", [
+    "first = Element(NSolutions(%s), 1)" % polynomial(shifted(linear_product(range(1, 21)))),
+    "last = Element(NSolutions(%s), 20)" % polynomial(shifted(linear_product(range(1, 21)))),
+], [])
+
+# Cyclotomic inputs: every x^n - 1 and x^n + 1 factors over the rationals.
+for n in range(15, 31):
+    c.case("factor", [f"result = Factor(x^{n}-1)"], [])
+for n in [15, 16, 20, 21, 22, 25, 26, 30, 32]:
+    c.case("factor", [f"result = Factor(x^{n}+1)"], [])
+# Products of many linear factors must peel their rational roots.
+for degree in range(16, 21):
+    c.case("factor", [f"result = Factor({polynomial(linear_product(range(1, degree + 1)))})"], [])
+# Swinnerton-Dyer style polynomials: irreducible over the rationals, yet
+# reducible modulo every prime, so only exhaustive recombination proves it.
+c.case("factor", ["result = Factor(%s)" % polynomial(
+    [46225, 0, -5596840, 0, 13950764, 0, -7453176, 0,
+     1513334, 0, -141912, 0, 6476, 0, -136, 0, 1])], [])
+c.case("factor", ["result = Factor(%s)" % polynomial(
+    [576, 0, -960, 0, 352, 0, -40, 0, 1])], [])
+
+# Inputs at and beyond the largest exact integer GeoGebra accepts.
+for expression in [
+    "NextPrime(9007199254740991)", "NextPrime(9007199254740992)",
+    "PreviousPrime(9007199254740992)", "NextPrime(9007199254741990)",
+    "PreviousPrime(9007199254741990)", "NextPrime(-7)", "PreviousPrime(-7)",
+    "NextPrime(-2.5)", "PreviousPrime(-2.5)", "NextPrime(1)", "PreviousPrime(1)",
+]:
+    c.case("prime", [f"result = {expression}"], [])
 c.write()

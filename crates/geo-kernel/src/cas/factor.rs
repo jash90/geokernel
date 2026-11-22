@@ -5,7 +5,7 @@ mod modular;
 use super::rational::gcd as integer_gcd;
 use super::{Rat, Work};
 
-pub(super) const FACTOR_MAX_DEGREE: usize = 16;
+pub(super) const FACTOR_MAX_DEGREE: usize = 32;
 pub(super) const KRONECKER_MAX_DEGREE: usize = 24;
 pub(super) const GCD_MAX_DEGREE: usize = 64;
 
@@ -53,7 +53,7 @@ fn div_rem(dividend: &[Rat], divisor: &[Rat], work: &mut Work<'_>) -> Option<(Ve
     Some((quotient, remainder))
 }
 
-pub(super) fn divide_exact(
+pub(crate) fn divide_exact(
     dividend: &[Rat],
     divisor: &[Rat],
     work: &mut Work<'_>,
@@ -68,7 +68,7 @@ pub(super) fn divide_exact(
     remainder.is_empty().then_some(quotient)
 }
 
-pub(super) fn gcd(left: &[Rat], right: &[Rat], work: &mut Work<'_>) -> Option<Vec<Rat>> {
+pub(crate) fn gcd(left: &[Rat], right: &[Rat], work: &mut Work<'_>) -> Option<Vec<Rat>> {
     work.spend(left.len().checked_add(right.len())?)?;
     let left = trimmed(left);
     let right = trimmed(right);
@@ -239,6 +239,9 @@ fn constrained_factor(
     if coefficients.len() > degree_limit + 1 {
         return None;
     }
+    if let Some(cyclotomic) = cyclotomic_split(coefficients, work)? {
+        return Some(cyclotomic);
+    }
     let (scalar, square_free_parts) = square_free(coefficients, work)?;
     let mut factors = Vec::new();
     for (part, multiplicity) in square_free_parts {
@@ -253,6 +256,56 @@ fn constrained_factor(
         }
     }
     Some((scalar, factors))
+}
+
+/// A scalar multiple of `x^n - 1` or `x^n + 1` splits into the cyclotomic
+/// polynomials it is the product of — each irreducible over the rationals —
+/// by exact division alone, without any modular factorization. `x^15 - 1`
+/// and its relatives defeat the subset recombination of the Berlekamp–
+/// Zassenhaus path (every prime splits them into many factors), which is
+/// why they take this road. Inner `None`: not of this shape.
+fn cyclotomic_split(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Option<Decomposition>> {
+    let Some(leading) = coefficients.last().copied() else {
+        return Some(None);
+    };
+    let degree = coefficients.len() - 1;
+    if degree < 2
+        || coefficients[1..degree]
+            .iter()
+            .any(|coefficient| *coefficient != Rat::ZERO)
+    {
+        return Some(None);
+    }
+    let plus = coefficients[0] == leading;
+    if !plus && coefficients[0] != leading.neg()? {
+        return Some(None);
+    }
+    // x^n + 1 is the product of Phi_d over the divisors d of 2n that do not
+    // divide n; x^n - 1 over the divisors of n. Every Phi_d is built from
+    // x^d - 1 divided by all the Phi_e with e a proper divisor of d — also
+    // the ones the answer will not keep, since x^d - 1 contains them too.
+    let target = if plus { 2 * degree } else { degree };
+    let mut cyclotomics: Vec<(usize, Vec<Rat>)> = Vec::new();
+    for divisor in 1..=target {
+        if target % divisor != 0 {
+            continue;
+        }
+        let mut numerator = vec![Rat::ZERO; divisor + 1];
+        numerator[0] = Rat::ONE.neg()?;
+        numerator[divisor] = Rat::ONE;
+        for &(smaller, ref phi) in &cyclotomics {
+            if divisor.is_multiple_of(smaller) {
+                numerator = divide_exact(&numerator, phi, work)?;
+            }
+        }
+        cyclotomics.push((divisor, numerator));
+    }
+    let factors = cyclotomics
+        .into_iter()
+        .filter(|&(divisor, _)| !plus || !degree.is_multiple_of(divisor))
+        .map(|(_, phi)| (phi, 1))
+        .collect::<Vec<_>>();
+    Some(Some((leading, factors)))
 }
 
 pub(super) fn rational_roots(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Vec<Rat>> {
@@ -273,6 +326,47 @@ mod tests {
             .iter()
             .map(|&value| Rat::new(value, 1).unwrap())
             .collect()
+    }
+
+    /// A work meter with the budget of a CAS command: `metered!(work, spent)`
+    /// declares both; afterwards `spent.get()` reports the units charged.
+    macro_rules! metered {
+        ($work:ident, $spent:ident) => {
+            let $spent = std::cell::Cell::new(0_usize);
+            let charge = |n: usize| {
+                let total = $spent.get() + n;
+                $spent.set(total);
+                total <= 500_000
+            };
+            let mut $work = Work::new(&charge);
+        };
+    }
+
+    fn product_of(factors: &[(Vec<Rat>, u32)]) -> Vec<Rat> {
+        let mut product = vec![Rat::ONE];
+        for (factor, multiplicity) in factors {
+            for _ in 0..*multiplicity {
+                let mut next = vec![Rat::ZERO; product.len() + factor.len() - 1];
+                for (i, &a) in product.iter().enumerate() {
+                    for (j, &b) in factor.iter().enumerate() {
+                        next[i + j] = next[i + j].add(a.mul(b).unwrap()).unwrap();
+                    }
+                }
+                product = next;
+            }
+        }
+        product
+    }
+
+    fn binomial(degree: usize, plus: bool) -> Vec<Rat> {
+        let mut coefficients = vec![Rat::ZERO; degree + 1];
+        coefficients[0] = if plus {
+            Rat::ONE
+        } else {
+            Rat::ONE.neg().unwrap()
+        };
+        coefficients[degree] = Rat::ONE;
+        coefficients
     }
 
     #[test]
@@ -377,5 +471,94 @@ mod tests {
             primitive(&coefficients, &mut Work::new(&|_| true)),
             Some(vec![3, 2]),
         );
+    }
+
+    #[test]
+    fn cyclotomic_shortcut_splits_binomials_of_every_degree() {
+        // The golden cas-factor cases (GeoGebra with Giac factors these
+        // instantly): x^n - 1 for every n up to 30 and x^n + 1 beyond the
+        // subset recombination limit of the plain Berlekamp-Zassenhaus path.
+        let mut work = Work::new(&|_| true);
+        for degree in 2..=30 {
+            for plus in [false, true] {
+                let coefficients = binomial(degree, plus);
+                let (scalar, factors) = factor(&coefficients, &mut work).unwrap();
+                assert_eq!(scalar, Rat::ONE, "leading of x^{degree} +/- 1");
+                // x^n - 1 counts the divisors of n, x^n + 1 the divisors of
+                // 2n that do not divide n (a power of two leaves Phi_2n alone).
+                let expected = if plus {
+                    (1..=2 * degree)
+                        .filter(|d| 2 * degree % d == 0 && degree % d != 0)
+                        .count()
+                } else {
+                    (1..=degree).filter(|d| degree % d == 0).count()
+                };
+                assert_eq!(factors.len(), expected, "x^{degree} +/- 1");
+                for (factor, multiplicity) in &factors {
+                    assert_eq!(*multiplicity, 1);
+                    assert_eq!(factor.last().copied().unwrap(), Rat::ONE);
+                }
+                assert_eq!(product_of(&factors), coefficients, "x^{degree} +/- 1");
+            }
+        }
+    }
+
+    #[test]
+    fn swinnerton_dyer_polynomials_stay_irreducible_within_budget() {
+        // cas-factor-041/042: Swinnerton-Dyer style inputs split into many
+        // factors modulo every prime, so no single reduction certifies
+        // irreducibility — only the exhaustive, Landau-bounded recombination
+        // does. The degree-16 input must not exhaust the work budget either.
+        let swinnerton_dyer_16 = integers(&[
+            46225, 0, -5596840, 0, 13950764, 0, -7453176, 0, 1513334, 0, -141912, 0, 6476, 0, -136,
+            0, 1,
+        ]);
+        metered!(work, spent);
+        let factorization = factor(&swinnerton_dyer_16, &mut work);
+        assert!(spent.get() <= 500_000, "spent {}", spent.get());
+        assert_eq!(
+            factorization,
+            Some((Rat::ONE, vec![(swinnerton_dyer_16, 1)])),
+            "spent {}",
+            spent.get()
+        );
+        // cas-factor-042: the degree-8 twin, irreducible the same way.
+        let swinnerton_dyer_8 = integers(&[576, 0, -960, 0, 352, 0, -40, 0, 1]);
+        metered!(work, spent);
+        let (scalar, factors) = factor(&swinnerton_dyer_8, &mut work).unwrap();
+        assert!(spent.get() <= 500_000, "spent {}", spent.get());
+        assert_eq!(
+            (scalar, factors),
+            (Rat::ONE, vec![(swinnerton_dyer_8.clone(), 1)])
+        );
+    }
+
+    #[test]
+    fn products_of_many_linear_factors_peel_rational_roots_first() {
+        // cas-factor-036..040: a product of 16 to 20 rational roots takes the
+        // rational-root peeling instead of the subset recombination.
+        for degree in [16, 17, 18, 19, 20] {
+            let mut polynomial = vec![Rat::ONE];
+            for root in 1..=degree as i128 {
+                let factor = integers(&[-root, 1]);
+                let mut next = vec![Rat::ZERO; polynomial.len() + 1];
+                for (i, &a) in polynomial.iter().enumerate() {
+                    for (j, &b) in factor.iter().enumerate() {
+                        next[i + j] = next[i + j].add(a.mul(b).unwrap()).unwrap();
+                    }
+                }
+                polynomial = next;
+            }
+            metered!(work, spent);
+            let (scalar, factors) = factor(&polynomial, &mut work).unwrap();
+            assert!(
+                spent.get() <= 500_000,
+                "degree {degree} spent {}",
+                spent.get()
+            );
+            assert_eq!(scalar, Rat::ONE);
+            assert_eq!(factors.len(), degree, "degree {degree}");
+            assert_eq!(product_of(&factors), polynomial);
+        }
     }
 }

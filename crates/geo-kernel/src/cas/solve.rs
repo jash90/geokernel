@@ -4,6 +4,7 @@ use std::cmp::Ordering;
 
 use super::{factor, Rat, Work};
 
+mod extended;
 mod system;
 #[cfg(test)]
 mod tests;
@@ -300,141 +301,10 @@ fn integer_root(n: i128, degree: u8, work: &mut Work<'_>) -> Option<Option<i128>
 }
 
 fn numeric(coefficients: &[Rat], repeated: bool, work: &mut Work<'_>) -> Option<Vec<Root>> {
-    let approximate: Vec<_> = coefficients.iter().map(|a| a.to_f64()).collect();
     Some(
-        isolate(&approximate, repeated, work)?
+        extended::numeric(coefficients, repeated, work)?
             .into_iter()
             .map(Root::Numeric)
             .collect(),
     )
-}
-
-/// Rolle's theorem partitions the real line into monotone intervals using
-/// the roots of the derivative. A strict sign change on one such interval
-/// encloses exactly one root. Square-free input does not need to classify a
-/// tiny residual at a critical point as a possible repeated root.
-fn isolate(coefficients: &[f64], repeated: bool, work: &mut Work<'_>) -> Option<Vec<f64>> {
-    work.spend(coefficients.len())?;
-    let Some(degree) = coefficients.iter().rposition(|&a| a != 0.0) else {
-        return Some(Vec::new());
-    };
-    let coefficients = &coefficients[..=degree];
-    let first = coefficients.iter().position(|&a| a != 0.0)?;
-    if first != 0 {
-        let mut roots = isolate(&coefficients[first..], repeated, work)?;
-        roots.insert(roots.partition_point(|&root| root < 0.0), 0.0);
-        return Some(roots);
-    }
-    match coefficients {
-        [_] => return Some(Vec::new()),
-        [b, a] => {
-            let root = -b / a;
-            return root.is_finite().then_some(vec![root]);
-        }
-        _ => {}
-    }
-    let derivative: Vec<_> = coefficients
-        .iter()
-        .enumerate()
-        .skip(1)
-        .map(|(i, a)| i as f64 * a)
-        .collect();
-    let critical = isolate(&derivative, false, work)?;
-    // Fujiwara's bound encloses roots even with a small leading coefficient.
-    // https://doi.org/10.1627/tmj1911.8.78
-    let bound = 2.0
-        * coefficients[..degree]
-            .iter()
-            .enumerate()
-            .map(|(i, a)| {
-                (a / coefficients[degree])
-                    .abs()
-                    .powf(1.0 / (degree - i) as f64)
-            })
-            .fold(1.0_f64, f64::max);
-    if !bound.is_finite() {
-        return None;
-    }
-    let mut roots = Vec::new();
-    let mut left = -bound;
-    let mut sign_left = sample(coefficients, left, false, work)?;
-    for right in critical
-        .into_iter()
-        .filter(|x| x.abs() < bound)
-        .chain([bound])
-    {
-        let sign_right = sample(coefficients, right, repeated, work)?;
-        if sign_right == 0.0 && right != bound {
-            roots.push(right);
-        } else if sign_left * sign_right < 0.0 {
-            roots.push(bisect(coefficients, left, right, sign_left, work)?);
-        }
-        (left, sign_left) = (right, sign_right);
-    }
-    Some(roots)
-}
-
-fn sample(coefficients: &[f64], x: f64, repeated: bool, work: &mut Work<'_>) -> Option<f64> {
-    work.spend(coefficients.len())?;
-    let (value, envelope) = scaled_value(coefficients, x);
-    if repeated && value.abs() <= 8.0 * f64::EPSILON * envelope || value == 0.0 {
-        return Some(0.0);
-    }
-    value.is_finite().then(|| value.signum())
-}
-
-fn scaled_value(coefficients: &[f64], x: f64) -> (f64, f64) {
-    // For large |x|, evaluate x^-degree * p(x) at 1/x. This keeps all
-    // accumulated values bounded by the magnitude of the coefficients.
-    if x.abs() <= 1.0 {
-        horner(coefficients.iter().rev().copied(), x)
-    } else {
-        let (value, envelope) = horner(coefficients.iter().copied(), 1.0 / x);
-        let change_sign = x < 0.0 && coefficients.len().is_multiple_of(2);
-        (if change_sign { -value } else { value }, envelope)
-    }
-}
-
-fn horner(coefficients: impl Iterator<Item = f64>, x: f64) -> (f64, f64) {
-    let (mut sum, mut error, mut envelope) = (0.0_f64, 0.0_f64, 0.0_f64);
-    for a in coefficients {
-        // Compensated Horner with error-free transformations for the
-        // product and sum (Graillat, Langlois and Louvet, 2005).
-        let product = sum * x;
-        let next = product + a;
-        let recovered = next - product;
-        let lost = (product - (next - recovered)) + (a - recovered);
-        error = error.mul_add(x, sum.mul_add(x, -product) + lost);
-        sum = next;
-        envelope = envelope.mul_add(x.abs(), a.abs());
-    }
-    (sum + error, envelope)
-}
-
-fn bisect(
-    coefficients: &[f64],
-    mut left: f64,
-    mut right: f64,
-    sign_left: f64,
-    work: &mut Work<'_>,
-) -> Option<f64> {
-    for _ in 0..640 {
-        let mid = left.midpoint(right);
-        if mid == left || mid == right {
-            work.spend(2 * coefficients.len())?;
-            let l = scaled_value(coefficients, left).0.abs();
-            let r = scaled_value(coefficients, right).0.abs();
-            return Some(if l <= r { left } else { right });
-        }
-        let sign = sample(coefficients, mid, false, work)?;
-        if sign == 0.0 {
-            return Some(mid);
-        }
-        if sign == sign_left {
-            left = mid;
-        } else {
-            right = mid;
-        }
-    }
-    None
 }
