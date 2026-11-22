@@ -250,6 +250,14 @@ cases.case("maximizepoint", [
     "b = 1", "f = sqrt(x(P) - b)", "M = Maximize(f, P)", "w = x(P)",
 ], [setn("b", 4), setn("b", -1), setn("b", 1)])
 
+cases.case("maximizepoint", [
+    "r = 5", "C = (1, 2)", "c = Circle(C, r)", "P = Point(c)", "M = Maximize(x(P) + y(P), P)",
+], [setn("r", -1), setn("r", 2), mv("C", -3, 0)])
+cases.case("maximizepoint", [
+    "A = (0, 0)", "B = (4, 0)", "C = (4, 3)", "D = (0, 3)", "q = Polygon(A, B, C, D)",
+    "F = (1, 1)", "P = Point(q)", "M = Maximize(Distance(P, F), P)", "F1 = (0, 0)", "F2 = (3, 0)", "k = 4", "e = Ellipse(F1, F2, k)",
+    "Q = Point(e)", "N = Maximize(x(Q) * y(Q), Q)",
+], [mv("C", 6, 5)])
 cases.case("minimizepoint", [
     "C = (3, 4)", "c = Circle(C, 5)", "P = Point(c)", "a = y(P)", "M = Minimize(a, P)",
 ], [mv("P", 8, 4)])
@@ -268,6 +276,14 @@ cases.case("minimizepoint", [
     "A = (0, 0)", "B = (6, 0)", "P = Point(Segment(A, B))",
     "b = 1", "f = sqrt(x(P) - b)", "M = Minimize(f, P)",
 ], [setn("b", 4), setn("b", -1), setn("b", 1)])
+cases.case("minimizepoint", [
+    "r = 5", "C = (1, 2)", "c = Circle(C, r)", "P = Point(c)", "M = Minimize(x(P) - 2y(P), P)",
+], [setn("r", -1), setn("r", 2), mv("C", -3, 0)])
+cases.case("minimizepoint", [
+    "A = (0, 0)", "B = (4, 0)", "C = (4, 3)", "D = (0, 3)", "q = Polygon(A, B, C, D)",
+    "F = (1, 1)", "P = Point(q)", "M = Minimize(Distance(P, F), P)", "F1 = (0, 0)", "F2 = (3, 0)", "k = 4", "e = Ellipse(F1, F2, k)",
+    "Q = Point(e)", "N = Minimize(x(Q) * y(Q), Q)",
+], [mv("C", 6, 5)])
 
 # The remaining Sum forms.
 cases.case("sum", [

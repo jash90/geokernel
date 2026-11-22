@@ -206,6 +206,163 @@
           "w": { "type": "number", "defined": true, "value": 0.0 }
         }
       ]
+    },
+    {
+      "id": "misc-maximizepoint-006",
+      "group": "misc",
+      "script": [
+        "r = 5",
+        "C = (1, 2)",
+        "c = Circle(C, r)",
+        "P = Point(c)",
+        "M = Maximize(x(P) + y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "set_number", "label": "r", "value": 2.0 },
+        { "action": "move", "label": "C", "x": -3.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 0.10557280900008414, "y": 0.2111456180001683 },
+          "M": { "type": "point", "defined": true, "x": 2.414213526661084, "y": 3.4142135980851056 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "C": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": -3.0, "cy": 0.0, "r": 2.0 },
+          "P": { "type": "point", "defined": true, "x": -3.8944271909999157, "y": -1.7888543819998317 },
+          "M": { "type": "point", "defined": true, "x": -1.5857864376013093, "y": 1.4142135623474994 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-007",
+      "group": "misc",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (4, 3)",
+        "D = (0, 3)",
+        "q = Polygon(A, B, C, D)",
+        "F = (1, 1)",
+        "P = Point(q)",
+        "M = Maximize(Distance(P, F), P)",
+        "F1 = (0, 0)",
+        "F2 = (3, 0)",
+        "k = 4",
+        "e = Ellipse(F1, F2, k)",
+        "Q = Point(e)",
+        "N = Maximize(x(Q) * y(Q), Q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 6.0, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [4.0, 3.0],
+              [0.0, 3.0]
+            ],
+            "area": 12.0,
+            "signed_area": 12.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 4.0, "y2": 3.0 },
+          "c": { "type": "segment", "defined": true, "x1": 4.0, "y1": 3.0, "x2": 0.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 4.0, "y": 2.999999994753477 },
+          "F1": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F2": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "number", "defined": true, "value": 4.0 },
+          "e": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [220.0, 256.0, -3025.0, 0.0, -330.0, -0.0],
+            "midpoint": [1.5, 0.0],
+            "half_axes": [4.0, 3.7080992435478315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "Q": { "type": "point", "defined": true, "x": -2.5, "y": 4.541111869531574E-16 },
+          "N": { "type": "point", "defined": true, "x": 3.9781780511706035, "y": 2.9107152392826245 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [6.0, 5.0],
+              [0.0, 3.0]
+            ],
+            "area": 19.0,
+            "signed_area": 19.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 6.0, "y2": 5.0 },
+          "c": { "type": "segment", "defined": true, "x1": 6.0, "y1": 5.0, "x2": 0.0, "y2": 3.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 5.999999965486635, "y": 4.999999913716588 },
+          "F1": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "F2": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "number", "defined": true, "value": 4.0 },
+          "e": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [220.0, 256.0, -3025.0, 0.0, -330.0, -0.0],
+            "midpoint": [1.5, 0.0],
+            "half_axes": [4.0, 3.7080992435478315],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "Q": { "type": "point", "defined": true, "x": -2.5, "y": 4.541111869531574E-16 },
+          "N": { "type": "point", "defined": true, "x": 3.9781780511706035, "y": 2.9107152392826245 }
+        }
+      ]
     }
   ]
 }
