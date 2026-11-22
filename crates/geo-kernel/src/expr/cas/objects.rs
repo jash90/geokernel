@@ -74,6 +74,11 @@ fn equation(c: &mut Construction, label: &str, source: &str) -> Result<Id, Strin
     let result = (|| {
         let hidden = format!("\0arg{}", c.len());
         let object = crate::expr::equation::define(c, &hidden, source)?;
+        if !matches!(c.kind(object), Kind::Line | Kind::Conic | Kind::Circle) {
+            // An equation of higher degree is an implicit curve, which the
+            // reference rewrites into an implicit curve.
+            return Err("`Simplify` needs a line or a conic".into());
+        }
         let nodes = [Node::Obj(object), Node::Cas(Op::Simplify, 0, NONE)];
         let literals = vec![Lit::default(); nodes.len()];
         let parsed = reparse(c, Kind::Function, &nodes, &literals, 1)

@@ -1,0 +1,744 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-implicitrewrite-001",
+      "group": "cas",
+      "script": [
+        "k: x^3+y^3=1",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(3) + y^(3) = 1",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x³ + y³ = 1",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(3) + y^(3) - 1 = 0",
+            "input_form": true
+          },
+          "r3": { "type": "implicit", "defined": false },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x³ + y³ = 1",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicitrewrite-002",
+      "group": "cas",
+      "script": [
+        "k: x^3=8",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0],
+              [0.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) = 8",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0],
+              [0.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x³ = 8",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0],
+              [0.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "((x - 2) * (x^(2) + (2 * x) + 4)) = 0",
+            "input_form": true
+          },
+          "r3": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0],
+              [0.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "((x - 2) * (x^(2) + (2 * x) + 4)) = 0",
+            "input_form": true
+          },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0],
+              [0.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x³ = 8",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicitrewrite-003",
+      "group": "cas",
+      "script": [
+        "k: x^3-x=0",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) - x = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x³ - x = 0",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "((x * (x + 1)) * (x - 1)) = 0",
+            "input_form": true
+          },
+          "r3": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "((x * (x - 1)) * (x + 1)) = 0",
+            "input_form": true
+          },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x³ - x = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicitrewrite-004",
+      "group": "cas",
+      "script": [
+        "k: y^3=x",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0, 1.0],
+              [-1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "y^(3) = x",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0, 1.0],
+              [-1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-x + y³ = 0",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0, 1.0],
+              [-1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "y^(3) - x = 0",
+            "input_form": true
+          },
+          "r3": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0, 1.0],
+              [-1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "y^(3) - x = 0",
+            "input_form": true
+          },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0, 1.0],
+              [-1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-x + y³ = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicitrewrite-005",
+      "group": "cas",
+      "script": [
+        "k: x^2*y=1",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "equation": "(x^(2) * y) = 1",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "equation": "x² y = 1",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "equation": "(x^(2) * y) - 1 = 0",
+            "input_form": true
+          },
+          "r3": { "type": "implicit", "defined": false },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "equation": "x² y = 1",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicitrewrite-006",
+      "group": "cas",
+      "script": [
+        "k: x^3-x*y^2=0",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, -1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x^(3) - (x * y^(2)) = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, -1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x³ - x y² = 0",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, -1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "((x * (x + y)) * (x - y)) = 0",
+            "input_form": true
+          },
+          "r3": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, -1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "(((-x) * (x + y)) * ((-x) + y)) = 0",
+            "input_form": true
+          },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, -1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x³ - x y² = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicitrewrite-007",
+      "group": "cas",
+      "script": [
+        "k: (x+y)^3=1",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 3.0, 0.0],
+              [0.0, 3.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "(x + y)^(3) = 1",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 3.0, 0.0],
+              [0.0, 3.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x³ + 3x² y + 3x y² + y³ = 1",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 3.0, 0.0],
+              [0.0, 3.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "((x + y - 1) * (x^(2) + y^(2) + ((2 * x) * y) + x + y + 1)) = 0",
+            "input_form": true
+          },
+          "r3": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 3.0, 0.0],
+              [0.0, 3.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "((x + y - 1) * (x^(2) + y^(2) + ((2 * x) * y) + x + y + 1)) = 0",
+            "input_form": true
+          },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 3.0, 0.0],
+              [0.0, 3.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x³ + 3x² y + 3x y² + y³ = 1",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicitrewrite-008",
+      "group": "cas",
+      "script": [
+        "k: x^4+y^4=1",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ + y⁴ = 1",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) - 1 = 0",
+            "input_form": true
+          },
+          "r3": { "type": "implicit", "defined": false },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ + y⁴ = 1",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicitrewrite-009",
+      "group": "cas",
+      "script": [
+        "k: x^3+x*y=2",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(3) + (x * y) = 2",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x³ + x y = 2",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(3) + (x * y) - 2 = 0",
+            "input_form": true
+          },
+          "r3": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(3) + (x * y) - 2 = 0",
+            "input_form": true
+          },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x³ + x y = 2",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicitrewrite-010",
+      "group": "cas",
+      "script": [
+        "k: y^2=x^3-x",
+        "r1 = Expand(k)",
+        "r2 = Factor(k)",
+        "r3 = IFactor(k)",
+        "r4 = Simplify(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0]
+            ],
+            "equation": "y^(2) = x^(3) - x",
+            "input_form": true
+          },
+          "r1": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0]
+            ],
+            "equation": "-x³ + x + y² = 0",
+            "input_form": false
+          },
+          "r2": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0]
+            ],
+            "equation": "(-x^(3)) + y^(2) + x = 0",
+            "input_form": true
+          },
+          "r3": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0]
+            ],
+            "equation": "(-x^(3)) + x + y^(2) = 0",
+            "input_form": true
+          },
+          "r4": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0]
+            ],
+            "equation": "-x³ + x + y² = 0",
+            "input_form": false
+          }
+        }
+      ]
+    }
+  ]
+}

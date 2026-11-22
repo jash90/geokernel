@@ -1,0 +1,14 @@
+{
+  "cases": [
+    {"id": "cas-implicitrewrite-001", "group": "cas", "script": ["k: x^3+y^3=1", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-implicitrewrite-002", "group": "cas", "script": ["k: x^3=8", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-implicitrewrite-003", "group": "cas", "script": ["k: x^3-x=0", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-implicitrewrite-004", "group": "cas", "script": ["k: y^3=x", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-implicitrewrite-005", "group": "cas", "script": ["k: x^2*y=1", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-implicitrewrite-006", "group": "cas", "script": ["k: x^3-x*y^2=0", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-implicitrewrite-007", "group": "cas", "script": ["k: (x+y)^3=1", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-implicitrewrite-008", "group": "cas", "script": ["k: x^4+y^4=1", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-implicitrewrite-009", "group": "cas", "script": ["k: x^3+x*y=2", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-implicitrewrite-010", "group": "cas", "script": ["k: y^2=x^3-x", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]}
+  ]
+}

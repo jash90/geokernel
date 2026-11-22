@@ -56,7 +56,12 @@ pub(super) fn list<const M: bool>(
                     ctx.cas_slots(std::iter::empty())
                 };
             }
-            Node::Obj(id) if matches!(ctx.c.kind(id), Kind::Line | Kind::Conic | Kind::Circle) => {
+            Node::Obj(id)
+                if matches!(
+                    ctx.c.kind(id),
+                    Kind::Line | Kind::Conic | Kind::Circle | Kind::ImplicitCurve
+                ) =>
+            {
                 polynomials.push(object_equation(ctx.c, id)?);
             }
             _ => polynomials.push(read(ctx.c, ctx.e, i, vars, work)?),
@@ -296,6 +301,20 @@ fn object_equation(c: &crate::Construction, id: crate::Id) -> Option<crate::cas:
                 ([1, 0, 0], 2.0 * x),
                 ([0, 1, 0], 2.0 * y),
             ])
+        }
+        Kind::ImplicitCurve => {
+            // Rows are the powers of x, columns the powers of y.
+            let matrix = c.implicit_coefficients(id)?;
+            let terms: Vec<([u8; 3], f64)> = matrix
+                .iter()
+                .enumerate()
+                .flat_map(|(i, row)| {
+                    row.iter().enumerate().map(move |(j, &v)| {
+                        Some(([u8::try_from(i).ok()?, u8::try_from(j).ok()?, 0], v))
+                    })
+                })
+                .collect::<Option<_>>()?;
+            as_equation(&terms)
         }
         _ => None,
     }

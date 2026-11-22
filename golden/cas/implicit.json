@@ -1,0 +1,3005 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-implicit-001",
+      "group": "cas",
+      "script": [
+        "k: x^3+y^3=1",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(3) + y^(3) = 1",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.005204946165835],
+                  [-4.0, 4.020725758589058],
+                  [-2.0, 2.080083823051904],
+                  [-1.0, 1.2599210498948732],
+                  [-0.5, 1.040041911525952],
+                  [0.0, 1.0],
+                  [0.5, 0.9564655913861946],
+                  [1.0, -0.0],
+                  [2.0, -1.912931182772389],
+                  [4.0, -3.9790572078963917],
+                  [8.0, -7.994788272140555]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.005204946165835],
+                  [-4.0, 4.020725758589058],
+                  [-2.0, 2.080083823051904],
+                  [-1.0, 1.2599210498948732],
+                  [-0.5, 1.040041911525952],
+                  [0.0, 1.0],
+                  [0.5, 0.9564655913861946],
+                  [1.0, -0.0],
+                  [2.0, -1.912931182772389],
+                  [4.0, -3.9790572078963917],
+                  [8.0, -7.994788272140555]
+                ]
+              }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.005204946165835],
+                  [-4.0, 4.020725758589058],
+                  [-2.0, 2.080083823051904],
+                  [-1.0, 1.2599210498948732],
+                  [-0.5, 1.040041911525952],
+                  [0.0, 1.0],
+                  [0.5, 0.9564655913861946],
+                  [1.0, -0.0],
+                  [2.0, -1.912931182772389],
+                  [4.0, -3.9790572078963917],
+                  [8.0, -7.994788272140555]
+                ]
+              }
+            ]
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.005204946165835],
+                  [-4.0, 4.020725758589058],
+                  [-2.0, 2.080083823051904],
+                  [-1.0, 1.2599210498948732],
+                  [-0.5, 1.040041911525952],
+                  [0.0, 1.0],
+                  [0.5, 0.9564655913861946],
+                  [1.0, -0.0],
+                  [2.0, -1.912931182772389],
+                  [4.0, -3.9790572078963917],
+                  [8.0, -7.994788272140555]
+                ]
+              }
+            ]
+          },
+          "r11": { "type": "list", "defined": false },
+          "r12": { "type": "list", "defined": false },
+          "r13": { "type": "list", "defined": false },
+          "r14": { "type": "list", "defined": false },
+          "r15": { "type": "list", "defined": false },
+          "r16": { "type": "list", "defined": false },
+          "r17": { "type": "list", "defined": false },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.005204946165835],
+                  [-4.0, 4.020725758589058],
+                  [-2.0, 2.080083823051904],
+                  [-1.0, 1.2599210498948732],
+                  [-0.5, 1.040041911525952],
+                  [0.0, 1.0],
+                  [0.5, 0.9564655913861946],
+                  [1.0, -0.0],
+                  [2.0, -1.912931182772389],
+                  [4.0, -3.9790572078963917],
+                  [8.0, -7.994788272140555]
+                ]
+              }
+            ]
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-002",
+      "group": "cas",
+      "script": [
+        "k: x^3=8",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0],
+              [0.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) = 8",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r11": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r12": { "type": "list", "defined": false },
+          "r13": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r14": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r15": { "type": "list", "defined": false },
+          "r16": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r17": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-003",
+      "group": "cas",
+      "script": [
+        "k: x^3-x=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) - x = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r11": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r12": { "type": "list", "defined": false },
+          "r13": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r14": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r15": { "type": "list", "defined": false },
+          "r16": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r17": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+                ]
+              }
+            ]
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-004",
+      "group": "cas",
+      "script": [
+        "k: y^3=x",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0, 1.0],
+              [-1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "y^(3) = x",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "implicit",
+                "defined": true,
+                "coefficients": [
+                  [0.0, 0.0, 0.0, -1.0],
+                  [1.0, 0.0, 0.0, 0.0]
+                ],
+                "equation": "x - y³ = 0",
+                "input_form": false
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -512.0],
+                  [-4.0, -64.0],
+                  [-2.0, -8.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.125],
+                  [0.0, 0.0],
+                  [0.5, 0.125],
+                  [1.0, 1.0],
+                  [2.0, 8.0],
+                  [4.0, 64.0],
+                  [8.0, 512.0]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -2.0],
+                  [-4.0, -1.5874010519681994],
+                  [-2.0, -1.2599210498948732],
+                  [-1.0, -1.0],
+                  [-0.5, -0.7937005259840998],
+                  [0.0, -0.0],
+                  [0.5, 0.7937005259840998],
+                  [1.0, 1.0],
+                  [2.0, 1.2599210498948732],
+                  [4.0, 1.5874010519681994],
+                  [8.0, 2.0]
+                ]
+              }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "implicit",
+                "defined": true,
+                "coefficients": [
+                  [0.0, 0.0, 0.0, -1.0],
+                  [1.0, 0.0, 0.0, 0.0]
+                ],
+                "equation": "x - y³ = 0",
+                "input_form": false
+              }
+            ]
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "implicit",
+                "defined": true,
+                "coefficients": [
+                  [0.0, 0.0, 0.0, -1.0],
+                  [1.0, 0.0, 0.0, 0.0]
+                ],
+                "equation": "x - y³ = 0",
+                "input_form": false
+              }
+            ]
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -2.0],
+                  [-4.0, -1.5874010519681994],
+                  [-2.0, -1.2599210498948732],
+                  [-1.0, -1.0],
+                  [-0.5, -0.7937005259840998],
+                  [0.0, -0.0],
+                  [0.5, 0.7937005259840998],
+                  [1.0, 1.0],
+                  [2.0, 1.2599210498948732],
+                  [4.0, 1.5874010519681994],
+                  [8.0, 2.0]
+                ]
+              }
+            ]
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -512.0],
+                  [-4.0, -64.0],
+                  [-2.0, -8.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.125],
+                  [0.0, 0.0],
+                  [0.5, 0.125],
+                  [1.0, 1.0],
+                  [2.0, 8.0],
+                  [4.0, 64.0],
+                  [8.0, 512.0]
+                ]
+              }
+            ]
+          },
+          "r11": { "type": "list", "defined": false },
+          "r12": { "type": "list", "defined": false },
+          "r13": { "type": "list", "defined": false },
+          "r14": { "type": "list", "defined": false },
+          "r15": { "type": "list", "defined": false },
+          "r16": { "type": "list", "defined": false },
+          "r17": { "type": "list", "defined": false },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "implicit",
+                "defined": true,
+                "coefficients": [
+                  [0.0, 0.0, 0.0, -1.0],
+                  [1.0, 0.0, 0.0, 0.0]
+                ],
+                "equation": "x - y³ = 0",
+                "input_form": false
+              }
+            ]
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -512.0],
+                  [-4.0, -64.0],
+                  [-2.0, -8.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.125],
+                  [0.0, 0.0],
+                  [0.5, 0.125],
+                  [1.0, 1.0],
+                  [2.0, 8.0],
+                  [4.0, 64.0],
+                  [8.0, 512.0]
+                ]
+              }
+            ]
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-005",
+      "group": "cas",
+      "script": [
+        "k: x^2*y=1",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 1.0]
+            ],
+            "equation": "(x^(2) * y) = 1",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false },
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, -1.4142135623730951],
+                  [1.0, -1.0],
+                  [2.0, -0.7071067811865476],
+                  [4.0, -0.5],
+                  [8.0, -0.3535533905932738]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, 1.4142135623730951],
+                  [1.0, 1.0],
+                  [2.0, 0.7071067811865476],
+                  [4.0, 0.5],
+                  [8.0, 0.3535533905932738]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 0.015625],
+                  [-4.0, 0.0625],
+                  [-2.0, 0.25],
+                  [-1.0, 1.0],
+                  [-0.5, 4.0],
+                  [0.0, null],
+                  [0.5, 4.0],
+                  [1.0, 1.0],
+                  [2.0, 0.25],
+                  [4.0, 0.0625],
+                  [8.0, 0.015625]
+                ]
+              }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false },
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false },
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 0.015625],
+                  [-4.0, 0.0625],
+                  [-2.0, 0.25],
+                  [-1.0, 1.0],
+                  [-0.5, 4.0],
+                  [0.0, null],
+                  [0.5, 4.0],
+                  [1.0, 1.0],
+                  [2.0, 0.25],
+                  [4.0, 0.0625],
+                  [8.0, 0.015625]
+                ]
+              }
+            ]
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, -1.4142135623730951],
+                  [1.0, -1.0],
+                  [2.0, -0.7071067811865476],
+                  [4.0, -0.5],
+                  [8.0, -0.3535533905932738]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, 1.4142135623730951],
+                  [1.0, 1.0],
+                  [2.0, 0.7071067811865476],
+                  [4.0, 0.5],
+                  [8.0, 0.3535533905932738]
+                ]
+              }
+            ]
+          },
+          "r11": { "type": "list", "defined": false },
+          "r12": { "type": "list", "defined": false },
+          "r13": { "type": "list", "defined": false },
+          "r14": { "type": "list", "defined": false },
+          "r15": { "type": "list", "defined": false },
+          "r16": { "type": "list", "defined": false },
+          "r17": { "type": "list", "defined": false },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "implicit", "defined": false },
+                  { "type": "implicit", "defined": false }
+                ]
+              }
+            ]
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, null],
+                      [-4.0, null],
+                      [-2.0, null],
+                      [-1.0, null],
+                      [-0.5, null],
+                      [0.0, null],
+                      [0.5, -1.4142135623730951],
+                      [1.0, -1.0],
+                      [2.0, -0.7071067811865476],
+                      [4.0, -0.5],
+                      [8.0, -0.3535533905932738]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, null],
+                      [-4.0, null],
+                      [-2.0, null],
+                      [-1.0, null],
+                      [-0.5, null],
+                      [0.0, null],
+                      [0.5, 1.4142135623730951],
+                      [1.0, 1.0],
+                      [2.0, 0.7071067811865476],
+                      [4.0, 0.5],
+                      [8.0, 0.3535533905932738]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-006",
+      "group": "cas",
+      "script": [
+        "k: x^3-x*y^2=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, -1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x^(3) - (x * y^(2)) = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0],
+                  [-4.0, 4.0],
+                  [-2.0, 2.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.5],
+                  [0.0, -0.0],
+                  [0.5, -0.5],
+                  [1.0, -1.0],
+                  [2.0, -2.0],
+                  [4.0, -4.0],
+                  [8.0, -8.0]
+                ]
+              },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0],
+                  [-4.0, 4.0],
+                  [-2.0, 2.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.5],
+                  [0.0, -0.0],
+                  [0.5, -0.5],
+                  [1.0, -1.0],
+                  [2.0, -2.0],
+                  [4.0, -4.0],
+                  [8.0, -8.0]
+                ]
+              }
+            ]
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0],
+                  [-4.0, 4.0],
+                  [-2.0, 2.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.5],
+                  [0.0, -0.0],
+                  [0.5, -0.5],
+                  [1.0, -1.0],
+                  [2.0, -2.0],
+                  [4.0, -4.0],
+                  [8.0, -8.0]
+                ]
+              },
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r11": { "type": "list", "defined": false },
+          "r12": { "type": "list", "defined": false },
+          "r13": { "type": "list", "defined": false },
+          "r14": { "type": "list", "defined": false },
+          "r15": { "type": "list", "defined": false },
+          "r16": { "type": "list", "defined": false },
+          "r17": { "type": "list", "defined": false },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+                ]
+              }
+            ]
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 8.0],
+                      [-4.0, 4.0],
+                      [-2.0, 2.0],
+                      [-1.0, 1.0],
+                      [-0.5, 0.5],
+                      [0.0, -0.0],
+                      [0.5, -0.5],
+                      [1.0, -1.0],
+                      [2.0, -2.0],
+                      [4.0, -4.0],
+                      [8.0, -8.0]
+                    ]
+                  },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-007",
+      "group": "cas",
+      "script": [
+        "k: (x+y)^3=1",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 3.0, 0.0],
+              [0.0, 3.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "(x + y)^(3) = 1",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 9.0],
+                  [-4.0, 5.0],
+                  [-2.0, 3.0],
+                  [-1.0, 2.0],
+                  [-0.5, 1.5],
+                  [0.0, 1.0],
+                  [0.5, 0.5],
+                  [1.0, 0.0],
+                  [2.0, -1.0],
+                  [4.0, -3.0],
+                  [8.0, -7.0]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 9.0],
+                  [-4.0, 5.0],
+                  [-2.0, 3.0],
+                  [-1.0, 2.0],
+                  [-0.5, 1.5],
+                  [0.0, 1.0],
+                  [0.5, 0.5],
+                  [1.0, 0.0],
+                  [2.0, -1.0],
+                  [4.0, -3.0],
+                  [8.0, -7.0]
+                ]
+              }
+            ]
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 9.0],
+                  [-4.0, 5.0],
+                  [-2.0, 3.0],
+                  [-1.0, 2.0],
+                  [-0.5, 1.5],
+                  [0.0, 1.0],
+                  [0.5, 0.5],
+                  [1.0, 0.0],
+                  [2.0, -1.0],
+                  [4.0, -3.0],
+                  [8.0, -7.0]
+                ]
+              }
+            ]
+          },
+          "r11": { "type": "list", "defined": false },
+          "r12": { "type": "list", "defined": false },
+          "r13": { "type": "list", "defined": false },
+          "r14": { "type": "list", "defined": false },
+          "r15": { "type": "list", "defined": false },
+          "r16": { "type": "list", "defined": false },
+          "r17": { "type": "list", "defined": false },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 9.0],
+                  [-4.0, 5.0],
+                  [-2.0, 3.0],
+                  [-1.0, 2.0],
+                  [-0.5, 1.5],
+                  [0.0, 1.0],
+                  [0.5, 0.5],
+                  [1.0, 0.0],
+                  [2.0, -1.0],
+                  [4.0, -3.0],
+                  [8.0, -7.0]
+                ]
+              }
+            ]
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-008",
+      "group": "cas",
+      "script": [
+        "k: x^4+y^4=1",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false },
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.0],
+                  [-0.5, -0.9839948356327152],
+                  [0.0, -1.0],
+                  [0.5, -0.9839948356327152],
+                  [1.0, -0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, 0.9839948356327152],
+                  [0.0, 1.0],
+                  [0.5, 0.9839948356327152],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.0],
+                  [-0.5, -0.9839948356327152],
+                  [0.0, -1.0],
+                  [0.5, -0.9839948356327152],
+                  [1.0, -0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, 0.9839948356327152],
+                  [0.0, 1.0],
+                  [0.5, 0.9839948356327152],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false },
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false },
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.0],
+                  [-0.5, -0.9839948356327152],
+                  [0.0, -1.0],
+                  [0.5, -0.9839948356327152],
+                  [1.0, -0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, 0.9839948356327152],
+                  [0.0, 1.0],
+                  [0.5, 0.9839948356327152],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.0],
+                  [-0.5, -0.9839948356327152],
+                  [0.0, -1.0],
+                  [0.5, -0.9839948356327152],
+                  [1.0, -0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, 0.9839948356327152],
+                  [0.0, 1.0],
+                  [0.5, 0.9839948356327152],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r11": { "type": "list", "defined": false },
+          "r12": { "type": "list", "defined": false },
+          "r13": { "type": "list", "defined": false },
+          "r14": { "type": "list", "defined": false },
+          "r15": { "type": "list", "defined": false },
+          "r16": { "type": "list", "defined": false },
+          "r17": { "type": "list", "defined": false },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "implicit", "defined": false },
+                  { "type": "implicit", "defined": false }
+                ]
+              }
+            ]
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, null],
+                      [-4.0, null],
+                      [-2.0, null],
+                      [-1.0, -0.0],
+                      [-0.5, -0.9839948356327152],
+                      [0.0, -1.0],
+                      [0.5, -0.9839948356327152],
+                      [1.0, -0.0],
+                      [2.0, null],
+                      [4.0, null],
+                      [8.0, null]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, null],
+                      [-4.0, null],
+                      [-2.0, null],
+                      [-1.0, 0.0],
+                      [-0.5, 0.9839948356327152],
+                      [0.0, 1.0],
+                      [0.5, 0.9839948356327152],
+                      [1.0, 0.0],
+                      [2.0, null],
+                      [4.0, null],
+                      [8.0, null]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-009",
+      "group": "cas",
+      "script": [
+        "k: x^3+x*y=2",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-2.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(3) + (x * y) = 2",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": { "type": "list", "defined": false },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -64.25],
+                  [-4.0, -16.5],
+                  [-2.0, -5.0],
+                  [-1.0, -3.0],
+                  [-0.5, -4.25],
+                  [0.0, null],
+                  [0.5, 3.75],
+                  [1.0, 1.0],
+                  [2.0, -3.0],
+                  [4.0, -15.5],
+                  [8.0, -63.75]
+                ]
+              }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -64.25],
+                  [-4.0, -16.5],
+                  [-2.0, -5.0],
+                  [-1.0, -3.0],
+                  [-0.5, -4.25],
+                  [0.0, null],
+                  [0.5, 3.75],
+                  [1.0, 1.0],
+                  [2.0, -3.0],
+                  [4.0, -15.5],
+                  [8.0, -63.75]
+                ]
+              }
+            ]
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r11": { "type": "list", "defined": false },
+          "r12": { "type": "list", "defined": false },
+          "r13": { "type": "list", "defined": false },
+          "r14": { "type": "list", "defined": false },
+          "r15": { "type": "list", "defined": false },
+          "r16": { "type": "list", "defined": false },
+          "r17": { "type": "list", "defined": false },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-010",
+      "group": "cas",
+      "script": [
+        "k: y^2=x^3-x",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = Solve(k, y)",
+        "r7 = Solve(k, x)",
+        "r8 = Solve(k, x=1)",
+        "r9 = Solutions(k, y)",
+        "r10 = Solutions(k, x)",
+        "r11 = Solutions(k, x=1)",
+        "r12 = NSolve(k, y)",
+        "r13 = NSolve(k, x)",
+        "r14 = NSolve(k, x=1)",
+        "r15 = NSolutions(k, y)",
+        "r16 = NSolutions(k, x)",
+        "r17 = NSolutions(k, x=1)",
+        "r18 = Solve({k}, x)",
+        "r19 = Solutions({k}, x)",
+        "r20 = NSolve({k}, x)",
+        "r21 = NSolutions({k}, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0]
+            ],
+            "equation": "y^(2) = x^(3) - x",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": { "type": "list", "defined": false },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.0],
+                  [-0.5, -0.6123724356957945],
+                  [0.0, -0.0],
+                  [0.5, null],
+                  [1.0, -0.0],
+                  [2.0, -2.449489742783178],
+                  [4.0, -7.745966692414834],
+                  [8.0, -22.44994432064365]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, 0.6123724356957945],
+                  [0.0, 0.0],
+                  [0.5, null],
+                  [1.0, 0.0],
+                  [2.0, 2.449489742783178],
+                  [4.0, 7.745966692414834],
+                  [8.0, 22.44994432064365]
+                ]
+              }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.0],
+                  [-0.5, -0.6123724356957945],
+                  [0.0, -0.0],
+                  [0.5, null],
+                  [1.0, -0.0],
+                  [2.0, -2.449489742783178],
+                  [4.0, -7.745966692414834],
+                  [8.0, -22.44994432064365]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, 0.6123724356957945],
+                  [0.0, 0.0],
+                  [0.5, null],
+                  [1.0, 0.0],
+                  [2.0, 2.449489742783178],
+                  [4.0, 7.745966692414834],
+                  [8.0, 22.44994432064365]
+                ]
+              }
+            ]
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r11": { "type": "list", "defined": false },
+          "r12": { "type": "list", "defined": false },
+          "r13": { "type": "list", "defined": false },
+          "r14": { "type": "list", "defined": false },
+          "r15": { "type": "list", "defined": false },
+          "r16": { "type": "list", "defined": false },
+          "r17": { "type": "list", "defined": false },
+          "r18": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r19": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r20": { "type": "list", "defined": false },
+          "r21": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-011",
+      "group": "cas",
+      "script": [
+        "a = 1",
+        "k: x^3-a*x=0",
+        "r1 = Solutions(k)",
+        "r2 = NSolutions(k)",
+        "r3 = Solve(k)",
+        "r4 = NSolve(k)",
+        "r5 = PlotSolve(k)",
+        "r6 = NSolutions(k, x=2)",
+        "r7 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) - (a * x) = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-4.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) - (a * x) = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-0.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) - (a * x) = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -9.99619789118E-13 }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [1.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) - (a * x) = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0],
+              [-2.0],
+              [0.0],
+              [1.0]
+            ],
+            "equation": "x^(3) - (a * x) = 0",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.4142135623730951 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.4142135623730951 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.414213562373 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.414213562373 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.4142135623730951 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.4142135623730951 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.414213562373 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.414213562373 }
+            ]
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.4142135623730951, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 0.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.414213562373 }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-012",
+      "group": "cas",
+      "script": [
+        "a = 1",
+        "k: a*x^3+x^2*y=4",
+        "r1 = Solutions(k, y)",
+        "r2 = Solve(k, y)",
+        "r3 = NSolutions(k, y)",
+        "r4 = Solutions(k, x)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-4.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 1.0],
+              [1.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + (x^(2) * y) = 4",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0625],
+                  [-4.0, 4.25],
+                  [-2.0, 3.0],
+                  [-1.0, 5.0],
+                  [-0.5, 16.5],
+                  [0.0, null],
+                  [0.5, 15.5],
+                  [1.0, 3.0],
+                  [2.0, -1.0],
+                  [4.0, -3.75],
+                  [8.0, -7.9375]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0625],
+                  [-4.0, 4.25],
+                  [-2.0, 3.0],
+                  [-1.0, 5.0],
+                  [-0.5, 16.5],
+                  [0.0, null],
+                  [0.5, 15.5],
+                  [1.0, 3.0],
+                  [2.0, -1.0],
+                  [4.0, -3.75],
+                  [8.0, -7.9375]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-4.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + (x^(2) * y) = 4",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 0.0625],
+                  [-4.0, 0.25],
+                  [-2.0, 1.0],
+                  [-1.0, 4.0],
+                  [-0.5, 16.0],
+                  [0.0, null],
+                  [0.5, 16.0],
+                  [1.0, 4.0],
+                  [2.0, 1.0],
+                  [4.0, 0.25],
+                  [8.0, 0.0625]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 0.0625],
+                  [-4.0, 0.25],
+                  [-2.0, 1.0],
+                  [-1.0, 4.0],
+                  [-0.5, 16.0],
+                  [0.0, null],
+                  [0.5, 16.0],
+                  [1.0, 4.0],
+                  [2.0, 1.0],
+                  [4.0, 0.25],
+                  [8.0, 0.0625]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, -2.8284271247461903],
+                  [1.0, -2.0],
+                  [2.0, -1.4142135623730951],
+                  [4.0, -1.0],
+                  [8.0, -0.7071067811865476]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, 2.8284271247461903],
+                  [1.0, 2.0],
+                  [2.0, 1.4142135623730951],
+                  [4.0, 1.0],
+                  [8.0, 0.7071067811865476]
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-4.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 1.0],
+              [-2.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + (x^(2) * y) = 4",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -15.9375],
+                  [-4.0, -7.75],
+                  [-2.0, -3.0],
+                  [-1.0, 2.0],
+                  [-0.5, 15.0],
+                  [0.0, null],
+                  [0.5, 17.0],
+                  [1.0, 6.0],
+                  [2.0, 5.0],
+                  [4.0, 8.25],
+                  [8.0, 16.0625]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -15.9375],
+                  [-4.0, -7.75],
+                  [-2.0, -3.0],
+                  [-1.0, 2.0],
+                  [-0.5, 15.0],
+                  [0.0, null],
+                  [0.5, 17.0],
+                  [1.0, 6.0],
+                  [2.0, 5.0],
+                  [4.0, 8.25],
+                  [8.0, 16.0625]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-4.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 1.0],
+              [1.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + (x^(2) * y) = 4",
+            "input_form": true
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0625],
+                  [-4.0, 4.25],
+                  [-2.0, 3.0],
+                  [-1.0, 5.0],
+                  [-0.5, 16.5],
+                  [0.0, null],
+                  [0.5, 15.5],
+                  [1.0, 3.0],
+                  [2.0, -1.0],
+                  [4.0, -3.75],
+                  [8.0, -7.9375]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0625],
+                  [-4.0, 4.25],
+                  [-2.0, 3.0],
+                  [-1.0, 5.0],
+                  [-0.5, 16.5],
+                  [0.0, null],
+                  [0.5, 15.5],
+                  [1.0, 3.0],
+                  [2.0, -1.0],
+                  [4.0, -3.75],
+                  [8.0, -7.9375]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-implicit-013",
+      "group": "cas",
+      "script": [
+        "r1 = Solve(x^3+y^3=1)",
+        "r2 = Solutions(x^3+y^3=1)",
+        "r3 = NSolve(x^3+y^3=1)",
+        "r4 = NSolutions(x^3+y^3=1)",
+        "r5 = PlotSolve(x^3+y^3=1)",
+        "r6 = Solve(x^3-x=0)",
+        "r7 = Solutions(x^3-x=0)",
+        "r8 = NSolve(x^3-x=0)",
+        "r9 = NSolutions(x^3-x=0)",
+        "r10 = PlotSolve(x^3-x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.005204946165835],
+                  [-4.0, 4.020725758589058],
+                  [-2.0, 2.080083823051904],
+                  [-1.0, 1.2599210498948732],
+                  [-0.5, 1.040041911525952],
+                  [0.0, 1.0],
+                  [0.5, 0.9564655913861946],
+                  [1.0, -0.0],
+                  [2.0, -1.912931182772389],
+                  [4.0, -3.9790572078963917],
+                  [8.0, -7.994788272140555]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 }
+            ]
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r8": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
+          },
+          "r9": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r10": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

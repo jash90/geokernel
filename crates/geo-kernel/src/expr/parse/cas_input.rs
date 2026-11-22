@@ -112,7 +112,10 @@ impl Parser<'_> {
             let accepted = match self.checked_type(equation)? {
                 Ty::Num(_) => self.reads_variable(equation),
                 Ty::Function | Ty::List(_) => true,
-                Ty::Object => self.as_function(equation),
+                Ty::Object => {
+                    self.as_function(equation)
+                        || matches!(self.node(equation), Node::Obj(id) if self.c.kind(id) == crate::Kind::ImplicitCurve)
+                }
                 _ => false,
             };
             if !accepted {

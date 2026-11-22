@@ -866,6 +866,111 @@ reason = "A list of variables after one equation runs GeoGebra's system solver, 
 mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
+id = "cas-implicit-001"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. GeoGebra's CAS answers the real cube root of 1 - y^3 for x (and of 1 - x^3 for y) as a function, Solve the implicit curves x = ... inside a list and PlotSolve a parametric curve."
+mismatches = ["0:r1", "0:r2", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]
+
+[[gap]]
+id = "cas-implicit-004"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. For y^3 = x GeoGebra's CAS answers the cube root of x for y, and Solve for x the curve x - y^3 = 0 itself as an implicit curve inside a list; PlotSolve answers a parametric curve."
+mismatches = ["0:r1", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r18"]
+
+[[gap]]
+id = "cas-implicit-005"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. For x^2 y = 1 GeoGebra's CAS answers +-1 / sqrt(y) for x, where the leading coefficient y depends on the parameter; Solve answers two undefined implicit curves inside a list and PlotSolve two parametric curves."
+mismatches = ["0:r1", "0:r2", "0:r5", "0:r7", "0:r8", "0:r10", "0:r18", "0:r19"]
+
+[[gap]]
+id = "cas-implicit-006"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. x^3 - x y^2 = 0 has degree three in x: GeoGebra's CAS answers the three lines x = y, x = -y and x = 0 in that order (Solutions the functions y, -y and the number 0); for y the leading coefficient -x depends on the parameter. PlotSolve answers two lines and a point."
+mismatches = ["0:r1", "0:r2", "0:r5", "0:r7", "0:r8", "0:r10", "0:r18", "0:r19"]
+
+[[gap]]
+id = "cas-implicit-007"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. For (x + y)^3 = 1 GeoGebra's CAS takes the real cube root and answers the line x + y = 1 for either variable."
+mismatches = ["0:r1", "0:r2", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]
+
+[[gap]]
+id = "cas-implicit-008"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. x^4 + y^4 = 1 has degree four in each variable: GeoGebra's CAS answers the two real fourth roots as functions, Solve for x two undefined implicit curves inside a list, PlotSolve two parametric curves."
+mismatches = ["0:r1", "0:r2", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]
+
+[[gap]]
+id = "cas-implicit-009"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. x^3 + x y = 2 has degree three in x, for which GeoGebra's CAS answers no solution at all (an empty list)."
+mismatches = ["0:r1", "0:r2", "0:r7", "0:r8", "0:r10", "0:r18", "0:r19"]
+
+[[gap]]
+id = "cas-implicit-010"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. y^2 = x^3 - x is no conic: GeoGebra's CAS answers +-sqrt(x^3 - x) for y and solves the cubic for x with cube roots."
+mismatches = ["0:r1", "0:r2", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]
+
+[[gap]]
+id = "cas-implicit-011"
+reason = "With a = 0 the curve is x^3 = 0, whose triple root Newton's method approaches at a linear rate; the numeric solver of GeoGebra's CAS stops short of 0 at its own tolerance (cas-start-016), and the kernel answers an undefined list for a start value that does not end on a simple root."
+mismatches = ["2:r6"]
+
+[[gap]]
+id = "cas-implicit-012"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. a x^3 + x^2 y = 4 has degree three in x, and with a = 0 the leading coefficient y of x^2 y = 4 depends on the parameter; GeoGebra's CAS answers the roots as functions."
+mismatches = ["0:r4", "1:r4", "2:r4", "3:r4"]
+
+[[gap]]
+id = "cas-implicit-013"
+reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. GeoGebra's CAS answers the real cube root of 1 - y^3 for x as a function, Solve an implicit curve x = ... inside a list and PlotSolve a parametric curve."
+mismatches = ["0:r1", "0:r2", "0:r5"]
+
+[[gap]]
+id = "cas-implicitrewrite-001"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "cas-implicitrewrite-002"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "cas-implicitrewrite-003"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "cas-implicitrewrite-004"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "cas-implicitrewrite-005"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "cas-implicitrewrite-006"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "cas-implicitrewrite-007"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "cas-implicitrewrite-008"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "cas-implicitrewrite-009"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
+id = "cas-implicitrewrite-010"
+reason = "Expand, Factor, IFactor and Simplify of an implicit curve answer an implicit curve in GeoGebra, with an equation text the CAS writes (Factor prints the raw factored form, IFactor is undefined for an irreducible polynomial). The kernel does not compute implicit curves from these commands and refuses them; the implicit forms of the four commands stay open."
+mismatches = ["0:script line 2"]
+
+[[gap]]
 id = "cas-name-013"
 reason = "Solve(k, y = 1) reads y = 1 as an assumption. With it GeoGebra's CAS can decide the sign of terms in y and lists the two lines of x^2 - y^2 = 0 by their values (x = -y before x = y) and not by their printed form as Solve(k) does. The kernel does not reproduce the order under an assumption and answers an undefined list when an equation with an assumption about the other variable has two branches."
 mismatches = ["0:r1"]

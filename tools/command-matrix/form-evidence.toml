@@ -3486,6 +3486,28 @@ cases = ["cas-conic-008"]
 difference = "polynomial-cas: `Solutions(conic, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`"
 
 [[form]]
+command = "NSolve"
+form = "implicit"
+cases = ["cas-implicit-002", "cas-implicit-003"]
+
+[[form]]
+command = "NSolve"
+form = "implicit,any"
+cases = ["cas-implicit-002", "cas-implicit-003"]
+difference = "polynomial-cas: `NSolve(implicit)`, `NSolutions(implicit)`, `NSolve(implicit, any)`, `NSolutions(implicit, any)`, `Solve(implicit)`, `Solutions(implicit)`, `PlotSolve(implicit)`, `Solve(implicit, any)`, `Solutions(implicit, any)`"
+
+[[form]]
+command = "NSolutions"
+form = "implicit"
+cases = ["cas-implicit-002", "cas-implicit-003"]
+
+[[form]]
+command = "NSolutions"
+form = "implicit,any"
+cases = ["cas-implicit-002", "cas-implicit-003"]
+difference = "polynomial-cas: `NSolve(implicit)`, `NSolutions(implicit)`, `NSolve(implicit, any)`, `NSolutions(implicit, any)`, `Solve(implicit)`, `Solutions(implicit)`, `PlotSolve(implicit)`, `Solve(implicit, any)`, `Solutions(implicit, any)`"
+
+[[form]]
 command = "Expand"
 form = "curve"
 cases = ["cas-curve-001"]

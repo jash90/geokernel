@@ -669,4 +669,32 @@ c.case("degree", ["result = Solutions(x^3+y=0, x)"], [])
 c.case("degree", ["result = Solutions(x*y^2+y=1, y)"], [])
 c.case("degree", ["r1 = Solutions(x^3+y=0, y)", "r2 = Solve(x^3+y=0, y)",
                   "r3 = Solutions(x*y^2+y=1, x)"], [])
+
+# An implicit curve: its polynomial is solved like an equation typed in
+# place. Every solve command with every shape of second argument.
+IMPLICIT = ["x^3+y^3=1", "x^3=8", "x^3-x=0", "y^3=x", "x^2*y=1", "x^3-x*y^2=0", "(x+y)^3=1",
+            "x^4+y^4=1", "x^3+x*y=2", "y^2=x^3-x"]
+for equation in IMPLICIT:
+    c.case("implicit", [f"k: {equation}"] + results(
+        [f"{command}(k)" for command in SOLVERS + ("PlotSolve",)]
+        + [f"{command}(k, {hint})" for command in SOLVERS for hint in ("y", "x", "x=1")]
+        + [f"{command}({{k}}, x)" for command in SOLVERS]), [])
+# The curve changes with a number, also into one of lower degree.
+c.case("implicit", ["a = 1", "k: x^3-a*x=0"] + results(
+    ["Solutions(k)", "NSolutions(k)", "Solve(k)", "NSolve(k)", "PlotSolve(k)",
+     "NSolutions(k, x=2)", "Solutions(k, y)"]),
+    [setn("a", 4), setn("a", 0), setn("a", -1), setn("a", 2)])
+c.case("implicit", ["a = 1", "k: a*x^3+x^2*y=4", "r1 = Solutions(k, y)", "r2 = Solve(k, y)",
+                    "r3 = NSolutions(k, y)", "r4 = Solutions(k, x)"],
+       [setn("a", 0), setn("a", -2), setn("a", 1)])
+c.case("implicit", results([f"{command}(x^3+y^3=1)" for command in SOLVERS + ("PlotSolve",)]
+                           + [f"{command}(x^3-x=0)" for command in SOLVERS + ("PlotSolve",)]), [])
 c.write()
+
+# Expand, Factor, IFactor and Simplify of an implicit curve answer an
+# implicit curve, which the kernel does not compute: it refuses them.
+reference = Cases("cas")
+for equation in IMPLICIT:
+    reference.case("implicitrewrite", [f"k: {equation}"] + results(
+        f"{command}(k)" for command in REWRITES + ("Simplify",)), [])
+reference.write("reference")

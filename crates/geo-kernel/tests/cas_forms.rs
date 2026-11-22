@@ -128,6 +128,44 @@ fn an_initial_value_selects_one_root() {
 }
 
 #[test]
+fn an_implicit_curve_is_solved_like_its_equation() {
+    let c = build(&[
+        "k: x^3-x=0",
+        "j: x^2*y=1",
+        "i: x^3+y^3=1",
+        "r1 = Solutions(k)",
+        "r2 = NSolutions(k, x=2)",
+        "r3 = Solve({k}, x)",
+        "r4 = NSolutions({k}, x)",
+        "r5 = Solutions(j, y)",
+        "r6 = Solutions(i, x)",
+        "r7 = PlotSolve(k)",
+    ]);
+    assert_eq!(c.kind(id(&c, "k")), Kind::ImplicitCurve);
+    assert_eq!(numbers(&c, "r1").unwrap(), [-1.0, 0.0, 1.0]);
+    assert_eq!(numbers(&c, "r2").unwrap(), [1.0]);
+    assert_eq!(c.elements(id(&c, "r3")).unwrap().len(), 1);
+    assert_eq!(c.elements(id(&c, "r4")).unwrap().len(), 0);
+    assert_eq!(samples(&c, "r5", 0, &[2.0]), [0.25]);
+    // A cube root is beyond the bounded CAS: undefined, as recorded.
+    assert!(c.elements(id(&c, "r6")).is_none());
+    assert_eq!(c.elements(id(&c, "r7")).unwrap().len(), 3);
+}
+
+#[test]
+fn rewriting_an_implicit_curve_is_refused() {
+    // The reference answers an implicit curve with an equation text of its
+    // CAS; the forms stay open.
+    let mut c = build(&["k: x^3+y^3=1"]);
+    for command in ["Expand", "Factor", "IFactor", "Simplify"] {
+        rejected(&mut c, &format!("r = {command}(k)"));
+    }
+    for line in ["r = Simplify(x^3+y^3=1)", "r = Simplify(x^3-x*y^2=0)"] {
+        rejected(&mut c, line);
+    }
+}
+
+#[test]
 fn the_second_argument_names_what_it_names() {
     let mut c = build(&["f(x) = x^2-9", "g: x+y=1", "b = 2", "P = (1, 2)"]);
     // `t` is a variable of its own, which the function does not hold.

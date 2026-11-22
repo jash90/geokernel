@@ -1414,8 +1414,10 @@ final class Session {
             case "Factor":
             case "IFactor":
             case "Simplify":
-                // The CAS commands rewrite the coordinates of a curve.
-                return first instanceof GeoCurveCartesian ? "curve" : null;
+                // The CAS commands rewrite the coordinates of a curve and
+                // the polynomial of an implicit curve.
+                return first instanceof GeoCurveCartesian ? "curve"
+                        : first instanceof GeoImplicitCurve ? "implicit" : null;
             default:
                 // a mathematical function such as `sqrt(a)` or `x(A)`
                 return null;
