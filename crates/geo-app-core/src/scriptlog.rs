@@ -25,6 +25,7 @@
 //! A simultaneous move is saved as one `$movePoints` directive.
 
 use geo_kernel::algo::measure::MeasureDef;
+use geo_kernel::kernel::control::{decode_text, encode_text, visibility_boolean};
 use geo_kernel::kernel::{Construction, Def, Id};
 use geo_kernel::script::{
     boundary_slot_owner, restore_boundary_labels, split_comment, BoundaryOutputs,
@@ -42,6 +43,7 @@ pub const DIRECTIVES: [&str; 3] = ["SetCoords", "SetValue", "SetVisibleInView"];
 const LABELS: &str = "# labels: ";
 const MOVE_POINTS: &str = "$movePoints";
 const ANGLE_STYLE: &str = "$angleStyle";
+const SHOW_OBJECT: &str = "$showObject";
 
 fn has_recorded_growth(src: &str) -> bool {
     src.lines().any(|line| {
@@ -95,6 +97,7 @@ pub(crate) struct GrownOutputs<'a> {
 pub enum Setting {
     Point(f64, f64),
     Number(f64),
+    Boolean(bool),
     AngleStyle(geo_kernel::kernel::angle::AngleStyle),
 }
 
@@ -136,6 +139,7 @@ enum Directive<'a> {
     Set(&'a str, Setting),
     MovePoints(Vec<Position<&'a str>>),
     Visible(&'a str, bool),
+    Condition(&'a str, &'a str),
 }
 
 /// The directive on a normalised line, if it is one (a definition always has
@@ -146,7 +150,7 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     }
     let (name, rest) = line.split_once('(')?;
     let name = name.trim();
-    if name != MOVE_POINTS && name != ANGLE_STYLE && !DIRECTIVES.contains(&name) {
+    if !matches!(name, MOVE_POINTS | ANGLE_STYLE | SHOW_OBJECT) && !DIRECTIVES.contains(&name) {
         return None;
     }
     let parse = || -> Option<Directive<'_>> {
@@ -164,7 +168,14 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
                     .collect::<Option<Vec<_>>>()
                     .map(Directive::MovePoints)
             }
-            ("SetValue", [l, v]) => Some(Directive::Set(l, Setting::Number(num(v)?))),
+            ("SetValue", [l, v]) => Some(Directive::Set(
+                l,
+                match v.parse::<bool>() {
+                    Ok(value) => Setting::Boolean(value),
+                    Err(_) => Setting::Number(num(v)?),
+                },
+            )),
+            (SHOW_OBJECT, [target, boolean]) => Some(Directive::Condition(target, boolean)),
             (ANGLE_STYLE, [l, style]) => Some(Directive::Set(
                 l,
                 Setting::AngleStyle(geo_kernel::kernel::angle::AngleStyle::from_xml(
@@ -324,12 +335,47 @@ pub struct Log {
     ops: Chain<Op>,
     /// Labels hidden in the drawing (part of the state that undo restores).
     pub hidden: Labels,
+    conditions: BTreeMap<String, VisibilityCondition>,
     /// Labels removed by `remove` since the last rebuild: lines that use them
     /// are dropped by the rebuild on purpose.
     removed: BTreeSet<String>,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+struct VisibilityCondition {
+    source: String,
+    boolean: String,
+}
+
 impl Log {
+    pub(crate) fn condition(&self, label: &str) -> Option<&str> {
+        self.conditions
+            .get(label)
+            .map(|condition| condition.boolean.as_str())
+    }
+
+    pub(crate) fn set_condition(
+        &mut self,
+        c: &mut Construction,
+        target: &str,
+        source: &str,
+    ) -> Result<(), String> {
+        if c.id(target).is_none() {
+            return Err(format!("`{target}` is missing"));
+        }
+        if self.conditions.contains_key(target) {
+            return Err(format!("`{target}` already has a visibility condition"));
+        }
+        let id = visibility_boolean(c, target, source)?;
+        self.conditions.insert(
+            target.to_owned(),
+            VisibilityCondition {
+                source: source.to_owned(),
+                boolean: c.label(id).to_owned(),
+            },
+        );
+        Ok(())
+    }
     fn entries(&self) -> impl Iterator<Item = &Entry> {
         self.ops.items().into_iter().filter_map(|op| match op {
             Op::Define(e) => Some(e),
@@ -570,6 +616,7 @@ impl Log {
                     let result = match *to {
                         Setting::Point(x, y) => c.move_point(id, x, y),
                         Setting::Number(v) => c.set_number(id, v),
+                        Setting::Boolean(v) => c.set_boolean(id, v),
                         Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
@@ -609,6 +656,7 @@ impl Log {
             kept.ops = self.ops.prefix(n);
         }
         kept.hidden = self.hidden.clone();
+        self.replay_conditions(&mut c, &mut kept);
         Ok((c, kept))
     }
 
@@ -628,6 +676,7 @@ impl Log {
         Log {
             ops,
             hidden,
+            conditions: self.conditions.clone(),
             removed: self.removed.clone(),
         }
     }
@@ -673,6 +722,7 @@ impl Log {
                     let result = match *to {
                         Setting::Point(x, y) => c.move_point(id, x, y),
                         Setting::Number(v) => c.set_number(id, v),
+                        Setting::Boolean(v) => c.set_boolean(id, v),
                         Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
@@ -689,6 +739,7 @@ impl Log {
             }
         }
         kept.hidden = self.hidden.clone();
+        self.replay_conditions(&mut c, &mut kept);
         Ok((c, kept))
     }
 
@@ -723,6 +774,7 @@ impl Log {
         Log {
             ops,
             hidden: self.hidden.clone(),
+            conditions: self.conditions.clone(),
             removed: self.removed.clone(),
         }
     }
@@ -775,6 +827,11 @@ impl Log {
                 } => writeln!(out, "SetValue({label}, {v})"),
                 Op::Set {
                     label,
+                    to: Setting::Boolean(v),
+                    ..
+                } => writeln!(out, "SetValue({label}, {v})"),
+                Op::Set {
+                    label,
                     to: Setting::AngleStyle(style),
                     ..
                 } => writeln!(out, "{ANGLE_STYLE}({label}, {})", style.xml_code()),
@@ -793,7 +850,21 @@ impl Log {
         for label in &self.hidden {
             let _ = writeln!(out, "SetVisibleInView({label}, 1, false)");
         }
+        for (target, condition) in &self.conditions {
+            let _ = writeln!(
+                out,
+                "{SHOW_OBJECT}({target}, {})",
+                encode_text(&condition.source)
+            );
+        }
         out
+    }
+
+    fn replay_conditions(&self, c: &mut Construction, kept: &mut Log) {
+        for (target, condition) in &self.conditions {
+            // A deleted object can be a target or be read by a condition.
+            let _ = kept.set_condition(c, target, &condition.source);
+        }
     }
 
     /// Applies a directive line to `c` and records it.
@@ -819,10 +890,15 @@ impl Log {
                 }
                 return Ok(Vec::new());
             }
+            Directive::Condition(target, condition) => {
+                self.set_condition(c, target, &decode_text(condition)?)?;
+                return Ok(Vec::new());
+            }
         };
         let result = match to {
             Setting::Point(x, y) => c.move_point(id, x, y),
             Setting::Number(v) => c.set_number(id, v),
+            Setting::Boolean(v) => c.set_boolean(id, v),
             Setting::AngleStyle(style) => c.set_angle_style(id, style),
         };
         result.map_err(|e| format!("`{label}`: {e}"))?;

@@ -167,6 +167,10 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
+    {
+        return result;
+    }
     let start = c.checkpoint();
     if let Some(result) = define_inline_region(c, name, rhs) {
         if result.is_err() {
@@ -184,7 +188,108 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     result
 }
 
+/// Lowers an imported argument within its owning definition. Each temporary
+/// object is anonymous and shares the lifetime of that definition's replay.
+fn with_saved_arguments<T>(
+    c: &mut Construction,
+    rhs: &str,
+    run: impl FnOnce(&mut Construction, &str) -> Result<T, String>,
+) -> Option<Result<T, String>> {
+    if !rhs.contains("$arg(") {
+        return None;
+    }
+    let (command, args) = split_call(rhs)?;
+    if !args.iter().any(|arg| arg.starts_with("$arg(")) {
+        return None;
+    }
+    let start = c.checkpoint();
+    let result = (|| {
+        let args = args
+            .iter()
+            .map(
+                |arg| match arg.strip_prefix("$arg(").and_then(|s| s.strip_suffix(')')) {
+                    Some(source) => saved_argument(c, source.trim(), 0),
+                    None => Ok((*arg).to_owned()),
+                },
+            )
+            .collect::<Result<Vec<_>, String>>()?;
+        run(c, &format!("{command}({})", args.join(", ")))
+    })();
+    if result.is_err() {
+        c.discard_since(start);
+    }
+    Some(result)
+}
+
+fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<String, String> {
+    if depth >= 32 {
+        return Err("nested command inputs are too deep".into());
+    }
+    if let Some(id) = c.id(source) {
+        return Ok(c.label(id).to_owned());
+    }
+    let start = c.checkpoint();
+    let label = format!("\0arg{}", c.len());
+    let call = split_call(source);
+    if let Some(("Vector", args)) = &call {
+        if let [arg] = args.as_slice() {
+            if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+                return Ok((*arg).to_owned());
+            }
+        }
+    }
+    if call.is_some() {
+        if let Ok(def) = parse_def(c, source) {
+            if c.add(&label, def).is_ok() {
+                return Ok(label);
+            }
+        }
+    }
+    let nested_vector = call
+        .as_ref()
+        .is_some_and(|(command, _)| *command == "Vector");
+    if !nested_vector && crate::expr::define_saved_argument(c, &label, source).is_ok() {
+        return Ok(label);
+    }
+    let Some((command, args)) = call else {
+        if crate::expr::equation::split_equation(source).is_ok() {
+            return crate::expr::equation::define(c, &label, source).map(|_| label);
+        }
+        return Err(format!("cannot evaluate command input `{source}`"));
+    };
+    let args = args
+        .into_iter()
+        .map(|arg| {
+            if crate::expr::plain_number(arg).is_some() {
+                Ok(arg.to_owned())
+            } else {
+                saved_argument(c, arg, depth + 1)
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if let ("Vector", [arg]) = (command, args.as_slice()) {
+        if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+            return Ok(arg.clone());
+        }
+    }
+    let first_output = c.len();
+    let label = format!("\0arg{first_output}");
+    let id = define_after_label(c, &label, &format!("{command}({})", args.join(", ")))
+        .map_err(|error| format!("nested `{command}`: {error}"))?;
+    if id.is_some_and(|id| c.label(id) == label) && c.len() == first_output + 1 {
+        Ok(label)
+    } else {
+        c.discard_since(start);
+        Err(format!("nested `{command}` must produce a single object"))
+    }
+}
+
 fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if rhs.starts_with('$') {
+        if let Some((form @ ("$checkBox" | "$button" | "$inputBox"), args)) = split_call(rhs) {
+            return crate::kernel::control::define(c, name, form, &args).map(Some);
+        }
+    }
     if let Some(result) = define_saved(c, name, rhs) {
         return result.map(Some);
     }
@@ -271,12 +376,23 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
 }
 
 fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id, String>> {
-    if !rhs.starts_with("$saved(") && !rhs.starts_with("$pointOnPath(") {
+    if !rhs.starts_with("$saved(")
+        && !rhs.starts_with("$pointOnPath(")
+        && !rhs.starts_with("$slider(")
+    {
         return None;
     }
     let mut parse = || {
         let (form, args) = split_call(rhs).ok_or("invalid saved definition")?;
         match (form, args.as_slice()) {
+            ("$slider", [value, min, max]) => c
+                .add_saved_slider(
+                    name,
+                    parse_number(value)?,
+                    parse_number(min)?,
+                    parse_number(max)?,
+                )
+                .map_err(|e| e.to_string()),
             ("$saved", [literal, _definition]) => {
                 let def = if let Some(def) = parse_forced(literal) {
                     def?
@@ -412,7 +528,7 @@ fn define_vector_call(
         return None;
     }
     let arg = rest.strip_suffix(')')?.trim();
-    if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+    if !arg.starts_with('\0') && c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
         return Some(Ok(None));
     }
     match parse_forced(arg)? {
@@ -979,7 +1095,9 @@ fn is_finite(v: &Value) -> bool {
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
         Value::Locus { .. } => true,
-        Value::HomogeneousPoint { .. } | Value::Undefined => false,
+        Value::HomogeneousPoint { .. } | Value::Button | Value::InputBox | Value::Undefined => {
+            false
+        }
     }
 }
 
@@ -1341,6 +1459,13 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         .strip_prefix('=')
         .ok_or("expected `=` after the output labels")?
         .trim();
+    if let Some(result) = with_saved_arguments(c, rhs, |c, call| exec_slots(c, &slots, call)) {
+        return result;
+    }
+    exec_slots(c, &slots, rhs)
+}
+
+fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<Id>, String> {
     // The command decides how many outputs it has; a longer list of labels is
     // refused before any label is looked at, so the work is bounded by the
     // command, not by the length of the line.
@@ -1351,7 +1476,7 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
             Ok(_) => "the command does not create several objects, write `name = ...`".into(),
         });
     };
-    add_named_outputs(c, &slots, defs?)
+    add_named_outputs(c, slots, defs?)
 }
 
 pub(crate) fn add_named_outputs(

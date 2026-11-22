@@ -33,6 +33,8 @@
 pub mod angle;
 #[path = "algo/axis.rs"]
 mod axis;
+#[path = "control.rs"]
+pub mod control;
 #[path = "algo/locus.rs"]
 pub mod locus;
 
@@ -145,6 +147,8 @@ pub enum Kind {
     /// [`Construction::locus`].
     Locus,
     Curve,
+    Button,
+    InputBox,
 }
 
 impl Kind {
@@ -177,6 +181,8 @@ impl fmt::Display for Kind {
             Kind::Sector => "sector",
             Kind::Locus => "locus",
             Kind::Curve => "curve",
+            Kind::Button => "button",
+            Kind::InputBox => "input box",
         })
     }
 }
@@ -238,6 +244,8 @@ pub enum Value {
     /// prover's "unknown" answer, so the kernel reports `Undefined` only when
     /// a predicate cannot decide.
     Bool(bool),
+    Button,
+    InputBox,
     /// A defined function; its values come from
     /// [`Construction::function_value`].
     Function,
@@ -356,7 +364,7 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
-            Value::Bool(_) => true,
+            Value::Bool(_) | Value::Button | Value::InputBox => true,
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
             Value::Arc { length } => length.is_finite(),
@@ -394,6 +402,9 @@ pub enum Def {
     },
     /// A number the user can change (a slider).
     Number(f64),
+    Boolean(bool),
+    Button,
+    InputBox(Option<Id>),
     /// A free angle in radians, such as `c = 30°`: a number the user can
     /// change that `floor`, `ceil` and `round` treat in whole degrees
     /// (GeoGebra's independent `GeoAngle`).
@@ -537,6 +548,9 @@ impl Def {
             Def::Segment(..) => Kind::Segment,
             Def::CircleThrough { .. } | Def::CircleRadius { .. } => Kind::Circle,
             Def::Number(_) | Def::Distance(..) => Kind::Number,
+            Def::Boolean(_) => Kind::Boolean,
+            Def::Button => Kind::Button,
+            Def::InputBox(_) => Kind::InputBox,
             Def::Angle(_)
             | Def::Measure(MeasureDef::Angle(..))
             | Def::Polygon(PolygonDef::Angle { .. }) => Kind::Angle,
@@ -591,6 +605,9 @@ impl Def {
             self,
             Def::FreePoint { .. }
                 | Def::Number(_)
+                | Def::Boolean(_)
+                | Def::Button
+                | Def::InputBox(None)
                 | Def::Angle(_)
                 | Def::Vector(VectorDef::Free { .. })
         ) || matches!(*self, Def::AngleObject(d) if d.is_free())
@@ -605,9 +622,13 @@ impl Def {
             | Def::YAxis
             | Def::FreePoint { .. }
             | Def::Number(_)
+            | Def::Boolean(_)
+            | Def::Button
+            | Def::InputBox(None)
             | Def::Angle(_)
             | Def::Expr(_)
             | Def::Equation(_) => Parents::none(),
+            Def::InputBox(Some(id)) => Parents::of(&[id]),
             Def::Line(p, q)
             | Def::Segment(p, q)
             | Def::Midpoint(p, q)
@@ -770,6 +791,7 @@ pub struct Construction {
     /// The intervals of the free numbers made by `Slider`, with the index of
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
+    controls: Vec<(Id, control::Control)>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -1128,6 +1150,8 @@ impl Construction {
     /// at or before it and stays valid, and the generation does not change.
     pub(crate) fn discard_since(&mut self, at: Checkpoint) {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
+        self.controls
+            .truncate(self.controls.partition_point(|(id, _)| id.0 < at.len));
         self.frozen_line_starts
             .retain(|_, &mut (_, _, order)| order < at.frozen_line_starts);
         while self.defs.len() > at.len {
@@ -2007,7 +2031,14 @@ impl Construction {
 
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
-            Def::XAxis | Def::YAxis => Ok(()),
+            Def::XAxis | Def::YAxis | Def::Boolean(_) | Def::Button | Def::InputBox(None) => Ok(()),
+            Def::InputBox(Some(linked)) => {
+                if self.defs.get(linked.0).is_some() || axis::get(linked).is_some() {
+                    Ok(())
+                } else {
+                    Err(Error::UnknownObject)
+                }
+            }
             Def::FreePoint { x, y } => {
                 if x.is_finite() && y.is_finite() {
                     Ok(())
@@ -2132,6 +2163,9 @@ impl Construction {
             Def::XAxis | Def::YAxis => axis::definition(def).map(|axis| axis.value),
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
+            Def::Boolean(v) => Some(Value::Bool(v)),
+            Def::Button => Some(Value::Button),
+            Def::InputBox(_) => Some(Value::InputBox),
             Def::Line(p, q) => algo::basic::line(self, p, q),
             Def::Segment(p, q) => algo::basic::segment(self, p, q),
             Def::Midpoint(p, q) => algo::basic::midpoint(self, p, q),

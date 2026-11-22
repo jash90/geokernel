@@ -29,7 +29,7 @@ impl View {
             v.xmax = v.xmax.max(x);
             v.ymax = v.ymax.max(y);
         };
-        for id in c.ids() {
+        for id in c.ids().filter(|&id| !c.label(id).starts_with('\0')) {
             match c.value(id) {
                 Value::Point { x, y } => grow(x, y),
                 Value::Segment { x1, y1, x2, y2 } => {
@@ -112,6 +112,17 @@ impl View {
 
 /// Renders the construction into an SVG document of the given pixel size.
 pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
+    render_visible(c, view, width, height, |_| true)
+}
+
+/// Renders the objects selected by a caller's visibility state.
+pub fn render_visible(
+    c: &Construction,
+    view: View,
+    width: u32,
+    height: u32,
+    visible: impl Fn(crate::Id) -> bool,
+) -> String {
     let (w, h) = (width as f64, height as f64);
     let (vw, vh) = (view.xmax - view.xmin, view.ymax - view.ymin);
     let scale = (w / vw).min(h / vh);
@@ -134,7 +145,10 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
     // Conics and function graphs, cut to the image.
     let frame = crate::plot::Frame::fit(view, w, h);
 
-    for id in c.ids() {
+    for id in c
+        .ids()
+        .filter(|&id| !c.label(id).starts_with('\0') && visible(id))
+    {
         match c.value(id) {
             v @ Value::Line { .. } => {
                 let Some((a, b, k)) = v.unit_line() else {
@@ -367,6 +381,8 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
             | Value::List { .. }
             | Value::HomogeneousPoint { .. }
             | Value::Curve { .. }
+            | Value::Button
+            | Value::InputBox
             | Value::Undefined => {}
         }
     }

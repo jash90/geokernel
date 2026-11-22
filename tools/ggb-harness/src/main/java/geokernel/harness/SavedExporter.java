@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.CircularDefinitionException;
 import org.geogebra.common.kernel.geos.GeoAngle;
 import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
@@ -34,6 +36,8 @@ import org.geogebra.common.kernel.geos.GeoVector;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
+import org.geogebra.common.plugin.EventType;
+import org.geogebra.common.plugin.ScriptType;
 import org.geogebra.common.util.AsyncOperation;
 
 /**
@@ -64,8 +68,8 @@ public final class SavedExporter {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 2) {
-            System.err.println("usage: SavedExporter <saved.json> <out dir>");
+        if (args.length < 2) {
+            System.err.println("usage: SavedExporter <saved.json> <out dir> [topic ...]");
             System.exit(2);
         }
         Object parsed = Json.parse(Files.readString(Path.of(args[0]), StandardCharsets.UTF_8));
@@ -73,9 +77,13 @@ public final class SavedExporter {
         Path outDir = Path.of(args[1]);
         Files.createDirectories(outDir);
         Set<String> produced = new HashSet<>();
+        List<String> topics = Arrays.asList(args).subList(2, args.length);
         for (Object o : cases) {
             Map<?, ?> input = (Map<?, ?>) o;
             String id = (String) input.get("id");
+            if (!topics.isEmpty() && topics.stream().noneMatch(t -> id.startsWith("saved-" + t + "-"))) {
+                continue;
+            }
             try {
                 export(input, outDir);
             } catch (RuntimeException e) {
@@ -86,7 +94,7 @@ public final class SavedExporter {
         }
         try (var files = Files.list(outDir)) {
             for (Path file : (Iterable<Path>) files::iterator) {
-                if (!produced.contains(file.getFileName().toString())) {
+                if (topics.isEmpty() && !produced.contains(file.getFileName().toString())) {
                     System.out.println("pruned " + file.getFileName());
                     Files.delete(file);
                 }
@@ -154,6 +162,19 @@ public final class SavedExporter {
                 angle.setAngleStyle(((Number) step.get("value")).intValue());
             } else if ("rename".equals(action)) {
                 geo.rename((String) step.get("name"));
+            } else if ("click_script".equals(action)) {
+                geo.setScript(ScriptType.GGBSCRIPT.newScript(app, (String) step.get("text")),
+                        EventType.CLICK);
+            } else if ("set_boolean".equals(action) && geo instanceof GeoBoolean b) {
+                b.setValue((Boolean) step.get("value"));
+            } else if ("condition".equals(action)) {
+                String condition = (String) step.get("expression");
+                GeoBoolean bool = kernel.getAlgebraProcessor().evaluateToBoolean(condition, null);
+                try {
+                    geo.setShowObjectCondition(bool);
+                } catch (CircularDefinitionException e) {
+                    throw new IllegalArgumentException("circular visibility condition", e);
+                }
             } else {
                 throw new IllegalArgumentException("invalid saved step " + step);
             }
@@ -189,7 +210,8 @@ public final class SavedExporter {
         Map<String, Object> f = new LinkedHashMap<>();
         boolean ok = geo.isDefined();
         if (geo instanceof GeoBoolean || geo instanceof GeoFunction || geo instanceof GeoVector
-                || geo instanceof GeoList || geo instanceof GeoPolygon) {
+                || geo instanceof GeoList || geo instanceof GeoPolygon
+                || geo.isGeoLocus() || geo.isGeoPolyLine() || geo.isGeoCurveCartesian()) {
             return Session.describe(geo, Session.typeOf(geo));
         } else if (geo instanceof GeoFunctionNVar) {
             return Session.describe(geo, "function");

@@ -24,7 +24,12 @@ impl Workbench {
             let imported = geo_import::import(bytes).map_err(|e| format!("{name}: {e}"))?;
             let notice = import_notice(&imported);
             return self
-                .load_imported(&imported.script.join("\n"), &imported.hidden, notice)
+                .load_imported_with_conditions(
+                    &imported.script.join("\n"),
+                    &imported.hidden,
+                    &imported.conditions,
+                    notice,
+                )
                 .map_err(|e| format!("{name}: {e}"));
         }
         let src = std::str::from_utf8(bytes).map_err(|e| format!("{name}: {e}"))?;
@@ -150,6 +155,70 @@ pub fn import_notice(imported: &geo_import::Imported) -> Option<String> {
 mod tests {
     use super::*;
     use geo_kernel::kernel::{Construction, Kind, Value};
+
+    #[test]
+    fn saved_controls_and_conditions_survive_restoring_a_snapshot() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-controls-002.xml"),
+            "controls.xml",
+        )
+        .unwrap();
+        for (label, kind) in [
+            ("run", "button"),
+            ("field", "input box"),
+            ("empty", "input box"),
+        ] {
+            let c = wb.construction();
+            assert_eq!(c.kind(c.id(label).unwrap()).to_string(), kind);
+        }
+        for label in ["A", "s"] {
+            assert!(!wb.is_visible(wb.construction().id(label).unwrap()));
+        }
+        let a = wb.construction().id("a").unwrap();
+        assert_eq!(wb.construction().slider_interval(a), Some((0.0, 8.0)));
+        let check = wb.construction().id("check").unwrap();
+        let run = wb.construction().id("run").unwrap();
+        let field = wb.construction().id("field").unwrap();
+        assert_eq!(
+            wb.construction().def(field),
+            geo_kernel::Def::InputBox(Some(a))
+        );
+        let button = wb.construction().control(run).unwrap();
+        assert_eq!(button.caption, "Apply");
+        assert_eq!(button.scripts[0].text, "SetValue(a, 7)\nSetValue(a, 6)");
+        assert_eq!(wb.construction().value(a), Value::Number(3.0));
+        assert!(wb.set_boolean(check, true));
+        let visible = |wb: &Workbench, label| wb.is_visible(wb.construction().id(label).unwrap());
+        assert!(visible(&wb, "A"));
+        assert!(visible(&wb, "s"));
+        assert!(wb.undo());
+        assert!(!visible(&wb, "A"));
+        assert!(wb.redo());
+        assert!(visible(&wb, "s"));
+        assert!(visible(&wb, "B"));
+        assert!(wb.set_number(wb.construction().id("a").unwrap(), 1.0));
+        assert!(!visible(&wb, "B"));
+        assert_round_trip(&mut wb, "imported controls");
+    }
+
+    #[test]
+    fn inline_inputs_stay_anonymous_through_edits_and_replay() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-inline-001.xml"),
+            "inline.xml",
+        )
+        .unwrap();
+        assert_eq!(wb.object_ids().count(), 13);
+        let point = wb.construction().id("A").unwrap();
+        assert!(wb.move_point(point, 4.0, 1.0));
+        assert_round_trip(&mut wb, "inline command inputs");
+        assert!(wb.undo());
+        assert_eq!(wb.object_ids().count(), 13);
+        assert!(wb.redo());
+        assert_eq!(wb.object_ids().count(), 13);
+    }
 
     /// Everything a reader of the document can see: each object's label,
     /// kind, value and visibility.

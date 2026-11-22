@@ -1398,7 +1398,7 @@ pub(crate) fn argument_object(c: &mut Construction, text: &str, label: &str, kin
     };
     let kind = match (kind, parsed.tys[parsed.root as usize]) {
         (Kind::Number, Ty::Num(1)) => Kind::Angle,
-        (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) => kind,
+        (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) | (Kind::Boolean, Ty::Bool) => kind,
         _ => return false,
     };
     !parsed.uses_var && add(c, label, parsed, kind).is_ok()
@@ -1428,6 +1428,23 @@ pub(crate) fn define(
     rhs: &str,
     vector_label: bool,
 ) -> Result<Id, String> {
+    define_with_coordinates(c, name, rhs, Some(vector_label))
+}
+
+pub(crate) fn define_saved_argument(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Result<Id, String> {
+    define_with_coordinates(c, name, rhs, None)
+}
+
+fn define_with_coordinates(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    vector_label: Option<bool>,
+) -> Result<Id, String> {
     let parsed = match parse::parse(c, rhs) {
         Ok(parsed) => parsed,
         Err(error) => match parse::parse_equation(c, rhs) {
@@ -1449,7 +1466,7 @@ pub(crate) fn define(
     let kind = match parsed.tys[parsed.root as usize] {
         Ty::Num(1) => Kind::Angle,
         Ty::Num(_) => Kind::Number,
-        Ty::Vec if vector_label => Kind::Vector,
+        Ty::Vec if vector_label.unwrap_or_else(|| argument_is_vector(c, &parsed)) => Kind::Vector,
         Ty::Vec => Kind::Point,
         Ty::Bool => Kind::Boolean,
         Ty::List(_) => Kind::List,
@@ -1458,6 +1475,28 @@ pub(crate) fn define(
         Ty::Function => return Err("a function needs an argument".into()),
     };
     add(c, name, parsed, kind)
+}
+
+/// ExpressionNode.evaluatesToVectorNotPoint, for an unlabelled 2D input.
+fn argument_is_vector(c: &Construction, parsed: &parse::Parsed) -> bool {
+    let mut vectors = Vec::with_capacity(parsed.nodes.len());
+    for (node, ty) in parsed.nodes.iter().zip(&parsed.tys) {
+        let read = |index: u32| vectors[index as usize];
+        let vector = matches!(ty, Ty::Vec)
+            && match *node {
+                Node::Obj(id) => c.kind(id) == Kind::Vector,
+                Node::Cmd(def, _) => def.kind() == Kind::Vector,
+                Node::Vector(_) => true,
+                Node::Bin(Bin::Add, a, b) if parsed.tys[a as usize] == Ty::Vec => {
+                    read(a) && read(b)
+                }
+                Node::Bin(Bin::Add | Bin::Sub | Bin::Mul | Bin::Div, a, b) => read(a) || read(b),
+                Node::If(_, _, value, _) => read(value),
+                _ => false,
+            };
+        vectors.push(vector);
+    }
+    vectors[parsed.root as usize]
 }
 
 /// Defines a coordinate expression with an explicit kind, regardless of

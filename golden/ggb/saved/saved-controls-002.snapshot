@@ -1,0 +1,26 @@
+{
+  "schema": 2,
+  "id": "saved-controls-002",
+  "script": [
+    "A = (2, 1)",
+    "B = (4, 3)",
+    "a = Slider(0, 8, 0.5)",
+    "s = Segment(A, B)",
+    "check = Checkbox(\"Show\", {A, s})",
+    "run = Button(\"Apply\")",
+    "field = InputBox(a)",
+    "empty = InputBox()",
+    "pos = a > 2"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+    "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+    "a": { "type": "number", "defined": true, "value": 3.0 },
+    "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 1.0, "x2": 4.0, "y2": 3.0 },
+    "check": { "type": "boolean", "defined": true, "value": false },
+    "run": { "type": "Button", "defined": true },
+    "field": { "type": "TextField", "defined": true },
+    "empty": { "type": "TextField", "defined": true },
+    "pos": { "type": "boolean", "defined": true, "value": true }
+  }
+}

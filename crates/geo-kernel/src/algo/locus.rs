@@ -216,9 +216,23 @@ impl Construction {
         } else {
             0.0_f64.clamp(min, max)
         };
+        self.add_saved_slider(label, value, min, max)
+    }
+
+    /// Restores an existing slider with its saved value and interval.
+    pub fn add_saved_slider(
+        &mut self,
+        label: &str,
+        value: f64,
+        min: f64,
+        max: f64,
+    ) -> Result<Id, Error> {
+        if !(min.is_finite() && max.is_finite()) {
+            return Err(Error::NotFinite);
+        }
         let id = self.add(label, Def::Number(value))?;
         self.sliders.push((id.0, min, max));
-        if reversed {
+        if min > max {
             self.values[id.0] = Value::Undefined;
         }
         Ok(id)

@@ -84,7 +84,7 @@ case "$cmd" in
     ;;
   saved)
     java "${java_opts[@]}" -cp "$build/classes:$(cat "$build/classpath.txt")" \
-      geokernel.harness.SavedExporter "$here/saved/saved.json" "$repo/golden/ggb/saved"
+      geokernel.harness.SavedExporter "$here/saved/saved.json" "$repo/golden/ggb/saved" "$@"
     ;;
   tpairs)
     commit="$(git -C "$ggb" rev-parse HEAD)"

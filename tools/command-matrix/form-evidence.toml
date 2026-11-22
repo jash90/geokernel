@@ -1821,3 +1821,8 @@ cases = ["algebralogic-relation-001", "algebralogic-relation-002", "algebralogic
 command = "Asymptote"
 form = "conic"
 cases = ["relationreview-asymptotes-001"]
+
+[[form]]
+command = "CurveCartesian"
+form = "number,number,number,number,number"
+cases = ["importgaps-curve-001"]
