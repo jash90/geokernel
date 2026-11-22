@@ -17,6 +17,7 @@
     {"id": "charts-barchart-015", "group": "charts", "script": ["chart = BarChart(5, 1, {1, 2, 3})"], "steps": [{"action": "initial"}]},
     {"id": "charts-barchart-016", "group": "charts", "script": ["chart = BarChart(1, 1, {1})"], "steps": [{"action": "initial"}]},
     {"id": "charts-barchart-017", "group": "charts", "script": ["chart = BarChart(1, 2, {})"], "steps": [{"action": "initial"}]},
+    {"id": "charts-boxplotfrequency-001", "group": "charts", "script": ["chart = BoxPlot(0, 1, {5}, {3}, false)"], "steps": [{"action": "initial"}]},
     {"id": "charts-boxplot-001", "group": "charts", "script": ["chart = BoxPlot( 4, 50, {2,3,4} )"], "steps": [{"action": "initial"}]},
     {"id": "charts-boxplot-002", "group": "charts", "script": ["chart = BoxPlot( 4, 50, {2,3,4}, true )"], "steps": [{"action": "initial"}]},
     {"id": "charts-boxplot-003", "group": "charts", "script": ["chart = BoxPlot( 4, 50, {2,3,4}, {1,2,3,4,5}, false )"], "steps": [{"action": "initial"}]},

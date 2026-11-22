@@ -834,6 +834,7 @@ dependencies = [
  "geo-golden",
  "geo-kernel",
  "miniz_oxide 0.9.1",
+ "png",
  "quick-xml 0.42.0",
  "serde",
  "serde_json",
@@ -847,6 +848,7 @@ version = "0.1.0"
 dependencies = [
  "image",
  "libm",
+ "png",
 ]
 
 [[package]]

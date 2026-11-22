@@ -539,6 +539,48 @@ fn locus_frames_stay_within_the_budget() {
 }
 
 #[test]
+fn large_chart_frames_stay_within_the_budget() {
+    let (mut script, mid) = grid(83);
+    script += "edges = Sequence(k / 250, k, -1000, 1000)\n";
+    script += "samples = Sequence((k + 0.5) / 250, k, -1000, 999)\n";
+    script += "histogram = Histogram(edges, samples, false)\n";
+    script += "dots = DotPlot(samples)\n";
+    let mut w = Window::with(&script, mid);
+    let c = w.app.wb.construction();
+    assert_eq!(
+        c.ids().filter(|&id| !c.label(id).starts_with('\0')).count(),
+        1000
+    );
+    for label in ["histogram", "dots"] {
+        let chart = c.chart(c.id(label).unwrap()).unwrap();
+        assert!(chart.marks.len() >= 2000, "{label}: {}", chart.marks.len());
+    }
+    w.settled(1);
+    let builds = crate::draw::charts::builds();
+    let start = std::time::Instant::now();
+    let idle = w.frames(1);
+    assert_eq!(crate::draw::charts::builds(), builds);
+    let idle_ms = start.elapsed().as_secs_f64() * 1000.0;
+    w.app.camera.as_mut().unwrap().cx += 0.2;
+    let start = std::time::Instant::now();
+    let pan = w.frames(1);
+    let pan_ms = start.elapsed().as_secs_f64() * 1000.0;
+    println!("charts idle ({idle_ms:.2} ms): {idle:?}; pan ({pan_ms:.2} ms): {pan:?}");
+    for counts in [idle, pan] {
+        assert!(
+            counts.shapes <= 2_600 && counts.texts <= 1_040,
+            "{counts:?}"
+        );
+        assert!(counts.vertices <= 100_000, "{counts:?}");
+        assert!(
+            counts.allocs <= 3_100 && counts.bytes <= 850_000,
+            "{counts:?}"
+        );
+        assert_eq!((counts.rows_formatted, counts.rows_built), (0, 0));
+    }
+}
+
+#[test]
 fn raster_frames_stay_within_the_budget() {
     use geo_kernel::kernel::image::{ImagePlacement, ImageStyle};
     use geo_kernel::script::image::definition;

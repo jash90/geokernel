@@ -1,9 +1,9 @@
 //! The journal syntax for raster assets and their instances.
 
-use super::{object, split_call};
+use super::{object, saved_argument, split_call};
 use crate::kernel::control::{decode_text, encode_text};
 use crate::kernel::image::{ImageCorner, ImagePlacement, ImageStyle};
-use crate::{Construction, Id};
+use crate::{Construction, Id, Kind};
 
 pub const FORM: &str = "$image";
 
@@ -45,7 +45,7 @@ fn fields<const N: usize>(args: [&str; N]) -> Result<[f64; N], String> {
     Ok(values)
 }
 
-fn corner(c: &Construction, arg: &str) -> Result<Option<ImageCorner>, String> {
+fn corner(c: &mut Construction, arg: &str) -> Result<Option<ImageCorner>, String> {
     if arg == "_" {
         return Ok(None);
     }
@@ -53,20 +53,37 @@ fn corner(c: &Construction, arg: &str) -> Result<Option<ImageCorner>, String> {
         return Err("invalid image corner".into());
     };
     Ok(Some(match (form, args.as_slice()) {
-        ("point", [name]) => ImageCorner::Point(object(c, &decode_text(name)?)?),
+        ("point", [source]) => {
+            let source = decode_text(source)?;
+            let label = saved_argument(c, &source, 0)?;
+            let id = object(c, &label)?;
+            if c.kind(id) != Kind::Point {
+                return Err("expected a point for the image corner".into());
+            }
+            ImageCorner::Point(id)
+        }
         ("xy", &[x, y]) => ImageCorner::Coordinates(fields([x, y])?),
         _ => return Err("invalid image corner".into()),
     }))
 }
 
 pub(super) fn define(c: &mut Construction, label: &str, rhs: &str) -> Result<Id, String> {
+    let checkpoint = c.checkpoint();
+    let result = define_inner(c, label, rhs);
+    if result.is_err() {
+        c.discard_since(checkpoint);
+    }
+    result
+}
+
+fn define_inner(c: &mut Construction, label: &str, rhs: &str) -> Result<Id, String> {
     let Some((FORM, args)) = split_call(rhs) else {
         return Err("invalid image definition".into());
     };
     let [name, alpha, background, interpolate, crop, placement] = args.as_slice() else {
         return Err("invalid image fields".into());
     };
-    let boolean = |s: &str| s.parse().map_err(|_| "invalid image flag");
+    let boolean = |s: &str| s.parse::<bool>().map_err(|_| "invalid image flag");
     let crop = if *crop == "_" {
         None
     } else if let Some(("crop", values)) = split_call(crop) {
@@ -77,18 +94,32 @@ pub(super) fn define(c: &mut Construction, label: &str, rhs: &str) -> Result<Id,
         return Err("invalid image crop".into());
     };
     let (form, args) = split_call(placement).ok_or("invalid image placement")?;
+    let name = decode_text(name)?;
+    if !c.has_image_asset(&name) {
+        return Err("missing image asset".into());
+    }
     let placement = match (form, args.as_slice()) {
         ("screen", &[x, y]) => ImagePlacement::Screen(fields([x, y])?),
-        ("world", [centered, screen_coords, a, b, d]) => ImagePlacement::World {
-            centered: boolean(centered)?,
-            screen_coords: boolean(screen_coords)?,
-            corners: [corner(c, a)?, corner(c, b)?, corner(c, d)?],
-        },
+        ("world", [centered, screen_coords, a, b, d]) => {
+            let centered = boolean(centered)?;
+            let screen_coords = boolean(screen_coords)?;
+            let a = corner(c, a)?;
+            let (b, d) = if a.is_some() && !centered && !screen_coords {
+                (corner(c, b)?, corner(c, d)?)
+            } else {
+                (None, None)
+            };
+            ImagePlacement::World {
+                centered,
+                screen_coords,
+                corners: [a, b, d],
+            }
+        }
         _ => return Err("invalid image placement".into()),
     };
     c.add_image(
         label,
-        &decode_text(name)?,
+        &name,
         placement,
         ImageStyle {
             alpha: alpha.parse().map_err(|_| "invalid image opacity")?,
@@ -97,4 +128,12 @@ pub(super) fn define(c: &mut Construction, label: &str, rhs: &str) -> Result<Id,
             crop,
         },
     )
+}
+
+/// Point expressions in an image definition are encoded in the journal.
+pub fn corner_sources(rhs: &str) -> impl Iterator<Item = String> + '_ {
+    rhs.strip_prefix("$image(")
+        .into_iter()
+        .flat_map(|rhs| rhs.split("point(").skip(1))
+        .filter_map(|source| decode_text(source.split_once(')')?.0).ok())
 }

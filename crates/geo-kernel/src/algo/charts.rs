@@ -66,6 +66,7 @@ impl Command {
             Self::Box => &[
                 &[N, N, L],
                 &[N, N, L, B],
+                &[N, N, L, L],
                 &[N, N, L, L, B],
                 &[N, N, N, N, N, N, N],
             ],
@@ -244,6 +245,7 @@ pub enum ChartMark {
 
 #[derive(Debug)]
 pub struct ChartData {
+    revision: u64,
     pub(crate) value: Value,
     pub marks: Vec<ChartMark>,
     pub(crate) vertices: Vec<(f64, f64)>,
@@ -255,6 +257,7 @@ pub struct ChartData {
 impl Default for ChartData {
     fn default() -> Self {
         Self {
+            revision: 0,
             value: Value::Undefined,
             marks: Vec::new(),
             vertices: Vec::new(),
@@ -266,6 +269,42 @@ impl Default for ChartData {
 }
 
 impl ChartData {
+    // GeoGebra's bar charts cap interval rectangles at 10,000. Use the
+    // same ceiling for the other drawing primitives without changing the
+    // computed list, chart value, or function domain.
+    pub const DRAW_LIMIT: usize = 10_000;
+
+    pub fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    pub(crate) fn bump_revision(&mut self) {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT: AtomicU64 = AtomicU64::new(1);
+        self.revision = NEXT.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn render_marks(&self, scale: f64) -> impl Iterator<Item = ChartMark> + '_ {
+        self.marks
+            .iter()
+            .copied()
+            .take(if self.dot_stack.is_some() {
+                0
+            } else {
+                Self::DRAW_LIMIT
+            })
+            .chain(
+                self.dot_stack
+                    .iter()
+                    .flat_map(move |stack| {
+                        stack
+                            .dots(scale)
+                            .map(|at| ChartMark::Point { at, open: false })
+                    })
+                    .take(Self::DRAW_LIMIT),
+            )
+    }
+
     pub(crate) fn same(&self, other: &Self) -> bool {
         self.value == other.value
             && self.marks == other.marks
@@ -497,10 +536,10 @@ impl Inputs<'_> {
             ],
             _ => {
                 let values = self.numbers(data)?;
-                if values.len() < 2 || !sort_work(self.work, values.len()) {
+                if values.is_empty() || !sort_work(self.work, values.len()) {
                     return None;
                 }
-                let weighted = args.len() == 5;
+                let weighted = args.get(3).is_some_and(|&id| self.c.kind(id) == Kind::List);
                 let weights = if weighted {
                     self.numbers(args[3])?
                 } else {
@@ -685,6 +724,32 @@ pub struct Pie {
 }
 
 impl Pie {
+    pub fn slice_color(index: usize) -> [u8; 3] {
+        const COLORS: [[u8; 3]; 6] = [
+            [101, 87, 210],
+            [224, 191, 0],
+            [59, 180, 166],
+            [218, 106, 157],
+            [59, 28, 50],
+            [255, 140, 112],
+        ];
+        let tint = 0.6f32.powi((index / COLORS.len()) as i32);
+        COLORS[index % COLORS.len()].map(|c| (255.0 + (f32::from(c) - 255.0) * tint).round() as u8)
+    }
+
+    pub fn slices(&self) -> impl Iterator<Item = (usize, f64, f64)> + '_ {
+        self.fractions
+            .iter()
+            .copied()
+            .take(ChartData::DRAW_LIMIT)
+            .enumerate()
+            .scan(-0.25, |start, (index, fraction)| {
+                let previous = *start;
+                *start += fraction;
+                Some((index, previous, fraction))
+            })
+    }
+
     fn same(&self, other: &Self) -> bool {
         self.center == other.center
             && self.radius == other.radius
@@ -720,5 +785,25 @@ impl DotStack {
                 *count += 1;
                 Some((*stack, y))
             })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn weighted_quartiles_use_the_expanded_sample_count() {
+        let c = crate::script::load(
+            "chart = BoxPlot(0, 1, {5}, {3})\nshort = BoxPlot(0, 1, {5}, {1}, false)",
+        )
+        .unwrap();
+        let chart = c.id("chart").unwrap();
+        assert_eq!(c.value(chart), Value::Number(5.0));
+        assert!(c.chart(chart).unwrap().marks.contains(&ChartMark::Box {
+            x: [5.0, 5.0],
+            y: [-1.0, 1.0],
+        }));
+        assert_eq!(c.value(c.id("short").unwrap()), Value::Undefined);
     }
 }

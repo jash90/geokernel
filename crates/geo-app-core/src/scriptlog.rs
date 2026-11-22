@@ -66,11 +66,12 @@ fn snapshot_labels(comment: &str) -> Option<&str> {
 
 fn has_recorded_growth(src: &str) -> bool {
     src.lines().any(|line| {
-        split_comment(line)
-            .0
-            .split_once('=')
-            .and_then(|(_, rhs)| boundary_slot_owner(rhs.trim()))
-            .is_some()
+        !line.trim_start().starts_with("$imageAsset(")
+            && split_comment(line)
+                .0
+                .split_once('=')
+                .and_then(|(_, rhs)| boundary_slot_owner(rhs.trim()))
+                .is_some()
     })
 }
 
@@ -362,6 +363,12 @@ fn tokens(line: &str) -> impl Iterator<Item = &str> {
         .0
         .split(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '{' | '}' | '\'')))
         .filter(|t| !t.is_empty())
+}
+
+fn uses_removed_object(entry: &Entry, gone: &BTreeSet<String>) -> bool {
+    tokens(&entry.line).any(|token| gone.contains(token))
+        || geo_kernel::script::image::corner_sources(entry.rhs())
+            .any(|source| tokens(&source).any(|token| gone.contains(token)))
 }
 
 /// Internal dependencies have a kernel id but no user-visible label.
@@ -771,7 +778,7 @@ impl Log {
                             }
                         }
                         Err(err) => {
-                            if c.len() != before || !tokens(&e.line).any(|t| gone.contains(t)) {
+                            if c.len() != before || !uses_removed_object(e, &gone) {
                                 return Err(format!("`{}`: {err}", e.line));
                             }
                             gone.extend(e.labels.iter().cloned());
@@ -896,6 +903,7 @@ impl Log {
         }
         kept.hidden = self.hidden.clone();
         self.replay_conditions(&mut c, &mut kept);
+        kept.prune_image_assets(&mut c);
         Ok((c, kept))
     }
 
@@ -947,7 +955,7 @@ impl Log {
                             kept.record(&c, before, &e.line);
                         }
                         Err(err) => {
-                            if c.len() != before || !tokens(&e.line).any(|t| gone.contains(t)) {
+                            if c.len() != before || !uses_removed_object(e, &gone) {
                                 return Err(format!("`{}`: {err}", e.line));
                             }
                             gone.extend(e.labels.iter().cloned());
@@ -1016,6 +1024,7 @@ impl Log {
         }
         kept.hidden = self.hidden.clone();
         self.replay_conditions(&mut c, &mut kept);
+        kept.prune_image_assets(&mut c);
         Ok((c, kept))
     }
 
@@ -1059,6 +1068,26 @@ impl Log {
     #[cfg(test)]
     pub(crate) fn distinct_entries<'a>(logs: impl IntoIterator<Item = &'a Log>) -> usize {
         Chain::distinct_nodes(logs.into_iter().map(|l| &l.ops))
+    }
+
+    fn prune_image_assets(&mut self, c: &mut Construction) {
+        let before = c.image_asset_count();
+        c.prune_image_assets();
+        if c.image_asset_count() != before {
+            self.ops.retain(|op| match op {
+                Op::SavedProperty(property) => match property.as_ref() {
+                    Property::ImageAsset { name, .. } => c.has_image_asset(name),
+                    _ => true,
+                },
+                _ => true,
+            });
+        }
+    }
+
+    fn record_asset(&mut self, asset: Option<Property>) {
+        if let Some(asset) = asset {
+            self.ops.push(Op::SavedProperty(Box::new(asset)));
+        }
     }
 
     /// The journal as a script that `load` reads back into the same
@@ -1242,6 +1271,18 @@ impl Log {
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
         for (i, raw) in src.lines().enumerate() {
+            if let Some(asset) = saved::load_image_asset(&mut c, raw) {
+                match asset {
+                    Ok(asset) => log.record_asset(asset),
+                    Err(reason) => rejected.push(Rejected {
+                        line: i + 1,
+                        text: "$imageAsset(…)".into(),
+                        reason,
+                        dependent: false,
+                    }),
+                }
+                continue;
+            }
             let (body, comment) = split_comment(raw);
             let listed = comment.and_then(snapshot_labels);
             let line = normalize_saved_definition(body, comment);
@@ -1295,6 +1336,7 @@ impl Log {
                 });
             }
         }
+        log.prune_image_assets(&mut c);
         (c, log, rejected)
     }
 
@@ -1337,17 +1379,32 @@ impl Log {
     /// Builds a log and construction from a whole script. The error carries
     /// the 1-based line number like `script::load`.
     pub fn load(src: &str) -> Result<(Construction, Log), String> {
+        Self::load_with_assets(src, &[])
+    }
+
+    pub(crate) fn load_with_assets(
+        src: &str,
+        assets: &[Property],
+    ) -> Result<(Construction, Log), String> {
         let mut c = Construction::new();
         let mut log = Log::default();
+        for asset in assets {
+            asset.apply(&mut c)?;
+            log.record_asset(Some(asset.clone()));
+        }
         let mut groups = BoundaryOutputs::default();
         let grow = !has_recorded_growth(src);
         for (i, raw) in src.lines().enumerate() {
+            let at = |e: String| format!("line {}: {e}", i + 1);
+            if let Some(asset) = saved::load_image_asset(&mut c, raw) {
+                log.record_asset(asset.map_err(at)?);
+                continue;
+            }
             let (body, comment) = split_comment(raw);
             let line = normalize_saved_definition(body, comment);
             if line.is_empty() {
                 continue;
             }
-            let at = |e: String| format!("line {}: {e}", i + 1);
             if let Some(d) = directive(&line) {
                 let changed = log.apply(&mut c, d.map_err(at)?).map_err(at)?;
                 if grow && !changed.is_empty() {
@@ -1370,6 +1427,7 @@ impl Log {
                 groups.record(&c, &line, id, c.len() - before);
             }
         }
+        log.prune_image_assets(&mut c);
         Ok((c, log))
     }
 }

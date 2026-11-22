@@ -151,6 +151,7 @@ listed in `crates/geo-golden/known-gaps.toml`.
 | `BarChart(number, number, any, number, number, number, number)` | Also accepts an explicit sequence step. | The step is passed to the budgeted `Sequence` implementation. | The step and range follow the same sequence rules as the six-argument form. |
 | `Histogram(boolean, list, list, boolean, number, any)` | Uses the first five arguments. | Uses the first five arguments. | The sixth argument is ignored by the command processor. |
 | `HistogramRight(boolean, list, list, boolean, number, any)` | Uses the first five arguments. | Uses the first five arguments. | The sixth argument is ignored by the command processor. |
+| Frequency box plot with a single distinct value | Quartiles are undefined because the value list has one entry. The command requires the outlier flag. | Quartiles are defined when the sum of frequencies is at least two. The four-argument form uses `false` for outliers. | The kernel uses the expanded sample size for quartiles. |
 | Stacked dots | Drawing the density plot updates the coordinates of the output list. | The list uses the harness view at 50 pixels per unit. The window adapts the stacked positions to the current camera. | Following the camera in the drawing keeps construction evaluation independent of the viewport. |
 
 ## Discrete geometry

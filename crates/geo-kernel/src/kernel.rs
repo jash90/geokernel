@@ -821,6 +821,8 @@ pub struct Construction {
     by_label: HashMap<String, Id>,
     images: image::Images,
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
+    drawing_styles: std::collections::BTreeMap<Id, DrawingStyle>,
+    drawing_layers: u16,
     text_presentations: HashMap<Id, text::TextOverrides>,
     /// Selected equation forms and their display revisions.
     equation_forms: HashMap<Id, (EquationForm, u64)>,
@@ -975,6 +977,24 @@ impl DirtySet {
         self.levels[0][pos / 64] &= !(1 << (pos % 64));
         self.len -= 1;
         Some(pos)
+    }
+}
+
+/// Display properties stored outside the construction's fixed-size values.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DrawingStyle {
+    pub layer: u8,
+    pub show_label: bool,
+    pub line_thickness: u8,
+}
+
+impl Default for DrawingStyle {
+    fn default() -> Self {
+        Self {
+            layer: 0,
+            show_label: true,
+            line_thickness: 3,
+        }
     }
 }
 
@@ -1191,6 +1211,41 @@ impl Construction {
         self.charts.iter().map(|(&id, data)| (id, data))
     }
 
+    pub fn drawing_style(&self, id: Id) -> DrawingStyle {
+        self.drawing_styles.get(&id).copied().unwrap_or_default()
+    }
+
+    pub fn set_drawing_style(&mut self, id: Id, mut style: DrawingStyle) {
+        style.layer = style.layer.min(9);
+        self.drawing_layers |= 1 << style.layer;
+        self.drawing_styles.insert(id, style);
+    }
+
+    pub fn drawing_layers(&self) -> impl Iterator<Item = u8> {
+        let layers = self.drawing_layers | 1;
+        (0..=9).filter(move |layer| layers & (1 << layer) != 0)
+    }
+
+    /// Classic drawing order: layer, object-class priority, construction order.
+    pub fn drawing_order(&self, id: Id) -> (u8, u8, Id) {
+        let priority = match self.kind(id) {
+            Kind::Image => 20,
+            Kind::List => 40,
+            Kind::Polygon => 50,
+            Kind::PolyLine => 51,
+            Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector => 70,
+            Kind::Number | Kind::Angle | Kind::PieChart => 80,
+            Kind::Function | Kind::Curve => 90,
+            Kind::Line => 100,
+            Kind::Ray | Kind::Segment => 110,
+            Kind::Vector => 120,
+            Kind::Locus => 130,
+            Kind::Point => 140,
+            _ => 150,
+        };
+        (self.drawing_style(id).layer, priority, id)
+    }
+
     /// The vertices of a polygon or polyline in order, `None` for a vertex
     /// that is undefined. Nothing for any other object, and nothing for a
     /// regular polygon that is undefined.
@@ -1296,6 +1351,7 @@ impl Construction {
         });
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
+        self.drawing_styles.split_off(&Id(at.len));
         self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
@@ -1476,7 +1532,8 @@ impl Construction {
                 value
             }
             Def::Chart(d) => {
-                let data = d.compute(self);
+                let mut data = d.compute(self);
+                data.bump_revision();
                 let value = data.value;
                 self.charts.insert(id, data);
                 value
@@ -1838,11 +1895,12 @@ impl Construction {
                     }
                 }
                 Def::Chart(d) => {
-                    let data = d.compute(self);
+                    let mut data = d.compute(self);
                     let id = Id(i);
                     if self.chart(id).is_some_and(|old| old.same(&data)) {
                         continue;
                     }
+                    data.bump_revision();
                     self.values[i] = data.value;
                     self.charts.insert(id, data);
                 }

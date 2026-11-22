@@ -13,9 +13,9 @@ use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
 use geo_kernel::kernel::control::{encode_scripts, encode_text, visibility_boolean};
-use geo_kernel::kernel::image::{ImageCorner, ImagePlacement, RasterAsset};
+use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
-use geo_kernel::kernel::{angle::AngleStyle, Def};
+use geo_kernel::kernel::{angle::AngleStyle, Def, DrawingStyle};
 use geo_kernel::script::equation::Style as EquationStyle;
 use geo_kernel::script::saved::Property;
 use geo_kernel::script::text::{
@@ -116,7 +116,7 @@ pub(crate) fn convert_with_assets(
         }
     }
     // Saved corner references can name points that appear later in the file.
-    let mut assets = BTreeMap::new();
+    let mut assets = ImageAssets::default();
     for el in images {
         c.image(el, archive, &mut assets)?;
     }
@@ -145,6 +145,29 @@ pub(crate) fn convert_with_assets(
     // A text start point may be named later in the construction.
     for el in elements.values() {
         c.apply_text_position(el);
+    }
+    for el in elements.values() {
+        let Some(id) = c.kernel.id(&el.label) else {
+            continue;
+        };
+        let mut style = DrawingStyle {
+            layer: el.layer,
+            ..DrawingStyle::default()
+        };
+        if c.kernel.chart(id).is_some() {
+            style.show_label = el.label_shown.unwrap_or(style.show_label);
+            style.line_thickness = el.thickness.unwrap_or(style.line_thickness);
+        }
+        if style != DrawingStyle::default() {
+            c.kernel.set_drawing_style(id, style);
+            c.out.script.push(
+                Property::DrawingStyle {
+                    label: el.label.clone(),
+                    style,
+                }
+                .to_string(),
+            );
+        }
     }
     let mut out = c.out;
     out.settings = doc.settings;
@@ -201,6 +224,13 @@ impl Flags {
             }
         }
     }
+}
+
+#[derive(Default)]
+struct ImageAssets {
+    by_name: BTreeMap<Arc<str>, Result<(), String>>,
+    by_offset: BTreeMap<u64, Result<(), String>>,
+    emitted: BTreeSet<Arc<str>>,
 }
 
 #[derive(Default)]
@@ -661,11 +691,11 @@ impl Converter {
         Ok(())
     }
 
-    fn image<'a>(
+    fn image(
         &mut self,
-        el: &'a Element,
+        el: &Element,
         archive: Option<&AssetArchive<'_>>,
-        assets: &mut BTreeMap<&'a str, Result<(), String>>,
+        assets: &mut ImageAssets,
     ) -> Result<(), ImportError> {
         let line = (|| {
             let image = el
@@ -680,47 +710,84 @@ impl Converter {
             if image.invalid_position {
                 return Err("invalid image position".into());
             }
-            let corner = |i: usize| {
-                image.corners[i].as_ref().map(|corner| match corner {
-                    ImageCorner::Coordinates(coords) => ImageCorner::Coordinates(*coords),
-                    ImageCorner::Point(label) => ImageCorner::Point(label.as_str()),
-                })
+            let mut corners = [None; 4];
+            let mut place = |anchor| {
+                let (index, corner): &(i32, ImageCorner<String>) = anchor;
+                let index = if image.centered { 3 } else { *index as usize };
+                if matches!(index, 1 | 2) && corners[0].is_none() {
+                    return;
+                }
+                if let Some(slot) = corners.get_mut(index) {
+                    *slot = Some(match corner {
+                        ImageCorner::Coordinates(coords) => ImageCorner::Coordinates(*coords),
+                        ImageCorner::Point(source) => ImageCorner::Point(source.as_str()),
+                    });
+                }
             };
-            let placement = match image.screen {
-                Some(coords) => ImagePlacement::Screen(coords),
-                None => ImagePlacement::World {
+            // Inline corner zero is set during XML reading. Other corners
+            // and named/expression anchors are installed in their saved order.
+            let immediate = |(index, corner): &&(i32, ImageCorner<String>)| {
+                *index == 0 && matches!(corner, ImageCorner::Coordinates(_))
+            };
+            for anchor in image.start_points.iter().filter(immediate) {
+                place(anchor);
+            }
+            for anchor in image
+                .start_points
+                .iter()
+                .filter(|anchor| !immediate(anchor))
+            {
+                place(anchor);
+            }
+            let [a, b, d, center] = corners;
+            let placement = match (image.anchors_in_screen_coords, image.centered, a) {
+                (true, true, _) | (true, false, None) => {
+                    ImagePlacement::Screen(image.screen.unwrap_or_default())
+                }
+                _ => ImagePlacement::World {
                     corners: if image.centered {
-                        [corner(3), None, None]
+                        [center, None, None]
                     } else {
-                        [corner(0), corner(1), corner(2)]
+                        [a, b, d]
                     },
                     centered: image.centered,
                     screen_coords: image.anchors_in_screen_coords,
                 },
             };
-            assets
-                .entry(name)
-                .or_insert_with(|| {
-                    let bytes = archive
+            if !assets.by_name.contains_key(name) {
+                let result = (|| {
+                    let (entry, data) = archive
                         .ok_or("the image has no archive asset")?
-                        .image(name)?;
-                    let asset = Arc::new(RasterAsset::decode(bytes)?);
-                    let property = Property::ImageAsset {
-                        name: name.into(),
-                        asset,
-                    };
-                    property.apply(&mut self.kernel)?;
-                    self.out.script.push(property.to_string());
-                    Ok(())
-                })
-                .as_ref()
-                .map_err(Clone::clone)?;
+                        .image_entry(name)?;
+                    let key = entry.local_offset;
+                    let result = assets.by_offset.entry(key).or_insert_with(|| {
+                        self.kernel
+                            .reserve_image_input(entry.size.max(data.len() as u64))?;
+                        let bytes = crate::archive::extract_entry(entry, data)
+                            .map_err(|e| e.to_string())?;
+                        self.kernel
+                            .decode_image_asset(name.into(), bytes)
+                            .map(|_| ())
+                    });
+                    result.as_ref().map(|_| ()).map_err(Clone::clone)
+                })();
+                assets.by_name.insert(name.into(), result);
+            }
+            assets.by_name[name].as_ref().map_err(Clone::clone)?;
             let rhs = geo_kernel::script::image::definition(name, placement, image.style);
             Ok(format!("{} = {rhs}", el.label))
         })();
         match line {
             Ok(line) => match self.run(&line, std::slice::from_ref(&el.label))? {
                 Ok(()) => {
+                    let id = self.kernel.id(&el.label).expect("accepted image");
+                    let image = self.kernel.image(id).expect("accepted raster");
+                    if assets.emitted.insert(image.name.clone()) {
+                        self.out.image_assets.push(Property::ImageAsset {
+                            name: image.name.clone(),
+                            asset: image.asset.clone(),
+                        });
+                    }
                     self.out.script.push(line);
                     self.record_element(el, None, None);
                 }

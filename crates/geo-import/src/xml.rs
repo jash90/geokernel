@@ -55,6 +55,9 @@ pub struct Element {
     pub label: String,
     /// `<show object=>`; `true` when absent.
     pub shown: bool,
+    pub layer: u8,
+    pub label_shown: Option<bool>,
+    pub thickness: Option<u8>,
     /// `<coords>` as written: `x`, `y`, `z`.
     pub coords: Option<[String; 3]>,
     /// `<value val=>` as written.
@@ -83,7 +86,7 @@ pub struct Element {
 pub struct SavedImage {
     pub file: Option<String>,
     pub screen: Option<[f64; 2]>,
-    pub corners: [Option<ImageCorner<String>>; 4],
+    pub start_points: Vec<(i32, ImageCorner<String>)>,
     pub anchors_in_screen_coords: bool,
     pub centered: bool,
     pub style: ImageStyle,
@@ -194,24 +197,33 @@ fn read_image(el: &mut Element, name: &str, e: &BytesStart) -> Result<(), Import
         }
         "absoluteScreenLocation" => {
             if let (Some(x), Some(y)) = (number("x")?, number("y")?) {
-                image.screen = Some([x, y]);
+                image.screen = Some([f64::from(x as i32), f64::from(y as i32)]);
+                image.anchors_in_screen_coords = true;
+                image.start_points.retain(|(index, corner)| {
+                    *index != 0 || matches!(corner, ImageCorner::Point(_))
+                });
             } else {
                 image.invalid_position = true;
             }
         }
         "startPoint" => {
-            let index = read("number")?.map_or(Some(0), |s| s.parse::<usize>().ok());
-            if let Some(slot) = index.and_then(|i| image.corners.get_mut(i)) {
-                image.anchors_in_screen_coords |= flag("absolute")?;
-                *slot = if let Some(name) = read("exp")?.or(read("label")?) {
-                    Some(ImageCorner::Point(name))
-                } else if let (Some(x), Some(y)) = (number("x")?, number("y")?) {
-                    let z = number("z")?.unwrap_or(1.0);
-                    Some(ImageCorner::Coordinates([x / z, y / z]))
-                } else {
-                    image.invalid_position = true;
-                    None
-                };
+            let index = read("number")?.and_then(|s| s.parse().ok()).unwrap_or(0);
+            image.anchors_in_screen_coords = flag("absolute")?;
+            if let Some(source) = read("exp")?.or(read("label")?) {
+                image.start_points.push((index, ImageCorner::Point(source)));
+            } else if let (Some(x), Some(y)) = (number("x")?, number("y")?) {
+                let z = number("z")?.unwrap_or(1.0);
+                if index == 0 {
+                    image.start_points.retain(|(index, corner)| {
+                        *index != 0 || matches!(corner, ImageCorner::Point(_))
+                    });
+                    if image.anchors_in_screen_coords {
+                        image.screen = None;
+                    }
+                }
+                image
+                    .start_points
+                    .push((index, ImageCorner::Coordinates([x / z, y / z])));
             }
         }
         _ => {}
@@ -427,9 +439,21 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     }
                 }
                 "show" if element.is_some() => {
+                    let el = element.as_mut().expect("checked above");
                     if let Some(object) = attr(e, "object")? {
-                        element.as_mut().expect("checked above").shown = object != "false";
+                        el.shown = object != "false";
                     }
+                    el.label_shown = attr(e, "label")?.map(|label| label == "true");
+                }
+                "layer" if element.is_some() => {
+                    if let Some(layer) = attr(e, "val")?.and_then(|v| v.parse::<i32>().ok()) {
+                        element.as_mut().expect("checked above").layer = layer.clamp(0, 9) as u8;
+                    }
+                }
+                "lineStyle" if element.is_some() => {
+                    element.as_mut().expect("checked above").thickness = attr(e, "thickness")?
+                        .and_then(|v| v.parse::<i32>().ok())
+                        .map(|v| v.clamp(0, 13) as u8);
                 }
                 "coords" if element.is_some() => {
                     let get = |k: &str| attr(e, k).map(Option::unwrap_or_default);

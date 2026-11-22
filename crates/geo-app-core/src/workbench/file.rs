@@ -21,11 +21,13 @@ impl Workbench {
     /// unchanged.
     pub fn load_bytes(&mut self, bytes: &[u8], name: &str) -> Result<(), String> {
         if geo_import::looks_like_construction(bytes) {
-            let imported = geo_import::import(bytes).map_err(|e| format!("{name}: {e}"))?;
+            let imported =
+                geo_import::import_for_replay(bytes).map_err(|e| format!("{name}: {e}"))?;
             let notice = import_notice(&imported);
             return self
                 .load_imported_with_conditions(
                     &imported.script.join("\n"),
+                    &imported.image_assets,
                     &imported.hidden,
                     &imported.conditions,
                     notice,
@@ -437,6 +439,27 @@ mod tests {
         let b = copy.construction().id("B").unwrap();
         assert!(copy.move_point(b, 1.0, 0.0));
         assert_eq!(copy.construction().image_quad(image, 50.0), Some(quad));
+    }
+
+    #[test]
+    fn deleting_the_last_image_omits_its_asset_from_save_and_undo_restores_it() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-images-001.ggb"),
+            "raster",
+        )
+        .unwrap();
+        let id = wb.construction().id("animatedImage").unwrap();
+        let asset = wb.construction().image(id).unwrap().asset.clone();
+        assert!(wb.delete(id));
+        assert_eq!(wb.snapshot_text().matches("$imageAsset(").count(), 2);
+        assert_eq!(wb.log.to_script().matches("$imageAsset(").count(), 2);
+        assert!(wb.undo());
+        let c = wb.construction();
+        assert!(std::sync::Arc::ptr_eq(
+            &c.image(c.id("animatedImage").unwrap()).unwrap().asset,
+            &asset
+        ));
     }
 
     /// The saved files of the golden set, and those of them that do not load.

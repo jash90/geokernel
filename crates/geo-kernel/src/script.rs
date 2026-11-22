@@ -86,13 +86,27 @@ impl std::error::Error for ScriptError {}
 
 /// Builds a construction from a whole script.
 pub fn load(src: &str) -> Result<Construction, ScriptError> {
+    load_with_assets(src, &[])
+}
+
+/// Replay imported definitions with the already decoded sources.
+pub fn load_with_assets(
+    src: &str,
+    assets: &[saved::Property],
+) -> Result<Construction, ScriptError> {
     let mut c = Construction::new();
+    for asset in assets {
+        asset
+            .apply(&mut c)
+            .map_err(|message| ScriptError { line: 1, message })?;
+    }
     for (i, raw) in src.lines().enumerate() {
         exec(&mut c, raw).map_err(|message| ScriptError {
             line: i + 1,
             message,
         })?;
     }
+    c.prune_image_assets();
     Ok(c)
 }
 
@@ -104,6 +118,9 @@ pub mod text;
 /// Runs one line. Returns the first output, or `Ok(None)` if the line
 /// creates nothing. Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
+    if let Some(asset) = saved::load_image_asset(c, raw) {
+        return asset.map(|_| None);
+    }
     let (line, comment) = split_comment(raw);
     let line = line.trim();
     let lowered = comment

@@ -32,7 +32,7 @@ const DEPENDENT_POINT_RADIUS: f32 = 4.0;
 pub const CURVE_WIDTH: f32 = 2.5;
 const LABEL_FONT: f32 = 16.0;
 
-mod charts;
+pub(crate) mod charts;
 pub(crate) mod image;
 mod text;
 
@@ -163,6 +163,42 @@ fn label(
 }
 
 pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform, scene: &Scene) {
+    if let Some(rects) = scene.label_rects {
+        rects.borrow_mut().clear();
+    }
+    if let Some(rects) = scene.text_rects {
+        rects.borrow_mut().clear();
+    }
+    let mut charts = charts::Frame::new(painter, rect, c, t, scene.generation, scene.visible);
+    let mut curves = None;
+    for layer in c.drawing_layers() {
+        if c.images().len() != 0 {
+            image::paint(painter, rect, c, t, Some(layer), scene.visible, scene.ghost);
+        }
+        paint_layer(
+            painter,
+            rect,
+            c,
+            t,
+            scene,
+            layer,
+            (&mut curves, charts.as_mut()),
+        );
+    }
+}
+
+fn paint_layer<'c>(
+    painter: &Painter,
+    rect: Rect,
+    c: &'c Construction,
+    t: &ViewTransform,
+    scene: &Scene,
+    layer: u8,
+    (curves, mut charts): (
+        &mut Option<crate::curves::Curves>,
+        Option<&mut charts::Frame<'_>>,
+    ),
+) {
     let (w, h) = (rect.width() as f64, rect.height() as f64);
     let origin = rect.min;
     let p = |x: f64, y: f64| -> Pos2 {
@@ -187,11 +223,16 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
     let (mx, my) = (0.5 * (v.xmin + v.xmax), 0.5 * (v.ymin + v.ymax));
     let reach = (w / t.scale()).hypot(h / t.scale()).max(vw.hypot(vh));
 
+    let layered = layer != 0 || c.drawing_layers().nth(1).is_some();
+    let has_charts = charts.is_some();
     let mut angles = Vec::new();
     let ids: Vec<Id> = c
         .ids()
         .filter(|&id| {
-            if !(scene.visible)(id) {
+            if !(scene.visible)(id)
+                || (layered && c.drawing_style(id).layer != layer)
+                || (has_charts && matches!(c.def(id), geo_kernel::Def::Chart(_)))
+            {
                 return false;
             }
             // A moved label may lie anywhere: its object is never skipped.
@@ -209,7 +250,7 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             !scene.cull || near_view(c, id, t, w, h) || (scene.label_offset)(id).is_some()
         })
         .collect();
-    let mut labels: Vec<Label> = Vec::new();
+    let mut labels: Vec<Label<'c>> = Vec::new();
     // Curved outlines are tessellated and kept between frames.
     let is_curve = |id: Id| match c.value(id) {
         Value::Function => !matches!(c.def(id), geo_kernel::Def::Chart(_)),
@@ -217,18 +258,27 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         Value::Undefined => matches!(c.kind(id), Kind::Arc | Kind::Sector),
         _ => false,
     };
-    let curves = (ids.iter().any(|&id| is_curve(id))
-        || [scene.hovered, scene.selected]
-            .into_iter()
-            .flatten()
-            // the id may be gone: the object was deleted after the last frame
-            .filter(|&i| c.exists(i))
-            .any(is_curve))
-    .then(|| crate::curves::Curves::new(painter, rect, t, scene.generation));
+    if curves.is_none()
+        && (ids.iter().any(|&id| is_curve(id))
+            || [scene.hovered, scene.selected]
+                .into_iter()
+                .flatten()
+                .filter(|&id| c.exists(id))
+                .any(is_curve))
+    {
+        *curves = Some(crate::curves::Curves::new(
+            painter,
+            rect,
+            t,
+            scene.generation,
+        ));
+    }
 
     // Highlights go under the objects, in the object's own colour.
     for (id, strong) in [(scene.hovered, false), (scene.selected, true)] {
-        let Some(id) = id.filter(|i| c.exists(*i) && (scene.visible)(*i)) else {
+        let Some(id) = id
+            .filter(|i| c.exists(*i) && (scene.visible)(*i) && c.drawing_style(*i).layer == layer)
+        else {
             continue;
         };
         if matches!(c.value(id), Value::Polygon { .. }) {
@@ -257,7 +307,34 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         }
     }
 
-    charts::paint(painter, rect, c, t, scene.visible, color);
+    let mut paint_charts = |low, high, labels: &mut Vec<Label<'c>>| {
+        let Some(frame) = &mut charts else { return };
+        for (id, chart) in c.charts() {
+            let (chart_layer, priority, _) = c.drawing_order(id);
+            if chart_layer != layer
+                || !(low..=high).contains(&priority)
+                || !(scene.visible)(id)
+                || !c.value(id).is_defined()
+            {
+                continue;
+            }
+            let col = color(id);
+            if let Some(at) = frame.draw(c, id, chart, col) {
+                let local = at - origin;
+                labels.push(label(
+                    id,
+                    Cow::Borrowed(c.label(id)),
+                    (
+                        f64::from(local.x.trunc()),
+                        f64::from(local.y.trunc() + LABEL_FONT),
+                    ),
+                    col,
+                    Align2::LEFT_BOTTOM,
+                ));
+            }
+        }
+    };
+    paint_charts(0, 49, &mut labels);
 
     // Angles first: their sectors lie under the lines.
     for (id, angle) in angles {
@@ -378,10 +455,57 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         }
     }
 
-    if c.has_loci() {
-        paint_loci(painter, c, &ids, (t, origin), color, scene.generation);
-    }
+    paint_charts(50, 69, &mut labels);
 
+    for &id in &ids {
+        if let Value::Circle { cx, cy, r } = c.value(id) {
+            paint_circle(painter, rect, t, (cx, cy, r), curve(id), &mut |pos| {
+                labels.push(label(
+                    id,
+                    Cow::Borrowed(c.label(id)),
+                    pos,
+                    color(id),
+                    Align2::CENTER_CENTER,
+                ));
+            });
+        }
+    }
+    for functions in [false, true] {
+        if functions {
+            paint_charts(70, u8::MAX, &mut labels);
+        }
+        let Some(curves) = curves.as_ref() else {
+            continue;
+        };
+        for id in ids
+            .iter()
+            .copied()
+            .filter(|&id| is_curve(id) && (c.kind(id) == Kind::Function) == functions)
+        {
+            let Some(drawn) = curves.get(c, id, color(id)) else {
+                continue;
+            };
+            if !drawn.mesh.is_empty() {
+                painter.add(Shape::Mesh(drawn.mesh.clone()));
+            }
+            if let Some(at) = drawn.point {
+                point_shape(painter, at, color(id), DEPENDENT_POINT_RADIUS);
+            }
+            // An ellipse smaller than a pixel: a dot of the stroke width.
+            if let Some(at) = drawn.dot {
+                painter.circle_filled(at, 0.5 * CURVE_WIDTH, color(id));
+            }
+            if let Some(pos) = drawn.label {
+                labels.push(label(
+                    id,
+                    Cow::Borrowed(c.label(id)),
+                    pos,
+                    color(id),
+                    Align2::LEFT_BOTTOM,
+                ));
+            }
+        }
+    }
     for &id in &ids {
         if let Some((a, b, k)) = c.value(id).unit_line() {
             let d = a * mx + b * my + k;
@@ -438,45 +562,6 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         }
     }
     for &id in &ids {
-        if let Value::Circle { cx, cy, r } = c.value(id) {
-            paint_circle(painter, rect, t, (cx, cy, r), curve(id), &mut |pos| {
-                labels.push(label(
-                    id,
-                    Cow::Borrowed(c.label(id)),
-                    pos,
-                    color(id),
-                    Align2::CENTER_CENTER,
-                ));
-            });
-        }
-    }
-    if let Some(curves) = &curves {
-        for id in ids.iter().copied().filter(|&id| is_curve(id)) {
-            let Some(drawn) = curves.get(c, id, color(id)) else {
-                continue;
-            };
-            if !drawn.mesh.is_empty() {
-                painter.add(Shape::Mesh(drawn.mesh.clone()));
-            }
-            if let Some(at) = drawn.point {
-                point_shape(painter, at, color(id), DEPENDENT_POINT_RADIUS);
-            }
-            // An ellipse smaller than a pixel: a dot of the stroke width.
-            if let Some(at) = drawn.dot {
-                painter.circle_filled(at, 0.5 * CURVE_WIDTH, color(id));
-            }
-            if let Some(pos) = drawn.label {
-                labels.push(label(
-                    id,
-                    Cow::Borrowed(c.label(id)),
-                    pos,
-                    color(id),
-                    Align2::LEFT_BOTTOM,
-                ));
-            }
-        }
-    }
-    for &id in &ids {
         if let Value::Segment { x1, y1, x2, y2 } = c.value(id) {
             if ![x1, y1, x2, y2].iter().all(|v| v.is_finite()) {
                 continue;
@@ -519,6 +604,10 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             Align2::CENTER_CENTER,
         ));
     }
+    if c.has_loci() {
+        paint_loci(painter, c, &ids, (t, origin), color, scene.generation);
+    }
+
     let mut has_text = false;
     for &id in &ids {
         let value = c.value(id);
@@ -544,19 +633,12 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
             has_text = true;
         }
     }
-    if let Some(text_rects) = scene.text_rects {
-        text_rects.borrow_mut().clear();
-    }
     if has_text {
         let texts = ids.iter().copied().filter(|&id| c.value(id) == Value::Text);
         text::paint(painter, rect, c, t, texts, color, scene);
     }
     let font = FontId::proportional(LABEL_FONT);
-    let mut rects = scene.label_rects.map(|r| {
-        let mut r = r.borrow_mut();
-        r.clear();
-        r
-    });
+    let mut rects = scene.label_rects.map(RefCell::borrow_mut);
     for (id, text, (sx, sy), color, align) in labels {
         // `labelOffsetX/Y` of the object, added to where its label goes.
         let (sx, sy) = match (scene.label_offset)(id) {

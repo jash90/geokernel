@@ -1,76 +1,123 @@
 //! Textured quads for imported rasters.
 
 use crate::interact::ViewTransform;
-use eframe::egui::cache::{ComputerMut, FrameCache};
-use eframe::egui::epaint::{mutex::RwLock, textures::TextureManager, Vertex};
+use eframe::egui::epaint::Vertex;
 use eframe::egui::{
     vec2, Color32, ColorImage, Mesh, Painter, Pos2, Rect, Shape, TextureHandle, TextureOptions,
 };
-use geo_kernel::kernel::image::RasterAsset;
+use geo_kernel::kernel::image::RasterImage;
 use geo_kernel::{Construction, Id, Value};
-use std::hash::{Hash, Hasher};
-use std::sync::{Arc, Weak};
-
-#[derive(Clone, Copy)]
-struct TextureKey<'a> {
-    asset: &'a Arc<RasterAsset>,
-    manager: &'a Arc<RwLock<TextureManager>>,
-    interpolate: bool,
-}
-
-impl Hash for TextureKey<'_> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        Arc::as_ptr(self.asset).hash(state);
-        self.interpolate.hash(state);
-    }
-}
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
-struct Upload;
+struct Textures {
+    handles: HashMap<(u64, bool), TextureHandle>,
+    live: HashSet<u64>,
+}
 
-impl ComputerMut<TextureKey<'_>, (Weak<RasterAsset>, TextureHandle)> for Upload {
-    fn compute(&mut self, key: TextureKey<'_>) -> (Weak<RasterAsset>, TextureHandle) {
-        let image = ColorImage::from_rgba_unmultiplied(
-            key.asset.size().map(|n| n as usize),
-            key.asset.rgba(),
-        );
-        let options = if key.interpolate {
-            TextureOptions::LINEAR
-        } else {
-            TextureOptions::NEAREST
-        };
-        let id = key
-            .manager
-            .write()
-            .alloc("construction image".into(), image.into(), options);
-        // The weak pointer keeps the cache key's address reserved until eviction.
-        (
-            Arc::downgrade(key.asset),
-            TextureHandle::new(key.manager.clone(), id),
-        )
+impl Textures {
+    fn retain_live(&mut self, c: &Construction) {
+        if !self.handles.is_empty() {
+            self.live.clear();
+            self.live
+                .extend(c.images().map(|(_, image)| image.asset.id()));
+            self.handles.retain(|(id, _), _| self.live.contains(id));
+        }
+    }
+
+    fn get(
+        &mut self,
+        painter: &Painter,
+        image: &RasterImage,
+        interpolate: bool,
+    ) -> eframe::egui::TextureId {
+        self.handles
+            .entry((image.asset.id(), interpolate))
+            .or_insert_with(|| {
+                let pixels = ColorImage::from_rgba_unmultiplied(
+                    image.asset.size().map(|n| n as usize),
+                    image.asset.rgba(),
+                );
+                let options = if interpolate {
+                    TextureOptions::LINEAR
+                } else {
+                    TextureOptions::NEAREST
+                };
+                let manager = painter.ctx().tex_manager();
+                let id = manager
+                    .write()
+                    .alloc("construction image".into(), pixels.into(), options);
+                TextureHandle::new(manager, id)
+            })
+            .id()
     }
 }
 
-type Textures = FrameCache<(Weak<RasterAsset>, TextureHandle), Upload>;
+fn textures(painter: &Painter) -> Arc<Mutex<Textures>> {
+    // This belongs to the window and lives across empty or offscreen frames.
+    painter.ctx().data_mut(|data| {
+        data.get_temp_mut_or_default::<Arc<Mutex<Textures>>>(eframe::egui::Id::unique(
+            "construction raster textures",
+        ))
+        .clone()
+    })
+}
 
+pub(crate) fn paint_background(
+    painter: &Painter,
+    rect: Rect,
+    c: &Construction,
+    view: &ViewTransform,
+    visible: &dyn Fn(Id) -> bool,
+    ghost: &dyn Fn(Id) -> bool,
+) {
+    let cache_id = eframe::egui::Id::unique("construction raster textures");
+    if let Some(cache) = painter
+        .ctx()
+        .data(|data| data.get_temp::<Arc<Mutex<Textures>>>(cache_id))
+    {
+        cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain_live(c);
+    }
+    paint(painter, rect, c, view, None, visible, ghost);
+}
+
+/// `None` paints all background images. A layer paints its foreground images.
 pub(crate) fn paint(
     painter: &Painter,
     rect: Rect,
     c: &Construction,
     view: &ViewTransform,
-    background: bool,
-    visible: impl Fn(Id) -> bool,
-    ghost: impl Fn(Id) -> bool,
+    layer: Option<u8>,
+    visible: &dyn Fn(Id) -> bool,
+    ghost: &dyn Fn(Id) -> bool,
 ) {
     let images = c.images();
     if images.len() == 0 {
         return;
     }
-    let manager = painter.ctx().tex_manager();
+    let mut images: Vec<_> = images
+        .filter(|&(id, image)| {
+            let in_layer = if let Some(layer) = layer {
+                !image.style.background && c.drawing_style(id).layer == layer
+            } else {
+                image.style.background
+            };
+            in_layer && visible(id) && c.value(id) == Value::Image
+        })
+        .collect();
+    if images.is_empty() {
+        return;
+    }
+    if layer.is_none() {
+        images.sort_unstable_by_key(|&(id, _)| c.drawing_order(id));
+    }
+    let cache = textures(painter);
+    let mut cache = cache.lock().unwrap_or_else(|e| e.into_inner());
     for (id, image) in images {
-        if image.style.background != background || !visible(id) || c.value(id) != Value::Image {
-            continue;
-        }
         let Some(quad) = c.image_quad(id, view.scale()) else {
             continue;
         };
@@ -88,34 +135,24 @@ pub(crate) fn paint(
             continue;
         }
         let [w, h] = image.asset.size().map(f64::from);
-        let [mut u0, mut v0, mut u1, mut v1] = [0.0, 0.0, 1.0, 1.0];
-        if let Some([x, y, width, height]) =
-            image.style.crop.filter(|_| !image.placement.is_screen())
-        {
-            u0 = (x.trunc() / w).clamp(0.0, 1.0);
-            v0 = (y.trunc() / h).clamp(0.0, 1.0);
-            u1 = ((x.trunc() + width.trunc()) / w).clamp(0.0, 1.0);
-            v1 = ((y.trunc() + height.trunc()) / h).clamp(0.0, 1.0);
-            if u1 <= u0 || v1 <= v0 {
-                continue;
-            }
-        }
+        let Some([x0, y0, x1, y1]) = image.source_rect() else {
+            continue;
+        };
+        let [u0, v0, u1, v1] = [x0 / w, y0 / h, x1 / w, y1 / h];
         let alpha = image.style.alpha * if ghost(id) { 0.3 } else { 1.0 };
         let color = Color32::from_white_alpha((alpha * 255.0).round() as u8);
-        let texture = painter.ctx().memory_mut(|mem| {
-            mem.caches
-                .cache::<Textures>()
-                .get(TextureKey {
-                    asset: &image.asset,
-                    manager: &manager,
-                    interpolate: image.style.interpolate,
-                })
-                .1
-                .id()
-        });
         let [top_left, top_right, _, bottom_left] = positions;
         let right = top_right - top_left;
         let down = bottom_left - top_left;
+        let near = |a: f32, b: f32| (a - b).abs() <= 1e-4;
+        let translation = painter.ctx().pixels_per_point() == 1.0
+            && near(top_left.x, top_left.x.round())
+            && near(top_left.y, top_left.y.round())
+            && near(right.x, w as f32)
+            && near(right.y, 0.0)
+            && near(down.x, 0.0)
+            && near(down.y, h as f32);
+        let texture = cache.get(painter, image, image.style.interpolate && !translation);
         let mesh = Mesh {
             texture_id: texture,
             indices: vec![0, 1, 2, 0, 2, 3],
@@ -163,25 +200,25 @@ mod tests {
                     .ctx()
                     .layer_painter(egui::LayerId::background())
                     .with_clip_rect(canvas);
-                for background in [true, false] {
-                    paint(
-                        &p,
-                        canvas,
-                        c,
-                        &view,
-                        background,
-                        |id| w.is_visible(id),
-                        |_| false,
-                    );
-                }
+                paint_background(&p, canvas, c, &view, &|id| w.is_visible(id), &|_| false);
+                paint(
+                    &p,
+                    canvas,
+                    c,
+                    &view,
+                    Some(0),
+                    &|id| w.is_visible(id),
+                    &|_| false,
+                );
             });
-            let uploaded = out
+            let uploaded: HashMap<_, _> = out
                 .textures_delta
                 .set
-                .iter()
-                .filter(|(id, _)| **id != egui::TextureId::default())
-                .count();
-            out.textures_delta.clear();
+                .drain()
+                .filter(|(id, _)| *id != egui::TextureId::default())
+                .filter_map(|(id, updates)| updates.last().map(|delta| (id, delta.options)))
+                .collect();
+            let freed = std::mem::take(&mut out.textures_delta.free);
             let meshes = out
                 .shapes
                 .into_iter()
@@ -190,16 +227,17 @@ mod tests {
                     _ => None,
                 })
                 .collect::<Vec<_>>();
-            (uploaded, meshes)
+            (uploaded, freed, meshes)
         };
-        let (uploaded, before) = frame(&w, camera);
-        assert_eq!(uploaded, 3);
+        let (uploaded, _, before) = frame(&w, camera);
+        assert_eq!(uploaded.len(), 4);
         assert_eq!(before.len(), 5);
-        let [_, fixed, world, anchored, _] = before.as_slice() else {
+        let [back, fixed, world, anchored, _] = before.as_slice() else {
             unreachable!()
         };
         assert_eq!(fixed.vertices[0].pos, canvas.min + vec2(41.0, 55.0));
-        assert_eq!(fixed.texture_id, world.texture_id);
+        assert_eq!(uploaded[&fixed.texture_id], TextureOptions::NEAREST);
+        assert_eq!(uploaded[&world.texture_id], TextureOptions::LINEAR);
         assert_eq!(world.texture_id, anchored.texture_id);
         assert_eq!(anchored.vertices[0].uv, Pos2::new(2.0 / 12.0, 1.0 / 8.0));
         assert_eq!(anchored.vertices[0].color, Color32::from_white_alpha(128));
@@ -208,12 +246,26 @@ mod tests {
         assert!(w.move_point(id, -3.0, 0.0));
         camera.scale *= 1.25;
         camera.cx += 1.0;
-        let (uploaded, after) = frame(&w, camera);
-        assert_eq!(uploaded, 0);
+        // At this zoom the centered image may need its other sampling mode.
+        let (_, _, changed) = frame(&w, camera);
+        let offscreen = Camera {
+            cx: 100_000.0,
+            ..camera
+        };
+        frame(&w, offscreen);
+        frame(&w, offscreen);
+        let (uploaded, freed, after) = frame(&w, camera);
+        assert!(uploaded.is_empty() && freed.is_empty());
+        assert_eq!(after, changed);
         assert_eq!(after.len(), 5);
         assert_eq!(after[1].vertices, fixed.vertices);
         assert_ne!(after[2].vertices, world.vertices);
         assert_ne!(after[3].vertices, anchored.vertices);
         assert_eq!(after[3].texture_id, anchored.texture_id);
+
+        let id = w.construction().id("backImage").unwrap();
+        assert!(w.delete(id));
+        let (_, freed, _) = frame(&w, camera);
+        assert!(freed.contains(&back.texture_id));
     }
 }

@@ -474,9 +474,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let c = app.wb.construction();
     let visible = |id: Id| show_all || app.wb.is_visible(id);
     let ghost = |id: Id| show_all && !app.wb.is_visible(id);
-    draw::image::paint(&painter, rect, c, &t, true, visible, ghost);
+    draw::image::paint_background(&painter, rect, c, &t, &visible, &ghost);
     grid::paint(&painter, rect, &t, app.decor, app.metrics.numbering_px);
-    draw::image::paint(&painter, rect, c, &t, false, visible, ghost);
     draw::paint(
         &painter,
         rect,
