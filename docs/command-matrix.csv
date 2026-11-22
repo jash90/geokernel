@@ -148,7 +148,7 @@ RootList,,function,P2,done,3,3,
 ImplicitCurve,,function,P2,done,3,3,
 ImplicitDerivative,,function,,out_of_scope,,,The implicit derivative command uses the CAS.
 NSolveODE,,function,P2,done,1,1,
-Spline,,function,P2,done,4,4,
+Spline,,function,P2,partial,4,3,
 BezierCurve,,function,P2,done,1,1,
 ImplicitSurface,,english,,out_of_scope,,,Implicit surfaces are 3D-only objects.
 Normalize,,function,P2,done,3,3,
@@ -432,8 +432,8 @@ SlowPlot,,geogebra,P2,todo,4,0,"Functions and lines follow an editable slider an
 ToolImage,,geogebra,,out_of_scope,,,"Draws a tool's icon image into the graphics view, not a construction object."
 DynamicCoordinates,,geogebra,P2,done,1,1,
 SetConstructionStep,,geogebra,P2,done,1,1,
-Maximize,,optimization,P2,done,2,2,
-Minimize,,optimization,P2,done,2,2,
+Maximize,,optimization,P2,partial,2,1,
+Minimize,,optimization,P2,partial,2,1,
 ExportImage,,scripting,,out_of_scope,,,
 Curve,CurveCartesian,function,P2,done,,,
 FormulaText,LaTeX,text,P2,done,,,
