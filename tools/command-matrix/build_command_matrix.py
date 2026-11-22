@@ -115,7 +115,7 @@ PARTIAL = {
     "Intersect": "Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, seeded curve pairs, and path and point incidence.",
     "LineBisector": "LineBisector(point, point); LineBisector(segment)",
     "AngularBisector": "AngularBisector(point, point, point); AngularBisector(line, line)",
-    "Tangent": "Tangents to conics, functions and Cartesian curves, and parallel tangents to implicit polynomials. Point tangents to implicit polynomials have a documented output count gap.",
+    "Tangent": "Tangents to conics, functions, Cartesian curves and implicit polynomials.",
     "Polar": "Polar(point, circle or conic)",
     "Incircle": "Incircle(point, point, point)",
     "Center": "Center(circle or conic); Center(segment)",

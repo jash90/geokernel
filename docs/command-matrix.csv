@@ -26,7 +26,7 @@ Line,,geometry,P0,done,5,5,"Line(point, point); Line(point, line, segment or ray
 Ray,,geometry,P1,done,2,2,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
 OrthogonalLine,,geometry,P0,done,5,5,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
-Tangent,,geometry,P1,done,11,11,"Tangents to conics, functions and Cartesian curves, and parallel tangents to implicit polynomials. Point tangents to implicit polynomials have a documented output count gap."
+Tangent,,geometry,P1,done,11,11,"Tangents to conics, functions, Cartesian curves and implicit polynomials."
 Segment,,geometry,P0,done,3,3,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
 Slope,,geometry,P1,done,2,2,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
