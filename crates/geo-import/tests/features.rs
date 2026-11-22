@@ -69,20 +69,12 @@ fn the_saved_value_is_checked_against_the_computed_one() {
         "<output a0=\"P\" a1=\"Q\"/>",
         &(second.replace('Q', "P") + &first.replace('P', "Q")),
     ));
-    // Exactly one of the two orders agrees with the kernel's index order,
-    // and the other is reported, not dropped.
-    assert_eq!(
-        r.mismatched.len() + swapped.mismatched.len(),
-        2,
-        "{:?} {:?}",
-        r.mismatched,
-        swapped.mismatched
-    );
-    let wrong = if r.mismatched.is_empty() {
-        &swapped
-    } else {
-        &r
-    };
+    assert!(r.mismatched.is_empty());
+    assert!(swapped.mismatched.is_empty());
+    let wrong = ok(&line_circle(
+        "<output a0=\"P\" a1=\"Q\"/>",
+        &(first.replace("y=\"0\"", "y=\"9\"") + &second.replace("y=\"0\"", "y=\"9\"")),
+    ));
     assert_eq!(wrong.mismatched.len(), 2);
     assert!(wrong.script.iter().any(|l| l == "P = Intersect(f, k, 1)"));
     assert_eq!(wrong.mismatched[0].label, "P");
@@ -171,21 +163,24 @@ fn older_expression_spellings_and_invalid_expressions() {
     );
     assert_eq!(
         r.script,
-        ["n = 2", "f(x) = If(x ≥ 0, n * x² + π)", "after = f(n)"]
+        [
+            "n = 2",
+            "f(x) = If(x ≥ 0, n * x² + π)",
+            "text = \"[text]\"",
+            "after = f(n)"
+        ]
     );
     let skips: Vec<_> = r
         .skipped
         .iter()
         .map(|s| (s.label.as_str(), s.reason.as_str()))
         .collect();
-    assert_eq!(skips.len(), 4);
+    assert_eq!(skips.len(), 3);
     assert_eq!(skips[0].0, "bad");
     assert!(skips[0].1.contains("square bracket"));
     assert_eq!(skips[1], ("g", "depends on the skipped object `bad`"));
-    assert_eq!(skips[2].0, "text");
-    assert!(skips[2].1.contains("text"));
-    assert_eq!(skips[3].0, "injection");
-    assert!(skips[3].1.contains("comment marker"));
+    assert_eq!(skips[2].0, "injection");
+    assert!(skips[2].1.contains("comment marker"));
 }
 
 #[test]
@@ -257,7 +252,10 @@ fn ignored_properties_are_listed_in_the_notes() {
     let notes = r.notes.join("\n");
     assert!(notes.contains("1 fixed"), "{notes}");
     assert!(notes.contains("1 auxiliary"), "{notes}");
-    assert!(notes.contains("1 objects with a condition"), "{notes}");
+    assert!(
+        notes.contains("visibility condition for `A`: `A` is not a boolean"),
+        "{notes}"
+    );
     assert!(notes.contains("1 vectors with a start point"), "{notes}");
     assert_eq!(r.script.len(), 3);
 }

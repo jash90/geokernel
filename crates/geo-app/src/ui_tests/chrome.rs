@@ -146,3 +146,24 @@ fn the_close_button_of_the_tool_hint_leaves_the_tool_like_escape() {
     // The move tool's hint has no close button with a mouse.
     assert!(h.query_by_label("Zakończ").is_none());
 }
+
+#[test]
+fn review_hidden_checkbox_still_toggles_in_algebra() {
+    let mut h = harness("");
+    h.state_mut()
+        .wb
+        .load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-object-scripts-001.xml"),
+            "object-scripts.xml",
+        )
+        .unwrap();
+    h.run();
+    let check = h.state().wb.construction().id("check").unwrap();
+    let point = h.state().wb.construction().id("A").unwrap();
+    assert!(!h.state().wb.is_visible(check));
+    assert!(!h.state().wb.is_visible(point));
+    h.get_by_label("check").click();
+    h.run();
+    assert_eq!(h.state().wb.construction().value(check), Value::Bool(true));
+    assert!(h.state().wb.is_visible(point));
+}

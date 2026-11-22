@@ -293,7 +293,7 @@ impl Parser<'_> {
     /// sum with the next, and the comparisons are joined left to right by
     /// `AND_INTERVAL`, a conjunction.
     fn comparison(&mut self) -> Result<u32, String> {
-        let mut left = self.sum()?;
+        let mut left = self.range()?;
         let mut joined: Option<u32> = None;
         loop {
             let op = match self.peek() {
@@ -306,7 +306,7 @@ impl Parser<'_> {
                 _ => break,
             };
             self.pos += 1;
-            let right = self.sum()?;
+            let right = self.range()?;
             let link = self.push(Node::Bin(op, left, right));
             joined = Some(match joined {
                 None => link,
@@ -315,6 +315,16 @@ impl Parser<'_> {
             left = right;
         }
         Ok(joined.unwrap_or(left))
+    }
+
+    /// The ellipsis creates a list from the two bounds.
+    fn range(&mut self) -> Result<u32, String> {
+        let mut left = self.sum()?;
+        while self.eat(&Tok::Range) {
+            let right = self.sum()?;
+            left = self.push(Node::Range(left, right, NONE));
+        }
+        Ok(left)
     }
 
     /// sum = product (('+' | '-') product)*
@@ -818,10 +828,13 @@ impl Parser<'_> {
             };
         }
         if let Some(id) = self.c.id(text) {
+            if self.equation && matches!(self.c.def(id), crate::Def::XAxis | crate::Def::YAxis) {
+                return Err("a line cannot be used in an expression".into());
+            }
             self.read(id, true);
             if self.c.kind(id) == Kind::FunctionNVar {
                 if !call {
-                    return Err(format!("the function `{text}` needs two arguments"));
+                    return Ok(self.push(Node::FunctionObject(id)));
                 }
                 return match self.arguments()?[..] {
                     [a, b] => Ok(self.push(Node::Apply2(id, a, b))),
@@ -830,7 +843,7 @@ impl Parser<'_> {
             }
             if self.c.kind(id) == Kind::Function {
                 if !call {
-                    return Err(format!("the function `{text}` needs an argument"));
+                    return Ok(self.push(Node::FunctionObject(id)));
                 }
                 return match self.arguments()?[..] {
                     [a] => Ok(self.push(Node::Apply(id, a))),
@@ -973,6 +986,7 @@ impl Parser<'_> {
                 let element = self.c.elements(id)?.get(0)?;
                 Some(match element {
                     super::Element::List(_) => Elem::List,
+                    super::Element::Text(_) => Elem::Text,
                     super::Element::Value(kind, _) => match kind {
                         Kind::Point | Kind::Vector => Elem::Vec,
                         Kind::Boolean => Elem::Bool,
@@ -1040,6 +1054,10 @@ impl Parser<'_> {
     /// Whether the subtree at `i` is a list.
     fn is_list(&self, i: u32) -> bool {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::List(_)))
+    }
+
+    pub(super) fn is_text(&self, i: u32) -> bool {
+        matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if tys[i as usize] == Ty::Text)
     }
 
     pub(super) fn uses_function_variable(&self, i: u32) -> bool {

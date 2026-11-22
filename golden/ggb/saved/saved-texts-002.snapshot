@@ -1,0 +1,30 @@
+{
+  "schema": 2,
+  "id": "saved-texts-002",
+  "script": [
+    "marker = \"Anchor label\"",
+    "P = (1.235, -2.246)",
+    "a = 4.1256",
+    "theta = 30.1256°",
+    "caption = \"Fixed panel #1 & notes\"",
+    "note = \"Survey note\u000asecond line\"",
+    "readout = \"a = \" + a + \"; P = \" + P + \"; θ = \" + theta",
+    "formula = \"\\frac{1}{2}\\\\\\frac{3}{4}\"",
+    "turned = VerticalText(formula)",
+    "hiddenText = \"Hidden label\"",
+    "atPoint = Text(\"Placed by command\", P, true, false, 0, 1)"
+  ],
+  "objects": {
+    "marker": { "type": "text", "defined": true, "text": "Anchor label" },
+    "P": { "type": "point", "defined": true, "x": 3.456, "y": 2.468 },
+    "a": { "type": "number", "defined": true, "value": 8.5678 },
+    "theta": { "type": "angle", "defined": true, "value": 0.5257909091388038 },
+    "caption": { "type": "text", "defined": true, "text": "Fixed panel #1 & notes" },
+    "note": { "type": "text", "defined": true, "text": "Survey note\u000asecond line" },
+    "readout": { "type": "text", "defined": true, "text": "a = 8.57; P = (3.46, 2.47); θ = 30.13°" },
+    "formula": { "type": "text", "defined": true, "text": "\\frac{1}{2}\\\\\\frac{3}{4}" },
+    "turned": { "type": "text", "defined": true, "text": "\\rotatebox{90.0}{ \\frac{1}{2}\\\\\\frac{3}{4} }" },
+    "hiddenText": { "type": "text", "defined": true, "text": "Hidden label" },
+    "atPoint": { "type": "text", "defined": true, "text": "Placed by command" }
+  }
+}

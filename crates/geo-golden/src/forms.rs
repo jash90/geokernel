@@ -320,9 +320,9 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
 /// The right-hand sides of a script, without comments.
 fn definitions(script: &[String]) -> impl Iterator<Item = &str> {
     script.iter().filter_map(|l| {
-        l.split('#')
-            .next()
-            .and_then(|l| l.split_once('='))
+        geo_kernel::script::split_comment(l)
+            .0
+            .split_once('=')
             .map(|(_, rhs)| rhs)
     })
 }
@@ -342,10 +342,6 @@ pub fn script_uses_form(
             names.get(name).is_some_and(|c| c == command) && {
                 if matches!(form, "inequality" | "interval") {
                     return matches!(args.as_slice(), [arg] if inline_inequality(arg));
-                }
-                if form == "text" {
-                    return matches!(args.as_slice(), [arg] if arg.len() >= 2
-                        && arg.starts_with('"') && arg.ends_with('"'));
                 }
                 let mut kinds: Vec<Option<Kind>> =
                     args.iter().map(|a| arg_kind(a, labels)).collect();

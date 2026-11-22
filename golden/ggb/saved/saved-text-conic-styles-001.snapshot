@@ -1,0 +1,198 @@
+{
+  "schema": 2,
+  "id": "saved-text-conic-styles-001",
+  "script": [
+    "C = (1, -2)",
+    "O = (0, 0)",
+    "pe: y = x^2 - 4x + 7",
+    "pv: y = x^2 - 4x + 7",
+    "pc: x = 2y^2 + 8y + 11",
+    "ps: y^2 = 4x",
+    "s = Circle(C, 3)",
+    "cp = Circle(O, 3)",
+    "ee: 4x^2 + 9y^2 = 36",
+    "h: 4x^2 - 9y^2 = 36",
+    "di: x^2 - y^2 = 0",
+    "dp: x^2 - y^2 = 0",
+    "pp: (x - 1)^2 = 4",
+    "pl: (x - 1)^2 = 0",
+    "sp: x^2 + y^2 = 0",
+    "peText = Text(pe)",
+    "pvText = Text(pv)",
+    "pcText = Text(pc)",
+    "psText = Text(ps)",
+    "sText = Text(s)",
+    "cpText = Text(cp)",
+    "eeText = Text(ee)",
+    "hText = Text(h)",
+    "diText = Text(di)",
+    "dpText = Text(dp)",
+    "ppText = Text(pp)",
+    "plText = Text(pl)",
+    "spText = Text(sp)",
+    "peTeX = FormulaText(pe)",
+    "pvTeX = FormulaText(pv)",
+    "pcTeX = FormulaText(pc)",
+    "psTeX = FormulaText(ps)",
+    "sTeX = FormulaText(s)",
+    "cpTeX = FormulaText(cp)",
+    "eeTeX = FormulaText(ee)",
+    "hTeX = FormulaText(h)",
+    "diTeX = FormulaText(di)",
+    "dpTeX = FormulaText(dp)",
+    "ppTeX = FormulaText(pp)",
+    "plTeX = FormulaText(pl)",
+    "spTeX = FormulaText(sp)"
+  ],
+  "objects": {
+    "C": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+    "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+    "pe": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "parabola",
+      "matrix": [-1.0, 0.0, -7.0, 0.0, 2.0, 0.5],
+      "vertex": [2.0, 3.0],
+      "p": 0.5,
+      "eigenvectors": [
+        [0.0, 1.0],
+        [-1.0, 0.0]
+      ]
+    },
+    "pv": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "parabola",
+      "matrix": [-1.0, 0.0, -7.0, 0.0, 2.0, 0.5],
+      "vertex": [2.0, 3.0],
+      "p": 0.5,
+      "eigenvectors": [
+        [0.0, 1.0],
+        [-1.0, 0.0]
+      ]
+    },
+    "pc": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "parabola",
+      "matrix": [0.0, -2.0, -11.0, 0.0, 0.5, -4.0],
+      "vertex": [3.0, -2.0],
+      "p": 0.25,
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    },
+    "ps": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "parabola",
+      "matrix": [0.0, 1.0, 0.0, 0.0, -2.0, 0.0],
+      "vertex": [0.0, -0.0],
+      "p": 2.0,
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    },
+    "s": { "type": "circle", "defined": true, "cx": 1.0, "cy": -2.0, "r": 3.0 },
+    "cp": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+    "ee": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "ellipse",
+      "matrix": [4.0, 9.0, -36.0, 0.0, 0.0, 0.0],
+      "midpoint": [0.0, 0.0],
+      "half_axes": [3.0, 2.0],
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    },
+    "h": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "hyperbola",
+      "matrix": [4.0, -9.0, -36.0, 0.0, 0.0, 0.0],
+      "midpoint": [-0.0, -0.0],
+      "half_axes": [3.0, 2.0],
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    },
+    "di": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "intersecting_lines",
+      "matrix": [1.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+      "lines": [
+        [-1.0, 1.0, -0.0],
+        [1.0, 1.0, 0.0]
+      ]
+    },
+    "dp": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "intersecting_lines",
+      "matrix": [1.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+      "lines": [
+        [-1.0, 1.0, -0.0],
+        [1.0, 1.0, 0.0]
+      ]
+    },
+    "pp": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "parallel_lines",
+      "matrix": [1.0, 0.0, -3.0, 0.0, -1.0, 0.0],
+      "lines": [
+        [-1.0, 0.0, -1.0],
+        [-1.0, 0.0, 3.0]
+      ]
+    },
+    "pl": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "double_line",
+      "matrix": [1.0, 0.0, 1.0, 0.0, -1.0, 0.0],
+      "lines": [
+        [-1.0, 0.0, 1.0],
+        [-1.0, 0.0, 1.0]
+      ]
+    },
+    "sp": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "single_point",
+      "matrix": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+      "point": [0.0, 0.0]
+    },
+    "peText": { "type": "text", "defined": true, "text": "y = x² - 4x + 7" },
+    "pvText": { "type": "text", "defined": true, "text": "y = (x - 2)² +3" },
+    "pcText": { "type": "text", "defined": true, "text": "0.5(x - 3) = (y + 2)²" },
+    "psText": { "type": "text", "defined": true, "text": "y² = 4x" },
+    "sText": { "type": "text", "defined": true, "text": "(x - 1)² + (y + 2)² = 9" },
+    "cpText": { "type": "text", "defined": true, "text": "X = (0, 0) + (3 cos(t), 3 sin(t))" },
+    "eeText": { "type": "text", "defined": true, "text": "x² / 9 + y² / 4 = 1" },
+    "hText": { "type": "text", "defined": true, "text": "x² / 9 - y² / 4 = 1" },
+    "diText": { "type": "text", "defined": true, "text": "(-x + y) (x + y) = 0" },
+    "dpText": { "type": "text", "defined": true, "text": "X = (0, 0, 0) + λ (1, ± 1, 0)" },
+    "ppText": { "type": "text", "defined": true, "text": "X = (1 ± 2, 0, 0) + λ (0, 1, 0)" },
+    "plText": { "type": "text", "defined": true, "text": "X = (1, 0, 0) + λ (0, 1, 0)" },
+    "spText": { "type": "text", "defined": true, "text": "X = (0, 0, 0)" },
+    "peTeX": { "type": "text", "defined": true, "text": "y = x^{2} - 4x + 7" },
+    "pvTeX": { "type": "text", "defined": true, "text": "y = (x - 2)^{2} +3" },
+    "pcTeX": { "type": "text", "defined": true, "text": "0.5(x - 3) = (y + 2)^{2}" },
+    "psTeX": { "type": "text", "defined": true, "text": "y^{2} = 4x" },
+    "sTeX": { "type": "text", "defined": true, "text": "(x - 1)^{2} + (y + 2)^{2} = 9" },
+    "cpTeX": { "type": "text", "defined": true, "text": "X = \\left(0,\\;0 \\right) + (3 cos(t),\\;3 sin(t))" },
+    "eeTeX": { "type": "text", "defined": true, "text": "x^{2} / 9 + y^{2} / 4 = 1" },
+    "hTeX": { "type": "text", "defined": true, "text": "x^{2} / 9 - y^{2} / 4 = 1" },
+    "diTeX": { "type": "text", "defined": true, "text": "(-x + y) (x + y) = 0" },
+    "dpTeX": { "type": "text", "defined": true, "text": "X = (0, 0, 0) + λ (1, ± 1, 0)" },
+    "ppTeX": { "type": "text", "defined": true, "text": "X = (1 ± 2, 0, 0) + λ (0, 1, 0)" },
+    "plTeX": { "type": "text", "defined": true, "text": "X = (1, 0, 0) + λ (0, 1, 0)" },
+    "spTeX": { "type": "text", "defined": true, "text": "X = \\left(0,\\;0,\\;0 \\right)" }
+  }
+}

@@ -96,12 +96,31 @@ pub fn load(src: &str) -> Result<Construction, ScriptError> {
     Ok(c)
 }
 
+pub mod equation;
+pub mod saved;
+pub mod text;
+
 /// Runs one line. Returns the first output, or `Ok(None)` if the line
 /// creates nothing. Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
-    let line = split_comment(raw).0.trim();
+    let (line, comment) = split_comment(raw);
+    let line = line.trim();
+    let lowered = comment
+        .and_then(saved::inline_argument_positions)
+        .map(|positions| saved::lower_marked_arguments(line, positions))
+        .transpose()?;
+    let line = lowered.as_deref().unwrap_or(line);
     if line.is_empty() {
         return Ok(None);
+    }
+    if let Some(property) = saved::parse(line) {
+        return property?.apply(c).map(|()| None);
+    }
+    if let Some(result) = text::apply(c, line) {
+        return result.map(|_| None);
+    }
+    if let Some(style) = equation::parse_style(line) {
+        return style?.apply(c).map(|_| None);
     }
     if line.starts_with('{') {
         return exec_labelled(c, line);
@@ -167,6 +186,10 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
+    {
+        return result;
+    }
     let start = c.checkpoint();
     if let Some(result) = define_inline_region(c, name, rhs) {
         if result.is_err() {
@@ -174,28 +197,154 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         }
         return result;
     }
-    let Some(call) = resolve_geometry_arguments(c, rhs) else {
-        return define_resolved(c, name, rhs);
+    let call = match resolve_text_argument(c, rhs) {
+        Ok(call) => call.or_else(|| resolve_geometry_arguments(c, rhs)),
+        Err(error) => {
+            c.discard_since(start);
+            return Err(error);
+        }
     };
-    let result = define_resolved(c, name, &call);
+    let result = define_resolved(c, name, call.as_deref().unwrap_or(rhs));
+    if let Ok(Some(id)) = result.as_ref() {
+        let numeric_expression = c.kind(*id).is_number()
+            && crate::expr::plain_number(rhs).is_none()
+            && !rhs.ends_with('°')
+            && split_call(rhs).is_none();
+        let coordinate_expression = c.kind(*id) == Kind::Point
+            && rhs
+                .strip_prefix('(')
+                .and_then(|s| s.strip_suffix(')'))
+                .is_some_and(|parts| {
+                    parts
+                        .split(',')
+                        .any(|arg| crate::expr::plain_number(arg.trim()).is_none())
+                });
+        if c.def(*id).is_free() && (numeric_expression || coordinate_expression) {
+            c.remember_construction_source(*id, rhs);
+        }
+    }
     if result.is_err() {
         c.discard_since(start);
     }
     result
 }
 
+/// Lowers an imported argument within its owning definition. Each temporary
+/// object is anonymous and shares the lifetime of that definition's replay.
+fn with_saved_arguments<T>(
+    c: &mut Construction,
+    rhs: &str,
+    run: impl FnOnce(&mut Construction, &str) -> Result<T, String>,
+) -> Option<Result<T, String>> {
+    if !rhs.contains("$arg(") {
+        return None;
+    }
+    let (command, args) = split_call(rhs)?;
+    if !args.iter().any(|arg| arg.starts_with("$arg(")) {
+        return None;
+    }
+    let before = c.len();
+    let start = c.checkpoint();
+    let result = (|| {
+        let args = args
+            .iter()
+            .map(
+                |arg| match arg.strip_prefix("$arg(").and_then(|s| s.strip_suffix(')')) {
+                    Some(source) => saved_argument(c, source.trim(), 0),
+                    None => Ok((*arg).to_owned()),
+                },
+            )
+            .collect::<Result<Vec<_>, String>>()?;
+        run(c, &format!("{command}({})", args.join(", ")))
+    })();
+    if result.is_err() {
+        c.discard_since(start);
+    } else {
+        let source = saved::command_with_inline_arguments(rhs).map(|(source, _)| source);
+        for index in before..c.len() {
+            let id = Id(index);
+            if !c.label(id).starts_with('\0') {
+                c.remember_construction_source(id, source.as_deref().unwrap_or(rhs));
+            }
+        }
+    }
+    Some(result)
+}
+
+fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<String, String> {
+    if depth >= 32 {
+        return Err("nested command inputs are too deep".into());
+    }
+    if let Some(id) = c.id(source) {
+        return Ok(c.label(id).to_owned());
+    }
+    let start = c.checkpoint();
+    let label = format!("\0arg{}", c.len());
+    let call = split_call(source);
+    if let Some(("Vector", args)) = &call {
+        if let [arg] = args.as_slice() {
+            if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+                return Ok((*arg).to_owned());
+            }
+        }
+    }
+    if call.is_some() {
+        if let Ok(def) = parse_def(c, source) {
+            if c.add(&label, def).is_ok() {
+                return Ok(label);
+            }
+        }
+    }
+    let nested_vector = call
+        .as_ref()
+        .is_some_and(|(command, _)| *command == "Vector");
+    if !nested_vector && crate::expr::define_saved_argument(c, &label, source).is_ok() {
+        return Ok(label);
+    }
+    let Some((command, args)) = call else {
+        if crate::expr::equation::split_equation(source).is_ok() {
+            return crate::expr::equation::define(c, &label, source).map(|_| label);
+        }
+        return Err(format!("cannot evaluate command input `{source}`"));
+    };
+    let args = args
+        .into_iter()
+        .map(|arg| {
+            if crate::expr::plain_number(arg).is_some() {
+                Ok(arg.to_owned())
+            } else {
+                saved_argument(c, arg, depth + 1)
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if let ("Vector", [arg]) = (command, args.as_slice()) {
+        if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+            return Ok(arg.clone());
+        }
+    }
+    let first_output = c.len();
+    let label = format!("\0arg{first_output}");
+    let id = define_after_label(c, &label, &format!("{command}({})", args.join(", ")))
+        .map_err(|error| format!("nested `{command}`: {error}"))?;
+    if id.is_some_and(|id| c.label(id) == label) && c.len() == first_output + 1 {
+        Ok(label)
+    } else {
+        c.discard_since(start);
+        Err(format!("nested `{command}` must produce a single object"))
+    }
+}
+
 fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if rhs.starts_with('$') {
+        if let Some((form @ ("$checkBox" | "$button" | "$inputBox"), args)) = split_call(rhs) {
+            return crate::kernel::control::define(c, name, form, &args).map(Some);
+        }
+    }
     if let Some(result) = define_saved(c, name, rhs) {
         return result.map(Some);
     }
     if let Some(("Curve", args)) = split_call(rhs) {
         return define_cartesian_curve(c, name, &args).map(Some);
-    }
-    if let Some(length) = text_length(rhs) {
-        return c
-            .add(name, Def::Measure(MeasureDef::TextLength(length?)))
-            .map(Some)
-            .map_err(|e| e.to_string());
     }
     if let Some(def) = intersect::growth::parse_slot(c, rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
@@ -271,12 +420,23 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
 }
 
 fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id, String>> {
-    if !rhs.starts_with("$saved(") && !rhs.starts_with("$pointOnPath(") {
+    if !rhs.starts_with("$saved(")
+        && !rhs.starts_with("$pointOnPath(")
+        && !rhs.starts_with("$slider(")
+    {
         return None;
     }
     let mut parse = || {
         let (form, args) = split_call(rhs).ok_or("invalid saved definition")?;
         match (form, args.as_slice()) {
+            ("$slider", [value, min, max]) => c
+                .add_saved_slider(
+                    name,
+                    parse_number(value)?,
+                    parse_number(min)?,
+                    parse_number(max)?,
+                )
+                .map_err(|e| e.to_string()),
             ("$saved", [literal, _definition]) => {
                 let def = if let Some(def) = parse_forced(literal) {
                     def?
@@ -361,25 +521,6 @@ fn define_cartesian_curve(c: &mut Construction, name: &str, args: &[&str]) -> Re
     result
 }
 
-/// `AlgoTextLength` counts UTF-16 code units, as Java's String.length does.
-fn text_length(rhs: &str) -> Option<Result<usize, String>> {
-    let (name, args) = rhs.split_once('(')?;
-    if name.trim() != "Length" {
-        return None;
-    }
-    let quoted = args
-        .trim_end()
-        .strip_suffix(')')?
-        .trim()
-        .strip_prefix('"')?;
-    let text = quoted.strip_suffix('"')?;
-    Some(if text.contains('"') {
-        Err("expected one text literal in `Length`".into())
-    } else {
-        Ok(text.encode_utf16().count())
-    })
-}
-
 fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     match define(c, name, rhs) {
         Ok(id) => {
@@ -412,7 +553,7 @@ fn define_vector_call(
         return None;
     }
     let arg = rest.strip_suffix(')')?.trim();
-    if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+    if !arg.starts_with('\0') && c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
         return Some(Ok(None));
     }
     match parse_forced(arg)? {
@@ -550,6 +691,11 @@ pub fn split_comment(line: &str) -> (&str, Option<&str>) {
     (line, None)
 }
 
+/// The byte position of the first matching character outside a string literal.
+pub fn find_unquoted(text: &str, ch: char) -> Option<usize> {
+    unquoted(text).find_map(|(i, c)| (c == ch).then_some(i))
+}
+
 fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
     let mut quoted = false;
     let mut escaped = false;
@@ -659,6 +805,66 @@ pub(crate) fn relation_or_region_argument(c: &mut Construction, arg: &str) -> Re
         return crate::expr::equation::define(c, &label, &call);
     }
     define_expression_or_command(c, &label, &call)
+}
+
+/// A formatting command accepts a geometry command as its first argument.
+fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<String>, String> {
+    let Some((name @ ("Text" | "FormulaText" | "LaTeX"), args)) = split_call(rhs) else {
+        return Ok(None);
+    };
+    let Some((first, rest)) = args.split_first() else {
+        return Ok(None);
+    };
+    let Some((command, args)) = split_call(first) else {
+        return Ok(None);
+    };
+    if crate::expr::is_expression_command(command) || crate::expr::accepts_text_argument(c, first) {
+        return Ok(None);
+    }
+    let label = format!("\0textarg{}", c.len());
+    let id = if command == "Polygon" && args.len() >= 2 {
+        let mut points = Vec::with_capacity(args.len());
+        for token in &args {
+            if let Some(id) = c.id(token).filter(|&id| c.kind(id) == Kind::Point) {
+                points.push(id);
+            } else {
+                let point = format!("\0textpoint{}", c.len());
+                if crate::expr::argument_object(c, token, &point, Kind::Point) {
+                    points.push(c.id(&point).unwrap());
+                } else {
+                    break;
+                }
+            }
+        }
+        let polygon = if points.len() == 2 && args.len() == 3 {
+            let n = crate::algo::polygon::count_arg(c, args[2])?;
+            c.add(
+                &label,
+                Def::Polygon(crate::algo::polygon::PolygonDef::Regular {
+                    a: points[0],
+                    b: points[1],
+                    n,
+                }),
+            )
+        } else if points.len() == args.len() && points.len() >= 3 {
+            c.add_with_list(&label, &points, |list| {
+                Def::Polygon(crate::algo::polygon::PolygonDef::Polygon(list))
+            })
+        } else {
+            return Err("expected points or two points and a vertex count".into());
+        };
+        polygon.map_err(|err| err.to_string())?
+    } else {
+        define_after_label(c, &label, first)?.ok_or("the text argument has no value")?
+    };
+    c.remember_construction_source(id, first);
+    Ok(Some(format!(
+        "{name}({})",
+        std::iter::once(label.as_str())
+            .chain(rest.iter().copied())
+            .collect::<Vec<_>>()
+            .join(", ")
+    )))
 }
 
 /// Give inline numeric and list inputs a live dependency, as for the
@@ -979,7 +1185,9 @@ fn is_finite(v: &Value) -> bool {
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
         Value::Locus { .. } => true,
-        Value::HomogeneousPoint { .. } | Value::Undefined => false,
+        Value::HomogeneousPoint { .. } | Value::Button | Value::InputBox | Value::Undefined => {
+            false
+        }
     }
 }
 
@@ -1341,6 +1549,13 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         .strip_prefix('=')
         .ok_or("expected `=` after the output labels")?
         .trim();
+    if let Some(result) = with_saved_arguments(c, rhs, |c, call| exec_slots(c, &slots, call)) {
+        return result;
+    }
+    exec_slots(c, &slots, rhs)
+}
+
+fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<Id>, String> {
     // The command decides how many outputs it has; a longer list of labels is
     // refused before any label is looked at, so the work is bounded by the
     // command, not by the length of the line.
@@ -1351,7 +1566,7 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
             Ok(_) => "the command does not create several objects, write `name = ...`".into(),
         });
     };
-    add_named_outputs(c, &slots, defs?)
+    add_named_outputs(c, slots, defs?)
 }
 
 pub(crate) fn add_named_outputs(

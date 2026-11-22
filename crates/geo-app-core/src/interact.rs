@@ -15,6 +15,7 @@
 use crate::snap::Snap;
 use geo_kernel::algo::path::PathDef;
 use geo_kernel::algo::vector::VectorDef;
+use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 use geo_kernel::svg::View;
 
@@ -153,6 +154,7 @@ pub fn movable(c: &Construction, id: Id) -> bool {
     id.index() < c.len()
         && match c.def(id) {
             Def::FreePoint { .. } => matches!(c.value(id), Value::Point { .. }),
+            _ if c.kind(id) == Kind::Text => text_drag_origin(c, id).is_some(),
             _ if on_path(c, id) => true,
             _ => moves_by_input_points(c, id),
         }
@@ -200,6 +202,8 @@ pub enum Hold {
     /// plus the pointer's motion from the press (`start`, in pixels)
     /// (`MoveMode.LABEL`, `moveLabel`). No undo step, no selection.
     Label { old: (f64, f64), start: (f64, f64) },
+    /// The placement of a text before dragging, and the world or screen press.
+    Text { old: TextMove, start: (f64, f64) },
 }
 
 /// A drag in progress: which object is held, and how.
@@ -218,6 +222,33 @@ pub enum Step {
     Translate { dx: f64, dy: f64 },
     /// Set the held object's label offset to `(x, y)` pixels.
     Label { x: f64, y: f64 },
+    /// Move a text or update its offset from a named anchor.
+    Text(TextMove),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum TextMove {
+    World { x: f64, y: f64 },
+    Screen { x: i32, y: i32 },
+    Offset([i32; 2]),
+}
+
+/// The location or offset that the text's drag can change.
+fn text_drag_origin(c: &Construction, id: Id) -> Option<TextMove> {
+    let style = c.text_presentation(id)?;
+    if style.fixed {
+        return None;
+    }
+    Some(match style.position {
+        TextPosition::Origin => TextMove::World { x: 0.0, y: 0.0 },
+        TextPosition::World { x, y } => TextMove::World { x, y },
+        TextPosition::Screen { x, y } => TextMove::Screen {
+            x: x as i32,
+            y: y as i32,
+        },
+        TextPosition::Point(_) => TextMove::Offset(style.offset),
+        TextPosition::ScreenPoint(_) | TextPosition::Undefined => return None,
+    })
 }
 
 impl Drag {
@@ -259,6 +290,24 @@ impl Drag {
         }
     }
 
+    /// Starts dragging a text using its placement's coordinate system.
+    pub fn text(
+        c: &Construction,
+        id: Id,
+        press_screen: (f64, f64),
+        press_world: (f64, f64),
+    ) -> Option<Drag> {
+        let old = text_drag_origin(c, id)?;
+        let start = match old {
+            TextMove::World { .. } => press_world,
+            _ => (press_screen.0.trunc(), press_screen.1.trunc()),
+        };
+        Some(Drag {
+            id,
+            hold: Hold::Text { old, start },
+        })
+    }
+
     /// The object being dragged.
     #[inline]
     pub fn id(&self) -> Id {
@@ -289,6 +338,32 @@ impl Drag {
                 x: old.0 + sx - start.0,
                 y: old.1 + sy - start.1,
             },
+            Hold::Text { old, start } => {
+                let pixels = |x: i32, y: i32| {
+                    (
+                        x.saturating_add((sx.trunc() - start.0) as i32),
+                        y.saturating_add((sy.trunc() - start.1) as i32),
+                    )
+                };
+                Step::Text(match *old {
+                    TextMove::World { x, y } => {
+                        let offset = (x - start.0, y - start.1);
+                        let pointer = snap.capture(t.screen_to_world(sx, sy), offset);
+                        TextMove::World {
+                            x: pointer.0 + offset.0,
+                            y: pointer.1 + offset.1,
+                        }
+                    }
+                    TextMove::Screen { x, y } => {
+                        let (x, y) = pixels(x, y);
+                        TextMove::Screen { x, y }
+                    }
+                    TextMove::Offset([x, y]) => {
+                        let (x, y) = pixels(x, y);
+                        TextMove::Offset([x, y])
+                    }
+                })
+            }
         }
     }
 }

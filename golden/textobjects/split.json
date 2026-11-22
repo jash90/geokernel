@@ -1,0 +1,172 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textobjects-split-001",
+      "group": "textobjects",
+      "script": [
+        "l = Split(\"kjhkjhk\", {\"p\"})",
+        "m = Split(\"kjhkjhk\", {\"\"})",
+        "n = Split(\"ppppp\", {\"p\"})",
+        "o = Split(\"\", {\"p\"})",
+        "p = Split(\"\", {\"\"})",
+        "q = Split(\"XaXaXX\", {\"X\"})",
+        "r = Split(\"aabbbcc\", {\"ab\", \"bb\"})",
+        "s = Split(\"4(x+1)(x+2)\", {\"(\", \")\"})",
+        "t = Split(\"4(x+1)(x+2)\", {\"(\", \")\", \"x\"})",
+        "u = Split(\"4(x+1)(x+2)\", {\"(x\", \")\"})",
+        "v = Split(\"kjhkjhk\", {})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "kjhkjhk" }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "k" },
+              { "type": "text", "defined": true, "text": "j" },
+              { "type": "text", "defined": true, "text": "h" },
+              { "type": "text", "defined": true, "text": "k" },
+              { "type": "text", "defined": true, "text": "j" },
+              { "type": "text", "defined": true, "text": "h" },
+              { "type": "text", "defined": true, "text": "k" }
+            ]
+          },
+          "n": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "o": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "p": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "a" },
+              { "type": "text", "defined": true, "text": "a" }
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "a" },
+              { "type": "text", "defined": true, "text": "cc" }
+            ]
+          },
+          "s": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "4" },
+              { "type": "text", "defined": true, "text": "x+1" },
+              { "type": "text", "defined": true, "text": "x+2" }
+            ]
+          },
+          "t": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "4" },
+              { "type": "text", "defined": true, "text": "+1" },
+              { "type": "text", "defined": true, "text": "+2" }
+            ]
+          },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "4" },
+              { "type": "text", "defined": true, "text": "+1" },
+              { "type": "text", "defined": true, "text": "+2" }
+            ]
+          },
+          "v": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "kjhkjhk" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "textobjects-split-002",
+      "group": "textobjects",
+      "script": [
+        "a = 1",
+        "u = Element({\"a\"}, 7)",
+        "l = Split(u, {\",\"})",
+        "m = Split(\"abcde\", {u})",
+        "s = \"a,b,\" + a",
+        "n = Split(s, {\",\"})",
+        "t = Element(n, 3)",
+        "size = Length(t)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 27.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "u": { "type": "text", "defined": false },
+          "l": { "type": "list", "defined": false },
+          "m": { "type": "list", "defined": false },
+          "s": { "type": "text", "defined": true, "text": "a,b,1" },
+          "n": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "a" },
+              { "type": "text", "defined": true, "text": "b" },
+              { "type": "text", "defined": true, "text": "1" }
+            ]
+          },
+          "t": { "type": "text", "defined": true, "text": "1" },
+          "size": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 27.0 },
+          "u": { "type": "text", "defined": false },
+          "l": { "type": "list", "defined": false },
+          "m": { "type": "list", "defined": false },
+          "s": { "type": "text", "defined": true, "text": "a,b,27" },
+          "n": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "text", "defined": true, "text": "a" },
+              { "type": "text", "defined": true, "text": "b" },
+              { "type": "text", "defined": true, "text": "27" }
+            ]
+          },
+          "t": { "type": "text", "defined": true, "text": "27" },
+          "size": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    }
+  ]
+}

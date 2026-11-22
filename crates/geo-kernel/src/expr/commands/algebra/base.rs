@@ -7,7 +7,7 @@
 
 use crate::expr::eval::{Ctx, Val};
 use crate::expr::math::{is_integer, java_round};
-use crate::expr::{Lit, Node, NONE};
+use crate::expr::{Bin, Lit, Node, NONE};
 use std::borrow::Cow;
 
 const DIGITS: &[u8; 36] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -47,6 +47,12 @@ impl<const M: bool> Ctx<'_, M> {
                 _ => None,
             },
             Node::Obj(id) => self.c.text(id).map(Cow::Borrowed),
+            Node::Bin(Bin::Add, a, b) => self.concatenate(a, b).map(Cow::Owned),
+            Node::TextCmd(op, first, count) => self.text_command(op, first, count).map(Cow::Owned),
+            Node::ListOp(op, list, index) => self
+                .pick(op, list, index)?
+                .text_value()
+                .map(|s| Cow::Owned(s.to_owned())),
             Node::Base {
                 to: true,
                 value,

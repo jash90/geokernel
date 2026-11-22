@@ -1,0 +1,38 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-tableupstream-001",
+      "group": "textnumbers",
+      "script": [
+        "ta = TableText(1..5)",
+        "tb = TableText(1..5, 1..5, \"h\")",
+        "tc = TableText({1..5, 1..5}, \"v\")",
+        "td = TableText(1..5, \"v\", 3)",
+        "te = TableText(1..5, \"h\", 3)",
+        "tf = TableText({1,2,3}, {4,5}, \"c\", 100)",
+        "tg = TableText({1,2}, {3,4,5}, \"c\", 100, 120)",
+        "th = TableText({{1,2,3}, {4,5}}, \"c\", 100)",
+        "ti = TableText({{1,2}, {3,4,5}}, \"c\", 100, 120)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "ta": { "type": "text", "defined": true, "text": "{\\begin{array}{lllll}1&2&3&4&5 \\\\ \\end{array}}" },
+          "tb": { "type": "text", "defined": true, "text": "{\\begin{array}{lllll}1&2&3&4&5 \\\\ 1&2&3&4&5 \\\\ \\end{array}}" },
+          "tc": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}1&1 \\\\ 2&2 \\\\ 3&3 \\\\ 4&4 \\\\ 5&5 \\\\ \\end{array}}" },
+          "td": { "type": "text", "defined": true, "text": "{\\begin{array}{ll}1&4 \\\\ 2&5 \\\\ 3& \\\\ \\end{array}}" },
+          "te": { "type": "text", "defined": true, "text": "{\\begin{array}{lll}1&2&3 \\\\ 4&5& \\\\ \\end{array}}" },
+          "tf": { "type": "text", "defined": true, "text": "{\\begin{array}{C{100.0}C{100.0}C{100.0}}1&2&3 \\\\ 4&5& \\\\ \\end{array}}" },
+          "tg": { "type": "text", "defined": true, "text": "{\\begin{array}{C{100.0}C{100.0}C{100.0}}1&2&\\\\[120.0]3&4&5\\\\[120.0]\\end{array}}" },
+          "th": { "type": "text", "defined": true, "text": "{\\begin{array}{C{100.0}C{100.0}C{100.0}}1&2&3 \\\\ 4&5& \\\\ \\end{array}}" },
+          "ti": { "type": "text", "defined": true, "text": "{\\begin{array}{C{100.0}C{100.0}C{100.0}}1&2&\\\\[120.0]3&4&5\\\\[120.0]\\end{array}}" }
+        }
+      ]
+    }
+  ]
+}

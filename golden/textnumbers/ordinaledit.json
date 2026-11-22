@@ -1,0 +1,46 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-ordinaledit-001",
+      "group": "textnumbers",
+      "script": [
+        "a = 21.9",
+        "ta = Ordinal(a)",
+        "tb = Ordinal(12)",
+        "tc = Ordinal(23)",
+        "td = Ordinal(0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 32.8 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 21.9 },
+          "ta": { "type": "text", "defined": true, "text": "21st" },
+          "tb": { "type": "text", "defined": true, "text": "12th" },
+          "tc": { "type": "text", "defined": true, "text": "23rd" },
+          "td": { "type": "text", "defined": true, "text": "0th" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "ta": { "type": "text", "defined": false },
+          "tb": { "type": "text", "defined": true, "text": "12th" },
+          "tc": { "type": "text", "defined": true, "text": "23rd" },
+          "td": { "type": "text", "defined": true, "text": "0th" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 32.8 },
+          "ta": { "type": "text", "defined": true, "text": "32nd" },
+          "tb": { "type": "text", "defined": true, "text": "12th" },
+          "tc": { "type": "text", "defined": true, "text": "23rd" },
+          "td": { "type": "text", "defined": true, "text": "0th" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,157 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textconcat-lists-001",
+      "group": "textconcat",
+      "script": [
+        "A = (0,0)",
+        "B = (1,1)",
+        "C = (1,0)",
+        "l = Line(A,B)",
+        "r = Ray(A,B)",
+        "s = Segment(A,B)",
+        "k = Circle(A,B)",
+        "h = Conic(1,2,-5,0,0,0)",
+        "p = Polygon(A,B,C)",
+        "f(x) = x^2 + 1",
+        "L = {l, r, s, k}",
+        "t = \"objects: \" + {L, {h, p, f}}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 3.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.4142135623730951 },
+          "h": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 2.0, -5.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.23606797749979, 1.5811388300841898],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [1.0, 1.0],
+              [1.0, 0.0]
+            ],
+            "area": 0.5,
+            "signed_area": -0.5
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0 },
+          "a": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+              { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 1.0, "c": 0.0 },
+              { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0 },
+              { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.4142135623730951 }
+            ]
+          },
+          "t": { "type": "text", "defined": true, "text": "objects: {{-x + y = 0, -x + y = 0, 1.41, x² + y² = 2}, {x² + 2y² = 5, 0.5, x² + 1}}" }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 3.0, "c": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 3.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.6055512754639896 },
+          "h": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 2.0, -5.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.23606797749979, 1.5811388300841898],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [3.0, 2.0],
+              [1.0, 0.0]
+            ],
+            "area": 1.0,
+            "signed_area": -1.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 2.0 },
+          "a": { "type": "segment", "defined": true, "x1": 3.0, "y1": 2.0, "x2": 1.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "L": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -2.0, "b": 3.0, "c": 0.0 },
+              { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 3.0, "c": 0.0 },
+              { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 2.0 },
+              { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.6055512754639896 }
+            ]
+          },
+          "t": { "type": "text", "defined": true, "text": "objects: {{-2x + 3y = 0, -2x + 3y = 0, 3.61, x² + y² = 13}, {x² + 2y² = 5, 1, x² + 1}}" }
+        }
+      ]
+    }
+  ]
+}

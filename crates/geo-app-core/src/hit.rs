@@ -32,6 +32,8 @@
 //!   square crosses its outline, or lies inside it (it is filled; for a
 //!   filled polygon wider than 20 px the square is the mouse's,
 //!   `DrawPolygon.hit`, `getFillingHitThreshold`);
+//! - a text is hit within its painted rectangle (`DrawText.hit`), without
+//!   a capture threshold.
 //! - of the objects hit, one is chosen (`EuclidianController.chooseGeo` on
 //!   `Hits.getTopHits` with the polygons removed when anything else is hit,
 //!   as `handleMousePressedForMoveMode` does): a single selected object that
@@ -494,6 +496,7 @@ pub fn screen_vertices(c: &Construction, id: Id, t: &ViewTransform) -> Option<Ve
 /// `DefaultGeoPriorityComparator`.
 fn type_priority(kind: Kind) -> u8 {
     match kind {
+        Kind::Text => 150,
         Kind::Point => 140,
         Kind::Vector => 120,
         Kind::Segment | Kind::Ray => 110,
@@ -613,18 +616,34 @@ impl Choice {
 pub fn pick(
     c: &Construction,
     t: &ViewTransform,
-    (sx, sy): (f64, f64),
+    position: (f64, f64),
     reach: &Reach,
     selected: Option<Id>,
     accept: impl Fn(Id) -> bool,
 ) -> Option<Id> {
+    pick_with_text(c, t, position, reach, selected, None, accept)
+}
+
+/// Includes a hit on a painted text rectangle alongside geometric hits.
+pub fn pick_with_text(
+    c: &Construction,
+    t: &ViewTransform,
+    position: (f64, f64),
+    reach: &Reach,
+    selected: Option<Id>,
+    text: Option<Id>,
+    accept: impl Fn(Id) -> bool,
+) -> Option<Id> {
     let pass = |threshold: f64| {
         let mut choice = Choice::default();
+        if let Some(id) = text {
+            choice.add(c, id, id.index(), HitType::Filling, Some(id) == selected);
+        }
         for (index, id) in c.ids().enumerate() {
             if !accept(id) {
                 continue;
             }
-            if let Some(how) = hit(c, id, t, (sx, sy), threshold, reach) {
+            if let Some(how) = hit(c, id, t, position, threshold, reach) {
                 choice.add(c, id, index, how, Some(id) == selected);
             }
         }

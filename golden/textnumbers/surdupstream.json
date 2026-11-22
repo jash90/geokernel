@@ -1,0 +1,30 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-surdupstream-001",
+      "group": "textnumbers",
+      "script": [
+        "ta = SurdText((-7 * 3^(1 / 2)) / 2)",
+        "tb = SurdText(-sqrt(2))",
+        "tc = SurdText(-sqrt(4^2 + 4^2))",
+        "td = SurdText( 42 )",
+        "te = SurdText( 42, {1,2,3,4,5} )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "ta": { "type": "text", "defined": true, "text": "-\\frac{7 \\; \\sqrt{3}}{2}" },
+          "tb": { "type": "text", "defined": true, "text": "-\\sqrt{2}" },
+          "tc": { "type": "text", "defined": true, "text": "-4 \\; \\sqrt{2}" },
+          "td": { "type": "text", "defined": true, "text": "42" },
+          "te": { "type": "text", "defined": true, "text": "42" }
+        }
+      ]
+    }
+  ]
+}

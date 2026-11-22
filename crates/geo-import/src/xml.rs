@@ -16,11 +16,13 @@
 //!   `<show object=/>`.
 //! * `<kernel>`: `Kernel.getKernelXML` (decimals, angle unit, continuity).
 //!
-//! * `<matrix A0= .. A5=>` of a conic, and the cheap flags `<fixed>`,
-//!   `<auxiliary>`, `<condition>`, `<startPoint>`, which no value depends on
-//!   (they are only counted, for a note).
+//! * Conic `<matrix A0= .. A5=>` and `<eqnStyle>`, numeric `<slider>` bounds,
+//!   captions, object scripts, and `<condition showObject=>` visibility rules.
+//! * `<fixed>`, `<auxiliary>`, and non-text `<startPoint>` are counted for a note.
+//! * Text placement and style: `<startPoint>`, `<absoluteScreenLocation>`,
+//!   `<labelOffset>`, `<font>`, and `<isLaTeX>`.
 //!
-//! Everything else (the user interface, styles, scripts) is ignored.
+//! Other UI properties and styles are ignored.
 //!
 //! At most [`MAX_ITEMS`] items (an item counts once, plus once per output of
 //! a command) are read, a command lists at most [`MAX_ARGUMENTS`] inputs and
@@ -28,6 +30,9 @@
 //! [`MAX_ATTRIBUTE_BYTES`] bytes.
 
 use crate::{ImportError, Settings};
+use geo_kernel::kernel::control::ControlScript;
+use geo_kernel::kernel::text::TextPosition;
+use geo_kernel::kernel::EquationForm;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
 
@@ -55,16 +60,38 @@ pub struct Element {
     pub value: Option<String>,
     /// GeoGebra's angle interval code (`<angleStyle val=>`).
     pub angle_style: Option<i32>,
+    /// The saved display form of a line or conic.
+    pub equation_form: Option<EquationForm>,
     /// `<matrix A0= ... A5=>` of a conic as written.
     pub matrix: Option<[String; 6]>,
     /// `<fixed val="true">`: not used, counted for a note.
     pub fixed: bool,
     /// `<auxiliary val="true">`: not used, counted for a note.
     pub auxiliary: bool,
-    /// A `<condition>` (conditional visibility): not used, counted for a note.
-    pub conditional: bool,
+    pub condition: Option<String>,
+    pub caption: String,
+    pub scripts: Vec<ControlScript>,
+    pub slider: Option<[Option<String>; 2]>,
     /// A `<startPoint>` of a vector: not used, counted for a note.
     pub start_point: bool,
+    pub text: Option<Box<TextStyle>>,
+}
+
+/// The presentation properties of a saved text.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct TextStyle {
+    pub position: Option<TextPosition<String>>,
+    pub latex: Option<bool>,
+    pub offset: Option<[i32; 2]>,
+    pub font: Option<SavedFont>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SavedFont {
+    pub multiplier: Option<f64>,
+    pub legacy_size: Option<i32>,
+    pub serif: bool,
+    pub style: u8,
 }
 
 /// One entry of the construction, in file order.
@@ -96,6 +123,8 @@ pub struct Document {
     pub weight: usize,
     /// Horizontal range of the primary graphics view, used by function paths.
     pub function_path_bounds: Option<[f64; 2]>,
+    /// Base font size used by older text elements with an additive size.
+    pub gui_font_size: Option<f64>,
 }
 
 fn bad(e: impl std::fmt::Display) -> ImportError {
@@ -123,6 +152,68 @@ fn value_of(a: &quick_xml::events::attributes::Attribute) -> Result<String, Impo
     Ok(a.normalized_value(XmlVersion::Implicit1_0)
         .map_err(bad)?
         .into_owned())
+}
+
+fn read_text_style(el: &mut Element, name: &str, e: &BytesStart) -> Result<(), ImportError> {
+    let text = el.text.get_or_insert_with(Box::default);
+    let read = |key: &str| attr(e, key);
+    let number = |key: &str| {
+        read(key).map(|v| {
+            v.and_then(|s| s.parse::<f64>().ok())
+                .filter(|v| v.is_finite())
+        })
+    };
+    match name {
+        "startPoint" => {
+            let absolute = read("absolute")?.as_deref() == Some("true");
+            text.position = Some(if let Some(point) = read("exp")?.or(read("label")?) {
+                if absolute {
+                    TextPosition::ScreenPoint(point)
+                } else {
+                    TextPosition::Point(point)
+                }
+            } else {
+                let coords = match (number("x")?, number("y")?, number("z")?) {
+                    (Some(x), Some(y), Some(z)) if z != 0.0 => Some((x / z, y / z)),
+                    _ => None,
+                };
+                match coords.filter(|(x, y)| x.is_finite() && y.is_finite()) {
+                    Some((x, y)) if absolute => TextPosition::Screen {
+                        x: f64::from(x as i32),
+                        y: f64::from(y as i32),
+                    },
+                    Some((x, y)) => TextPosition::World { x, y },
+                    None => TextPosition::Undefined,
+                }
+            });
+        }
+        "absoluteScreenLocation" => {
+            text.position = match (number("x")?, number("y")?) {
+                (Some(x), Some(y)) => Some(TextPosition::Screen {
+                    x: f64::from(x as i32),
+                    y: f64::from(y as i32),
+                }),
+                _ => None,
+            };
+        }
+        "labelOffset" => {
+            text.offset = match (read("x")?, read("y")?) {
+                (Some(x), Some(y)) => x.parse().ok().zip(y.parse().ok()).map(|(x, y)| [x, y]),
+                _ => None,
+            };
+        }
+        "isLaTeX" => text.latex = read("val")?.and_then(|v| v.parse().ok()),
+        "font" => {
+            text.font = Some(SavedFont {
+                multiplier: number("sizeM")?.filter(|v| *v > 0.0),
+                legacy_size: read("size")?.and_then(|v| v.parse().ok()),
+                serif: read("serif")?.as_deref() == Some("true"),
+                style: read("style")?.and_then(|v| v.parse().ok()).unwrap_or(0),
+            });
+        }
+        _ => unreachable!("only text properties are read here"),
+    }
+    Ok(())
 }
 
 /// The attributes `a0`, `a1`, ... of an `<input>` or `<output>` tag, which
@@ -176,6 +267,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
     let mut command: Option<(String, Vec<String>, Vec<String>)> = None;
     let mut element: Option<Element> = None;
     let mut in_kernel = false;
+    let mut in_gui = false;
     let mut view = None;
     loop {
         let event = reader.read_event().map_err(bad)?;
@@ -193,6 +285,13 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     doc.constructions += 1;
                 }
                 "kernel" if !in_construction => in_kernel = !empty,
+                "gui" if !in_construction => in_gui = !empty,
+                "font" if in_gui && !in_construction => {
+                    doc.gui_font_size = attr(e, "size")?
+                        .and_then(|s| s.parse::<u32>().ok())
+                        .filter(|v| *v > 0)
+                        .map(f64::from);
+                }
                 "euclidianView"
                     if !in_construction && !empty && doc.function_path_bounds.is_none() =>
                 {
@@ -293,7 +392,37 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     }
                 }
                 "condition" if element.is_some() => {
-                    element.as_mut().expect("checked above").conditional = true;
+                    element.as_mut().expect("checked above").condition = attr(e, "showObject")?;
+                }
+                "caption" if element.is_some() => {
+                    element.as_mut().expect("checked above").caption =
+                        attr(e, "val")?.unwrap_or_default();
+                }
+                "ggbscript" | "javascript" if element.is_some() => {
+                    let scripts = &mut element.as_mut().expect("checked above").scripts;
+                    for (attribute, event) in [
+                        ("val", "click"),
+                        ("onUpdate", "update"),
+                        ("onDragEnd", "dragEnd"),
+                        ("onChange", "change"),
+                    ] {
+                        if let Some(text) = attr(e, attribute)? {
+                            scripts.push(ControlScript {
+                                language: name.clone(),
+                                event: event.into(),
+                                text,
+                            });
+                        }
+                    }
+                }
+                "slider" if element.is_some() => {
+                    element.as_mut().expect("checked above").slider =
+                        Some([attr(e, "min")?, attr(e, "max")?]);
+                }
+                "startPoint" | "absoluteScreenLocation" | "labelOffset" | "isLaTeX" | "font"
+                    if element.as_ref().is_some_and(|el| el.kind == "text") =>
+                {
+                    read_text_style(element.as_mut().expect("checked above"), &name, e)?;
                 }
                 "startPoint" if element.is_some() => {
                     element.as_mut().expect("checked above").start_point = true;
@@ -305,6 +434,16 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     element.as_mut().expect("checked above").angle_style =
                         attr(e, "val")?.and_then(|v| v.parse().ok());
                 }
+                "eqnStyle"
+                    if element
+                        .as_ref()
+                        .is_some_and(|el| matches!(el.kind.as_str(), "line" | "ray" | "conic")) =>
+                {
+                    let style = attr(e, "style")?;
+                    let parameter = attr(e, "parameter")?;
+                    element.as_mut().expect("checked above").equation_form = style
+                        .and_then(|style| EquationForm::from_xml(&style, parameter.as_deref()));
+                }
                 _ => {}
             }
         }
@@ -312,6 +451,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
             Event::End(e) => match e.name().as_ref() {
                 "construction" => in_construction = false,
                 "kernel" => in_kernel = false,
+                "gui" => in_gui = false,
                 "euclidianView" => {
                     if let Some((number, width, xzero, scale)) = view.take() {
                         doc.function_path_bounds = (|| {

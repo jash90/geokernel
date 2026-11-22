@@ -53,6 +53,23 @@ pub(crate) fn check(
             Node::Num(_) | Node::MinusOne => (Ty::Num(0), 1, 1, 0),
             Node::Bool(_) => (Ty::Bool, 1, 1, 0),
             Node::Text | Node::Relation { .. } => (Ty::Text, 1, 1, 0),
+            Node::TextCmd(op, first, count) => {
+                let end = (first + count) as usize;
+                let first = first as usize;
+                let ty = commands::text::result_type(c, op, nodes, &tys, first..end)?;
+                let v = vars[first..end]
+                    .iter()
+                    .fold(0u64, |a, b| a.saturating_add(*b));
+                let k = cost[first..end]
+                    .iter()
+                    .fold(1u64, |a, b| a.saturating_add(*b));
+                (
+                    ty,
+                    1 + depth[first..end].iter().copied().max().unwrap_or(0),
+                    k,
+                    v,
+                )
+            }
             Node::Base { to, value, radix } => {
                 let (v, r) = (value as usize, radix as usize);
                 if !matches!(tys[r], Ty::Num(_))
@@ -318,9 +335,6 @@ pub(crate) fn check(
                 let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
                 for item in first..first.saturating_add(len) {
                     let item = item as usize;
-                    if tys[item] == Ty::Text {
-                        return Err("text in a list is unsupported".into());
-                    }
                     elem = join_elem(elem, elem_of(tys[item]));
                     d = d.max(depth[item]);
                     k = k.saturating_add(cost[item]);
@@ -463,7 +477,7 @@ fn result_type(kind: Kind) -> Result<Ty, String> {
         Kind::Point | Kind::Vector => Ok(Ty::Vec),
         Kind::Boolean => Ok(Ty::Bool),
         Kind::Text => Ok(Ty::Text),
-        other => Err(format!("a {other} cannot be used in an expression")),
+        _ => Ok(Ty::Object),
     }
 }
 
@@ -503,6 +517,16 @@ fn scalar_unary_type(op: Un, a: Ty) -> Result<Ty, String> {
 /// `MyDouble.add`, `mult`, `div`, `pow` for the angle dimension; vectors
 /// add, scale and multiply to the scalar product.
 fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
+    if a == Ty::Text || b == Ty::Text {
+        return if op == Bin::Add {
+            Ok(Ty::Text)
+        } else {
+            Err("text operands require concatenation".into())
+        };
+    }
+    if matches!(a, Ty::Object | Ty::Function) || matches!(b, Ty::Object | Ty::Function) {
+        return Err("geometric objects cannot be used as arithmetic operands".into());
+    }
     let list = |t: Ty| match t {
         Ty::List(e) => ty_of(e).map(Some),
         _ => Ok(None),

@@ -260,6 +260,7 @@ fn write_elements(list: geo_kernel::expr::List<'_>, out: &mut Vec<Value>) {
     for e in list.iter() {
         match e {
             geo_kernel::expr::Element::Value(_, v) => out.push(v),
+            geo_kernel::expr::Element::Text(_) => out.push(Value::Text),
             geo_kernel::expr::Element::List(inner) => {
                 out.push(Value::List {
                     len: inner.len() as u32,

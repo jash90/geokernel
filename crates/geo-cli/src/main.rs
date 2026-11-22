@@ -42,7 +42,7 @@ fn main() -> ExitCode {
 
 /// Imports a construction file into script text. What was left out is
 /// reported on stderr.
-fn import_file(path: &str, bytes: &[u8]) -> Result<String, String> {
+fn import_file(path: &str, bytes: &[u8]) -> Result<geo_import::Imported, String> {
     let imported = geo_import::import(bytes).map_err(|e| format!("{path}: {e}"))?;
     for note in &imported.notes {
         eprintln!("note: {note}");
@@ -75,25 +75,48 @@ fn import_file(path: &str, bytes: &[u8]) -> Result<String, String> {
     }
     if !imported.hidden.is_empty() {
         eprintln!(
-            "{} objects are hidden in the file; SVG shows all",
+            "{} objects have visibility turned off in the file",
             imported.hidden.len()
         );
     }
-    Ok(imported.script.join("\n"))
+    Ok(imported)
 }
 
 fn run(path: &str, out: Option<&str>) -> Result<(), String> {
     // A construction file is told from a script by its content, not its name.
     let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
-    let src = if geo_import::looks_like_construction(&bytes) {
-        import_file(path, &bytes)?
+    let (src, hidden, conditions) = if geo_import::looks_like_construction(&bytes) {
+        let imported = import_file(path, &bytes)?;
+        (
+            imported.script.join("\n"),
+            imported.hidden,
+            imported.conditions,
+        )
     } else {
-        String::from_utf8(bytes).map_err(|e| format!("{path}: {e}"))?
+        (
+            String::from_utf8(bytes).map_err(|e| format!("{path}: {e}"))?,
+            Vec::new(),
+            Vec::new(),
+        )
     };
-    let c = script::load(&src).map_err(|e| format!("{path}: {e}"))?;
+    let mut c = script::load(&src).map_err(|e| format!("{path}: {e}"))?;
     print_objects(&c);
     if let Some(out) = out {
-        write_svg(&c, View::fit(&c), out)?;
+        let mut hidden: std::collections::HashSet<_> =
+            hidden.iter().filter_map(|label| c.id(label)).collect();
+        for (target, source) in &conditions {
+            let Some(id) = c.id(target) else { continue };
+            let condition =
+                geo_kernel::kernel::control::visibility_boolean(&mut c, target, source)?;
+            if c.value(condition) == Value::Bool(true) {
+                hidden.remove(&id);
+            } else {
+                hidden.insert(id);
+            }
+        }
+        let rendered = svg::render_visible(&c, View::fit(&c), 800, 600, |id| !hidden.contains(&id));
+        std::fs::write(out, rendered).map_err(|e| format!("{out}: {e}"))?;
+        println!("wrote {out}");
     }
     Ok(())
 }
@@ -129,13 +152,15 @@ fn write_svg(c: &Construction, view: View, path: &str) -> Result<(), String> {
 }
 
 fn print_objects(c: &Construction) {
-    for id in c.ids() {
-        println!(
-            "  {:<4} {:<8} {}",
-            c.label(id),
-            c.kind(id).to_string(),
-            describe(c, id)
-        );
+    for id in c.ids().filter(|&id| !c.label(id).starts_with('\0')) {
+        let label = c.label(id);
+        let kind = c.kind(id).to_string();
+        let value = describe(c, id);
+        if let Some(source) = c.construction_source(id) {
+            println!("  {label:<4} {kind:<8} {value}  [{source}]");
+        } else {
+            println!("  {label:<4} {kind:<8} {value}");
+        }
     }
 }
 

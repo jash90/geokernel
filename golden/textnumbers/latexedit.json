@@ -1,0 +1,64 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-latexedit-001",
+      "group": "textnumbers",
+      "script": [
+        "a = 3",
+        "ta = FormulaText(a)",
+        "tb = Text(a, (0, 0), true, true)",
+        "tc = FractionText(a)",
+        "td = FractionText(1E20)",
+        "te = FormulaText(a + 0)",
+        "tf = Text(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.141592653589793 },
+        { "action": "set_number", "label": "a", "value": 1.0E20 },
+        { "action": "set_number", "label": "a", "value": -1.0E20 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "ta": { "type": "text", "defined": true, "text": "3" },
+          "tb": { "type": "text", "defined": true, "text": "3" },
+          "tc": { "type": "text", "defined": true, "text": "3" },
+          "td": { "type": "text", "defined": true, "text": "1 \\cdot 10^{20}" },
+          "te": { "type": "text", "defined": true, "text": "3" },
+          "tf": { "type": "text", "defined": true, "text": "3" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.141592653589793 },
+          "ta": { "type": "text", "defined": true, "text": "\\pi " },
+          "tb": { "type": "text", "defined": true, "text": "\\pi " },
+          "tc": { "type": "text", "defined": true, "text": " \\frac{ 103993 }{ 33102 } " },
+          "td": { "type": "text", "defined": true, "text": "1 \\cdot 10^{20}" },
+          "te": { "type": "text", "defined": true, "text": "\\pi " },
+          "tf": { "type": "text", "defined": true, "text": "π" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E20 },
+          "ta": { "type": "text", "defined": true, "text": "1 \\cdot 10^{20}" },
+          "tb": { "type": "text", "defined": true, "text": "1 \\cdot 10^{20}" },
+          "tc": { "type": "text", "defined": true, "text": "1 \\cdot 10^{20}" },
+          "td": { "type": "text", "defined": true, "text": "1 \\cdot 10^{20}" },
+          "te": { "type": "text", "defined": true, "text": "1 \\cdot 10^{20}" },
+          "tf": { "type": "text", "defined": true, "text": "1 ⋅ 10²⁰" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0E20 },
+          "ta": { "type": "text", "defined": true, "text": "-1 \\cdot 10^{20}" },
+          "tb": { "type": "text", "defined": true, "text": "-1 \\cdot 10^{20}" },
+          "tc": { "type": "text", "defined": true, "text": "-1 \\cdot 10^{20}" },
+          "td": { "type": "text", "defined": true, "text": "1 \\cdot 10^{20}" },
+          "te": { "type": "text", "defined": true, "text": "-1 \\cdot 10^{20}" },
+          "tf": { "type": "text", "defined": true, "text": "-1 ⋅ 10²⁰" }
+        }
+      ]
+    }
+  ]
+}

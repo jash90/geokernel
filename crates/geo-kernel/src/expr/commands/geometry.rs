@@ -485,9 +485,9 @@ fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option
         return None;
     }
     let product = |i, j| {
-        let x = slot_val(lists.read(ctx.c, a + i));
-        let y = slot_val(lists.read(ctx.c, b + j));
-        slot_val(combine(Bin::Mul, x, y))
+        let x = slot_val(&lists.read(ctx.c, a + i));
+        let y = slot_val(&lists.read(ctx.c, b + j));
+        slot_val(&combine(Bin::Mul, x, y))
     };
     let component = |i, j| combine(Bin::Sub, product(i, j), product(j, i));
     let start = lists.reserve(3)?;

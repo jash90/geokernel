@@ -65,6 +65,124 @@ fn a_drag_with_the_keyboard_open_moves_the_point_not_the_view() {
     );
 }
 
+fn text_presentation(h: &Harness<'_, App>) -> geo_kernel::kernel::text::TextPresentation {
+    let c = h.state().wb.construction();
+    c.text_presentation(c.id("t").unwrap()).unwrap()
+}
+
+#[test]
+fn text_canvas_picks_and_drags_screen_and_world_text_with_undo() {
+    use geo_kernel::kernel::text::TextPosition;
+
+    for (placement, before, after) in [
+        (
+            "screen, 150, 180",
+            TextPosition::Screen { x: 150.0, y: 180.0 },
+            TextPosition::Screen { x: 210.0, y: 145.0 },
+        ),
+        (
+            "world, 1, 1",
+            TextPosition::World { x: 1.0, y: 1.0 },
+            TextPosition::World { x: 2.2, y: 1.7 },
+        ),
+    ] {
+        let mut h = harness(&format!(
+            "t = \"Canvas text\"\n$textProperties(t, -, -, -, -, -, {placement})\n"
+        ));
+        h.state_mut().decor.grid = false;
+        h.state_mut().decor.axes = false;
+        let at = match before {
+            TextPosition::Screen { x, y } => {
+                h.state().view.unwrap().0.min.egui() + egui::vec2(x as f32, y as f32)
+            }
+            TextPosition::World { x, y } => on_screen(&h, x, y),
+            _ => unreachable!(),
+        };
+        let id = h.state().wb.construction().id("t").unwrap();
+        moved(&mut h, at + egui::vec2(20.0, 10.0));
+        assert_eq!(h.state().hovered, None, "outside the text rectangle");
+        let from = at + egui::vec2(20.0, -6.0);
+        moved(&mut h, from);
+        assert_eq!(h.state().hovered, Some(id));
+        click(&mut h, from);
+        assert_eq!(h.state().wb.selected, Some(id));
+        assert!(!h.state().wb.can_undo());
+        let corner = top_left(&h);
+        drag(&mut h, from, from + egui::vec2(60.0, -35.0));
+        match (text_presentation(&h).position, after) {
+            (
+                TextPosition::World { x, y },
+                TextPosition::World {
+                    x: want_x,
+                    y: want_y,
+                },
+            ) => {
+                assert!(close((x, y), (want_x, want_y)), "{x}, {y}");
+            }
+            (actual, expected) => assert_eq!(actual, expected),
+        }
+        assert!(close(top_left(&h), corner));
+        assert_eq!(h.state().wb.undo_depth(), (1, 0));
+        assert!(h.state_mut().undo());
+        assert_eq!(text_presentation(&h).position, before);
+        assert!(h.state_mut().redo());
+        assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    }
+}
+
+#[test]
+fn text_canvas_keeps_point_anchors_when_dragged() {
+    use geo_kernel::kernel::text::TextPosition;
+
+    for (script, offset) in [
+        (
+            "A = (1, 1)\nt = \"Canvas text\"\n$textProperties(t, -, -, -, -, -, point, A)\n",
+            [60, -35],
+        ),
+        ("A = (1, 1)\nt = Text(\"Canvas text\", A)\n", [0, 0]),
+        (
+            "A = (150, 180)\nt = \"Canvas text\"\n$textProperties(t, -, -, -, -, -, screenPoint, A)\n",
+            [0, 0],
+        ),
+    ] {
+        let mut h = harness(script);
+        let before = text_presentation(&h);
+        let at = if matches!(before.position, TextPosition::ScreenPoint(_)) {
+            h.state().view.unwrap().0.min.egui() + egui::vec2(150.0, 180.0)
+        } else {
+            on_screen(&h, 1.0, 1.0)
+        };
+        let anchor = point(&h, "A");
+        let corner = top_left(&h);
+        let from = at + egui::vec2(24.0, -6.0);
+        drag(&mut h, from, from + egui::vec2(60.0, -35.0));
+        let c = h.state().wb.construction();
+        assert_eq!(h.state().wb.selected, c.id("t"));
+        assert!(close(top_left(&h), corner));
+        assert_eq!(point(&h, "A"), anchor);
+        assert_eq!(text_presentation(&h).position, before.position);
+        assert_eq!(text_presentation(&h).offset, offset);
+        assert_eq!(h.state().wb.undo_depth(), (usize::from(offset != [0, 0]), 0));
+
+        if offset != [0, 0] {
+            assert!(h.state_mut().undo());
+            assert_eq!(text_presentation(&h).offset, [0, 0]);
+            assert!(h.state_mut().redo());
+            assert_eq!(text_presentation(&h).offset, offset);
+        }
+        let id = h.state().wb.construction().id("A").unwrap();
+        assert!(h.state_mut().wb.move_point(id, anchor.0 + 2.0, anchor.1 - 1.0));
+        h.run();
+        let shift = if matches!(before.position, TextPosition::ScreenPoint(_)) {
+            egui::vec2(2.0, -1.0)
+        } else {
+            egui::vec2(100.0, 50.0)
+        };
+        moved(&mut h, from + shift + egui::vec2(offset[0] as f32, offset[1] as f32));
+        assert_eq!(h.state().hovered, h.state().wb.construction().id("t"));
+    }
+}
+
 #[test]
 fn a_tool_click_with_the_keyboard_open_hits_what_is_under_the_pointer() {
     let mut h = harness("A = (1, 1)\n");

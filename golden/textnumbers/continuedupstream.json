@@ -1,0 +1,28 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-continuedupstream-001",
+      "group": "textnumbers",
+      "script": [
+        "ta = ContinuedFraction((sqrt(5)-1)/2)",
+        "tb = ContinuedFraction((sqrt(5)-1)/2,true)",
+        "tc = ContinuedFraction((sqrt(5)-1)/2,10)",
+        "td = ContinuedFraction((sqrt(5)-1)/2,10,true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "ta": { "type": "text", "defined": true, "text": "0+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\cdots}}}}}}}}}}}}}}" },
+          "tb": { "type": "text", "defined": true, "text": "[0;1,1,1,1,1,1,1,1,1,1,1,1,1,1,\\ldots]" },
+          "tc": { "type": "text", "defined": true, "text": "0+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\cdots}}}}}}}}}" },
+          "td": { "type": "text", "defined": true, "text": "[0;1,1,1,1,1,1,1,1,1,\\ldots]" }
+        }
+      ]
+    }
+  ]
+}

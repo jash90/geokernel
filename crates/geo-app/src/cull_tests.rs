@@ -132,6 +132,7 @@ fn picture_with(
                 generation: wb.rebuilds(),
                 label_offset: &|_| None,
                 label_rects: None,
+                text_rects: None,
             };
             draw::paint(&painter, rect, wb.construction(), t, &scene);
         })
@@ -232,6 +233,7 @@ fn shapes_text(
                 generation: wb.rebuilds(),
                 label_offset: &|_| None,
                 label_rects: None,
+                text_rects: None,
             };
             draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
         })

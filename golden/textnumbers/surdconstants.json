@@ -1,0 +1,47 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-surdconstants-001",
+      "group": "textnumbers",
+      "script": [
+        "a = 2",
+        "ta = SurdText(a*sqrt(2), {sqrt(2)})",
+        "tb = SurdText(pi/2, {pi})",
+        "tc = SurdText(sqrt(2)+sqrt(3), {sqrt(2), sqrt(3)})",
+        "td = SurdText(1/3, {})",
+        "te = SurdText(sqrt(2), {pi})",
+        "tf = SurdText(0.1234567, {})",
+        "tg = SurdText(2*sqrt(2)+2*sqrt(3), {sqrt(8), sqrt(2), sqrt(3)})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "ta": { "type": "text", "defined": true, "text": "?" },
+          "tb": { "type": "text", "defined": true, "text": "?" },
+          "tc": { "type": "text", "defined": true, "text": "?" },
+          "td": { "type": "text", "defined": true, "text": "?" },
+          "te": { "type": "text", "defined": true, "text": "1.41421356237310" },
+          "tf": { "type": "text", "defined": true, "text": "0.123456700000000" },
+          "tg": { "type": "text", "defined": true, "text": "?" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.0 },
+          "ta": { "type": "text", "defined": true, "text": "?" },
+          "tb": { "type": "text", "defined": true, "text": "?" },
+          "tc": { "type": "text", "defined": true, "text": "?" },
+          "td": { "type": "text", "defined": true, "text": "?" },
+          "te": { "type": "text", "defined": true, "text": "1.41421356237310" },
+          "tf": { "type": "text", "defined": true, "text": "0.123456700000000" },
+          "tg": { "type": "text", "defined": true, "text": "?" }
+        }
+      ]
+    }
+  ]
+}

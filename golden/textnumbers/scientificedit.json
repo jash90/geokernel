@@ -1,0 +1,64 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-scientificedit-001",
+      "group": "textnumbers",
+      "script": [
+        "a = 2.002",
+        "p = 4",
+        "ta = ScientificText(a,p)",
+        "tb = ScientificText(a)",
+        "tc = ScientificText(0)",
+        "td = ScientificText(-98765.4321,3)",
+        "te = ScientificText(0.0125,2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 9.9999 },
+        { "action": "set_number", "label": "p", "value": 1.0 },
+        { "action": "set_number", "label": "p", "value": 16.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.002 },
+          "p": { "type": "number", "defined": true, "value": 4.0 },
+          "ta": { "type": "text", "defined": true, "text": "2.002 \\times 10^{0}" },
+          "tb": { "type": "text", "defined": true, "text": "2.002 \\times 10^{0}" },
+          "tc": { "type": "text", "defined": true, "text": "0 \\times 10^{0}" },
+          "td": { "type": "text", "defined": true, "text": "-9.88 \\times 10^{4}" },
+          "te": { "type": "text", "defined": true, "text": "1.3 \\times 10^{-2}" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.9999 },
+          "p": { "type": "number", "defined": true, "value": 4.0 },
+          "ta": { "type": "text", "defined": true, "text": "1.000 \\times 10^{1}" },
+          "tb": { "type": "text", "defined": true, "text": "9.9999 \\times 10^{0}" },
+          "tc": { "type": "text", "defined": true, "text": "0 \\times 10^{0}" },
+          "td": { "type": "text", "defined": true, "text": "-9.88 \\times 10^{4}" },
+          "te": { "type": "text", "defined": true, "text": "1.3 \\times 10^{-2}" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.9999 },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "ta": { "type": "text", "defined": true, "text": "1 \\times 10^{1}" },
+          "tb": { "type": "text", "defined": true, "text": "9.9999 \\times 10^{0}" },
+          "tc": { "type": "text", "defined": true, "text": "0 \\times 10^{0}" },
+          "td": { "type": "text", "defined": true, "text": "-9.88 \\times 10^{4}" },
+          "te": { "type": "text", "defined": true, "text": "1.3 \\times 10^{-2}" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.9999 },
+          "p": { "type": "number", "defined": true, "value": 16.0 },
+          "ta": { "type": "text", "defined": false },
+          "tb": { "type": "text", "defined": true, "text": "9.9999 \\times 10^{0}" },
+          "tc": { "type": "text", "defined": true, "text": "0 \\times 10^{0}" },
+          "td": { "type": "text", "defined": true, "text": "-9.88 \\times 10^{4}" },
+          "te": { "type": "text", "defined": true, "text": "1.3 \\times 10^{-2}" }
+        }
+      ]
+    }
+  ]
+}
