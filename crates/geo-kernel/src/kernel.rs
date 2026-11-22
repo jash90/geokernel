@@ -3556,8 +3556,10 @@ mod tests {
         use crate::script::{self, saved::Property};
 
         let caption = encode_text("Keep this caption");
-        let mut c =
-            script::load(&format!("b = $checkBox(true, {caption})\nt = \"first\"")).unwrap();
+        let mut c = script::load(&format!(
+            "b = $checkBox(true, {caption})\nd = If(b, 1, 0)\nt = \"first\""
+        ))
+        .unwrap();
         let b = c.id("b").unwrap();
         let t = c.id("t").unwrap();
         let scripts = vec![ControlScript {
@@ -3581,8 +3583,10 @@ mod tests {
         let presentation = c.text_presentation(t).unwrap();
 
         assert_eq!(script::exec(&mut c, "b = false"), Ok(Some(b)));
+        assert_eq!(c.object_scripts("b"), scripts);
         assert_eq!(script::exec(&mut c, r#"t = "second""#), Ok(Some(t)));
-        assert!(script::exec(&mut c, "b = b").is_err());
+        let error = script::exec(&mut c, "b = (1, 1)").unwrap_err();
+        assert!(error.contains("a dependent object requires the original kind"));
         assert!(script::exec(&mut c, r#"t = t + "third""#).is_err());
         assert_eq!(c.object_scripts("b"), scripts);
         assert_eq!(c.drawing_style(b), style);
