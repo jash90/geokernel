@@ -188,6 +188,8 @@ cases.cases[-1]["sample_curves"] = True
 cases.write()
 
 cases = Cases("funcrest")
+case("freehandpoints", "n = 2\nf = Function({-2, 4, 1, 5, 2})\nl = First(f, n)",
+     [setn("n", 4), setn("n", 1)])
 case("conditionalmixed",
      "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\ng = Line(A, C)\ns = If(n > 0, r, g)",
      [setn("n", -1), setn("n", 1)])

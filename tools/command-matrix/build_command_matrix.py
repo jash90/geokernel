@@ -84,7 +84,7 @@ FORM_NOTES = {
     "Roots": "Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.",
     "Extremum": "Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.",
     "Function": "Domain restrictions with an optional local variable, the empty data function and freehand functions of a list.",
-    "SolveODE": "Numeric first-order, parametric and second-order systems. The symbolic forms solve a polynomial right-hand side in x, with or without an initial point; other right-hand sides use the CAS.",
+    "SolveODE": "Numeric first-order, parametric and second-order systems. The local symbolic solver handles polynomial slopes in x, with or without an initial point.",
     "ComplexRoot": "Numeric polynomial roots, returned as points with real and imaginary coordinates.",
 
     "CommonDenominator": "Number pairs and rational-function pairs.",
@@ -177,14 +177,14 @@ PARTIAL = {
     "InteriorAngles": "InteriorAngles(polygon)",
     "If": "If(condition, then); If(condition, then, else); If(condition, value, condition, value, ..., else)",
     "Element": "Element(list, index); Element(list, index, index, ...)",
-    "Sum": "Sum(list); Sum(list, number of elements); numbers, points or vectors",
+    "Sum": "List and indexed forms, plus variadic numbers, points, functions and text. Direct vector arguments are rejected.",
     "Product": "Product(list); Product(list, number of elements); "
                 "Product(list, list of frequencies); Product(expression, variable, from, to)",
     "Mean": "Mean(list)",
     "Sequence": "Sequence(end); Sequence(start, end); Sequence(start, end, step); "
                 "Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)",
     "Reverse": "Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)",
-    "First": "First(list); First(list, number of elements); First(locus, number of elements)",
+    "First": "Lists, text and loci. The freehand function point reader remains open.",
     "Last": "Last(list); Last(list, number of elements)",
     "Sort": "Sort(list of numbers, booleans or points); Sort(value list, key list); "
             "Sort(point, point, ...)",

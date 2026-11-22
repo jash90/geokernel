@@ -1037,3 +1037,8 @@ mismatches = ["0:s"]
 id = "funcrest-svd-011"
 reason = "The cyclic rotation sweep exceeds the kernel work budget on the dense 200 by 200 matrix. The enclosing IsDefined becomes undefined, while the reference finishes and returns true."
 mismatches = ["0:d"]
+
+[[gap]]
+id = "funcrest-freehandpoints-001"
+reason = "The kernel has no First overload that reads a freehand function as a list of its sample points. It rejects the command instead of returning a live prefix."
+mismatches = ["0:script line 3"]
