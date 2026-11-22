@@ -58,4 +58,17 @@ for path in ("PolyLine", "Polygon"):
                              f"p = {path}(Sequence((j, If(j < 1000, 0, 3)), j, 0, 1000))",
                              "s = IntersectPath(p, k)"], [])
 
+# CommandsTest.cmdIntersectPath clips the boundary of a square into four pieces.
+for args in ("p, k", "k, p"):
+    cases.case("polygon", [
+        pt("A", 0, 0), pt("B", 4, 0), "p = Polygon(A, B, 4)",
+        pt("O", 2, 2), "r = sqrt(5)", "k = Circle(O, r)",
+        f"q = IntersectPath({args})",
+    ], [mv("O", 2, 1), setn("r", 0), setn("r", 3), mv("B", 0, 0), mv("B", 4, 0)])
+
+cases.case("polygon", ellipse + [
+    pt("A", -4, 0), pt("B", 4, 0), pt("C", 4, 4), pt("D", -4, 4),
+    "p = Polygon(A, B, C, D)", "q = IntersectPath(k, p)",
+], [mv("N", 1, 2), setn("r", 0.5), setn("r", 3)])
+
 cases.write()

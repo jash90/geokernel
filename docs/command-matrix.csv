@@ -36,7 +36,7 @@ Point,,geometry,P1,done,4,4,"Coordinate list, point and vector, or a line, segme
 Midpoint,,geometry,P0,done,4,4,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
 Intersect,,geometry,P0,partial,65,50,"Carrier, conic, function and polygonal boundary forms; line and Cartesian curve; seeded curve pairs; path and point incidence"
-IntersectPath,,geometry,P1,partial,9,5,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
+IntersectPath,,geometry,P1,done,9,9,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
 IntersectRegion,,english,P2,partial,9,2,
 Distance,,geometry,P0,done,4,4,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
 Length,,geometry,P1,done,11,11,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"

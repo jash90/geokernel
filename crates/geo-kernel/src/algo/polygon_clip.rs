@@ -445,7 +445,7 @@ fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
     for (p, end) in path_edges {
         let dir = sub(end, p);
         if dir == (0.0, 0.0) {
-            if kind == Kind::Segment && inside(p) {
+            if inside(p) {
                 result.push((p, end));
             }
             continue;
@@ -458,11 +458,14 @@ fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
         cuts.clear();
         cuts.extend([0.0, 1.0]);
         let discriminant = qb * qb - qa * qc;
+        let rounding = 8.0 * f64::EPSILON * (qb * qb + (qa * qc).abs());
         if qa.abs() < STANDARD_PRECISION {
             if qb.abs() >= STANDARD_PRECISION {
                 cuts.push(-qc / (2.0 * qb));
             }
-        } else if discriminant >= 0.0 {
+        } else if discriminant.abs() <= rounding {
+            cuts.push(-qb / qa);
+        } else if discriminant > 0.0 {
             let root = discriminant.sqrt();
             cuts.extend([(-qb - root) / qa, (-qb + root) / qa]);
         }

@@ -3403,3 +3403,23 @@ difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyM
 command = "SurdText"
 form = "point"
 cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
+
+[[form]]
+command = "IntersectPath"
+form = "polyline,conic"
+cases = ["georestclip-polyline-003"]
+
+[[form]]
+command = "IntersectPath"
+form = "conic,polyline"
+cases = ["georestclip-polyline-004"]
+
+[[form]]
+command = "IntersectPath"
+form = "polygon,conic"
+cases = ["georestclip-polygon-002"]
+
+[[form]]
+command = "IntersectPath"
+form = "conic,polygon"
+cases = ["georestclip-polygon-005"]
