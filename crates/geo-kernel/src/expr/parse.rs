@@ -78,6 +78,14 @@ pub(super) fn parse_parameter(c: &Construction, src: &str, name: &str) -> Result
     parse_in(c, src, Mode::Parameter(name))
 }
 
+pub(super) fn parse_system(
+    c: &Construction,
+    src: &str,
+    parameters: &[&str],
+) -> Result<Parsed, String> {
+    parse_in(c, src, Mode::System(parameters))
+}
+
 /// [`parse`] with the variables an equation may read: `x` and `y` are
 /// GeoGebra's function variables, not objects (`Equation.initEquation`
 /// replaces the `x`, `y` and `z` nodes).
@@ -99,6 +107,7 @@ enum Mode<'a> {
     Equation,
     EquationLeft,
     Parameter(&'a str),
+    System(&'a [&'a str]),
 }
 
 fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, String> {
@@ -139,12 +148,20 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
         } else {
             None
         },
-        locals: Vec::new(),
+        locals: match mode {
+            Mode::System(names) => names.iter().map(|n| (n.to_string(), Elem::Num)).collect(),
+            _ => Vec::new(),
+        },
     };
     if p.toks.is_empty() {
         return Err("empty expression".into());
     }
     let root = p.expression()?;
+    let root = if let Mode::System(names) = mode {
+        p.push(Node::SystemFunction(names.len() as u8, root))
+    } else {
+        root
+    };
     if let Some(t) = p.toks.get(p.pos) {
         return Err(format!("unexpected `{}`", &src[t.start..t.end]));
     }
@@ -172,7 +189,7 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
 }
 
 pub(super) struct Parser<'a> {
-    c: &'a Construction,
+    pub(super) c: &'a Construction,
     src: &'a str,
     pub(super) toks: Vec<Token>,
     pub(super) pos: usize,
@@ -191,7 +208,7 @@ pub(super) struct Parser<'a> {
     uses_y: bool,
     /// Whether `y` reads as the second variable of an equation, not as the
     /// coordinate function (see [`parse_equation`]).
-    equation: bool,
+    pub(super) equation: bool,
     inline_argument: bool,
     parameter: Option<&'a str>,
     /// Whether a name that resolves as nothing may read as a product of
@@ -819,6 +836,10 @@ impl Parser<'_> {
                 return Ok(variable);
             }
             let arg = self.element()?;
+            if matches!(text, "x" | "y") && self.is_point_or_vector(arg) {
+                let coordinate = if text == "x" { Un::X } else { Un::Y };
+                return Ok(self.push(Node::Un(coordinate, arg)));
+            }
             return Ok(self.push(Node::Bin(Bin::Mul, variable, arg)));
         }
         let free = |s: &str| self.c.id(s).is_none();
@@ -1110,8 +1131,28 @@ impl Parser<'_> {
         }
     }
 
+    /// The state a command that read its arguments leaves behind (see
+    /// [`Parser::reset`]), so that a command that takes no part of them
+    /// can hand them to the script parser untouched.
+    pub(super) fn saved(&self) -> (usize, usize, usize, bool) {
+        (
+            self.pos,
+            self.parents.len(),
+            self.inputs.len(),
+            self.uses_var,
+        )
+    }
+
+    /// Puts the parser back to a [`Parser::saved`] state.
+    pub(super) fn reset(&mut self, saved: (usize, usize, usize, bool)) {
+        self.pos = saved.0;
+        self.parents.truncate(saved.1);
+        self.inputs.truncate(saved.2);
+        self.uses_var = saved.3;
+    }
+
     /// Whether the subtree at `i` is a list.
-    fn is_list(&self, i: u32) -> bool {
+    pub(super) fn is_list(&self, i: u32) -> bool {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::List(_)))
     }
 
@@ -1166,6 +1207,11 @@ impl Parser<'_> {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::Vec))
     }
 
+    pub(super) fn checked_type(&self, i: u32) -> Result<Ty, String> {
+        let (types, ..) = check(self.c, &self.nodes, i)?;
+        Ok(types[i as usize])
+    }
+
     /// `( expression, expression, ... )` after a function name.
     pub(super) fn arguments(&mut self) -> Result<Vec<u32>, String> {
         self.parse_arguments(false)
@@ -1181,7 +1227,25 @@ impl Parser<'_> {
         Ok(args)
     }
 
-    fn argument(&mut self, takes_function: bool) -> Result<u32, String> {
+    pub(super) fn iteration_argument(&mut self, binary: bool) -> Result<u32, String> {
+        if binary
+            && self
+                .toks
+                .get(self.pos + 1)
+                .is_some_and(|t| t.tok == Tok::Comma)
+        {
+            if let Some(f) = self.kind_at(self.pos, Kind::FunctionNVar) {
+                self.pos += 1;
+                self.read(f, true);
+                let x = self.push(Node::Var);
+                let y = self.push(Node::VarY);
+                return Ok(self.push(Node::Apply2(f, x, y)));
+            }
+        }
+        self.argument(true)
+    }
+
+    pub(super) fn argument(&mut self, takes_function: bool) -> Result<u32, String> {
         if takes_function
             && matches!(
                 self.toks.get(self.pos + 1).map(|t| &t.tok),

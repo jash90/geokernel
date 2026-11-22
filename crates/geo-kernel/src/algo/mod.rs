@@ -16,14 +16,19 @@
 //!
 //! [`Def`]: crate::kernel::Def
 
+pub(crate) mod analysis;
+
 pub mod arc;
 pub mod basic;
+pub mod calculus;
+pub mod charts;
 pub mod circle;
 pub mod conic;
 pub mod conic_nd;
 pub mod conic_parts;
 pub(crate) mod conic_path;
 pub(crate) mod curve;
+pub mod discrete;
 pub(crate) mod elliptic;
 pub mod general_conic;
 pub mod intersect;

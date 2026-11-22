@@ -87,23 +87,42 @@ impl std::error::Error for ScriptError {}
 
 /// Builds a construction from a whole script.
 pub fn load(src: &str) -> Result<Construction, ScriptError> {
+    load_with_assets(src, &[])
+}
+
+/// Replay imported definitions with the already decoded sources.
+pub fn load_with_assets(
+    src: &str,
+    assets: &[saved::Property],
+) -> Result<Construction, ScriptError> {
     let mut c = Construction::new();
+    for asset in assets {
+        asset
+            .apply(&mut c)
+            .map_err(|message| ScriptError { line: 1, message })?;
+    }
     for (i, raw) in src.lines().enumerate() {
         exec(&mut c, raw).map_err(|message| ScriptError {
             line: i + 1,
             message,
         })?;
     }
+    c.prune_image_assets();
     Ok(c)
 }
 
+mod analysis;
 pub mod equation;
+pub mod image;
 pub mod saved;
 pub mod text;
 
 /// Runs one line. Returns the first output, or `Ok(None)` if the line
 /// creates nothing. Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
+    if let Some(asset) = saved::load_image_asset(c, raw) {
+        return asset.map(|_| None);
+    }
     let (line, comment) = split_comment(raw);
     let line = line.trim();
     let lowered = comment
@@ -191,6 +210,22 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
             }
         }
         return crate::expr::define_function(c, f, rhs.trim(), of_y).map(Some);
+    }
+    if let Some((label, arguments)) = split_call(name) {
+        if (2..=17).contains(&arguments.len())
+            && is_output_label(label)
+            && arguments.iter().all(|arg| is_identifier(arg))
+        {
+            check_label(label)?;
+            let distinct = arguments
+                .iter()
+                .copied()
+                .collect::<std::collections::HashSet<_>>();
+            if distinct.len() != arguments.len() {
+                return Err("duplicate function parameter".into());
+            }
+            return crate::expr::define_system_function(c, label, rhs.trim(), &arguments).map(Some);
+        }
     }
     if !is_output_label(name) {
         return Err(format!("`{name}` is not a valid object name"));
@@ -586,11 +621,14 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
             return crate::kernel::control::define(c, name, form, &args).map(Some);
         }
     }
+    if rhs.starts_with("$image(") {
+        return image::define(c, name, rhs).map(Some);
+    }
     if let Some(result) = define_saved(c, name, rhs) {
         return result.map(Some);
     }
-    if let Some(("Curve", args)) = split_call(rhs) {
-        return define_cartesian_curve(c, name, &args).map(Some);
+    if let Some(result) = analysis::exec(c, name, rhs) {
+        return result.map(Some);
     }
     if let Some(def) = intersect::growth::parse_slot(c, rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
@@ -631,8 +669,14 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(result) = crate::expr::division_list(c, name, rhs) {
         return result.map(Some);
     }
+    if let Some(result) = crate::algo::discrete::exec(c, name, rhs) {
+        return result.map(Some);
+    }
     if let Some(result) = exec_polyline_flag(c, name, rhs) {
         return result;
+    }
+    if let Some(result) = crate::algo::charts::exec(c, name, rhs) {
+        return result.map(Some);
     }
     if let Some(result) = crate::algo::vector::matrix::exec(c, name, rhs) {
         return result;
@@ -650,6 +694,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         return result;
     }
     if let Some(result) = define_vector_call(c, name, rhs) {
+        return result;
+    }
+    if let Some(result) = crate::algo::calculus::exec(c, name, rhs) {
         return result;
     }
     // GeoGebra returns an already labelled angle unchanged.
@@ -1170,12 +1217,23 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             | "Arc"
             | "Sector"
             | "Circle"
+            | "LowerSum"
+            | "UpperSum"
+            | "LeftSum"
+            | "TrapezoidalSum"
+            | "RectangleSum"
+            | "Integral"
+            | "NIntegral"
+            | "IntegralBetween"
+            | "Derivative"
+            | "NDerivative"
     ) {
         return None;
     }
     let (func, mut args) = split_call(rhs)?;
     let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
     let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
+        ("Tangent", [f, _]) if is_kind(f, Kind::Function) => &[(1, Kind::Point)],
         ("Tangent", [_, f]) if is_kind(f, Kind::Function) => &[(0, Kind::Number)],
         ("Length", [f, _, _]) if is_kind(f, Kind::Function) || is_kind(f, Kind::Curve) => {
             &[(1, Kind::Number), (2, Kind::Number)]
@@ -1199,14 +1257,77 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         {
             &[(1, Kind::Number)]
         }
+        // the calculus commands: their number and boolean positions, in
+        // the order the commands check them
+        ("LowerSum" | "UpperSum" | "LeftSum" | "TrapezoidalSum", [f, _, _, _])
+            if is_kind(f, Kind::Function) =>
+        {
+            &[(1, Kind::Number), (2, Kind::Number), (3, Kind::Number)]
+        }
+        ("RectangleSum", [f, _, _, _, _]) if is_kind(f, Kind::Function) => &[
+            (1, Kind::Number),
+            (2, Kind::Number),
+            (3, Kind::Number),
+            (4, Kind::Number),
+        ],
+        ("Integral" | "NIntegral", [f, _, _]) if is_kind(f, Kind::Function) => {
+            &[(1, Kind::Number), (2, Kind::Number)]
+        }
+        // the boolean fourth argument is tried as a number first, so an
+        // inline `true` or `false` falls through to the boolean row
+        ("Integral" | "NIntegral" | "IntegralBetween", [f, _, _, _])
+            if is_kind(f, Kind::Function) =>
+        {
+            &[
+                (1, Kind::Number),
+                (2, Kind::Number),
+                (3, Kind::Number),
+                (3, Kind::Boolean),
+            ]
+        }
+        ("Integral" | "NIntegral" | "IntegralBetween", [f, _, _, _, _])
+            if is_kind(f, Kind::Function) =>
+        {
+            &[
+                (1, Kind::Number),
+                (2, Kind::Number),
+                (3, Kind::Number),
+                (3, Kind::Boolean),
+                (4, Kind::Boolean),
+            ]
+        }
+        ("IntegralBetween", [f, _, _]) if is_kind(f, Kind::Function) => {
+            &[(1, Kind::Number), (2, Kind::Number)]
+        }
+        ("Derivative" | "NDerivative", [f, order]) if is_kind(f, Kind::Function) => {
+            &[(1, Kind::Number)]
+        }
+        ("Derivative" | "NDerivative", [f, _, order]) if is_kind(f, Kind::Function) => {
+            &[(2, Kind::Number)]
+        }
         _ => return None,
     };
+    // the calculus commands keep their numbers as live objects; the
+    // geometry commands parse a plain decimal into their own definition
+    let live_numbers = matches!(
+        func,
+        "LowerSum"
+            | "UpperSum"
+            | "LeftSum"
+            | "TrapezoidalSum"
+            | "RectangleSum"
+            | "Integral"
+            | "NIntegral"
+            | "IntegralBetween"
+            | "Derivative"
+            | "NDerivative"
+    );
     let replacements: Vec<_> = inputs
         .iter()
         .filter_map(|&(index, kind)| {
             let arg = args[index];
             if c.id(arg).is_some()
-                || (!matches!(func, "Point" | "Arc" | "Sector" | "Circle")
+                || (!(live_numbers || matches!(func, "Point" | "Arc" | "Sector" | "Circle"))
                     && crate::algo::polygon::decimal(arg).is_some())
             {
                 return None;
@@ -1227,6 +1348,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         r.map(|defs| defs.into_iter().map(f).collect())
     }
     let (func, args) = split_call(rhs)?;
+    if let Some(defs) = analysis::existing_outputs(c, func, &args) {
+        return Some(defs);
+    }
     if let Some(defs) = intersect::parse_multi(c, func, &args) {
         return Some(Ok(defs));
     }
@@ -1450,9 +1574,12 @@ fn is_finite(v: &Value) -> bool {
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
         Value::Locus { .. } => true,
-        Value::HomogeneousPoint { .. } | Value::Button | Value::InputBox | Value::Undefined => {
-            false
-        }
+        Value::HomogeneousPoint { .. }
+        | Value::Button
+        | Value::InputBox
+        | Value::Image
+        | Value::PieChart
+        | Value::Undefined => false,
     }
 }
 
@@ -1824,6 +1951,9 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
 }
 
 fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<Id>, String> {
+    if let Some(result) = analysis::exec_slots(c, slots, rhs) {
+        return result;
+    }
     // The command decides how many outputs it has; a longer list of labels is
     // refused before any label is looked at, so the work is bounded by the
     // command, not by the length of the line.

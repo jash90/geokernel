@@ -1,0 +1,590 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "calculus-degree-001",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^2",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-degree-002",
+      "group": "calculus",
+      "script": [
+        "f(x) = sin(x)",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "calculus-degree-003",
+      "group": "calculus",
+      "script": [
+        "f(x) = 3",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.0],
+              [-4.0, 3.0],
+              [-2.0, 3.0],
+              [-1.0, 3.0],
+              [-0.5, 3.0],
+              [0.0, 3.0],
+              [0.5, 3.0],
+              [1.0, 3.0],
+              [2.0, 3.0],
+              [4.0, 3.0],
+              [8.0, 3.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-degree-004",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^3 - 6x^2 + 9x",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -968.0],
+              [-4.0, -196.0],
+              [-2.0, -50.0],
+              [-1.0, -16.0],
+              [-0.5, -6.125],
+              [0.0, 0.0],
+              [0.5, 3.125],
+              [1.0, 4.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 200.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-degree-005",
+      "group": "calculus",
+      "script": [
+        "f(x) = x*x*x",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-degree-006",
+      "group": "calculus",
+      "script": [
+        "f(x) = x^4 / 12 + x^2",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 405.3333333333333],
+              [-4.0, 37.33333333333333],
+              [-2.0, 5.333333333333333],
+              [-1.0, 1.0833333333333333],
+              [-0.5, 0.2552083333333333],
+              [0.0, 0.0],
+              [0.5, 0.2552083333333333],
+              [1.0, 1.0833333333333333],
+              [2.0, 5.333333333333333],
+              [4.0, 37.33333333333333],
+              [8.0, 405.3333333333333]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-degree-007",
+      "group": "calculus",
+      "script": [
+        "a = 2",
+        "f(x) = a x^3 + x",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1032.0],
+              [-4.0, -132.0],
+              [-2.0, -18.0],
+              [-1.0, -3.0],
+              [-0.5, -0.75],
+              [0.0, 0.0],
+              [0.5, 0.75],
+              [1.0, 3.0],
+              [2.0, 18.0],
+              [4.0, 132.0],
+              [8.0, 1032.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -520.0],
+              [-4.0, -68.0],
+              [-2.0, -10.0],
+              [-1.0, -2.0],
+              [-0.5, -0.625],
+              [0.0, 0.0],
+              [0.5, 0.625],
+              [1.0, 2.0],
+              [2.0, 10.0],
+              [4.0, 68.0],
+              [8.0, 520.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1032.0],
+              [-4.0, -132.0],
+              [-2.0, -18.0],
+              [-1.0, -3.0],
+              [-0.5, -0.75],
+              [0.0, 0.0],
+              [0.5, 0.75],
+              [1.0, 3.0],
+              [2.0, 18.0],
+              [4.0, 132.0],
+              [8.0, 1032.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-degree-008",
+      "group": "calculus",
+      "script": [
+        "a = 3",
+        "f(x) = x^a",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.5 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 2.9999999999 },
+        { "action": "set_number", "label": "a", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 4096.0],
+              [-4.0, 256.0],
+              [-2.0, 16.0],
+              [-1.0, 1.0],
+              [-0.5, 0.0625],
+              [0.0, 0.0],
+              [0.5, 0.0625],
+              [1.0, 1.0],
+              [2.0, 16.0],
+              [4.0, 256.0],
+              [8.0, 4096.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.17677669529663687],
+              [1.0, 1.0],
+              [2.0, 5.65685424949238],
+              [4.0, 32.0],
+              [8.0, 181.01933598375615]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.9999999999 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.12500000000866435],
+              [1.0, 1.0],
+              [2.0, 7.999999999445482],
+              [4.0, 63.999999991127716],
+              [8.0, 511.99999989353256]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, 0.0],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-degree-009",
+      "group": "calculus",
+      "script": [
+        "f(x) = (x + 1)^300",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.38385702007491E253],
+              [-4.0, 1.3689147905858839E143],
+              [-2.0, 1.0],
+              [-1.0, 0.0],
+              [-0.5, 4.9090934652977266E-91],
+              [0.0, 1.0],
+              [0.5, 6.720130653014568E52],
+              [1.0, 2.037035976334486E90],
+              [2.0, 1.3689147905858839E143],
+              [4.0, 4.909093465297727E209],
+              [8.0, 1.873927703884794E286]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 300.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-degree-010",
+      "group": "calculus",
+      "script": [
+        "a = 1",
+        "b = 1",
+        "f(x) = (a x + b)^300",
+        "d = Degree(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.38385702007491E253],
+              [-4.0, 1.3689147905858839E143],
+              [-2.0, 1.0],
+              [-1.0, 0.0],
+              [-0.5, 4.9090934652977266E-91],
+              [0.0, 1.0],
+              [0.5, 6.720130653014568E52],
+              [1.0, 2.037035976334486E90],
+              [2.0, 1.3689147905858839E143],
+              [4.0, 4.909093465297727E209],
+              [8.0, 1.873927703884794E286]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, 3.38385702007491E253],
+              [-2.0, 1.3689147905858839E143],
+              [-1.0, 1.0],
+              [-0.5, 0.0],
+              [0.0, 1.0],
+              [0.5, 2.037035976334486E90],
+              [1.0, 1.3689147905858839E143],
+              [2.0, 4.909093465297727E209],
+              [4.0, 1.873927703884794E286],
+              [8.0, null]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.38385702007491E253],
+              [-4.0, 1.3689147905858839E143],
+              [-2.0, 1.0],
+              [-1.0, 0.0],
+              [-0.5, 4.9090934652977266E-91],
+              [0.0, 1.0],
+              [0.5, 6.720130653014568E52],
+              [1.0, 2.037035976334486E90],
+              [2.0, 1.3689147905858839E143],
+              [4.0, 4.909093465297727E209],
+              [8.0, 1.873927703884794E286]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

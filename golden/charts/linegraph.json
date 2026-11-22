@@ -1,0 +1,209 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "charts-linegraph-001",
+      "group": "charts",
+      "script": [
+        "graph = LineGraph({1,2},{3,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "graph": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, 3.0],
+              [2.0, 4.0],
+              [4.0, null],
+              [8.0, null]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-linegraph-002",
+      "group": "charts",
+      "script": [
+        "graph = LineGraph({3,2},{3,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "graph": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-linegraph-003",
+      "group": "charts",
+      "script": [
+        "graph = LineGraph({3,(4,5)},{3,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "graph": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-linegraph-004",
+      "group": "charts",
+      "script": [
+        "graph = LineGraph({1,2},{3,?})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "graph": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-linegraph-005",
+      "group": "charts",
+      "script": [
+        "graph = LineGraph({1,2},{3,Infinity})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "graph": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-linegraph-006",
+      "group": "charts",
+      "script": [
+        "graph = LineGraph({}, {})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "graph": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-linegraph-007",
+      "group": "charts",
+      "script": [
+        "graph = LineGraph({1}, {2})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "graph": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-linegraph-008",
+      "group": "charts",
+      "script": [
+        "graph = LineGraph({1, 1}, {2, 3})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "graph": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-linegraph-009",
+      "group": "charts",
+      "script": [
+        "graph = LineGraph({-3,-1,0,2,4}, {3,0,4,-2,3})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "graph": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.5],
+              [-1.0, 0.0],
+              [-0.5, 2.0],
+              [0.0, 4.0],
+              [0.5, 2.5],
+              [1.0, 1.0],
+              [2.0, -2.0],
+              [4.0, 3.0],
+              [8.0, null]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "charts-linegraph-010",
+      "group": "charts",
+      "script": [
+        "f = LineGraph({1, 2}, {3, 4})",
+        "A = Point(f)",
+        "g = Tangent(f, (1, 3))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, 3.0],
+              [2.0, 4.0],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "g": { "type": "line", "defined": false }
+        }
+      ]
+    }
+  ]
+}

@@ -89,7 +89,9 @@ impl App {
     /// on objects (`new_points_on_objects`). A point under the pointer is
     /// not this function's business: the tool picks it.
     pub fn new_point_at(&mut self, t: &ViewTransform, pos: (f64, f64), reach: &Reach) -> NewPoint {
-        let (x, y) = self.snap(t.scale()).apply(t.screen_to_world(pos.0, pos.1));
+        let (x, y) = self
+            .snap(t.xscale(), t.yscale())
+            .apply(t.screen_to_world(pos.0, pos.1));
         if !new_points_on_objects(self.tool.tool(), self.tool.picks()) {
             return NewPoint::Free(x, y);
         }
@@ -373,7 +375,8 @@ mod tests {
         Camera {
             cx: 0.0,
             cy: 0.0,
-            scale: 50.0,
+            xscale: 50.0,
+            yscale: 50.0,
         }
         .transform(800.0, 600.0)
     }

@@ -1,0 +1,202 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "charts-stepgraph-001",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({1,2,3,4,5}, {2,3,4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-002",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({(1,1),(2,2),(3,3),(4,1/4),(5,1/5)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 6.45 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-003",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({1,2,3,4,5}, {2,3,4},true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-004",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({(1,1),(2,2),(3,3),(4,1/4),(5,1/5)},true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 6.45 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-005",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({1,2,3,4,5}, {2,3,4},true,42)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-006",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({(1,1),(2,2),(3,3),(4,1/4),(5,1/5)},true,4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 6.45 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-007",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({},{})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-008",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({},{1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-009",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({1},{})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-010",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({(2,-3),(1,2),(2,-1)})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-011",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({2, 1, 2}, {-3, 2, -1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-012",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({2, 1}, {-3, 2}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-stepgraph-013",
+      "group": "charts",
+      "script": [
+        "chart = StepGraph({2, 1}, {-3, 2}, true, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}

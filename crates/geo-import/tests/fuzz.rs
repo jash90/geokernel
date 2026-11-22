@@ -6,7 +6,7 @@
 
 use geo_golden::repo_root;
 use geo_import::import;
-use geo_kernel::script::exec;
+use geo_kernel::script::{exec, saved::inline_argument_positions, split_comment};
 use geo_kernel::Construction;
 use std::fs;
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -120,7 +120,10 @@ fn check(name: &str, bytes: &[u8]) -> bool {
         let mut c = Construction::new();
         for line in &imported.script {
             assert!(
-                !line.contains('\n') && !line.contains('\r') && !line.contains('#'),
+                !line.contains(['\n', '\r'])
+                    && split_comment(line)
+                        .1
+                        .is_none_or(|comment| inline_argument_positions(comment).is_some()),
                 "{name}: a line spans several lines or has a comment: {line:?}"
             );
             if let Err(e) = exec(&mut c, line) {

@@ -1,0 +1,29 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-reviewiteration-001",
+      "group": "funcanalysis",
+      "script": [
+        "n = 2",
+        "R = Iteration(x+1,1,n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2000000.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "R": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2000000.0 },
+          "R": { "type": "number", "defined": true, "value": 2000001.0 }
+        }
+      ]
+    }
+  ]
+}

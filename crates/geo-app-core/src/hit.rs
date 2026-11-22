@@ -197,8 +197,9 @@ pub fn hit(
             if len == 0.0 {
                 return None;
             }
-            // A point far along the ray stands in for infinity.
-            let far = 1e7 / tr.scale().max(1e-9);
+            // A point far along the ray stands in for infinity: far on
+            // the coarser axis, so it clears the area on both.
+            let far = 1e7 / tr.xscale().min(tr.yscale()).max(1e-9);
             let end = to_screen(x + far * b / len, y - far * a / len);
             boundary(segment_meets_square(to_screen(x, y), end, p, t))
         }
@@ -217,7 +218,10 @@ pub fn hit(
             // nearest point is inside the outer circle and its farthest
             // corner outside the inner one.
             let s = to_screen(cx, cy);
-            let rad = r * tr.scale();
+            // With the scales apart the drawn shape is an ellipse; the
+            // ring test keeps one radius, the geometric mean of the scales
+            // (exact whenever they are equal).
+            let rad = r * (tr.xscale() * tr.yscale()).sqrt();
             let (dx, dy) = ((s.0 - p.0).abs(), (s.1 - p.1).abs());
             let near = (dx - t).max(0.0).hypot((dy - t).max(0.0));
             let far = (dx + t).hypot(dy + t);
@@ -238,7 +242,10 @@ pub fn hit(
             let angle = c.angle_geometry(id)?;
             let center = to_screen(angle.center.0, angle.center.1);
             angle
-                .contains((p.0 - center.0, center.1 - p.1), angle.radius(tr.scale()))
+                .contains(
+                    (p.0 - center.0, center.1 - p.1),
+                    angle.radius((tr.xscale() * tr.yscale()).sqrt()),
+                )
                 .then_some(HitType::Filling)
         }
         Value::Polygon { .. } => {
@@ -291,7 +298,7 @@ fn conic_meets_square(d: &ConicData, tr: &ViewTransform, p: (f64, f64), t: f64) 
     }
     let (x, y) = tr.screen_to_world(p.0, p.1);
     let [mx, my] = d.midpoint;
-    let h = t / tr.scale();
+    let h = t / (tr.xscale() * tr.yscale()).sqrt();
     let [e0, e1] = d.eigenvec;
     let [a, b] = d.half_axes;
     let (dx, dy) = (x - mx, y - my);
@@ -387,7 +394,7 @@ fn part_meets_square(part: &ArcData, tr: &ViewTransform, p: (f64, f64), t: f64) 
         if length == 0.0 || !length.is_finite() {
             return false;
         }
-        let far = 1e7 / (tr.scale() * length);
+        let far = 1e7 / (tr.xscale().min(tr.yscale()) * length);
         return segment_meets_square(screen(a), screen((a.0 - far * dx, a.1 - far * dy)), p, t)
             || segment_meets_square(screen(b), screen((b.0 + far * dx, b.1 + far * dy)), p, t);
     }
@@ -410,7 +417,7 @@ fn part_meets_square(part: &ArcData, tr: &ViewTransform, p: (f64, f64), t: f64) 
     // Intersections of the ellipse with each edge x = k or y = k satisfy
     // A cos(angle) + B sin(angle) = k, relative to the ellipse's centre.
     let (px, py) = tr.screen_to_world(p.0, p.1);
-    let h = t / tr.scale();
+    let h = t / (tr.xscale() * tr.yscale()).sqrt();
     for (axis, d, other) in [(0, px - mx, py), (1, py - my, px)] {
         for k in [d - h, d + h] {
             if part_axis_crossings(part, axis, k).any(|angle| {
@@ -433,7 +440,7 @@ fn function_meets_square(
     t: f64,
 ) -> bool {
     let (x, y) = tr.screen_to_world(p.0, p.1);
-    let h = t / tr.scale();
+    let h = t / (tr.xscale() * tr.yscale()).sqrt();
     let eval = |x: f64| c.function_value(id, x).map_or(f64::NAN, |v| v - y);
     let center = eval(x);
     if center.abs() <= h {

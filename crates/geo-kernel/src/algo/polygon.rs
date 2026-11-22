@@ -347,6 +347,7 @@ pub(super) fn has_fixed_vertices(c: &Construction, poly: Id) -> bool {
 enum Shape<'a> {
     Points(&'a [Id]),
     List(List<'a>),
+    Chart(&'a [(f64, f64)]),
     Regular(Regular),
     Clipped(Vec<(f64, f64)>),
     /// The image of another shape under a map: a polygon or polyline under
@@ -367,6 +368,9 @@ impl<'a> Shape<'a> {
             return Shape::Points(image);
         }
         match c.def(id) {
+            Def::Chart(_) if c.kind(id) == Kind::PolyLine => c
+                .chart(id)
+                .map_or(Shape::Empty, |data| Shape::Chart(&data.vertices)),
             Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
                 Shape::Points(c.list(list))
             }
@@ -412,6 +416,7 @@ impl<'a> Shape<'a> {
         match self {
             Shape::Points(ids) => ids.len(),
             Shape::List(list) => list.len(),
+            Shape::Chart(vertices) => vertices.len(),
             Shape::Regular(r) => r.n,
             Shape::Clipped(vertices) => vertices.len(),
             Shape::Moved(inner, ..) | Shape::Shifted(inner, ..) | Shape::Applied(inner, ..) => {
@@ -443,6 +448,7 @@ impl<'a> Shape<'a> {
             }
             Shape::Regular(r) => (k < r.n).then(|| r.vertex(k)),
             Shape::Clipped(vertices) => vertices.get(k).copied(),
+            Shape::Chart(vertices) => vertices.get(k).copied(),
             Shape::Moved(inner, map) => {
                 let (x, y) = inner.vertex(c, k)?;
                 map.map(|m| m.point(x, y))

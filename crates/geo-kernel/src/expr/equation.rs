@@ -74,8 +74,28 @@ use crate::tol::STANDARD_PRECISION;
 const MAX_ALLOWED_DEGREE: f64 = 300.0;
 
 /// Upper bound on the terms one expansion may hold, so that a long product
-/// cannot grow without end.
+/// cannot grow without end. Checked on the merged terms: the product of two
+/// merged polynomials holds many more terms before `simplify` merges them
+/// (squaring a 129-term binomial power makes 16 641 raw terms that merge to
+/// 257), so the bound on the raw product is [`MAX_PRODUCT_TERMS`] instead.
 const MAX_TERMS: usize = 4096;
+
+/// Upper bound on the raw terms one multiplication may build before they
+/// are merged: a memory bound only, sized so every dense univariate
+/// expansion up to `MAX_ALLOWED_DEGREE` stays inside it.
+const MAX_PRODUCT_TERMS: usize = 1_000_000;
+
+/// The memo of one run of number evaluations over a builder's arena: the
+/// value of a subtree by its node index, shared by every tree that reads it.
+type NumberMemo = std::collections::HashMap<u32, Option<f64>>;
+
+/// How deep the memoized evaluation of the coefficient trees of one
+/// polynomial may recurse: unlike a parsed expression (bounded by
+/// [`parse::MAX_NESTING`]), the builder's arena is a DAG whose deepest path
+/// is the term chain of one power, bounded by [`MAX_TERMS`] coefficient
+/// additions, so a long expansion stays readable while the recursion keeps
+/// far under the stack.
+const MAX_COEFFICIENT_DEPTH: u32 = 2 * MAX_TERMS as u32;
 
 /// Upper bound on the nodes the bodies of the function calls of one
 /// equation may add to the arena, so that nested calls cannot grow without
@@ -110,6 +130,8 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         lits,
         function_nodes: MAX_FUNCTION_NODES,
         function_dependent: false,
+        variable_powers: false,
+        abort_at: u64::MAX,
     };
 
     let poly = match build_normal(c, &mut builder, lhs.root, rhs_root) {
@@ -292,10 +314,10 @@ fn map_children(
 /// One monomial: the degrees of `x` and `y` and the root of its
 /// coefficient tree, an index into the builder's arena.
 #[derive(Clone, Copy)]
-struct Term {
-    x: u32,
-    y: u32,
-    coeff: u32,
+pub(crate) struct Term {
+    pub(crate) x: u32,
+    pub(crate) y: u32,
+    pub(crate) coeff: u32,
 }
 
 /// A polynomial in `x` and `y`: GeoGebra's `Polynomial`, as its list of
@@ -303,10 +325,10 @@ struct Term {
 /// every operation ends in [`Poly::simplify`], which leaves no two terms
 /// of one monomial and no term of a constant zero coefficient.
 #[derive(Clone)]
-struct Poly(Vec<Term>);
+pub(crate) struct Poly(Vec<Term>);
 
 /// Why an expression is no polynomial in `x` and `y`.
-enum NotPolynomial {
+pub(crate) enum NotPolynomial {
     /// The equation would be an implicit curve.
     ImplicitCurve,
     /// An exponent reads an object (`x^n`): GeoGebra makes an implicit
@@ -316,8 +338,8 @@ enum NotPolynomial {
 
 /// The merged arena of the two sides of an equation, which the coefficient
 /// trees of its terms are built in.
-struct Builder {
-    nodes: Vec<Node>,
+pub(crate) struct Builder {
+    pub(crate) nodes: Vec<Node>,
     lits: Vec<Lit>,
     /// How many more nodes the bodies of function calls may add (see
     /// [`MAX_FUNCTION_NODES`]).
@@ -327,22 +349,58 @@ struct Builder {
     /// `makePolyTreeFromFunction`): such an equation is no plain line or
     /// conic, however polynomial its normal form is.
     function_dependent: bool,
+    /// Whether a power whose exponent reads a number object may expand
+    /// with that value (`Polynomial.apply`'s dynamic branch), as the
+    /// calculus commands of a function need. The equation input keeps
+    /// refusing a variable degree instead (see `DIFFERENCES.md`).
+    variable_powers: bool,
+    /// Where the work meter ends for the tree this builder grows: a walk
+    /// that charges past it stops building (`u64::MAX` never stops). The
+    /// no-CAS rules set it so that one pass of `rule_derivative` cannot
+    /// build a tree far past the budget before the next pass is checked.
+    pub(crate) abort_at: u64,
 }
 
 impl Builder {
-    fn push(&mut self, node: Node) -> u32 {
+    pub(crate) fn push(&mut self, node: Node) -> u32 {
         self.nodes.push(node);
         self.lits.push(Lit::default());
         (self.nodes.len() - 1) as u32
     }
 
-    fn node(&self, i: u32) -> Node {
+    pub(crate) fn node(&self, i: u32) -> Node {
         self.nodes[i as usize]
+    }
+
+    /// A builder over the whole tree of the function `e`, which the
+    /// calculus commands expand (see `algo::calculus`).
+    pub(crate) fn function(e: &super::Entry) -> Self {
+        Builder {
+            nodes: e.nodes.clone(),
+            lits: e.lits.clone(),
+            function_nodes: MAX_FUNCTION_NODES,
+            function_dependent: false,
+            variable_powers: true,
+            abort_at: u64::MAX,
+        }
+    }
+
+    /// An empty builder, for a tree the calculus commands build from
+    /// numbers alone (see `algo::calculus`).
+    pub(crate) fn empty() -> Self {
+        Builder {
+            nodes: Vec::new(),
+            lits: Vec::new(),
+            function_nodes: MAX_FUNCTION_NODES,
+            function_dependent: false,
+            variable_powers: true,
+            abort_at: u64::MAX,
+        }
     }
 
     /// `ExpressionNode.makePolynomialTree` of the subtree at `i`, with the
     /// operations of `Polynomial.apply` and `Term` on the coefficients.
-    fn expand(&mut self, c: &Construction, i: u32) -> Result<Poly, NotPolynomial> {
+    pub(crate) fn expand(&mut self, c: &Construction, i: u32) -> Result<Poly, NotPolynomial> {
         match self.node(i) {
             Node::Var => Ok(Poly(vec![Term {
                 x: 1,
@@ -453,9 +511,14 @@ impl Builder {
 
     /// `Polynomial.apply(POWER, ...)`: the exponent must be a constant
     /// integer in `[0, MAX_ALLOWED_DEGREE]`, or the base must be a constant
-    /// whose one coefficient is raised as a tree. An exponent that reads an
-    /// object (`x^n`) has a variable degree, which makes an implicit
-    /// polynomial upstream.
+    /// whose one coefficient is raised as a tree. With
+    /// [`variable_powers`](Self::variable_powers) (the calculus commands of
+    /// a function), an exponent that is itself a number object expands with
+    /// its value: the truncated `(int)` power, which stays a polynomial
+    /// only while the value is a whole number not below zero (the variable
+    /// degree of `Equation.isPolynomial`); a compound exponent that reads
+    /// objects is not dynamic and only its value counts. The equation input
+    /// keeps refusing a variable degree (`x^n`).
     fn power(&mut self, c: &Construction, base: u32, exponent: u32) -> Result<Poly, NotPolynomial> {
         let mut p = self.expand(c, base)?;
         let e = self.expand(c, exponent)?;
@@ -467,6 +530,28 @@ impl Builder {
             // `apply` raises the one coefficient to that power as a tree
             let coeff = p.0[0].coeff;
             p.0[0].coeff = self.push(Node::Bin(Bin::Pow, coeff, exp_coeff));
+            return Ok(p);
+        }
+        if self.variable_powers {
+            if matches!(self.node(exp_coeff), Node::Obj(_)) {
+                let Some(value) = self.number_value(c, exp_coeff) else {
+                    // `rt.evaluate` is no `NumberValue`: no polynomial
+                    return Err(NotPolynomial::VariableDegree);
+                };
+                // `Equation.isPolynomial` of the recorded variable degree
+                if !math::is_integer(value) || value < -STANDARD_PRECISION {
+                    return Err(NotPolynomial::VariableDegree);
+                }
+                p.pow(java_int(value).max(0) as u32, self)?;
+                return Ok(p);
+            }
+            let Some(power) = self.number_value(c, exp_coeff) else {
+                return Err(NotPolynomial::ImplicitCurve);
+            };
+            if !math::is_integer(power) || !(0.0..=MAX_ALLOWED_DEGREE).contains(&power) {
+                return Err(NotPolynomial::ImplicitCurve);
+            }
+            p.pow(power as u32, self)?;
             return Ok(p);
         }
         if self.contains_object(exp_coeff) {
@@ -484,7 +569,7 @@ impl Builder {
 
     /// Whether the subtree at `i` reads the variable `x` or `y`
     /// (`containsFunctionVariable`).
-    fn contains_var(&self, i: u32) -> bool {
+    pub(crate) fn contains_var(&self, i: u32) -> bool {
         match self.node(i) {
             Node::Var | Node::VarY => true,
             node => children(&node).any(|child| self.contains_var(child)),
@@ -493,19 +578,100 @@ impl Builder {
 
     /// Whether the subtree at `i` reads an object (`isDynamicGeoElement`):
     /// the coefficient of such a term is recomputed when the object
-    /// changes, and it survives `simplify` even at the value 0.
-    fn contains_object(&self, i: u32) -> bool {
-        match self.node(i) {
-            Node::Obj(_) | Node::Apply(..) | Node::Cmd(..) | Node::If(..) => true,
-            node => children(&node).any(|child| self.contains_object(child)),
+    /// changes, and it survives `simplify` even at the value 0. The walk
+    /// marks the nodes it has seen, because the arena is a DAG (the
+    /// polynomial powers reuse coefficient trees) and a plain recursion
+    /// would walk a shared subtree once per reference.
+    pub(crate) fn contains_object(&self, i: u32) -> bool {
+        let mut seen = vec![false; self.nodes.len()];
+        let mut stack = vec![i];
+        while let Some(i) = stack.pop() {
+            if seen[i as usize] {
+                continue;
+            }
+            seen[i as usize] = true;
+            match self.node(i) {
+                Node::Obj(_) | Node::Apply(..) | Node::Cmd(..) | Node::If(..) => return true,
+                node => stack.extend(children(&node)),
+            }
         }
+        false
     }
 
     /// The value of a subtree that reads no object (`isConstant` with
     /// `evaluateDouble`); `None` when it does read one, or is nested too
     /// deeply to look at.
-    fn constant_value(&self, i: u32) -> Option<f64> {
+    pub(crate) fn constant_value(&self, i: u32) -> Option<f64> {
         self.constant_at(i, 0)
+    }
+
+    /// The value of a subtree with the current values of the objects it
+    /// reads (`evaluateDouble`): like [`constant_value`](Self::constant_value),
+    /// but a number object counts as a value too (`isNumberValue`, which
+    /// the exponent checks of `Polynomial.apply` and the no-CAS rules of
+    /// `Derivative` and `ExpressionNode.integral` use). `None` when the
+    /// tree reads something that is no number, or is nested too deeply.
+    pub(crate) fn number_value(&self, c: &Construction, i: u32) -> Option<f64> {
+        let mut memo = NumberMemo::default();
+        self.number_at(c, i, 0, parse::MAX_NESTING, &mut memo)
+    }
+
+    /// The values of many coefficient trees read with one shared memo
+    /// ([`number_value`](Self::number_value) of each): the builder's arena
+    /// is a DAG whose polynomial operations reuse coefficient trees, so one
+    /// memo makes every shared subtree evaluate once however many trees
+    /// reference it.
+    pub(crate) fn number_values(
+        &self,
+        c: &Construction,
+        roots: impl IntoIterator<Item = u32>,
+    ) -> Vec<Option<f64>> {
+        let mut memo = NumberMemo::default();
+        roots
+            .into_iter()
+            .map(|root| self.number_at(c, root, 0, MAX_COEFFICIENT_DEPTH, &mut memo))
+            .collect()
+    }
+
+    fn number_at(
+        &self,
+        c: &Construction,
+        i: u32,
+        depth: u32,
+        limit: u32,
+        memo: &mut NumberMemo,
+    ) -> Option<f64> {
+        if let Some(value) = memo.get(&i) {
+            return *value;
+        }
+        if depth > limit {
+            return None;
+        }
+        let value = |j: u32, memo: &mut NumberMemo| self.number_at(c, j, depth + 1, limit, memo);
+        let result = Some(match self.node(i) {
+            Node::Num(v) => v,
+            Node::MinusOne => -1.0,
+            Node::Degree => math::PI_180,
+            Node::Obj(id) => match c.value(id) {
+                Value::Number(v) => v,
+                _ => return None,
+            },
+            Node::Un(op, a) => eval::scalar(op, value(a, memo)?, false),
+            Node::Bin(op, a, b) => {
+                let (x, y) = (value(a, memo)?, value(b, memo)?);
+                match op {
+                    Bin::Add => x + y,
+                    Bin::Sub => x - y,
+                    Bin::Mul => x * y,
+                    Bin::Div => x / y,
+                    Bin::Pow => math::my_pow(x, y),
+                    _ => return None,
+                }
+            }
+            _ => return None,
+        });
+        memo.insert(i, result);
+        result
     }
 
     fn constant_at(&self, i: u32, depth: u32) -> Option<f64> {
@@ -535,7 +701,7 @@ impl Builder {
 
     /// `Term.add` of two coefficients: constants fold into one number,
     /// and the tree is otherwise the operation.
-    fn add(&mut self, a: u32, b: u32) -> u32 {
+    pub(crate) fn add(&mut self, a: u32, b: u32) -> u32 {
         match (self.constant_value(a), self.constant_value(b)) {
             (Some(x), Some(y)) => self.push(Node::Num(x + y)),
             _ => self.push(Node::Bin(Bin::Add, a, b)),
@@ -543,7 +709,7 @@ impl Builder {
     }
 
     /// `Term.multiply` of two coefficients, with its constant reductions.
-    fn multiply(&mut self, a: u32, b: u32) -> u32 {
+    pub(crate) fn multiply(&mut self, a: u32, b: u32) -> u32 {
         match (self.constant_value(a), self.constant_value(b)) {
             (Some(x), Some(y)) => self.push(Node::Num(x * y)),
             (Some(0.0), _) => self.push(Node::Num(0.0)),
@@ -553,7 +719,7 @@ impl Builder {
     }
 
     /// `Term.divide` of two coefficients, with its constant reductions.
-    fn divide(&mut self, a: u32, b: u32) -> u32 {
+    pub(crate) fn divide(&mut self, a: u32, b: u32) -> u32 {
         match (self.constant_value(a), self.constant_value(b)) {
             (Some(x), Some(y)) => self.push(Node::Num(x / y)),
             (Some(0.0), _) => self.push(Node::Num(0.0)),
@@ -562,7 +728,17 @@ impl Builder {
         }
     }
 
-    fn collect_reads(&self, c: &Construction, i: u32, parents: &mut Vec<Id>, inputs: &mut Vec<Id>) {
+    pub(crate) fn collect_reads(
+        &self,
+        c: &Construction,
+        i: u32,
+        parents: &mut Vec<Id>,
+        inputs: &mut Vec<Id>,
+    ) {
+        // The arena is a DAG (the polynomial powers reuse coefficient
+        // trees), so the walk keeps every node it has seen: a node shared
+        // by two parents is read once, as its reads are already collected.
+        let mut seen = vec![false; self.nodes.len()];
         let mut read = |id: Id, input: bool| {
             if !parents.contains(&id) {
                 parents.push(id);
@@ -571,40 +747,82 @@ impl Builder {
                 inputs.push(id);
             }
         };
-        match self.node(i) {
-            Node::Obj(id) => read(id, true),
-            Node::Apply(f, a) => {
-                read(f, true);
-                self.collect_reads(c, a, parents, inputs);
+        let mut stack = vec![i];
+        while let Some(i) = stack.pop() {
+            if seen[i as usize] {
+                continue;
             }
-            Node::Cmd(def, _) => {
-                for &p in def.parents().as_slice() {
-                    read(p, false);
+            seen[i as usize] = true;
+            match self.node(i) {
+                Node::Obj(id) => read(id, true),
+                Node::Apply(f, a) => {
+                    read(f, true);
+                    stack.push(a);
                 }
-                for p in crate::algo::intersect::hidden_parents(c, &def) {
-                    read(p, false);
+                Node::Cmd(def, _) => {
+                    for &p in def.parents().as_slice() {
+                        read(p, false);
+                    }
+                    for p in crate::algo::intersect::hidden_parents(c, &def) {
+                        read(p, false);
+                    }
+                    for p in crate::algo::vector::hidden_parents(c, &def) {
+                        read(p, false);
+                    }
+                    let node = self.node(i);
+                    let mut kids: Vec<u32> = children(&node).collect();
+                    kids.reverse();
+                    stack.extend(kids);
                 }
-                for p in crate::algo::vector::hidden_parents(c, &def) {
-                    read(p, false);
-                }
-                let node = self.node(i);
-                for child in children(&node) {
-                    self.collect_reads(c, child, parents, inputs);
-                }
-            }
-            node => {
-                for child in children(&node) {
-                    self.collect_reads(c, child, parents, inputs);
+                node => {
+                    let mut kids: Vec<u32> = children(&node).collect();
+                    kids.reverse();
+                    stack.extend(kids);
                 }
             }
         }
+    }
+
+    /// The tree at `root` as a self-contained [`parse::Parsed`], with the
+    /// objects it reads as its parents: what the calculus commands hand to
+    /// the expression table.
+    pub(crate) fn finish(&self, c: &Construction, root: u32) -> Result<parse::Parsed, String> {
+        let (mut parents, mut inputs) = (Vec::new(), Vec::new());
+        self.collect_reads(c, root, &mut parents, &mut inputs);
+        let (tys, depth, cost, vars_read) = types::check(c, &self.nodes, root)?;
+        let r = root as usize;
+        Ok(parse::Parsed {
+            root,
+            depth: depth[r],
+            cost: cost[r],
+            vars: vars_read[r],
+            nodes: self.nodes.clone(),
+            lits: self.lits.clone(),
+            tys,
+            parents,
+            inputs,
+            uses_var: false,
+            uses_y: false,
+        })
+    }
+}
+
+/// Java's `(int)` cast of a double: truncation toward zero, saturating at
+/// the `int` bounds (`Polynomial.apply`'s `(int) power`).
+fn java_int(v: f64) -> i64 {
+    if v >= i32::MAX as f64 {
+        i32::MAX as i64
+    } else if v <= i32::MIN as f64 {
+        i32::MIN as i64
+    } else {
+        v.trunc() as i64
     }
 }
 
 impl Poly {
     /// The degree of the polynomial: the largest sum of the variable
     /// degrees of its terms (`Polynomial.degree`).
-    fn degree(&self) -> u32 {
+    pub(crate) fn degree(&self) -> u32 {
         self.0
             .iter()
             .map(|t| t.x.saturating_add(t.y))
@@ -655,6 +873,23 @@ impl Poly {
         })
     }
 
+    /// The coefficient root of every power of `x` from `0` up to the
+    /// polynomial's degree, summed like [`Poly::coefficient`] sums one
+    /// monomial; `None` for a power no term has, whose coefficient
+    /// GeoGebra reads as zero.
+    pub(crate) fn coefficient_roots(&self, b: &mut Builder) -> Vec<Option<u32>> {
+        let degree = self.degree() as usize;
+        let mut roots = vec![None; degree + 1];
+        for term in &self.0 {
+            let acc = &mut roots[term.x as usize];
+            *acc = Some(match (*acc, term.coeff) {
+                (None, coeff) => coeff,
+                (Some(a), coeff) => b.add(a, coeff),
+            });
+        }
+        roots
+    }
+
     /// The coefficient roots of the monomial `vars`, in term order.
     fn terms_of(&self, vars: (u32, u32)) -> Vec<u32> {
         self.0
@@ -691,12 +926,12 @@ impl Poly {
     /// `Polynomial.multiply`: every term of this polynomial times every
     /// term of `e`, the variables joined, then [`Poly::simplify`].
     fn mul(&mut self, e: &Poly, b: &mut Builder) -> Result<(), NotPolynomial> {
+        if self.0.len().saturating_mul(e.0.len()) > MAX_PRODUCT_TERMS {
+            return Err(NotPolynomial::ImplicitCurve);
+        }
         let mut out = Vec::with_capacity(self.0.len() * e.0.len());
         for ti in &self.0 {
             for tj in &e.0 {
-                if out.len() >= MAX_TERMS {
-                    return Err(NotPolynomial::ImplicitCurve);
-                }
                 let x = ti.x.checked_add(tj.x).ok_or(NotPolynomial::ImplicitCurve)?;
                 let y = ti.y.checked_add(tj.y).ok_or(NotPolynomial::ImplicitCurve)?;
                 let coeff = b.multiply(ti.coeff, tj.coeff);
@@ -704,7 +939,11 @@ impl Poly {
             }
         }
         self.0 = out;
-        self.simplify(b)
+        self.simplify(b)?;
+        if self.0.len() > MAX_TERMS {
+            return Err(NotPolynomial::ImplicitCurve);
+        }
+        Ok(())
     }
 
     /// `Polynomial.power`: by repeated squaring, exactly upstream's
@@ -719,7 +958,10 @@ impl Poly {
             }];
             return Ok(());
         }
-        if p < 2 {
+        // `Polynomial.power`: `Integer.MAX_VALUE` returns unchanged
+        // ("correctness is handled elsewhere"), which the saturated
+        // `(int)` cast of a huge dynamic exponent reaches
+        if p < 2 || p == i32::MAX as u32 {
             return Ok(());
         }
         let exp = self.clone();
@@ -891,11 +1133,6 @@ pub(super) fn side_parents(c: &Construction, equation: Id, left: bool) -> &[Id] 
 }
 
 /// Evaluate a side object at a pair of coordinates.
-pub(crate) fn side_value(c: &Construction, id: Id, x: f64, y: f64) -> Option<f64> {
-    let meter = eval::Lists::new(Vec::new());
-    sample_side(c, id, x, y, &meter)
-}
-
 pub(super) fn sample_side(
     c: &Construction,
     id: Id,

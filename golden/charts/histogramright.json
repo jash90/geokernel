@@ -1,0 +1,382 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "charts-histogramright-001",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight( false, {1,2,3,4,5}, {2,3,4}, true , 4 )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 12.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-002",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight( {1,2,3,4,5}, {1,2,3,4,5} )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-003",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight( {1,2,3,4,5}, {2,3,4}, true , 4 )"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 12.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-004",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 2, 5}, {3, -1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-005",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 2, 5}, {0, 2, 5}, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 7.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-006",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 2, 5}, {0, 2, 5}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-007",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 2, 5}, {0, 2, 5}, true, 2.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 7.5 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-008",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 2, 5}, {0, 2, 5}, false, -4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 7.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-009",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight(true, {0, 2, 5}, {0, 2, 5}, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 13.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-010",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight(true, {0, 2, 5}, {0, 2, 5}, true, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 10.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-011",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight(false, {0, 2, 5}, {0, 2, 5}, {1, 2, 4}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 7.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-012",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight(true, {0, 2, 5}, {0, 2, 5}, {1, 2, 4}, true, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 20.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-013",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight(false, {0, 2, 5}, {0, 2, 5}, {1, -2, 4}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-014",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight(false, {0, 2, 5}, {0, 2}, true, 2, 50)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-015",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 2, 5}, {0, 2, 5}, true, -1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 7.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-016",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 2, 5}, {0, 2, 5}, true, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-017",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 2, 5}, {0, 2, 5}, true, -2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-018",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 2, 5}, {}, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-019",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({}, {}, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-020",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0}, {0}, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-021",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 3, 2, 6}, {1, 2, 4, 6}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-022",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 3, 2, 6}, {1, 2, 4})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 17.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-023",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 1, 1, 3}, {0, 1, 2, 3}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-024",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({0, 1, 1, 3}, {0, 1, 2, 3}, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "charts-histogramright-025",
+      "group": "charts",
+      "script": [
+        "chart = HistogramRight({-3, -1, 0}, {-2, -1, 0}, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    }
+  ]
+}

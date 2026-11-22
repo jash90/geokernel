@@ -35,6 +35,7 @@ pub mod angle;
 mod axis;
 #[path = "control.rs"]
 pub mod control;
+pub mod image;
 #[path = "algo/locus.rs"]
 pub mod locus;
 mod slider;
@@ -42,7 +43,9 @@ pub mod text;
 
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use self::locus::{LocusData, LocusDef};
+use crate::algo::analysis::{AnalysisCache, AnalysisDef};
 use crate::algo::arc::{ArcData, ArcDef};
+use crate::algo::calculus::{CalcRecord, CalculusDef};
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
@@ -152,6 +155,8 @@ pub enum Kind {
     Curve,
     Button,
     InputBox,
+    Image,
+    PieChart,
 }
 
 impl Kind {
@@ -186,6 +191,8 @@ impl fmt::Display for Kind {
             Kind::Curve => "curve",
             Kind::Button => "button",
             Kind::InputBox => "input box",
+            Kind::Image => "image",
+            Kind::PieChart => "pie chart",
         })
     }
 }
@@ -249,6 +256,8 @@ pub enum Value {
     Bool(bool),
     Button,
     InputBox,
+    Image,
+    PieChart,
     /// A defined function; its values come from
     /// [`Construction::function_value`].
     Function,
@@ -367,7 +376,9 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
-            Value::Bool(_) | Value::Button | Value::InputBox => true,
+            Value::Bool(_) | Value::Button | Value::InputBox | Value::Image | Value::PieChart => {
+                true
+            }
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
             Value::Arc { length } => length.is_finite(),
@@ -408,6 +419,8 @@ pub enum Def {
     Boolean(bool),
     Button,
     InputBox(Option<Id>),
+    Image(IdList),
+    Chart(algo::charts::ChartDef),
     /// A free angle in radians, such as `c = 30°`: a number the user can
     /// change that `floor`, `ceil` and `round` treat in whole degrees
     /// (GeoGebra's independent `GeoAngle`).
@@ -507,11 +520,22 @@ pub enum Def {
     /// number; the search itself runs in
     /// [`algo::optimize::record`], as a locus record does.
     Optimize(OptimizeDef),
+    /// A locus built from points or a segment graph.
+    Discrete(algo::discrete::DiscreteDef),
+    /// A point, number or circle computed from a function or curve.
+    Analysis(AnalysisDef),
     /// A line or conic defined by an equation in `x` and `y`
     /// (`a: 2x + 3y = 6`, `y = m x + b`); the construction keeps the trees
     /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
     /// handle is valid only in the construction that made it.
     Equation(EquationDef),
+    /// The calculus commands of the function group: the integrals, the
+    /// derivatives, the Riemann sums and the polynomial queries. An
+    /// object whose value samples a tree keeps it in the construction's
+    /// calculus records (see [`Construction::calculus_record`]). The
+    /// objects it reads are `u32` indices, so the five inputs of a sum
+    /// still fit the fixed size of a definition.
+    Calculus(CalculusDef),
 }
 
 /// A line or conic defined by an equation in `x` and `y`: which of the two
@@ -602,6 +626,8 @@ impl Def {
             Def::Boolean(_) => Kind::Boolean,
             Def::Button => Kind::Button,
             Def::InputBox(_) => Kind::InputBox,
+            Def::Image(_) => Kind::Image,
+            Def::Chart(d) => d.kind(),
             Def::Angle(_)
             | Def::Measure(MeasureDef::Angle(..))
             | Def::Polygon(PolygonDef::Angle { .. }) => Kind::Angle,
@@ -630,12 +656,17 @@ impl Def {
             }
             Def::Locus(d) => d.kind(),
             Def::Optimize(d) => d.kind(),
+            Def::Calculus(d) => d.kind(),
+            Def::Discrete(_) => Kind::Locus,
+            Def::Analysis(d) => d.kind(),
         }
     }
 
     /// The stored list of parents this definition reads, if it has one.
     pub fn list(&self) -> Option<IdList> {
         match self {
+            Def::Image(list) => Some(*list),
+            Def::Chart(d) => Some(d.args),
             Def::Polygon(d) => d.list(),
             Def::GeneralConic(d) => d.list(),
             _ => None,
@@ -646,6 +677,11 @@ impl Def {
     /// A definition without a list is returned unchanged.
     pub fn with_list(self, list: IdList) -> Def {
         match self {
+            Def::Image(_) => Def::Image(list),
+            Def::Chart(mut d) => {
+                d.args = list;
+                Def::Chart(d)
+            }
             Def::Polygon(d) => Def::Polygon(d.with_list(list)),
             Def::GeneralConic(d) => Def::GeneralConic(d.with_list(list)),
             other => other,
@@ -677,6 +713,8 @@ impl Def {
             | Def::Boolean(_)
             | Def::Button
             | Def::InputBox(None)
+            | Def::Image(_)
+            | Def::Chart(_)
             | Def::Angle(_)
             | Def::Expr(_)
             | Def::Equation(_) => Parents::none(),
@@ -710,6 +748,9 @@ impl Def {
             Def::Arc(d) => d.parents(),
             Def::Locus(d) => d.parents(),
             Def::Optimize(d) => d.parents(),
+            Def::Calculus(d) => d.parents(),
+            Def::Discrete(d) => d.parents(),
+            Def::Analysis(d) => d.parents(),
         }
     }
 }
@@ -766,6 +807,7 @@ pub struct Checkpoint {
     lists: usize,
     exprs: usize,
     frozen_line_starts: usize,
+    image_assets: usize,
     /// How many rollbacks the construction had made when it was taken.
     generation: u64,
 }
@@ -799,6 +841,10 @@ pub struct Construction {
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
+    images: image::Images,
+    charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
+    drawing_styles: std::collections::BTreeMap<Id, DrawingStyle>,
+    drawing_layers: u16,
     text_presentations: HashMap<Id, text::TextOverrides>,
     /// Selected equation forms and their display revisions.
     equation_forms: HashMap<Id, (EquationForm, u64)>,
@@ -824,6 +870,7 @@ pub struct Construction {
     conic_intersections: Vec<(usize, PairState)>,
     continuous_conic_intersections: bool,
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
+    pub(crate) analysis: AnalysisCache,
     last_update_changed_automatic_root: bool,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
@@ -840,6 +887,9 @@ pub struct Construction {
     /// The points of the loci, with the index of each object, in creation
     /// order.
     loci: Vec<(usize, LocusData)>,
+    /// The calculus records: the tree or list elements of the calculus
+    /// objects that keep one (`algo::calculus`), by owner index.
+    calculus: Vec<(usize, CalcRecord)>,
     /// The graphics window used to sample loci. A headless construction
     /// uses the reference window.
     locus_view: Option<[f64; 6]>,
@@ -964,6 +1014,24 @@ impl DirtySet {
         self.levels[0][pos / 64] &= !(1 << (pos % 64));
         self.len -= 1;
         Some(pos)
+    }
+}
+
+/// Display properties stored outside the construction's fixed-size values.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DrawingStyle {
+    pub layer: u8,
+    pub show_label: bool,
+    pub line_thickness: u8,
+}
+
+impl Default for DrawingStyle {
+    fn default() -> Self {
+        Self {
+            layer: 0,
+            show_label: true,
+            line_thickness: 3,
+        }
     }
 }
 
@@ -1182,6 +1250,56 @@ impl Construction {
         }
     }
 
+    pub fn chart(&self, id: Id) -> Option<&algo::charts::ChartData> {
+        self.charts.get(&id)
+    }
+
+    pub fn charts(&self) -> impl ExactSizeIterator<Item = (Id, &algo::charts::ChartData)> {
+        self.charts.iter().map(|(&id, data)| (id, data))
+    }
+
+    pub fn drawing_style(&self, id: Id) -> DrawingStyle {
+        self.drawing_styles.get(&id).copied().unwrap_or_else(|| {
+            let mut style = DrawingStyle::default();
+            if self.exists(id) && self.kind(id) == Kind::PieChart {
+                style.show_label = false;
+                style.line_thickness = 0;
+            }
+            style
+        })
+    }
+
+    pub fn set_drawing_style(&mut self, id: Id, mut style: DrawingStyle) {
+        style.layer = style.layer.min(9);
+        self.drawing_layers |= 1 << style.layer;
+        self.drawing_styles.insert(id, style);
+    }
+
+    pub fn drawing_layers(&self) -> impl Iterator<Item = u8> {
+        let layers = self.drawing_layers | 1;
+        (0..=9).filter(move |layer| layers & (1 << layer) != 0)
+    }
+
+    /// Classic drawing order: layer, object-class priority, construction order.
+    pub fn drawing_order(&self, id: Id) -> (u8, u8, Id) {
+        let priority = match self.kind(id) {
+            Kind::Image => 20,
+            Kind::List => 40,
+            Kind::Polygon => 50,
+            Kind::PolyLine => 51,
+            Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector => 70,
+            Kind::Number | Kind::Angle | Kind::PieChart => 80,
+            Kind::Function | Kind::Curve => 90,
+            Kind::Line => 100,
+            Kind::Ray | Kind::Segment => 110,
+            Kind::Vector => 120,
+            Kind::Locus => 130,
+            Kind::Point => 140,
+            _ => 150,
+        };
+        (self.drawing_style(id).layer, priority, id)
+    }
+
     /// The vertices of a polygon or polyline in order, `None` for a vertex
     /// that is undefined. Nothing for any other object, and nothing for a
     /// regular polygon that is undefined.
@@ -1225,6 +1343,7 @@ impl Construction {
             lists: self.lists.len(),
             exprs: self.exprs.len(),
             frozen_line_starts: self.frozen_line_starts.len(),
+            image_assets: self.images.asset_count(),
             generation: self.generation,
         }
     }
@@ -1284,6 +1403,9 @@ impl Construction {
                     .flatten()
                     .all(|bound| bound.exists_before(at.len))
         });
+        self.images.discard_since(at.len, at.image_assets);
+        self.charts.split_off(&Id(at.len));
+        self.drawing_styles.split_off(&Id(at.len));
         self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
@@ -1312,6 +1434,7 @@ impl Construction {
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
         self.function_roots.clear();
+        self.analysis.clear();
         self.conic_intersections.truncate(
             self.conic_intersections
                 .partition_point(|&(owner, _)| owner < at.len),
@@ -1342,6 +1465,13 @@ impl Construction {
         }
         while self.loci.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.loci.pop();
+        }
+        while self
+            .calculus
+            .last()
+            .is_some_and(|&(owner, _)| owner >= at.len)
+        {
+            self.calculus.pop();
         }
         while self
             .sliders
@@ -1463,13 +1593,24 @@ impl Construction {
                 }
                 value
             }
-            Def::Locus(d) => {
-                let data = locus::record(self, d, id);
-                let value = data.value();
-                self.loci.push((id.0, data));
+            Def::Chart(d) => {
+                let mut data = d.compute(self);
+                data.bump_revision();
+                let value = data.value;
+                self.charts.insert(id, data);
                 value
             }
+            Def::Locus(d) => {
+                let data = locus::record(self, d, id);
+                self.store_locus(id, data)
+            }
             Def::Optimize(d) => algo::optimize::record(self, d),
+            Def::Calculus(d) if d.has_record() => {
+                let (value, record) = algo::calculus::initialize(self, &d);
+                self.calculus.push((id.0, record));
+                value
+            }
+            Def::Discrete(d) => self.store_locus(id, d.record(self, None)),
             _ => self.compute(def, id.0),
         };
         if let Def::IntersectBoundary(intersection) = def {
@@ -1821,6 +1962,7 @@ impl Construction {
     fn propagate_dirty(&mut self, mut dirty: DirtySet, mut from: usize) -> usize {
         self.last_update_changed_automatic_root = false;
         self.function_roots.clear();
+        self.analysis.clear();
         let mut recomputed = 0;
         while let Some(i) = dirty.pop_first(from) {
             // children only add larger indices
@@ -1863,8 +2005,28 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Chart(d) => {
+                    let mut data = d.compute(self);
+                    let id = Id(i);
+                    if self.chart(id).is_some_and(|old| old.same(&data)) {
+                        continue;
+                    }
+                    data.bump_revision();
+                    self.values[i] = data.value;
+                    self.charts.insert(id, data);
+                }
                 Def::Locus(d) => {
-                    if !self.update_locus(i, d) {
+                    if !self.update_locus(i, |c| locus::record(c, d, Id(i))) {
+                        continue;
+                    }
+                }
+                Def::Discrete(d) => {
+                    if !self.update_locus(i, |c| d.record(c, c.locus(Id(i)))) {
+                        continue;
+                    }
+                }
+                Def::Calculus(d) if d.has_record() => {
+                    if !self.update_calculus(i, &d) {
                         continue;
                     }
                 }
@@ -1886,7 +2048,13 @@ impl Construction {
                         }
                     }
                     if new == self.values[i]
-                        && !matches!(def, Def::Measure(MeasureDef::CartesianCurve { .. }))
+                        && !matches!(
+                            def,
+                            Def::Measure(MeasureDef::CartesianCurve { .. })
+                                | Def::Analysis(
+                                    AnalysisDef::ParametricDerivative(_) | AnalysisDef::Spline(_)
+                                )
+                        )
                     {
                         // Nothing downstream can change because of this object.
                         continue;
@@ -2040,6 +2208,19 @@ impl Construction {
         true
     }
 
+    /// Recomputes the calculus object `i`; tells whether its children
+    /// must follow. A function always counts as changed, like an
+    /// expression function (see `expr::store`).
+    fn update_calculus(&mut self, i: usize, d: &CalculusDef) -> bool {
+        let Some(slot) = self.calculus_slot(i) else {
+            return false;
+        };
+        let (value, record) = algo::calculus::refresh(self, d);
+        self.values[i] = value;
+        self.calculus[slot].1 = record;
+        true
+    }
+
     /// Recomputes the equation object `i` from its coefficients; tells
     /// whether its children must follow: whether any coefficient changed,
     /// bit for bit, or its display uses the original expression sides.
@@ -2078,6 +2259,20 @@ impl Construction {
     /// Where the record of object `i` is kept in `arcs`.
     fn arc_slot(&self, i: usize) -> Option<usize> {
         self.arcs.binary_search_by_key(&i, |&(owner, _)| owner).ok()
+    }
+
+    /// The slot of the calculus record of object `i`, if it has one.
+    pub(crate) fn calculus_slot(&self, i: usize) -> Option<usize> {
+        self.calculus
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+            .ok()
+    }
+
+    /// The calculus record of object `id`: the tree its function value
+    /// samples, or the elements of its coefficient list. `None` for any
+    /// other object.
+    pub(crate) fn calculus_record(&self, id: Id) -> Option<&CalcRecord> {
+        self.calculus_slot(id.0).map(|slot| &self.calculus[slot].1)
     }
 
     /// The record of the arc or sector `id`: its conic, the range of its
@@ -2226,7 +2421,10 @@ impl Construction {
 
     /// Evaluates a two-variable function at the given coordinates.
     pub fn function_value_xy(&self, id: Id, x: f64, y: f64) -> Option<f64> {
-        expr::equation::side_value(self, id, x, y)
+        if !matches!(self.value(id), Value::FunctionNVar) {
+            return None;
+        }
+        Some(expr::IntersectionWork::new().sample_system(self, id, x, &[y]))
     }
 
     /// The coefficient entries of the equation object `id` (see
@@ -2246,6 +2444,8 @@ impl Construction {
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
             Def::XAxis | Def::YAxis | Def::Boolean(_) | Def::Button | Def::InputBox(None) => Ok(()),
+            Def::Chart(d) => d.check(self),
+            Def::Image(list) => self.expect_list(list, POINT),
             Def::InputBox(Some(linked)) => {
                 if self.defs.get(linked.0).is_some() || axis::get(linked).is_some() {
                     Ok(())
@@ -2322,6 +2522,9 @@ impl Construction {
             Def::Equation(d) => crate::expr::equation::check(self, d),
             Def::Locus(d) => d.check(self),
             Def::Optimize(d) => d.check(self),
+            Def::Calculus(d) => d.check(self),
+            Def::Discrete(d) => d.check(self),
+            Def::Analysis(d) => d.check(self),
         }
     }
 
@@ -2381,6 +2584,12 @@ impl Construction {
             Def::Boolean(v) => Some(Value::Bool(v)),
             Def::Button => Some(Value::Button),
             Def::InputBox(_) => Some(Value::InputBox),
+            Def::Chart(d) => Some(d.compute(self).value),
+            Def::Image(list) => self
+                .list(list)
+                .iter()
+                .all(|&id| self.value(id).is_defined())
+                .then_some(Value::Image),
             Def::Line(p, q) => algo::basic::line(self, p, q),
             Def::Segment(p, q) => algo::basic::segment(self, p, q),
             Def::Midpoint(p, q) => algo::basic::midpoint(self, p, q),
@@ -2420,6 +2629,9 @@ impl Construction {
             Def::Equation(d) => Some(expr::equation::current(self, d)),
             Def::Locus(d) => d.compute(self),
             Def::Optimize(d) => d.compute(self),
+            Def::Calculus(d) => d.compute(self),
+            Def::Discrete(_) => None,
+            Def::Analysis(d) => d.compute(self),
         }
     }
 

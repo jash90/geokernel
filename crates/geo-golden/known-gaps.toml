@@ -531,6 +531,47 @@ reason = "Dilate reports a command error when a number is visited before any tra
 mismatches = ["1:step"]
 
 
+
+[[gap]]
+id = "lists-classes-015"
+reason = "intended difference, recorded in DIFFERENCES.md: in GeoGebra 1 / 0 is infinity and defined, so it takes part in the bounds of Classes (min 2, max infinity, width -infinity); the three bounds come out NaN, -infinity and infinity, which all show as undefined numbers. The kernel has no infinity: 1 / 0 is undefined, the bounds stay 2 and the three classes are defined"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p", "6:p", "7:p", "8:p", "9:p"]
+
+[[gap]]
+id = "lists-take-016"
+reason = "intended difference, recorded in DIFFERENCES.md: Take(l, m) with m past the end of the list makes an undefined list, but GeoGebra keeps the elements of the last defined one, and + 1 maps over them, giving one undefined number per stale element. The undefined value of the kernel has no elements"
+mismatches = ["5:p", "6:p", "7:p"]
+
+[[gap]]
+id = "lists-undef-001"
+reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so RemoveUndefined keeps it (and a point with an infinite coordinate); the kernel has no infinity and drops those elements like undefined ones"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-003"
+reason = "intended difference, recorded in DIFFERENCES.md: a point with an infinite coordinate is defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined point"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-004"
+reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined number"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-005"
+reason = "intended difference, recorded in DIFFERENCES.md: a point with an infinite coordinate is defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined point"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-008"
+reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so it survives arithmetic and RemoveUndefined keeps the point built from it; the kernel has no infinity and drops it like an undefined one"
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "lists-undef-010"
+reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so RemoveUndefined keeps the list element built from it; the kernel has no infinity and drops it like an undefined one"
+mismatches = ["0:p", "1:p", "3:p", "4:p", "5:p"]
+
 [[gap]]
 id = "algebralogic-logic-022"
 reason = "GeoFunction.isInRegion reads the separately stored GeoPoint x2D coordinate, which can be stale at construction and after a direct headless move. The kernel evaluates the inequality at the point's current Cartesian coordinates. The construction mismatch is recorded separately in algebralogic-logic-025."
@@ -545,3 +586,98 @@ mismatches = ["0:b"]
 id = "misc-alias-003"
 reason = "The contours agree geometrically. Once the moved vertex makes the triangles overlap, GeoGebra's sweep starts the intersection at the crossing of the boundaries and the kernel starts at the top of the contour, which also moves the first output point; the same difference as geomclip-polygon-003."
 mismatches = ["1:r_{1}", "1:G"]
+# Discrete loci
+
+[[gap]]
+id = "discrete-path-004"
+reason = "Identity-hash iteration in SparseMultigraph can select either equal-cost route through the diamond across recomputations. The kernel settles tied endpoints by first occurrence in the segment list."
+mismatches = ["0:g", "0:h", "1:h", "3:g", "3:h"]
+
+[[gap]]
+id = "discrete-tree-003"
+reason = "UndirectedSparseMultigraph iteration can change which equal-weight edges Prim selects, and the HashSet of TreeLink edges uses identity hashes for emission order. Both orders can vary across rebuilds. The kernel uses input-pair order."
+mismatches = ["0:g", "1:g", "2:g", "3:g", "4:g", "5:g"]
+
+[[gap]]
+id = "discrete-tree-005"
+reason = "The reference emits the two spanning edges of the copied point list in HashSet iteration order, which depends on the identity hashes of the TreeLink edges. The kernel uses input-pair order. The single-point state and zero-length edges agree."
+mismatches = ["0:g", "3:g"]
+
+[[gap]]
+id = "discrete-tree-007"
+reason = "The reference emits both spanning edges of the repeated-point list in HashSet iteration order, which depends on the identity hashes of the TreeLink edges. The kernel uses input-pair order."
+mismatches = ["0:g"]
+
+[[gap]]
+id = "discrete-upstream-019"
+reason = "The circumcircle test is sensitive to the last bit of cos(6) on approximately cocircular sites. The literal cocircular cases exercise the exact tie rule separately."
+mismatches = ["0:g"]
+
+# Calculus
+
+[[gap]]
+id = "calculus-degree-010"
+reason = "The reference exhausts its heap expanding the coefficient trees of (a x + b)^300 (its `power` deep-copies the shared trees, which grows without bound; at the harness's 4 GB it fails from about the 65th power on) and answers undefined. The kernel reads each shared coefficient subtree once, a memo over the builder's arena, and answers within its budget."
+mismatches = ["0:d", "1:d", "2:d", "3:d"]
+
+# Numerical function analysis
+
+[[gap]]
+id = "funcanalysis-asymptote-001"
+reason = "The headless harness uses CASFactoryDummy and returns an empty list for 1/x. The numeric result has the horizontal line y=0 and the pole x=0."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "funcanalysis-asymptote-002"
+reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the oblique line y=x+1 and the pole x=1."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "funcanalysis-asymptote-004"
+reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has y=x+1 and discards the removable pole."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "funcanalysis-asymptote-005"
+reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the horizontal line y=0 at negative infinity."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "funcanalysis-asymptote-006"
+reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the two horizontal limits of atan."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "funcanalysis-asymptote-007"
+reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the logarithmic pole x=0."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "funcanalysis-curvatureupstream-004"
+reason = "CommandsTest and the headless harness record an undefined sine curvature vector because the CAS-derived function is unavailable. The kernel evaluates the vector from numeric derivatives."
+mismatches = ["0:R"]
+
+[[gap]]
+id = "funcanalysis-discontinuity-001"
+reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole (1, 2)."
+mismatches = ["0:R"]
+
+[[gap]]
+id = "funcanalysis-discontinuity-002"
+reason = "The headless CAS supplies no denominator roots and records one undefined point. The numeric result finds two removable holes and labels both in index order."
+mismatches = ["0:R"]
+
+[[gap]]
+id = "funcanalysis-discontinuity-004"
+reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole at zero with limit 1."
+mismatches = ["0:R"]
+
+[[gap]]
+id = "funcanalysis-discontinuity-005"
+reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole at zero with limit 1/2."
+mismatches = ["0:R"]
+
+[[gap]]
+id = "funcanalysis-discontinuity-006"
+reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole at (1, 0)."
+mismatches = ["0:R"]

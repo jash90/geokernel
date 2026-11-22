@@ -30,8 +30,10 @@ OUT_OF_SCOPE_GROUPS = {"3d", "spreadsheet", "probability", "cas", "scripting", "
 # a statistics pair (var, cov), 3D objects (Polyhedron, CornerThreeD), a
 # command of the CAS view (Evaluate) and whiteboard-only objects (Stadium,
 # TableToChart).
+# `SelectedElement`, `SelectedIndex` read the UI selection state and
+# `RandomElement` a random value, so no golden data can pin them down.
 OUT_OF_SCOPE_COMMANDS = {"var", "cov", "Polyhedron", "CornerThreeD", "Evaluate", "Stadium",
-                         "TableToChart"}
+                         "TableToChart", "SelectedElement", "SelectedIndex", "RandomElement"}
 EXCLUDED_ALGEBRA = {
     "PenStrokeBezier": "A pen stroke reads the pointing device and the tablet state, not the construction.",
     "ImplicitSurface": "Implicit surfaces are 3D-only objects.",
@@ -53,7 +55,35 @@ EXCLUDED_ALGEBRA = {
     "PreviousPrime": "AlgoNextPreviousPrime obtains the value from the CAS.",
 }
 
+EXCLUDED_CHARTS = {
+    "StemPlot": "Produces a LaTeX stem-and-leaf table.",
+    "FrequencyTable": "Produces a LaTeX frequency table.",
+    "ContingencyTable": "Produces a LaTeX contingency table, optionally with a test report.",
+}
+
+EXCLUDED_FUNCTION = {
+    "TaylorSeries": "A symbolic Taylor polynomial uses the CAS.",
+    "Limit": "Symbolic limits, including variable and infinite endpoints, use the CAS.",
+    "LimitAbove": "Symbolic one-sided limits use the CAS.",
+    "LimitBelow": "Symbolic one-sided limits use the CAS.",
+    "PartialFractions": "Symbolic partial fraction decomposition uses the CAS.",
+    "TrigExpand": "Symbolic trigonometric expansion uses the CAS.",
+    "TrigSimplify": "Symbolic trigonometric simplification uses the CAS.",
+    "TrigCombine": "Symbolic trigonometric combination uses the CAS.",
+    "ImplicitDerivative": "The implicit derivative command uses the CAS.",
+}
+
 FORM_NOTES = {
+    "Asymptote": "Conic output is verified. Numeric rational and affine exp, atan or log output is unverified against a full CAS. Implicit polynomials are pending.",
+    "RemovableDiscontinuity": "Numeric hole detection is implemented. Defined results are unverified against a full CAS.",
+    "Factors": "Function factorization uses the CAS. The numeric list of prime/exponent points is a separate form.",
+    "Root": "Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending.",
+    "Roots": "Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.",
+    "Extremum": "Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.",
+    "Function": "Domain restrictions with an optional local variable. Empty and freehand functions are pending.",
+    "SolveODE": "Numeric first-order, parametric and second-order systems. Symbolic function and curve forms, with or without an initial point, use the CAS.",
+    "ComplexRoot": "Numeric polynomial roots, returned as points with real and imaginary coordinates.",
+
     "CommonDenominator": "Number pairs. The function pair delegates to the CAS (AlgoPolynomialCD).",
     "LeftSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
     "RightSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
@@ -142,18 +172,37 @@ PARTIAL = {
     "Vertex": "Conic, polygon, polyline or a kernel graphics corner, including indexed polygon, polyline and segment forms",
     "InteriorAngles": "InteriorAngles(polygon)",
     "If": "If(condition, then); If(condition, then, else); If(condition, value, condition, value, ..., else)",
-    "Element": "Element(list, index)",
+    "Element": "Element(list, index); Element(list, index, index, ...)",
     "Sum": "Sum(list); Sum(list, number of elements); numbers, points or vectors",
-    "Product": "Product(list); Product(list, number of elements)",
+    "Product": "Product(list); Product(list, number of elements); "
+                "Product(list, list of frequencies); Product(expression, variable, from, to)",
     "Mean": "Mean(list)",
     "Sequence": "Sequence(end); Sequence(start, end); Sequence(start, end, step); "
                 "Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)",
-    "Reverse": "Reverse(list)",
-    "First": "First(list); First(list, number of elements)",
+    "Reverse": "Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)",
+    "First": "First(list); First(list, number of elements); First(locus, number of elements)",
     "Last": "Last(list); Last(list, number of elements)",
-    "Sort": "Sort(list of numbers, booleans or points)",
+    "Sort": "Sort(list of numbers, booleans or points); Sort(value list, key list); "
+            "Sort(point, point, ...)",
     "Append": "Append(list, object); Append(object, list)",
     "Join": "Join(list, list, ...); Join(list of lists)",
+    "Take": "Take(list, from[, to])",
+    "RemoveUndefined": "RemoveUndefined(list)",
+    "IndexOf": "IndexOf(object, list[, start])",
+    "Flatten": "Flatten(list)",
+    "Insert": "Insert(object, list, position)",
+    "Frequency": "Frequency of numbers, with classes, a cumulative flag, "
+                 "density and a scale factor",
+    "Unique": "Unique(list)",
+    "Classes": "Classes(list, number of classes); Classes(list, start, width)",
+    "Zip": "Zip(expression, variable, list, ...)",
+    "Intersection": "Intersection(list, list)",
+    "Union": "Union(list, list)",
+    "Remove": "Remove(list, list)",
+    "PointList": "PointList(list); PointList(number, number, ...); "
+                 "PointList(point, point, ...)",
+    "OrdinalRank": "OrdinalRank(list); OrdinalRank(number, number, ...)",
+    "TiedRank": "TiedRank(list); TiedRank(number, number, ...)",
     "Mod": "Mod(number, number)",
     "Div": "Div(number, number)",
     "GCD": "GCD(number, number)",
@@ -287,6 +336,10 @@ def classify(group, command, alias_of):
     """Return (priority, status, notes) for a real command; aliases copy their target."""
     if command in EXCLUDED_ALGEBRA:
         return "", "out_of_scope", EXCLUDED_ALGEBRA[command]
+    if command in EXCLUDED_CHARTS:
+        return "", "out_of_scope", EXCLUDED_CHARTS[command]
+    if command in EXCLUDED_FUNCTION:
+        return "", "out_of_scope", EXCLUDED_FUNCTION[command]
     if command in OUT_OF_SCOPE_COMMANDS:
         return "", "out_of_scope", ""
     if command in PARTIAL and not alias_of:

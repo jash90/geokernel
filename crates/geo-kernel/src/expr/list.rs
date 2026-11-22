@@ -39,6 +39,13 @@ impl Slot {
 
     /// A number element; one that is not finite shows as undefined, like a
     /// number object.
+    pub(crate) fn with_value(kind: Kind, value: Value) -> Slot {
+        Self {
+            value,
+            ..Self::undefined(kind)
+        }
+    }
+
     pub(crate) fn number(v: f64) -> Slot {
         if v.is_finite() {
             Slot {
@@ -86,6 +93,14 @@ impl Slot {
         }
     }
 
+    pub(crate) fn line(value: Value) -> Slot {
+        debug_assert!(matches!(value, Value::Line { .. }));
+        Slot {
+            value,
+            ..Slot::undefined(Kind::Line)
+        }
+    }
+
     pub(crate) fn point(value: Value) -> Slot {
         debug_assert!(matches!(
             value,
@@ -122,6 +137,13 @@ impl Slot {
 
     pub(crate) fn with_object(mut self, object: Id) -> Slot {
         self.object = object;
+        self
+    }
+
+    pub(super) fn detach_graph_object(mut self) -> Self {
+        if matches!(self.kind, Kind::Point | Kind::Segment) {
+            self.object = NO_OBJECT;
+        }
         self
     }
 
@@ -198,6 +220,11 @@ impl Slot {
             // curves, and conics can change data held outside their value.
             return false;
         }
+        if matches!(self.value, Value::Segment { .. })
+            || matches!(other.value, Value::Segment { .. })
+        {
+            return self.value == other.value;
+        }
         let bits = |v: &Value| -> [u64; 3] {
             match *v {
                 Value::Number(x) => [x.to_bits(), 0, 0],
@@ -208,6 +235,18 @@ impl Slot {
                 _ => [u64::MAX; 3],
             }
         };
+        if let (
+            Value::Segment { x1, y1, x2, y2 },
+            Value::Segment {
+                x1: a,
+                y1: b,
+                x2: c,
+                y2: d,
+            },
+        ) = (self.value, other.value)
+        {
+            return [x1, y1, x2, y2].map(f64::to_bits) == [a, b, c, d].map(f64::to_bits);
+        }
         self.kind == other.kind
             && self.start == other.start
             && std::mem::discriminant(&self.value) == std::mem::discriminant(&other.value)

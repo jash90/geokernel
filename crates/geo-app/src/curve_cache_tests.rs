@@ -78,7 +78,7 @@ fn frame_with(
                         .mesh
                         .vertices
                         .iter()
-                        .map(|v| v.pos - origin.to_vec2())
+                        .map(|v| d.mesh_transform * v.pos - origin.to_vec2())
                         .collect(),
                     indices: d.mesh.indices.clone(),
                     text: d.label,
@@ -417,8 +417,7 @@ fn arcs_and_sectors_a_function_reads_are_keyed_by_value() {
 #[test]
 fn the_same_view_elsewhere_on_the_screen_is_drawn_there() {
     // The same size and camera with the area at two places on the screen:
-    // relative to its area, each frame draws the same thing (a moved mesh
-    // keeps only the triangles that reach the area).
+    // relative to its area, each frame draws the same thing.
     let wb = Workbench::from_script(
         "F = (-2, 0)\nG = (2, 0)\na = 3\nk = Ellipse(F, G, a)\nf(x) = sin(x)\n",
     )

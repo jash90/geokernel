@@ -1,0 +1,620 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "calculus-piecewise-001",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x < 1, x, 2x)",
+        "d = Integral(f, 0, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 15.5 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-002",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x > 2, 1, 2)",
+        "d = Integral(f, 0, 2.01)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 2.0],
+              [-4.0, 2.0],
+              [-2.0, 2.0],
+              [-1.0, 2.0],
+              [-0.5, 2.0],
+              [0.0, 2.0],
+              [0.5, 2.0],
+              [1.0, 2.0],
+              [2.0, 2.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.01 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-003",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x < 0, 0, x <= 2, x)",
+        "d = Integral(f, -1, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-004",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x < 0, 0, x <= 2, x)",
+        "d = Integral(f, 1, 5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-005",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x^2 > 1, 1, x > 7, 0, 0)",
+        "d = Integral(f, -2, 2)",
+        "e = Integral(f, 0, 8)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "e": { "type": "number", "defined": true, "value": 7.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-006",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x < 1, x^2, If(x < 3, 4 - x, x - 3))",
+        "d = Integral(f, 0, 5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 3.0],
+              [2.0, 2.0],
+              [4.0, 1.0],
+              [8.0, 5.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 6.333333333333333 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-007",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(1 < x < 3, 1, 0)",
+        "d = Integral(f, 0, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 1.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-008",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x < 1, x, 2x)",
+        "d = Integral(f, 4, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": -15.5 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-009",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x < 1, sqrt(x), x)",
+        "d = Integral(f, 0, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 8.16666666666715 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-010",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x < 0, -1, 1)",
+        "d = Integral(f, -2, 2)",
+        "e = Integral(f, 2, -2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0],
+              [-4.0, -1.0],
+              [-2.0, -1.0],
+              [-1.0, -1.0],
+              [-0.5, -1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-011",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x == 2, 1, 0)",
+        "d = Integral(f, 0, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 1.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-012",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x != 2, 1, 0)",
+        "d = Integral(f, 0, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 0.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-013",
+      "group": "calculus",
+      "script": [
+        "f(x) = If(x < 2, x, x^2)",
+        "d = LowerSum(f, 0, 3, 6)",
+        "u = UpperSum(f, 0, 3, 6)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 6.625 },
+          "u": { "type": "number", "defined": true, "value": 10.12499946614628 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-014",
+      "group": "calculus",
+      "script": [
+        "f(x) = 3 If(x > 1, x, 2)",
+        "d = Integral(f, 0, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 6.0],
+              [-4.0, 6.0],
+              [-2.0, 6.0],
+              [-1.0, 6.0],
+              [-0.5, 6.0],
+              [0.0, 6.0],
+              [0.5, 6.0],
+              [1.0, 6.0],
+              [2.0, 6.0],
+              [4.0, 12.0],
+              [8.0, 24.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 10.499999999999996 }
+        }
+      ]
+    },
+    {
+      "id": "calculus-piecewise-015",
+      "group": "calculus",
+      "script": [
+        "c = 1",
+        "f(x) = If(x < c, x, 2x)",
+        "d = Integral(f, 0, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "c", "value": 2.0 },
+        { "action": "set_number", "label": "c", "value": 0.0 },
+        { "action": "set_number", "label": "c", "value": 4.0 },
+        { "action": "set_number", "label": "c", "value": -1.0 },
+        { "action": "set_number", "label": "c", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 15.5 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 14.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 16.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 8.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -2.0],
+              [-0.5, -1.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 16.0 }
+        },
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 15.5 }
+        }
+      ]
+    }
+  ]
+}

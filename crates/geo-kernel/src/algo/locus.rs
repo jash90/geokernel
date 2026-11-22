@@ -76,20 +76,34 @@ pub(crate) const HEADLESS_VIEW: [f64; 6] = [-4.3, 11.700000000000001, -5.7, 6.3,
 /// `AlgoLocusND.MAX_X_PIXEL_DIST` and `MAX_Y_PIXEL_DIST`.
 const MAX_PIXEL_DIST: f64 = 5.0;
 
+#[path = "locus/numeric.rs"]
+mod numeric;
+pub(crate) use numeric::NumericLocus;
+
 /// A locus command.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum LocusDef {
     /// `Locus(Q, P)` with `P` a point on a path (`AlgoLocus`).
-    Path { point: Id, mover: Id },
+    Path {
+        point: Id,
+        mover: Id,
+    },
     /// `Locus(Q, a)` with `a` a slider (`AlgoLocusSlider`).
-    Slider { point: Id, slider: Id },
+    Slider {
+        point: Id,
+        slider: Id,
+    },
     /// Integral curve of a slope function through a point.
-    Ode { point: Id, source: Id },
+    Ode {
+        point: Id,
+        source: Id,
+    },
     /// A grid of line segments showing the slope at each sample.
     SlopeField(Id),
     /// `Hull(list, number)`: the convex hull of a list of points as a
     /// closed locus (`AlgoConvexHull`); the number is ignored.
     Hull(Id),
+    Numeric(NumericLocus),
 }
 
 /// One point of a locus (`MyPoint`): drawn with a line from the point before
@@ -129,12 +143,13 @@ impl LocusData {
     fn same(&self, o: &LocusData) -> bool {
         let b = |a: f64, b: f64| a.to_bits() == b.to_bits();
         self.defined == o.defined
-            && self.points.len() == o.points.len()
-            && self
-                .points
-                .iter()
-                .zip(o.points.iter())
-                .all(|(p, q)| b(p.x, q.x) && b(p.y, q.y) && p.line_to == q.line_to)
+            && (Arc::ptr_eq(&self.points, &o.points)
+                || self.points.len() == o.points.len()
+                    && self
+                        .points
+                        .iter()
+                        .zip(o.points.iter())
+                        .all(|(p, q)| b(p.x, q.x) && b(p.y, q.y) && p.line_to == q.line_to))
     }
 }
 
@@ -142,7 +157,9 @@ impl Construction {
     /// The points of the locus `id`; `None` for any other object.
     pub fn locus(&self, id: Id) -> Option<&LocusData> {
         match self.defs.get(id.0)? {
-            Def::Locus(_) => self.locus_slot(id.0).map(|slot| &self.loci[slot].1),
+            Def::Locus(_) | Def::Discrete(_) => {
+                self.locus_slot(id.0).map(|slot| &self.loci[slot].1)
+            }
             _ => None,
         }
     }
@@ -180,13 +197,16 @@ impl Construction {
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
         for &(i, _) in &self.loci {
-            dirty.insert(i);
+            if matches!(self.defs[i], Def::Locus(_)) {
+                dirty.insert(i);
+            }
         }
         for (i, def) in self.defs.iter().enumerate() {
             if matches!(
                 def,
                 Def::Point(crate::algo::point::PointDef::ViewCorner { .. })
-            ) {
+            ) || matches!(def, Def::Analysis(analysis) if analysis.uses_view())
+            {
                 dirty.insert(i);
             }
         }
@@ -235,6 +255,12 @@ impl Construction {
         self.propagate_dirty(dirty, 0);
     }
 
+    pub(super) fn store_locus(&mut self, id: Id, data: LocusData) -> Value {
+        let value = data.value();
+        self.loci.push((id.0, data));
+        value
+    }
+
     fn locus_slot(&self, i: usize) -> Option<usize> {
         self.loci.binary_search_by_key(&i, |&(owner, _)| owner).ok()
     }
@@ -242,11 +268,15 @@ impl Construction {
     /// Recomputes the points of the locus `i`; tells whether its children
     /// must follow: whether the points changed, bit for bit.
     #[inline(never)]
-    pub(super) fn update_locus(&mut self, i: usize, d: LocusDef) -> bool {
+    pub(super) fn update_locus(
+        &mut self,
+        i: usize,
+        record: impl FnOnce(&mut Self) -> LocusData,
+    ) -> bool {
         let Some(slot) = self.locus_slot(i) else {
             return false;
         };
-        let new = record(self, d, Id(i));
+        let new = record(self);
         if new.same(&self.loci[slot].1) {
             return false;
         }
@@ -314,13 +344,14 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
     let point = match d {
         LocusDef::Ode { point, source } => {
             let mut ids = vec![source, point];
-            if let Def::Locus(LocusDef::SlopeField(function)) = c.def(source) {
+            if let Some(function) = slope_source(c.def(source)) {
                 ids.push(function);
             }
             return ids;
         }
         LocusDef::SlopeField(source) => return vec![source],
         LocusDef::Hull(list) => return vec![list],
+        LocusDef::Numeric(def) => return def.inputs().collect(),
         LocusDef::Slider { point, .. } | LocusDef::Path { point, .. } => point,
     };
     if point.0 >= c.len() {
@@ -335,9 +366,10 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
         let reads = match d {
             LocusDef::Path { mover, .. } => id != mover && pointer_changeable(c, id),
             LocusDef::Slider { .. } => c.def(id).is_free(),
-            LocusDef::Ode { .. } | LocusDef::SlopeField(_) | LocusDef::Hull(_) => {
-                unreachable!()
-            }
+            LocusDef::Ode { .. }
+            | LocusDef::SlopeField(_)
+            | LocusDef::Hull(_)
+            | LocusDef::Numeric(_) => unreachable!(),
         };
         if is && reads {
             ids.push(id);
@@ -398,6 +430,7 @@ pub(crate) struct Saved {
     paths: Vec<(usize, PathState)>,
     conics: Vec<(usize, crate::algo::conic_nd::ConicData)>,
     arcs: Vec<(usize, crate::algo::arc::ArcData)>,
+    discrete: Vec<(usize, LocusData)>,
 }
 
 impl Saved {
@@ -408,6 +441,7 @@ impl Saved {
             paths: Vec::new(),
             conics: Vec::new(),
             arcs: Vec::new(),
+            discrete: Vec::new(),
         };
         for &i in ids {
             s.values.push((i, c.values[i]));
@@ -420,6 +454,10 @@ impl Saved {
             }
             if let Some(slot) = c.arc_slot(i) {
                 s.arcs.push((slot, c.arcs[slot].1));
+            }
+            if matches!(c.defs[i], Def::Discrete(_)) {
+                let slot = c.locus_slot(i).expect("recorded discrete locus");
+                s.discrete.push((slot, c.loci[slot].1.clone()));
             }
         }
         s
@@ -439,8 +477,13 @@ impl Saved {
         for &(i, v) in &self.values {
             c.values[i] = v;
         }
+        for (slot, data) in self.discrete {
+            c.loci[slot].1 = data;
+        }
         for &i in chain {
-            recompute(c, i);
+            if !matches!(c.defs[i], Def::Discrete(_)) {
+                recompute(c, i);
+            }
         }
         for (i, v) in self.values {
             c.values[i] = v;
@@ -475,6 +518,13 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
         }
         // a locus is never between a moving object and the point of a locus
         Def::Locus(_) => {}
+        Def::Discrete(d) => {
+            c.update_locus(i, |c| d.record(c, c.locus(Id(i))));
+        }
+        Def::Analysis(_) => {
+            c.analysis.clear();
+            c.values[i] = c.compute(def, i);
+        }
         _ => c.values[i] = c.compute(def, i),
     }
 }
@@ -487,18 +537,24 @@ pub(crate) fn record(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData 
         LocusDef::Path { point, mover } => record_path(c, point, mover, owner),
         LocusDef::Slider { point, slider } => record_slider(c, point, slider),
         LocusDef::Ode { point, source } => record_ode(c, point, source),
-        LocusDef::SlopeField(source) => record_slope_field(c, source),
+        LocusDef::SlopeField(source) => record_slope_field(c, source, None, None, None),
         LocusDef::Hull(list) => record_hull(c, list),
+        LocusDef::Numeric(d) => d.record(c),
+    }
+}
+
+fn slope_source(def: Def) -> Option<Id> {
+    match def {
+        Def::Locus(LocusDef::SlopeField(function)) => Some(function),
+        Def::Locus(LocusDef::Numeric(d)) => d.slope_source(),
+        _ => None,
     }
 }
 
 // AlgoIntegralODE uses classical Runge-Kutta with step 0.02 and integrates
 // the numerator and denominator in both time directions for 20 units.
 fn record_ode(c: &Construction, point: Id, source: Id) -> LocusData {
-    let function = match c.def(source) {
-        Def::Locus(LocusDef::SlopeField(function)) => function,
-        _ => source,
-    };
+    let function = slope_source(c.def(source)).unwrap_or(source);
     let (Some((x, y)), Some(function)) = (c.point(point), FunctionFraction::new(c, function))
     else {
         return LocusData::default();
@@ -537,20 +593,42 @@ fn record_ode(c: &Construction, point: Id, source: Id) -> LocusData {
     locus_from_points(points)
 }
 
-fn record_slope_field(c: &Construction, source: Id) -> LocusData {
+fn record_slope_field(
+    c: &Construction,
+    source: Id,
+    count: Option<f64>,
+    length_ratio: Option<f64>,
+    bounds: Option<[f64; 4]>,
+) -> LocusData {
     let Some(function) = FunctionFraction::new(c, source) else {
         return LocusData::default();
     };
     let [xmin, xmax, ymin, ymax, xs, ys] = c.locus_view.unwrap_or(HEADLESS_VIEW);
+    let [xmin, xmax, ymin, ymax] = bounds.unwrap_or([xmin, xmax, ymin, ymax]);
+    if !(xmin < xmax && ymin < ymax) {
+        return locus_from_points(Vec::new());
+    }
     let ratio = ys / xs;
-    let x_step = (xmax - xmin) / 39.0;
-    let y_step = (ymax - ymin) / 39.0;
-    let length = x_step.min(y_step * ratio) * 0.25;
-    let mut points = Vec::with_capacity(3200);
+    let divisions = count.map_or(39, |n| (n - 1.0) as i32);
+    let divisions = if (2..=100).contains(&divisions) {
+        divisions
+    } else {
+        39
+    };
+    let x_step = (xmax - xmin) / f64::from(divisions);
+    let y_step = (ymax - ymin) / f64::from(divisions);
+    let factor = length_ratio
+        .filter(|n| (0.0..=1.0).contains(n))
+        .unwrap_or(0.5);
+    let length = x_step.min(y_step * ratio) * factor * 0.5;
+    let mut points = Vec::with_capacity((2 * (divisions + 1).pow(2)) as usize);
     let mut x = xmin;
-    for _ in 0..40 {
+    for _ in 0..=divisions {
         let mut y = ymin;
-        for _ in 0..40 {
+        for _ in 0..=divisions {
+            if function.exhausted() {
+                return LocusData::default();
+            }
             let (dy, dx) = function.evaluate(x, y);
             let scaled = dy * ratio;
             let norm = (dx * dx + scaled * scaled).sqrt();
@@ -1077,7 +1155,7 @@ impl Mover {
 /// (two graphics views and the 3D view), of which only the first is shown.
 /// The others keep their zero-initialised bounds, which upstream still
 /// consults (see [`Run::distance_ok`]).
-struct View {
+pub(crate) struct View {
     visible: [bool; 3],
     max_x: [f64; 3],
     max_y: [f64; 3],
@@ -1375,7 +1453,7 @@ fn sample<M: Moving>(
     locus_from_points(run.points)
 }
 
-fn locus_from_points(points: Vec<LocusPoint>) -> LocusData {
+pub(crate) fn locus_from_points(points: Vec<LocusPoint>) -> LocusData {
     let mut bounds: Option<[f64; 4]> = None;
     for p in &points {
         if p.x.is_finite() && p.y.is_finite() {
@@ -1412,6 +1490,7 @@ impl Group for LocusDef {
             } => Parents::of(&[point, mover]),
             LocusDef::SlopeField(source) => Parents::of(&[source]),
             LocusDef::Hull(list) => Parents::of(&[list]),
+            LocusDef::Numeric(d) => d.parents(),
         }
     }
 
@@ -1422,14 +1501,17 @@ impl Group for LocusDef {
         let (point, mover) = match *self {
             LocusDef::Ode { point, source } => {
                 c.expect(point, POINT)?;
-                return if matches!(c.def(source), Def::Locus(LocusDef::SlopeField(_))) {
+                return if slope_source(c.def(source)).is_some() {
                     Ok(())
                 } else {
                     c.expect(source, &[Kind::Function])
                 };
             }
-            LocusDef::SlopeField(source) => return c.expect(source, &[Kind::Function]),
+            LocusDef::SlopeField(source) => {
+                return c.expect(source, &[Kind::Function, Kind::FunctionNVar])
+            }
             LocusDef::Hull(list) => return c.expect(list, &[Kind::List]),
+            LocusDef::Numeric(d) => return d.check(c),
             LocusDef::Path { point, mover }
             | LocusDef::Slider {
                 point,
@@ -1459,9 +1541,10 @@ impl Group for LocusDef {
                     return Err(wrong(NUMBER));
                 }
             }
-            LocusDef::Ode { .. } | LocusDef::SlopeField(_) | LocusDef::Hull(_) => {
-                unreachable!()
-            }
+            LocusDef::Ode { .. }
+            | LocusDef::SlopeField(_)
+            | LocusDef::Hull(_)
+            | LocusDef::Numeric(_) => unreachable!(),
         }
         if on_path(c, point) || !is_ancestor(c, mover, point) {
             return Err(Error::WrongKind {
@@ -1546,7 +1629,7 @@ fn parse_locus(c: &Construction, args: &[&str]) -> Result<LocusDef, String> {
         LocusDef::Ode { .. } => {
             format!("`Locus({a}, {b})` needs a slope function or field and a point")
         }
-        LocusDef::SlopeField(_) | LocusDef::Hull(_) => unreachable!(),
+        LocusDef::SlopeField(_) | LocusDef::Hull(_) | LocusDef::Numeric(_) => unreachable!(),
     })?;
     Ok(def)
 }

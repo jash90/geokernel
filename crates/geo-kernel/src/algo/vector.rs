@@ -121,7 +121,7 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
         Kind::Curve => &[Kind::Curve],
-        Kind::Button | Kind::InputBox => &[],
+        Kind::Button | Kind::InputBox | Kind::Image | Kind::PieChart => &[],
     }
 }
 
@@ -485,6 +485,8 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         | Value::Curve { .. }
         | Value::Button
         | Value::InputBox
+        | Value::Image
+        | Value::PieChart
         | Value::Undefined => return None,
     })
 }
@@ -503,6 +505,11 @@ pub fn start(c: &Construction, id: Id) -> Option<(f64, f64)> {
         _ => None,
     };
     match c.def(id) {
+        Def::Analysis(super::analysis::AnalysisDef::Curvature {
+            point,
+            output: super::analysis::CurvatureKind::Vector,
+            ..
+        }) => from(point),
         Def::Vector(VectorDef::Between(p, _)) => from(p),
         Def::Vector(VectorDef::TranslateTo { start, .. }) => from(start),
         Def::Vector(

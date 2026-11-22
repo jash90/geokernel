@@ -92,7 +92,7 @@ impl Walker<'_> {
             Node::Num(_) | Node::MinusOne | Node::Degree | Node::Obj(_) | Node::VarY => 0.0,
             Node::Bool(_) => 0.0,
             Node::Var => 1.0,
-            Node::FnName(_) => f64::NAN,
+            Node::FnName(_) | Node::Call(..) => f64::NAN,
             // No rule for the financial commands, as GeoGebra's derivative
             // tree has none for the operations behind them.
             Node::Financial(..) => f64::NAN,
@@ -125,20 +125,6 @@ impl Walker<'_> {
                 .gradient(e.root, depth)?;
                 df * self.gradient(arg, depth)?
             }
-            Node::Dilate(source, factor, center) => {
-                let (r, sx, _) = self.ctx.dilation(factor, center);
-                let x = crate::algo::transform::dilation_preimage(self.x, r, sx);
-                let dx = Walker {
-                    ctx: Ctx {
-                        env: &Env::Value(x),
-                        ..self.ctx
-                    },
-                    x,
-                    budget: self.budget,
-                }
-                .gradient(source, depth)?;
-                (dx * (1.0 / r)) * r
-            }
             Node::If(mode, cond, then, rest) => {
                 // `Operation.IF` and `IF_LIST` keep the condition and
                 // differentiate the branches, so evaluating the derivative
@@ -158,13 +144,14 @@ impl Walker<'_> {
                 }
             }
             Node::Cmd(..)
-            | Node::Inverse(_)
             | Node::Tuple(..)
-            | Node::Vector(_)
             | Node::Polar(..)
+            | Node::Vector(_)
+            | Node::Inverse(_)
+            | Node::Dilate(..)
+            | Node::ItemObject(_)
             | Node::List(..)
             | Node::Item(_)
-            | Node::ItemObject(_)
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..)
@@ -177,6 +164,10 @@ impl Walker<'_> {
             | Node::Base { .. }
             | Node::FunctionObject(_)
             | Node::Extremum(..)
+            | Node::SystemFunction(..)
+            | Node::RootList(..)
+            | Node::FunctionAsymptotes(..)
+            | Node::Iteration { .. }
             | Node::PolynomialPart(..)
             | Node::Algebra(..)
             | Node::ObjectDefined(_)
@@ -378,7 +369,7 @@ impl Walker<'_> {
 /// `AlgoFractionText.decimalToFraction(decimal, accuracyFactor)`: a
 /// continued fraction `numerator / denominator` within `accuracy` of
 /// `decimal`.
-pub(super) fn decimal_to_fraction(decimal: f64, accuracy: f64) -> (f64, f64) {
+pub(crate) fn decimal_to_fraction(decimal: f64, accuracy: f64) -> (f64, f64) {
     if decimal.is_nan() {
         return (0.0, 0.0);
     }

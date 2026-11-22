@@ -358,3 +358,14 @@ fn a_line_that_creates_other_objects_than_the_file_has_is_skipped() {
     let c = geo_kernel::script::load(&r.script.join("\n")).unwrap();
     assert!(c.id("b_{2}").is_none());
 }
+
+#[test]
+fn central_and_local_zip_names_must_match() {
+    let xml = file(&point("A", "1", "2", "1"));
+    let mut archive = zip_of(&[("geogebra.xml", xml.as_bytes())]);
+    // Change only the local name. The directory still identifies the XML.
+    archive[30] = b'G';
+    let err = import(&archive).unwrap_err();
+    assert!(matches!(err, ImportError::Zip(_)));
+    assert!(err.to_string().contains("name"), "{err}");
+}

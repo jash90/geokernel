@@ -70,6 +70,7 @@
 //! it in `commands/mod.rs`.
 
 mod commands;
+pub(crate) use commands::brent_minimum;
 mod decimal;
 pub(crate) mod derivative;
 /// Equations in `x` and `y` as lines and conics (see the module docs).
@@ -92,8 +93,67 @@ impl IntersectionWork {
         self.0.charge(units)
     }
 
+    pub(crate) fn sample_system(&self, c: &Construction, id: Id, t: f64, state: &[f64]) -> f64 {
+        if !self.charge(1) {
+            return f64::NAN;
+        }
+        sample_system(c, id, t, state, &self.0)
+    }
+
     pub(crate) fn exhausted(&self) -> bool {
         self.0.over()
+    }
+}
+
+fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::Lists) -> f64 {
+    let Def::Expr(d) = c.def(id) else {
+        return f64::NAN;
+    };
+    let function = entry(c, d);
+    let env = eval::Env::Pair(t, state.first().copied().unwrap_or(0.0));
+    let ctx = eval::Ctx::<true> {
+        meter: Some(meter),
+        ..eval::Ctx::new(c, function, &env)
+    };
+    match (c.value(id), ctx.node(function.root)) {
+        (Value::FunctionNVar, Node::SystemFunction(arity, f)) => {
+            let mut args = [0.0; 16];
+            let n = usize::from(arity.saturating_sub(1));
+            if n == 0 || n > args.len() {
+                return f64::NAN;
+            }
+            let supplied = state.len().min(n);
+            args[..supplied].copy_from_slice(&state[..supplied]);
+            let time = eval::Local {
+                depth: 0,
+                value: eval::Val::N(t),
+                run: None,
+                vector: false,
+                up: None,
+            };
+            eval::system_locals(
+                &eval::Ctx {
+                    locals: Some(&time),
+                    ..ctx
+                },
+                f,
+                1,
+                &args[..n],
+            )
+        }
+        (Value::Function, _) => {
+            if function.function_of_y {
+                let env = eval::Env::Value(state.first().copied().unwrap_or(f64::NAN));
+                eval::Ctx { env: &env, ..ctx }.fast(function.root)
+            } else {
+                ctx.fast(function.root)
+            }
+        }
+        (Value::FunctionNVar, _) => {
+            equation::sample_side(c, id, t, state.first().copied().unwrap_or(0.0), meter)
+                .unwrap_or(f64::NAN)
+        }
+        _ => f64::NAN,
     }
 }
 
@@ -101,11 +161,12 @@ pub(crate) mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
 use commands::text::TextOp;
-use list::Slot;
+pub(crate) use list::{same_slots, Slot};
 pub use list::{Element, List};
 pub(crate) mod math;
 mod names;
 mod parse;
+pub(crate) use parse::{Parsed, MAX_DEPTH};
 mod types;
 mod wide;
 
@@ -132,7 +193,7 @@ impl ExprDef {
 
 /// One node of an expression tree. Children are indices into the same
 /// arena and always smaller than the index of their parent.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Node {
     /// A constant (`MyDouble`): a literal, `π`, `e`, `∞` or `?`.
     Num(f64),
@@ -180,10 +241,20 @@ pub(crate) enum Node {
     },
     /// A numerical extremum on a bounded interval. The function's x is local.
     Extremum(bool, u32, u32, u32),
+    RootList(u32),
+    FunctionAsymptotes(u32),
+    Iteration {
+        mode: IterationMode,
+        collect: bool,
+        formula: u32,
+        initial: u32,
+        count: u32,
+    },
     /// Quotient or remainder of two polynomial functions of the same x.
     PolynomialPart(bool, u32, u32),
     /// Reference to a function as a list element.
     FunctionObject(Id),
+    SystemFunction(u8, u32),
     /// A function object applied to an argument.
     Apply(Id, u32),
     Apply2(Id, u32, u32),
@@ -218,6 +289,9 @@ pub(crate) enum Node {
     /// expression, from, to, step ([`NONE`] when absent), and the depth of
     /// its variable `k`, a [`Node::Local`].
     Seq(u32, u32, u32, u32, u32),
+    /// A list command of more arguments than [`Node::ListOp`] holds: its
+    /// `len` arguments are the nodes from `first` on (`Take`, `Zip`, ...).
+    Call(CallOp, u32, u32),
     /// The variable of the enclosing `Sequence` of this depth (0 for the
     /// outermost).
     Local(u32, Elem),
@@ -231,6 +305,13 @@ pub(crate) enum Node {
     },
     Defined(u32),
     ObjectDefined(Id),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum IterationMode {
+    Unary,
+    Indexed,
+    Local { first: u32, count: u32 },
 }
 
 /// Numeric commands with a scalar or list result.
@@ -252,6 +333,26 @@ impl AlgebraOp {
             Self::Division | Self::PrimeFactors | Self::DivisorsList
         )
     }
+}
+
+/// The commands behind a [`Node::Call`] (see there).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CallOp {
+    /// `Take(list, from[, to])` (`AlgoTake`).
+    Take,
+    /// `IndexOf(object, list[, start])` (`AlgoIndexOf`).
+    IndexOf,
+    /// `Insert(object, list, position)` (`AlgoInsert`).
+    Insert,
+    /// `Classes(list, number of classes | start, width)` (`AlgoClasses`).
+    Classes,
+    /// `Frequency(...)` (`AlgoFrequency`).
+    Frequency,
+    /// `Zip(expression, variable, list, ...)` (`AlgoZip`): the expression,
+    /// then a [`Node::Local`] and its list per variable.
+    Zip,
+    /// `Product(expression, variable, from, to)` (`AlgoFoldExpression`).
+    Fold,
 }
 
 /// The commands that read a list.
@@ -279,6 +380,24 @@ pub(crate) enum ListOp {
     /// `Join(list of lists)`; `Join(l1, l2, ...)` joins the list of its
     /// arguments (`AlgoJoin`).
     Join,
+    /// `Take` is a [`Node::Call`]; `RemoveUndefined(list)`
+    /// (`AlgoRemoveUndefined`).
+    RemoveUndefined,
+    /// `Unique(list)` (`AlgoUnique`).
+    Unique,
+    /// `Flatten(list)` (`AlgoFlatten`).
+    Flatten,
+    /// `PointList(list)` (`AlgoPointList`).
+    PointList,
+    /// `OrdinalRank(list)` (`AlgoOrdinalRank`).
+    OrdinalRank,
+    /// `TiedRank(list)` (`AlgoTiedRank`).
+    TiedRank,
+    /// `Union(l1, l2)` (`AlgoUnion`); `Intersection(l1, l2)`
+    /// (`AlgoIntersection`); `Remove(l1, l2)` (`AlgoRemove`).
+    Union,
+    Intersect,
+    Remove,
 
     // statistics (`commands/statistics.rs`)
     /// `Sum(list)` and `Sum(list, n)` of numbers (`AlgoStats1D`).
@@ -584,10 +703,10 @@ struct TextResult {
 
 #[derive(Clone)]
 pub(crate) struct Entry {
-    nodes: Vec<Node>,
+    pub(crate) nodes: Vec<Node>,
     lits: Vec<Lit>,
     tys: Vec<Ty>,
-    root: u32,
+    pub(crate) root: u32,
     parents: Vec<Id>,
     /// Whether this is a function.
     function: bool,
@@ -769,10 +888,21 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         Node::Filter {
             list, condition, ..
         } => fixed[..2].copy_from_slice(&[list, condition]),
-        Node::Defined(a) => fixed[0] = a,
-        Node::Seq(a, b, c, d, _) => fixed[..4].copy_from_slice(&[a, b, c, d]),
+        Node::Defined(a)
+        | Node::RootList(a)
+        | Node::FunctionAsymptotes(a)
+        | Node::SystemFunction(_, a) => fixed[0] = a,
+        Node::Iteration {
+            formula,
+            initial,
+            count,
+            ..
+        } => {
+            fixed[..3].copy_from_slice(&[formula, initial, count]);
+        }
+        Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
         Node::Financial(_, args) => fixed.copy_from_slice(&args),
-        Node::List(first, len) | Node::TextCmd(_, first, len) => {
+        Node::List(first, len) | Node::TextCmd(_, first, len) | Node::Call(_, first, len) => {
             run = first..first.saturating_add(len)
         }
         _ => {}
@@ -822,14 +952,27 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(list);
             shift(condition);
         }
-        Node::Defined(a) => shift(a),
+        Node::Defined(a)
+        | Node::RootList(a)
+        | Node::FunctionAsymptotes(a)
+        | Node::SystemFunction(_, a) => shift(a),
+        Node::Iteration {
+            formula,
+            initial,
+            count,
+            ..
+        } => {
+            shift(formula);
+            shift(initial);
+            shift(count);
+        }
         Node::Seq(a, b, c, d, _) => {
             shift(a);
             shift(b);
             shift(c);
             shift(d);
         }
-        Node::List(first, _) | Node::TextCmd(_, first, _) => shift(first),
+        Node::List(first, _) | Node::TextCmd(_, first, _) | Node::Call(_, first, _) => shift(first),
         Node::Financial(_, args) => args.iter_mut().for_each(shift),
         _ => {}
     }
@@ -846,10 +989,14 @@ fn is_list_node(node: &Node) -> bool {
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..)
+            | Node::Call(..)
             | Node::Local(..)
             | Node::Filter { .. }
             | Node::Algebra(..)
             | Node::Extremum(..)
+            | Node::RootList(..)
+            | Node::FunctionAsymptotes(..)
+            | Node::Iteration { .. }
             | Node::Base { .. }
             | Node::Apply2(..)
     )
@@ -1307,12 +1454,16 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
 pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
     if d.kind == Kind::FunctionNVar {
         let e = entry(c, d);
-        return if let Node::Side(eq, _) = e.nodes[e.root as usize] {
-            if c.value(eq).is_defined() {
-                Value::FunctionNVar
-            } else {
-                Value::Undefined
+        let defined = match e.nodes[e.root as usize] {
+            Node::Side(eq, _) => c.value(eq).is_defined(),
+            Node::SystemFunction(_, root) => {
+                inputs_defined(c, e)
+                    && !matches!(e.nodes[root as usize], Node::Num(v) if v.is_nan())
             }
+            _ => false,
+        };
+        return if defined {
+            Value::FunctionNVar
         } else {
             Value::Undefined
         };
@@ -1334,8 +1485,17 @@ pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
 
 /// The elements of the list object `id`, when it is a defined list.
 pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
-    match (c.def(id), c.value(id)) {
-        (Def::Expr(d), Value::List { len }) => Some(List::new(&entry(c, d).items, len)),
+    let Value::List { len } = c.value(id) else {
+        return None;
+    };
+    Some(List::new(list_slots(c, id)?, len))
+}
+
+fn list_slots(c: &Construction, id: Id) -> Option<&[Slot]> {
+    match c.def(id) {
+        Def::Expr(d) => Some(&entry(c, d).items),
+        Def::Calculus(_) => c.calculus_record(id).map(|record| record.slots.as_slice()),
+        Def::Chart(_) => c.chart(id).map(|data| data.slots.as_slice()),
         _ => None,
     }
 }
@@ -1370,6 +1530,11 @@ pub(crate) fn store(c: &mut Construction, d: ExprDef, out: Outcome) -> bool {
 pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
     match (c.def(f), c.value(f)) {
         (Def::Expr(d), Value::Function) => Some(eval::sample(c, entry(c, d), x)),
+        (Def::Calculus(d), Value::Function) => {
+            let record = c.calculus_record(f)?;
+            d.record_value(c, record, f, x)
+        }
+        (Def::Chart(_), Value::Function) => c.chart(f).map(|data| data.sample(x)),
         _ => None,
     }
 }
@@ -1382,6 +1547,12 @@ pub(crate) struct FunctionSignature {
 }
 
 pub(crate) fn function_signature(c: &Construction, id: Id) -> Option<FunctionSignature> {
+    if c.kind(id) == Kind::Function && matches!(c.def(id), Def::Chart(_)) {
+        return Some(FunctionSignature {
+            boolean: false,
+            of_y: false,
+        });
+    }
     let Def::Expr(d) = c.def(id) else {
         return None;
     };
@@ -1435,6 +1606,141 @@ pub(crate) fn relation_number(c: &Construction, id: Id) -> f64 {
     }
 }
 
+/// The entry of a tree the calculus commands built themselves (see
+/// `algo::calculus`), sampled like a function's tree.
+pub(crate) fn function_entry(c: &Construction, parsed: parse::Parsed) -> Entry {
+    Entry::new(c, parsed, true)
+}
+
+/// The entry of the expression object `d`, for the calculus commands that
+/// read the tree of their source function.
+pub(crate) fn source_entry(c: &Construction, d: ExprDef) -> &Entry {
+    entry(c, d)
+}
+
+/// `GeoFunction.value` of a tree the calculus commands built, without
+/// keeping the entry (the antiderivative at a bound of integration).
+pub(crate) fn sample_parsed(c: &Construction, parsed: &parse::Parsed, x: f64) -> f64 {
+    eval::sample(c, &Entry::new(c, parsed.clone(), true), x)
+}
+
+/// `GeoFunction.value` of a tree the calculus commands built; the entry is
+/// one of their records.
+pub(crate) fn sample_tree(c: &Construction, e: &Entry, x: f64) -> f64 {
+    eval::sample(c, e, x)
+}
+
+/// `GeoFunction.value` of the subtree `i` of a function's tree: a branch
+/// of a conditional function the conditional integral integrates
+/// (`AlgoIntegralDefinite.computeConditional`).
+pub(crate) fn sample_subtree(c: &Construction, e: &Entry, i: u32, x: f64) -> f64 {
+    eval::sample_subtree(c, e, i, x)
+}
+
+/// The boolean value of the subtree `i` of a function's tree at `x`, and
+/// whether it is defined (`Bounds.addRestriction`'s condition checks).
+pub(crate) fn subtree_bool(c: &Construction, e: &Entry, i: u32, x: f64) -> Option<(bool, bool)> {
+    match eval::subtree(c, e, i, x) {
+        eval::Val::B(v, defined) => Some((v, defined)),
+        _ => None,
+    }
+}
+
+/// Whether the subtree `i` of a function's tree is a number (`Ty::Num`),
+/// which the constant side of a branch bound's comparison must be
+/// (`NumberValue`).
+pub(crate) fn subtree_is_number(e: &Entry, i: u32) -> bool {
+    matches!(e.tys[i as usize], Ty::Num(_))
+}
+
+/// `GeoFunction.isDefined` of a tree the calculus commands built: its
+/// objects are defined, and the root is not the constant `NaN` that
+/// GeoGebra's no-CAS integrator builds for a rule it cannot integrate
+/// (`ExpressionNode.isDefined`).
+pub(crate) fn tree_defined(c: &Construction, e: &Entry) -> bool {
+    inputs_defined(c, e) && !matches!(e.nodes[e.root as usize], Node::Num(v) if v.is_nan())
+}
+
+/// The nodes of an entry, for the calculus commands that walk the tree of
+/// their source function.
+pub(crate) fn nodes_of(e: &Entry) -> &[Node] {
+    &e.nodes
+}
+
+/// The root node index of an entry.
+pub(crate) fn root_of(e: &Entry) -> u32 {
+    e.root
+}
+
+/// The number literals of a tree, in tree order
+/// (`AlgoCoefficients.extractConstants`: every `MyDouble` leaf is a
+/// constant — a degree sign included — collected by the pre-order walk of
+/// `ExpressionNode.any`, which covers the tree, not the parser's arena).
+pub(crate) fn constant_literals(e: &Entry) -> Vec<f64> {
+    let mut out = Vec::new();
+    let mut stack = vec![e.root];
+    while let Some(i) = stack.pop() {
+        match e.nodes[i as usize] {
+            Node::Num(v) => out.push(v),
+            Node::MinusOne => out.push(-1.0),
+            Node::Degree => out.push(math::PI_180),
+            ref node => {
+                let mut kids: Vec<u32> = children(node).filter(|&k| k != NONE).collect();
+                kids.reverse();
+                stack.extend(kids);
+            }
+        }
+    }
+    out
+}
+
+/// The parsed tree of an entry again, for the copy an order-zero
+/// derivative is.
+pub(crate) fn parsed_of(e: &Entry) -> parse::Parsed {
+    parse::Parsed {
+        root: e.root,
+        nodes: e.nodes.clone(),
+        lits: e.lits.clone(),
+        tys: e.tys.clone(),
+        parents: e.parents.clone(),
+        inputs: e.inputs.clone(),
+        depth: e.depth,
+        cost: e.cost,
+        vars: e.vars,
+        uses_var: false,
+        uses_y: false,
+    }
+}
+
+/// The current value of a tree the calculus commands built, reading the
+/// current values of its objects: what a polynomial coefficient is.
+pub(crate) fn value_of_tree(c: &Construction, parsed: &parse::Parsed) -> Option<f64> {
+    let entry = Entry::new(c, parsed.clone(), false);
+    match eval::root(c, &entry, None).0 {
+        Raw::Num(v) => Some(v),
+        _ => None,
+    }
+}
+
+/// Charges `n` units of evaluation work (see [`eval`]), which the loops of
+/// the calculus commands stay inside.
+pub(crate) fn charge(n: u64) {
+    eval::work(n);
+}
+
+/// Adds a tree the calculus commands built as the object `name`: a
+/// coefficient list, or a hidden list of points. The kinds are those
+/// [`add_parsed`] takes; a tree without parents still becomes a
+/// dependent object, like a list it builds.
+pub(crate) fn add_built(
+    c: &mut Construction,
+    name: &str,
+    parsed: parse::Parsed,
+    kind: Kind,
+) -> Result<Id, Error> {
+    add_parsed(c, name, parsed, kind, AngleStyle::Unbounded, false)
+}
+
 /// The last stored result.
 pub(crate) fn raw(c: &Construction, d: ExprDef) -> Raw {
     entry(c, d).raw
@@ -1472,6 +1778,48 @@ pub(crate) fn argument_object(c: &mut Construction, text: &str, label: &str, kin
         _ => return false,
     };
     !parsed.uses_var && add(c, label, parsed, kind).is_ok()
+}
+
+/// Builds a list from resolved arguments whose hidden labels cannot be written
+/// in an expression.
+pub(crate) fn list_of_objects(
+    c: &mut Construction,
+    label: &str,
+    ids: Vec<Id>,
+) -> Result<Id, String> {
+    let count = u32::try_from(ids.len()).map_err(|_| "too many arguments")?;
+    let root = count.checked_mul(2).ok_or("too many arguments")?;
+    if u64::from(root) + 1 > parse::MAX_COST {
+        return Err("too many arguments".into());
+    }
+    let mut nodes = Vec::with_capacity(root as usize + 1);
+    nodes.extend(ids.iter().copied().map(Node::Obj));
+    nodes.extend(ids.iter().enumerate().map(|(i, &id)| {
+        if list::object_kind(c.kind(id)) {
+            Node::ItemObject(id)
+        } else {
+            Node::Item(i as u32)
+        }
+    }));
+    nodes.push(Node::List(count, count));
+    let (tys, depth, cost, vars) = types::check(c, &nodes, root)?;
+    let mut parents = ids.clone();
+    parents.sort_unstable();
+    parents.dedup();
+    let parsed = parse::Parsed {
+        lits: vec![Lit::default(); nodes.len()],
+        nodes,
+        tys,
+        root,
+        parents,
+        inputs: ids,
+        uses_var: false,
+        uses_y: false,
+        depth: depth[root as usize],
+        cost: cost[root as usize],
+        vars: vars[root as usize],
+    };
+    add(c, label, parsed, Kind::List)
 }
 
 /// Evaluates a self-contained scalar argument without adding a construction
@@ -1654,6 +2002,16 @@ pub(crate) fn define_function(
     function(c, name, parsed, of_y)
 }
 
+pub(crate) fn define_system_function(
+    c: &mut Construction,
+    label: &str,
+    rhs: &str,
+    parameters: &[&str],
+) -> Result<Id, String> {
+    let parsed = parse::parse_system(c, rhs, parameters)?;
+    add(c, label, parsed, Kind::FunctionNVar)
+}
+
 pub(crate) fn define_parametric_coordinate(
     c: &mut Construction,
     label: &str,
@@ -1714,6 +2072,29 @@ fn function(
 
 fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> Result<Id, String> {
     add_parsed(c, name, parsed, kind, AngleStyle::Unbounded, false).map_err(|e| e.to_string())
+}
+
+/// A hidden function object of the inline expression `text`, the argument
+/// of a command that reads a function (`sin(x)` in `Polynomial(sin(x))`;
+/// see `script::resolve_geometry_arguments`).
+pub(crate) fn argument_function(c: &mut Construction, text: &str, label: &str) -> Option<Id> {
+    let parsed = parse::parse(c, text).ok()?;
+    match parsed.tys[parsed.root as usize] {
+        Ty::Num(_) if parsed.uses_var => add(c, label, parsed, Kind::Function).ok(),
+        _ => None,
+    }
+}
+
+/// A number as the constant function it counts as where GeoGebra accepts
+/// one (`isRealValuedFunction` of a `GeoNumeric`): the second curve of
+/// `Integral` and `IntegralBetween` (`CmdIntegral`'s first four-argument
+/// branch).
+pub(crate) fn constant_function(c: &mut Construction, text: &str, label: &str) -> Option<Id> {
+    let parsed = parse::parse(c, text).ok()?;
+    match parsed.tys[parsed.root as usize] {
+        Ty::Num(_) if !parsed.uses_var => add(c, label, parsed, Kind::Function).ok(),
+        _ => None,
+    }
 }
 
 fn add_parsed(

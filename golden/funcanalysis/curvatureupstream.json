@@ -1,0 +1,280 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-curvatureupstream-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = Curvature((1,1),sin(x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "number", "defined": true, "value": -0.5730366435551724 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-curvatureupstream-002",
+      "group": "funcanalysis",
+      "script": [
+        "c = Curve(sin(t),cos(t),t,0,3)",
+        "R = Curvature((1,1),c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": 0.0,
+            "end": 3.0,
+            "samples_curve": [
+              [
+                0.0,
+                [0.0, 1.0]
+              ],
+              [
+                0.375,
+                [0.36627252908604757, 0.9305076219123143]
+              ],
+              [
+                0.75,
+                [0.6816387600233341, 0.7316888688738209]
+              ],
+              [
+                1.5,
+                [0.9974949866040543, 0.0707372016677029]
+              ],
+              [
+                2.25,
+                [0.7780731968879212, -0.6281736227227391]
+              ],
+              [
+                2.625,
+                [0.4939202986100892, -0.8695071814659845]
+              ],
+              [
+                3.0,
+                [0.1411200080598672, -0.9899924966004454]
+              ]
+            ]
+          },
+          "R": { "type": "number", "defined": true, "value": -1.0000000000000002 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-curvatureupstream-003",
+      "group": "funcanalysis",
+      "script": [
+        "C = (2,3)",
+        "k = Circle(C,2)",
+        "R = Curvature((1,1),k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 2.0, "cy": 3.0, "r": 2.0 },
+          "R": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-curvatureupstream-004",
+      "group": "funcanalysis",
+      "script": [
+        "R = CurvatureVector((1,1),sin(x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "vector", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-curvatureupstream-005",
+      "group": "funcanalysis",
+      "script": [
+        "c = Curve(sin(t),cos(t),t,0,3)",
+        "R = CurvatureVector((1,1),c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": 0.0,
+            "end": 3.0,
+            "samples_curve": [
+              [
+                0.0,
+                [0.0, 1.0]
+              ],
+              [
+                0.375,
+                [0.36627252908604757, 0.9305076219123143]
+              ],
+              [
+                0.75,
+                [0.6816387600233341, 0.7316888688738209]
+              ],
+              [
+                1.5,
+                [0.9974949866040543, 0.0707372016677029]
+              ],
+              [
+                2.25,
+                [0.7780731968879212, -0.6281736227227391]
+              ],
+              [
+                2.625,
+                [0.4939202986100892, -0.8695071814659845]
+              ],
+              [
+                3.0,
+                [0.1411200080598672, -0.9899924966004454]
+              ]
+            ]
+          },
+          "R": { "type": "vector", "defined": true, "x": -0.7071067733113368, "y": -0.7071067890617581 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-curvatureupstream-006",
+      "group": "funcanalysis",
+      "script": [
+        "C = (2,3)",
+        "k = Circle(C,2)",
+        "R = CurvatureVector((1,1),k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 2.0, "cy": 3.0, "r": 2.0 },
+          "R": { "type": "vector", "defined": true, "x": 0.22360679774997896, "y": 0.447213595499958 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-curvatureupstream-007",
+      "group": "funcanalysis",
+      "script": [
+        "R = OsculatingCircle((1,1),sin(x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "circle", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-curvatureupstream-008",
+      "group": "funcanalysis",
+      "script": [
+        "c = Curve(sin(t),cos(t),t,0,3)",
+        "R = OsculatingCircle((1,1),c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": 0.0,
+            "end": 3.0,
+            "samples_curve": [
+              [
+                0.0,
+                [0.0, 1.0]
+              ],
+              [
+                0.375,
+                [0.36627252908604757, 0.9305076219123143]
+              ],
+              [
+                0.75,
+                [0.6816387600233341, 0.7316888688738209]
+              ],
+              [
+                1.5,
+                [0.9974949866040543, 0.0707372016677029]
+              ],
+              [
+                2.25,
+                [0.7780731968879212, -0.6281736227227391]
+              ],
+              [
+                2.625,
+                [0.4939202986100892, -0.8695071814659845]
+              ],
+              [
+                3.0,
+                [0.1411200080598672, -0.9899924966004454]
+              ]
+            ]
+          },
+          "R": { "type": "circle", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-curvatureupstream-009",
+      "group": "funcanalysis",
+      "script": [
+        "C = (2,3)",
+        "k = Circle(C,2)",
+        "R = OsculatingCircle((1,1),k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 2.0, "cy": 3.0, "r": 2.0 },
+          "R": { "type": "circle", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-curvatureupstream-010",
+      "group": "funcanalysis",
+      "script": [
+        "R = OsculatingCircle((0,0),x^2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.5, "r": 0.5 }
+        }
+      ]
+    }
+  ]
+}
