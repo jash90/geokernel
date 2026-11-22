@@ -389,3 +389,32 @@ fn the_wheel_zooms_nothing_while_a_text_field_has_the_focus() {
     h.run();
     assert_eq!(scales(&h), was, "the wheel zoomed over the field");
 }
+
+#[test]
+fn the_trackpad_pinch_zooms_only_without_text_field_focus() {
+    let mut h = harness("A = (1, 1)\n");
+    h.state_mut().focus_input = true;
+    h.run();
+    assert!(h.ctx.egui_wants_keyboard_input());
+
+    let at = drawn(&h, 2.0, -2.0);
+    let before = scales(&h);
+    let pinch = |h: &mut Harness<'_, App>| {
+        h.input_mut()
+            .events
+            .extend([Event::PointerMoved(at), Event::Zoom(1.25)]);
+        h.step();
+    };
+    pinch(&mut h);
+    assert_eq!(scales(&h), before, "the pinch zoomed while typing");
+
+    h.ctx.memory_mut(|m| {
+        if let Some(id) = m.focused() {
+            m.surrender_focus(id);
+        }
+    });
+    let (sx, sy) = scales(&h);
+    pinch(&mut h);
+    let (nx, ny) = scales(&h);
+    assert!(close(nx, sx * 1.25) && close(ny, sy * 1.25));
+}

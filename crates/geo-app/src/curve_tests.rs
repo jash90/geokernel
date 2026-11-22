@@ -8,9 +8,10 @@ use crate::draw::{self, Scene};
 use crate::geom::ToEgui;
 use crate::interact::ViewTransform;
 use crate::workbench::Workbench;
-use eframe::egui::{epaint, vec2, Context, Pos2, Rect};
+use eframe::egui::{epaint, vec2, Context, FullOutput, Pos2, Rect};
 use geo_kernel::kernel::Id;
 use geo_kernel::svg::View;
+use std::sync::Arc;
 
 const W: f32 = 800.0;
 const H: f32 = 600.0;
@@ -41,8 +42,18 @@ fn stroke_triangles(
     t: &ViewTransform,
     marks: (Option<Id>, Option<Id>),
 ) -> Vec<[Pos2; 3]> {
+    let rect = Rect::from_min_size(ORIGIN, vec2(W, H));
+    triangles(ctx, stroke_shapes(ctx, wb, t, rect, marks))
+}
+
+fn stroke_shapes(
+    ctx: &Context,
+    wb: &Workbench,
+    t: &ViewTransform,
+    rect: Rect,
+    marks: (Option<Id>, Option<Id>),
+) -> FullOutput {
     let mut out = ctx.run_ui(Default::default(), |ui| {
-        let rect = Rect::from_min_size(ORIGIN, vec2(W, H));
         let scene = Scene {
             visible: &|_| true,
             ghost: &|_| false,
@@ -58,6 +69,10 @@ fn stroke_triangles(
         draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
     });
     out.textures_delta.clear();
+    out
+}
+
+fn triangles(ctx: &Context, out: FullOutput) -> Vec<[Pos2; 3]> {
     let mut tris = Vec::new();
     for p in ctx.tessellate(out.shapes, out.pixels_per_point) {
         let epaint::Primitive::Mesh(m) = p.primitive else {
@@ -72,6 +87,51 @@ fn stroke_triangles(
         }
     }
     tris
+}
+
+#[test]
+fn an_anisotropic_resize_moves_the_kept_mesh_to_the_new_screen_position() {
+    let wb = Workbench::from_script("f(x) = x / 2 + 1\n").unwrap();
+    let ctx = Context::default();
+    let frame = |width: f32, height: f32| {
+        let (hw, hh) = (f64::from(width) / 80.0, f64::from(height) / 120.0);
+        let t = ViewTransform::new(
+            View {
+                xmin: -hw,
+                xmax: hw,
+                ymin: -hh,
+                ymax: hh,
+            },
+            f64::from(width),
+            f64::from(height),
+        );
+        let rect = Rect::from_min_size(ORIGIN, vec2(width, height));
+        stroke_shapes(&ctx, &wb, &t, rect, (None, None))
+    };
+    let mesh = |out: &FullOutput| {
+        out.shapes
+            .iter()
+            .find_map(|s| match &s.shape {
+                epaint::Shape::Mesh(mesh) => Some(mesh.clone()),
+                _ => None,
+            })
+            .expect("the graph has a stroke mesh")
+    };
+    let before = frame(W, H);
+    let kept = mesh(&before);
+    let plots = curves_plotted();
+    let after = frame(W + 44.0, H + 26.0);
+    assert_eq!(curves_plotted(), plots);
+
+    // The point (2, 2) is 80 px right and 120 px above the canvas centre.
+    let old = Pos2::new(500.0, 190.0);
+    let new = Pos2::new(522.0, 203.0);
+    assert!(covered(&triangles(&ctx, before), old));
+    let drawn = mesh(&after);
+    let tris = triangles(&ctx, after);
+    assert!(covered(&tris, new), "the graph misses {new:?}");
+    assert!(!covered(&tris, old), "the graph still crosses {old:?}");
+    assert!(Arc::ptr_eq(&kept, &drawn), "resize copied the kept mesh");
 }
 
 fn inside(t: &[Pos2; 3], p: Pos2) -> bool {

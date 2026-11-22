@@ -174,8 +174,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // proportional to the scroll amount (the owner's rule, spec D2), so
     // egui's smoothed delta is no measure of it; the reference app zooms
     // one fixed x1.1 per event whatever its delta. The wheel belongs to a
-    // text field that has the keyboard (`isTextfieldHasFocus` returns
-    // false and the event is not the drawing's). It zooms about the
+    // text field that has the keyboard (`isTextfieldHasFocus`). It zooms about the
     // pointer while that is over the drawing; horizontal scrolling zooms
     // nothing; Alt strengthens the zoom (`wrapMouseWheelMoved`).
     let typing = ui.ctx().egui_wants_keyboard_input();
@@ -213,9 +212,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         1.0
     };
     // A trackpad's pinch, as the platform reports it (egui's zoom events,
-    // unsmoothed): a zoom like the wheel's, about the pointer. A pinch of
-    // two touch pointers is the one below, under the fingers.
-    let native = if response.hovered() {
+    // unsmoothed): like the wheel, it zooms about the pointer only when
+    // no text field has focus. Two touch pointers pinch under the fingers.
+    let native = if response.hovered() && !typing {
         ui.input(|i| {
             i.events
                 .iter()

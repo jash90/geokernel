@@ -23,15 +23,17 @@
 //!   the others are drawn from their kept meshes moved and scaled (within
 //!   [`MAX_STALE_SCALE`]; a curve seen for the first time is not drawn
 //!   yet), and the next frames are asked for until none is left;
-//! - a kept mesh is moved or scaled by copying only its runs of triangles
-//!   that reach the area (see [`placed_runs`]), never tessellated again
-//!   unless epaint laid it out otherwise;
+//! - a translated mesh is shared with the painter, which positions it
+//!   with a transform. A scaled mesh copies only the runs of triangles
+//!   that reach the area (see [`placed_runs`]), tessellating again only
+//!   when the stroke layout requires it;
 //! - a curve whose drawing lies outside the area costs only that test, and
 //!   a view whose pixels the coordinates cannot tell apart draws nothing.
 
 mod key;
 mod parts;
 
+use eframe::egui::emath::TSTransform;
 use eframe::egui::epaint::{PathShape, Tessellator};
 use eframe::egui::{vec2, Color32, Context, Mesh, Painter, Pos2, Rect, Stroke, Vec2};
 use geo_kernel::kernel::{Construction, Id, Value};
@@ -48,9 +50,9 @@ use std::sync::{Arc, Mutex};
 /// [`FUNCTION_COST`]; an edited curve is always plotted at once.
 pub const REPLOTS_PER_FRAME: usize = 24;
 
-/// [`REPLOTS_PER_FRAME`] for a frame of a pan, which also moves every kept
-/// mesh: the curves due again are still drawn whole for a while (they are
-/// within the margin), and once the view stops the full cap plots them.
+/// [`REPLOTS_PER_FRAME`] for a frame of a pan: the curves due again are
+/// still drawn whole for a while (they are within the margin), and once
+/// the view stops the full cap plots them.
 pub const REPLOTS_PER_PAN_FRAME: usize = 12;
 
 /// What plotting a function counts against [`REPLOTS_PER_FRAME`].
@@ -89,7 +91,7 @@ pub fn curves_uncovered() -> u64 {
     UNCOVERED.with(Cell::get)
 }
 
-/// Vertices this thread has copied to move or scale kept meshes so far.
+/// Vertices this thread has copied to scale kept meshes so far.
 #[cfg(test)]
 pub fn curves_moved_vertices() -> u64 {
     MOVED.with(Cell::get)
@@ -364,7 +366,7 @@ struct Plotted {
     mesh: Arc<Mesh>,
     mesh_at: Pos2,
     /// The mesh's triangles in runs, each with the bounds of its vertices,
-    /// so that a moved drawing copies only the runs that reach the area.
+    /// so that a scaled drawing copies only the runs that reach the area.
     runs: Arc<[Run]>,
     /// Whether the mesh has four vertices for each point of the polylines
     /// (of two points or more), as `placed_runs` needs to scale it (see
@@ -386,6 +388,8 @@ struct Plotted {
 /// One curve as drawn this frame, in screen points unless noted.
 pub struct Drawn {
     pub mesh: Arc<Mesh>,
+    /// Translation of the shared mesh in screen points.
+    pub mesh_transform: TSTransform,
     plotted: Arc<Plotted>,
     /// Where the kept plot's area point `p` goes: `origin + scale * p`,
     /// per axis.
@@ -462,7 +466,7 @@ pub struct Curves {
     /// Whether the last frame had the same view: the view stopped moving.
     still: bool,
     /// Whether the view moves at the same scale and size as the last
-    /// frame's (a pan): the frame moves every kept mesh, so it plots less.
+    /// frame's (a pan), with the lower plotting cap.
     panning: bool,
     /// Whether the view can be drawn at all ([`Frame::resolves`]).
     usable: bool,
@@ -691,7 +695,8 @@ impl Curves {
         let p = &entry.plotted;
         let (w, h) = (self.frame.width() as f32, self.frame.height() as f32);
         let area = Rect::from_min_size(self.origin, vec2(w, h));
-        let (origin, scale) = match self.fit(p) {
+        let fit = self.fit(p);
+        let (origin, scale) = match fit {
             Fit::Moved(d, covered, _) => {
                 if !covered {
                     count(&UNCOVERED);
@@ -745,10 +750,15 @@ impl Curves {
         if scale != Vec2::splat(1.0) && !area.expand(reach).contains_rect(bounds) {
             return None;
         }
-        let mesh = if !strokes {
-            Arc::new(Mesh::default())
-        } else if scale == Vec2::splat(1.0) && origin == p.mesh_at {
-            p.mesh.clone()
+        let (mesh, mesh_transform) = if !strokes {
+            (Arc::new(Mesh::default()), TSTransform::IDENTITY)
+        } else if matches!(fit, Fit::Moved(..))
+            || (scale == Vec2::splat(1.0) && origin == p.mesh_at)
+        {
+            (
+                p.mesh.clone(),
+                TSTransform::from_translation(origin - p.mesh_at),
+            )
         } else {
             let at = Placing {
                 from: p.mesh_at,
@@ -756,12 +766,14 @@ impl Curves {
                 scale,
             };
             let kept = (&*p.mesh, &*p.runs, p.points_of_four);
-            Arc::new(placed_stroke(kept, &p.paths, at, area, |pieces| {
+            let scaled = placed_stroke(kept, &p.paths, at, area, |pieces| {
                 self.tessellate(pieces.into_iter(), entry.color).0
-            }))
+            });
+            (Arc::new(scaled), TSTransform::IDENTITY)
         };
         Some(Arc::new(Drawn {
             mesh,
+            mesh_transform,
             plotted: p.clone(),
             origin,
             scale,

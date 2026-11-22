@@ -14,6 +14,7 @@ use crate::labelpos;
 use crate::shape;
 use crate::style;
 use crate::theme;
+use eframe::egui::emath::TSTransform;
 use eframe::egui::epaint::{CircleShape, PathShape, TessellationOptions, Tessellator};
 use eframe::egui::{vec2, Align2, Color32, FontId, Mesh, Painter, Pos2, Rect, Shape, Stroke};
 use geo_app_core::geom;
@@ -453,7 +454,16 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
                 continue;
             };
             if !drawn.mesh.is_empty() {
-                painter.add(Shape::Mesh(drawn.mesh.clone()));
+                let idx = painter.add(Shape::Mesh(drawn.mesh.clone()));
+                if drawn.mesh_transform != TSTransform::IDENTITY {
+                    // egui positions the mesh as it batches it for rendering.
+                    // The painter's clip rectangle stays in screen coordinates.
+                    painter.ctx().graphics_mut(|layers| {
+                        layers.entry(painter.layer_id()).mutate_shape(idx, |shape| {
+                            shape.transform_after_tessellation = drawn.mesh_transform;
+                        });
+                    });
+                }
             }
             if let Some(at) = drawn.point {
                 point_shape(painter, at, color(id), DEPENDENT_POINT_RADIUS);
