@@ -1054,7 +1054,7 @@
       "group": "funcrest",
       "script": [
         "n = 2",
-        "l = {{1, 2}, Sequence(k, k, 1, n)}",
+        "l = {{1, 2}, Sequence(k + 2, k, 1, n)}",
         "s = SVD(l)"
       ],
       "steps": [
@@ -1081,8 +1081,8 @@
                 "type": "list",
                 "defined": true,
                 "elements": [
-                  { "type": "number", "defined": true, "value": 1.0 },
-                  { "type": "number", "defined": true, "value": 2.0 }
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
                 ]
               }
             ]
@@ -1099,16 +1099,16 @@
                     "type": "list",
                     "defined": true,
                     "elements": [
-                      { "type": "number", "defined": true, "value": -0.7071067811865475 },
-                      { "type": "number", "defined": true, "value": -0.7071067811865475 }
+                      { "type": "number", "defined": true, "value": 0.4045535848337569 },
+                      { "type": "number", "defined": true, "value": 0.9145142956773045 }
                     ]
                   },
                   {
                     "type": "list",
                     "defined": true,
                     "elements": [
-                      { "type": "number", "defined": true, "value": -0.7071067811865475 },
-                      { "type": "number", "defined": true, "value": 0.7071067811865476 }
+                      { "type": "number", "defined": true, "value": 0.9145142956773045 },
+                      { "type": "number", "defined": true, "value": -0.4045535848337569 }
                     ]
                   }
                 ]
@@ -1121,7 +1121,7 @@
                     "type": "list",
                     "defined": true,
                     "elements": [
-                      { "type": "number", "defined": true, "value": 3.1622776601683795 },
+                      { "type": "number", "defined": true, "value": 5.464985704219043 },
                       { "type": "number", "defined": true, "value": 0.0 }
                     ]
                   },
@@ -1130,7 +1130,7 @@
                     "defined": true,
                     "elements": [
                       { "type": "number", "defined": true, "value": 0.0 },
-                      { "type": "number", "defined": true, "value": 0.0 }
+                      { "type": "number", "defined": true, "value": 0.3659661906262574 }
                     ]
                   }
                 ]
@@ -1143,16 +1143,16 @@
                     "type": "list",
                     "defined": true,
                     "elements": [
-                      { "type": "number", "defined": true, "value": -0.4472135954999579 },
-                      { "type": "number", "defined": true, "value": -0.8944271909999157 }
+                      { "type": "number", "defined": true, "value": 0.5760484367663208 },
+                      { "type": "number", "defined": true, "value": -0.8174155604703632 }
                     ]
                   },
                   {
                     "type": "list",
                     "defined": true,
                     "elements": [
-                      { "type": "number", "defined": true, "value": -0.8944271909999157 },
-                      { "type": "number", "defined": true, "value": 0.4472135954999579 }
+                      { "type": "number", "defined": true, "value": 0.8174155604703632 },
+                      { "type": "number", "defined": true, "value": 0.5760484367663208 }
                     ]
                   }
                 ]
@@ -1178,7 +1178,7 @@
                 "type": "list",
                 "defined": true,
                 "elements": [
-                  { "type": "number", "defined": true, "value": 1.0 }
+                  { "type": "number", "defined": true, "value": 3.0 }
                 ]
               }
             ]
@@ -1203,8 +1203,8 @@
                 "type": "list",
                 "defined": true,
                 "elements": [
-                  { "type": "number", "defined": true, "value": 1.0 },
-                  { "type": "number", "defined": true, "value": 2.0 }
+                  { "type": "number", "defined": true, "value": 3.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
                 ]
               }
             ]

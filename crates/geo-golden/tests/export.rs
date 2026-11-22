@@ -141,6 +141,7 @@ fn corpus() -> Vec<(String, Workbench, Option<FileView>)> {
                     wb.set_number(id, *value);
                 }
                 Step::Reject { .. } => panic!("{name}: unexpected rejection step"),
+                Step::SetSliderBounds { .. } => panic!("{name}: unexpected slider bounds edit"),
             }
         }
         let c = wb.construction();

@@ -504,6 +504,77 @@
           "b": { "type": "boolean", "defined": true, "value": false }
         }
       ]
+    },
+    {
+      "id": "funcrest-vertexform-008",
+      "group": "funcrest",
+      "script": [
+        "O = (0, 0)",
+        "A = (1, 0)",
+        "B = (0, 1)",
+        "s = Segment(O, A)",
+        "r = Ray(O, A)",
+        "c = CircularArc(O, A, B)",
+        "d = CircularSector(O, A, B)",
+        "n = 30°",
+        "a = IsVertexForm(s)",
+        "b = IsVertexForm(r)",
+        "e = IsVertexForm(c)",
+        "f = IsVertexForm(d)",
+        "g = IsVertexForm(n)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 0.0 },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "c": {
+            "type": "arc",
+            "defined": true,
+            "value": 1.5707963267948966,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 1.5707963267948966,
+            "area": 0.2853981633974483,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": {
+            "type": "sector",
+            "defined": true,
+            "value": 0.7853981633974483,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 1.5707963267948966,
+            "area": 0.7853981633974483,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "n": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "a": { "type": "boolean", "defined": true, "value": false },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "e": { "type": "boolean", "defined": true, "value": false },
+          "f": { "type": "boolean", "defined": true, "value": false },
+          "g": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
     }
   ]
 }

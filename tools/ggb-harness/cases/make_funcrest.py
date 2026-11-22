@@ -98,7 +98,7 @@ case("svd", "n = 2\nl = Sequence({k, 0}, k, 1, n)\ns = SVD(l)",
      [setn("n", 0), setn("n", 1), setn("n", 3)])
 case("svd", "s = SVD({})\nt = SVD({{}, {}})\nu = SVD({{1, 2}, {3}})\nv = SVD({1, 2})",
      [reject("r = SVD(1)"), reject("r = SVD({{1}}, {{2}})")])
-case("svd", "n = 2\nl = {{1, 2}, Sequence(k, k, 1, n)}\ns = SVD(l)",
+case("svd", "n = 2\nl = {{1, 2}, Sequence(k + 2, k, 1, n)}\ns = SVD(l)",
      [setn("n", 1), setn("n", 2)])
 case("svd", "s = SVD({{1/0}})\nt = SVD({{0/0}})")
 case("svd", "s = SVD({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})")
@@ -118,6 +118,9 @@ case("vertexform", "l = Line((0, 0), (1, 1))\nv = Line((0, 0), (0, 1))\n"
      [reject("s = IsVertexForm(Vector((1, 1)))")])
 case("vertexform", "F = (0, 1)\nl: y = -1\nc = Parabola(F, l)\ne = Circle((0, 0), 2)\n"
      "a = IsVertexForm(c)\nb = IsVertexForm(e)", [mv("F", 0, -1), mv("F", 0, 2)])
+case("vertexform", "O = (0, 0)\nA = (1, 0)\nB = (0, 1)\ns = Segment(O, A)\nr = Ray(O, A)\n"
+     "c = CircularArc(O, A, B)\nd = CircularSector(O, A, B)\nn = 30°\na = IsVertexForm(s)\n"
+     "b = IsVertexForm(r)\ne = IsVertexForm(c)\nf = IsVertexForm(d)\ng = IsVertexForm(n)")
 
 # ---------------------------------------------------------------------- If
 cases.topic("conditional")
@@ -178,7 +181,7 @@ case("derivative", "f(x) = x^3\nd = Derivative(Curve(t, t^2, t, 0, 1))\n"
      [reject("g = Derivative(f, pi, 2)"),
       reject("g = Derivative(Curve(t, t^2, t, 0, 1), pi, 2)")])
 cases.cases[-1]["sample_curves"] = True
-case("derivative", "n = 5\ns = Spline(Sequence((k, sin(k)), k, 1, n))\nd = Derivative(s)",
+case("derivative", "n = 5\ns = Spline(Sequence((k, sin(k)), k, 1, n))\nd = Derivative(s)\ne = NDerivative(s)",
      [setn("n", 260), setn("n", 5)])
 cases.cases[-1]["sample_curves"] = True
 
