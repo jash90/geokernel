@@ -379,6 +379,27 @@ fn typeset(node: &Node<'_>, env: Env) -> Layout {
             out.has_fallback = true;
             out
         }
+        Node::Error => {
+            // The empty place of a missing field, in the error colour.
+            let em = env.em();
+            let mut out = Layout {
+                width: 0.45 * em,
+                height: 0.6 * em,
+                depth: 0.15 * em,
+                ..Layout::default()
+            };
+            out.rect(
+                [0.0, -0.6 * em],
+                [0.45 * em, 0.15 * em],
+                Some(FALLBACK_COLOR),
+            );
+            out.has_fallback = true;
+            out
+        }
+        Node::Broken => Layout {
+            has_fallback: true,
+            ..Layout::default()
+        },
     }
 }
 
@@ -400,7 +421,9 @@ fn atom_class(node: &Node<'_>) -> Option<Class> {
         | Node::VerticalSpace(_)
         | Node::Styled(_, None)
         | Node::SwitchColor(_)
-        | Node::SwitchVariant(_) => return None,
+        | Node::SwitchVariant(_)
+        | Node::Error
+        | Node::Broken => return None,
         _ => Ordinary,
     })
 }

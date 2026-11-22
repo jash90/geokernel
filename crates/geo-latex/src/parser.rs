@@ -107,6 +107,11 @@ pub(crate) enum Node<'a> {
     Phantom(Box<Self>, bool, bool),
     Classified(Class, Box<Self>),
     Fallback(&'a str),
+    /// A missing or unusable argument: an empty box in the error colour.
+    Error,
+    /// An error with no ink of its own, where a closing token TeX would
+    /// insert was missing. Flags the formula as partly broken.
+    Broken,
 }
 
 pub(crate) const MAX_SOURCE: usize = 32 * 1024;
@@ -124,7 +129,7 @@ pub(crate) fn parse(source: &str) -> Node<'_> {
         text: false,
         colors: HashMap::new(),
     };
-    parser.document().unwrap_or(Node::Fallback(source))
+    parser.document()
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -208,19 +213,49 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn document(&mut self) -> Result<Node<'a>> {
-        let mut lines = vec![self.row(Stop::Top)?];
-        while self.eat(r"\\") || self.eat("\n") {
-            lines.push(self.row(Stop::Top)?);
+    /// The whole source, recovering as TeX does: a token a row refused is
+    /// shown in the error colour and the text goes on after it, instead of
+    /// the whole source standing in for one broken part.
+    fn document(&mut self) -> Node<'a> {
+        let mut lines = self.row_nodes(Stop::Top);
+        loop {
+            if self.rest.is_empty() {
+                break;
+            }
+            let separator = self.eat(r"\\");
+            if separator || self.eat("\n") {
+                if separator {
+                    self.separator_extra();
+                }
+                lines.push(Vec::new());
+                lines.append(&mut self.row_nodes(Stop::Top));
+                continue;
+            }
+            // The only token a top-level row stops before: a stray `}`.
+            let start = self.rest;
+            let _ = self.next();
+            let line = lines.last_mut().unwrap();
+            line.push(Node::Fallback(&start[..start.len() - self.rest.len()]));
+            for mut more in self.row_nodes(Stop::Top) {
+                line.append(&mut more);
+            }
         }
-        if !self.rest.is_empty() {
-            return Err(());
-        }
-        Ok(if lines.len() == 1 {
-            lines.pop().unwrap()
+        if lines.len() == 1 {
+            Node::Row(lines.pop().unwrap())
         } else {
-            Node::Lines(lines, false)
-        })
+            Node::Lines(lines.into_iter().map(Node::Row).collect(), false)
+        }
+    }
+
+    /// The star and bracketed length that may follow a `\\` separator. An
+    /// unbalanced bracket stays visible instead of taking the rest of the
+    /// source with it.
+    fn separator_extra(&mut self) {
+        self.eat("*");
+        let before = self.rest;
+        if self.raw_option().is_err() {
+            self.rest = before;
+        }
     }
 
     fn at_end(&self, stop: Stop) -> bool {
@@ -243,16 +278,35 @@ impl<'a> Parser<'a> {
             }
     }
 
-    fn row(&mut self, stop: Stop) -> Result<Node<'a>> {
-        self.nested(|p| {
-            let mut nodes = Vec::new();
+    fn row(&mut self, stop: Stop) -> Node<'a> {
+        let mut lines = self.row_nodes(stop);
+        if lines.len() == 1 {
+            Node::Row(lines.pop().unwrap())
+        } else {
+            Node::Lines(lines.into_iter().map(Node::Row).collect(), false)
+        }
+    }
+
+    /// The lines of one row. What could not be parsed is kept as a
+    /// [`Node::Fallback`] of the tokens it consumed, and the row goes on
+    /// after it, as TeX reports an error and reads on. In text mode a `\\`
+    /// the enclosing stop does not claim (an array, `align` or the document
+    /// level claim theirs) breaks the line, as it does in running text.
+    fn row_nodes(&mut self, stop: Stop) -> Vec<Vec<Node<'a>>> {
+        match self.nested(|p| {
+            let mut lines: Vec<Vec<Node<'a>>> = vec![Vec::new()];
             while !p.at_end(stop) {
-                let c = p.peek().ok_or(())?;
+                let Some(c) = p.peek() else {
+                    break;
+                };
+                let nodes = lines.last_mut().unwrap();
                 if c.is_whitespace() {
                     p.next()?;
                     if p.text {
                         nodes.push(Node::Char(' ', Class::Ordinary));
                     }
+                } else if p.text && p.eat(r"\\") {
+                    lines.push(Vec::new());
                 } else if !p.text && matches!(c, '_' | '^' | '\'') {
                     let base = nodes.pop().unwrap_or_else(|| Node::Row(Vec::new()));
                     nodes.push(p.scripts(base)?);
@@ -264,11 +318,25 @@ impl<'a> Parser<'a> {
                     let base = nodes.pop().unwrap_or_else(|| Node::Row(Vec::new()));
                     nodes.push(p.scripts(base)?);
                 } else {
-                    nodes.push(p.atom()?);
+                    let before = p.rest;
+                    match p.atom() {
+                        Ok(node) => nodes.push(node),
+                        Err(()) => {
+                            nodes.push(Node::Fallback(&before[..before.len() - p.rest.len()]))
+                        }
+                    }
                 }
             }
-            Ok(Node::Row(nodes))
-        })
+            Ok(lines)
+        }) {
+            Ok(lines) => lines,
+            // Only the nesting limit lands here: the rest of the row is
+            // shown as it stands.
+            Err(()) => {
+                let rest = std::mem::take(&mut self.rest);
+                vec![vec![Node::Fallback(rest)]]
+            }
+        }
     }
 
     fn display_lines(&mut self) -> Result<Node<'a>> {
@@ -276,24 +344,41 @@ impl<'a> Parser<'a> {
         if !self.eat("{") {
             return Err(());
         }
-        let mut lines = vec![self.row(Stop::Lines)?];
+        let mut lines = vec![self.row(Stop::Lines)];
         while self.eat(r"\\") {
-            lines.push(self.row(Stop::Lines)?);
+            self.separator_extra();
+            lines.push(self.row(Stop::Lines));
         }
-        self.eat("}").then_some(Node::Lines(lines, true)).ok_or(())
+        // A missing closing brace is supplied, as TeX does.
+        if self.eat("}") {
+            Ok(Node::Lines(lines, true))
+        } else {
+            Ok(Node::Row(vec![Node::Lines(lines, true), Node::Broken]))
+        }
     }
 
-    fn group(&mut self, stop: Stop, close: &str) -> Result<Node<'a>> {
-        let node = self.row(stop)?;
-        self.eat(close).then_some(node).ok_or(())
+    fn group(&mut self, stop: Stop, close: &str) -> Node<'a> {
+        let node = self.row(stop);
+        // A missing closing token is supplied, as TeX does; the formula is
+        // flagged as partly broken.
+        if self.eat(close) {
+            node
+        } else {
+            Node::Row(vec![node, Node::Broken])
+        }
     }
 
-    fn arg(&mut self) -> Result<Node<'a>> {
+    fn arg(&mut self) -> Node<'a> {
         self.space();
-        self.nested(Self::atom)
+        match self.nested(Self::atom) {
+            Ok(node) => node,
+            // A missing or unusable argument: its empty place, in the error
+            // colour.
+            Err(()) => Node::Error,
+        }
     }
 
-    fn text_arg(&mut self) -> Result<Node<'a>> {
+    fn text_arg(&mut self) -> Node<'a> {
         let old = std::mem::replace(&mut self.text, true);
         let result = self.arg();
         self.text = old;
@@ -303,7 +388,7 @@ impl<'a> Parser<'a> {
     fn option(&mut self) -> Result<Option<Box<Node<'a>>>> {
         self.space();
         if self.eat("[") {
-            Ok(Some(Box::new(self.group(Stop::Bracket, "]")?)))
+            Ok(Some(Box::new(self.group(Stop::Bracket, "]"))))
         } else {
             Ok(None)
         }
@@ -338,7 +423,7 @@ impl<'a> Parser<'a> {
     fn atom(&mut self) -> Result<Node<'a>> {
         let start = self.rest;
         Ok(match self.next()? {
-            '{' => self.group(Stop::Brace, "}")?,
+            '{' => self.group(Stop::Brace, "}"),
             '}' => return Err(()),
             '\\' => {
                 let name = self.control()?;
@@ -347,7 +432,7 @@ impl<'a> Parser<'a> {
             '$' => {
                 let double = self.eat("$");
                 let old = std::mem::replace(&mut self.text, false);
-                let node = self.group(Stop::Dollar, if double { "$$" } else { "$" })?;
+                let node = self.group(Stop::Dollar, if double { "$$" } else { "$" });
                 self.text = old;
                 Node::Variant(Variant::Upright, Box::new(node))
             }
@@ -377,12 +462,12 @@ impl<'a> Parser<'a> {
             if sub.is_some() {
                 return Err(());
             }
-            sub = Some(Box::new(self.arg()?));
+            sub = Some(Box::new(self.arg()));
         } else if self.eat("^") {
             if sup.is_some() {
                 return Err(());
             }
-            sup = Some(Box::new(self.arg()?));
+            sup = Some(Box::new(self.arg()));
         } else if self.eat("'") {
             let mut primes = vec![Node::Char('′', Class::Ordinary)];
             while self.eat("'") {
@@ -393,7 +478,7 @@ impl<'a> Parser<'a> {
             }
             self.space();
             if self.eat("^") {
-                primes.push(self.arg()?);
+                primes.push(self.arg());
             }
             sup = Some(Box::new(Node::Row(primes)));
         }

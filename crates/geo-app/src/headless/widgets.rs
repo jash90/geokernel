@@ -242,10 +242,17 @@ fn rows(ctx: &Context, app: &App, out: &mut Vec<Widget>) {
     let by_id: HashMap<Id, &WidgetRect> = rects.iter().map(|w| (w.id, w)).collect();
     let mut top = list.origin.y;
     let painter = ctx.layer_painter(LayerId::background());
+    let shared = algebra::measures(ctx);
+    let mut measures = shared.lock().unwrap_or_else(|e| e.into_inner());
     let mut formulas = None;
     for row in app.wb.current_rows() {
-        let math = algebra::row_math(app.wb.construction(), &painter, row, &mut formulas);
-        let height = algebra::row_height(row, math.as_ref());
+        let height = algebra::measured_height(
+            app.wb.construction(),
+            &painter,
+            row,
+            &mut measures,
+            &mut formulas,
+        );
         let rect = Rect::from_min_size(pos2(list.origin.x, top), vec2(list.width, height));
         top += height;
         let id = algebra::row_id(&row.label);

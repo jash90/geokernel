@@ -19,4 +19,6 @@ The renderer implements the math-list spacing, style progression, baseline boxes
 
 The parser handles `matrix`, `smallmatrix`, `pmatrix`, `bmatrix`, `Bmatrix`, `vmatrix`, `Vmatrix`, `array`, `tabular`, `cases`, `rcases`, `align`, `aligned`, `alignat`, `alignedat`, `gather`, `gathered`, `split`, and `eqnarray`, including their supported unnumbered forms. It supports standard size-changing styles, explicit math spacing, the reference palette, hex and RGB colors, and the `\fgcolor`, `\bgcolor` and `\cellcolor` commands.
 
+Broken input keeps its valid parts, as TeX recovers: what cannot be parsed is shown in the error colour where it stands and the text goes on after it, a missing argument leaves its empty place as an error-coloured box, a missing closing token (`}`, `\right`, `\end`) is supplied, and the whole formula is marked as containing something the renderer could not honour. A `\\` outside an array breaks the line in running text and is ignored in math, as in inline TeX.
+
 The visual fixture is rendered with Metal at 1 point per pixel on Apple Silicon. The test permits 60 changed pixels above a 12-level channel delta. Layout, document round-trip, canvas, algebra, SVG, Java corpus and frame-counter tests run on the workspace's other targets.

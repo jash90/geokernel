@@ -11,7 +11,9 @@ use eframe::egui::{
 use geo_kernel::kernel::text::TextPresentation;
 use geo_latex::{Face, Style, Transform};
 
-const MAX_LAYOUTS: usize = 2048;
+/// The layout cache's weight budget. Every layout is cached, whatever its
+/// size: entries are dropped least-recently-used first until the budget
+/// holds, and one entry alone never evicts itself.
 const MAX_CACHE_WEIGHT: usize = 6 * 1024 * 1024;
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
@@ -21,12 +23,122 @@ struct StyleKey {
     face: Face,
 }
 
-#[derive(Default)]
+/// One cached layout, in the recency list of [`Cache`].
+struct Slot {
+    formula: Arc<Formula>,
+    weight: usize,
+    key: StyleKey,
+    source: Box<str>,
+}
+
+/// The absent end of the recency list.
+const NONE: u32 = u32::MAX;
+
 struct Cache {
     marker: Option<Arc<Galley>>,
-    layouts: HashMap<StyleKey, HashMap<Box<str>, Arc<Formula>>>,
-    entries: usize,
+    layouts: HashMap<StyleKey, HashMap<Box<str>, u32>>,
+    slots: Vec<Option<Slot>>,
+    free: Vec<u32>,
+    /// The recency list over `slots`, most recent first.
+    newer: Vec<u32>,
+    older: Vec<u32>,
+    head: u32,
+    tail: u32,
     weight: usize,
+}
+
+impl Default for Cache {
+    fn default() -> Self {
+        Self {
+            marker: None,
+            layouts: HashMap::new(),
+            slots: Vec::new(),
+            free: Vec::new(),
+            newer: Vec::new(),
+            older: Vec::new(),
+            head: NONE,
+            tail: NONE,
+            weight: 0,
+        }
+    }
+}
+
+impl Cache {
+    fn slot(&self, at: u32) -> &Slot {
+        self.slots[at as usize].as_ref().expect("a live slot")
+    }
+
+    fn detach(&mut self, at: u32) {
+        let (older, newer) = (self.older[at as usize], self.newer[at as usize]);
+        if older != NONE {
+            self.newer[older as usize] = newer;
+        } else {
+            self.head = newer;
+        }
+        if newer != NONE {
+            self.older[newer as usize] = older;
+        } else {
+            self.tail = older;
+        }
+    }
+
+    fn link_front(&mut self, at: u32) {
+        self.older[at as usize] = NONE;
+        self.newer[at as usize] = self.head;
+        if self.head != NONE {
+            self.older[self.head as usize] = at;
+        }
+        self.head = at;
+        if self.tail == NONE {
+            self.tail = at;
+        }
+    }
+
+    fn touch(&mut self, at: u32) {
+        if self.head != at {
+            self.detach(at);
+            self.link_front(at);
+        }
+    }
+
+    /// Drops the least recently used entry, map key and handle together.
+    fn evict_tail(&mut self) {
+        let tail = self.tail;
+        debug_assert_ne!(tail, NONE);
+        self.detach(tail);
+        let slot = self.slots[tail as usize].take().expect("a live slot");
+        self.weight -= slot.weight;
+        if let Some(entries) = self.layouts.get_mut(&slot.key) {
+            entries.remove(&*slot.source);
+            if entries.is_empty() {
+                self.layouts.remove(&slot.key);
+            }
+        }
+        self.free.push(tail);
+    }
+
+    fn insert(&mut self, key: StyleKey, source: Box<str>, formula: Arc<Formula>, weight: usize) {
+        let at = self.free.pop().unwrap_or_else(|| {
+            self.slots.push(None);
+            self.older.push(NONE);
+            self.newer.push(NONE);
+            (self.slots.len() - 1) as u32
+        });
+        self.slots[at as usize] = Some(Slot {
+            formula,
+            weight,
+            key,
+            source: source.clone(),
+        });
+        self.link_front(at);
+        self.weight += weight;
+        self.layouts.entry(key).or_default().insert(source, at);
+        // Over budget: drop the stalest entries, never the only one left
+        // (a single formula past the budget stays cached by its handle).
+        while self.weight > MAX_CACHE_WEIGHT && self.tail != self.head {
+            self.evict_tail();
+        }
+    }
 }
 
 pub(crate) struct FormulaCache(Arc<Mutex<Cache>>);
@@ -56,11 +168,19 @@ enum Item {
 #[cfg(test)]
 thread_local! {
     static BUILT: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+    static LOOKED_UP: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
 #[cfg(test)]
 pub(crate) fn layouts_built() -> u64 {
     BUILT.with(std::cell::Cell::get)
+}
+
+/// How many layouts were asked for, hit or miss: the off-screen algebra
+/// rows of a settled frame ask for none.
+#[cfg(test)]
+pub(crate) fn cache_lookups() -> u64 {
+    LOOKED_UP.with(std::cell::Cell::get)
 }
 
 pub(crate) fn face(style: TextPresentation) -> Face {
@@ -113,12 +233,15 @@ impl FormulaCache {
             face,
         };
         let mut cache = self.0.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(layout) = cache
+        #[cfg(test)]
+        LOOKED_UP.with(|n| n.set(n.get() + 1));
+        if let Some(&at) = cache
             .layouts
             .get(&key)
             .and_then(|entries| entries.get(source))
         {
-            return layout.clone();
+            cache.touch(at);
+            return cache.slot(at).formula.clone();
         }
         #[cfg(test)]
         BUILT.with(|n| n.set(n.get() + 1));
@@ -133,20 +256,7 @@ impl FormulaCache {
             .sum::<usize>();
         let weight = source.len() + layout.ink.len() * 128 + glyph_bytes;
         let formula = Arc::new(Formula::new(painter, layout));
-        if weight <= MAX_CACHE_WEIGHT / 4 {
-            if cache.entries >= MAX_LAYOUTS || cache.weight + weight > MAX_CACHE_WEIGHT {
-                cache.layouts.clear();
-                cache.weight = 0;
-                cache.entries = 0;
-            }
-            cache
-                .layouts
-                .entry(key)
-                .or_default()
-                .insert(source.into(), formula.clone());
-            cache.entries += 1;
-            cache.weight += weight;
-        }
+        cache.insert(key, source.into(), formula.clone(), weight);
         formula
     }
 }
@@ -378,6 +488,57 @@ mod tests {
             assert!(first.size.y > style.size.y);
             assert!(size.size.y > first.size.y);
             assert!(!Arc::ptr_eq(&first, &bold));
+        });
+        output.textures_delta.clear();
+    }
+
+    /// A formula of about `chars` glyph bytes, above the cache weight the
+    /// old code refused to store at all.
+    fn heavy(ch: char, chars: usize) -> String {
+        format!(r"\text{{{}}}", ch.to_string().repeat(chars))
+    }
+
+    #[test]
+    fn formulas_past_a_quarter_of_the_weight_budget_stay_cached() {
+        let ctx = eframe::egui::Context::default();
+        let mut output = ctx.run_ui(Default::default(), |ui| {
+            let painter = ui.painter();
+            let cache = FormulaCache::new(painter);
+            let source = heavy('a', 25_000);
+            assert!(source.len() * 65 > MAX_CACHE_WEIGHT / 4);
+            let built = layouts_built();
+            let first = cache.get(painter, &source, 16.0, Style::Display, Face::default());
+            let again = cache.get(painter, &source, 16.0, Style::Display, Face::default());
+            assert!(Arc::ptr_eq(&first, &again));
+            assert_eq!(layouts_built(), built + 1);
+        });
+        output.textures_delta.clear();
+    }
+
+    #[test]
+    fn the_cache_evicts_least_recently_used_by_weight_not_by_clearing() {
+        let ctx = eframe::egui::Context::default();
+        let mut output = ctx.run_ui(Default::default(), |ui| {
+            let painter = ui.painter();
+            let cache = FormulaCache::new(painter);
+            let face = Face::default();
+            // Eight of these pass the budget; the ninth evicts the stalest.
+            let sources: Vec<String> = (0..9)
+                .map(|i| heavy(char::from(b'a' + i), 12_000))
+                .collect();
+            let a = cache.get(painter, &sources[0], 16.0, Style::Display, face);
+            let _ = cache.get(painter, &sources[1], 16.0, Style::Display, face);
+            // `a` is used again, so `b` becomes the stalest entry.
+            let _ = cache.get(painter, &sources[0], 16.0, Style::Display, face);
+            for source in &sources[2..] {
+                let _ = cache.get(painter, source, 16.0, Style::Display, face);
+            }
+            let built = layouts_built();
+            let kept = cache.get(painter, &sources[0], 16.0, Style::Display, face);
+            assert!(Arc::ptr_eq(&a, &kept));
+            assert_eq!(layouts_built(), built);
+            let _ = cache.get(painter, &sources[1], 16.0, Style::Display, face);
+            assert_eq!(layouts_built(), built + 1);
         });
         output.textures_delta.clear();
     }

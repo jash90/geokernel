@@ -111,5 +111,15 @@ pub fn layout(source: &str, size: f32, style: Style, face: Face) -> Layout {
     layout::layout(&parser::parse(source), size, style, face)
 }
 
+/// Measures plain (non-math) text with the same bundled font metrics the
+/// renderer uses: one `(width, height, depth)` per line, as a [`Layout`]
+/// has them. Callers that place plain text next to formulas (the SVG
+/// export) agree with the formula renderer about a text's size.
+pub fn plain_lines(text: &str, size: f32, face: Face) -> Vec<(f32, f32, f32)> {
+    text.lines()
+        .map(|line| font::measure(line, size, face))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests;

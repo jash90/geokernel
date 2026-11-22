@@ -89,6 +89,7 @@ impl<'a> Parser<'a> {
         let old = self.text;
         self.text |= grid.text;
         self.space();
+        let mut unclosed = false;
         loop {
             while self.eat_control("hline") {
                 grid.horizontal.push(grid.rows.len());
@@ -118,6 +119,11 @@ impl<'a> Parser<'a> {
                     .and_then(table_length)
                     .unwrap_or(Length::Em(0.0));
                 grid.gaps.push(gap);
+            } else if self.rest.is_empty() {
+                // A missing \end: the grid is shown as built, flagged as
+                // partly broken (TeX inserts the \end it asks for).
+                unclosed = true;
+                break;
             } else if !self.at_control("end") {
                 return Err(());
             }
@@ -130,10 +136,15 @@ impl<'a> Parser<'a> {
         } else {
             grid
         };
-        Ok(Some(if delimiters == ('.', '.') {
+        let node = if delimiters == ('.', '.') {
             body
         } else {
             Node::Delimited(delimiters.0, Box::new(body), delimiters.1)
+        };
+        Ok(Some(if unclosed {
+            Node::Row(vec![node, Node::Broken])
+        } else {
+            node
         }))
     }
 
@@ -141,13 +152,13 @@ impl<'a> Parser<'a> {
         self.space();
         if self.eat_control("cellcolor") {
             let raw = self.raw_group()?;
-            let content = Box::new(self.row(Stop::Grid)?);
+            let content = Box::new(self.row(Stop::Grid));
             return self
                 .resolve_color(None, raw)
                 .map(|c| Node::CellColor(c, content))
                 .ok_or(());
         }
-        self.row(Stop::Grid)
+        Ok(self.row(Stop::Grid))
     }
 }
 

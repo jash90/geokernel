@@ -103,13 +103,18 @@ fn algebra_scrolled(r: &mut Runner, n: usize) {
     let mid = rows.len() / 2;
     let painter = r.ctx.layer_painter(eframe::egui::LayerId::background());
     let c = r.app.wb.construction();
-    let mut formulas = None;
-    let mut height = |row: &crate::workbench::Row| {
-        let math = crate::algebra::row_math(c, &painter, row, &mut formulas);
-        crate::algebra::row_height(row, math.as_ref())
+    // The measures are read under their lock, which is released before the
+    // steps below: a frame's own layout takes it too.
+    let offset = {
+        let shared = crate::algebra::measures(&r.ctx);
+        let mut measures = shared.lock().unwrap_or_else(|e| e.into_inner());
+        let mut formulas = None;
+        let mut height = |row: &crate::workbench::Row| {
+            crate::algebra::measured_height(c, &painter, row, &mut measures, &mut formulas)
+        };
+        let above: f32 = rows[..mid].iter().map(&mut height).sum();
+        (above - area.height() / 2.0 + height(&rows[mid]) / 2.0).max(0.0)
     };
-    let above: f32 = rows[..mid].iter().map(&mut height).sum();
-    let offset = (above - area.height() / 2.0 + height(&rows[mid]) / 2.0).max(0.0);
     let at = area.center();
     r.step(vec![moved(at)]);
     r.step(vec![moved(at), wheel(-offset)]);

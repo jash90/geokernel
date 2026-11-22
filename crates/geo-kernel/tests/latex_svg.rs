@@ -33,3 +33,49 @@ fn svg_formulas_use_fallback_ink_and_obey_visibility() {
     let hidden = svg::render_visible(&c, view, 400, 300, |candidate| candidate != id);
     assert!(!hidden.contains("<path "));
 }
+
+/// Texts are drawn with the colour the canvas gives them, and a plain
+/// text sits at its anchor with the width the formula renderer measures.
+#[test]
+fn svg_texts_use_the_object_colour_and_measured_width() {
+    let source = format!(
+        "t = {}\n$textProperties(t, true, -, -, -, -, screen, 40, 50)\n\
+         p = {}\n$textProperties(p, false, -, -, -, -, screen, 40, 150)\n",
+        script::text::literal(r"\frac{a}{b}"),
+        script::text::literal("plain text")
+    );
+    let c = script::load(&source).unwrap();
+    let svg = svg::render(&c, svg::View::fit(&c), 400, 300);
+    assert!(svg.contains(r##"fill="#1c1c1f""##), "{svg}");
+    assert!(
+        svg.contains(r#"<text x="40.00" y="150.00""#),
+        "plain text at its anchor: {svg}"
+    );
+}
+
+/// A text parked at a huge coordinate does not swallow the fitted view;
+/// only a construction of texts alone is fitted to them.
+#[test]
+fn a_text_far_away_does_not_swallow_the_fitted_view() {
+    let source = "A = (1, 1)\nB = (3, 1)\ns = Segment(A, B)\n".to_owned()
+        + &format!(
+            "t = {}\n$textProperties(t, false, -, -, -, -, world, 1000000, -1000000)\n",
+            script::text::literal("far away")
+        );
+    let c = script::load(&source).unwrap();
+    let view = svg::View::fit(&c);
+    assert!(view.xmin > -10.0 && view.xmax < 10.0, "{view:?}");
+    let svg = svg::render(&c, view, 400, 300);
+    assert!(svg.contains("far away"), "the text is still drawn");
+
+    let only = format!(
+        "t = {}\n$textProperties(t, false, -, -, -, -, world, 10, -20)\n",
+        script::text::literal("lonely")
+    );
+    let c = script::load(&only).unwrap();
+    let view = svg::View::fit(&c);
+    assert!(
+        (view.xmin - 10.0).abs() < 0.6 && (view.ymax + 20.0).abs() < 0.6,
+        "{view:?}"
+    );
+}

@@ -135,6 +135,100 @@ fn nesting_limit_handles_incomplete_and_pathological_input() {
 }
 
 #[test]
+fn broken_input_shows_only_its_broken_parts() {
+    // \frac{1}: the numerator is drawn, the missing denominator is its
+    // empty place in the error colour, as TeX shows a missing field.
+    let result = layout(r"\frac{1}", 20.0, Style::Display, Face::default());
+    assert!(result.has_fallback);
+    assert!(result.ink.iter().any(|ink| matches!(&ink.shape,
+        Shape::Glyphs { text, .. } if text == "1" && ink.color.is_none())));
+    assert!(result.ink.iter().any(|ink| matches!(&ink.shape,
+        Shape::Fill { .. } if ink.color == Some(FALLBACK_COLOR))));
+    assert!(result.height > 20.0 && result.depth > 5.0);
+
+    // \left( with no \right: closed with the invisible delimiter TeX
+    // inserts (\right.), the contents drawn.
+    let result = layout(r"\left(a+b", 20.0, Style::Display, Face::default());
+    assert!(result.has_fallback);
+    assert!(result.ink.iter().any(|ink| matches!(&ink.shape,
+        Shape::Glyphs { text, .. } if text.contains('a') && ink.color.is_none())));
+
+    // A stray closing brace: shown in the error colour, and the text goes
+    // on after it.
+    let result = layout("x}y", 20.0, Style::Display, Face::default());
+    assert!(result.has_fallback);
+    assert!(result.ink.iter().any(|ink| matches!(&ink.shape,
+        Shape::Glyphs { text, .. } if text == "}" && ink.color == Some(FALLBACK_COLOR))));
+    assert!(result.ink.iter().any(|ink| matches!(&ink.shape,
+        Shape::Glyphs { text, .. } if text.contains('y') && ink.color.is_none())));
+
+    // An unclosed group is supplied, its contents drawn, the formula
+    // flagged as partly broken.
+    let result = layout("{a", 20.0, Style::Display, Face::default());
+    assert!(result.has_fallback);
+    assert!(result.ink.iter().any(|ink| matches!(&ink.shape,
+        Shape::Glyphs { text, .. } if text.contains('a') && ink.color.is_none())));
+
+    // A command with no place here marks itself, not the rest of the row.
+    let result = layout(r"\right) + b", 20.0, Style::Display, Face::default());
+    assert!(result.has_fallback);
+    assert!(result.ink.iter().any(|ink| matches!(&ink.shape,
+        Shape::Glyphs { text, .. } if text.contains('b') && ink.color.is_none())));
+}
+
+#[test]
+fn row_separator_breaks_text_and_is_ignored_in_math() {
+    // In math, as in inline TeX, `\\` is nothing: the letters join (the
+    // split glyph run only costs its slant padding, under a tenth of the
+    // size).
+    let joined = math(r"{a\\b}", 20.0, Style::Display);
+    let plain = math(r"{ab}", 20.0, Style::Display);
+    assert!((joined.width - plain.width) < 0.1 * 20.0);
+    assert!((joined.height - plain.height).abs() < 0.5);
+    assert!(!joined.ink.iter().any(|ink| matches!(&ink.shape,
+        Shape::Glyphs { text, .. } if text.contains('\\'))));
+
+    // In running text it breaks the line, as it does outside an array.
+    let broken = math(r"\text{a\\b}", 20.0, Style::Display);
+    let one_line = math(r"\text{ab}", 20.0, Style::Display);
+    let runs = |result: &Layout| -> Vec<String> {
+        result
+            .ink
+            .iter()
+            .filter_map(|ink| match &ink.shape {
+                Shape::Glyphs { text, .. } => Some(text.clone()),
+                _ => None,
+            })
+            .collect()
+    };
+    assert_eq!(runs(&broken), ["a".to_string(), "b".to_string()]);
+    assert_eq!(runs(&one_line), ["ab".to_string()]);
+    assert!(broken.height + broken.depth > one_line.height + one_line.depth + 4.0);
+
+    // At the document level it still separates lines, with its optional
+    // star and length consumed.
+    let spaced = math("a\\\\*[1em]b", 20.0, Style::Display);
+    assert_eq!(runs(&spaced), ["a".to_string(), "b".to_string()]);
+    assert!(spaced.height + spaced.depth > plain.height + plain.depth + 10.0);
+}
+
+#[test]
+fn a_valid_depth_90_tree_lays_out_on_a_small_stack() {
+    // Deeper than any saved formula and under the parser's cap of 96:
+    // layout recursion must fit a small thread's stack even in debug
+    // builds (the main thread's 8 MiB hides an overrun).
+    let source = format!("{}x{}", "{".repeat(90), "}".repeat(90));
+    let child = std::thread::Builder::new()
+        .stack_size(2 * 1024 * 1024)
+        .spawn(move || {
+            let formula = math(&source, 20.0, Style::Display);
+            assert!(formula.width > 0.0 && formula.height > 0.0);
+        })
+        .unwrap();
+    child.join().unwrap();
+}
+
+#[test]
 fn matrix_aliases_and_aligned_columns_share_the_grid_layout() {
     let table = r"x_0&=1\\y_0&=\frac{1}{2}";
     for env in [

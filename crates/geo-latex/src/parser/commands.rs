@@ -14,22 +14,32 @@ impl<'a> Parser<'a> {
                     _ => None,
                 };
                 Node::Fraction(
-                    Box::new([self.arg()?, self.arg()?]),
+                    Box::new([self.arg(), self.arg()]),
                     style,
                     name.ends_with("binom"),
                 )
             }
             "sqrt" => {
                 let index = self.option()?;
-                Node::Root(Box::new(self.arg()?), index)
+                Node::Root(Box::new(self.arg()), index)
             }
             "left" => {
                 let left = self.delimiter()?;
-                let child = self.row(Stop::Fence)?;
-                if !self.eat_control("right") {
-                    return Err(());
+                let child = self.row(Stop::Fence);
+                // A missing \right is supplied as TeX does with \right., and
+                // the formula is flagged as partly broken.
+                let implicit = !self.eat_control("right");
+                let right = if implicit {
+                    '.'
+                } else {
+                    self.delimiter().unwrap_or('.')
+                };
+                let node = Node::Delimited(left, Box::new(child), right);
+                if implicit {
+                    Node::Row(vec![node, Node::Broken])
+                } else {
+                    node
                 }
-                Node::Delimited(left, Box::new(child), self.delimiter()?)
             }
             "middle" => Node::SizedDelimiter(self.delimiter()?, 1.0, Relation),
             "big" | "Big" | "bigg" | "Bigg" | "bigl" | "Bigl" | "biggl" | "Biggl" | "bigr"
@@ -56,16 +66,16 @@ impl<'a> Parser<'a> {
                 }
             }
             "text" | "textrm" | "textnormal" | "textsf" | "mbox" => {
-                self.variant(Variant::Text, true)?
+                self.variant(Variant::Text, true)
             }
-            "textit" | "emph" => self.variant(Variant::Italic, true)?,
-            "textbf" => self.variant(Variant::Bold, true)?,
-            "textsc" => self.variant(Variant::SmallCaps, true)?,
-            "texttt" => self.variant(Variant::Mono, true)?,
-            "mathrm" | "mathsf" => self.variant(Variant::Upright, false)?,
-            "mathit" => self.variant(Variant::Italic, false)?,
-            "mathbf" | "boldsymbol" | "bm" => self.variant(Variant::Bold, false)?,
-            "mathtt" => self.variant(Variant::Mono, false)?,
+            "textit" | "emph" => self.variant(Variant::Italic, true),
+            "textbf" => self.variant(Variant::Bold, true),
+            "textsc" => self.variant(Variant::SmallCaps, true),
+            "texttt" => self.variant(Variant::Mono, true),
+            "mathrm" | "mathsf" => self.variant(Variant::Upright, false),
+            "mathit" => self.variant(Variant::Italic, false),
+            "mathbf" | "boldsymbol" | "bm" => self.variant(Variant::Bold, false),
+            "mathtt" => self.variant(Variant::Mono, false),
             "rm" | "sf" => Node::SwitchVariant(Variant::Upright),
             "it" => Node::SwitchVariant(Variant::Italic),
             "bf" => Node::SwitchVariant(Variant::Bold),
@@ -74,7 +84,14 @@ impl<'a> Parser<'a> {
             "displaylines" => self.display_lines()?,
             "operatorname" => {
                 self.eat("*");
-                Node::Classified(Operator, Box::new(self.variant(Variant::Text, true)?))
+                Node::Classified(Operator, Box::new(self.variant(Variant::Text, true)))
+            }
+            // The row separator outside an array: text mode breaks the line
+            // (in `row`), and math ignores it, as TeX does in inline math.
+            // An optional star and bracketed length go with it.
+            "\\" => {
+                self.separator_extra();
+                Node::Space(Length::Em(0.0))
             }
             "sin" | "cos" | "tan" | "sec" | "csc" | "cot" | "arcsin" | "arccos" | "arctan"
             | "arccot" | "sinh" | "cosh" | "tanh" | "coth" | "sech" | "csch" | "log" | "ln"
@@ -101,16 +118,16 @@ impl<'a> Parser<'a> {
                 };
                 Node::Operator(glyph, !matches!(name, "int" | "iint" | "iiint" | "oint"))
             }
-            "overline" | "bar" => self.accent(Accent::Bar)?,
-            "underline" => self.accent(Accent::Under)?,
+            "overline" | "bar" => self.accent(Accent::Bar),
+            "underline" => self.accent(Accent::Under),
             "vec" | "overrightarrow" | "underrightarrow" => {
-                self.accent(Accent::Right(name.starts_with("under")))?
+                self.accent(Accent::Right(name.starts_with("under")))
             }
             "overleftarrow" | "underleftarrow" => {
-                self.accent(Accent::Left(name.starts_with("under")))?
+                self.accent(Accent::Left(name.starts_with("under")))
             }
             "overleftrightarrow" | "underleftrightarrow" => {
-                self.accent(Accent::Both(name.starts_with("under")))?
+                self.accent(Accent::Both(name.starts_with("under")))
             }
             "xrightarrow" | "xleftarrow" | "xleftrightarrow" => {
                 let below = self.option()?;
@@ -119,11 +136,11 @@ impl<'a> Parser<'a> {
                     "xleftarrow" => Accent::Left(false),
                     _ => Accent::Both(false),
                 };
-                Node::Arrow(accent, Box::new(self.arg()?), below)
+                Node::Arrow(accent, Box::new(self.arg()), below)
             }
             "overset" | "underset" | "stackrel" => {
-                let mark = Some(Box::new(self.arg()?));
-                let base = Box::new(self.arg()?);
+                let mark = Some(Box::new(self.arg()));
+                let base = Box::new(self.arg());
                 let (sub, sup) = if name == "underset" {
                     (mark, None)
                 } else {
@@ -141,11 +158,11 @@ impl<'a> Parser<'a> {
                     script
                 }
             }
-            "hat" | "widehat" => self.accent(Accent::Hat)?,
-            "tilde" | "widetilde" => self.accent(Accent::Tilde)?,
-            "dot" => self.accent(Accent::Dot)?,
-            "ddot" => self.accent(Accent::DoubleDot)?,
-            "overbrace" | "underbrace" => self.accent(Accent::Brace(name == "overbrace"))?,
+            "hat" | "widehat" => self.accent(Accent::Hat),
+            "tilde" | "widetilde" => self.accent(Accent::Tilde),
+            "dot" => self.accent(Accent::Dot),
+            "ddot" => self.accent(Accent::DoubleDot),
+            "overbrace" | "underbrace" => self.accent(Accent::Brace(name == "overbrace")),
             "mathord" | "mathop" | "mathbin" | "mathrel" | "mathopen" | "mathclose"
             | "mathpunct" | "mathinner" => {
                 let class = match name {
@@ -158,7 +175,7 @@ impl<'a> Parser<'a> {
                     "mathinner" => Class::Inner,
                     _ => Class::Ordinary,
                 };
-                Node::Classified(class, Box::new(self.arg()?))
+                Node::Classified(class, Box::new(self.arg()))
             }
             "displaystyle" | "textstyle" | "scriptstyle" | "scriptscriptstyle" => {
                 let style = match name {
@@ -177,7 +194,7 @@ impl<'a> Parser<'a> {
                     (Stop::Inline, r"\)")
                 };
                 let style = if display { Style::Display } else { Style::Text };
-                Node::Styled(style, Some(Box::new(self.group(stop, close)?)))
+                Node::Styled(style, Some(Box::new(self.group(stop, close))))
             }
             "," | "thinspace" => Node::Space(Length::Em(3.0 / 18.0)),
             ":" | ">" | "medspace" => Node::Space(Length::Em(4.0 / 18.0)),
@@ -226,7 +243,7 @@ impl<'a> Parser<'a> {
             "textcolor" | "fgcolor" | "bgcolor" | "colorbox" => {
                 let model = self.raw_option()?;
                 let raw = self.raw_group()?;
-                let child = Box::new(self.arg()?);
+                let child = Box::new(self.arg());
                 if let Some(color) = self.resolve_color(model, raw) {
                     Node::Color(color, child, matches!(name, "bgcolor" | "colorbox"))
                 } else {
@@ -235,7 +252,7 @@ impl<'a> Parser<'a> {
             }
             "rotatebox" => {
                 let angle = number(self.raw_group()?).map(|n| n.rem_euclid(360.0));
-                let child = Box::new(self.arg()?);
+                let child = Box::new(self.arg());
                 if let Some(angle) = angle {
                     Node::Rotate(-angle.to_radians(), child)
                 } else {
@@ -245,7 +262,7 @@ impl<'a> Parser<'a> {
             "scalebox" => {
                 let x = number(self.raw_group()?);
                 let y = self.raw_option()?.map(number).unwrap_or(x);
-                let child = Box::new(self.arg()?);
+                let child = Box::new(self.arg());
                 if let (Some(x), Some(y)) = (x, y) {
                     Node::Scale(x.clamp(-16.0, 16.0), y.clamp(-16.0, 16.0), child)
                 } else {
@@ -253,15 +270,13 @@ impl<'a> Parser<'a> {
                 }
             }
             "fbox" | "boxed" => Node::Border(Box::new(if name == "fbox" {
-                self.text_arg()?
+                self.text_arg()
             } else {
-                self.arg()?
+                self.arg()
             })),
-            "phantom" | "hphantom" | "vphantom" => Node::Phantom(
-                Box::new(self.arg()?),
-                name == "hphantom",
-                name == "vphantom",
-            ),
+            "phantom" | "hphantom" | "vphantom" => {
+                Node::Phantom(Box::new(self.arg()), name == "hphantom", name == "vphantom")
+            }
             "over" | "atop" | "choose" | "end" | "right" => return Err(()),
             "nonumber" | "notag" => Node::Space(Length::Em(0.0)),
             _ => {
@@ -279,7 +294,7 @@ impl<'a> Parser<'a> {
                         Node::Fallback(&start[..start.len() - self.rest.len()])
                     }
                 } else if let Some(color) = named_color(name) {
-                    Node::Color(color, Box::new(self.arg()?), false)
+                    Node::Color(color, Box::new(self.arg()), false)
                 } else {
                     self.unsupported(start)?
                 }
@@ -314,13 +329,13 @@ impl<'a> Parser<'a> {
         &start[..start.len() - self.rest.len()]
     }
 
-    fn variant(&mut self, variant: Variant, text: bool) -> Result<Node<'a>> {
-        let child = if text { self.text_arg()? } else { self.arg()? };
-        Ok(Node::Variant(variant, Box::new(child)))
+    fn variant(&mut self, variant: Variant, text: bool) -> Node<'a> {
+        let child = if text { self.text_arg() } else { self.arg() };
+        Node::Variant(variant, Box::new(child))
     }
 
-    fn accent(&mut self, accent: Accent) -> Result<Node<'a>> {
-        Ok(Node::Accent(accent, Box::new(self.arg()?)))
+    fn accent(&mut self, accent: Accent) -> Node<'a> {
+        Node::Accent(accent, Box::new(self.arg()))
     }
 }
 

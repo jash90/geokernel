@@ -13,7 +13,8 @@ use eframe::egui::{
 };
 use geo_app_core::text::{self, Label};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 /// Row heights: one line for a free object, two for a dependent one.
 const ROW_FREE: f32 = 50.0;
@@ -45,6 +46,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     let mut actions = Actions::default();
     let kept: Option<String> = ui.data(|d| d.get_temp(kept_id()));
     let all = lay_out_all_rows();
+    let measures = measures(ui.ctx());
     let output = egui::ScrollArea::vertical()
         .auto_shrink([false, false])
         .show_viewport(ui, |ui, viewport| {
@@ -53,20 +55,33 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             let width = ui.available_width();
             // Only the rows in the visible part are laid out, and the row
             // that holds the keyboard focus or an open menu (egui forgets
-            // both for a widget it does not see). The space of the others
-            // is left empty, so the list is as tall and every row where it
-            // would be with all of them laid out.
+            // both for a widget it does not see). The heights of the others
+            // come from the measures of their last layout, so the list is
+            // as tall and every row where it would be with all of them
+            // laid out.
             let rows = app.wb.current_rows();
+            let mut measures = measures.lock().unwrap_or_else(|e| e.into_inner());
+            // The measures of rows long gone (a mass deletion) are dropped
+            // at once; the next frame measures the rows again.
+            if measures.map.len() > 4 * rows.len() + 64 {
+                measures.map.clear();
+            }
             let (mut top, mut skipped) = (0.0, 0.0);
             let mut keep = None;
             let mut formulas = None;
             for row in rows {
-                let math = row_math(app.wb.construction(), ui.painter(), row, &mut formulas);
-                let height = row_height(row, math.as_ref());
+                let height = measured_height(
+                    app.wb.construction(),
+                    ui.painter(),
+                    row,
+                    &mut measures,
+                    &mut formulas,
+                );
                 let in_view = top + height > viewport.min.y && top < viewport.max.y;
                 if all || in_view || kept.as_deref() == Some(row.label.as_str()) {
                     ui.add_space(skipped);
                     skipped = 0.0;
+                    let math = row_math(app.wb.construction(), ui.painter(), row, &mut formulas);
                     if paint_row(app, ui, row, math.as_ref(), height, &mut actions) {
                         keep = Some(row.label.clone());
                     }
@@ -169,6 +184,96 @@ pub(crate) fn row_height(row: &Row, math: Option<&RowMath>) -> f32 {
     } else {
         ROW_DEPENDENT
     }
+}
+
+/// One row's height, with what it was measured against: the workbench's
+/// counters move with content edits and rebuilds, and the stored source
+/// and text-style bits move with a saved presentation override (a
+/// `$textProperties` line changes no row). Until one of these changes, an
+/// off-screen row needs no layout at all.
+struct RowMeasure {
+    kind: Kind,
+    free: bool,
+    /// The latex / bold / italic bits of a text's presentation; `None` for
+    /// every row whose math does not come from one.
+    style: Option<(bool, bool, bool)>,
+    source: Option<Box<str>>,
+    height: f32,
+}
+
+/// The measured heights of the list's rows, shared by every placement of
+/// them (the list, the harness's row model, the benchmark's scroll).
+#[derive(Default)]
+pub(crate) struct RowMeasures {
+    map: HashMap<Box<str>, RowMeasure>,
+}
+
+/// What a row's math is made of this frame: the presentation bits of a
+/// LaTeX text, and the source its formula comes from.
+fn row_fingerprint<'a>(
+    c: &'a Construction,
+    row: &'a Row,
+) -> (Option<(bool, bool, bool)>, Option<&'a str>) {
+    if row.kind == Kind::Text {
+        match (
+            c.text_presentation(row.id).filter(|style| style.latex),
+            c.text(row.id).filter(|text| !text.is_empty()),
+        ) {
+            (Some(style), Some(source)) => {
+                (Some((style.latex, style.bold, style.italic)), Some(source))
+            }
+            _ => (None, None),
+        }
+    } else {
+        (None, row.formula.as_deref())
+    }
+}
+
+/// The shared row measures of a context, as the list's last frames left
+/// them.
+pub(crate) fn measures(ctx: &egui::Context) -> Arc<Mutex<RowMeasures>> {
+    ctx.data_mut(|d| {
+        d.get_temp_mut_or_default::<Arc<Mutex<RowMeasures>>>(row_measures_id())
+            .clone()
+    })
+}
+
+fn row_measures_id() -> egui::Id {
+    egui::Id::unique("algebra_row_measures")
+}
+
+/// A row's height, measured on the frame its content or text style
+/// changed and kept until one of them changes again.
+pub(crate) fn measured_height(
+    c: &Construction,
+    painter: &egui::Painter,
+    row: &Row,
+    measures: &mut RowMeasures,
+    formulas: &mut Option<FormulaCache>,
+) -> f32 {
+    let (style, source) = row_fingerprint(c, row);
+    if let Some(measure) = measures.map.get(row.label.as_str()) {
+        if measure.kind == row.kind
+            && measure.free == row.free
+            && measure.style == style
+            && measure.source.as_deref() == source
+        {
+            return measure.height;
+        }
+    }
+    let math = row_math(c, painter, row, formulas);
+    let height = row_height(row, math.as_ref());
+    measures.map.insert(
+        row.label.clone().into_boxed_str(),
+        RowMeasure {
+            kind: row.kind,
+            free: row.free,
+            style,
+            source: source.map(Box::from),
+            height,
+        },
+    );
+    height
 }
 
 /// The id of an object's row. Its widgets' ids derive from it (`body`,

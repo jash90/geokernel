@@ -1110,17 +1110,16 @@ fn curve_frames_stay_within_the_budget() {
     w.settled(1);
 }
 
-#[test]
-fn a_thousand_visible_formulas_reuse_their_layouts() {
+/// `n` LaTeX texts, every anchor inside the viewport (screen anchors, so
+/// fitting the view to the content cannot hide most of the load).
+fn formula_script(n: usize) -> String {
     use geo_kernel::script::text::literal;
     use std::fmt::Write;
 
     let mut script = String::new();
-    for i in 0..1000 {
+    for i in 0..n {
         let formula = literal(&format!(r"\frac{{{i}}}{{x^2}}"));
         writeln!(script, "t{i} = {formula}").unwrap();
-        // Every anchor is inside the viewport. Use screen anchors to avoid
-        // fit-to-content hiding most of the load being measured.
         writeln!(
             script,
             "$textProperties(t{i}, true, 0.65, 0, -, -, screen, {}, {})",
@@ -1129,7 +1128,12 @@ fn a_thousand_visible_formulas_reuse_their_layouts() {
         )
         .unwrap();
     }
-    let mut w = Window::with(&script, String::new());
+    script
+}
+
+#[test]
+fn a_thousand_visible_formulas_reuse_their_layouts() {
+    let mut w = Window::with(&formula_script(1000), String::new());
     assert_eq!(w.app.wb.construction().len(), 1000);
     let idle = w.settled(5);
     let built = crate::latex::layouts_built();
@@ -1153,6 +1157,112 @@ fn a_thousand_visible_formulas_reuse_their_layouts() {
     );
     assert!(
         idle.shapes <= 4700 && idle.allocs <= 450 && idle.bytes <= 600_000,
+        "{idle:?}"
+    );
+}
+
+/// The cold first frame of the 1000-formula scene: every formula is parsed
+/// and laid out once, the drawing's thousand and the algebra rows' own
+/// thousand. Measured at 512 ms alone and 1.1 s beside the other budget
+/// tests on an M-series debug build (the settled frames after it run at
+/// 10 ms in a debug build, 0.9 ms in the release benchmark); the bound
+/// holds both with room for slower machines, and catches a cache that
+/// re-lays-out formulas it should already hold.
+#[test]
+fn the_first_formula_frame_fits_its_budget() {
+    let ctx = egui::Context::default();
+    theme::apply(&ctx);
+    let mut w = Window {
+        ctx,
+        app: App::new(Workbench::from_script(&formula_script(1000)).unwrap(), None),
+        time: 0.0,
+        mid: String::new(),
+        screen: SCREEN,
+    };
+    let start = std::time::Instant::now();
+    let counts = w.step(Vec::new());
+    let cold_ms = start.elapsed().as_secs_f64() * 1000.0;
+    let built = crate::latex::layouts_built();
+    println!("formula cold frame {cold_ms:.2} ms: {counts:?}, {built} layouts");
+    // The drawing's formulas and the algebra rows' own, one per text
+    // each, and nothing else: the next frame builds none of them again.
+    assert_eq!(built, 2000);
+    assert!(cold_ms <= 2000.0, "cold frame {cold_ms:.2} ms, cap 2000 ms");
+}
+
+/// 3000 LaTeX texts, past the 2048-entry clear-on-full cliff the layout
+/// cache had: a settled frame builds no layout again and paints within
+/// the formula scene's caps (only the rows that reach the drawing paint;
+/// every one of the 3000 is laid out and cached).
+#[test]
+fn three_thousand_formulas_stay_cached_above_the_old_cliff() {
+    let mut w = Window::with(&formula_script(3000), String::new());
+    assert_eq!(w.app.wb.construction().len(), 3000);
+    let idle = w.settled(5);
+    let built = crate::latex::layouts_built();
+    let mut elapsed = Vec::new();
+    for _ in 0..15 {
+        let start = std::time::Instant::now();
+        let counts = w.step(Vec::new());
+        elapsed.push(start.elapsed().as_secs_f64() * 1000.0);
+        assert_eq!((counts.rows_formatted, counts.rows_built), (0, 0));
+        assert!(!counts.immediate);
+    }
+    elapsed.sort_by(f64::total_cmp);
+    println!(
+        "3000-formula frame median {:.3} ms, p95 {:.3} ms, {idle:?}",
+        elapsed[7], elapsed[14]
+    );
+    assert_eq!(crate::latex::layouts_built(), built);
+    assert!(
+        idle.vertices >= 14_000 && idle.vertices <= 46_000,
+        "{idle:?}"
+    );
+    assert!(
+        idle.shapes <= 5300 && idle.allocs <= 300 && idle.bytes <= 640_000,
+        "{idle:?}"
+    );
+}
+
+/// One 30 KB formula, past the quarter of the weight budget the cache
+/// once refused to store at all: it is kept by handle like any other, and
+/// a settled frame builds nothing.
+#[test]
+fn a_thirty_kilobyte_formula_is_cached_like_any_other() {
+    use geo_kernel::script::text::literal;
+    use std::fmt::Write;
+
+    let mut script = String::new();
+    let formula = literal(&format!(r"\text{{{}}}", "a".repeat(30_000)));
+    writeln!(script, "t = {formula}").unwrap();
+    writeln!(
+        script,
+        "$textProperties(t, true, 0.65, 0, -, -, screen, 40, 40)"
+    )
+    .unwrap();
+    let mut w = Window::with(&script, String::new());
+    let idle = w.settled(5);
+    let built = crate::latex::layouts_built();
+    let mut elapsed = Vec::new();
+    for _ in 0..15 {
+        let start = std::time::Instant::now();
+        let counts = w.step(Vec::new());
+        elapsed.push(start.elapsed().as_secs_f64() * 1000.0);
+        assert_eq!((counts.rows_formatted, counts.rows_built), (0, 0));
+        assert!(!counts.immediate);
+    }
+    elapsed.sort_by(f64::total_cmp);
+    println!(
+        "30 KB formula frame median {:.3} ms, p95 {:.3} ms, {idle:?}",
+        elapsed[7], elapsed[14]
+    );
+    assert_eq!(crate::latex::layouts_built(), built);
+    // Thirty thousand glyphs are a quarter million vertices by nature; the
+    // caps document that size (measured 249 196) and the settled frame's
+    // own cost (417 shapes, 174 allocations of 62 912 bytes).
+    assert!(idle.vertices <= 260_000, "{idle:?}");
+    assert!(
+        idle.shapes <= 460 && idle.allocs <= 220 && idle.bytes <= 80_000,
         "{idle:?}"
     );
 }
