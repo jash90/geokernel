@@ -1,0 +1,517 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "lists-prodfreq-001",
+      "group": "lists",
+      "script": [
+        "t = 1",
+        "l = {2, 3, 4}",
+        "k = {2, 2}",
+        "c = Product(l, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 3.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 76.5625 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 76.5625 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 76.5625 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 76.5625 }
+        }
+      ]
+    },
+    {
+      "id": "lists-prodfreq-002",
+      "group": "lists",
+      "script": [
+        "t = 1",
+        "l = {2, 3, 4}",
+        "k = {2, 2}",
+        "c = Product({2, 3}, {3, 2})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 3.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 72.0 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 72.0 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 72.0 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 72.0 }
+        }
+      ]
+    },
+    {
+      "id": "lists-prodfreq-003",
+      "group": "lists",
+      "script": [
+        "t = 1",
+        "l = {2, 3, 4}",
+        "k = {2, 2}",
+        "c = Product({2, 3, 4}, {1, 2})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 3.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 30.625 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 30.625 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 30.625 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 30.625 }
+        }
+      ]
+    },
+    {
+      "id": "lists-prodfreq-004",
+      "group": "lists",
+      "script": [
+        "t = 1",
+        "l = {2, 3, 4}",
+        "k = {2, 2}",
+        "c = Product({2, 3, 4}, {-1})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 3.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "lists-prodfreq-005",
+      "group": "lists",
+      "script": [
+        "t = 1",
+        "l = {2, 3, 4}",
+        "k = {2, 2}",
+        "c = Product({2, 3, 4}, {t, 2})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 3.0 },
+        { "action": "set_number", "label": "t", "value": -1.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 30.625 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 191.40625 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": -1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": 4.0 }
+            ]
+          },
+          "k": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "c": { "type": "number", "defined": true, "value": 30.625 }
+        }
+      ]
+    }
+  ]
+}

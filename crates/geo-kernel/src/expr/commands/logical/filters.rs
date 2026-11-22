@@ -137,6 +137,7 @@ impl<const M: bool> Ctx<'_, M> {
                 depth,
                 value,
                 run: slot.run(),
+                vector: slot.kind == Kind::Vector,
                 up: self.locals,
             };
             let ctx = Ctx {
