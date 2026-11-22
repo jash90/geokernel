@@ -249,17 +249,20 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
     let result = (|| {
         // the function itself may be written inline, as GeoGebra's argument
         // resolver wraps it
-        let function = match c.id(args[0]).filter(|&id| c.kind(id) == Kind::Function) {
+        let function = match c.id(args[0]).filter(|&id| {
+            c.kind(id) == Kind::Function
+                && !crate::expr::function_signature(c, id).is_some_and(|sig| sig.boolean)
+        }) {
             Some(id) => id,
             None => {
                 let label = format!("\u{0}spf{}", c.len());
-                crate::expr::define_function(c, &label, args[0], false)
-                    .map_err(|e| e.to_string())?
+                crate::expr::argument_function(c, args[0], &label)
+                    .ok_or("SlowPlot needs a real-valued function")?
             }
         };
         if let Some(repeat) = args.get(1) {
             // the repeat flag is read as a double: a number or a boolean
-            let numeric = crate::expr::plain_number(repeat).is_some()
+            let numeric = crate::expr::argument_number(c, repeat).is_some()
                 || matches!(*repeat, "true" | "false")
                 || c.id(repeat).is_some_and(
                     |id| matches!(c.kind(id), k if k.is_number() || k == Kind::Boolean),
@@ -268,24 +271,13 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
                 return Err(format!("`{repeat}` is not a number"));
             }
         }
-        let var = format!("\u{0}slow{}", c.len());
-        slider(c, &var, &["0", "1"]).map_err(|e| e.to_string())?;
-        // the view corners the drawn stretch runs between
-        let mut corner = |n: &str| -> Result<Id, String> {
-            let label = format!("\u{0}sp{}{}", n, c.len());
-            let def = crate::algo::point::parse_view_corner(c, &[n])
-                .unwrap_or_else(|| unreachable!("`Corner` of a number is a view corner"))
-                .map_err(|e| e.to_string())?;
-            c.add(&label, Def::Point(def)).map_err(|e| e.to_string())
-        };
-        let (first, second) = (corner("1")?, corner("2")?);
-        let body = format!(
-            "If(x < x({}) + {var} * (x({}) - x({})), {}(x))",
-            c.label(first),
-            c.label(second),
-            c.label(first),
-            c.label(function)
-        );
+        let first = format!("\u{0}sp{}", c.len());
+        let corner = crate::algo::point::parse_view_corner(c, &["1"])
+            .expect("corner of the view")
+            .map_err(|e| e.to_string())?;
+        c.add(&first, Def::Point(corner))
+            .map_err(|e| e.to_string())?;
+        let body = format!("If(x < x({first}), {}(x))", c.label(function));
         crate::expr::define_function(c, name, &body, false).map(Some)
     })();
     if result.is_err() {

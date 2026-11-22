@@ -129,4 +129,12 @@ case("conditional",
      "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\ng = Line(A, C)\ns = If(n > 0, r, g)",
      [setn("n", -1), setn("n", 1)])
 
+# ---------------------------------------------------------------- SlowPlot
+cases.topic("slowplot")
+case("slowplot", "f(x) = sin(x)\ng = SlowPlot(f)\nu = g(-8)\nv = g(0)")
+case("slowplot", "n = 1\nf(x) = n*x\ng = SlowPlot(f, 0)\nh = SlowPlot(f, n + 1)\nu = h(-8)",
+     [setn("n", 0), setn("n", -2)])
+case("slowplot", "n = 1\nf(x) = x/n\ng = SlowPlot(f)\nu = g(-8)",
+     [setn("n", 0), setn("n", 2), reject("s = SlowPlot(3)")])
+
 cases.write()

@@ -354,6 +354,10 @@ final class Session {
         if (out != null && out.length >= 1 && isTransformedPoly(definition)) {
             return runPolygon(line, label, out);
         }
+        if (out != null && out.length == 0 && definition.startsWith("SlowPlot(")
+                && kernel.lookupLabel(label) instanceof GeoFunction plotted) {
+            out = new GeoElementND[] {plotted};
+        }
         // A transformed segment or ray with labelled end points also creates
         // the image points (see `transformedOutputs`); the segment or ray is
         // the first output. Any other object gives exactly one output.
