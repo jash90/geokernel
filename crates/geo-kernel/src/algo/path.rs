@@ -188,6 +188,16 @@ impl PathState {
         state
     }
 
+    /// Restore a curve point from its saved parameter, which identifies its
+    /// branch even when multiple parameters share the same coordinates.
+    pub(crate) fn saved_curve(c: &Construction, curve: Id, t: f64) -> Self {
+        let mut state = Self::new();
+        state.t = t;
+        state.temp_t = t;
+        geom(c, curve).path_changed(&mut state);
+        state
+    }
+
     /// The raw path parameter, in the range of the path (not normalised).
     pub fn parameter(&self) -> f64 {
         self.t
@@ -681,8 +691,14 @@ impl Geom<'_> {
             &Geom::PolyLine { c, id, n } => polygonal_point_changed(c, id, n, false, p),
             Geom::Arc(a) => a.point_changed(p),
             Geom::Curve { c, id, .. } => {
+                let (x, y) = (p.x / p.z, p.y / p.z);
                 if let Some(curve) = super::curve::Cartesian::new(c, *id) {
-                    p.t = curve.closest_from((p.x / p.z, p.y / p.z), p.t);
+                    // Keep the current branch when its parameter already fits the point.
+                    let (px, py) = curve.value(p.t);
+                    let distance = (px - x).hypot(py - y);
+                    if !distance.is_finite() || distance >= crate::tol::MIN_PRECISION {
+                        p.t = curve.closest_from((x, y), p.t);
+                    }
                 }
                 self.path_changed(p);
             }

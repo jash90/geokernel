@@ -148,6 +148,7 @@
     {"id": "charts-piechart-007", "group": "charts", "script": ["chart = PieChart({1, 0, 2})"], "steps": [{"action": "initial"}]},
     {"id": "charts-piechart-008", "group": "charts", "script": ["chart = PieChart({2, 3}, (2, 4), -1)"], "steps": [{"action": "initial"}]},
     {"id": "charts-piechart-009", "group": "charts", "script": ["chart = PieChart({1, ?, 3})"], "steps": [{"action": "initial"}]},
-    {"id": "charts-linegraph-010", "group": "charts", "script": ["f = LineGraph({1, 2}, {3, 4})", "A = Point(f)", "g = Tangent(f, (1, 3))"], "steps": [{"action": "initial"}]}
+    {"id": "charts-linegraph-010", "group": "charts", "script": ["f = LineGraph({1, 2}, {3, 4})", "A = Point(f)", "g = Tangent(f, (1, 3))"], "steps": [{"action": "initial"}]},
+    {"id": "charts-piechart-010", "group": "charts", "script": ["values = {1, 2, 3}", "A = (1, 1)", "r = 2", "chart = PieChart(values, A, r)"], "steps": [{"action": "initial"}]}
   ]
 }

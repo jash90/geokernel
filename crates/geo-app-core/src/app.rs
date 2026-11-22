@@ -23,6 +23,21 @@ pub struct Decor {
     pub axes: bool,
 }
 
+impl Decor {
+    pub fn for_document(wb: &Workbench) -> Self {
+        wb.file_view().map_or(
+            Self {
+                grid: true,
+                axes: true,
+            },
+            |view| Self {
+                grid: view.grid,
+                axes: view.axes.into_iter().any(|axis| axis),
+            },
+        )
+    }
+}
+
 /// A change of view requested outside the drawing code.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewRequest {
@@ -113,6 +128,10 @@ pub struct App {
     pub input_error: Option<String>,
     pub tool_error: Option<String>,
     pub load_error: Option<String>,
+    /// Path being edited in the Save As dialog.
+    pub save_path: Option<String>,
+    /// Path of the document opened into this window.
+    pub source_path: Option<std::path::PathBuf>,
     pub decor: Decor,
     /// The object under the pointer in the drawing area.
     pub hovered: Option<Id>,
@@ -188,6 +207,7 @@ impl App {
     }
 
     pub fn new(wb: Workbench, load_error: Option<String>) -> Self {
+        let decor = Decor::for_document(&wb);
         App {
             wb,
             rules: OwnerRules::OURS,
@@ -203,10 +223,9 @@ impl App {
             input_error: None,
             tool_error: None,
             load_error,
-            decor: Decor {
-                grid: true,
-                axes: true,
-            },
+            save_path: None,
+            source_path: None,
+            decor,
             hovered: None,
             focus_input: false,
             input_cursor: 0,

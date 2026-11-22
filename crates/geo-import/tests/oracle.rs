@@ -4,7 +4,9 @@
 //! is compared with `snapshots[0]` of the same golden case under the rules of
 //! `golden/SCHEMA.md`, with the comparison of `geo-golden`.
 
-use geo_golden::compare::{compare_arc, compare_conic, compare_object, numbers_agree};
+use geo_golden::compare::{
+    compare_arc, compare_conic, compare_construction_object, compare_object, numbers_agree,
+};
 use geo_golden::model::ExpectedData;
 use geo_golden::model::{self, Case};
 use geo_golden::{gaps, repo_root};
@@ -252,6 +254,7 @@ fn compare_case(
             Kind::Conic => {
                 compare_conic(expected, c.kind(id), &c.value(id), c.conic(id).as_ref()).0
             }
+            Kind::PieChart | Kind::List => compare_construction_object(expected, &c, id),
             _ => compare_object(expected, c.kind(id), &c.value(id), &vertices),
         };
         match compared {

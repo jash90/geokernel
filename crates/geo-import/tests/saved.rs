@@ -374,7 +374,6 @@ fn saved_expressions_match_geogebra_before_and_after_edits() {
         let expected_skips = BTreeMap::from([
             ("bad", "NextPrime"),
             ("lost", "depends on the skipped object `bad`"),
-            ("multi", "function with multiple variables"),
         ]);
         let snapshot: serde_json::Value =
             serde_json::from_slice(&fs::read(dir.join(format!("{file}.snapshot"))).unwrap())
@@ -453,8 +452,25 @@ fn saved_expressions_match_geogebra_before_and_after_edits() {
                 let id = c
                     .id(label)
                     .unwrap_or_else(|| panic!("{file}: missing {label}"));
-                let sample = |x| within_budget(|| c.function_value(id, x));
-                compare_sampled(expected, c.kind(id), &c.value(id), &[], Some(&sample))
+                let multivariate = label == "multi";
+                if multivariate {
+                    assert_eq!(c.kind(id), Kind::FunctionNVar);
+                }
+                let sample = |x| {
+                    within_budget(|| {
+                        if multivariate {
+                            c.function_value_xy(id, x, 0.0)
+                        } else {
+                            c.function_value(id, x)
+                        }
+                    })
+                };
+                let (kind, value) = if multivariate {
+                    (Kind::Function, Value::Function)
+                } else {
+                    (c.kind(id), c.value(id))
+                };
+                compare_sampled(expected, kind, &value, &[], Some(&sample))
                     .unwrap_or_else(|why| panic!("{file}: {label}: {why}"));
             }
         }

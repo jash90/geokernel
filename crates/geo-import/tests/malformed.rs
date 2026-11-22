@@ -105,6 +105,20 @@ fn zip_errors() {
 }
 
 #[test]
+fn a_damaged_optional_directory_entry_does_not_prevent_opening_xml() {
+    let xml = file(&point("A", "1", "2", "1"));
+    let mut archive = zip_of(&[("geogebra.xml", xml.as_bytes()), ("thumbnail.png", b"")]);
+    let damaged = archive
+        .windows(4)
+        .rposition(|b| b == b"PK\x01\x02")
+        .unwrap();
+    archive[damaged] = 0;
+    let imported = import(&archive).unwrap();
+    assert_eq!(imported.script, ["A = (1, 2)"]);
+    assert!(!imported.notes.is_empty());
+}
+
+#[test]
 fn bad_numbers_are_errors_not_panics() {
     let e = import(file(&point("A", "abc", "2", "1")).as_bytes()).unwrap_err();
     assert_eq!(

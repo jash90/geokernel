@@ -813,8 +813,10 @@ dependencies = [
 name = "geo-cli"
 version = "0.1.0"
 dependencies = [
+ "geo-app-core",
  "geo-import",
  "geo-kernel",
+ "same-file",
 ]
 
 [[package]]
@@ -828,6 +830,7 @@ dependencies = [
  "serde",
  "serde_json",
  "toml 0.8.23",
+ "zip",
 ]
 
 [[package]]

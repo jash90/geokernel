@@ -2,8 +2,8 @@
 
 Runs GeoGebra headlessly to produce the golden data in `golden/` (format:
 `golden/SCHEMA.md`) and to time GeoGebra on the chain that
-`geokernel bench` builds. Nothing here is needed to build or test the Rust
-crates.
+`geokernel bench` builds. The regular Rust tests use the checked-in golden
+corpus. The export oracle also runs the Java harness live.
 
 The harness only calls GeoGebra's API (classes under the EUPL 1.2 header).
 It never copies GeoGebra code, jars, `.properties` files or artwork into this
@@ -47,6 +47,22 @@ harness is then compiled with plain `javac` into `build/classes`.
 
 `golden` stamps every file with the commit that `git rev-parse HEAD` reports
 for the checkout. Two runs produce byte-identical files.
+
+## Export oracle
+
+`harness.sh export-snapshot <directory>` opens each `.ggb` in a fresh headless
+app and writes a `.ggb.snapshot` alongside it. GeoGebra warnings, errors and
+unrecognized XML tags fail the run. The integration test exports constructions
+replayed from harness goldens, including `cases/export.json`, and exports
+reference-saved text, raster, control and path fixtures. It compares every
+labelled object against both Rust constructions at the golden tolerance and
+checks object styles, slider settings and the primary view directly in the
+Java reader.
+
+After building the harness, run the ignored
+`geogebra_reloads_exports_and_matches_the_kernel` test in
+`geo-golden`'s `export` integration suite with `GEOGEBRA_SRC` set.
+The `check` CI job runs this test with the pinned reference revision.
 
 ## How a case is replayed
 

@@ -19,14 +19,15 @@ fn main() -> eframe::Result {
         println!("{}", cli::USAGE);
         return Ok(());
     };
-    let (wb, load_error) = match script {
+    let (wb, load_error, source_path) = match script {
         Some(path) => {
             let mut wb = Workbench::default();
             let result = cli::load_into(&mut wb, &path);
-            (wb, result.err())
+            let source_path = result.is_ok().then_some(path);
+            (wb, result.err(), source_path)
         }
         None => match Workbench::from_script(SCRIPT) {
-            Ok(wb) => (wb, None),
+            Ok(wb) => (wb, None, None),
             Err(e) => {
                 eprintln!("cannot load the built-in script: {e}");
                 std::process::exit(1);
@@ -49,7 +50,9 @@ fn main() -> eframe::Result {
             } else {
                 Metrics::desktop()
             };
-            Ok(Box::new(Window::new(cc, wb, load_error, metrics)))
+            Ok(Box::new(
+                Window::new(cc, wb, load_error, metrics).with_source_path(source_path),
+            ))
         }),
     )
 }

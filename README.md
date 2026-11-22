@@ -7,7 +7,8 @@ not a target for one-to-one compatibility. `geokernel` is a working name.
 This project is not affiliated with or endorsed by GeoGebra GmbH. The name
 and logo GeoGebra belong to GeoGebra GmbH. Construction files saved by
 GeoGebra (`.ggb`) can be opened; what is not supported yet is reported, not
-dropped silently.
+dropped silently. Use **File → Save as .ggb** in the app menu to export
+the current construction.
 
 ## Status
 
@@ -71,7 +72,7 @@ The reference commit for ported code and recorded test data is
 | `crates/geo-app` | The `geokernel-app` desktop window (egui on wgpu): toolbar with construction tools, algebra view, graphics view with pan and zoom, on-screen keyboard, undo and redo. Opens scripts and GeoGebra files. |
 | `crates/geo-app-core` | The window's logic without any UI toolkit: pointer and touch gestures, layout and size profiles, tools, the document with its undo history, snapshots. Builds for Android. |
 | `crates/geo-mcp` | The `geokernel-mcp` server: drives the window without a window through its own frame loop, so an agent or a script can click, drag, type and read the exact state. See [crates/geo-mcp/README.md](crates/geo-mcp/README.md). |
-| `crates/geo-import` | Reads GeoGebra construction files (`.ggb` or bare XML) into a kernel script, and reports what it skipped and what differs from the values saved in the file. |
+| `crates/geo-import` | Reads and writes `.ggb` construction files. The reader also accepts bare XML and reports skipped objects and saved value mismatches. |
 | `crates/geo-golden` | Tests that compare the kernel with values recorded from GeoGebra. |
 | `golden/` | Recorded golden data and its format, [golden/SCHEMA.md](golden/SCHEMA.md). |
 | `examples/` | Example scripts. |
@@ -85,6 +86,7 @@ cargo test --workspace
 cargo run --release -p geo-cli -- demo out        # triangle before and after moving A
 cargo run --release -p geo-cli -- run examples/triangle.geo out.svg
 cargo run --release -p geo-cli -- run drawing.ggb out.svg   # a file saved by GeoGebra
+cargo run --release -p geo-cli -- export drawing.geo drawing.ggb
 cargo run --release -p geo-cli -- bench           # 105 thousand objects, dragging a point
 cargo run --release -p geo-app                    # window with the triangle; pick a tool, drag the blue points, type commands
 cargo run --release -p geo-app -- drawing.ggb     # open a script or a file saved by GeoGebra

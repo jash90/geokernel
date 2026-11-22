@@ -1,0 +1,26 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "export-texts-001",
+      "group": "export",
+      "script": [
+        "A = (1, 2)",
+        "s = \"A \" + UnicodeToLetter(34) + \"quote\" + UnicodeToLetter(34)",
+        "t = Text(\"\\frac{1}{2}\", A, true, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "s": { "type": "text", "defined": true, "text": "A \"quote\"" },
+          "t": { "type": "text", "defined": true, "text": "\\frac{1}{2}" }
+        }
+      ]
+    }
+  ]
+}
