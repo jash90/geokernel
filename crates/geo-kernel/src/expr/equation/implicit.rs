@@ -262,7 +262,12 @@ fn cubic_matrix(c: &Construction, cubic: barycentric::Cubic) -> Option<Coefficie
         }
     }
     let polynomial = build_normal(c, &mut builder, zero, sum).ok()?;
-    Some(matrix(c, &mut builder, polynomial).ok()?.1)
+    let (_, coefficients) = matrix(c, &mut builder, polynomial).ok()?;
+    coefficients
+        .iter()
+        .flatten()
+        .all(|n| n.is_finite())
+        .then_some(coefficients)
 }
 
 fn matrix(
@@ -371,6 +376,7 @@ fn coefficient_value(c: &Construction, builder: &Builder, root: u32) -> Option<f
 
 pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
     let (owner, record) = &c.implicit_curves[index as usize];
+    let owner = Id(*owner);
     let (kind, coefficients) = match record.source {
         Source::Matrix => {
             return if record.coefficients.is_empty() {
@@ -411,9 +417,16 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
             (Kind::ImplicitCurve, coefficients)
         }
         Source::Cubic(inputs) => {
-            let Some(coefficients) =
-                barycentric::cubic(c, inputs).and_then(|cubic| cubic_matrix(c, cubic))
-            else {
+            let cubic = match barycentric::cubic(c, inputs) {
+                Ok(cubic) => cubic,
+                // An invalid catalogue expression aborts the update before a
+                // replacement curve is installed.
+                Err(barycentric::CubicError::InvalidCatalogue) if c.exists(owner) => {
+                    return c.value(owner);
+                }
+                Err(_) => return Value::Undefined,
+            };
+            let Some(coefficients) = cubic_matrix(c, cubic) else {
                 return Value::Undefined;
             };
             (Kind::ImplicitCurve, coefficients)
@@ -448,7 +461,6 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
             (Kind::ImplicitCurve, coefficients)
         }
     };
-    let owner = Id(*owner);
     let replacing = record.kind != kind;
     if replacing && !c.children(owner).is_empty() {
         return Value::Undefined;

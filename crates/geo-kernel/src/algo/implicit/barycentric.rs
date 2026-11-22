@@ -1,4 +1,9 @@
-// Licensed under the EUPL 1.2.
+// The cubic rules follow reference commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/AlgoCubic.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/AlgoCubicSwitch.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/CmdCubic.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use std::f64::consts::TAU;
 use std::sync::OnceLock;
@@ -42,11 +47,25 @@ pub(crate) struct Cubic {
     pub(crate) central: f64,
 }
 
-pub(crate) fn cubic(c: &Construction, [a, b, d, n]: [Id; 4]) -> Option<Cubic> {
-    let points = [c.point(a)?, c.point(b)?, c.point(d)?];
-    let barycentric = coordinates(points)?;
-    let index = c.number(n)? as i32;
-    let entry = CatalogueEntry::find(index)?;
+pub(crate) enum CubicError {
+    Undefined,
+    InvalidCatalogue,
+}
+
+pub(crate) fn cubic(c: &Construction, [a, b, d, n]: [Id; 4]) -> Result<Cubic, CubicError> {
+    use CubicError::Undefined;
+
+    let [Some(a), Some(b), Some(d)] = [a, b, d].map(|id| c.point(id)) else {
+        return Err(Undefined);
+    };
+    let points = [a, b, d];
+    let barycentric = coordinates(points).ok_or(Undefined)?;
+    if barycentric.iter().flatten().any(|value| !value.is_finite()) {
+        return Err(Undefined);
+    }
+    // Number and angle objects both expose a scalar. Angles use radians.
+    let index = c.number(n).filter(|n| n.is_finite()).ok_or(Undefined)? as i32;
+    let entry = CatalogueEntry::find(index).ok_or(Undefined)?;
     let distance = |i: usize, j: usize| {
         let (x, y) = points[i];
         let (u, v) = points[j];
@@ -59,14 +78,21 @@ pub(crate) fn cubic(c: &Construction, [a, b, d, n]: [Id; 4]) -> Option<Cubic> {
         let j = (i + 1) % 3;
         let k = (i + 2) % 3;
         let (a, b, c) = (sides[i], sides[j], sides[k]);
-        let [vertex, mixed, product] = entry.coefficients([a, b, c])?;
-        let [_, swapped, _] = entry.coefficients([b, a, c])?;
+        let [vertex, mixed, product] = entry.coefficients([a, b, c]).ok_or(Undefined)?;
+        let [_, swapped, _] = entry.coefficients([b, a, c]).ok_or(Undefined)?;
         *weights = [vertex, mixed, entry.symmetry * swapped];
         if i == 0 {
             central = product;
         }
     }
-    Some(Cubic {
+    let mut weights = cyclic.iter().flatten().chain([&central]);
+    if weights.clone().any(|value| value.is_nan()) {
+        return Err(CubicError::InvalidCatalogue);
+    }
+    if weights.any(|value| !value.is_finite()) {
+        return Err(Undefined);
+    }
+    Ok(Cubic {
         coordinates: barycentric,
         cyclic,
         central,

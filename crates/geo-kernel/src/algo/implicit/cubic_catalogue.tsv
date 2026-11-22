@@ -1,4 +1,8 @@
-# Licensed under the EUPL 1.2.
+# Expanded from reference commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+#   source/shared/common/src/main/java/org/geogebra/common/kernel/barycentric/AlgoCubicSwitch.java
+# Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+# Licensed by GeoGebra GmbH under the EUPL 1.2.
+# Based on data from Bernard Gibert.
 # Index, symmetry, vertex coefficient, mixed coefficient, central coefficient.
 # Spaces separate signed monomials. Factors include side powers a2 through c20,
 # area factor S (four times the area), r3 = sqrt(3), and cA3/cB3/cC3

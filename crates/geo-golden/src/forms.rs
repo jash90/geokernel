@@ -349,6 +349,9 @@ pub fn script_uses_form(
                 }
                 let mut kinds: Vec<Option<Kind>> =
                     args.iter().map(|a| arg_kind(a, labels)).collect();
+                if command == "Cubic" && matches!(kinds.as_slice(), [_, _, _, Some(Kind::Angle)]) {
+                    kinds[3] = Some(Kind::Number);
+                }
                 if command == "TriangleCurve"
                     && matches!(args.as_slice(), [_, _, _, equation]
                         if equation.matches('=').count() == 1
