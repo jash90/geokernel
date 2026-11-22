@@ -171,10 +171,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         return Ok(None);
     }
     let (name, rhs, colon) = assignment(line).ok_or("expected `name = definition`")?;
-    if let Some((id, value)) = (!colon)
-        .then(|| slider_assignment_value(c, name, rhs))
-        .flatten()
-    {
+    if let Some((id, value)) = slider_assignment_value(c, name, rhs) {
         c.assign_slider_number(id, value)
             .map_err(|e| e.to_string())?;
         return Ok(None);
@@ -583,10 +580,8 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
 
 /// Whether the line assigns a literal value to an existing slider.
 pub fn is_slider_assignment(c: &Construction, line: &str) -> bool {
-    split_comment(line)
-        .0
-        .split_once('=')
-        .is_some_and(|(name, rhs)| slider_assignment_value(c, name.trim(), rhs.trim()).is_some())
+    assignment(split_comment(line).0)
+        .is_some_and(|(name, rhs, _)| slider_assignment_value(c, name, rhs).is_some())
 }
 
 fn slider_assignment_value(c: &Construction, name: &str, rhs: &str) -> Option<(Id, f64)> {
@@ -2493,6 +2488,16 @@ mod tests {
         // Two points still make a plain line.
         assert!(matches!(c.def(c.id("m").unwrap()), Def::Line(..)));
         assert!(matches!(c.def(c.id("p").unwrap()), Def::Parallel { .. }));
+    }
+
+    #[test]
+    fn a_colon_assignment_updates_an_existing_slider() {
+        let mut c = load("a = Slider(0, 4)\nb = 2 a").unwrap();
+        let slider = c.id("a").unwrap();
+        assert!(is_slider_assignment(&c, "a: 3"));
+        assert_eq!(exec(&mut c, "a: 3"), Ok(None));
+        assert_eq!(c.id("a"), Some(slider));
+        assert_eq!(c.value(c.id("b").unwrap()), Value::Number(6.0));
     }
 
     #[test]
