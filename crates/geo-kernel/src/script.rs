@@ -296,7 +296,8 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
             c.add(&label, Def::Point(def)).map_err(|e| e.to_string())
         };
         let corners = [corner("1")?, corner("2")?];
-        crate::expr::define_slow_plot(c, name, function, slider, corners).map(Some)
+        crate::expr::define_slow_plot(c, name, function, slider, corners)?;
+        Ok(Some(slider))
     })();
     if result.is_err() {
         c.discard_since(start);
@@ -346,12 +347,10 @@ fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
-    if let Some(id) = c.id(name).filter(|&id| c.slider_interval(id).is_some()) {
-        if let Some(value) = crate::expr::plain_number(rhs) {
-            c.assign_slider_number(id, value)
-                .map_err(|e| e.to_string())?;
-            return Ok(Some(id));
-        }
+    if let Some((id, value)) = slider_assignment_value(c, name, rhs) {
+        c.assign_slider_number(id, value)
+            .map_err(|e| e.to_string())?;
+        return Ok(None);
     }
     // `name = SetConstructionStep(n)` runs the script too: a scripting
     // command's returned argument is not labelable, so even the labelled
@@ -532,6 +531,20 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         c.discard_since(start);
     }
     result
+}
+
+/// Whether the line assigns a literal value to an existing slider.
+pub fn is_slider_assignment(c: &Construction, line: &str) -> bool {
+    split_comment(line)
+        .0
+        .split_once('=')
+        .is_some_and(|(name, rhs)| slider_assignment_value(c, name.trim(), rhs.trim()).is_some())
+}
+
+fn slider_assignment_value(c: &Construction, name: &str, rhs: &str) -> Option<(Id, f64)> {
+    let id = c.id(name)?;
+    c.slider_interval(id)?;
+    Some((id, crate::expr::plain_number(rhs)?))
 }
 
 fn implicit_multi_output(c: &Construction, rhs: &str) -> bool {
@@ -1350,7 +1363,10 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         }
         ("Point" | "Polygon" | "PolyLine", [_]) | ("PolyLine", [_, _]) => &[(0, Kind::List)],
         ("Barycenter", [_, _]) => &[(0, Kind::List), (1, Kind::List)],
-        ("Circle", [_, _]) => &[(0, Kind::Point), (1, Kind::Number), (1, Kind::Point)],
+        ("Circle", [_, radius]) if crate::expr::plain_number(radius).is_none() => {
+            &[(0, Kind::Point), (1, Kind::Number), (1, Kind::Point)]
+        }
+        ("Circle", [_, _]) => &[(0, Kind::Point)],
         ("Dilate", [src, _]) if is_kind(src, Kind::Curve) || is_kind(src, Kind::Image) => {
             &[(1, Kind::Number)]
         }
@@ -1430,7 +1446,7 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             {
                 return None;
             }
-            let label = format!("\0arg{}", c.len());
+            let label = format!("\0input{}", c.len());
             let resolved = crate::expr::argument_object(c, arg, &label, kind)
                 || (func == "Tangent"
                     && kind == Kind::Number

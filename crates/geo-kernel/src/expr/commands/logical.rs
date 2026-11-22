@@ -199,24 +199,21 @@ impl<const M: bool> Ctx<'_, M> {
     /// Select the original alternative so it is copied into the output
     /// type of the whole command just once.
     pub(crate) fn if_alternative(&self, mut i: u32) -> Option<u32> {
-        let charge = || match self.meter {
-            Some(meter) => meter.charge(1),
-            None => {
-                crate::expr::charge(1);
-                true
-            }
-        };
         for _ in 0..MAX_IF_ALTERNATIVES {
-            if !charge() {
-                return None;
-            }
             let Node::If(mode, cond, then, rest) = self.node(i) else {
                 return None;
             };
+            // The metered condition evaluation charges every visited node.
+            if self.meter.is_none() {
+                crate::expr::charge(1);
+            }
             let (value, defined) = match self.full(cond).val {
                 Val::B(v, d) => (v, d),
                 _ => (false, false),
             };
+            if self.stop(0) {
+                return None;
+            }
             if mode == IfMode::Else && !defined {
                 return None;
             }
@@ -227,7 +224,7 @@ impl<const M: bool> Ctx<'_, M> {
                 return None;
             }
             if !matches!(self.node(rest), Node::If(IfMode::AlgoNext, ..)) {
-                return charge().then_some(rest);
+                return Some(rest);
             }
             i = rest;
         }
