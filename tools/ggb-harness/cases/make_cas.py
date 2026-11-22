@@ -412,4 +412,7 @@ c.case("plot", ["f(x) = x^2-3", "g: x=3"],
 c.case("plot", ["k: x^2+y^2=4", "result = PlotSolve(k)"], [])
 c.case("plot", ["k: x*y=1", "result = PlotSolve(k)"], [])
 c.case("plot", ["f(x) = sin(x)", "result = PlotSolve(f)"], [])
+# A parabola solved for its linear variable is the conic itself, which
+# the kernel cannot hold inside a list.
+c.case("conic", ["k: y=x^2+x", "result = Solve(k, y)"], [])
 c.write()

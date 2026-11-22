@@ -716,6 +716,11 @@ reason = "GeoGebra lists the solution families of a product equation in the orde
 mismatches = ["0:result"]
 
 [[gap]]
+id = "cas-conic-060"
+reason = "Solve(k, y) of the parabola y = x^2 + x answers the conic y = x^2 + x itself in GeoGebra. A kernel list holds numbers, points, lines, functions and texts, not a conic that is no named object, so the kernel answers an undefined list. Solving a proper conic for x answers implicit curves, which neither a kernel list nor the harness can record."
+mismatches = ["0:result"]
+
+[[gap]]
 id = "cas-hint-028"
 reason = "A list of variables after one equation runs GeoGebra's system solver, which lists the solutions in the order its CAS returns them (Solve(f, {x}) of x^2 - 3 answers x = sqrt(3) before x = -sqrt(3), while Solve(f, x) answers them ascending). The kernel always answers the roots in ascending order, so the solution sets agree while the order differs."
 mismatches = ["0:result"]

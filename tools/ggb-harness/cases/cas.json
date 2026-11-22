@@ -346,6 +346,7 @@
     {"id": "cas-plot-022", "group": "cas", "script": ["f(x) = x^2-3", "g: x=3"], "steps": [{"action": "initial"}, {"action": "reject", "line": "r = PlotSolve(f, x)"}, {"action": "reject", "line": "r = PlotSolve(g, y)"}, {"action": "reject", "line": "r = PlotSolve(2)"}, {"action": "reject", "line": "r = PlotSolve(x, y)"}, {"action": "reject", "line": "r = PlotSolve(f, x=1)"}]},
     {"id": "cas-plot-023", "group": "cas", "script": ["k: x^2+y^2=4", "result = PlotSolve(k)"], "steps": [{"action": "initial"}]},
     {"id": "cas-plot-024", "group": "cas", "script": ["k: x*y=1", "result = PlotSolve(k)"], "steps": [{"action": "initial"}]},
-    {"id": "cas-plot-025", "group": "cas", "script": ["f(x) = sin(x)", "result = PlotSolve(f)"], "steps": [{"action": "initial"}]}
+    {"id": "cas-plot-025", "group": "cas", "script": ["f(x) = sin(x)", "result = PlotSolve(f)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-conic-060", "group": "cas", "script": ["k: y=x^2+x", "result = Solve(k, y)"], "steps": [{"action": "initial"}]}
   ]
 }

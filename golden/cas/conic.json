@@ -6333,6 +6333,51 @@
           "r2": { "type": "list", "defined": false }
         }
       ]
+    },
+    {
+      "id": "cas-conic-060",
+      "group": "cas",
+      "script": [
+        "k: y=x^2+x",
+        "result = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, -0.5, 0.5],
+            "vertex": [-0.5, -0.25],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "conic",
+                "defined": true,
+                "conic_type": "parabola",
+                "matrix": [-1.0, 0.0, 0.0, 0.0, -0.5, 0.5],
+                "vertex": [-0.5, -0.25],
+                "p": 0.5,
+                "eigenvectors": [
+                  [0.0, 1.0],
+                  [-1.0, 0.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

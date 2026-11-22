@@ -1388,7 +1388,9 @@ final class Session {
     }
 
     private static Map<String, Object> describeSolutions(GeoList list) {
-        Map<String, Object> result = describe(list, "list");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "list");
+        result.put("defined", list.isDefined());
         if (!list.isDefined()) {
             return result;
         }
@@ -1401,6 +1403,9 @@ final class Session {
             // GeoGebra answers, which `Element(Solutions(...), k)` reads.
             if (e instanceof GeoList row && sameCoordinateAssignments(row)) {
                 elements.add(describeSolutions(row));
+            } else if (e instanceof GeoConic && !(e instanceof GeoConicPart)) {
+                // An assignment of degree two, such as `y = x^2 + x`.
+                elements.add(describe(e, "conic"));
             } else {
                 elements.add(describe(e, typeOf(e)));
             }
