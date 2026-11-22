@@ -11,6 +11,7 @@
 use super::boundary::{BoundaryDef, Carrier};
 use super::function_roots::fixed_steps_roots;
 use crate::algo::curve::Cartesian;
+use crate::algo::plane_polynomial::{self, MAX_PLANE_DEGREE};
 use crate::algo::{Group, Parents, CARRIERS, POINT};
 use crate::expr::{IntersectionWork, Raw};
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
@@ -30,6 +31,7 @@ pub(crate) struct CurveIntersection {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Method {
     Line(usize),
+    Pair(usize),
     Seeds([u32; 2]),
     Point,
 }
@@ -39,46 +41,51 @@ impl CurveIntersection {
     // budget admits fewer than 432 coefficients across all pieces.
     pub(crate) const MAX_SAVED_SLOTS: usize = 512;
 
-    pub(crate) fn carrier_pair(c: &Construction, name: &str, args: &[&str]) -> Option<Self> {
+    pub(crate) fn unseeded_pair(c: &Construction, name: &str, args: &[&str]) -> Option<Self> {
         let ("Intersect", [first, second]) = (name, args) else {
             return None;
         };
         let (first, second) = (c.id(first)?, c.id(second)?);
-        let (curve, other) = match (c.kind(first), c.kind(second)) {
-            (Kind::Curve, kind) if CARRIERS.contains(&kind) => (first, second),
-            (kind, Kind::Curve) if CARRIERS.contains(&kind) => (second, first),
+        let (curve, other, method) = match (c.kind(first), c.kind(second)) {
+            (Kind::Curve, Kind::Curve) => (first, second, Method::Pair(0)),
+            (Kind::Curve, kind) if CARRIERS.contains(&kind) => (first, second, Method::Line(0)),
+            (kind, Kind::Curve) if CARRIERS.contains(&kind) => (second, first, Method::Line(0)),
             _ => return None,
         };
         Some(Self {
             curve,
             other,
-            method: Method::Line(0),
+            method,
         })
     }
 
     pub(super) fn multi(c: &Construction, name: &str, args: &[&str]) -> Option<Vec<BoundaryDef>> {
-        let first = Self::carrier_pair(c, name, args)?;
-        Some(first.line_slots(first.root_count(c).max(1)).collect())
+        let first = Self::unseeded_pair(c, name, args)?;
+        Some(first.slots(first.root_count(c).max(1)).collect())
     }
 
     /// Slots in a saved construction survive an edit that removed crossings.
     pub(crate) fn saved_slots(self, count: usize) -> Vec<Def> {
-        self.line_slots(count).map(Def::IntersectBoundary).collect()
+        self.slots(count).map(Def::IntersectBoundary).collect()
     }
 
-    fn line_slots(self, count: usize) -> impl Iterator<Item = BoundaryDef> {
+    fn slots(self, count: usize) -> impl Iterator<Item = BoundaryDef> {
         (0..count).map(move |slot| BoundaryDef::cartesian(self.with_slot(slot)))
     }
 
     fn with_slot(self, slot: usize) -> Self {
         Self {
-            method: Method::Line(slot),
+            method: if matches!(self.method, Method::Pair(_)) {
+                Method::Pair(slot)
+            } else {
+                Method::Line(slot)
+            },
             ..self
         }
     }
 
     pub(super) fn can_grow(self) -> bool {
-        self.method == Method::Line(0)
+        matches!(self.method, Method::Line(0) | Method::Pair(0))
     }
 
     pub(super) fn grown_slot(self, slot: usize) -> Option<Self> {
@@ -93,8 +100,8 @@ impl CurveIntersection {
         self.method != Method::Point
     }
 
-    pub(super) fn is_line(self) -> bool {
-        matches!(self.method, Method::Line(_))
+    pub(super) fn keeps_all_slots(self) -> bool {
+        matches!(self.method, Method::Line(_) | Method::Pair(_))
     }
 
     pub(crate) fn seed_pair(c: &Construction, args: &[&str]) -> Option<[Id; 2]> {
@@ -139,9 +146,12 @@ impl CurveIntersection {
     }
 
     fn with_roots<T>(self, c: &Construction, read: impl FnOnce(&[Option<Point>]) -> T) -> T {
-        c.function_roots.cartesian_line(
+        c.function_roots.cartesian(
             [self.curve, self.other],
-            || line_roots(c, self.curve, self.other),
+            || match self.method {
+                Method::Pair(_) => pair_roots(c, self.curve, self.other).unwrap_or_default(),
+                _ => line_roots(c, self.curve, self.other),
+            },
             read,
         )
     }
@@ -162,7 +172,7 @@ impl Group for CurveIntersection {
             self.other,
             match self.method {
                 Method::Line(_) => CARRIERS,
-                Method::Seeds(_) => CURVE,
+                Method::Pair(_) | Method::Seeds(_) => CURVE,
                 Method::Point => POINT,
             },
         )
@@ -170,7 +180,9 @@ impl Group for CurveIntersection {
 
     fn compute(&self, c: &Construction) -> Option<Value> {
         let (x, y) = match self.method {
-            Method::Line(slot) => self.with_roots(c, |roots| roots.get(slot).copied().flatten())?,
+            Method::Line(slot) | Method::Pair(slot) => {
+                self.with_roots(c, |roots| roots.get(slot).copied().flatten())?
+            }
             Method::Seeds(seeds) => seeded(c, self.curve, self.other, seeds)?,
             Method::Point => {
                 let p = c.point(self.other)?;
@@ -250,6 +262,47 @@ fn line_roots(c: &Construction, curve: Id, line: Id) -> CurveRoots {
     } else {
         points
     }
+}
+
+fn pair_roots(c: &Construction, first: Id, second: Id) -> Option<CurveRoots> {
+    let left = Cartesian::new(c, first)?;
+    let right = Cartesian::new(c, second)?;
+    let work = IntersectionWork::new();
+    let [x, y] = left.polynomial_coordinates(c, &work)?;
+    let [u, v] = right.polynomial_coordinates(c, &work)?;
+    if [&x, &y, &u, &v].iter().any(|coefficients| {
+        coefficients.len() > MAX_PLANE_DEGREE + 1
+            || coefficients.iter().any(|value| !value.is_finite())
+    }) {
+        return None;
+    }
+    let difference = |lhs: &[f64], rhs: &[f64]| {
+        plane_polynomial::from_terms(
+            lhs.iter()
+                .enumerate()
+                .map(|(i, &value)| (i, 0, value))
+                .chain(rhs.iter().enumerate().map(|(i, &value)| (0, i, -value))),
+        )
+    };
+    let parameters =
+        plane_polynomial::intersections(&difference(&x, &u), &difference(&y, &v), &work)?;
+    let in_domain = |curve: &Cartesian<'_>, t| {
+        let (start, end) = curve.parameter_bounds();
+        (start - STANDARD_PRECISION..=end + STANDARD_PRECISION).contains(&t)
+    };
+    let points = parameters
+        .into_iter()
+        .map(|(t, s)| {
+            if !work.charge(1) || !in_domain(&left, t) || !in_domain(&right, s) {
+                return None;
+            }
+            let (x, y) = left.value(t);
+            let (u, v) = right.value(s);
+            ((x - u).abs() < STANDARD_PRECISION && (y - v).abs() < STANDARD_PRECISION)
+                .then_some((x, y))
+        })
+        .collect();
+    (!work.exhausted() && left.has_budget() && right.has_budget()).then_some(points)
 }
 
 fn seeded(c: &Construction, first: Id, second: Id, seeds: [u32; 2]) -> Option<Point> {

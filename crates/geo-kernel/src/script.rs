@@ -181,12 +181,8 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         }
         check_label(name)?;
         let rhs = rhs.trim();
-        if rhs.contains('=') {
+        if crate::expr::equation::has_equation_separator(rhs) {
             return crate::expr::equation::define(c, name, rhs).map(Some);
-        }
-        if rhs.contains('<') || rhs.contains('>') {
-            // what the input bar would make an inequality of
-            return Err("inequalities are not supported".into());
         }
         return define_after_label(c, name, rhs);
     }
@@ -673,8 +669,13 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     }
     if rhs.starts_with("Vertex") || rhs.starts_with("Corner") {
         if let Some((func @ ("Vertex" | "Corner"), args)) = split_call(rhs) {
+            if let Some(source) = PointDef::inequality_source(c, func, &args) {
+                let count = crate::expr::inequality::vertices(c, source).len().max(1);
+                return add_outputs(c, name, PointDef::inequality_slots(source, count)).map(Some);
+            }
             let def = PointDef::parse_image_vertex(c, &args)
                 .or_else(|| PointDef::parse_segment_vertex(c, func, &args))
+                .or_else(|| PointDef::parse_drawable_corner(c, &args))
                 .or_else(|| crate::algo::point::parse_view_corner(c, &args));
             if let Some(def) = def {
                 return c
@@ -1227,6 +1228,13 @@ fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<Strin
 /// named inputs of these commands. Their normal dispatch reads the labels.
 fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String> {
     let (name, _) = rhs.split_once('(')?;
+    if matches!(name.trim(), "Corner" | "Vertex") {
+        if let Some((func, args)) = split_call(rhs) {
+            if let Some(id) = PointDef::inline_inequality_source(c, func, &args) {
+                return Some(format!("{func}({})", c.label(id)));
+            }
+        }
+    }
     if matches!(name.trim(), "Locus" | "SlopeField") {
         let (func, args) = split_call(rhs)?;
         let first = match (func, args.as_slice()) {
@@ -1288,7 +1296,13 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
             &[(1, Kind::Number), (2, Kind::Number)]
         }
         ("Vertex" | "Corner", [s, _]) if is_kind(s, Kind::Segment) => &[(1, Kind::Number)],
-        ("Vertex" | "Corner", [image, _]) if is_kind(image, Kind::Image) => &[(1, Kind::Number)],
+        ("Vertex" | "Corner", [source, _])
+            if [Kind::Image, Kind::Text, Kind::Boolean]
+                .into_iter()
+                .any(|kind| is_kind(source, kind)) =>
+        {
+            &[(1, Kind::Number)]
+        }
         ("Point", [path, _])
             if c.id(path)
                 .is_some_and(|id| crate::algo::path::PATH.contains(&c.kind(id))) =>
@@ -1307,8 +1321,10 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         {
             &[(1, Kind::Number)]
         }
-        ("Dilate", [curve, _]) if is_kind(curve, Kind::Curve) => &[(1, Kind::Number)],
-        ("Dilate", [curve, _, _]) if is_kind(curve, Kind::Curve) => {
+        ("Dilate", [src, _]) if is_kind(src, Kind::Curve) || is_kind(src, Kind::Image) => {
+            &[(1, Kind::Number)]
+        }
+        ("Dilate", [src, _, _]) if is_kind(src, Kind::Curve) || is_kind(src, Kind::Image) => {
             &[(1, Kind::Number), (2, Kind::Point)]
         }
         // the calculus commands: their number and boolean positions, in
@@ -1416,6 +1432,10 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
     if let Some(defs) = intersect::parse_multi(c, func, &args) {
         return Some(Ok(defs));
     }
+    if let Some(source) = PointDef::inequality_source(c, func, &args) {
+        let count = crate::expr::inequality::vertices(c, source).len().max(1);
+        return Some(Ok(PointDef::inequality_slots(source, count)));
+    }
     if func == "Angle" {
         if let Some(defs) = angle::fixed(c, &args) {
             return Some(defs.map(|defs| defs.into_iter().map(Def::AngleObject).collect()));
@@ -1510,7 +1530,13 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
     }
     let count = defined.iter().filter(|&&d| d).count();
     let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed())
-        || matches!(defs.first(), Some(Def::Lines(LineDef::ImplicitTangent(_))));
+        || matches!(
+            defs.first(),
+            Some(
+                Def::Point(PointDef::InequalityVertex { .. })
+                    | Def::Lines(LineDef::ImplicitTangent(_))
+            )
+        );
     let all_indexed =
         matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_all_indexed(c));
     // Construction.getIndexLabel: the prefix is the name up to the first `_`.
@@ -2063,9 +2089,17 @@ fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<
             .collect();
         return add_named_outputs(c, slots, defs);
     }
+    if let Some((func, args)) = split_call(rhs) {
+        if let Some(source) = PointDef::inequality_source(c, func, &args) {
+            if slots.len() > crate::expr::inequality::MAX_VERTICES {
+                return Err("too many output labels for the inequality".into());
+            }
+            return add_named_outputs(c, slots, PointDef::inequality_slots(source, slots.len()));
+        }
+    }
     if let Some((name @ "Intersect", args)) = split_call(rhs) {
         use intersect::curves::CurveIntersection;
-        if let Some(curve) = CurveIntersection::carrier_pair(c, name, &args) {
+        if let Some(curve) = CurveIntersection::unseeded_pair(c, name, &args) {
             if slots.len() > CurveIntersection::MAX_SAVED_SLOTS {
                 return Err("too many output labels for the curve intersection".into());
             }

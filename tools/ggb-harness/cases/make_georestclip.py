@@ -58,4 +58,66 @@ for path in ("PolyLine", "Polygon"):
                              f"p = {path}(Sequence((j, If(j < 1000, 0, 3)), j, 0, 1000))",
                              "s = IntersectPath(p, k)"], [])
 
+# CommandsTest.cmdIntersectPath clips the boundary of a square into four pieces.
+for args in ("p, k", "k, p"):
+    cases.case("polygon", [
+        pt("A", 0, 0), pt("B", 4, 0), "p = Polygon(A, B, 4)",
+        pt("O", 2, 2), "r = sqrt(5)", "k = Circle(O, r)",
+        f"q = IntersectPath({args})",
+    ], [mv("O", 2, 1), setn("r", 0), setn("r", 3), mv("B", 0, 0), mv("B", 4, 0)])
+
+cases.case("polygon", ellipse + [
+    pt("A", -4, 0), pt("B", 4, 0), pt("C", 4, 4), pt("D", -4, 4),
+    "p = Polygon(A, B, C, D)", "q = IntersectPath(k, p)",
+], [mv("N", 1, 2), setn("r", 0.5), setn("r", 3)])
+
+def alias_cases(topic, command):
+    # Use the same homogeneous point as the upstream polygon and line test.
+    cases.case(topic, [
+        "g: 100x = -300", "h: 100y = 200", "A = Intersect(g, h)",
+        pt("B", -3, -2), pt("C", 3, -2), "p = Polygon(A, B, C)",
+        pt("D", 0, 5), pt("E", 2, 8), "f = Line(D, E)",
+        f"q = {command}(p, f)",
+    ], [mv("E", 0, 5), mv("E", 2, 8), mv("D", 0, 10)])
+    for path, build in (
+        ("s", "Segment(A, B)"),
+        ("s", "PolyLine(A, B, C, D)"),
+        ("p", "Polygon(A, B, C, D)"),
+    ):
+        cases.case(topic, ellipse + [
+            pt("A", -4, 0), pt("B", 4, 0), pt("C", 4, 1), pt("D", -4, 1),
+            f"{path} = {build}", f"q = {command}({path}, k)", f"u = {command}(k, {path})",
+        ], [setn("r", 0.5), mv("N", 1, 2), setn("r", 3), mv("B", -4, 0)])
+
+
+alias_cases("region", "IntersectRegion")
+alias_cases("paths", "IntersectionPaths")
+
+for command in ("IntersectPath", "IntersectRegion", "IntersectionPaths"):
+    for shape in ("Arc", "Sector"):
+        for base in (circle, [
+            pt("F", -3, 0), pt("G", 3, 0), pt("H", 0, 2), "k = Ellipse(F, G, H)",
+        ]):
+            for path in ("Segment(A, B)", "PolyLine(A, B, C)", "Polygon(A, B, C)"):
+                cases.case("conicpart", base + [
+                    num("t", 0.5), f"a = {shape}(k, t, 2.5)",
+                    pt("A", 0, 0), pt("B", 0, 3), pt("C", -4, 3),
+                    f"p = {path}", f"q = {command}(p, a)", f"u = {command}(a, p)",
+                ], [mv("B", 0, -3), setn("t", 3), mv("B", 0, 3), setn("t", 0.5)])
+
+cases.case("segment", circle + [
+    "A = (-4, 1.99999999)", "B = (4, 1.99999999)",
+    "s = Segment(A, B)", "q = IntersectPath(s, k)",
+], [mv("O", 0, -0.01), mv("O", 0, 0.01), mv("O", 0, 0)])
+cases.case("segment", circle + [
+    pt("A", -4, 0), pt("B", 1.999995, 0),
+    "s = Segment(A, B)", "q = IntersectPath(s, k)",
+], [mv("B", 1.99, 0), mv("B", -3, 0), mv("B", 1.999995, 0)])
+
+cases.case("longcarrier", [
+    "p = Polygon(Sequence((j, If(j < 6999, 0, 3)), j, 0, 6999))",
+    pt("A", 3500.5, -1), pt("B", 3500.5, 3), "g = Line(A, B)",
+    "s = IntersectPath(p, g)",
+], [])
+
 cases.write()

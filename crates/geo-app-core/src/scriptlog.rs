@@ -97,7 +97,7 @@ impl Entry {
     }
 
     fn replay(&self, c: &mut Construction) -> Result<Option<Id>, String> {
-        if self.rhs().starts_with("Intersect") {
+        if BoundaryOutputs::is_command(self.rhs()) {
             let labels: Vec<_> = self.labels.iter().map(String::as_str).collect();
             if let Some(result) = restore_boundary_labels(c, &self.line, &labels) {
                 return result;
@@ -595,7 +595,9 @@ impl Log {
     pub(crate) fn boundary_outputs(&self, c: &Construction) -> BoundaryOutputs {
         let entries: Vec<_> = self
             .entries_rev()
-            .filter(|e| e.rhs().starts_with("Intersect") || boundary_slot_owner(e.rhs()).is_some())
+            .filter(|e| {
+                BoundaryOutputs::is_command(e.rhs()) || boundary_slot_owner(e.rhs()).is_some()
+            })
             .collect();
         let mut groups = BoundaryOutputs::default();
         for e in entries.into_iter().rev() {
@@ -684,7 +686,7 @@ impl Log {
         let Some(entry) = self.entries().find(|e| e.labels.iter().any(|l| l == label)) else {
             return false;
         };
-        let grown = (entry.rhs().starts_with("Intersect")
+        let grown = (BoundaryOutputs::is_command(entry.rhs())
             || boundary_slot_owner(entry.rhs()).is_some())
         .then(|| {
             self.grown_groups()

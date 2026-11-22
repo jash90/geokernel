@@ -793,6 +793,86 @@ mismatches = [
 ]
 
 [[gap]]
+id = "corners-text-001"
+reason = "Text corners require the drawable bounding box, including its headless font metrics. The kernel has no drawable bounds."
+mismatches = ["0:P", "1:P", "2:P", "4:P"]
+
+[[gap]]
+id = "corners-inequality-002"
+reason = "A sinusoidal border prevents polynomial expansion of the full inequality tree. The reference can still return the three vertices from pairs of linear borders."
+mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}"]
+
+[[gap]]
+id = "corners-text-002"
+reason = "A text corner reads the drawable's font metrics and anchor bounds. The kernel has no drawable bounds."
+mismatches = ["0:P", "3:P"]
+
+[[gap]]
+id = "corners-checkbox-001"
+reason = "A Boolean corner reads the checkbox drawable. This headless drawable reports a zero-size rectangle at the pixel origin, and the kernel has no checkbox bounds."
+mismatches = ["0:P", "1:P", "3:P"]
+
+[[gap]]
+id = "corners-vertex-003"
+reason = "The bounded polynomial solver cannot expand the sinusoidal border. The reference can still use it as a filter for crossings of the three linear borders."
+mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}"]
+
+[[gap]]
+id = "curvepairs-growth-001"
+reason = "The reference orders the positive integer root first when the height reaches one. The kernel orders the real solutions by ascending first parameter."
+mismatches = ["1:P_{1}", "1:P_{2}"]
+
+[[gap]]
+id = "curvepairs-radical-001"
+reason = "The reference solves the square-root coordinate symbolically. The unseeded solver requires two polynomial coordinate pairs."
+mismatches = ["0:P_{1}"]
+
+[[gap]]
+id = "curvepairs-bounded-001"
+reason = "The symbolic solution puts the positive integer root in the first slot. The kernel orders parameters ascending, so it puts that root in the second slot even when the negative root is outside the curve domain."
+mismatches = ["0:P_{1}", "0:P_{2}", "2:P_{1}", "2:P_{2}", "3:P_{1}", "3:P_{2}"]
+
+[[gap]]
+id = "curvepairs-independent-001"
+reason = "The symbolic system solver orders the parameter equations differently from ascending first parameter. The numerical coordinates agree for the two roots, and the labels are exchanged."
+mismatches = ["0:P_{1}", "0:P_{2}", "1:P_{1}", "1:P_{2}", "3:P_{1}", "3:P_{2}"]
+
+[[gap]]
+id = "curvepairs-order-001"
+reason = "The symbolic system returns the four integer roots in descending first-parameter order. The numerical solver orders them ascending."
+mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}", "0:P_{4}"]
+
+[[gap]]
+id = "curvepairs-parabola-001"
+reason = "The symbolic solution returns the positive integer root before the negative one. The numerical solver orders them by ascending first parameter, including an undefined slot when the earlier parameter falls outside the curve domain."
+mismatches = ["0:P_{1}", "0:P_{2}", "3:P_{1}", "3:P_{2}", "4:P_{1}", "4:P_{2}", "6:P_{1}", "6:P_{2}", "7:P_{1}", "7:P_{2}"]
+
+[[gap]]
+id = "curvepairs-parabola-002"
+reason = "The symbolic solution returns the positive integer root before the negative one. The numerical solver orders them by ascending first parameter, including an undefined slot when the earlier parameter falls outside the curve domain."
+mismatches = ["0:P_{1}", "0:P_{2}", "3:P_{1}", "3:P_{2}", "4:P_{1}", "4:P_{2}", "6:P_{1}", "6:P_{2}", "7:P_{1}", "7:P_{2}"]
+
+[[gap]]
+id = "curvepairs-radical-002"
+reason = "The symbolic solution orders irrational roots negative first and switches to positive first at height four. The numerical solver orders all real solutions by ascending first parameter."
+mismatches = ["1:P_{1}", "1:P_{2}"]
+
+[[gap]]
+id = "curvepairs-radical-003"
+reason = "The symbolic solution orders irrational roots negative first and switches to positive first at height four. The numerical solver orders all real solutions by ascending first parameter."
+mismatches = ["1:P_{1}", "1:P_{2}"]
+
+[[gap]]
+id = "curvepairs-radical-004"
+reason = "The symbolic solution orders irrational roots negative first and switches to positive first at height four. The numerical solver orders all real solutions by ascending first parameter."
+mismatches = ["1:P_{1}", "1:P_{2}"]
+
+[[gap]]
+id = "curvepairs-radical-005"
+reason = "The symbolic solution orders irrational roots negative first and switches to positive first at height four. The numerical solver orders all real solutions by ascending first parameter."
+mismatches = ["1:P_{1}", "1:P_{2}"]
+
+[[gap]]
 id = "implicit-barycentric-001"
 reason = "The numbered triangle cubic catalogue and its coefficient substitution have no kernel implementation."
 mismatches = ["0:script line 5"]
