@@ -15,6 +15,9 @@ and tell an infinite number from an undefined one:
 - `outputs`: commands and function calls whose result is infinite.
 """
 
+import json
+from pathlib import Path
+
 from caselib import Cases, mv, num, pt, setn
 
 cases = Cases("infinity")
@@ -183,5 +186,31 @@ for line in ("b = AreEqual(c, c)", "b = AreEqual(c, d)", "b = AreEqual(d, d)",
              "r = nPr(c, c)", "r = Max(c, n)", "r = Max(d, d)", "r = Min(c, c)",
              "r = Min(d, n)", "r = If(n > 2, c)", "r = If(n > 2, d, 1)"):
     case("commands", OBJECTS + [line], MOVES)
+
+# Re-record the original inputs with signed infinity fields.
+legacy_pairs = Path(__file__).with_name("legacy-infinity.txt").read_text().splitlines()
+
+legacy = {}
+sources = Path(__file__).parent
+for file in sorted([*sources.glob("*.json"), *(sources / "reference").glob("*.json")]):
+    if file.name != "infinity.json":
+        legacy.update((entry["id"], entry) for entry in json.loads(file.read_text())["cases"])
+for pair in legacy_pairs:
+    original, recording = pair.split()
+    entry = legacy.get(original)
+    if entry is None:
+        group, topic, _ = original.split("-")
+        file = sources.parents[2] / "golden" / group / f"{topic}.json"
+        recorded = next(entry for entry in json.loads(file.read_text())["cases"]
+                        if entry["id"] == original)
+        entry = {key: value for key, value in recorded.items() if key != "snapshots"}
+    case("legacy", entry["script"], entry["steps"][1:])
+    assert cases.cases[-1]["id"] == recording
+    for key in entry.keys() - {"id", "group", "script", "steps"}:
+        cases.cases[-1][key] = entry[key]
+
+case("setnumber", ["a = 1", "b = 1 / a", "P = (b, 1)", "c = IsDefined(a)"],
+     [{"action": "set_number", "label": "a", "infinity": sign} for sign in (1, -1)]
+     + [setn("a", 0), setn("a", 2)])
 
 cases.write()

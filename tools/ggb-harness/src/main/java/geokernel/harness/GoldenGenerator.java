@@ -151,10 +151,25 @@ public final class GoldenGenerator {
                 }
                 case "set_number": {
                     String label = (String) step.get("label");
-                    double value = number(step.get("value"));
-                    session.setNumber(label, value);
                     outStep.put("label", label);
-                    outStep.put("value", value);
+                    Object infinity = step.get("infinity");
+                    double value;
+                    if (infinity == null) {
+                        value = number(step.get("value"));
+                        outStep.put("value", value);
+                    } else if (Long.valueOf(1).equals(infinity) || Long.valueOf(-1).equals(infinity)) {
+                        value = number(infinity) * Double.POSITIVE_INFINITY;
+                        outStep.put("infinity", infinity);
+                    } else {
+                        throw new IllegalArgumentException("infinity must be 1 or -1");
+                    }
+                    session.setNumber(label, value);
+                    break;
+                }
+                case "delete": {
+                    String label = (String) step.get("label");
+                    session.delete(label);
+                    outStep.put("label", label);
                     break;
                 }
                 case "redefine": {

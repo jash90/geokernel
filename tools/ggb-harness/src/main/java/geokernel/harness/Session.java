@@ -91,7 +91,7 @@ final class Session {
     private final Map<String, BufferedImage> fixtureImages = new LinkedHashMap<>();
 
     private static final Pattern LINE =
-            Pattern.compile("^([A-Za-z][A-Za-z0-9']*(?:_\\{[A-Za-z0-9]+\\})?)"
+            Pattern.compile("^([A-Za-z][A-Za-z0-9']*(?:_(?:\\{[A-Za-z0-9]+\\}|[A-Za-z0-9]))?)"
                     + "(\\([A-Za-z][A-Za-z0-9]*(?:, *[A-Za-z][A-Za-z0-9]*)*\\))? = (.+)$");
     /** `label: definition`, where a comparison or equation belongs to the definition. */
     private static final Pattern EQUATION =
@@ -203,7 +203,7 @@ final class Session {
     /** Applies an assignment to a label already in the snapshot. */
     void redefine(String line) {
         Matcher matcher = LINE.matcher(line);
-        if (!matcher.matches() || !objects.containsKey(matcher.group(1))) {
+        if (!matcher.matches() || kernel.lookupLabel(matcher.group(1)) == null) {
             throw new IllegalArgumentException("expected an assignment to an existing label: " + line);
         }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
@@ -213,6 +213,11 @@ final class Session {
             throw new IllegalStateException("expected one replacement from: " + line);
         }
         objects.replaceAll((name, old) -> kernel.lookupLabel(name));
+    }
+
+    void delete(String label) {
+        lookup(label).remove();
+        objects.entrySet().removeIf(entry -> kernel.lookupLabel(entry.getKey()) == null);
     }
 
     /** Runs a scripting command that creates no object of its own, such as
@@ -1363,7 +1368,7 @@ final class Session {
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":
             case "Midpoint":
-                return !arguments.contains("=") && (VARIABLE_X.matcher(arguments).find()
+                return (VARIABLE_X.matcher(arguments).find() && arguments.matches(".*[<>].*")
                         || first instanceof GeoFunction && ((GeoFunction) first).isBooleanFunction())
                         ? "number" : "point";
             case "Line":

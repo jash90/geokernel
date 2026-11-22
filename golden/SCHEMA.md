@@ -65,8 +65,9 @@ One JSON object per file, stored under `golden/<group>/`.
 | --- | --- | --- |
 | `initial` | none | The state right after the script has run. |
 | `move` | `label`, `x`, `y` | Move the free point `label` to `(x, y)`, or set the free vector `label` to `(x, y)`. A point made by `Point(path)` moves too: GeoGebra puts it at the point of its path closest to `(x, y)` (`GeoPoint.setCoords` with `Path.pointChanged`) and keeps its path parameter. |
-| `set_number` | `label`, `value` | Set the free number `label` to `value`. |
+| `set_number` | `label`, `value` or `infinity` | Set a free number. Use `infinity: 1` or `infinity: -1` for an infinite value. |
 | `redefine` | `line` | Assign a new definition to an existing label. |
+| `delete` | `label` | Remove the object and its dependents from the construction. Subsequent snapshots omit the deleted labels. |
 | `reject` | `line` | Check that the command reports an error and creates no output. |
 
 ## Snapshot
@@ -287,11 +288,11 @@ Schema 3 records a number whose value is `Infinity` or `-Infinity` (group
 only refuses NaN. It is written `{ "type": "number", "defined": true,
 "infinity": 1 }`, or `-1` for the negative one, also as a list element.
 Angles, coordinates and every other value keep the rule above. Schema 1
-and 2 wrote an infinite number as `defined: false`, like an undefined one,
-so in those files an undefined number also agrees with an infinite number
-in the kernel; in schema 3 it agrees with an undefined number only. The
-files written before are not regenerated: they keep their schema version
-and their meaning.
+and 2 wrote an infinite number as `defined: false`. An undefined number
+in those files agrees with an undefined value. For the exact case pairs in
+`tools/ggb-harness/cases/legacy-infinity.txt`, the loader also restores an
+infinity at each matching snapshot position where the new recording
+supplies its sign. The original files keep their schema version and bytes.
 
 Script lines may also be equations in `x` and `y` (group `equations`),
 written `label: lhs = rhs` as GeoGebra's input bar reads them: a linear

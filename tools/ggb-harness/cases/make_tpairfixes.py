@@ -81,11 +81,22 @@ for rhs in ("a / a", "sqrt(a)", "a / 0", "ln(a) + x", "x / a"):
 topic("matrixrow")
 case("matrixrow", ["m = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}", "k = 2", "r = m(k)"],
      [setn("k", -1), setn("k", -5), setn("k", 0), setn("k", 1)])
+for matrix in ("{{(1, 2), (3, 4)}, {(5, 6), (7, 8)}}",
+               '{{"a", "b"}, {"c", "d"}}', "{{true, false}, {false, true}}",
+               "{{1, 2}, {3}}", "{{(1, 2)}, {(5, 6), (7, 8)}}"):
+    case("matrixrow", [f"m = {matrix}", "k = 2", "r = m(k)"],
+         [setn("k", 3), setn("k", 0), setn("k", -1), setn("k", 1)])
 
 topic("symbolic")
 case("symbolic", ["f(x) = (3 / 2)^x", "n = 2", "a = f(n)", "b = 5 * 10^(-2)"],
      [setn("n", -1), setn("n", -2), setn("n", 0)])
 case("symbolic", ["n = 8", "a = sqrt(n)", "b = sqrt(1024 * 2 * 3)"],
      [setn("n", -3), setn("n", 17), setn("n", 8)])
+
+case("numbertext", ["a = 2", "b = 1 / a", "t = Text(a)", "u = Text(b)"],
+     [setn("a", 1e100), setn("a", 1e-100), setn("a", -0.0), setn("a", 0),
+      setn("a", -2)])
+case("numbertext", ["a = 4", "b = sqrt(a)", "t = Text(b)"],
+     [setn("a", -1), setn("a", 0), setn("a", 4)])
 
 cases.write()

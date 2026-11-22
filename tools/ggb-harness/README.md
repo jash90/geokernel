@@ -131,7 +131,9 @@ For every case `GoldenGenerator`:
    `move` calls `GeoPoint.setCoords(x, y, 1)` (for a free vector
    `GeoVector.setCoords(x, y, 0)`) and `updateCascade()`;
    `set_number` calls `GeoNumeric.setValue` (it fails if GeoGebra clamps the
-   value) and `updateCascade()`.
+   value) and `updateCascade()`. Use `infinity: 1` or `infinity: -1` in place
+   of `value` to set an infinity. The `delete` step calls the object's removal
+   operation and records the surviving labels.
 
 Snapshot encoding:
 

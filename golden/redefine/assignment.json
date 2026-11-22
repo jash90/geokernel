@@ -621,6 +621,55 @@
           "d": { "type": "number", "defined": true, "value": 13.0 }
         }
       ]
+    },
+    {
+      "id": "redefine-assignment-017",
+      "group": "redefine",
+      "script": [
+        "a = 1",
+        "b = 2 a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "a = Slope(y = 2x)" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "redefine-assignment-018",
+      "group": "redefine",
+      "script": [
+        "a_{1} = 2",
+        "b = 2 a_{1}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "a_1 = 3" },
+        { "action": "redefine", "line": "a_{1} = 5" }
+      ],
+      "snapshots": [
+        {
+          "a_{1}": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a_{1}": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a_{1}": { "type": "number", "defined": true, "value": 5.0 },
+          "b": { "type": "number", "defined": true, "value": 10.0 }
+        }
+      ]
     }
   ]
 }
