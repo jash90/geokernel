@@ -135,7 +135,7 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `list` | `elements` | The elements in order, each an Object of its own (`number`, `angle`, `point`, `vector`, `boolean`, `function`, `text` or `list`, defined or not): `{ "type": "list", "defined": true, "elements": [{ "type": "number", "defined": true, "value": 1.0 }, { "type": "list", "defined": true, "elements": [] }] }`. An element that is a point or vector carries `x` and `y` like an object. |
 | `conic` | `conic_type`, `matrix`, and the parts of the type (below) | A general conic: an object made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, or the image of one under a transformation. Every other conic object of GeoGebra is a `circle`, an `arc` or a `sector`. |
 | `curve` | `start`, `end` | The lower and upper parameters of a Cartesian curve. Length cases measure the coordinates over this interval or a supplied interval. |
-| `locus` | `points` | The points of a locus or slope field, in order, each `[x, y, lineTo]`: `lineTo` is `true` when the point is joined to the one before it and `false` when it starts a new piece. A coordinate that is not finite is a signed sample; `x` and `y` are both `null` for an undefined point, which GeoGebra may append at the end. See below for the view the points depend on. |
+| `locus` | `points` | The points of a locus or slope field, in order, each `[x, y, lineTo]`: `lineTo` is `true` when the point is joined to the one before it and `false` when it starts a new piece. `x` and `y` are both `null` for an undefined point, which GeoGebra may append at the end. Before schema 4 both coordinates are `null` whenever either is not finite; from schema 4 each coordinate is a signed sample on its own, so a single `null` is a NaN coordinate. See below for the view the points depend on. |
 | `arc`, `sector` | `value`, `conic_type`, and further fields of the type (below) | A part of a circle or conic (GeoGebra's `GeoConicPart`), made by `CircularArc`, `CircumcircularArc`, `Semicircle` or `Arc` (an `arc`), or by `CircularSector`, `CircumcircularSector` or `Sector` (a `sector`). `value` is the length of an arc and the area of a sector. |
 
 A `conic` carries `conic_type`, a string, and `matrix`, the six numbers
@@ -198,9 +198,11 @@ its length is not finite, so the polyline is undefined.
 A defined Cartesian curve can also carry `samples_curve`, an array of
 `[parameter, [x, y]]` entries at fixed fractions of its parameter interval.
 Before schema 4 the coordinate pair is `null` when either coordinate is not
-finite. From schema 4 the pair is always written and each coordinate that is
-not finite is a signed sample. If the array is present, replay checks every
-sample at the existing tolerance.
+finite. From schema 4 the pair is always written, a `null` pair is refused,
+and each coordinate that is not finite is a signed sample. If the array is
+present, replay checks every sample at the existing tolerance. A curve inside
+a list carries no `samples_curve`: list replay compares its bounds only, so
+the loader refuses one.
 
 ### Signed samples
 
@@ -260,7 +262,8 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   (`Construction::arc`), raw.
 - Loci: the number of points must be equal, and each point must agree with
   the kernel's (`Construction::locus`) like two numbers per coordinate, with
-  the same `lineTo`. A `null` point requires NaN in both coordinates.
+  the same `lineTo`. A `null` point requires NaN in both coordinates, and
+  from schema 4 a single `null` coordinate requires NaN in that coordinate.
 - Lists: the number of elements must be equal, and each element is
   compared like an object of its type, nested lists recursively
   (`Construction::elements`).
@@ -328,11 +331,17 @@ the encodings the schema bump implies (an infinite number of a schema 1 or 2
 file). A file whose new recording also changed other values, such as the last
 bits of a finite sample, keeps its schema and bytes. Its cases with a `null`
 sample are paired in `legacy-infinity.txt` with a schema 4 recording of the
-same input in the `infinity` group. At each `null` sample, curve pair or pie
-fraction of such a case the loader takes the recorded sign of an infinity,
-keeps `null` where the recording has NaN, and refuses the pair where one side
-has a finite value and the other does not. A legacy case whose own file is in
-schema 4 needs no pair; its pair is kept so the recording keeps its id.
+same input in the `infinity` group. The loader checks every object of every
+step of such a pair: the same labels, types and definedness, the same list
+lengths, sample positions, curve bounds and parameters, and locus `lineTo`
+flags, and finite values within the comparison tolerance (the rounding of
+another platform). One agreeing object cannot cover a contradictory one. At
+each `null` sample, pie fraction, curve pair or locus point the loader takes
+the recorded sign of an infinity, keeps `null` where the recording has NaN,
+and refuses the pair where one side is finite and the other is not. A legacy
+`null` locus point needs both recorded coordinates to be non-finite. A legacy
+case whose own file is in schema 4 needs no pair; its pair is kept so the
+recording keeps its id.
 
 Script lines may also be equations in `x` and `y` (group `equations`),
 written `label: lhs = rhs` as GeoGebra's input bar reads them: a linear

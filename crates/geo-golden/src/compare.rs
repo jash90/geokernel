@@ -39,6 +39,12 @@ fn samples_agree(want: Option<f64>, got: Option<f64>) -> bool {
     }
 }
 
+/// A recorded coordinate against the kernel's: NaN, a recorded `null` from
+/// schema 4, agrees with NaN only; every other value by [`numbers_agree`].
+fn coordinate_agrees(want: f64, got: f64) -> bool {
+    samples_agree((!want.is_nan()).then_some(want), Some(got))
+}
+
 pub(crate) fn implicit_matrices_agree(expected: &[Vec<f64>], matrix: &[Vec<f64>]) -> bool {
     expected.len() == matrix.len()
         && expected
@@ -286,12 +292,10 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
             let result = compare(expected, kind, &c.value(id))?;
             for &(t, want) in samples {
                 let got = c.curve_sample(id, t);
-                // from schema 4 a NaN coordinate stands for a recorded `null`
-                let coordinate = |want: f64, got: f64| {
-                    samples_agree((!want.is_nan()).then_some(want), Some(got))
-                };
                 let agrees = match (want, got) {
-                    (Some((x, y)), Some((a, b))) => coordinate(x, a) && coordinate(y, b),
+                    (Some((x, y)), Some((a, b))) => {
+                        coordinate_agrees(x, a) && coordinate_agrees(y, b)
+                    }
                     (Some((x, y)), None) => x.is_nan() && y.is_nan(),
                     (None, got) => got.is_none_or(|(x, y)| {
                         !x.is_infinite() && !y.is_infinite() && (x.is_nan() || y.is_nan())
@@ -657,7 +661,8 @@ pub fn compare_locus(
     }
     for (i, ((at, line_to), p)) in want.iter().zip(got).enumerate() {
         let same = match *at {
-            Some((x, y)) => numbers_agree(x, p.x) && numbers_agree(y, p.y),
+            // from schema 4 a NaN coordinate stands for a recorded `null`
+            Some((x, y)) => coordinate_agrees(x, p.x) && coordinate_agrees(y, p.y),
             None => p.x.is_nan() && p.y.is_nan(),
         };
         if !same || *line_to != p.line_to {
@@ -983,6 +988,15 @@ mod tests {
                 assert_eq!(compare_extra(&c, id, &expected).is_ok(), agrees, "{label}");
             }
         }
+    }
+
+    #[test]
+    fn a_recorded_null_coordinate_meets_nan_only() {
+        assert!(coordinate_agrees(f64::NAN, f64::NAN));
+        assert!(!coordinate_agrees(f64::NAN, 1.0));
+        assert!(!coordinate_agrees(f64::NAN, f64::INFINITY));
+        assert!(coordinate_agrees(f64::INFINITY, f64::INFINITY));
+        assert!(!coordinate_agrees(1.0, f64::NAN));
     }
 
     #[test]
