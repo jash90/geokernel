@@ -1,6 +1,6 @@
 """Exercise polynomial equations and the commands that use them."""
 
-from caselib import Cases, mv, setn
+from caselib import Cases, mv, pt, setn
 
 cases = Cases("implicit")
 cases.case("equations", ["c: x^3 + y^3 = 1"], [])
@@ -139,6 +139,88 @@ cases.case(
 )
 cases.cases[-1]["track_boundary_growth"] = True
 cases.case("tangents", ["c: x^4 + y^4 = 1", "A = (1, 1)", "t = Tangent(A, c)"], [])
+
+for path in ("Segment", "Ray"):
+    cases.case(
+        "line", ["c: x^4 + y^4 = 2", "A = (-2, 0)", "B = (2, 0)", f"s = {path}(A, B)",
+                 "P = Intersect(c, s)", "Q = Intersect(s, c)",
+                 "R = Intersect(c, s, 1)", "S = Intersect(s, c, 2)"],
+        [mv("B", 0, 0), mv("A", 0.5, 0), mv("B", 0.5, 0), mv("A", -2, 0), mv("B", 2, 0)],
+    )
+    cases.cases[-1]["track_boundary_growth"] = True
+    cases.case(
+        "line", ["c: x^4 + y^4 = 2", "A = (0, 0)", "B = (2, 0)", f"s = {path}(A, B)",
+                 "P = Intersect(c, s)", "R = Intersect(c, s, 2)"],
+        [mv("A", -2, 0), mv("B", -2, 0), mv("B", 2, 0)],
+    )
+    cases.cases[-1]["track_boundary_growth"] = True
+
+for path in ("CircularArc", "CircularSector"):
+    arc = ["c: x^4 + y^4 = 2", "O = (0, 0)", "A = (sqrt(2), 0)", "B = (0, 2)",
+           f"k = {path}(O, A, B)"]
+    cases.case("conic", arc + ["P = Intersect(c, k)", "Q = Intersect(k, c)",
+                              "R = Intersect(c, k, 2)"],
+               [mv("B", 0, -2), mv("A", 0, 0), mv("A", 2, 0), mv("A", 1.414214, 0)])
+    cases.cases[-1]["track_boundary_growth"] = True
+    cases.case("conic", arc, [{"action": "reject", "line": "R = Intersect(k, c, 2)"}])
+    transversal = arc[:2] + ["A = (1.3, 0)"] + arc[3:]
+    cases.case("conic", transversal + ["P = Intersect(c, k)", "Q = Intersect(k, c)",
+                                      "R = Intersect(c, k, 2)"],
+               [mv("B", 0, -2), mv("A", 0, 0), mv("A", 1.3, 0)])
+    cases.cases[-1]["track_boundary_growth"] = True
+
+for count in (5, 9, 14):
+    labels = "ABCDEFGHIJKLMN"[:count]
+    collinear = [pt(label, i, i) for i, label in enumerate(labels[:-1])]
+    cases.case("constructors", collinear + [pt(labels[-1], 0, 1),
+                                             f"c = ImplicitCurve({', '.join(labels)})"],
+               [mv(labels[-1], count - 1, count - 1), mv("B", 0, 0), mv("B", 1, 1)])
+
+for scale in (0.01, 0.001, 0.0001, 0.00001):
+    labels = "ABCDEFGHI"
+    grid = [(i, j) for i in range(4) for j in range(4 - i)][1:]
+    scaled = [pt(label, x * scale, y * scale) for label, (x, y) in zip(labels, grid)]
+    cases.case("constructors", scaled + [f"pts = {{{', '.join(labels)}}}", "c = ImplicitCurve(pts)"],
+               [])
+
+cases.case("asymptotes", ["a = 0.000000001", "c: a*x^3 + x*y = 1", "lines = Asymptote(c)"],
+           [setn("a", 1e-8), setn("a", 2e-8), setn("a", 0)])
+cases.case("pair", ["a = 0", "c: a*x^3 + y^3 - y = 0", "d: y^3 + y = 0", "P = Intersect(c, d)"],
+           [setn("a", 1), setn("a", 0)])
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("pair", ["c: y^3 - y = 0", "d: y^3 + y = 0", "P = Intersect(c, d)"], [])
+cases.case("pair", ["a = 0", "b = 0", "c: a*x^3 + x^2 + y^2 = 1", "d: b*x^3 + y = x^2",
+                    "P = Intersect(c, d)"], [setn("a", 1), setn("b", 1), setn("a", 0), setn("b", 0)])
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("pair", ["c: -5*x^4+x^2+y^2=0", "d: -20*x^3+2*x^2+2*x+2*y^2+4*y=0",
+                    "P = Intersect(c, d)"], [])
+cases.case("pair", ["a = 0", "c: x^4 + y^4 = 1", "d: x^4 + y^4 + (x^2-0.5)^2 = 1 + a",
+                    "P = Intersect(c, d)"], [setn("a", -1e-10), setn("a", 1e-10), setn("a", 0)])
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("pair", ["c: x^8 + y^2 = 1", "d: x^9 + y^2 = 1", "P = Intersect(c, d)"], [])
+cases.case("pair", ["c: x^8 - y = 0", "d: x - y^9 = 0", "P = Intersect(c, d)"], [])
+cases.case("pair", ["a = 1", "b = 1", "c: a*x^3 + x^2 + y^2 = 1", "d: b*x^3 + y = x^2",
+                    "P = Intersect(c, d)"], [setn("a", 0), setn("b", 0), setn("a", 1), setn("b", 1)])
+cases.cases[-1]["track_boundary_growth"] = True
+
+cases.case("cleanup", ["A = (0, 0)", "a = 2", "k = Circle(A, 2*a)", "B = (2, 2)",
+                       "M = Midpoint(A, B)"],
+           [{"action": "reject", "line": "P = Intersect((0,1), (2,3))"}])
+cases.case("cleanup", ["c: x^4 + y^4 = 1", "g: y = 2", "P = Intersect(c, g)",
+                       "A = (0, 0)", "a = 2", "k = Circle(A, 2*a)"], [])
+cases.case("tangents", ["c: x^4 + y^4 = 1", "A = (1, 1)", "t = Tangent(c, A)"],
+           [mv("A", 0, 0), mv("A", 2, 2), mv("A", 1, 1)])
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("tangents", ["a = 0.000000001", "c: a*x^3 + x*y = 1", "g: x + y = 0", "t = Tangent(g, c)"],
+           [setn("a", 0), setn("a", 2e-8), setn("a", 1e-9)])
+
+cases.case("graph", ["k = 0.1", "c: y^3 + y = 0", "f(x) = sin(k*x)", "P = Intersect(c, f)"],
+           [setn("k", 13), setn("k", 0.1)])
+cases.cases[-1]["track_boundary_growth"] = True
+zigzag = [pt(f"A_{{{i + 1}}}", (-1) ** i * 2, 0) for i in range(34)]
+cases.case("polyline", ["c: x^4 + y^4 = 1"] + zigzag
+           + ["s = PolyLine(" + ", ".join(f"A_{{{i + 1}}}" for i in range(len(zigzag))) + ")",
+              "P = Intersect(c, s)"], [])
 
 cases.write()
 

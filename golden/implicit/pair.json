@@ -266,6 +266,758 @@
           }
         }
       ]
+    },
+    {
+      "id": "implicit-pair-005",
+      "group": "implicit",
+      "script": [
+        "a = 0",
+        "c: a*x^3 + y^3 - y = 0",
+        "d: y^3 + y = 0",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + y^(3) - y = 0",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, 0.0, 1.0]
+            ],
+            "equation": "y^(3) + y = 0",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + y^(3) - y = 0",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, 0.0, 1.0]
+            ],
+            "equation": "y^(3) + y = 0",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + y^(3) - y = 0",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, 0.0, 1.0]
+            ],
+            "equation": "y^(3) + y = 0",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "implicit-pair-006",
+      "group": "implicit",
+      "script": [
+        "c: y^3 - y = 0",
+        "d: y^3 + y = 0",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -1.0, 0.0, 1.0]
+            ],
+            "equation": "y^(3) - y = 0",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0, 0.0, 1.0]
+            ],
+            "equation": "y^(3) + y = 0",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "implicit-pair-007",
+      "group": "implicit",
+      "script": [
+        "a = 0",
+        "b = 0",
+        "c: a*x^3 + x^2 + y^2 = 1",
+        "d: b*x^3 + y = x^2",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-pair-008",
+      "group": "implicit",
+      "script": [
+        "c: -5*x^4+x^2+y^2=0",
+        "d: -20*x^3+2*x^2+2*x+2*y^2+4*y=0",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [-5.0, 0.0, 0.0]
+            ],
+            "equation": "(-5 * x^(4)) + x^(2) + y^(2) = 0",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 4.0, 2.0],
+              [2.0, 0.0, 0.0],
+              [2.0, 0.0, 0.0],
+              [-20.0, 0.0, 0.0]
+            ],
+            "equation": "(-20 * x^(3)) + (2 * x^(2)) + (2 * x) + (2 * y^(2)) + (4 * y) = 0",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -6.938893903907228E-17, "y": -7.132909029541784E-18 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.47563514840774185, "y": 0.17224558824440475 },
+          "P_{3}": { "type": "point", "defined": true, "x": 0.9999999999999996, "y": 1.9999999999999984 },
+          "P_{4}": { "type": "point", "defined": true, "x": 2.338809137914721, "y": -12.005665890026147 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-pair-009",
+      "group": "implicit",
+      "script": [
+        "a = 0",
+        "c: x^4 + y^4 = 1",
+        "d: x^4 + y^4 + (x^2-0.5)^2 = 1 + a",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0E-10 },
+        { "action": "set_number", "label": "a", "value": 1.0E-10 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-0.75, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [2.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) + (x^(2) - 0.5)^(2) = 1 + a",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.7071053390927953, "y": -0.9306054917322661 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.7071097427283779, "y": 0.9306035598830282 },
+          "P_{3}": { "type": "point", "defined": true, "x": 0.7071053390927953, "y": -0.9306054917322661 },
+          "P_{4}": { "type": "point", "defined": true, "x": 0.7071097427283781, "y": 0.9306035598830282 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0E-10 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-0.7499999999, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [2.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) + (x^(2) - 0.5)^(2) = 1 + a",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.707099482590361, "y": -0.9306080608028597 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.7071009635247244, "y": 0.9306074111659347 },
+          "P_{3}": { "type": "point", "defined": true, "x": 0.7070994825903607, "y": -0.9306080608028597 },
+          "P_{4}": { "type": "point", "defined": true, "x": 0.7071009635247245, "y": 0.9306074111659347 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E-10 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-0.7500000001, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [2.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) + (x^(2) - 0.5)^(2) = 1 + a",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.7071171133336249, "y": -0.9306003263110031 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.7071178570943035, "y": 0.9306 },
+          "P_{3}": { "type": "point", "defined": true, "x": 0.7071171133336249, "y": -0.9306003263110031 },
+          "P_{4}": { "type": "point", "defined": true, "x": 0.7071178570943029, "y": 0.9306 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-0.75, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [2.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) + (x^(2) - 0.5)^(2) = 1 + a",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.7071053390927953, "y": -0.9306054917322661 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.7071097427283779, "y": 0.9306035598830282 },
+          "P_{3}": { "type": "point", "defined": true, "x": 0.7071053390927953, "y": -0.9306054917322661 },
+          "P_{4}": { "type": "point", "defined": true, "x": 0.7071097427283781, "y": 0.9306035598830282 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-pair-010",
+      "group": "implicit",
+      "script": [
+        "c: x^8 + y^2 = 1",
+        "d: x^9 + y^2 = 1",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x^(8) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x^(9) + y^(2) = 1",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-pair-011",
+      "group": "implicit",
+      "script": [
+        "c: x^8 - y = 0",
+        "d: x - y^9 = 0",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -1.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(8) - y = 0",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x - y^(9) = 0",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-pair-012",
+      "group": "implicit",
+      "script": [
+        "a = 1",
+        "b = 1",
+        "c: a*x^3 + x^2 + y^2 = 1",
+        "d: b*x^3 + y = x^2",
+        "P = Intersect(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "b", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.7311213078970571, "y": 0.9253507567617499 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.7486743688233678, "y": 0.14087136155919824 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.6679607074962346, "y": 0.744196542078186 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + x^(2) + y^(2) = 1",
+            "input_form": true
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-1.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "(b * x^(3)) + y = x^(2)",
+            "input_form": true
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.7311213078970571, "y": 0.9253507567617499 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.7486743688233678, "y": 0.14087136155919824 }
+        }
+      ]
     }
   ]
 }

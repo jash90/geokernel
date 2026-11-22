@@ -129,6 +129,8 @@ fn tokens_of(k: Kind) -> &'static [&'static str] {
         Kind::Ray => &["ray"],
         Kind::Circle => &["circle"],
         Kind::Conic => &["conic"],
+        Kind::Arc => &["arc"],
+        Kind::Sector => &["sector"],
         Kind::Polygon => &["polygon"],
         Kind::PolyLine => &["polyline"],
         Kind::List => &["list"],

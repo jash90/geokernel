@@ -3500,11 +3500,86 @@ form = "implicit,conic,number"
 cases = ["implicit-conic-001"]
 
 [[form]]
-command = "Intersect"
-form = "implicit,implicit"
-cases = ["implicit-pair-001", "implicit-pair-002", "implicit-pair-003", "implicit-pair-004"]
+command = "Tangent"
+form = "line,implicit"
+cases = ["implicit-tangents-003", "implicit-tangents-007"]
 
 [[form]]
 command = "Tangent"
-form = "line,implicit"
-cases = ["implicit-tangents-003"]
+form = "point,implicit"
+cases = ["implicit-tangents-001", "implicit-tangents-004", "implicit-tangents-005"]
+
+[[form]]
+command = "Tangent"
+form = "implicit,point"
+cases = ["implicit-tangents-002", "implicit-tangents-006"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,segment"
+cases = ["implicit-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "segment,implicit"
+cases = ["implicit-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,segment,number"
+cases = ["implicit-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "segment,implicit,number"
+cases = ["implicit-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,ray"
+cases = ["implicit-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "ray,implicit"
+cases = ["implicit-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,ray,number"
+cases = ["implicit-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "ray,implicit,number"
+cases = ["implicit-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,arc"
+cases = ["implicit-conic-007"]
+
+[[form]]
+command = "Intersect"
+form = "arc,implicit"
+cases = ["implicit-conic-007"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,arc,number"
+cases = ["implicit-conic-007"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,sector"
+cases = ["implicit-conic-010"]
+
+[[form]]
+command = "Intersect"
+form = "sector,implicit"
+cases = ["implicit-conic-010"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,sector,number"
+cases = ["implicit-conic-010"]

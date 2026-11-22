@@ -1281,10 +1281,14 @@ pub(crate) fn implicit_output<'a>(
         matches!(
             k,
             Kind::Line
+                | Kind::Segment
+                | Kind::Ray
                 | Kind::PolyLine
                 | Kind::Function
                 | Kind::Conic
                 | Kind::Circle
+                | Kind::Arc
+                | Kind::Sector
                 | Kind::ImplicitCurve
         )
     };

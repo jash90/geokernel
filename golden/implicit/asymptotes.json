@@ -218,6 +218,114 @@
           }
         }
       ]
+    },
+    {
+      "id": "implicit-asymptotes-006",
+      "group": "implicit",
+      "script": [
+        "a = 0.000000001",
+        "c: a*x^3 + x*y = 1",
+        "lines = Asymptote(c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0E-8 },
+        { "action": "set_number", "label": "a", "value": 2.0E-8 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E-9 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [1.0E-9, 0.0]
+            ],
+            "equation": "(a * x^(3)) + (x * y) = 1",
+            "input_form": true
+          },
+          "lines": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -0.0, "c": -0.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E-8 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [1.0E-8, 0.0]
+            ],
+            "equation": "(a * x^(3)) + (x * y) = 1",
+            "input_form": true
+          },
+          "lines": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -0.0, "c": -0.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0E-8 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [2.0E-8, 0.0]
+            ],
+            "equation": "(a * x^(3)) + (x * y) = 1",
+            "input_form": true
+          },
+          "lines": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -0.0, "c": -0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0],
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [0.0, 0.0]
+            ],
+            "equation": "(a * x^(3)) + (x * y) = 1",
+            "input_form": true
+          },
+          "lines": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -0.0, "c": -0.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -0.0 }
+            ]
+          }
+        }
+      ]
     }
   ]
 }
