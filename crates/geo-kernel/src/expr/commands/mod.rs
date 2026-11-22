@@ -12,6 +12,7 @@ mod algebra;
 pub(crate) use algebra::fmin;
 pub(crate) use algebra::polynomial;
 pub(super) mod financial;
+mod geogebra;
 mod geometry;
 mod list;
 mod logical;
@@ -35,6 +36,7 @@ pub(super) fn is_command(name: &str) -> bool {
         geometry::NAMES,
         text::NAMES,
         financial::NAMES,
+        geogebra::NAMES,
     ]
     .iter()
     .any(|names| names.contains(&name))
@@ -60,6 +62,9 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         return Ok(Some(node));
     }
     if let Some(node) = geometry::parse(p, text)? {
+        return Ok(Some(node));
+    }
+    if let Some(node) = geogebra::parse(p, text)? {
         return Ok(Some(node));
     }
     algebra::parse(p, text)

@@ -1081,6 +1081,16 @@ impl Construction {
     }
 
     /// The interval of an angle, including an unbounded numeric angle.
+    /// The coordinate style a point or vector prints in, set by
+    /// `ToComplex`, `ToPolar` and `ToPoint` (`Kernel.COORD_*`).
+    pub fn coordinate_mode(&self, id: Id) -> Option<crate::algo::point::CoordMode> {
+        match self.def(id) {
+            Def::Point(PointDef::Convert { mode, .. })
+            | Def::Vector(VectorDef::Convert { mode, .. }) => Some(mode),
+            _ => None,
+        }
+    }
+
     pub fn angle_style(&self, id: Id) -> Option<AngleStyle> {
         match *self.defs.get(id.0)? {
             Def::AngleObject(d) if d.kind() == Kind::Angle => Some(d.style),

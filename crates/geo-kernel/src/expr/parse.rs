@@ -242,6 +242,49 @@ impl Parser<'_> {
         self.nodes[i as usize]
     }
 
+    /// A reference to the object `id`, registered as a parent — what
+    /// writing its label would parse to (`Name` and `Object` insert these
+    /// for the object their argument resolved to).
+    pub(super) fn object_reference(&mut self, id: Id) -> u32 {
+        self.read(id, true);
+        self.push(Node::Obj(id))
+    }
+
+    /// A string literal node with the text `text`.
+    pub(super) fn text_literal(&mut self, text: &str) -> u32 {
+        let id = self.push(Node::Text);
+        self.lits[id as usize] = Lit::Text(text.into());
+        id
+    }
+
+    /// The text of a string literal node.
+    pub(super) fn literal_text(&self, i: u32) -> Option<&str> {
+        match &self.lits[i as usize] {
+            Lit::Text(text) => Some(text),
+            _ => None,
+        }
+    }
+
+    /// The construction the expression parses in.
+    pub(super) fn construction(&self) -> &Construction {
+        self.c
+    }
+
+    /// The label of the object `id`.
+    pub(super) fn label(&self, id: Id) -> &str {
+        self.c.label(id)
+    }
+
+    /// The kind of the object `id`.
+    pub(super) fn kind(&self, id: Id) -> Kind {
+        self.c.kind(id)
+    }
+
+    /// The object named `label`, if the construction has it.
+    pub(super) fn lookup(&self, label: &str) -> Option<Id> {
+        self.c.id(label)
+    }
+
     pub(super) fn read(&mut self, id: Id, input: bool) {
         if !self.parents.contains(&id) {
             self.parents.push(id);

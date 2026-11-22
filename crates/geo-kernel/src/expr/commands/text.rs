@@ -68,6 +68,7 @@ pub(super) const NAMES: &[&str] = &[
     "IndexOf",
     "Length",
     "Take",
+    "Name",
 ];
 
 pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, String> {
@@ -91,6 +92,7 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
         "IndexOf" => TextOp::IndexOf,
         "Length" => TextOp::Length,
         "Take" => TextOp::Take,
+        "Name" => return parse_name(p),
         _ => return Ok(None),
     };
     if matches!(op, TextOp::Length | TextOp::IndexOf | TextOp::Take) {
@@ -105,6 +107,26 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
     let args = p.arguments()?;
     let node = call_node(p, op, &args);
     Ok(Some(p.push(node)))
+}
+
+/// `Name(g)`: the label of the object `g` as a fixed string (`AlgoName`).
+/// An object the construction keeps hidden has no label to show; its
+/// formula string is not reproduced here.
+fn parse_name(p: &mut Parser<'_>) -> Result<Option<u32>, String> {
+    let args = p.arguments()?;
+    match args[..] {
+        [arg] => match p.nodes[arg as usize] {
+            Node::Obj(id) => {
+                let label = p.label(id).to_owned();
+                if label.starts_with('\0') {
+                    return Err("`Name` needs an object with a label".into());
+                }
+                Ok(Some(p.text_literal(&label)))
+            }
+            _ => Err("`Name` needs an object".into()),
+        },
+        _ => Err(format!("`Name` does not take {} argument(s)", args.len())),
+    }
 }
 
 fn call_node(p: &mut Parser<'_>, op: TextOp, args: &[u32]) -> Node {

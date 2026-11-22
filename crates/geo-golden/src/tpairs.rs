@@ -165,6 +165,13 @@ pub fn value_string(c: &Construction, id: Id) -> Option<String> {
         let (x, y) = (ggb_double(x)?, ggb_double(y)?);
         Some(format!("({x}, {y})"))
     };
+    // `ToComplex` and `ToPolar` only change how the point prints
+    // (`GeoPoint.buildValueString`)
+    if let Some(mode) = c.coordinate_mode(id) {
+        if let (Value::Point { x, y }, true) = (&value, mode != geo_kernel::algo::point::CoordMode::Cartesian) {
+            return styled_point(*x, *y, mode);
+        }
+    }
     match (&value, c.kind(id)) {
         (Value::Undefined, kind) => match kind {
             Kind::Number => Some("NaN".into()),
@@ -181,6 +188,42 @@ pub fn value_string(c: &Construction, id: Id) -> Option<String> {
         (Value::Segment { x1, y1, x2, y2 }, _) => ggb_double((x2 - x1).hypot(y2 - y1)),
         (_, Kind::List) => list_string(c.elements(id)?),
         _ => None,
+    }
+}
+
+/// A point in the coordinate style `ToComplex` or `ToPolar` set
+/// (`GeoPoint.buildValueString`): `x + yί` with a signed coefficient, or
+/// `(r; θ*°)` with the angle in degrees, as the templates GeoGebra's own
+/// tests replay with print.
+fn styled_point(x: f64, y: f64, mode: geo_kernel::algo::point::CoordMode) -> Option<String> {
+    match mode {
+        geo_kernel::algo::point::CoordMode::Complex => {
+            let imaginary = '\u{03af}';
+            if x != 0.0 {
+                let coefficient = if y == -1.0 {
+                    "- ".to_string()
+                } else if y == 1.0 {
+                    "+ ".to_string()
+                } else if y < 0.0 {
+                    format!("- {}", ggb_double(-y)?)
+                } else {
+                    format!("+ {}", ggb_double(y)?)
+                };
+                Some(format!("{} {coefficient}{imaginary}", ggb_double(x)?))
+            } else if y == -1.0 {
+                Some(format!("-{imaginary}"))
+            } else if y == 1.0 {
+                Some(format!("{imaginary}"))
+            } else {
+                Some(format!("{}{imaginary}", ggb_double(y)?))
+            }
+        }
+        geo_kernel::algo::point::CoordMode::Polar => Some(format!(
+            "({}; {}*\u{00b0})",
+            ggb_double(x.hypot(y))?,
+            ggb_double(y.atan2(x).to_degrees())?
+        )),
+        geo_kernel::algo::point::CoordMode::Cartesian => None,
     }
 }
 

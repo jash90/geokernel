@@ -1899,12 +1899,6 @@ reason = "the kernel refuses the input: unknown command `DotPlot`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1547"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `DynamicCoordinates`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1548"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `DynamicCoordinates`"
@@ -3730,8 +3724,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2710"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Maximize`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `slider`; the method's step `commands/CommandsTest.java:2709` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -3742,8 +3736,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2712"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Maximize`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `ptPath`; the method's step `commands/CommandsTest.java:2709` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -3826,8 +3820,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2763"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Minimize`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `slider`; the method's step `commands/CommandsTest.java:2762` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -3838,8 +3832,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2765"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Minimize`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `ptPath`; the method's step `commands/CommandsTest.java:2762` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -4314,12 +4308,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:3046"
 category = "cas"
 reason = "the kernel refuses the input: unknown command `NSolveODE`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3060"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Name`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6622,8 +6610,8 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:438"
-category = "incomplete-context"
-reason = "the kernel refuses the input: unknown command `Object`"
+category = "cascade"
+reason = "the kernel refuses the input: unknown object `list2`; the method's step `commands/CommandsTest.java:431` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
 
 [[gap]]
@@ -6825,27 +6813,9 @@ reason = "the kernel refuses the input: unknown command `ToolImage`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4583"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ToPolar`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4584"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `ToPolar`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4589"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ToComplex`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4594"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ToPoint`"
 mismatches = ["step"]
 
 [[gap]]

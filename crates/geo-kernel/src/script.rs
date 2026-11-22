@@ -204,6 +204,21 @@ fn set_construction_step(c: &mut Construction, arg: &str) -> Result<f64, String>
     Ok(value)
 }
 
+/// The source argument of `ToComplex`/`ToPolar`/`ToPoint`: an existing
+/// object, or an inline point or arithmetic expression as a hidden object.
+fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
+    if let Some(id) = c.id(arg) {
+        return Ok(id);
+    }
+    let label = format!("\\0conv{}", c.len());
+    for kind in [Kind::Point, Kind::Number] {
+        if crate::expr::argument_object(c, arg, &label, kind) {
+            return Ok(c.id(&label).unwrap());
+        }
+    }
+    Err(format!("cannot convert `{arg}`"))
+}
+
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
@@ -216,6 +231,94 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         .and_then(|s| s.strip_suffix(')'))
     {
         return set_construction_step(c, arg.trim()).map(|_| None);
+    }
+    // `name = ToComplex(g)`, `ToPolar(g)` and `ToPoint(g)`: a copy of the
+    // value that only shows in another coordinate style; the argument may
+    // be an inline point literal or arithmetic, which becomes a hidden
+    // object (`AlgoToComplexPolar` accepts point, number, vector, list).
+    if let Some((func @ ("ToComplex" | "ToPolar" | "ToPoint"), args)) = split_call(rhs) {
+        if args.len() != 1 {
+            return Err(format!("`{func}` does not take {} argument(s)", args.len()));
+        }
+        let mode = match func {
+            "ToComplex" => crate::algo::point::CoordMode::Complex,
+            "ToPolar" => crate::algo::point::CoordMode::Polar,
+            _ => crate::algo::point::CoordMode::Cartesian,
+        };
+        let start = c.checkpoint();
+        let result = convert_source(c, args[0]);
+        let result = result.and_then(|source| match c.kind(source) {
+            Kind::Vector => c
+                .add(
+                    name,
+                    Def::Vector(crate::algo::vector::VectorDef::Convert { source, mode }),
+                )
+                .map(Some)
+                .map_err(|e| e.to_string()),
+            _ => c
+                .add(
+                    name,
+                    Def::Point(crate::algo::point::PointDef::Convert { source, mode }),
+                )
+                .map(Some)
+                .map_err(|e| e.to_string()),
+        });
+        if result.is_err() {
+            c.discard_since(start);
+        }
+        return result;
+    }
+    // `name = DynamicCoordinates(P, x, y)`: the point `(x, y)`, an input of
+    // the movable point `P` so that dragging it recomputes
+    // (`AlgoDynamicCoordinates`); the 4-argument form is 3D.
+    if let Some(("DynamicCoordinates", args)) = split_call(rhs) {
+        if args.len() == 4 {
+            return Err("`DynamicCoordinates` with four arguments needs 3D".into());
+        }
+        if args.len() != 3 {
+            return Err(format!(
+                "`DynamicCoordinates` does not take {} argument(s)",
+                args.len()
+            ));
+        }
+        let start = c.checkpoint();
+        let result = (|| {
+            let point = match c.id(args[0]).filter(|&id| c.kind(id) == Kind::Point) {
+                Some(id) => id,
+                None => {
+                    let label = format!("\0dyn{}", c.len());
+                    if !crate::expr::argument_object(c, args[0], &label, Kind::Point) {
+                        return Err(format!("`{}` is not a point", args[0]));
+                    }
+                    c.id(&label).unwrap()
+                }
+            };
+            let mut number = |arg: &str, slot: usize| -> Result<Id, String> {
+                match c.id(arg).filter(|&id| c.kind(id).is_number()) {
+                    Some(id) => Ok(id),
+                    None => {
+                        let label = format!("\0dyn{}_{slot}", c.len());
+                        if crate::expr::argument_object(c, arg, &label, Kind::Number) {
+                            Ok(c.id(&label).unwrap())
+                        } else {
+                            Err(format!("`{arg}` is not a number"))
+                        }
+                    }
+                }
+            };
+            let def = crate::algo::point::PointDef::Dynamic {
+                point,
+                x: number(args[1], 1)?,
+                y: number(args[2], 2)?,
+            };
+            c.add(name, Def::Point(def))
+                .map(Some)
+                .map_err(|e| e.to_string())
+        })();
+        if result.is_err() {
+            c.discard_since(start);
+        }
+        return result;
     }
     // `name = Maximize(expr, number)` and `Minimize`: the dependent value
     // may be an inline arithmetic expression, which becomes a hidden
