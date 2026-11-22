@@ -286,6 +286,68 @@ impl IntersectionWork {
         .then_some(coefficients)
     }
 
+    /// Extract polynomial factors from the branch of a restricted function.
+    /// Keeping powers factored avoids ill-conditioned expanded coefficients at
+    /// repeated roots. Higher derivatives of ordinary polynomials use coefficients.
+    pub(crate) fn analysis_polynomials(
+        &self,
+        c: &Construction,
+        id: Id,
+        order: usize,
+    ) -> Option<Vec<Vec<f64>>> {
+        let ctx = self.context(c, id, &Env::None)?;
+        let root = match ctx.node(ctx.e.root) {
+            Node::If(_, _, branch, expr::NONE) => branch,
+            _ => ctx.e.root,
+        };
+        analysis_polynomials(&ctx, root, order, self, expr::parse::MAX_DEPTH)
+    }
+
+    pub(crate) fn analysis_denominators(&self, c: &Construction, id: Id) -> Vec<Vec<f64>> {
+        let Some(ctx) = self.context(c, id, &Env::None) else {
+            return Vec::new();
+        };
+        let mut results = Vec::new();
+        let mut pending = vec![ctx.e.root];
+        while let Some(i) = pending.pop() {
+            if !self.charge(1) {
+                return Vec::new();
+            }
+            let node = ctx.node(i);
+            if let Node::Bin(Bin::Div, _, b) = node {
+                if let Some(poly) = self.polynomial_at(&ctx, b).filter(|p| p.len() > 1) {
+                    results.push(poly);
+                }
+            }
+            pending.extend(expr::children(&node));
+        }
+        results
+    }
+
+    pub(crate) fn analysis_transcendental(
+        &self,
+        c: &Construction,
+        id: Id,
+    ) -> Option<(u8, [f64; 2])> {
+        let ctx = self.context(c, id, &Env::None)?;
+        let Node::Un(op, a) = ctx.node(ctx.e.root) else {
+            return None;
+        };
+        let operation = match op {
+            Un::Exp => 0,
+            Un::Atan => 1,
+            Un::Ln | Un::Log10 | Un::Log2 => 2,
+            _ => return None,
+        };
+        let poly: [f64; 2] = self.polynomial_at(&ctx, a)?.try_into().ok()?;
+        (poly[1] != 0.0).then_some((operation, poly))
+    }
+
+    pub(crate) fn analysis_is_conditional(&self, c: &Construction, id: Id) -> bool {
+        self.context(c, id, &Env::None)
+            .is_some_and(|ctx| matches!(ctx.node(ctx.e.root), Node::If(..)))
+    }
+
     pub(crate) fn constant(&self, c: &Construction, id: Id) -> Option<f64> {
         let ctx = self.context(c, id, &Env::None)?;
         let root = ctx.e.root;
@@ -298,6 +360,66 @@ impl IntersectionWork {
         let ctx = self.context(c, id, &Env::None)?;
         inverse(&ctx, ctx.e.root, value, expr::parse::MAX_DEPTH)
     }
+}
+
+fn analysis_polynomials(
+    ctx: &Ctx<'_, true>,
+    root: u32,
+    order: usize,
+    work: &IntersectionWork,
+    depth: u32,
+) -> Option<Vec<Vec<f64>>> {
+    use crate::expr::NONE;
+    let depth = depth.checked_sub(1)?;
+    if !work.charge(1) {
+        return None;
+    }
+    match ctx.node(root) {
+        Node::Bin(Bin::Mul, a, b) if order == 0 => {
+            let mut first = analysis_polynomials(ctx, a, order, work, depth)?;
+            first.extend(analysis_polynomials(ctx, b, order, work, depth)?);
+            return Some(first);
+        }
+        Node::Bin(Bin::Pow, base, exponent) if order < 2 && !has_variable(ctx, exponent)? => {
+            let exponent = ctx.full_number(exponent);
+            if exponent > 0.0 && exponent.fract() == 0.0 {
+                let mut factors = analysis_polynomials(ctx, base, order, work, depth)?;
+                if order == 1 && exponent % 2.0 == 0.0 {
+                    factors.extend(analysis_polynomials(ctx, base, 0, work, depth)?);
+                }
+                return Some(factors);
+            }
+        }
+        Node::Un(Un::Sqrt | Un::Cbrt | Un::Abs, a) if order == 0 => {
+            return analysis_polynomials(ctx, a, order, work, depth);
+        }
+        Node::If(_, _, branch, NONE) => {
+            return analysis_polynomials(ctx, branch, order, work, depth);
+        }
+        _ => {}
+    }
+    let f = fraction(ctx, root, work, depth)?;
+    if f.denominator.len() != 1 && order > 0 {
+        return None;
+    }
+    // General high-degree expansions are ill-conditioned. Top-level
+    // factored powers take the path above.
+    if f.numerator.len() > 64 {
+        return Some(Vec::new());
+    }
+    let mut poly = f.numerator;
+    for _ in 0..order {
+        if !work.charge(poly.len() as u64) {
+            return None;
+        }
+        poly = poly
+            .iter()
+            .enumerate()
+            .skip(1)
+            .map(|(i, a)| i as f64 * a)
+            .collect();
+    }
+    Some(vec![poly])
 }
 
 /// Isolate the variable through the operations used by the Newton fallback.

@@ -86,6 +86,7 @@ public final class GoldenGenerator {
         boolean boundaryGrowth = Boolean.TRUE.equals(input.get("track_boundary_growth"));
         boolean pointListGrowth = Boolean.TRUE.equals(input.get("track_point_list_growth"));
         boolean rootGrowth = Boolean.TRUE.equals(input.get("track_root_growth"));
+        boolean sampleCurves = Boolean.TRUE.equals(input.get("sample_curves"));
         Session session = new Session(boundaryGrowth, pointListGrowth, rootGrowth);
         List<?> script = (List<?>) input.get("script");
         List<?> steps = (List<?>) input.get("steps");
@@ -138,7 +139,7 @@ public final class GoldenGenerator {
             if (outStep.size() != step.size()) {
                 throw new IllegalArgumentException("unexpected fields in step " + step);
             }
-            Map<String, Object> snap = session.snapshot();
+            Map<String, Object> snap = session.snapshot(sampleCurves);
             for (Object o : snap.values()) {
                 if (Boolean.FALSE.equals(((Map<?, ?>) o).get("defined"))) {
                     stats.undefined++;
@@ -156,7 +157,7 @@ public final class GoldenGenerator {
         golden.put("steps", outSteps);
         golden.put("snapshots", snapshots);
         if (input.size() != (4 + (boundaryGrowth ? 1 : 0) + (pointListGrowth ? 1 : 0)
-                + (rootGrowth ? 1 : 0))) {
+                + (rootGrowth ? 1 : 0) + (sampleCurves ? 1 : 0))) {
             throw new IllegalArgumentException(
                     "unexpected fields in the case input");
         }

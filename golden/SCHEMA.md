@@ -184,6 +184,11 @@ both of which GeoGebra itself reports as defined. A polygon with a vertex at
 infinity is recorded as undefined; in a polyline such a vertex is `null`, and
 its length is not finite, so the polyline is undefined.
 
+A defined Cartesian curve can also carry `samples_curve`, an array of
+`[parameter, [x, y]]` entries at fixed fractions of its parameter interval.
+The coordinate pair is `null` when either coordinate is nonfinite. If the
+array is present, replay checks every sample at the existing tolerance.
+
 ## Comparison rules
 
 These rules are applied by the Rust side (`crates/geo-golden`).

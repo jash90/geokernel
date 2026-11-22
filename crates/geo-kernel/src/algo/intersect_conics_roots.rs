@@ -160,11 +160,12 @@ impl Complex {
 fn laguerre(
     coefficients: &[Complex],
     remaining: &mut usize,
+    start: f64,
     charge: &impl Fn(u64) -> bool,
 ) -> Option<Complex> {
     let degree = (coefficients.len() - 1) as f64;
     let (&leading, tail) = coefficients.split_last()?;
-    let mut x = Complex(-1.0, 0.0);
+    let mut x = Complex(start, 0.0);
     let mut previous = Complex(f64::INFINITY, f64::INFINITY);
     while *remaining != 0 {
         if !charge(coefficients.len() as u64) {
@@ -215,7 +216,7 @@ fn quartic_candidates(coefficients: [f64; 5]) -> Option<[f64; 4]> {
     let mut remaining = ROOT_ITERATIONS;
     for (i, slot) in roots.iter_mut().enumerate() {
         let degree = 4 - i;
-        let root = laguerre(&coefficients[..=degree], &mut remaining, &|_| true)?;
+        let root = laguerre(&coefficients[..=degree], &mut remaining, -1.0, &|_| true)?;
         *slot = root.0;
         let mut carry = coefficients[degree];
         for coefficient in coefficients[..degree].iter_mut().rev() {
@@ -262,7 +263,7 @@ fn brent(coefficients: &[f64], left: f64, right: f64) -> Option<f64> {
     )
 }
 
-pub(in crate::algo::intersect) fn bracketed_root(
+pub(in crate::algo) fn bracketed_root(
     f: &impl Fn(f64) -> f64,
     left: f64,
     right: f64,
@@ -481,7 +482,7 @@ pub(in crate::algo) fn graph_roots(
             if !charge(degree as u64) {
                 return Vec::new();
             }
-            let Some(root) = laguerre(&working[..=degree], &mut remaining, charge) else {
+            let Some(root) = laguerre(&working[..=degree], &mut remaining, -1.0, charge) else {
                 break;
             };
             results.push(root.0);
@@ -516,4 +517,100 @@ pub(in crate::algo) fn graph_roots(
     roots.sort_by(f64::total_cmp);
     roots.dedup_by(|a, b| (*a - *b).abs() < STANDARD_PRECISION);
     roots
+}
+
+/// Complex Laguerre roots without the real-axis residual filter.
+pub(in crate::algo) fn complex_roots(
+    coefficients: &[f64],
+    charge: &impl Fn(u64) -> bool,
+) -> Vec<(f64, f64)> {
+    if !charge(coefficients.len() as u64) || coefficients.iter().any(|a| !a.is_finite()) {
+        return Vec::new();
+    }
+    let Some(first) = coefficients.iter().position(|&a| a != 0.0) else {
+        return Vec::new();
+    };
+    let last = coefficients
+        .iter()
+        .rposition(|&a| a != 0.0)
+        .unwrap_or(first);
+    let mut roots = if first == 0 {
+        Vec::new()
+    } else {
+        vec![(0.0, 0.0)]
+    };
+    let reduced = &coefficients[first..=last];
+    match *reduced {
+        [_, _] => roots.push((-reduced[0] / reduced[1], 0.0)),
+        [c, b, a] => roots.extend(complex_quadratic(c, b, a)),
+        [_] => {}
+        _ => {
+            if let Some(mut candidates) = [-1.0, 0.577_215_664_901_532_9]
+                .into_iter()
+                .find_map(|start| complex_with_seed(reduced, start, charge))
+            {
+                candidates.sort_by(|a, b| a.0.total_cmp(&b.0));
+                let mut offset = 0;
+                while let Some(&(x, _)) = candidates.get(offset) {
+                    let len =
+                        candidates[offset..].partition_point(|p| p.0 - x < STANDARD_PRECISION);
+                    if len == 0 || !charge(len as u64) {
+                        return Vec::new();
+                    }
+                    candidates[offset..offset + len].sort_by(|a, b| a.1.total_cmp(&b.1));
+                    offset += len;
+                }
+                roots.extend(candidates);
+            }
+        }
+    }
+    roots
+}
+
+fn complex_quadratic(c: f64, b: f64, a: f64) -> Vec<(f64, f64)> {
+    if a.abs() < STANDARD_PRECISION {
+        return (b.abs() >= STANDARD_PRECISION)
+            .then_some((-c / b, 0.0))
+            .into_iter()
+            .collect();
+    }
+    let d = b * b - 4.0 * a * c;
+    let real = -b / (2.0 * a);
+    if d.abs() < STANDARD_PRECISION {
+        vec![(real, 0.0)]
+    } else if d < 0.0 {
+        let imag = (-d).sqrt() / (2.0 * a);
+        vec![(real, imag), (real, -imag)]
+    } else {
+        let q = -0.5 * (b + if b < 0.0 { -d.sqrt() } else { d.sqrt() });
+        vec![(q / a, 0.0), (c / q, 0.0)]
+    }
+}
+
+fn complex_with_seed(
+    coefficients: &[f64],
+    start: f64,
+    charge: &impl Fn(u64) -> bool,
+) -> Option<Vec<(f64, f64)>> {
+    let mut work: Vec<_> = coefficients.iter().map(|&a| Complex(a, 0.0)).collect();
+    let mut roots = Vec::with_capacity(work.len());
+    let mut remaining = 1000;
+    for degree in (1..work.len()).rev() {
+        if !charge(degree as u64) {
+            return None;
+        }
+        let root = if degree == 1 {
+            work[0].scale(-1.0).div(work[1])
+        } else {
+            laguerre(&work[..=degree], &mut remaining, start, charge)?
+        };
+        roots.push((root.0, root.1));
+        let mut carry = work[degree];
+        for a in work[..degree].iter_mut().rev() {
+            let next = a.add(carry.mul(root));
+            *a = carry;
+            carry = next;
+        }
+    }
+    Some(roots)
 }

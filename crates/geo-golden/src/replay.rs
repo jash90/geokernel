@@ -138,7 +138,7 @@ pub fn replay(case: &Case) -> CaseOutcome {
             let sample = |x| c.function_value(id, x);
             let outcome = if c.kind(id) == Kind::List {
                 compare_list(&c, expected, Kind::List, c.elements(id))
-            } else if matches!(c.kind(id), Kind::Text | Kind::FunctionNVar) {
+            } else if matches!(c.kind(id), Kind::Text | Kind::FunctionNVar | Kind::Curve) {
                 compare_extra(&c, id, expected)
             } else {
                 compare_sampled(expected, c.kind(id), &actual, &vertices, Some(&sample))

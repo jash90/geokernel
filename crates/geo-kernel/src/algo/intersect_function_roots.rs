@@ -10,7 +10,7 @@
 use super::conics::bracketed_root;
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
 
-pub(super) fn root_near(
+pub(in crate::algo) fn root_near(
     f: &impl Fn(f64) -> f64,
     derivative: impl Fn(f64) -> f64,
     seed: f64,
@@ -37,7 +37,11 @@ pub(super) fn root_near(
     root.or_else(|| inverse().filter(accepted))
 }
 
-fn newton(f: &impl Fn(f64) -> f64, derivative: impl Fn(f64) -> f64, mut x: f64) -> Option<f64> {
+pub(in crate::algo) fn newton(
+    f: &impl Fn(f64) -> f64,
+    derivative: impl Fn(f64) -> f64,
+    mut x: f64,
+) -> Option<f64> {
     for _ in 0..50 {
         let next = x - f(x) / derivative(x);
         if (next - x).abs() <= 1e-6 {
@@ -51,7 +55,11 @@ fn newton(f: &impl Fn(f64) -> f64, derivative: impl Fn(f64) -> f64, mut x: f64) 
     None
 }
 
-fn defined_interval(f: &impl Fn(f64) -> f64, left: f64, right: f64) -> Option<(f64, f64)> {
+pub(in crate::algo) fn defined_interval(
+    f: &impl Fn(f64) -> f64,
+    left: f64,
+    right: f64,
+) -> Option<(f64, f64)> {
     match (f(left).is_finite(), f(right).is_finite()) {
         (true, true) => Some((left, right)),
         (true, false) => Some((left, defined_border(f, right, left))),
@@ -119,7 +127,7 @@ pub(super) fn check_root(x: f64, f: &impl Fn(f64) -> f64) -> Option<f64> {
 
 /// AlgoRoots uses one sample per five view pixels. Double the density if
 /// crossings fill the grid. The headless view uses 50 pixels per unit.
-pub(super) fn interval_roots(
+pub(in crate::algo) fn interval_roots(
     f: &impl Fn(f64) -> f64,
     a: f64,
     b: f64,

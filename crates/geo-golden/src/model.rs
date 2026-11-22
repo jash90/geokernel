@@ -143,6 +143,7 @@ pub enum ExpectedData {
     Curve {
         start: f64,
         end: f64,
+        samples: Vec<CurveSample>,
     },
     Vector {
         x: f64,
@@ -200,6 +201,9 @@ pub enum ExpectedData {
         curve: Option<ArcCurve>,
     },
 }
+
+/// A curve parameter and its coordinates, when finite.
+pub type CurveSample = (f64, Option<(f64, f64)>);
 
 /// A point of a locus: `(x, y)`, `None` for an undefined point, and whether
 /// it is joined to the point before it.
@@ -401,6 +405,7 @@ struct RawObject {
     /// Only for a function: `[x, y]` pairs, `y` null where not finite.
     samples: Option<Vec<(f64, Option<f64>)>>,
     samples_xy: Option<Vec<(f64, f64, Option<f64>)>>,
+    samples_curve: Option<Vec<CurveSample>>,
     #[serde(flatten)]
     fields: BTreeMap<String, serde_json::Value>,
 }
@@ -513,6 +518,9 @@ impl TryFrom<RawObject> for Expected {
         }
         if raw.samples_xy.is_some() && (kind != Kind::FunctionNVar || !raw.defined) {
             return Err("only a defined two-variable function carries samples_xy".into());
+        }
+        if raw.samples_curve.is_some() && (kind != Kind::Curve || !raw.defined) {
+            return Err("only a defined curve carries samples_curve".into());
         }
         if !raw.defined {
             if !raw.fields.is_empty() {
@@ -672,6 +680,7 @@ impl TryFrom<RawObject> for Expected {
             Kind::Curve => ExpectedData::Curve {
                 start: f("start"),
                 end: f("end"),
+                samples: raw.samples_curve.unwrap_or_default(),
             },
             Kind::Vector => ExpectedData::Vector {
                 x: f("x"),
@@ -720,9 +729,18 @@ pub fn script_labels(script: &[String]) -> BTreeSet<String> {
 /// The label of a script line's left-hand side, such as `f` for `f(x)`.
 pub fn line_label(lhs: &str) -> String {
     let lhs = lhs.trim();
-    lhs.strip_suffix("(x)")
-        .or_else(|| lhs.strip_suffix("(y)"))
-        .unwrap_or(lhs)
+    lhs.split_once('(')
+        .filter(|(label, args)| {
+            !label.is_empty()
+                && args.strip_suffix(')').is_some_and(|args| {
+                    args.split(',').all(|arg| {
+                        let mut chars = arg.trim().chars();
+                        chars.next().is_some_and(|c| c.is_alphabetic() || c == '_')
+                            && chars.all(|c| c.is_alphanumeric() || c == '_' || c == '\'')
+                    })
+                })
+        })
+        .map_or(lhs, |(label, _)| label)
         .trim_end()
         .to_string()
 }

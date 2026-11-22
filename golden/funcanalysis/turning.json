@@ -1,0 +1,69 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-turning-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = TurningPoint(x^3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-turning-002",
+      "group": "funcanalysis",
+      "script": [
+        "R = TurningPoint(x^4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-turning-003",
+      "group": "funcanalysis",
+      "script": [
+        "R = TurningPoint(x^5-5*x^3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": -1.224744871391589, "y": 6.429910574805841 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 1.224744871391589, "y": -6.429910574805841 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-turning-004",
+      "group": "funcanalysis",
+      "script": [
+        "R = TurningPoint(sin(x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

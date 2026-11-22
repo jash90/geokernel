@@ -49,7 +49,28 @@ EXCLUDED_ALGEBRA = {
     "PreviousPrime": "AlgoNextPreviousPrime obtains the value from the CAS.",
 }
 
+EXCLUDED_FUNCTION = {
+    "TaylorSeries": "A symbolic Taylor polynomial uses the CAS.",
+    "Limit": "Symbolic limits, including variable and infinite endpoints, use the CAS.",
+    "LimitAbove": "Symbolic one-sided limits use the CAS.",
+    "LimitBelow": "Symbolic one-sided limits use the CAS.",
+    "PartialFractions": "Symbolic partial fraction decomposition uses the CAS.",
+    "TrigExpand": "Symbolic trigonometric expansion uses the CAS.",
+    "TrigSimplify": "Symbolic trigonometric simplification uses the CAS.",
+    "TrigCombine": "Symbolic trigonometric combination uses the CAS.",
+    "ImplicitDerivative": "The implicit derivative command uses the CAS.",
+}
+
 FORM_NOTES = {
+    "Asymptote": "Conics, rational graphs and simple exp, atan or log of an affine argument. General function limits and implicit polynomials are pending.",
+    "Factors": "Function factorization uses the CAS. The numeric list of prime/exponent points is a separate form.",
+    "Root": "Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending.",
+    "Roots": "Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.",
+    "Extremum": "Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.",
+    "Function": "Domain restrictions with an optional local variable. Empty and freehand functions are pending.",
+    "SolveODE": "Numeric first-order, parametric and second-order systems. Symbolic function and curve forms, with or without an initial point, use the CAS.",
+    "ComplexRoot": "Numeric polynomial roots, returned as points with real and imaginary coordinates.",
+
     "CommonDenominator": "Number pairs. The function pair delegates to the CAS (AlgoPolynomialCD).",
     "LeftSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
     "RightSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
@@ -283,6 +304,8 @@ def classify(group, command, alias_of):
     """Return (priority, status, notes) for a real command; aliases copy their target."""
     if command in EXCLUDED_ALGEBRA:
         return "", "out_of_scope", EXCLUDED_ALGEBRA[command]
+    if command in EXCLUDED_FUNCTION:
+        return "", "out_of_scope", EXCLUDED_FUNCTION[command]
     if command in OUT_OF_SCOPE_COMMANDS:
         return "", "out_of_scope", ""
     if command in PARTIAL and not alias_of:

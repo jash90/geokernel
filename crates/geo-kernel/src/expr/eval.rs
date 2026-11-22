@@ -684,6 +684,28 @@ pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
     }
 }
 
+pub(super) fn system_locals(ctx: &Ctx<'_, true>, root: u32, depth: u32, values: &[f64]) -> f64 {
+    if let Some((&x, rest)) = values.split_first() {
+        let local = Local {
+            depth,
+            value: Val::N(x),
+            run: None,
+            up: ctx.locals,
+        };
+        system_locals(
+            &Ctx {
+                locals: Some(&local),
+                ..*ctx
+            },
+            root,
+            depth + 1,
+            rest,
+        )
+    } else {
+        ctx.fast(root)
+    }
+}
+
 /// The tree of the function object `f`, when it is defined.
 pub(super) fn function_entry(c: &Construction, f: Id) -> Option<&Entry> {
     match (c.def(f), c.value(f)) {
@@ -801,7 +823,7 @@ impl<const M: bool> Ctx<'_, M> {
                 let y = self.full_number(b);
                 let v = self
                     .meter
-                    .and_then(|meter| super::equation::sample_side(self.c, f, x, y, meter));
+                    .map(|meter| super::sample_system(self.c, f, x, &[y], meter));
                 Ex::plain(N(v.unwrap_or(f64::NAN)))
             }
             Node::Side(..) => Ex::plain(N(f64::NAN)),
@@ -844,6 +866,24 @@ impl<const M: bool> Ctx<'_, M> {
                 value,
                 radix,
             } => Ex::plain(N(self.read_base_number(value, radix))),
+            Node::Iteration {
+                mode,
+                formula,
+                initial,
+                count,
+                ..
+            } => Ex::plain(
+                self.iteration_value(mode, formula, initial, count)
+                    .unwrap_or_else(|| {
+                        if self.is_vec(i) {
+                            V(f64::NAN, f64::NAN)
+                        } else {
+                            N(f64::NAN)
+                        }
+                    }),
+            ),
+            Node::SystemFunction(_, a) => self.full(a),
+            Node::RootList(_) | Node::FunctionAsymptotes(_) => Ex::plain(N(f64::NAN)),
             Node::Extremum(minimum, f, a, b) => Ex::plain(self.extremum(minimum, f, a, b)),
             Node::PolynomialPart(..) => Ex::plain(N(self.polynomial_value())),
             Node::ObjectDefined(id) => Ex::plain(Val::B(super::object_defined(self.c, id), true)),
@@ -1209,6 +1249,15 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Obj(id) => self.object_list(id),
             Node::Bin(op, a, b) => self.list_binary(op, a, b),
             Node::Un(op, a) => self.list_unary(op, a),
+            Node::RootList(a) => self.root_list(a),
+            Node::FunctionAsymptotes(a) => self.function_asymptotes(a),
+            Node::Iteration {
+                collect: true,
+                mode,
+                formula,
+                initial,
+                count,
+            } => self.iteration_list(mode, formula, initial, count),
             Node::Range(from, to, step) => self.range(from, to, step),
             Node::Algebra(op, a, b) => self.algebra_list(op, a, b),
             Node::TextCmd(op, first, count) => self.text_list(op, first, count),

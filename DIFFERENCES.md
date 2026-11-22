@@ -153,3 +153,40 @@ listed in `crates/geo-golden/known-gaps.toml`.
 | `MinimumSpanningTree(number, number, ...)` | The shared dispatcher can wrap numbers into a list, but the algorithm rejects a list of multiple numbers when it reads them as points. | Reports a command error. | A number supplies no point coordinates. The harness records the rejection in `discrete-tree-001`. |
 | Traveling salesman with an undefined site on update | The tour heuristic can throw while reading the missing site. | The locus is undefined until the sites are defined again. | A partial tour would be misleading. Both reject a missing site at creation, as recorded in `discrete-tour-009`. |
 | Discrete graph work limit | Work depends on list size, geometry and the tour's improvement steps. | A graph is undefined when its computation exhausts the kernel's work budget. | Moving a site or growing a list recomputes the graph and must finish within a bounded amount of work. |
+
+## Numerical function analysis
+
+| Area | GeoGebra | geokernel | Reason |
+| --- | --- | --- | --- |
+| `Root(function)`, `Roots(function)`, `Roots(function, number, number)`, `Extremum(function)`, `Extremum(function, number, number)`, `TurningPoint(function)`, `ComplexRoot(function)`, `RemovableDiscontinuity(function)` | An algorithm can create more labelled outputs after an edit. | Existing slots recompute in order and become undefined when the corresponding result disappears. Additional labels are allocated at creation. | Growing the output list requires journal support. The kernel keeps a stable set of objects for replay. |
+| `ComplexRoot(function)` | Uses complex-number display and CAS-aware polynomial expansion. | Returns points whose coordinates are the real and imaginary parts of the numeric polynomial roots. | The geometry kernel represents the two coordinates without a separate complex number kind. |
+| `Function(function, any, number, number)` | A standalone bound variable names the restricted function's local argument. | Accepts an identifier as the bound variable, with inclusive endpoints. | The argument is a binding and must be a valid name. The empty and freehand forms are outside the restriction implementation. |
+| `Iteration(function, any, ...)`, `IterationList(function, any, ...)` | Local variables can carry arbitrary objects and may use symbolic substitution. | Local recurrences support numeric, point and boolean values with homogeneous seeds. The standard one- and two-variable numeric forms are also supported. | Symbolic substitution and arbitrary object copies are outside numerical function analysis. Iterations share the expression work and element limits. |
+| `Asymptote(function)` | Uses CAS limits and solves for poles. | Finds poles and horizontal or oblique limits from rational coefficients. Also handles an affine argument to exp, atan or log. | These forms have direct numeric rules. General CAS limits and arbitrary implicit curves remain outside the numeric solver. |
+| `RemovableDiscontinuity(function)` | Solves denominators and takes limits with CAS. | Finds removable holes through rational multiplicities, and estimates two-sided limits for other expressions with polynomial denominator roots. | The numeric search requires a supported denominator and evidence of convergence. |
+| `NSolveODE(list, number, list, number)` and numeric `SolveODE` | Uses third-party Dormand–Prince and classical Runge–Kutta integrators. | Uses independently implemented Dormand–Prince 5(4) and classical RK4 formulas. Solves up to 16 coupled states and 100000 sampled points per solve, subject to the kernel work limit. | The Java harness records reference step sizes, accepted states, and terminal points. The integrator implementations outside EUPL source were used only through GeoGebra's calls. |
+
+The seeded and interval root commands reuse the kernel's Brent and Newton
+routines. The EUPL command classes specify the order of the seed, endpoint
+and valid-domain attempts. The Java harness records the chosen root, including
+the stopping point of Newton iteration at a multiple root. Complex roots reuse
+the kernel's Laguerre solver with the reference command's alternate seed.
+No golden tolerance is changed.
+
+The headless reference harness configures `CASFactoryDummy`. The recorded
+empty asymptote lists and undefined removable-discontinuity outputs for
+functions with poles and holes therefore differ from the numeric kernel
+results. The fixture gaps identify the affected outputs. The same harness
+configuration makes the upstream sine curvature vector undefined. The kernel
+evaluates the curvature vector numerically.
+
+Polynomial analysis keeps products and integer powers factored where the
+command supports that structure. A dense expansion above degree 63 is
+reported undefined. The shared evaluation budget still applies to factored
+inputs.
+
+The sampling window for unbounded numerical `Roots` and `Extremum` comes from
+the construction's view when supplied, with the reference headless window as
+the default. Curvature of general function and parametric inputs uses a
+five-point finite difference of the kernel's first derivative where a second
+derivative is needed.

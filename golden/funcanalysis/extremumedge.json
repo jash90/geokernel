@@ -1,0 +1,98 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-extremumedge-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = Extremum(-x^2,-1,1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-extremumedge-002",
+      "group": "funcanalysis",
+      "script": [
+        "R = Extremum(x^3-3x,2,-2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 2.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-extremumedge-003",
+      "group": "funcanalysis",
+      "script": [
+        "R = Extremum(x^2,0,4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-extremumedge-004",
+      "group": "funcanalysis",
+      "script": [
+        "R = Extremum(1/x,-2,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-extremumedge-005",
+      "group": "funcanalysis",
+      "script": [
+        "R = Extremum(abs(x),-2,3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-extremumedge-006",
+      "group": "funcanalysis",
+      "script": [
+        "R = Extremum(If(x>0,x*ln(x)), -2, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.36787944136531825, "y": -0.36787944117144233 }
+        }
+      ]
+    }
+  ]
+}
