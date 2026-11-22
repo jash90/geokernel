@@ -330,6 +330,18 @@ impl<'a> Cartesian<'a> {
         }
     }
 
+    pub(super) fn polynomial_coordinates(
+        &self,
+        c: &Construction,
+        work: &IntersectionWork,
+    ) -> Option<[Vec<f64>; 2]> {
+        let coordinate = |line| match self.line_polynomial(c, work, line)? {
+            LinePolynomial::Coefficients(values) => Some(values),
+            LinePolynomial::Spline(..) => None,
+        };
+        Some([coordinate((1.0, 0.0, 0.0))?, coordinate((0.0, 1.0, 0.0))?])
+    }
+
     fn line_polynomial(
         &self,
         c: &Construction,

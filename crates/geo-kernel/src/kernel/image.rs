@@ -1,9 +1,12 @@
-// Placement follows GeoGebra's DrawImage.java, commit 112919f2d450ec7430a5cd3b65dba226fdc43b74.
+// Placement follows DrawImage.java, GeoImage.java, GeoVec2D.java and AlgoImageCorner.java,
+// upstream revision 112919f2d450ec7430a5cd3b65dba226fdc43b74.
 // Copyright (c) GeoGebra GmbH. Licensed under the EUPL 1.2.
 
 //! Raster assets and the placement of their instances in a construction.
 
-use super::{Construction, Def, Id, Value};
+use super::{Construction, Def, Id, Kind, Value};
+use crate::algo::transform::{source_of, TransformDef};
+use crate::algo::vector::{matrix::Matrix, VectorDef};
 use image::{AnimationDecoder as _, ImageDecoder, ImageFormat, ImageReader, Limits};
 use std::collections::{hash_map::RandomState, BTreeMap, HashMap, HashSet};
 use std::hash::BuildHasher;
@@ -16,6 +19,7 @@ const MAX_DIMENSION: u32 = 4096;
 const MAX_RASTER_MEMORY: u64 = 128 << 20;
 
 const MAX_ASSET_ENTRIES: usize = 4096;
+const MAX_TRANSFORM_DEPTH: usize = 32;
 // Charge cumulative input (before inflation or hex parsing) and attempted pixels.
 // Failed decodes do not return work to either allowance.
 const MAX_ASSET_INPUT: u64 = 64 << 20;
@@ -232,6 +236,73 @@ pub struct RasterImage {
     pub style: ImageStyle,
 }
 
+#[derive(Clone, Copy)]
+enum ImageTransform {
+    Dilate(TransformDef),
+    Matrix { source: Id, matrix: Id },
+}
+
+impl ImageTransform {
+    fn of(def: Def) -> Option<Self> {
+        match def {
+            Def::Transform(
+                d @ TransformDef::Dilate {
+                    kind: Kind::Image, ..
+                },
+            ) => Some(Self::Dilate(d)),
+            Def::Vector(VectorDef::ApplyMatrix {
+                kind: Kind::Image,
+                src,
+                matrix,
+            }) => Some(Self::Matrix {
+                source: src,
+                matrix,
+            }),
+            _ => None,
+        }
+    }
+
+    fn source(self) -> Id {
+        match self {
+            Self::Dilate(def) => source_of(&def),
+            Self::Matrix { source, .. } => source,
+        }
+    }
+}
+
+/// Lower left, lower right and upper left. A projective map can leave a
+/// finite anchor visible to a corner command while another is at infinity.
+struct ImageFrame {
+    anchors: [[f64; 2]; 3],
+    defined: bool,
+}
+
+impl ImageFrame {
+    fn from_axes(a: [f64; 2], right: [f64; 2], up: [f64; 2]) -> Self {
+        Self {
+            anchors: [
+                a,
+                [a[0] + right[0], a[1] + right[1]],
+                [a[0] + up[0], a[1] + up[1]],
+            ],
+            defined: true,
+        }
+    }
+
+    fn map(self, transform: impl FnMut([f64; 2]) -> [f64; 2]) -> Self {
+        let anchors = self.anchors.map(transform);
+        // The raster takes its defined state from its placement points.
+        // Infinite coordinates can be defined. NaN indicates an undefined anchor.
+        let defined = anchors.iter().flatten().all(|v| !v.is_nan());
+        Self { anchors, defined }
+    }
+
+    fn quad(&self) -> [[f64; 2]; 4] {
+        let [a, b, d] = self.anchors;
+        [d, [d[0] + b[0] - a[0], d[1] + b[1] - a[1]], b, a]
+    }
+}
+
 impl RasterImage {
     pub fn source_rect(&self) -> Option<[f64; 4]> {
         let [w, h] = self.asset.size().map(f64::from);
@@ -304,6 +375,78 @@ impl Images {
 }
 
 impl Construction {
+    pub(super) fn register_transformed_image(&mut self, id: Id, def: Def) {
+        let Some(transform) = ImageTransform::of(def) else {
+            return;
+        };
+        let Some(image) = self.image(transform.source()) else {
+            return;
+        };
+        let placement = if image.placement.is_screen() {
+            image.placement
+        } else {
+            ImagePlacement::World {
+                corners: [None; 3],
+                centered: false,
+                screen_coords: false,
+            }
+        };
+        self.images.instances.insert(
+            id,
+            RasterImage {
+                asset: image.asset.clone(),
+                name: image.name.clone(),
+                placement,
+                style: image.style,
+            },
+        );
+    }
+
+    pub(crate) fn transformed_image_value(&self, def: Def) -> Option<Value> {
+        let transform = ImageTransform::of(def)?;
+        let [_, _, _, _, xs, ys] = self.locus_view().unwrap_or(super::locus::HEADLESS_VIEW);
+        self.transformed_image_frame(transform, [xs, ys], MAX_TRANSFORM_DEPTH)?
+            .defined
+            .then_some(Value::Image)
+    }
+
+    fn transformed_image_frame(
+        &self,
+        transform: ImageTransform,
+        scale: [f64; 2],
+        depth: usize,
+    ) -> Option<ImageFrame> {
+        let source = transform.source();
+        let mut frame = self.image_frame(source, scale, depth.checked_sub(1)?)?;
+        if !frame.defined {
+            return Some(frame);
+        }
+        let screen = self.image(source)?.placement.is_screen();
+        match transform {
+            ImageTransform::Dilate(dilation) if !screen => {
+                let map = dilation.map(self)?;
+                frame = frame.map(|[x, y]| {
+                    let (x, y) = map.point(x, y);
+                    [x, y]
+                });
+            }
+            ImageTransform::Matrix { matrix, .. } => {
+                if let Some(map) = self.elements(matrix).and_then(Matrix::read) {
+                    if !screen {
+                        frame = frame.map(|[x, y]| {
+                            let (x, y, w) = map.curve_coordinates((x, y), 1.0);
+                            [x / w, y / w]
+                        });
+                    }
+                } else {
+                    frame.defined = false;
+                }
+            }
+            ImageTransform::Dilate(_) => {}
+        }
+        Some(frame)
+    }
+
     /// Charge the declared compressed raster size before allocating its bytes.
     pub fn reserve_image_input(&mut self, bytes: u64) -> Result<(), String> {
         if bytes > MAX_ASSET_BYTES {
@@ -521,10 +664,12 @@ impl Construction {
         xscale: f64,
         yscale: f64,
     ) -> Option<[[f64; 2]; 4]> {
-        let image = self.image(id)?;
-        let [a, right, up] = self.image_frame(image, xscale, yscale)?;
+        let frame = self.image_frame(id, [xscale, yscale], MAX_TRANSFORM_DEPTH)?;
+        let [a, b, d] = frame.anchors;
+        let right = delta(b, a);
+        let up = delta(d, a);
         let area = right[0] * up[1] - right[1] * up[0];
-        (area.is_finite() && area != 0.0).then(|| quad(a, right, up))
+        (frame.defined && area.is_finite() && area != 0.0).then(|| frame.quad())
     }
 
     pub(crate) fn image_vertex(&self, id: Id, index: i32) -> Option<Value> {
@@ -537,12 +682,15 @@ impl Construction {
             _ => return None,
         };
         let [_, _, _, _, xs, ys] = self.locus_view().unwrap_or(super::locus::HEADLESS_VIEW);
-        let [a, right, up] = self.image_frame(image, xs, ys)?;
-        let [x, y] = quad(a, right, up)[i];
-        Some(Value::Point { x, y })
+        let [x, y] = self.image_frame(id, [xs, ys], MAX_TRANSFORM_DEPTH)?.quad()[i];
+        (x.is_finite() && y.is_finite()).then_some(Value::Point { x, y })
     }
 
-    fn image_frame(&self, image: &RasterImage, xscale: f64, yscale: f64) -> Option<[[f64; 2]; 3]> {
+    fn image_frame(&self, id: Id, [xscale, yscale]: [f64; 2], depth: usize) -> Option<ImageFrame> {
+        if let Some(transform) = ImageTransform::of(self.def(id)) {
+            return self.transformed_image_frame(transform, [xscale, yscale], depth);
+        }
+        let image = self.image(id)?;
         let [width, height] = image.asset.size.map(f64::from);
         let resolve = |corner: ImageCorner| match corner {
             ImageCorner::Coordinates(coords) => Some(coords),
@@ -562,10 +710,15 @@ impl Construction {
                 let mut a = a.map_or(Some([0.0, 0.0]), resolve)?;
                 if screen_coords {
                     a = a.map(|coordinate| f64::from(coordinate as i32));
-                    return Some([a, [width, 0.0], [0.0, -height]]);
+                    return Some(ImageFrame::from_axes(a, [width, 0.0], [0.0, -height]));
                 }
                 let (right, up) = match (b, d) {
-                    (Some(b), Some(d)) => (delta(resolve(b)?, a), delta(resolve(d)?, a)),
+                    (Some(b), Some(d)) => {
+                        return Some(ImageFrame {
+                            anchors: [a, resolve(b)?, resolve(d)?],
+                            defined: true,
+                        })
+                    }
                     (Some(b), None) => {
                         let r = delta(resolve(b)?, a);
                         (r, [-r[1] * height / width, r[0] * height / width])
@@ -583,7 +736,7 @@ impl Construction {
                 (a, right, up)
             }
         };
-        Some([a, right, up])
+        Some(ImageFrame::from_axes(a, right, up))
     }
 }
 
@@ -602,11 +755,6 @@ impl<T> ImagePlacement<T> {
 
 fn delta(to: [f64; 2], from: [f64; 2]) -> [f64; 2] {
     [to[0] - from[0], to[1] - from[1]]
-}
-
-fn quad(a: [f64; 2], r: [f64; 2], u: [f64; 2]) -> [[f64; 2]; 4] {
-    let b = [a[0] + r[0], a[1] + r[1]];
-    [[a[0] + u[0], a[1] + u[1]], [b[0] + u[0], b[1] + u[1]], b, a]
 }
 
 #[cfg(test)]

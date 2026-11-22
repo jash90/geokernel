@@ -1,0 +1,110 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "corners-conic-001",
+      "group": "corners",
+      "script": [
+        "A = (-1, 0)",
+        "B = (1, 0)",
+        "r = 3",
+        "k = Ellipse(A, B, r)",
+        "V = Corner(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.5 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [128.0, 144.0, -1152.0, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 2.8284271247461903],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": true, "x": 0.0, "y": -2.8284271247461903 },
+          "V_{4}": { "type": "point", "defined": true, "x": 0.0, "y": 2.8284271247461903 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-12.0, 4.0, 3.0, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [0.5, 0.8660254037844386],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -0.5, "y": 0.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.5, "y": 0.0 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-12.0, -12.0, -5.0, -16.0, 16.0, 12.0],
+            "midpoint": [-0.0, 1.0],
+            "half_axes": [0.5, 1.3228756555322954],
+            "eigenvectors": [
+              [0.7071067811865475, 0.7071067811865475],
+              [-0.7071067811865475, 0.7071067811865475]
+            ]
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -0.35355339059327373, "y": 0.6464466094067263 },
+          "V_{2}": { "type": "point", "defined": true, "x": 0.35355339059327373, "y": 1.3535533905932737 },
+          "V_{3}": { "type": "point", "defined": false },
+          "V_{4}": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [128.0, 128.0, -880.0, -16.0, 16.0, -128.0],
+            "midpoint": [0.0, 1.0],
+            "half_axes": [3.0, 2.6457513110645907],
+            "eigenvectors": [
+              [0.7071067811865475, 0.7071067811865475],
+              [-0.7071067811865475, 0.7071067811865475]
+            ]
+          },
+          "V_{1}": { "type": "point", "defined": true, "x": -2.1213203435596424, "y": -1.1213203435596424 },
+          "V_{2}": { "type": "point", "defined": true, "x": 2.1213203435596424, "y": 3.1213203435596424 },
+          "V_{3}": { "type": "point", "defined": true, "x": 1.8708286933869707, "y": -0.8708286933869707 },
+          "V_{4}": { "type": "point", "defined": true, "x": -1.8708286933869707, "y": 2.8708286933869704 }
+        }
+      ]
+    }
+  ]
+}

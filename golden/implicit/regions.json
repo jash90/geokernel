@@ -1,0 +1,779 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-regions-001",
+      "group": "implicit",
+      "script": [
+        "h = 1",
+        "c: x^4 + y^4 = h",
+        "q: x^4 + y^4 <= h",
+        "b = q(0, 1)",
+        "A = (-2, 0)",
+        "B = (2, 0)",
+        "C = (0, 2)",
+        "s = Segment(A, B)",
+        "p = Polygon(A, B, C)",
+        "P = Intersect(c, s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "V = Corner(c)" },
+        { "action": "reject", "line": "V = Vertex(c)" },
+        { "action": "reject", "line": "R = Intersect(c, q)" },
+        { "action": "reject", "line": "R = Intersect(q, c)" },
+        { "action": "reject", "line": "j = IntersectPath(s, c)" },
+        { "action": "reject", "line": "j = IntersectPath(c, p)" },
+        { "action": "set_number", "label": "h", "value": -1.0 },
+        { "action": "set_number", "label": "h", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = h",
+            "input_form": true
+          },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "c_1": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = h",
+            "input_form": true
+          },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "c_1": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = h",
+            "input_form": true
+          },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "c_1": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = h",
+            "input_form": true
+          },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "c_1": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = h",
+            "input_form": true
+          },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "c_1": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = h",
+            "input_form": true
+          },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "c_1": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = h",
+            "input_form": true
+          },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "c_1": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": -1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = h",
+            "input_form": true
+          },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "c_1": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = h",
+            "input_form": true
+          },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-2.0, 0.0],
+              [2.0, 0.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "c_1": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -2.0, "y2": 0.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-regions-002",
+      "group": "implicit",
+      "script": [
+        "h = 1",
+        "q: x >= 0 && y >= 0 && x + y <= h - 1.5",
+        "c: x^4 - 5*x^2 + y = 0",
+        "g: y = 2*h - 3",
+        "P = Intersect(c, g)",
+        "V = Vertex(q)",
+        "W = Corner(q)",
+        "d: x^4 + y^4 = 1",
+        "A = (h, 0)",
+        "t = Tangent(A, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "h", "value": 2.0 },
+        { "action": "set_number", "label": "h", "value": 0.0 },
+        { "action": "set_number", "label": "h", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-5.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(4) - (5 * x^(2)) + y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.27872385417085, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.27872385417085, "y": -1.0 },
+          "V_{1}": { "type": "point", "defined": false },
+          "W_{1}": { "type": "point", "defined": false },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 4.0, "b": 0.0, "c": -4.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-5.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(4) - (5 * x^(2)) + y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.188901059316734, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.45685025174785665, "y": 1.0 },
+          "V_{1}": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "W_{1}": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -0.881264520127971, "b": 1.2062994740159003, "c": 1.762529040255942 },
+          "P_{3}": { "type": "point", "defined": true, "x": 0.45685025174785665, "y": 1.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 2.188901059316734, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -0.0, "y": 0.5 },
+          "V_{3}": { "type": "point", "defined": true, "x": 0.5, "y": -0.0 },
+          "W_{2}": { "type": "point", "defined": true, "x": -0.0, "y": 0.5 },
+          "W_{3}": { "type": "point", "defined": true, "x": 0.5, "y": -0.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.881264520127971, "b": 1.2062994740159003, "c": -1.762529040255942 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-5.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(4) - (5 * x^(2)) + y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 3.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.3540138625651954, "y": -3.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.3540138625651954, "y": -3.0 },
+          "V_{1}": { "type": "point", "defined": false },
+          "W_{1}": { "type": "point", "defined": false },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": false },
+          "P_{3}": { "type": "point", "defined": false },
+          "P_{4}": { "type": "point", "defined": false },
+          "V_{2}": { "type": "point", "defined": false },
+          "V_{3}": { "type": "point", "defined": false },
+          "W_{2}": { "type": "point", "defined": false },
+          "W_{3}": { "type": "point", "defined": false },
+          "t_{2}": { "type": "line", "defined": false }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 1.0],
+              [0.0, 0.0],
+              [-5.0, 0.0],
+              [0.0, 0.0],
+              [1.0, 0.0]
+            ],
+            "equation": "x^(4) - (5 * x^(2)) + y = 0",
+            "input_form": true
+          },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.188901059316734, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.45685025174785665, "y": 1.0 },
+          "V_{1}": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "W_{1}": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -0.881264520127971, "b": 1.2062994740159003, "c": 1.762529040255942 },
+          "P_{3}": { "type": "point", "defined": true, "x": 0.45685025174785665, "y": 1.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 2.188901059316734, "y": 1.0 },
+          "V_{2}": { "type": "point", "defined": true, "x": -0.0, "y": 0.5 },
+          "V_{3}": { "type": "point", "defined": true, "x": 0.5, "y": -0.0 },
+          "W_{2}": { "type": "point", "defined": true, "x": -0.0, "y": 0.5 },
+          "W_{3}": { "type": "point", "defined": true, "x": 0.5, "y": -0.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.881264520127971, "b": 1.2062994740159003, "c": -1.762529040255942 }
+        }
+      ]
+    }
+  ]
+}

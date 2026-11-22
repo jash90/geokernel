@@ -1206,7 +1206,7 @@ cases = ["geomclip-carrier-001", "geomclip-carrier-002", "geomclip-carrier-005"]
 [[form]]
 command = "IntersectPath"
 form = "polygon,line"
-cases = ["geomclip-carrier-001", "geomclip-carrier-002"]
+cases = ["geomclip-carrier-001", "geomclip-carrier-002", "georestclip-longcarrier-001"]
 
 [[form]]
 command = "IntersectPath"
@@ -3448,12 +3448,12 @@ difference = "geometry-command-arguments: `Vertex(image, number)`"
 [[form]]
 command = "IntersectPath"
 form = "segment,conic"
-cases = ["georestclip-segment-003"]
+cases = ["georestclip-segment-003", "georestclip-conicpart-001", "georestclip-conicpart-004", "georestclip-conicpart-007", "georestclip-conicpart-010", "georestclip-segment-005", "georestclip-segment-006"]
 
 [[form]]
 command = "IntersectPath"
 form = "conic,segment"
-cases = ["georestclip-segment-004"]
+cases = ["georestclip-segment-004", "georestclip-conicpart-001", "georestclip-conicpart-004", "georestclip-conicpart-007", "georestclip-conicpart-010"]
 
 [[form]]
 command = "Dilate"
@@ -3480,6 +3480,151 @@ difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyM
 command = "SurdText"
 form = "point"
 cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
+
+[[form]]
+command = "IntersectPath"
+form = "polyline,conic"
+cases = ["georestclip-polyline-003", "georestclip-conicpart-002", "georestclip-conicpart-005", "georestclip-conicpart-008", "georestclip-conicpart-011"]
+
+[[form]]
+command = "IntersectPath"
+form = "conic,polyline"
+cases = ["georestclip-polyline-004", "georestclip-conicpart-002", "georestclip-conicpart-005", "georestclip-conicpart-008", "georestclip-conicpart-011"]
+
+[[form]]
+command = "IntersectPath"
+form = "polygon,conic"
+cases = ["georestclip-polygon-002", "georestclip-conicpart-003", "georestclip-conicpart-006", "georestclip-conicpart-009", "georestclip-conicpart-012"]
+
+[[form]]
+command = "IntersectPath"
+form = "conic,polygon"
+cases = ["georestclip-polygon-005", "georestclip-conicpart-003", "georestclip-conicpart-006", "georestclip-conicpart-009", "georestclip-conicpart-012"]
+
+[[form]]
+command = "IntersectRegion"
+form = "polygon,line"
+cases = ["georestclip-region-001"]
+
+[[form]]
+command = "IntersectRegion"
+form = "segment,conic"
+cases = ["georestclip-region-002", "georestclip-conicpart-013", "georestclip-conicpart-016", "georestclip-conicpart-019", "georestclip-conicpart-022"]
+
+[[form]]
+command = "IntersectRegion"
+form = "conic,segment"
+cases = ["georestclip-region-002", "georestclip-conicpart-013", "georestclip-conicpart-016", "georestclip-conicpart-019", "georestclip-conicpart-022"]
+
+[[form]]
+command = "IntersectRegion"
+form = "polyline,conic"
+cases = ["georestclip-region-003", "georestclip-conicpart-014", "georestclip-conicpart-017", "georestclip-conicpart-020", "georestclip-conicpart-023"]
+
+[[form]]
+command = "IntersectRegion"
+form = "conic,polyline"
+cases = ["georestclip-region-003", "georestclip-conicpart-014", "georestclip-conicpart-017", "georestclip-conicpart-020", "georestclip-conicpart-023"]
+
+[[form]]
+command = "IntersectRegion"
+form = "polygon,conic"
+cases = ["georestclip-region-004", "georestclip-conicpart-015", "georestclip-conicpart-018", "georestclip-conicpart-021", "georestclip-conicpart-024"]
+
+[[form]]
+command = "IntersectRegion"
+form = "conic,polygon"
+cases = ["georestclip-region-004", "georestclip-conicpart-015", "georestclip-conicpart-018", "georestclip-conicpart-021", "georestclip-conicpart-024"]
+
+[[form]]
+command = "IntersectionPaths"
+form = "polygon,line"
+cases = ["georestclip-paths-001"]
+
+[[form]]
+command = "IntersectionPaths"
+form = "segment,conic"
+cases = ["georestclip-paths-002", "georestclip-conicpart-025", "georestclip-conicpart-028", "georestclip-conicpart-031", "georestclip-conicpart-034"]
+
+[[form]]
+command = "IntersectionPaths"
+form = "conic,segment"
+cases = ["georestclip-paths-002", "georestclip-conicpart-025", "georestclip-conicpart-028", "georestclip-conicpart-031", "georestclip-conicpart-034"]
+
+[[form]]
+command = "IntersectionPaths"
+form = "polyline,conic"
+cases = ["georestclip-paths-003", "georestclip-conicpart-026", "georestclip-conicpart-029", "georestclip-conicpart-032", "georestclip-conicpart-035"]
+
+[[form]]
+command = "IntersectionPaths"
+form = "conic,polyline"
+cases = ["georestclip-paths-003", "georestclip-conicpart-026", "georestclip-conicpart-029", "georestclip-conicpart-032", "georestclip-conicpart-035"]
+
+[[form]]
+command = "IntersectionPaths"
+form = "polygon,conic"
+cases = ["georestclip-paths-004", "georestclip-conicpart-027", "georestclip-conicpart-030", "georestclip-conicpart-033", "georestclip-conicpart-036"]
+
+[[form]]
+command = "IntersectionPaths"
+form = "conic,polygon"
+cases = ["georestclip-paths-004", "georestclip-conicpart-027", "georestclip-conicpart-030", "georestclip-conicpart-033", "georestclip-conicpart-036"]
+
+[[form]]
+command = "Corner"
+form = "conic"
+cases = ["corners-conic-001"]
+
+[[form]]
+command = "Corner"
+form = "polygon"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "polyline"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "polygon,number"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "polyline,number"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "segment,number"
+cases = ["corners-geometry-001"]
+
+[[form]]
+command = "Corner"
+form = "image,number"
+cases = ["corners-raster-001"]
+
+[[form]]
+command = "Corner"
+form = "number,number"
+cases = ["corners-view-001"]
+
+[[form]]
+command = "Dilate"
+form = "image,number"
+cases = ["corners-dilate-001", "corners-dilate-002", "corners-dilate-004"]
+
+[[form]]
+command = "Dilate"
+form = "image,number,point"
+cases = ["corners-dilate-001", "corners-dilate-002", "corners-dilate-003", "corners-dilate-004"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,image"
+cases = ["corners-matrix-001", "corners-matrix-002", "corners-matrix-003", "corners-matrix-004"]
 
 [[form]]
 command = "ImplicitCurve"

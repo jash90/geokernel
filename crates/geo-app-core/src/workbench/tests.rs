@@ -1177,6 +1177,65 @@ fn script_moves_can_reveal_boundary_outputs_used_by_later_lines() {
 }
 
 #[test]
+fn inequality_vertices_keep_grown_labels_through_replay() {
+    let src = "P_{1} = (8, 9)\nh = -1\nP = Vertex(x > 0 && y > 0 && x + y < h)";
+    let mut w = Workbench::from_script(src).unwrap();
+    let h = w.construction().id("h").unwrap();
+    assert!(w.construction().id("P_{2}").is_some());
+    assert!(w.construction().id("P_{3}").is_none());
+    assert!(w.set_number(h, 2.0));
+    assert!(w.construction().id("P_{4}").is_some());
+    assert!(w.set_number(h, -1.0));
+    assert!(w.delete(w.construction().id("P_{1}").unwrap()));
+
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert!(restored.construction().id("P_{1}").is_none());
+    for label in ["P_{2}", "P_{3}", "P_{4}"] {
+        let c = restored.construction();
+        assert_eq!(c.value(c.id(label).unwrap()), Value::Undefined);
+    }
+    assert!(restored.set_number(restored.construction().id("h").unwrap(), 3.0));
+    let c = restored.construction();
+    let last = c.id("P_{4}").unwrap();
+    assert_eq!(c.value(last), Value::Point { x: 3.0, y: 0.0 });
+    assert!(restored.delete(last));
+    for label in ["P_{2}", "P_{3}", "P_{4}"] {
+        assert!(restored.construction().id(label).is_none());
+    }
+}
+
+#[test]
+fn implicit_tangents_keep_grown_labels_through_replay() {
+    let src = "h = 1\nA = (h, 0)\nc: x^4 + y^4 = 1\nt_{1} = Line(A, xAxis)\nt = Tangent(A, c)";
+    let mut w = Workbench::from_script(src).unwrap();
+    let h = w.construction().id("h").unwrap();
+    assert!(w.construction().id("t_{2}").is_some());
+    assert!(w.construction().id("t_{3}").is_none());
+    assert!(w.set_number(h, 2.0));
+    assert!(w.construction().id("t_{3}").is_some());
+    assert!(w.set_number(h, 0.0));
+    assert!(w.delete(w.construction().id("t_{1}").unwrap()));
+
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    let c = restored.construction();
+    assert!(c.id("t_{1}").is_none());
+    let tangents = ["t_{2}", "t_{3}"].map(|label| c.id(label).unwrap());
+    assert!(tangents.iter().all(|&id| c.value(id) == Value::Undefined));
+    assert!(restored.set_number(c.id("h").unwrap(), 2.0));
+    assert!(tangents
+        .iter()
+        .all(|&id| matches!(restored.construction().value(id), Value::Line { .. })));
+}
+
+#[test]
 fn automatic_intersection_follows_its_root_through_journal_replay() {
     let mut w = Workbench::default();
     for line in [

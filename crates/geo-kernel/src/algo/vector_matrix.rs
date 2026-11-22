@@ -541,6 +541,7 @@ pub(crate) fn exec(
             | Kind::PolyLine
             | Kind::Curve
             | Kind::Function
+            | Kind::Image
     ) {
         return None;
     }

@@ -17,7 +17,10 @@ use crate::algo::{curve, Group, Parents, CARRIERS, CONIC_OBJECTS};
 use crate::expr::{IntersectionWork, Raw};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
-use std::{collections::HashMap, sync::Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 const FUNCTION: &[Kind] = &[Kind::Function];
 
@@ -48,12 +51,14 @@ enum Method {
 }
 
 type Point = (f64, f64);
+type Vertices = Arc<[Point]>;
 
 /// Root lists shared by output slots until a dependency update or rollback.
 #[derive(Default)]
 pub(crate) struct FunctionRootCache {
     graphs: Mutex<HashMap<FunctionIntersection, Vec<Point>>>,
-    cartesian_lines: Mutex<HashMap<[Id; 2], super::curves::CurveRoots>>,
+    cartesian_pairs: Mutex<HashMap<[Id; 2], super::curves::CurveRoots>>,
+    inequalities: Mutex<HashMap<Id, Vertices>>,
     implicit_pairs: Mutex<HashMap<[Id; 2], super::curves::CurveRoots>>,
     implicit_tangents: Mutex<HashMap<[Id; 2], Vec<Value>>>,
 }
@@ -69,20 +74,41 @@ impl FunctionRootCache {
             .get_mut()
             .expect("implicit intersection cache")
             .clear();
-        self.cartesian_lines
+        self.cartesian_pairs
             .get_mut()
             .expect("curve root cache")
             .clear();
+        self.inequalities
+            .get_mut()
+            .expect("inequality vertex cache")
+            .clear();
     }
 
-    pub(super) fn cartesian_line<T>(
+    pub(crate) fn inequality(&self, key: Id, solve: impl FnOnce() -> Vertices) -> Vertices {
+        if let Some(points) = self
+            .inequalities
+            .lock()
+            .expect("inequality vertex cache")
+            .get(&key)
+        {
+            return points.clone();
+        }
+        let points = solve();
+        self.inequalities
+            .lock()
+            .expect("inequality vertex cache")
+            .insert(key, points.clone());
+        points
+    }
+
+    pub(super) fn cartesian<T>(
         &self,
         key: [Id; 2],
         solve: impl FnOnce() -> super::curves::CurveRoots,
         read: impl FnOnce(&[Option<Point>]) -> T,
     ) -> T {
         if let Some(points) = self
-            .cartesian_lines
+            .cartesian_pairs
             .lock()
             .expect("curve root cache")
             .get(&key)
@@ -91,7 +117,7 @@ impl FunctionRootCache {
         }
         let points = solve();
         let result = read(&points);
-        self.cartesian_lines
+        self.cartesian_pairs
             .lock()
             .expect("curve root cache")
             .insert(key, points);

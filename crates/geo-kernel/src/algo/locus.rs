@@ -207,7 +207,10 @@ impl Construction {
                 || matches!(
                     def,
                     Def::Vector(crate::algo::vector::VectorDef::ApplyMatrix {
-                        kind: crate::Kind::Function,
+                        kind: Kind::Function | Kind::Image,
+                        ..
+                    }) | Def::Transform(crate::algo::transform::TransformDef::Dilate {
+                        kind: Kind::Image,
                         ..
                     })
                 )

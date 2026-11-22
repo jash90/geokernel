@@ -1,0 +1,44 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "corners-checkbox-001",
+      "group": "corners",
+      "script": [
+        "b = true",
+        "n = 1",
+        "P = Vertex(b, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 5.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        },
+        {
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        },
+        {
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "number", "defined": true, "value": 5.0 },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        }
+      ]
+    }
+  ]
+}
