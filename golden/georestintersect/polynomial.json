@@ -1,0 +1,49 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestintersect-polynomial-001",
+      "group": "georestintersect",
+      "script": [
+        "q = Curve(t, -t^4+2t^2+0.25t+5, t, -10, 10)",
+        "A = (0, 4.07875)",
+        "B = (9.6, 5.07875)",
+        "g = Line(A, B)",
+        "P = Intersect(q, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 9.6, "y": 6.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 4.07875 }
+      ],
+      "snapshots": [
+        {
+          "q": { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 4.07875 },
+          "B": { "type": "point", "defined": true, "x": 9.6, "y": 5.07875 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 9.6, "c": -39.156 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.5178281056420015, "y": 3.9206429056622913 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.5704720119954514, "y": 4.242340834582863 }
+        },
+        {
+          "q": { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 4.07875 },
+          "B": { "type": "point", "defined": true, "x": 9.6, "y": 6.0 },
+          "g": { "type": "line", "defined": true, "a": -1.9212499999999997, "b": 9.6, "c": -39.156 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.5356384876792133, "y": 3.771422349535825 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.5536293591438746, "y": 4.38967816731825 }
+        },
+        {
+          "q": { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 4.07875 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.07875 },
+          "g": { "type": "line", "defined": false },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

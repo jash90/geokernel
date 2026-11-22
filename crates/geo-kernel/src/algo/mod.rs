@@ -20,6 +20,7 @@ pub(crate) mod analysis;
 
 pub mod arc;
 pub mod basic;
+pub mod calculus;
 pub mod charts;
 pub mod circle;
 pub mod conic;

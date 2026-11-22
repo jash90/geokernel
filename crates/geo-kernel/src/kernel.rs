@@ -45,6 +45,7 @@ use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use self::locus::{LocusData, LocusDef};
 use crate::algo::analysis::{AnalysisCache, AnalysisDef};
 use crate::algo::arc::{ArcData, ArcDef};
+use crate::algo::calculus::{CalcRecord, CalculusDef};
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
@@ -415,6 +416,11 @@ pub enum Def {
     /// A number the user can change (a slider).
     Number(f64),
     Boolean(bool),
+    /// A geometric `If`: condition and alternative pairs, then an optional else object.
+    Conditional {
+        args: IdList,
+        kind: Kind,
+    },
     Button,
     InputBox(Option<Id>),
     Image(IdList),
@@ -523,6 +529,13 @@ pub enum Def {
     /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
     /// handle is valid only in the construction that made it.
     Equation(EquationDef),
+    /// The calculus commands of the function group: the integrals, the
+    /// derivatives, the Riemann sums and the polynomial queries. An
+    /// object whose value samples a tree keeps it in the construction's
+    /// calculus records (see [`Construction::calculus_record`]). The
+    /// objects it reads are `u32` indices, so the five inputs of a sum
+    /// still fit the fixed size of a definition.
+    Calculus(CalculusDef),
 }
 
 /// A line or conic defined by an equation in `x` and `y`: which of the two
@@ -611,6 +624,7 @@ impl Def {
             Def::CircleThrough { .. } | Def::CircleRadius { .. } => Kind::Circle,
             Def::Number(_) | Def::Distance(..) => Kind::Number,
             Def::Boolean(_) => Kind::Boolean,
+            Def::Conditional { kind, .. } => *kind,
             Def::Button => Kind::Button,
             Def::InputBox(_) => Kind::InputBox,
             Def::Image(_) => Kind::Image,
@@ -642,6 +656,7 @@ impl Def {
                 }
             }
             Def::Locus(d) => d.kind(),
+            Def::Calculus(d) => d.kind(),
             Def::Discrete(_) => Kind::Locus,
             Def::Analysis(d) => d.kind(),
         }
@@ -651,6 +666,7 @@ impl Def {
     pub fn list(&self) -> Option<IdList> {
         match self {
             Def::Image(list) => Some(*list),
+            Def::Conditional { args, .. } => Some(*args),
             Def::Chart(d) => Some(d.args),
             Def::Polygon(d) => d.list(),
             Def::GeneralConic(d) => d.list(),
@@ -663,6 +679,7 @@ impl Def {
     pub fn with_list(self, list: IdList) -> Def {
         match self {
             Def::Image(_) => Def::Image(list),
+            Def::Conditional { kind, .. } => Def::Conditional { args: list, kind },
             Def::Chart(mut d) => {
                 d.args = list;
                 Def::Chart(d)
@@ -697,6 +714,7 @@ impl Def {
             | Def::Number(_)
             | Def::Boolean(_)
             | Def::Button
+            | Def::Conditional { .. }
             | Def::InputBox(None)
             | Def::Image(_)
             | Def::Chart(_)
@@ -732,6 +750,7 @@ impl Def {
             Def::Path(d) => d.parents(),
             Def::Arc(d) => d.parents(),
             Def::Locus(d) => d.parents(),
+            Def::Calculus(d) => d.parents(),
             Def::Discrete(d) => d.parents(),
             Def::Analysis(d) => d.parents(),
         }
@@ -853,6 +872,7 @@ pub struct Construction {
     conic_intersections: Vec<(usize, PairState)>,
     continuous_conic_intersections: bool,
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
+    pub(crate) clips: algo::polygon_clip::ClipCache,
     pub(crate) analysis: AnalysisCache,
     last_update_changed_automatic_root: bool,
     /// The states of the points on paths, with the index of each point, in
@@ -870,6 +890,9 @@ pub struct Construction {
     /// The points of the loci, with the index of each object, in creation
     /// order.
     loci: Vec<(usize, LocusData)>,
+    /// The calculus records: the tree or list elements of the calculus
+    /// objects that keep one (`algo::calculus`), by owner index.
+    calculus: Vec<(usize, CalcRecord)>,
     /// The graphics window used to sample loci. A headless construction
     /// uses the reference window.
     locus_view: Option<[f64; 6]>,
@@ -1393,6 +1416,7 @@ impl Construction {
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
         self.function_roots.clear();
+        self.clips.clear();
         self.analysis.clear();
         self.conic_intersections.truncate(
             self.conic_intersections
@@ -1424,6 +1448,13 @@ impl Construction {
         }
         while self.loci.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.loci.pop();
+        }
+        while self
+            .calculus
+            .last()
+            .is_some_and(|&(owner, _)| owner >= at.len)
+        {
+            self.calculus.pop();
         }
         while self
             .sliders
@@ -1472,6 +1503,9 @@ impl Construction {
         ids.extend(algo::predicate::hidden_parents(self, def));
         ids.extend(algo::polygon::hidden_parents(self, def));
         ids.extend(algo::measure::hidden_parents(self, def));
+        if let Def::Point(point) = *def {
+            ids.extend_from_slice(point.hidden_parents(self));
+        }
         ids.extend(angle::hidden_parents(self, def));
         ids.extend(expr::parents(self, def));
         if let Def::Equation(d) = *def {
@@ -1555,6 +1589,11 @@ impl Construction {
             Def::Locus(d) => {
                 let data = locus::record(self, d, id);
                 self.store_locus(id, data)
+            }
+            Def::Calculus(d) if d.has_record() => {
+                let (value, record) = algo::calculus::initialize(self, &d);
+                self.calculus.push((id.0, record));
+                value
             }
             Def::Discrete(d) => self.store_locus(id, d.record(self, None)),
             _ => self.compute(def, id.0),
@@ -1866,6 +1905,7 @@ impl Construction {
     fn propagate_dirty(&mut self, mut dirty: DirtySet, mut from: usize) -> usize {
         self.last_update_changed_automatic_root = false;
         self.function_roots.clear();
+        self.clips.clear();
         self.analysis.clear();
         let mut recomputed = 0;
         while let Some(i) = dirty.pop_first(from) {
@@ -1929,6 +1969,11 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Calculus(d) if d.has_record() => {
+                    if !self.update_calculus(i, &d) {
+                        continue;
+                    }
+                }
                 _ => {
                     let new = self.compute(def, i);
                     if let Def::IntersectBoundary(intersection) = def {
@@ -1938,17 +1983,19 @@ impl Construction {
                         }
                     }
                     if new == self.values[i]
+                        && def.kind() != Kind::Curve
                         && !matches!(
                             def,
-                            Def::Measure(MeasureDef::CartesianCurve { .. })
-                                | Def::Analysis(
-                                    AnalysisDef::ParametricDerivative(_) | AnalysisDef::Spline(_)
-                                )
+                            Def::Conditional {
+                                kind: Kind::Circle | Kind::Conic,
+                                ..
+                            }
                         )
                     {
                         // Nothing downstream can change because of this object.
                         continue;
                     }
+                    // Curves and conditional conics can change shape at constant summary values.
                     self.values[i] = new;
                 }
             }
@@ -2098,6 +2145,19 @@ impl Construction {
         true
     }
 
+    /// Recomputes the calculus object `i`; tells whether its children
+    /// must follow. A function always counts as changed, like an
+    /// expression function (see `expr::store`).
+    fn update_calculus(&mut self, i: usize, d: &CalculusDef) -> bool {
+        let Some(slot) = self.calculus_slot(i) else {
+            return false;
+        };
+        let (value, record) = algo::calculus::refresh(self, d);
+        self.values[i] = value;
+        self.calculus[slot].1 = record;
+        true
+    }
+
     /// Recomputes the equation object `i` from its coefficients; tells
     /// whether its children must follow: whether any coefficient changed,
     /// bit for bit, or its display uses the original expression sides.
@@ -2136,6 +2196,20 @@ impl Construction {
     /// Where the record of object `i` is kept in `arcs`.
     fn arc_slot(&self, i: usize) -> Option<usize> {
         self.arcs.binary_search_by_key(&i, |&(owner, _)| owner).ok()
+    }
+
+    /// The slot of the calculus record of object `i`, if it has one.
+    pub(crate) fn calculus_slot(&self, i: usize) -> Option<usize> {
+        self.calculus
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+            .ok()
+    }
+
+    /// The calculus record of object `id`: the tree its function value
+    /// samples, or the elements of its coefficient list. `None` for any
+    /// other object.
+    pub(crate) fn calculus_record(&self, id: Id) -> Option<&CalcRecord> {
+        self.calculus_slot(id.0).map(|slot| &self.calculus[slot].1)
     }
 
     /// The record of the arc or sector `id`: its conic, the range of its
@@ -2244,7 +2318,13 @@ impl Construction {
     /// any other defined circle the record GeoGebra's circle commands make.
     /// `None` for other objects and for an undefined circle that keeps no
     /// record. A record may be undefined ([`ConicData::defined`]).
-    pub fn conic(&self, id: Id) -> Option<ConicData> {
+    pub fn conic(&self, mut id: Id) -> Option<ConicData> {
+        while let Def::Conditional { args, .. } = self.defs.get(id.0)? {
+            if !self.values[id.0].is_defined() {
+                return None;
+            }
+            id = expr::conditional_branch(self, self.list(*args))?;
+        }
         match self.defs.get(id.0)? {
             Def::GeneralConic(_) | Def::Equation(_) => {
                 self.conic_slot(id.0).map(|slot| self.conics[slot].1)
@@ -2314,6 +2394,22 @@ impl Construction {
             Def::XAxis | Def::YAxis | Def::Boolean(_) | Def::Button | Def::InputBox(None) => Ok(()),
             Def::Chart(d) => d.check(self),
             Def::Image(list) => self.expect_list(list, POINT),
+            Def::Conditional { args, kind } => {
+                let ids = self.list(args);
+                let expected = expr::conditional_kind(kind).ok_or(Error::UnknownObject)?;
+                if ids.len() < 2 {
+                    return Err(Error::UnknownObject);
+                }
+                let (pairs, fallback) = ids.as_chunks::<2>();
+                for &[condition, branch] in pairs {
+                    self.expect(condition, &[Kind::Boolean])?;
+                    self.expect(branch, expected)?;
+                }
+                for &branch in fallback {
+                    self.expect(branch, expected)?;
+                }
+                Ok(())
+            }
             Def::InputBox(Some(linked)) => {
                 if self.defs.get(linked.0).is_some() || axis::get(linked).is_some() {
                     Ok(())
@@ -2389,6 +2485,7 @@ impl Construction {
             // the coefficient entries were checked when they were parsed
             Def::Equation(d) => crate::expr::equation::check(self, d),
             Def::Locus(d) => d.check(self),
+            Def::Calculus(d) => d.check(self),
             Def::Discrete(d) => d.check(self),
             Def::Analysis(d) => d.check(self),
         }
@@ -2448,6 +2545,9 @@ impl Construction {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
             Def::Boolean(v) => Some(Value::Bool(v)),
+            Def::Conditional { args, .. } => {
+                Some(self.stored_value(expr::conditional_branch(self, self.list(args))?))
+            }
             Def::Button => Some(Value::Button),
             Def::InputBox(_) => Some(Value::InputBox),
             Def::Chart(d) => Some(d.compute(self).value),
@@ -2494,6 +2594,7 @@ impl Construction {
             Def::Arc(d) => d.compute(self),
             Def::Equation(d) => Some(expr::equation::current(self, d)),
             Def::Locus(d) => d.compute(self),
+            Def::Calculus(d) => d.compute(self),
             Def::Discrete(_) => None,
             Def::Analysis(d) => d.compute(self),
         }

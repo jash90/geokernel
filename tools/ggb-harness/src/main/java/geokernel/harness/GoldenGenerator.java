@@ -22,6 +22,8 @@ import java.util.TreeMap;
  * A case may set {@code track_boundary_growth} to record indexed outputs
  * from line or boundary crossings when the reference first labels them.
  * {@code track_root_growth} records newly labelled roots of an interval command.
+ * {@code file_loading} exercises the legacy {@code Function} interval command
+ * and emits the same script form as the saved-construction importer.
  */
 public final class GoldenGenerator {
 
@@ -90,6 +92,7 @@ public final class GoldenGenerator {
         boolean pointListGrowth = Boolean.TRUE.equals(input.get("track_point_list_growth"));
         boolean rootGrowth = Boolean.TRUE.equals(input.get("track_root_growth"));
         boolean sampleCurves = Boolean.TRUE.equals(input.get("sample_curves"));
+        boolean fileLoading = Boolean.TRUE.equals(input.get("file_loading"));
         Session session = new Session(boundaryGrowth, pointListGrowth, rootGrowth);
         List<?> view = (List<?>) input.get("view");
         if (view != null) {
@@ -104,8 +107,13 @@ public final class GoldenGenerator {
         }
         List<?> script = (List<?>) input.get("script");
         List<?> steps = (List<?>) input.get("steps");
-        for (Object line : script) {
-            session.run((String) line);
+        session.kernel().getConstruction().setFileLoading(fileLoading);
+        try {
+            for (Object line : script) {
+                session.run((String) line);
+            }
+        } finally {
+            session.kernel().getConstruction().setFileLoading(false);
         }
         if (steps.isEmpty() || !"initial".equals(((Map<?, ?>) steps.get(0)).get("action"))) {
             throw new IllegalArgumentException("the first step must be 'initial'");
@@ -167,14 +175,17 @@ public final class GoldenGenerator {
         Map<String, Object> golden = new LinkedHashMap<>();
         golden.put("id", input.get("id"));
         golden.put("group", input.get("group"));
-        golden.put("script", new ArrayList<>(script));
+        golden.put("script", fileLoading ? script.stream()
+                .map(line -> ((String) line).replace(" = Function(", " = $functionInterval("))
+                .toList() : new ArrayList<>(script));
         if (view != null) {
             golden.put("view", view);
         }
         golden.put("steps", outSteps);
         golden.put("snapshots", snapshots);
         if (input.size() != (4 + (boundaryGrowth ? 1 : 0) + (pointListGrowth ? 1 : 0)
-                + (rootGrowth ? 1 : 0) + (sampleCurves ? 1 : 0) + (view != null ? 1 : 0))) {
+                + (rootGrowth ? 1 : 0) + (sampleCurves ? 1 : 0) + (view != null ? 1 : 0)
+                + (fileLoading ? 1 : 0))) {
             throw new IllegalArgumentException(
                     "unexpected fields in the case input");
         }

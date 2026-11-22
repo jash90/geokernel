@@ -463,7 +463,7 @@ mod tests {
     }
 
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 41;
+    const GOLDEN_FILES: usize = 44;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]
@@ -1203,6 +1203,30 @@ mod tests {
             }
             assert_round_trip(&mut wb, "imported construction");
         }
+    }
+
+    #[test]
+    fn latex_text_keeps_source_face_and_placement_after_save_and_load() {
+        use geo_kernel::kernel::text::TextPosition;
+        use geo_kernel::script::text::literal;
+
+        let latex = "\\begin{bmatrix}a&\\sqrt[3]{b}\\\\c&\\frac{1}{2}\\end{bmatrix}\n\\text{units}";
+        let source = format!(
+            "t = {}\n$textProperties(t, true, 1.5, 6, -, -, screen, 25, 80)\n",
+            literal(latex),
+        );
+        let mut wb = Workbench::from_script(&source).unwrap();
+        assert_round_trip(&mut wb, "LaTeX text");
+        let snapshot = wb.snapshot_text();
+        let mut back = Workbench::default();
+        back.load_bytes(snapshot.as_bytes(), "formula.geo").unwrap();
+        let c = back.construction();
+        let id = c.id("t").unwrap();
+        assert_eq!(c.text(id), Some(latex));
+        let style = c.text_presentation(id).unwrap();
+        assert!(style.latex && style.bold && style.italic);
+        assert_eq!(style.size, 1.5);
+        assert_eq!(style.position, TextPosition::Screen { x: 25.0, y: 80.0 });
     }
 
     #[test]

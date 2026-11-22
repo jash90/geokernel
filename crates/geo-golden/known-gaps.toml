@@ -609,6 +609,13 @@ id = "discrete-upstream-019"
 reason = "The circumcircle test is sensitive to the last bit of cos(6) on approximately cocircular sites. The literal cocircular cases exercise the exact tie rule separately."
 mismatches = ["0:g"]
 
+# Calculus
+
+[[gap]]
+id = "calculus-degree-010"
+reason = "The reference exhausts its heap expanding the coefficient trees of (a x + b)^300 (its `power` deep-copies the shared trees, which grows without bound; at the harness's 4 GB it fails from about the 65th power on) and answers undefined. The kernel reads each shared coefficient subtree once, a memo over the builder's arena, and answers within its budget."
+mismatches = ["0:d", "1:d", "2:d", "3:d"]
+
 # Numerical function analysis
 
 [[gap]]
@@ -692,3 +699,80 @@ mismatches = ["0:result"]
 id = "cas-solve-045"
 reason = "GeoGebra lists the solution families of a product equation in the order its CAS factors it (the y = 0 family of x*y = 0 before x = 0), which follows no rule. The kernel lists the family whose first coordinate is constant first, so the families agree while the order differs."
 mismatches = ["0:result"]
+
+[[gap]]
+id = "georestintersect-spline-001"
+reason = "IntersectLineSpline leaves the previous point defined when adjacent spline inputs coincide, while the kernel propagates the undefined spline to the intersection"
+mismatches = ["2:P_{1}"]
+
+[[gap]]
+id = "georestclip-largepath-001"
+reason = "Conic clipping caps polylines at 1,000 vertices."
+mismatches = [
+  "0:s_{1}",
+  "0:s_{2}",
+]
+
+[[gap]]
+id = "georestclip-largepath-002"
+reason = "Conic clipping caps polygons at 1,000 vertices."
+mismatches = [
+  "0:s_{1}",
+  "0:s_{2}",
+  "0:s_{3}",
+]
+
+[[gap]]
+id = "georestclip-overlay-001"
+reason = "The polygon overlay traces contours with the interior on the left and chooses its own start vertex. Labelled vertices and edges follow that order."
+mismatches = [
+  "0:M",
+  "0:N",
+  "0:O",
+  "0:P",
+  "0:Q",
+  "0:R",
+  "0:f_1",
+  "0:m",
+  "0:n",
+  "0:r",
+  "0:s",
+  "0:s_{1}",
+  "0:t",
+  "1:I",
+  "1:J",
+  "1:K",
+  "1:L",
+  "1:M",
+  "1:N",
+  "1:O",
+  "1:P",
+  "1:Q",
+  "1:R",
+  "1:f_1",
+  "1:i",
+  "1:j",
+  "1:k",
+  "1:l",
+  "1:m",
+  "1:n",
+  "1:r",
+  "1:r_{1}",
+  "1:s",
+  "1:s_{1}",
+  "1:t",
+]
+
+[[gap]]
+id = "georestsmall-iflimited-001"
+reason = "Geometric If alternatives must be named objects."
+mismatches = [
+  "0:script line 6",
+]
+
+[[gap]]
+id = "georestsmall-surdcomplex-001"
+reason = "The kernel has no complex point mode, so the input point cannot be constructed."
+mismatches = [
+  "0:script line 1",
+]

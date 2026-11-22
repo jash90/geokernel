@@ -168,6 +168,7 @@ pub use list::{Element, List};
 pub(crate) mod math;
 mod names;
 mod parse;
+pub(crate) use parse::{Parsed, MAX_DEPTH};
 mod types;
 mod wide;
 
@@ -194,7 +195,7 @@ impl ExprDef {
 
 /// One node of an expression tree. Children are indices into the same
 /// arena and always smaller than the index of their parent.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Node {
     /// A constant (`MyDouble`): a literal, `π`, `e`, `∞` or `?`.
     Num(f64),
@@ -306,7 +307,7 @@ pub(crate) enum Node {
     ObjectDefined(Id),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum IterationMode {
     Unary,
     Indexed,
@@ -686,12 +687,19 @@ struct TextResult {
     presentation: crate::kernel::text::TextPresentation,
 }
 
+#[derive(Clone, Copy)]
+struct FunctionInterval {
+    bounds: [u32; 2],
+    range: Option<[f64; 2]>,
+    defined: bool,
+}
+
 #[derive(Clone)]
 pub(crate) struct Entry {
-    nodes: Vec<Node>,
+    pub(crate) nodes: Vec<Node>,
     lits: Vec<Lit>,
     tys: Vec<Ty>,
-    root: u32,
+    pub(crate) root: u32,
     parents: Vec<Id>,
     /// Whether this is a function.
     function: bool,
@@ -699,6 +707,8 @@ pub(crate) struct Entry {
     function_of_y: bool,
     /// The name used by a Cartesian curve's coordinate function.
     curve_parameter: Option<Box<str>>,
+    /// Explicit domain of a function loaded from a legacy Function command.
+    interval: Option<FunctionInterval>,
     /// Whether a function's tree requires checking its branches or transforms
     /// to decide whether it is defined (see [`inputs_defined`]).
     checks_branches: bool,
@@ -722,6 +732,19 @@ pub(crate) struct Entry {
 }
 
 impl Entry {
+    fn evaluate_interval(&self, c: &Construction) -> Option<FunctionInterval> {
+        let mut interval = self.interval?;
+        let [min, max] = interval
+            .bounds
+            .map(|bound| sample_subtree(c, self, bound, 0.0));
+        interval.defined = min <= max;
+        // AlgoFunctionInterval keeps the previous domain when bounds reverse.
+        if min.partial_cmp(&max) != Some(std::cmp::Ordering::Greater) {
+            interval.range = interval.defined.then_some([min, max]);
+        }
+        Some(interval)
+    }
+
     fn new(c: &Construction, p: parse::Parsed, function: bool) -> Self {
         let checks_branches = function
             && p.nodes.iter().any(|n| {
@@ -748,6 +771,7 @@ impl Entry {
             lists,
             items: Vec::new(),
             coordinate_layout: None,
+            interval: None,
             nodes: p.nodes,
             lits: p.lits,
             tys: p.tys,
@@ -1359,6 +1383,9 @@ pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) 
     if entry(c, d).lists {
         return update_lists(c, d);
     }
+    if let Some(interval) = entry(c, d).evaluate_interval(c) {
+        c.exprs.entries[d.index as usize].interval = Some(interval);
+    }
     let e = entry(c, d);
     if let Node::PolynomialPart(remainder, a, b) = e.nodes[e.root as usize] {
         let coefficients = commands::polynomial::divide(c, e, remainder, a, b);
@@ -1407,6 +1434,9 @@ pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
 /// object it names is, and every command in it has a result. A number with
 /// an infinite raw value counts as defined, as in GeoGebra.
 fn inputs_defined(c: &Construction, e: &Entry) -> bool {
+    if e.interval.is_some_and(|interval| !interval.defined) {
+        return false;
+    }
     if e.checks_branches {
         let meter = eval::Lists::new(Vec::new());
         let ctx = eval::Ctx::<true> {
@@ -1521,6 +1551,7 @@ pub(crate) fn list(c: &Construction, id: Id) -> Option<List<'_>> {
 fn list_slots(c: &Construction, id: Id) -> Option<&[Slot]> {
     match c.def(id) {
         Def::Expr(d) => Some(&entry(c, d).items),
+        Def::Calculus(_) => c.calculus_record(id).map(|record| record.slots.as_slice()),
         Def::Chart(_) => c.chart(id).map(|data| data.slots.as_slice()),
         _ => None,
     }
@@ -1556,6 +1587,10 @@ pub(crate) fn store(c: &mut Construction, d: ExprDef, out: Outcome) -> bool {
 pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
     match (c.def(f), c.value(f)) {
         (Def::Expr(d), Value::Function) => Some(eval::sample(c, entry(c, d), x)),
+        (Def::Calculus(d), Value::Function) => {
+            let record = c.calculus_record(f)?;
+            d.record_value(c, record, f, x)
+        }
         (Def::Chart(_), Value::Function) => c.chart(f).map(|data| data.sample(x)),
         _ => None,
     }
@@ -1585,6 +1620,7 @@ pub(crate) fn function_signature(c: &Construction, id: Id) -> Option<FunctionSig
     })
 }
 
+pub(crate) use commands::logical::{conditional_branch, conditional_kind, define_geometry_if};
 pub(crate) use commands::relation::{define_relation, relation_reports};
 
 pub(crate) fn is_independent_text(c: &Construction, id: Id) -> bool {
@@ -1628,6 +1664,141 @@ pub(crate) fn relation_number(c: &Construction, id: Id) -> f64 {
             _ => f64::NAN,
         },
     }
+}
+
+/// The entry of a tree the calculus commands built themselves (see
+/// `algo::calculus`), sampled like a function's tree.
+pub(crate) fn function_entry(c: &Construction, parsed: parse::Parsed) -> Entry {
+    Entry::new(c, parsed, true)
+}
+
+/// The entry of the expression object `d`, for the calculus commands that
+/// read the tree of their source function.
+pub(crate) fn source_entry(c: &Construction, d: ExprDef) -> &Entry {
+    entry(c, d)
+}
+
+/// `GeoFunction.value` of a tree the calculus commands built, without
+/// keeping the entry (the antiderivative at a bound of integration).
+pub(crate) fn sample_parsed(c: &Construction, parsed: &parse::Parsed, x: f64) -> f64 {
+    eval::sample(c, &Entry::new(c, parsed.clone(), true), x)
+}
+
+/// `GeoFunction.value` of a tree the calculus commands built; the entry is
+/// one of their records.
+pub(crate) fn sample_tree(c: &Construction, e: &Entry, x: f64) -> f64 {
+    eval::sample(c, e, x)
+}
+
+/// `GeoFunction.value` of the subtree `i` of a function's tree: a branch
+/// of a conditional function the conditional integral integrates
+/// (`AlgoIntegralDefinite.computeConditional`).
+pub(crate) fn sample_subtree(c: &Construction, e: &Entry, i: u32, x: f64) -> f64 {
+    eval::sample_subtree(c, e, i, x)
+}
+
+/// The boolean value of the subtree `i` of a function's tree at `x`, and
+/// whether it is defined (`Bounds.addRestriction`'s condition checks).
+pub(crate) fn subtree_bool(c: &Construction, e: &Entry, i: u32, x: f64) -> Option<(bool, bool)> {
+    match eval::subtree(c, e, i, x) {
+        eval::Val::B(v, defined) => Some((v, defined)),
+        _ => None,
+    }
+}
+
+/// Whether the subtree `i` of a function's tree is a number (`Ty::Num`),
+/// which the constant side of a branch bound's comparison must be
+/// (`NumberValue`).
+pub(crate) fn subtree_is_number(e: &Entry, i: u32) -> bool {
+    matches!(e.tys[i as usize], Ty::Num(_))
+}
+
+/// `GeoFunction.isDefined` of a tree the calculus commands built: its
+/// objects are defined, and the root is not the constant `NaN` that
+/// GeoGebra's no-CAS integrator builds for a rule it cannot integrate
+/// (`ExpressionNode.isDefined`).
+pub(crate) fn tree_defined(c: &Construction, e: &Entry) -> bool {
+    inputs_defined(c, e) && !matches!(e.nodes[e.root as usize], Node::Num(v) if v.is_nan())
+}
+
+/// The nodes of an entry, for the calculus commands that walk the tree of
+/// their source function.
+pub(crate) fn nodes_of(e: &Entry) -> &[Node] {
+    &e.nodes
+}
+
+/// The root node index of an entry.
+pub(crate) fn root_of(e: &Entry) -> u32 {
+    e.root
+}
+
+/// The number literals of a tree, in tree order
+/// (`AlgoCoefficients.extractConstants`: every `MyDouble` leaf is a
+/// constant — a degree sign included — collected by the pre-order walk of
+/// `ExpressionNode.any`, which covers the tree, not the parser's arena).
+pub(crate) fn constant_literals(e: &Entry) -> Vec<f64> {
+    let mut out = Vec::new();
+    let mut stack = vec![e.root];
+    while let Some(i) = stack.pop() {
+        match e.nodes[i as usize] {
+            Node::Num(v) => out.push(v),
+            Node::MinusOne => out.push(-1.0),
+            Node::Degree => out.push(math::PI_180),
+            ref node => {
+                let mut kids: Vec<u32> = children(node).filter(|&k| k != NONE).collect();
+                kids.reverse();
+                stack.extend(kids);
+            }
+        }
+    }
+    out
+}
+
+/// The parsed tree of an entry again, for the copy an order-zero
+/// derivative is.
+pub(crate) fn parsed_of(e: &Entry) -> parse::Parsed {
+    parse::Parsed {
+        root: e.root,
+        nodes: e.nodes.clone(),
+        lits: e.lits.clone(),
+        tys: e.tys.clone(),
+        parents: e.parents.clone(),
+        inputs: e.inputs.clone(),
+        depth: e.depth,
+        cost: e.cost,
+        vars: e.vars,
+        uses_var: false,
+        uses_y: false,
+    }
+}
+
+/// The current value of a tree the calculus commands built, reading the
+/// current values of its objects: what a polynomial coefficient is.
+pub(crate) fn value_of_tree(c: &Construction, parsed: &parse::Parsed) -> Option<f64> {
+    let entry = Entry::new(c, parsed.clone(), false);
+    match eval::root(c, &entry, None).0 {
+        Raw::Num(v) => Some(v),
+        _ => None,
+    }
+}
+
+/// Charges `n` units of evaluation work (see [`eval`]), which the loops of
+/// the calculus commands stay inside.
+pub(crate) fn charge(n: u64) {
+    eval::work(n);
+}
+
+/// Adds a tree the calculus commands built as the object `name`: a
+/// coefficient list, or a hidden list of points. The kinds are those
+/// [`add_parsed`] takes; a tree without parents still becomes a
+/// dependent object, like a list it builds.
+pub(crate) fn add_built(
+    c: &mut Construction,
+    name: &str,
+    parsed: parse::Parsed,
+    kind: Kind,
+) -> Result<Id, Error> {
+    add_parsed(c, name, parsed, kind, AngleStyle::Unbounded, false)
 }
 
 /// The last stored result.
@@ -1918,6 +2089,49 @@ pub(crate) fn define_parametric_coordinate(
     Ok(id)
 }
 
+/// Legacy Function stores the graph's bounds separately. Parse the bounds
+/// with the body to retain all of their construction dependencies.
+pub(crate) fn define_function_interval(
+    c: &mut Construction,
+    label: &str,
+    restriction: &str,
+    parameter: &str,
+) -> Result<Id, String> {
+    let parsed = parse::parse_parameter(c, restriction, parameter)?;
+    let Node::If(_, condition, body, _) = parsed.nodes[parsed.root as usize] else {
+        return Err("expected a function interval".into());
+    };
+    let Node::Bin(Bin::And, left, right) = parsed.nodes[condition as usize] else {
+        return Err("expected two function bounds".into());
+    };
+    let (Node::Bin(Bin::LessEqual, min, _), Node::Bin(Bin::LessEqual, _, max)) =
+        (parsed.nodes[left as usize], parsed.nodes[right as usize])
+    else {
+        return Err("expected two inclusive function bounds".into());
+    };
+    if !matches!(parsed.tys[body as usize], Ty::Num(_)) || reads_list(&parsed.nodes, &parsed.tys) {
+        return Err("expected a numeric function on the interval".into());
+    }
+    let mut e = Entry::new(c, parsed, true);
+    e.root = body;
+    e.interval = Some(FunctionInterval {
+        bounds: [min, max],
+        range: None,
+        defined: false,
+    });
+    e.interval = e.evaluate_interval(c);
+    e.curve_parameter = Some(parameter.into());
+    add_entry(c, label, e, Kind::Function, AngleStyle::Unbounded).map_err(|e| e.to_string())
+}
+
+/// A legacy function exposes its saved graph interval even while undefined.
+pub(crate) fn function_interval(c: &Construction, id: Id) -> Option<Option<[f64; 2]>> {
+    let Def::Expr(def) = c.def(id) else {
+        return None;
+    };
+    Some(entry(c, def).interval?.range)
+}
+
 /// Hidden two-variable function for a slope field or integral curve.
 pub(crate) fn define_slope(c: &mut Construction, label: &str, rhs: &str) -> Result<Id, String> {
     numeric_function(c, label, parse::parse_equation(c, rhs)?)
@@ -1964,6 +2178,29 @@ fn function(
 
 fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> Result<Id, String> {
     add_parsed(c, name, parsed, kind, AngleStyle::Unbounded, false).map_err(|e| e.to_string())
+}
+
+/// A hidden function object of the inline expression `text`, the argument
+/// of a command that reads a function (`sin(x)` in `Polynomial(sin(x))`;
+/// see `script::resolve_geometry_arguments`).
+pub(crate) fn argument_function(c: &mut Construction, text: &str, label: &str) -> Option<Id> {
+    let parsed = parse::parse(c, text).ok()?;
+    match parsed.tys[parsed.root as usize] {
+        Ty::Num(_) if parsed.uses_var => add(c, label, parsed, Kind::Function).ok(),
+        _ => None,
+    }
+}
+
+/// A number as the constant function it counts as where GeoGebra accepts
+/// one (`isRealValuedFunction` of a `GeoNumeric`): the second curve of
+/// `Integral` and `IntegralBetween` (`CmdIntegral`'s first four-argument
+/// branch).
+pub(crate) fn constant_function(c: &mut Construction, text: &str, label: &str) -> Option<Id> {
+    let parsed = parse::parse(c, text).ok()?;
+    match parsed.tys[parsed.root as usize] {
+        Ty::Num(_) if !parsed.uses_var => add(c, label, parsed, Kind::Function).ok(),
+        _ => None,
+    }
 }
 
 fn add_parsed(
@@ -2022,6 +2259,16 @@ fn add_parsed(
             return Ok(id);
         }
     }
+    add_entry(c, name, entry, kind, angle_style)
+}
+
+fn add_entry(
+    c: &mut Construction,
+    name: &str,
+    entry: Entry,
+    kind: Kind,
+    angle_style: AngleStyle,
+) -> Result<Id, Error> {
     let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
     c.exprs.entries.push(entry);
     c.exprs.pending = Some(index);

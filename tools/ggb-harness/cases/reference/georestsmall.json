@@ -1,0 +1,6 @@
+{
+  "cases": [
+    {"id": "georestsmall-iflimited-001", "group": "georestsmall", "script": ["A = (0, 0)", "B = (4, 0)", "C = (0, 3)", "r = Segment(A, B)", "b = x(B) > 0", "s = If(b, r, Segment(A, C))"], "steps": [{"action": "initial"}]},
+    {"id": "georestsmall-surdcomplex-001", "group": "georestsmall", "script": ["A = 1 + 2i", "s = SurdText(A)"], "steps": [{"action": "initial"}]}
+  ]
+}

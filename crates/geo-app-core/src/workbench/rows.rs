@@ -265,6 +265,7 @@ fn make_row(c: &Construction, id: Id, src: Source) -> Row {
         free,
         head: String::new(),
         value: None,
+        formula: c.algebra_formula(id).map(String::into_boxed_str),
         free_number: None,
         angle: c.kind(id) == Kind::Angle,
         siblings: siblings(src, label).cloned().collect(),
@@ -298,6 +299,7 @@ fn placeholder(id: Id) -> Row {
         free: false,
         head: String::new(),
         value: None,
+        formula: None,
         free_number: None,
         angle: false,
         siblings: Vec::new(),
@@ -419,6 +421,13 @@ impl Workbench {
             let (text, free_number) = value_parts(c, id);
             self.rows_formatted += 1;
             changed |= set_value(row, text, free_number);
+            if row.kind == Kind::List {
+                let formula = c.algebra_formula(id).map(String::into_boxed_str);
+                if row.formula != formula {
+                    row.formula = formula;
+                    changed = true;
+                }
+            }
         }
         // Rows of new objects.
         let from = self.rows.last().map_or(0, |row| row.id.index() + 1);
@@ -585,6 +594,7 @@ impl Workbench {
                     free,
                     head,
                     value: second,
+                    formula: c.algebra_formula(id).map(String::into_boxed_str),
                     siblings,
                     free_number,
                     angle: c.kind(id) == Kind::Angle,

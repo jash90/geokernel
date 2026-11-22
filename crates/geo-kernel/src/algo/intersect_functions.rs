@@ -51,11 +51,41 @@ type Point = (f64, f64);
 
 /// Root lists shared by output slots until a dependency update or rollback.
 #[derive(Default)]
-pub(crate) struct FunctionRootCache(Mutex<HashMap<FunctionIntersection, Vec<Point>>>);
+pub(crate) struct FunctionRootCache {
+    graphs: Mutex<HashMap<FunctionIntersection, Vec<Point>>>,
+    cartesian_lines: Mutex<HashMap<[Id; 2], super::curves::CurveRoots>>,
+}
 
 impl FunctionRootCache {
     pub(crate) fn clear(&mut self) {
-        self.0.get_mut().expect("function root cache").clear();
+        self.graphs.get_mut().expect("function root cache").clear();
+        self.cartesian_lines
+            .get_mut()
+            .expect("curve root cache")
+            .clear();
+    }
+
+    pub(super) fn cartesian_line<T>(
+        &self,
+        key: [Id; 2],
+        solve: impl FnOnce() -> super::curves::CurveRoots,
+        read: impl FnOnce(&[Option<Point>]) -> T,
+    ) -> T {
+        if let Some(points) = self
+            .cartesian_lines
+            .lock()
+            .expect("curve root cache")
+            .get(&key)
+        {
+            return read(points);
+        }
+        let points = solve();
+        let result = read(&points);
+        self.cartesian_lines
+            .lock()
+            .expect("curve root cache")
+            .insert(key, points);
+        result
     }
 
     fn get<R>(
@@ -64,12 +94,12 @@ impl FunctionRootCache {
         solve: impl FnOnce() -> Vec<Point>,
         read: impl FnOnce(&[Point]) -> R,
     ) -> R {
-        if let Some(points) = self.0.lock().expect("function root cache").get(&key) {
+        if let Some(points) = self.graphs.lock().expect("function root cache").get(&key) {
             return read(points);
         }
         let points = solve();
         let result = read(&points);
-        self.0
+        self.graphs
             .lock()
             .expect("function root cache")
             .insert(key, points);

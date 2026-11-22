@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestsmall-surdcomplex-001",
+      "group": "georestsmall",
+      "script": [
+        "A = 1 + 2i",
+        "s = SurdText(A)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "s": { "type": "text", "defined": true, "text": "1+2ί" }
+        }
+      ]
+    }
+  ]
+}

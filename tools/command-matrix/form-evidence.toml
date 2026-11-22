@@ -1210,11 +1210,6 @@ cases = ["geomclip-carrier-001", "geomclip-carrier-002"]
 
 [[form]]
 command = "IntersectPath"
-form = "conic,polygon"
-cases = ["geomclip-conic-003"]
-
-[[form]]
-command = "IntersectPath"
 form = "polygon,polygon"
 cases = ["geomclip-polygon-001", "geomclip-polygon-002"]
 
@@ -1918,6 +1913,206 @@ cases = ["algebralogic-relation-001", "algebralogic-relation-002", "algebralogic
 command = "Asymptote"
 form = "conic"
 cases = ["relationreview-asymptotes-001"]
+
+[[form]]
+command = "Coefficients"
+form = "function"
+cases = ["calculus-coefficients-001", "calculus-coefficients-011", "cas-coefficients-001", "cas-coefficients-006"]
+
+[[form]]
+command = "Degree"
+form = "function"
+cases = ["calculus-degree-001", "calculus-degree-009", "cas-coefficients-001", "cas-coefficients-006"]
+
+[[form]]
+command = "Denominator"
+form = "function"
+cases = ["calculus-fraction-013", "cas-projection-001"]
+
+[[form]]
+command = "Denominator"
+form = "number"
+cases = ["calculus-fraction-001", "cas-projection-002"]
+
+[[form]]
+command = "Derivative"
+form = "function"
+cases = ["calculus-derivative-001"]
+
+[[form]]
+command = "Derivative"
+form = "function,number"
+cases = ["calculus-derivative-002"]
+
+[[form]]
+command = "Derivative"
+form = "function,any"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "Derivative"
+form = "function,any,number"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "Integral"
+form = "function"
+cases = ["calculus-integral-001"]
+
+[[form]]
+command = "Integral"
+form = "function,number"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "Integral"
+form = "function,number,number"
+cases = ["calculus-integral-002"]
+
+[[form]]
+command = "Integral"
+form = "function,number,number,boolean"
+cases = ["calculus-integral-002"]
+
+[[form]]
+command = "Integral"
+form = "function,number,number,number"
+cases = ["calculus-integral-008"]
+
+[[form]]
+command = "Integral"
+form = "function,function,number,number"
+cases = ["calculus-integral-006"]
+
+[[form]]
+command = "Integral"
+form = "function,function,number,number,boolean"
+cases = ["calculus-integral-007"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function"
+cases = ["calculus-integral-016"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,number"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "IntegralBetween"
+form = "function,number,number"
+cases = ["calculus-between-007"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,number,number,boolean"
+cases = ["calculus-between-007"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,number,number,number"
+cases = ["calculus-integral-017"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,function,number,number"
+cases = ["calculus-between-001"]
+
+[[form]]
+command = "IntegralBetween"
+form = "function,function,number,number,boolean"
+cases = ["calculus-between-002"]
+
+[[form]]
+command = "LeftSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001"]
+
+[[form]]
+command = "LowerSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001"]
+
+[[form]]
+command = "NDerivative"
+form = "function"
+cases = ["calculus-derivative-001"]
+
+[[form]]
+command = "NDerivative"
+form = "function,number"
+cases = ["calculus-derivative-003"]
+
+[[form]]
+command = "NIntegral"
+form = "function"
+cases = ["calculus-integral-001"]
+
+[[form]]
+command = "NIntegral"
+form = "function,number"
+difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(function, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
+
+[[form]]
+command = "NIntegral"
+form = "function,number,number"
+cases = ["calculus-integral-010"]
+
+[[form]]
+command = "NIntegral"
+form = "function,number,number,boolean"
+cases = ["calculus-integral-011"]
+
+[[form]]
+command = "NIntegral"
+form = "function,number,number,number"
+cases = ["calculus-integral-017"]
+
+[[form]]
+command = "NIntegral"
+form = "function,function,number,number,boolean"
+cases = ["calculus-integral-017"]
+
+[[form]]
+command = "Numerator"
+form = "function"
+cases = ["calculus-fraction-013", "cas-projection-001"]
+
+[[form]]
+command = "Numerator"
+form = "number"
+cases = ["calculus-fraction-001", "cas-projection-002"]
+
+[[form]]
+command = "Polynomial"
+form = "function"
+cases = ["calculus-polynomial-001", "cas-projection-003"]
+
+[[form]]
+command = "Polynomial"
+form = "list"
+cases = ["calculus-polynomial-010"]
+
+[[form]]
+command = "Polynomial"
+form = "point,point,..."
+cases = ["calculus-polynomial-006"]
+
+[[form]]
+command = "RectangleSum"
+form = "function,number,number,number,number"
+cases = ["calculus-sums-001"]
+
+[[form]]
+command = "TrapezoidalSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001"]
+
+[[form]]
+command = "UpperSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001"]
 
 [[form]]
 command = "Text"
@@ -2790,44 +2985,9 @@ form = "function,function"
 cases = ["cas-denominator-001", "cas-denominator-002"]
 
 [[form]]
-command = "Degree"
-form = "function"
-cases = ["cas-coefficients-001", "cas-coefficients-006"]
-
-[[form]]
-command = "Coefficients"
-form = "function"
-cases = ["cas-coefficients-001", "cas-coefficients-006"]
-
-[[form]]
 command = "Coefficients"
 form = "conic"
 cases = ["cas-coefficients-005"]
-
-[[form]]
-command = "Numerator"
-form = "function"
-cases = ["cas-projection-001"]
-
-[[form]]
-command = "Numerator"
-form = "number"
-cases = ["cas-projection-002"]
-
-[[form]]
-command = "Denominator"
-form = "function"
-cases = ["cas-projection-001"]
-
-[[form]]
-command = "Denominator"
-form = "number"
-cases = ["cas-projection-002"]
-
-[[form]]
-command = "Polynomial"
-form = "function"
-cases = ["cas-projection-003"]
 
 [[form]]
 command = "Factors"
@@ -2932,3 +3092,76 @@ command = "NSolutions"
 form = "list,any"
 cases = ["cas-solve-032"]
 difference = "polynomial-cas: `NSolutions(list, any)`"
+
+[[form]]
+command = "Tangent"
+form = "point,curve"
+cases = ["georesttangent-curve-001", "georesttangent-curve-002", "georesttangent-curve-003", "georesttangent-curve-004", "georesttangent-curve-005", "georesttangent-curve-006", "georesttangent-curve-008"]
+
+[[form]]
+command = "Intersect"
+form = "line,curve"
+cases = ["georestintersect-trig-001", "georestintersect-tangent-001", "georestintersect-bounded-001", "georestintersect-growth-001", "georestintersect-affine-001", "georestintersect-affine-003", "georestintersect-affine-004"]
+
+[[form]]
+command = "Intersect"
+form = "curve,line"
+cases = ["georestintersect-trig-002", "georestintersect-tangent-002", "georestintersect-polynomial-001", "georestintersect-splineend-001", "georestintersect-splineend-002", "georestintersect-affine-002"]
+
+[[form]]
+command = "Intersect"
+form = "curve,curve,number,number"
+cases = ["georestintersect-seed-001", "georestintersect-seedlines-001", "georestintersect-seedrounding-001"]
+
+[[form]]
+command = "Intersect"
+form = "path,point"
+cases = ["georestintersect-pathline-001", "georestintersect-pathcurve-001"]
+difference = "curve-and-implicit-intersections: `Intersect(path, point)` and `Intersect(point, path)`"
+
+[[form]]
+command = "Intersect"
+form = "point,path"
+cases = ["georestintersect-pathline-002", "georestintersect-pathcurve-002"]
+difference = "curve-and-implicit-intersections: `Intersect(path, point)` and `Intersect(point, path)`"
+
+[[form]]
+command = "Vertex"
+form = "image,number"
+difference = "geometry-command-arguments: `Vertex(image, number)`"
+
+[[form]]
+command = "IntersectPath"
+form = "segment,conic"
+cases = ["georestclip-segment-003"]
+
+[[form]]
+command = "IntersectPath"
+form = "conic,segment"
+cases = ["georestclip-segment-004"]
+
+[[form]]
+command = "Dilate"
+form = "curve,number"
+cases = ["georestsmall-dilatecurve-001", "georestsmall-dilatecurve-002"]
+
+[[form]]
+command = "Dilate"
+form = "curve,number,point"
+cases = ["georestsmall-dilatecurve-001", "georestsmall-dilatecurve-002", "georestsmall-dilatecurve-003"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,curve"
+cases = ["georestsmall-matrixcurve-001", "georestsmall-matrixcurve-002", "georestsmall-matrixcurve-003"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,function"
+cases = ["georestsmall-matrixfunction-001", "georestsmall-matrixfunction-002", "georestsmall-matrixfunction-003", "georestsmall-matrixfunction-004"]
+difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyMatrix(list, function)`"
+
+[[form]]
+command = "SurdText"
+form = "point"
+cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]

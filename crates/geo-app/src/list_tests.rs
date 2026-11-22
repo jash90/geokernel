@@ -232,3 +232,41 @@ fn a_number_being_typed_keeps_its_text_and_focus_while_scrolled_out() {
     assert_eq!(typed, 12.25, "typing into the field");
     assert_eq!(type_into_number(Some(-2500.0)), typed);
 }
+
+/// A settled frame lays out only the rows in its viewport: the heights of
+/// the others were measured when their content last changed, so they ask
+/// for no layout (their anchors sit past the canvas's right edge, so the
+/// drawing asks for none either).
+#[test]
+fn off_screen_rows_ask_for_no_layout() {
+    use geo_kernel::script::text::literal;
+    use std::fmt::Write;
+
+    let mut s = String::new();
+    for i in 0..60 {
+        let formula = literal(&format!(r"\frac{{{i}}}{{x^2}}"));
+        writeln!(s, "t_{{{i}}} = {formula}").unwrap();
+        writeln!(
+            s,
+            "$textProperties(t_{{{i}}}, true, -, -, -, -, screen, 30000, 50)"
+        )
+        .unwrap();
+    }
+    let mut h = window(&s);
+    for _ in 0..4 {
+        frame(&mut h, false, vec![]);
+    }
+    scroll(&mut h, false, -4000.0);
+    let before = crate::latex::cache_lookups();
+    frame(&mut h, false, vec![]);
+    let asked = crate::latex::cache_lookups() - before;
+    let shown = rows(&h)
+        .iter()
+        .filter(|w| w.kind == WidgetKind::Row && w.visible)
+        .count();
+    assert!(shown > 0 && shown < 30, "{shown} rows in view");
+    assert!(
+        asked < shown as u64 + 2,
+        "{asked} layouts asked for {shown} rows in view"
+    );
+}

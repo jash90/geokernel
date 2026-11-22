@@ -237,6 +237,11 @@ fn derivative(ctx: &Ctx<'_, true>, i: u32, depth: u32) -> Option<f64> {
 }
 
 impl IntersectionWork {
+    pub(crate) fn curve_polynomial(&self, c: &Construction, id: Id) -> Option<Vec<f64>> {
+        let ctx = self.context(c, id, &Env::None)?;
+        self.polynomial_at(&ctx, ctx.e.root)
+    }
+
     fn context<'a>(
         &'a self,
         c: &'a Construction,

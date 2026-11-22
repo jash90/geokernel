@@ -37,7 +37,8 @@ def topic(name):
     rng.seed(f"saved-{name}", version=2)
 
 
-def case(name, script, steps, unit=None, hidden=None, archive=False):
+def case(name, script, steps, unit=None, hidden=None, archive=False,
+         images=None, after_images=None):
     counters[name] = counters.get(name, 0) + 1
     entry = {"id": f"saved-{name}-{counters[name]:03d}"}
     if unit:
@@ -47,6 +48,10 @@ def case(name, script, steps, unit=None, hidden=None, archive=False):
     if archive:
         entry["archive"] = True
     entry["script"] = script
+    if images:
+        entry["images"] = images
+    if after_images:
+        entry["after_images"] = after_images
     entry["steps"] = steps
     cases.append(entry)
 
@@ -317,6 +322,24 @@ case("slider-bounds", ["n = Slider(0, 10)", "m = Slider(0, 10)", "k = Slider(0, 
       {"action": "slider_bounds", "label": "m", "min": "a - 1"},
       {"action": "slider_bounds", "label": "k", "min": "-3", "max": "NextPrime(a)"}])
 
+image_points = ["A = (-2, -1)", "B = (1, 0)", "D = (-1, 2)"]
+anchor_image = {"label": "anchoredImage", "file": "generated/tile.png",
+                "corners": ["A", "B", "D"], "alpha": 0.5, "crop": [2, 1, 8, 6]}
+image_edits = [
+    {"action": "move", "label": "A", "x": -3, "y": 0},
+    {"action": "move", "label": "D", "x": -2, "y": 3},
+]
+case("images", image_points, [], archive=True, images=[
+    {"label": "fixedImage", "file": "generated/tile.png", "screen": [41, 63]},
+    {"label": "worldImage", "file": "generated/tile.png", "corners": [[2, 1], [5, 1]]},
+    anchor_image,
+    {"label": "backImage", "file": "generated/tile.jpg", "corners": [[-5, 1], None, [-4, 3]],
+     "background": True},
+    {"label": "animatedImage", "file": "generated/animated.png", "format": "gif",
+     "corners": [[6, 0]], "centered": True},
+])
+case("images", image_points, image_edits, archive=True, images=[anchor_image])
+
 case("object-scripts", ["A = (1, 2)", "check = false", "a = 2"],
      [{"action": "condition", "label": "A", "expression": "check"},
       {"action": "click_script", "label": "A", "text": "SetValue(a, 7)"},
@@ -327,6 +350,32 @@ case("object-scripts", ["A = (1, 2)", "check = false", "a = 2"],
       {"action": "object_script", "label": "A", "event": "EDITOR_KEY_TYPED",
        "language": "JAVASCRIPT", "text": 'ggbApplet.setValue("a", 10);'}],
      hidden=["check"])
+
+corners = ["P = Vertex(art, n)", "Q = Corner(art, 2)",
+           "R = Vertex(art, 3)", "S = Vertex(art, 4)",
+           "T = Vertex(markerImage, 3)", "U = Vertex(fixedImage, 1)"]
+for steps in ([], image_edits, image_edits + [
+    mv("B", -3, 0), {"action": "set_number", "label": "n", "value": 5}
+]):
+    case("vertex-image", image_points + ["n = 1.5"], steps, archive=True,
+         images=[
+             {"label": "art", "file": "generated/tile.png", "corners": ["A", "B", "D"]},
+             {"label": "markerImage", "file": "generated/tile.png", "corners": ["A"]},
+             {"label": "fixedImage", "file": "generated/tile.png", "screen": [40, 60]},
+         ],
+         after_images=corners)
+
+curve_intersections = ["A = (-2, 1)", "B = (2, 1)", "g = Line(A, B)",
+                       "q = Curve(t, t^2, t, -2, 2)", "r = Curve(s, 1, s, -2, 2)",
+                       "P = Intersect(g, q)", "Q = Intersect(q, r, -1.5, 0)"]
+case("curve-intersections", curve_intersections, [])
+case("curve-intersections", curve_intersections, [mv("A", -2, 0), mv("B", 2, 0)])
+
+clip_paths = ["O = (0, 0)", "k = Circle(O, 2)", "A = (-4, 0)", "B = (4, 0)",
+              "C = (4, 1)", "D = (-4, 1)", "p = PolyLine(A, B, C, D)",
+              "s = Segment(A, B)", "q = IntersectPath(p, k)", "t = IntersectPath(k, s)"]
+case("conic-clip", clip_paths, [])
+case("conic-clip", clip_paths, [mv("O", 0, 2)])
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)

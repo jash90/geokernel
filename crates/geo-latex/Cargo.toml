@@ -1,0 +1,13 @@
+[package]
+name = "geo-latex"
+description = "Math text layout for the canvas, algebra panel and SVG export"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+# The font files and outline reader already shipped by epaint.
+epaint_default_fonts = "0.37"
+skrifa = { version = "0.44", default-features = false, features = ["std"] }

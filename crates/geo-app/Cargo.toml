@@ -24,6 +24,7 @@ headless = []
 
 [dependencies]
 geo-kernel = { path = "../geo-kernel" }
+geo-latex = { path = "../geo-latex" }
 geo-app-core = { path = "../geo-app-core" }
 # Default features are off to avoid pulling in glow, accesskit and the web
 # helpers. We want the wgpu renderer and the bundled fonts everywhere.
