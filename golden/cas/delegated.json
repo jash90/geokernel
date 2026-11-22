@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 3,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -138,6 +138,46 @@
               [2.0, 1.0],
               [4.0, 1.0],
               [8.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-delegated-004",
+      "group": "cas",
+      "script": [
+        "f(x) = 1/(x - 0.25)",
+        "result = Asymptote(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.12121212121212122],
+              [-4.0, -0.23529411764705882],
+              [-2.0, -0.4444444444444444],
+              [-1.0, -0.8],
+              [-0.5, -1.3333333333333333],
+              [0.0, -4.0],
+              [0.5, 4.0],
+              [1.0, 1.3333333333333333],
+              [2.0, 0.5714285714285714],
+              [4.0, 0.26666666666666666],
+              [8.0, 0.12903225806451613]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -0.25 }
             ]
           }
         }

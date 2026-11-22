@@ -176,6 +176,8 @@
     {"id": "cas-prime-014", "group": "cas", "script": ["result = NextPrime(-2.5)"], "steps": [{"action": "initial"}]},
     {"id": "cas-prime-015", "group": "cas", "script": ["result = PreviousPrime(-2.5)"], "steps": [{"action": "initial"}]},
     {"id": "cas-prime-016", "group": "cas", "script": ["result = NextPrime(1)"], "steps": [{"action": "initial"}]},
-    {"id": "cas-prime-017", "group": "cas", "script": ["result = PreviousPrime(1)"], "steps": [{"action": "initial"}]}
+    {"id": "cas-prime-017", "group": "cas", "script": ["result = PreviousPrime(1)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-denominator-003", "group": "cas", "script": ["f(x) = 1/(x - 0.25)", "g(x) = 1/(x + 0.25)", "result = CommonDenominator(f, g)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-delegated-004", "group": "cas", "script": ["f(x) = 1/(x - 0.25)", "result = Asymptote(f)"], "steps": [{"action": "initial"}]}
   ]
 }

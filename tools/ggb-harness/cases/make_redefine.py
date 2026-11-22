@@ -61,5 +61,9 @@ cases.case("assignment", ["a_{1} = 2", "b = 2 a_{1}"],
            [redefine("a_1 = 3"), redefine("a_{1} = 5")])
 cases.case("deletion", ["X = (1, 1)", "A = (0, 0)", "B = 2 A", "C = (4, 1)"],
            [redefine("A = X + (1, 0)"), {"action": "delete", "label": "X"}])
-
+cases.case("deletion", ["X = (1, 1)", "A = X + (1, 0)", "B = 2 A", "C = (4, 1)"],
+           [redefine("A = (0, 0)"), {"action": "delete", "label": "X"}, mv("A", 1, 2)])
+cases.case("deletion", ["X = (1, 1)", "A = X + (1, 0)", "B = 2 A", "n = 2"],
+           [redefine("A = (n, 1 / n)"), {"action": "delete", "label": "X"},
+            setn("n", 0), setn("n", 4)])
 cases.write()
