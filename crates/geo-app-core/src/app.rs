@@ -110,6 +110,22 @@ pub struct App {
     pub tool_press: Option<crate::toolpress::ToolPress>,
     /// The delete tool's drag is erasing (spec E11).
     pub erasing: bool,
+    /// The view change in progress, for its undo step
+    /// (`camera::VIEW_CHANGES_ARE_STEPS`).
+    pub view_gesture: crate::camera::ViewGesture,
+    /// Two fingers pinched the view in the last frame (the frame's zoom is
+    /// the pinch's).
+    pub pinching: bool,
+    /// An axis the current drag rescales (`camera::axis_scale`), with the
+    /// world value the press grabbed on it.
+    pub axis: Option<crate::camera::AxisDrag>,
+    /// The press of a zoom rectangle drag, in the area's pixels.
+    pub rect_from: Option<(f64, f64)>,
+    /// The pointer's last place of the rectangle drag, for its preview.
+    pub rect_to: Option<(f64, f64)>,
+    /// The zoom factor the keyboard asked for (Ctrl + plus / minus), about
+    /// the last pointer position (spec D14).
+    pub key_zoom: Option<f64>,
     /// A text field had the keyboard in the previous frame.
     pub was_typing: bool,
     /// Where the labels were painted in the last frame, in the area's
@@ -118,10 +134,16 @@ pub struct App {
 }
 
 impl App {
-    /// How new and dragged free points are captured to the grid at `scale`
-    /// pixels per unit (on while the grid or the axes are shown).
-    pub fn snap(&self, scale: f64) -> Snap {
-        Snap::new(&self.metrics, scale, self.decor.grid || self.decor.axes)
+    /// How new and dragged free points are captured to the grid at
+    /// `xscale` / `yscale` pixels per unit (on while the grid or the axes
+    /// are shown; each axis captures by its own step).
+    pub fn snap(&self, xscale: f64, yscale: f64) -> Snap {
+        Snap::new(
+            &self.metrics,
+            xscale,
+            yscale,
+            self.decor.grid || self.decor.axes,
+        )
     }
 
     pub fn new(wb: Workbench, load_error: Option<String>) -> Self {
@@ -158,6 +180,12 @@ impl App {
             press_view: None,
             tool_press: None,
             erasing: false,
+            view_gesture: crate::camera::ViewGesture::default(),
+            pinching: false,
+            axis: None,
+            rect_from: None,
+            rect_to: None,
+            key_zoom: None,
             was_typing: false,
             label_rects: RefCell::new(Vec::new()),
         }

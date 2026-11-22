@@ -1,20 +1,37 @@
 //! Pan, zoom and fit: the camera over the plane, with no UI types.
 //!
-//! A [`Camera`] is a world-space centre and a scale in pixels per world unit.
-//! It is turned into an [`crate::interact::ViewTransform`] for a given drawing
+//! A [`Camera`] is a world-space centre and one scale per axis, in pixels
+//! per world unit, as the reference app's view (`EuclidianView.xscale` and
+//! `.yscale`): the scales come apart in an axis rescale, a zoom rectangle
+//! or a zoom to fit, and every world/pixel conversion uses both. It is
+//! turned into an [`crate::interact::ViewTransform`] for a given drawing
 //! area size with [`Camera::transform`].
+//!
+//! Parts of `fit` and `zoom_at` are translated from GeoGebra (EUPL 1.2),
+//! commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//! `shared/common/src/main/java/org/geogebra/common/euclidian/EuclidianView.java`
+//! (`calculateRectangleOfAllObjects`, `setRealWorldCoordSystemVisible`,
+//! `CoordSystemAnimation`), see `camera.rs` for the rest.
 
 use crate::interact::ViewTransform;
 use geo_kernel::kernel::{Construction, Value};
 use geo_kernel::svg::View;
 
-/// Smallest and largest allowed scale, in pixels per world unit.
+/// Smallest and largest allowed scale, in pixels per world unit. The
+/// reference app allows 1e-15 .. 1e15 (`Kernel.MAX_DOUBLE_PRECISION`),
+/// far past the precision the drawing works at; ours keeps its own bounds
+/// (the owner's choice, spec D15).
 pub const MIN_SCALE: f64 = 1e-6;
 pub const MAX_SCALE: f64 = 1e9;
-/// Scale of an empty construction.
-const DEFAULT_SCALE: f64 = 50.0;
-/// Fraction of the area kept free around the content by "fit".
-const FIT_MARGIN: f64 = 0.08;
+/// Scale of an empty construction (`EuclidianView.SCALE_STANDARD`).
+pub const STANDARD_SCALE: f64 = 50.0;
+/// The fraction of the content's extent that "fit" keeps free on every
+/// side (`calculateRectangleOfAllObjects`: `xGap = (x1 - x0) * 0.03`).
+const FIT_MARGIN: f64 = 0.03;
+/// The radius of the rectangle a point covers on the screen
+/// (`DrawPoint.getBounds`: the selection circle's box, at least the mouse
+/// capturing threshold 3 plus `SELECTION_RADIUS_MIN` 12).
+const POINT_BOUNDS_RADIUS: f64 = 15.0;
 
 /// An axis-aligned rectangle of the plane.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -79,17 +96,31 @@ pub struct Camera {
     /// World point shown at the centre of the area.
     pub cx: f64,
     pub cy: f64,
-    /// Pixels per world unit.
-    pub scale: f64,
+    /// Pixels per world unit, on each axis (`EuclidianView.xscale`,
+    /// `.yscale`).
+    pub xscale: f64,
+    pub yscale: f64,
 }
 
 impl Camera {
-    /// The standard view: origin in the middle, 50 pixels per unit.
+    /// The standard view: origin in the middle, 50 pixels per unit on both
+    /// axes (`setStandardView`).
     pub const STANDARD: Camera = Camera {
         cx: 0.0,
         cy: 0.0,
-        scale: DEFAULT_SCALE,
+        xscale: STANDARD_SCALE,
+        yscale: STANDARD_SCALE,
     };
+
+    /// A camera of one scale on both axes.
+    pub const fn uniform(cx: f64, cy: f64, scale: f64) -> Camera {
+        Camera {
+            cx,
+            cy,
+            xscale: scale,
+            yscale: scale,
+        }
+    }
 
     /// The view a document opens with: the standard view when all of the
     /// content fits into it, otherwise fitted to the content.
@@ -100,61 +131,150 @@ impl Camera {
         if b.xmin >= v.xmin && b.xmax <= v.xmax && b.ymin >= v.ymin && b.ymax <= v.ymax {
             std
         } else {
-            Camera::fit(Some(b), width, height)
+            Camera::fit(bounds, width, height)
         }
     }
 
-    /// Frames `bounds` in a `width` x `height` area with a margin. `None`, an
-    /// empty box and a single point get a fixed scale around the box centre.
+    /// Frames `bounds` in a `width` x `height` area. `None`, an empty box
+    /// and a single point get a fixed scale around the box centre.
     pub fn fit(bounds: Option<Bounds>, width: f64, height: f64) -> Camera {
         let Some(b) = bounds else {
-            return Camera {
-                cx: 0.0,
-                cy: 0.0,
-                scale: DEFAULT_SCALE,
-            };
+            return Camera::STANDARD;
         };
         let (w, h) = (b.xmax - b.xmin, b.ymax - b.ymin);
-        let usable = 1.0 - 2.0 * FIT_MARGIN;
-        let sx = width.max(1.0) * usable / w;
-        let sy = height.max(1.0) * usable / h;
-        // A zero extent gives an infinite ratio, which `min` discards.
-        let scale = sx.min(sy);
-        let scale = if scale.is_finite() {
-            scale.clamp(MIN_SCALE, MAX_SCALE)
+        let scale = |extent: f64, area: f64| -> f64 {
+            // The same free space on every side as the reference app's fit
+            // (`FIT_MARGIN`, half of it on each side of the extent).
+            let s = area.max(1.0) / (extent * (1.0 + 2.0 * FIT_MARGIN));
+            if s.is_finite() {
+                s.clamp(MIN_SCALE, MAX_SCALE)
+            } else {
+                STANDARD_SCALE
+            }
+        };
+        // A zero extent on one axis leaves that axis its standard scale
+        // (an infinite ratio, which the reference bounds by its own scale
+        // limits); both zero is a single point at the standard scale.
+        let (xscale, yscale) = if w > 0.0 && h > 0.0 {
+            (scale(w, width), scale(h, height))
+        } else if w > 0.0 {
+            (scale(w, width), STANDARD_SCALE)
+        } else if h > 0.0 {
+            (STANDARD_SCALE, scale(h, height))
         } else {
-            DEFAULT_SCALE
+            (STANDARD_SCALE, STANDARD_SCALE)
         };
         Camera {
             cx: 0.5 * (b.xmin + b.xmax),
             cy: 0.5 * (b.ymin + b.ymax),
-            scale,
+            xscale,
+            yscale,
         }
     }
 
-    /// The transform for an area of `width` x `height` pixels.
-    /// The camera after the area changed from `old` to `new` (width,
-    /// height in pixels), keeping the world point at the top left corner
-    /// where it is: opening the keyboard or resizing the window does not
-    /// move the drawing under the pointer.
-    pub fn resized(self, old: (f64, f64), new: (f64, f64)) -> Camera {
-        Camera {
-            cx: self.cx + 0.5 * (new.0 - old.0) / self.scale,
-            cy: self.cy - 0.5 * (new.1 - old.1) / self.scale,
-            ..self
+    /// Zoom to fit the way the reference app does
+    /// (`App.setViewShowAllObjects` with the ratio not kept): the bounds
+    /// of the drawn shapes — a point by its selection circle's box, a
+    /// segment by its ends, a circle by its box — as the reference measures
+    /// them, in whole pixels of the view `t` now, then 3 per cent of the
+    /// extent free on every side (`calculateRectangleOfAllObjects`). The
+    /// new view shows exactly that rectangle (`setRealWorldCoordSystemVisible`).
+    /// `None` when nothing is bounded: the view does not change.
+    pub fn fit_drawn(
+        c: &Construction,
+        t: &ViewTransform,
+        width: f64,
+        height: f64,
+    ) -> Option<Camera> {
+        let mut b = Bounds {
+            xmin: f64::INFINITY,
+            ymin: f64::INFINITY,
+            xmax: f64::NEG_INFINITY,
+            ymax: f64::NEG_INFINITY,
+        };
+        let mut any = false;
+        let grow = |b: &mut Bounds, x0: f64, y0: f64, x1: f64, y1: f64| {
+            b.grow(t.screen_to_world(x0, 0.0).0, t.screen_to_world(0.0, y0).1);
+            b.grow(t.screen_to_world(x1, 0.0).0, t.screen_to_world(0.0, y1).1);
+        };
+        for id in c.ids() {
+            match c.value(id) {
+                // `DrawPoint.getBounds`: a whole-pixel rectangle of the
+                // point's screen position (the reference truncates the
+                // position to an int) with the selection radius on every
+                // side.
+                Value::Point { x, y } => {
+                    let (sx, sy) = t.world_to_screen(x, y);
+                    let (sx, sy) = (sx.trunc(), sy.trunc());
+                    let r = POINT_BOUNDS_RADIUS;
+                    grow(&mut b, sx - r, sy - r, sx + r, sy + r);
+                    any = true;
+                }
+                // `DrawSegment.getBounds`: the ends, no threshold.
+                Value::Segment { x1, y1, x2, y2 } => {
+                    let (ax, ay) = t.world_to_screen(x1, y1);
+                    let (bx, by) = t.world_to_screen(x2, y2);
+                    grow(&mut b, ax.min(bx), ay.min(by), ax.max(bx), ay.max(by));
+                    any = true;
+                }
+                // `DrawConic.getBounds`: the box the ellipse fills.
+                Value::Circle { cx, cy, r } => {
+                    let (x0, y0) = t.world_to_screen(cx - r, cy - r);
+                    let (x1, y1) = t.world_to_screen(cx + r, cy + r);
+                    grow(&mut b, x0, y0, x1, y1);
+                    any = true;
+                }
+                _ => {}
+            }
         }
+        if !any {
+            return None;
+        }
+        let gap = |lo: &mut f64, hi: &mut f64| {
+            let g = (*hi - *lo) * FIT_MARGIN;
+            *lo -= g;
+            *hi += g;
+        };
+        gap(&mut b.xmin, &mut b.xmax);
+        gap(&mut b.ymin, &mut b.ymax);
+        Some(Camera::showing(b, width, height))
+    }
+
+    /// The camera that shows exactly `b` in a `width` x `height` area
+    /// (`setRealWorldCoordSystemVisible`: each axis its own scale, the
+    /// bounds clamped).
+    pub fn showing(b: Bounds, width: f64, height: f64) -> Camera {
+        let (w, h) = (b.xmax - b.xmin, b.ymax - b.ymin);
+        if !(w.is_finite() && w > 0.0 && h.is_finite() && h > 0.0) {
+            return Camera::fit(None, width, height);
+        }
+        Camera {
+            cx: 0.5 * (b.xmin + b.xmax),
+            cy: 0.5 * (b.ymin + b.ymax),
+            xscale: (width / w).clamp(MIN_SCALE, MAX_SCALE),
+            yscale: (height / h).clamp(MIN_SCALE, MAX_SCALE),
+        }
+    }
+
+    /// Whether this is the standard view (`isStandardView` /
+    /// `isZeroStandard`): the origin at the area's centre — which a camera
+    /// of a world-space centre says as the centre being the origin — and
+    /// both scales 50.
+    pub fn is_standard(self) -> bool {
+        self.cx.abs() < 1e-9
+            && self.cy.abs() < 1e-9
+            && (self.xscale - STANDARD_SCALE).abs() < 1e-9
+            && (self.yscale - STANDARD_SCALE).abs() < 1e-9
     }
 
     #[inline]
     pub fn transform(&self, width: f64, height: f64) -> ViewTransform {
-        let hw = 0.5 * width / self.scale;
-        let hh = 0.5 * height / self.scale;
         ViewTransform::new(
             View {
-                xmin: self.cx - hw,
-                ymin: self.cy - hh,
-                xmax: self.cx + hw,
-                ymax: self.cy + hh,
+                xmin: self.cx - 0.5 * width / self.xscale,
+                ymin: self.cy - 0.5 * height / self.yscale,
+                xmax: self.cx + 0.5 * width / self.xscale,
+                ymax: self.cy + 0.5 * height / self.yscale,
             },
             width,
             height,
@@ -164,21 +284,24 @@ impl Camera {
     /// Moves the content by `(dx, dy)` screen pixels (y points down).
     #[inline]
     pub fn pan_pixels(&mut self, dx: f64, dy: f64) {
-        let (cx, cy) = (self.cx - dx / self.scale, self.cy + dy / self.scale);
+        let (cx, cy) = (self.cx - dx / self.xscale, self.cy + dy / self.yscale);
         if cx.is_finite() && cy.is_finite() {
             (self.cx, self.cy) = (cx, cy);
         }
     }
 
-    /// Multiplies the scale by `factor`, keeping the world point under the
-    /// screen position `(sx, sy)` fixed. The area is `width` x `height`.
-    /// Non-finite or non-positive factors are ignored.
+    /// Multiplies both scales by `factor`, keeping the world point under
+    /// the screen position `(sx, sy)` fixed (`CoordSystemAnimation` in its
+    /// ZOOM mode: both axes by the same factor, so a scale ratio survives
+    /// a zoom). The area is `width` x `height`. Non-finite or non-positive
+    /// factors are ignored.
     #[inline]
     pub fn zoom_at(&mut self, factor: f64, sx: f64, sy: f64, width: f64, height: f64) {
         if !(factor.is_finite() && factor > 0.0) {
             return;
         }
-        let new_scale = (self.scale * factor).clamp(MIN_SCALE, MAX_SCALE);
+        let nx = (self.xscale * factor).clamp(MIN_SCALE, MAX_SCALE);
+        let ny = (self.yscale * factor).clamp(MIN_SCALE, MAX_SCALE);
         // Offset of the cursor from the area centre, in pixels, is unchanged.
         let (ox, oy) = (sx - 0.5 * width, sy - 0.5 * height);
         let (mut wx, mut wy) = self.transform(width, height).screen_to_world(sx, sy);
@@ -186,26 +309,19 @@ impl Camera {
             // A view whose extent rounds away (far out and zoomed far in)
             // has no usable transform; the point under the cursor follows
             // from the camera alone.
-            (wx, wy) = (self.cx + ox / self.scale, self.cy - oy / self.scale);
+            (wx, wy) = (self.cx + ox / self.xscale, self.cy - oy / self.yscale);
         }
-        let (cx, cy) = (wx - ox / new_scale, wy + oy / new_scale);
+        let (cx, cy) = (wx - ox / nx, wy + oy / ny);
         // Never a camera that is not finite: it stays as it was.
         if cx.is_finite() && cy.is_finite() {
             *self = Camera {
                 cx,
                 cy,
-                scale: new_scale,
+                xscale: nx,
+                yscale: ny,
             };
         }
     }
-}
-
-/// Scale factor for one frame of wheel scrolling: `scroll_y` is the scrolled
-/// distance in points (positive = content moves down), `pinch` is the
-/// multiplicative pinch factor of the frame (1 = none).
-#[inline]
-pub fn zoom_factor(scroll_y: f64, pinch: f64) -> f64 {
-    (scroll_y * 0.002).exp() * pinch
 }
 
 #[cfg(test)]
@@ -215,15 +331,14 @@ mod tests {
     #[test]
     fn a_zoom_or_pan_far_out_keeps_the_camera_finite() {
         for (c, scale) in [(1e10, 1e9), (1e16, 1e3), (1e300, 1e-3)] {
-            let mut cam = Camera {
-                cx: c,
-                cy: c,
-                scale,
-            };
+            let mut cam = Camera::uniform(c, c, scale);
             for (factor, sx, sy) in [(1.25, 10.0, 590.0), (0.8, 400.0, 300.0), (1.1, 799.0, 1.0)] {
                 cam.zoom_at(factor, sx, sy, 800.0, 600.0);
                 assert!(
-                    cam.cx.is_finite() && cam.cy.is_finite() && cam.scale.is_finite(),
+                    cam.cx.is_finite()
+                        && cam.cy.is_finite()
+                        && cam.xscale.is_finite()
+                        && cam.yscale.is_finite(),
                     "{cam:?}"
                 );
             }
@@ -231,13 +346,9 @@ mod tests {
             assert!(cam.cx.is_finite() && cam.cy.is_finite(), "{cam:?}");
         }
         // Far out and zoomed in, a zoom out still works.
-        let mut cam = Camera {
-            cx: 1e10,
-            cy: 1e10,
-            scale: 1e9,
-        };
+        let mut cam = Camera::uniform(1e10, 1e10, 1e9);
         cam.zoom_at(0.5, 10.0, 10.0, 800.0, 600.0);
-        assert_eq!(cam.scale, 5e8);
+        assert_eq!(cam.xscale, 5e8);
     }
 
     fn close(a: f64, b: f64) -> bool {
@@ -269,29 +380,26 @@ mod tests {
         };
         let cam = Camera::initial(Some(big), 1000.0, 800.0);
         assert_ne!(cam, Camera::STANDARD);
-        assert!(cam.scale < 10.0);
+        assert!(cam.xscale < 10.0);
     }
 
     #[test]
-    fn transform_has_the_camera_scale_and_centre() {
+    fn transform_has_the_camera_scales_and_centre() {
         let cam = Camera {
             cx: 3.0,
             cy: -2.0,
-            scale: 40.0,
+            xscale: 40.0,
+            yscale: 25.0,
         };
         let t = cam.transform(800.0, 600.0);
-        assert!(close(t.scale(), 40.0));
+        assert!(close(t.xscale(), 40.0) && close(t.yscale(), 25.0));
         let (sx, sy) = t.world_to_screen(3.0, -2.0);
         assert!(close(sx, 400.0) && close(sy, 300.0));
     }
 
     #[test]
     fn pan_moves_content_by_the_pixel_delta() {
-        let mut cam = Camera {
-            cx: 0.0,
-            cy: 0.0,
-            scale: 25.0,
-        };
+        let mut cam = Camera::uniform(0.0, 0.0, 25.0);
         let before = cam.transform(400.0, 300.0).world_to_screen(1.0, 2.0);
         cam.pan_pixels(30.0, -12.0);
         let after = cam.transform(400.0, 300.0).world_to_screen(1.0, 2.0);
@@ -299,11 +407,12 @@ mod tests {
     }
 
     #[test]
-    fn zoom_keeps_the_point_under_the_cursor() {
+    fn zoom_keeps_the_point_under_the_cursor_on_both_axes() {
         let mut cam = Camera {
             cx: 1.0,
             cy: 1.0,
-            scale: 30.0,
+            xscale: 30.0,
+            yscale: 20.0,
         };
         let (sx, sy) = (123.0, 77.0);
         let (wx, wy) = cam.transform(500.0, 400.0).screen_to_world(sx, sy);
@@ -316,29 +425,31 @@ mod tests {
 
     #[test]
     fn zoom_scales_and_clamps() {
-        let mut cam = Camera {
-            cx: 0.0,
-            cy: 0.0,
-            scale: 10.0,
-        };
+        let mut cam = Camera::uniform(0.0, 0.0, 10.0);
         cam.zoom_at(2.0, 0.0, 0.0, 100.0, 100.0);
-        assert!(close(cam.scale, 20.0));
+        assert!(close(cam.xscale, 20.0) && close(cam.yscale, 20.0));
         cam.zoom_at(1e30, 50.0, 50.0, 100.0, 100.0);
-        assert_eq!(cam.scale, MAX_SCALE);
+        assert_eq!((cam.xscale, cam.yscale), (MAX_SCALE, MAX_SCALE));
         cam.zoom_at(1e-30, 50.0, 50.0, 100.0, 100.0);
-        assert_eq!(cam.scale, MIN_SCALE);
+        assert_eq!((cam.xscale, cam.yscale), (MIN_SCALE, MIN_SCALE));
         let kept = cam;
         cam.zoom_at(f64::NAN, 0.0, 0.0, 100.0, 100.0);
         cam.zoom_at(-1.0, 0.0, 0.0, 100.0, 100.0);
         assert_eq!(cam, kept);
     }
 
+    /// A zoom keeps the ratio of the scales apart (`CoordSystemAnimation`:
+    /// `newScale * view.getScaleRatio()`).
     #[test]
-    fn wheel_factor_is_neutral_without_input_and_monotone() {
-        assert!(close(zoom_factor(0.0, 1.0), 1.0));
-        assert!(zoom_factor(10.0, 1.0) > 1.0);
-        assert!(zoom_factor(-10.0, 1.0) < 1.0);
-        assert!(close(zoom_factor(0.0, 1.25), 1.25));
+    fn a_zoom_keeps_the_scale_ratio() {
+        let mut cam = Camera {
+            cx: 0.0,
+            cy: 0.0,
+            xscale: 60.0,
+            yscale: 30.0,
+        };
+        cam.zoom_at(1.5, 200.0, 150.0, 400.0, 300.0);
+        assert!(close(cam.xscale, 90.0) && close(cam.yscale, 45.0));
     }
 
     #[test]
@@ -392,7 +503,7 @@ mod tests {
     #[test]
     fn fit_degenerate_inputs_stay_finite() {
         let cam = Camera::fit(None, 100.0, 100.0);
-        assert_eq!(cam.scale, DEFAULT_SCALE);
+        assert_eq!((cam.xscale, cam.yscale), (STANDARD_SCALE, STANDARD_SCALE));
         let one = Bounds {
             xmin: 2.0,
             ymin: 3.0,
@@ -400,7 +511,10 @@ mod tests {
             ymax: 3.0,
         };
         let cam = Camera::fit(Some(one), 100.0, 100.0);
-        assert_eq!((cam.cx, cam.cy, cam.scale), (2.0, 3.0, DEFAULT_SCALE));
+        assert_eq!(
+            (cam.cx, cam.cy, cam.xscale, cam.yscale),
+            (2.0, 3.0, STANDARD_SCALE, STANDARD_SCALE)
+        );
         let flat = Bounds {
             xmin: 0.0,
             ymin: 1.0,
@@ -408,30 +522,89 @@ mod tests {
             ymax: 1.0,
         };
         let cam = Camera::fit(Some(flat), 200.0, 100.0);
-        assert!(close(cam.scale, 200.0 * 0.84 / 10.0));
+        // 3 per cent free on every side: 200 px over 10.6 world units.
+        assert!(close(cam.xscale, 200.0 / 10.6) && close(cam.yscale, STANDARD_SCALE));
         let cam = Camera::fit(Some(flat), 0.0, 0.0);
-        assert!(cam.scale.is_finite() && cam.scale > 0.0);
+        assert!(cam.xscale.is_finite() && cam.xscale > 0.0);
+    }
+
+    /// Zoom to fit as the reference app measures it
+    /// (`calculateRectangleOfAllObjects` over `DrawPoint.getBounds`): the
+    /// numbers of the observation B2f (points (1, 1) and (5, 2) in an
+    /// 892 x 747 view with the origin at (446, 373.5), scale 50).
+    #[test]
+    fn fit_drawn_takes_whole_pixel_point_boxes_and_three_percent() {
+        let mut c = Construction::new();
+        geo_kernel::script::exec(&mut c, "A = (1, 1)").unwrap();
+        geo_kernel::script::exec(&mut c, "B = (5, 2)").unwrap();
+        let t = Camera::STANDARD.transform(892.0, 747.0);
+        let cam = Camera::fit_drawn(&c, &t, 892.0, 747.0).unwrap();
+        let v = cam.transform(892.0, 747.0).view();
+        // The point boxes: floor(496) +- 15 = [481, 511] px in x, and in y
+        // floor(323.5) = 323 -> [308, 338], floor(273.5) = 273 -> [258,
+        // 288], whose world [0.71, 2.31] with the 3 per cent gap each side
+        // is what the view shows; x has no half pixel and stays [0.7, 5.3].
+        assert!(close(v.xmin, 0.562), "{}", v.xmin);
+        assert!(close(v.xmax, 5.438), "{}", v.xmax);
+        assert!(close(v.ymin, 0.662), "{}", v.ymin);
+        assert!(close(v.ymax, 2.358), "{}", v.ymax);
+        assert!(!cam.is_standard());
     }
 
     #[test]
-    fn resizing_keeps_the_top_left_corner_in_place() {
-        let cam = Camera {
-            cx: 1.0,
-            cy: -2.0,
-            scale: 40.0,
-        };
-        let (old, new) = ((800.0, 600.0), (900.0, 378.0));
-        let a = cam.transform(old.0, old.1).screen_to_world(0.0, 0.0);
-        let moved = cam.resized(old, new);
-        let b = moved.transform(new.0, new.1).screen_to_world(0.0, 0.0);
-        assert!(
-            (a.0 - b.0).abs() < 1e-12 && (a.1 - b.1).abs() < 1e-12,
-            "{a:?} {b:?}"
+    fn fit_drawn_of_an_empty_drawing_changes_nothing() {
+        let t = Camera::STANDARD.transform(892.0, 747.0);
+        assert_eq!(
+            Camera::fit_drawn(&Construction::new(), &t, 892.0, 747.0),
+            None
         );
-        assert_eq!(moved.scale, cam.scale);
-        // A point on screen stays at the same pixel.
-        let p = cam.transform(old.0, old.1).world_to_screen(2.0, 1.0);
-        let q = moved.transform(new.0, new.1).world_to_screen(2.0, 1.0);
-        assert!((p.0 - q.0).abs() < 1e-9 && (p.1 - q.1).abs() < 1e-9);
+    }
+
+    #[test]
+    fn showing_clamps_to_the_scale_bounds() {
+        let cam = Camera::showing(
+            Bounds {
+                xmin: 0.0,
+                ymin: 0.0,
+                xmax: 1e15,
+                ymax: 1.0,
+            },
+            100.0,
+            100.0,
+        );
+        assert_eq!(cam.xscale, MIN_SCALE);
+    }
+
+    /// `isStandardView`: the origin at the centre and both scales 50, and
+    /// nothing else.
+    #[test]
+    fn the_standard_view_is_recognised() {
+        assert!(Camera::STANDARD.is_standard());
+        // One pixel off the centre (0.02 world units at 50 px per unit) is
+        // not the standard view any more.
+        assert!(!Camera::uniform(0.02, 0.0, 50.0).is_standard());
+        assert!(!Camera::uniform(0.0, 0.0, 55.0).is_standard());
+        let mut cam = Camera {
+            cx: 0.0,
+            cy: 0.0,
+            xscale: 50.0,
+            yscale: 60.0,
+        };
+        assert!(!cam.is_standard());
+        cam.zoom_at(1.0, 0.0, 0.0, 100.0, 100.0);
+        assert!(!cam.is_standard());
+    }
+
+    /// A resize keeps the world point at the centre (`keepCenter`, spec
+    /// D11): the camera names that point itself, so whatever the area size
+    /// becomes, the centre of it still shows `cx`/`cy` — was
+    /// `resizing_keeps_the_top_left_corner_in_place`.
+    #[test]
+    fn a_resize_keeps_the_world_point_at_the_centre() {
+        let cam = Camera::uniform(1.0, -2.0, 40.0);
+        for (w, h) in [(800.0, 600.0), (900.0, 378.0)] {
+            let (x, y) = cam.transform(w, h).screen_to_world(0.5 * w, 0.5 * h);
+            assert_eq!((x, y), (cam.cx, cam.cy));
+        }
     }
 }

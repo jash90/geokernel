@@ -119,11 +119,11 @@ fn the_toolbar_undo_and_redo_buttons_work() {
 fn a_click_on_a_round_view_button_does_not_place_a_point() {
     let mut h = harness("A = (0, 0)\n");
     h.state_mut().tool.set_tool(Tool::Point);
-    let scale = h.state().camera.unwrap().scale;
+    let scale = h.state().camera.unwrap().xscale;
     // The zoom-in button sits in the lower right corner of the view.
     click(&mut h, at(SIZE.0 - 35.0, SIZE.1 - 33.0 - 88.0));
     assert_eq!(labels(&h), ["A"]);
-    assert!(h.state().camera.unwrap().scale > scale);
+    assert!(h.state().camera.unwrap().xscale > scale);
 }
 
 #[test]

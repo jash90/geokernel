@@ -539,7 +539,13 @@ mod window_tests {
         let st = state(&mut s);
         assert_ne!(camera(&st).0, cam.0, "the second press panned the view");
         assert_eq!(point(&st, "A").0, 2.0);
-        // The drag of A is one undo step of its own.
+        // The pan is one undo step right after the gesture (the owner's
+        // rule, spec F3), the drag of A another of its own: undoing takes
+        // the pan back first, then the drag.
+        call(&mut s, "undo", json!({}));
+        let st = state(&mut s);
+        assert_eq!(camera(&st).0, cam.0, "the pan was undone");
+        assert_eq!(point(&st, "A").0, 2.0);
         call(&mut s, "undo", json!({}));
         let st = state(&mut s);
         assert_eq!(point(&st, "A").0, 0.0);
@@ -785,6 +791,13 @@ fn a_two_finger_pinch_zooms_and_leaves_the_points() {
     );
     assert_eq!(point(&st, "A"), (0.0, 0.0));
     assert_eq!(point(&st, "B"), (3.0, 1.0));
+    // The pinch is one undo step right after the gesture (the owner's
+    // rule, spec F3): undoing puts the view back where it began.
+    assert_eq!(st["undo"]["can_undo"], true);
+    call(&mut s, "undo", json!({}));
+    let st = state(&mut s);
+    let (cx, cy, scale_after) = camera(&st);
+    assert_eq!((cx, cy, scale_after), (0.0, 0.0, scale));
     assert_eq!(st["undo"]["can_undo"], false);
 }
 
@@ -832,11 +845,11 @@ fn set_view_resize_and_world_positions_agree() {
     assert!(r["changes"].is_object());
     let st = state(&mut s);
     assert_eq!(st["window"]["width"], 800.0);
-    // The window keeps the top left world point on a resize: the centre
-    // moved.
+    // A resize keeps the world point at the centre of the drawing there
+    // (the reference app's `keepCenter`, spec D11): the centre stands.
     let (cx, cy, scale) = camera(&st);
     assert_eq!(scale, 25.0);
-    assert_ne!((cx, cy), (2.0, -1.0));
+    assert_eq!((cx, cy), (2.0, -1.0));
     // A click with the point tool at a world position lands there.
     call(&mut s, "select_tool", json!({"tool": "point"}));
     call(&mut s, "click", world(cx + 1.0, cy + 2.0));

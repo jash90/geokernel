@@ -16,6 +16,7 @@ use geo_app::headless::egui::{
 use geo_app::headless::{self, Headless, Profile, WidgetKind, DT, SCALES};
 use geo_app::Workbench;
 use geo_app_core::app::OwnerRules;
+use geo_app_core::text::{self, Label};
 use geo_app_core::view::Camera;
 use serde_json::{json, Map, Value as Json};
 use std::path::{Path, PathBuf};
@@ -595,6 +596,59 @@ impl Session {
             "focus" => out.push(Event::WindowFocused(
                 flag(e, "focused")?.ok_or("`focus` needs `focused`")?,
             )),
+            // A press of a button over the drawing or of the input row, by
+            // the name the window's own accessibility tree gives it.
+            "button" => {
+                let name = text(e, "name")?.ok_or("`button` needs a `name`")?;
+                let which = match name {
+                    "zoom_in" | "zoom_out" | "zoom_to_fit" | "home" | "fullscreen" => name,
+                    other => return Err(format!("unknown button `{other}`")),
+                };
+                let label = match which {
+                    "zoom_in" => text::label(Label::ZoomIn),
+                    "zoom_out" => text::label(Label::ZoomOut),
+                    "zoom_to_fit" => text::label(Label::ShowAllObjects),
+                    "home" => text::label(Label::StandardView),
+                    _ => text::label(Label::Fullscreen),
+                };
+                let center = self
+                    .h
+                    .widgets()
+                    .into_iter()
+                    .find(|w| w.kind == WidgetKind::ViewButton && w.label == label)
+                    .map(|w| w.rect.center())
+                    .ok_or_else(|| format!("no `{which}` button on screen"))?;
+                out.push(Event::PointerMoved(center));
+                out.push(headless::press(center, PointerButton::Primary, true));
+                out.push(headless::press(center, PointerButton::Primary, false));
+            }
+            "focus_input_row" => {
+                let center = self
+                    .h
+                    .widgets()
+                    .into_iter()
+                    .find(|w| w.kind == WidgetKind::InputBar)
+                    .map(|w| w.rect.center())
+                    .ok_or("no input row on screen")?;
+                out.push(Event::PointerMoved(center));
+                out.push(headless::press(center, PointerButton::Primary, true));
+                out.push(headless::press(center, PointerButton::Primary, false));
+            }
+            // The window resized before the frame runs.
+            "resize_window" => {
+                let v = e
+                    .get("viewport")
+                    .and_then(Json::as_array)
+                    .ok_or("`resize_window` needs a `viewport`: [w, h]")?;
+                let (w, h) = match (
+                    v.first().and_then(Json::as_f64),
+                    v.get(1).and_then(Json::as_f64),
+                ) {
+                    (Some(w), Some(h)) => (w as f32, h as f32),
+                    _ => return Err("`resize_window` needs a `viewport`: [w, h]".to_owned()),
+                };
+                self.h.set_size((w, h));
+            }
             _ => return Err(format!("unknown event type `{kind}`")),
         }
         Ok(())
@@ -861,12 +915,28 @@ impl Session {
         let old = self.h.app.camera.unwrap_or(Camera::STANDARD);
         let cx = coord(args, "cx")?.unwrap_or(old.cx);
         let cy = coord(args, "cy")?.unwrap_or(old.cy);
-        let scale = num(args, "scale")?.unwrap_or(old.scale);
-        if !(1.0e-6..=1.0e9).contains(&scale) {
-            return Err("`scale` (points per unit) must be from 1e-6 to 1e9".to_owned());
+        // `scale` names both scales, as the view's own one did before the
+        // axes came apart (spec D1); `yscale` alone rescales only y.
+        let (xscale, yscale) = match (num(args, "scale")?, num(args, "yscale")?) {
+            (Some(s), Some(y)) => (s, y),
+            (Some(s), None) => (s, s),
+            (None, Some(y)) => (old.xscale, y),
+            (None, None) => (old.xscale, old.yscale),
+        };
+        for (name, s) in [("scale", xscale), ("yscale", yscale)] {
+            if !(1.0e-6..=1.0e9).contains(&s) {
+                return Err(format!(
+                    "`{name}` (points per unit) must be from 1e-6 to 1e9"
+                ));
+            }
         }
         let before = Snapshot::take(&self.h);
-        self.h.app.camera = Some(Camera { cx, cy, scale });
+        self.h.app.camera = Some(Camera {
+            cx,
+            cy,
+            xscale,
+            yscale,
+        });
         self.h.app.view_request = None;
         self.run(DT, Vec::new());
         let settled = self.settle();

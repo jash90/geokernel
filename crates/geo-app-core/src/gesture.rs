@@ -121,6 +121,12 @@ pub enum Grab {
     Pan,
     /// Nothing: the drag does nothing until it ends.
     Nothing,
+    /// A rectangle the zoom in tool will zoom to (`processZoomRectangle`);
+    /// the drag only shows it.
+    Rect,
+    /// An axis the drag rescales (`scaleXAxis` / `scaleYAxis`): the view
+    /// move tool, or Shift with the move tool, pressing on an axis.
+    Axis,
 }
 
 /// How a press that ended went, for the undo rules of a drag: whether it
@@ -145,6 +151,9 @@ pub struct Intents {
     pub pan: Option<(f32, f32)>,
     /// Put a dragged object back where the drag started.
     pub cancel_drag: bool,
+    /// Put the view back where the drag or pinch that moved it started
+    /// (the press was taken away).
+    pub cancel_view: bool,
     /// The drag ended (the object stays where it is).
     pub end_drag: bool,
     /// A press ended with a release (not a cancel): how it went.
@@ -169,7 +178,22 @@ enum Mode {
     Pan,
     /// A drag whose target is gone (the construction was rebuilt).
     Inert,
+    /// A rectangle the zoom in tool drags out.
+    Rect,
+    /// An axis a drag rescales.
+    Axis,
     Pinch,
+}
+
+impl Mode {
+    /// Whether a drag this mode stands for ends at the release of the
+    /// press.
+    fn is_drag(self) -> bool {
+        matches!(
+            self,
+            Mode::Point | Mode::Pan | Mode::Inert | Mode::Rect | Mode::Axis
+        )
+    }
 }
 
 impl From<Grab> for Mode {
@@ -178,6 +202,8 @@ impl From<Grab> for Mode {
             Grab::Point => Mode::Point,
             Grab::Pan => Mode::Pan,
             Grab::Nothing => Mode::Inert,
+            Grab::Rect => Mode::Rect,
+            Grab::Axis => Mode::Axis,
         }
     }
 }
@@ -221,6 +247,10 @@ pub struct Gesture {
     touch_last: bool,
     /// What the press is doing once it is a drag (or a pinch).
     mode: Option<Mode>,
+    /// What the press held before a pinch suspended it: the drag the
+    /// pressing finger goes on with when the other finger lifts
+    /// (`twoTouchStart` / `twoTouchEnd`; `None` while no pinch is going).
+    before_pinch: Option<Mode>,
     /// A press that ended (released) with accepted moves before its drag
     /// was decided: `end_frame` decides it from this press position (and
     /// button), applies its motion and ends it.
@@ -258,6 +288,7 @@ impl Gesture {
             press: None,
             touch_last: false,
             mode: None,
+            before_pinch: None,
             unresolved: None,
             ended: None,
             moved_to: None,
@@ -271,6 +302,11 @@ impl Gesture {
     /// A drag is in progress that pans the view.
     pub fn panning(&self) -> bool {
         self.mode == Some(Mode::Pan)
+    }
+
+    /// Two fingers of the area pinch the view.
+    pub fn pinching(&self) -> bool {
+        self.mode == Some(Mode::Pinch)
     }
 
     /// A press is held (whether or not it is a drag yet).
@@ -346,9 +382,18 @@ impl Gesture {
                 }
                 let tap = !p.beyond && button == Button::Primary && self.mode != Some(Mode::Pinch);
                 match self.mode {
-                    Some(m @ (Mode::Point | Mode::Pan | Mode::Inert)) => {
+                    Some(m) if m.is_drag() => {
                         self.ended = Some(m);
                         self.pending.end_drag = true;
+                    }
+                    // A pinch suspended a drag: the release ends it where
+                    // it is (`twoTouchEnd` set `draggingBeyondThreshold`,
+                    // so the release is no click).
+                    Some(Mode::Pinch) => {
+                        if let Some(m) = self.before_pinch.filter(|m| m.is_drag()) {
+                            self.ended = Some(m);
+                            self.pending.end_drag = true;
+                        }
                     }
                     // Moves were accepted but the drag is decided only at
                     // the end of the frame: it is decided, applied and ended
@@ -367,6 +412,7 @@ impl Gesture {
                     self.pending.tap = Some(pos);
                 }
                 self.mode = None;
+                self.before_pinch = None;
                 self.press = None;
             }
             Event::Cancel { id } => {
@@ -430,8 +476,21 @@ impl Gesture {
                         *f = None;
                     }
                 }
+                // The last other finger lifted: the pinch is over and the
+                // pressing finger goes on with what it held.
+                if self.fingers.iter().all(Option::is_none) {
+                    self.end_pinch();
+                }
             }
         }
+    }
+
+    /// The pinch is over (`twoTouchEnd`): the drag it suspended resumes.
+    fn end_pinch(&mut self) {
+        if self.mode == Some(Mode::Pinch) {
+            self.mode = self.before_pinch.take();
+        }
+        self.before_pinch = None;
     }
 
     /// Forgets which fingers are down: the platform may recreate its touch
@@ -459,6 +518,7 @@ impl Gesture {
             no_drag: false,
         });
         self.mode = None;
+        self.before_pinch = None;
         // Another finger is already down in the area: two fingers pinch.
         if self.fingers.iter().any(Option::is_some) {
             self.mode = Some(Mode::Pinch);
@@ -467,10 +527,19 @@ impl Gesture {
 
     /// Ends the press without a tap; a dragged point goes back.
     fn abort(&mut self) {
-        if self.mode == Some(Mode::Point) {
+        if self.mode == Some(Mode::Point)
+            || (self.mode == Some(Mode::Pinch) && self.before_pinch == Some(Mode::Point))
+        {
             self.pending.cancel_drag = true;
         }
+        if matches!(
+            self.mode,
+            Some(Mode::Pan | Mode::Axis | Mode::Rect | Mode::Pinch)
+        ) {
+            self.pending.cancel_view = true;
+        }
         self.mode = None;
+        self.before_pinch = None;
         self.press = None;
         self.moved_to = None;
         self.panned = (0.0, 0.0);
@@ -493,7 +562,12 @@ impl Gesture {
     /// Escape: the drag in progress ends where it is, and the press can no
     /// longer start one (a release may still be a tap).
     pub fn stop(&mut self) {
-        if matches!(self.mode, Some(Mode::Point | Mode::Pan | Mode::Inert)) {
+        if matches!(self.mode, Some(m) if m.is_drag()) {
+            self.pending.end_drag = true;
+            self.mode = None;
+        } else if let Some(m) = self.before_pinch.filter(|m| m.is_drag()) {
+            // Escape during a pinch ends the drag it suspended.
+            self.ended = Some(m);
             self.pending.end_drag = true;
             self.mode = None;
         }
@@ -533,10 +607,19 @@ impl Gesture {
         })
     }
 
+    /// A second finger landed in the area (`twoTouchStart`): whatever the
+    /// press held is suspended — not taken back, the drag goes on when the
+    /// other finger lifts — and the two fingers pinch. The pinch marks the
+    /// press, so its release is never a click (`twoTouchEnd` sets
+    /// `draggingBeyondThreshold`).
     fn start_pinch(&mut self) {
-        if self.mode == Some(Mode::Point) {
-            self.pending.cancel_drag = true;
+        if let Some(p) = &mut self.press {
+            p.beyond = true;
+            // The pinch moves the view itself: a pan that resumes must not
+            // jump by the motion of the pinch, so it re-anchors first.
+            p.anchor = None;
         }
+        self.before_pinch = self.mode.take().filter(|m| m.is_drag());
         self.mode = Some(Mode::Pinch);
         self.moved_to = None;
         self.panned = (0.0, 0.0);
@@ -579,7 +662,7 @@ impl Gesture {
         }
         if moved_to.is_some() {
             match mode {
-                Some(Mode::Point) => out.drag_to = moved_to,
+                Some(Mode::Point | Mode::Rect | Mode::Axis) => out.drag_to = moved_to,
                 Some(Mode::Pan) => out.pan = Some(panned),
                 _ => {}
             }
@@ -930,8 +1013,13 @@ mod tests {
         assert!(!g.touch_press());
     }
 
+    /// The second finger of a pinch (`twoTouchStart`, `twoTouchEnd`): a
+    /// point drag in progress is suspended, not taken back — the point
+    /// stays where the drag left it — and when the second finger lifts, the
+    /// first one drags it again. The pinch marks the press, so its release
+    /// is never a tap (`twoTouchEnd` sets `draggingBeyondThreshold`).
     #[test]
-    fn a_pinch_while_a_point_is_held_puts_the_point_back_and_moves_it_no_more() {
+    fn a_second_finger_suspends_the_point_drag_and_the_pinch_resumes_it() {
         let mut g = Gesture::new(&Metrics::touch());
         first_finger(&mut g, 0.0, Grab::Point);
         let out = frame(&mut g, 0.2, &[mv(20.0, 0.0)], Grab::Point);
@@ -941,13 +1029,21 @@ mod tests {
         let zoom = g.pinch(1.1, p(30.0, 30.0), (2.0, 0.0)).unwrap();
         assert_eq!((zoom.factor, zoom.pan), (1.1, (2.0, 0.0)));
         let out = g.end_frame(|_| Grab::Point);
-        assert!(out.cancel_drag);
+        assert!(!out.cancel_drag, "the point stays where the drag left it");
         assert_eq!(out.drag_to, None);
+        // While both fingers are down the moves are the pinch's.
         let out = frame(&mut g, 0.4, &[mv(40.0, 0.0)], Grab::Point);
         assert_eq!(out, Intents::default());
-        // The point drag was cancelled, so the release ends nothing.
-        let out = frame(&mut g, 0.5, &[up(40.0, 0.0)], Grab::Point);
-        assert!(!out.end_drag && out.tap.is_none());
+        // The second finger lifts: the first one drags the point again.
+        g.begin_frame(0.5);
+        g.touch(2, TouchPhase::End, true);
+        let out = g.end_frame(|_| Grab::Point);
+        assert_eq!(out, Intents::default());
+        let out = frame(&mut g, 0.6, &[mv(50.0, 0.0)], Grab::Point);
+        assert_eq!(out.drag_to, Some(p(50.0, 0.0)));
+        // The pinch marked the press: the release ends the drag, no tap.
+        let out = frame(&mut g, 0.7, &[up(50.0, 0.0)], Grab::Point);
+        assert!(out.end_drag && out.tap.is_none());
     }
 
     #[test]
@@ -964,7 +1060,7 @@ mod tests {
         g.begin_frame(0.3);
         g.touch(8, TouchPhase::Start, true);
         let out = g.end_frame(|_| Grab::Point);
-        assert!(out.cancel_drag);
+        assert!(!out.cancel_drag, "the drag is only suspended");
         assert_eq!(out.drag_to, None);
         // A still press would have been a tap; now it is not.
         let mut g = Gesture::new(&Metrics::touch());
@@ -994,16 +1090,25 @@ mod tests {
         assert_eq!(g.end_frame(|_| Grab::Pan), Intents::default());
     }
 
+    /// After a pinch the pressing finger goes on with what it held
+    /// (`twoTouchEnd`): the press's drag resumes when the other finger
+    /// lifts. A finger that never pressed moves nothing, however the
+    /// platform reports it as the mouse.
     #[test]
-    fn after_a_pinch_the_finger_that_stays_moves_nothing() {
+    fn after_a_pinch_the_pressing_finger_goes_on_dragging() {
         for first_lifts in [false, true] {
             let mut g = Gesture::new(&Metrics::touch());
             first_finger(&mut g, 0.0, Grab::Pan);
-            g.begin_frame(0.1);
+            // The press drags first, so the pinch suspends a live drag:
+            // lifting the pressing finger in it ends that drag, while the
+            // other finger lifting resumes it.
+            let out = frame(&mut g, 0.12, &[mv(10.0, 0.0)], Grab::Pan);
+            assert_eq!(out.started, Some(Grab::Pan));
+            g.begin_frame(0.2);
             g.touch(2, TouchPhase::Start, true);
             assert!(g.pinch(1.2, p(40.0, 0.0), (0.0, 0.0)).is_some());
             g.end_frame(|_| Grab::Pan);
-            g.begin_frame(0.2);
+            g.begin_frame(0.3);
             if first_lifts {
                 g.touch(1, TouchPhase::End, true);
                 g.event(up(0.0, 0.0));
@@ -1014,13 +1119,15 @@ mod tests {
             let out = g.end_frame(|_| Grab::Pan);
             assert_eq!(
                 (out.started, out.pan, out.tap, out.end_drag),
-                (None, None, None, false)
+                (None, None, None, first_lifts),
+                "first lifts: {first_lifts}"
             );
             // The finger that stays moves far from where the press began.
             // Once the first finger is up, egui-winit reports the other one
             // as the mouse, though it never pressed: moves, then a release.
+            let mut panned = (0.0, 0.0);
             for (i, x) in [30.0, 60.0, 90.0].into_iter().enumerate() {
-                g.begin_frame(0.3 + 0.1 * i as f64);
+                g.begin_frame(0.4 + 0.1 * i as f64);
                 if first_lifts {
                     g.touch(2, TouchPhase::Move, true);
                     g.event(mv(80.0 + x, 0.0));
@@ -1029,9 +1136,21 @@ mod tests {
                     g.event(mv(x, 0.0));
                 }
                 let out = g.end_frame(|_| Grab::Pan);
-                assert_eq!(out, Intents::default(), "first lifts: {first_lifts}");
+                if first_lifts {
+                    // Its press ended with the first finger's release.
+                    assert_eq!(out, Intents::default(), "first lifts: {first_lifts}");
+                } else {
+                    let pan = out.pan.unwrap_or((0.0, 0.0));
+                    panned = (panned.0 + pan.0, panned.1 + pan.1);
+                }
             }
-            g.begin_frame(0.7);
+            if !first_lifts {
+                // The moves 30 -> 60 -> 90 pan 60 of it: the first move
+                // after the pinch re-anchors, as its motion went into the
+                // pinch's own translation of the view.
+                assert_eq!(panned, (60.0, 0.0), "the pan resumed");
+            }
+            g.begin_frame(0.8);
             if first_lifts {
                 g.touch(2, TouchPhase::End, true);
                 g.event(up(170.0, 0.0));
@@ -1043,8 +1162,8 @@ mod tests {
             }
             let out = g.end_frame(|_| Grab::Pan);
             assert_eq!(
-                (out.started, out.pan, out.tap, out.end_drag),
-                (None, None, None, false),
+                (out.started, out.pan, out.tap),
+                (None, None, None),
                 "first lifts: {first_lifts}"
             );
             assert!(!g.pressed());

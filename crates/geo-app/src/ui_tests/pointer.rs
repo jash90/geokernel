@@ -12,9 +12,12 @@ fn open_keyboard(h: &mut Harness<'_, App>, top: f32) {
     assert!(h.state().keyboard.open, "the input row opens the keyboard");
 }
 
-/// The world point at the top left corner of the drawing area.
-fn top_left(h: &Harness<'_, App>) -> (f64, f64) {
-    h.state().view.unwrap().1.screen_to_world(0.0, 0.0)
+/// The world point at the centre of the drawing area: what a resize keeps
+/// (`keepCenter`, spec D11) and a pan moves.
+fn centre(h: &Harness<'_, App>) -> (f64, f64) {
+    let (r, t) = h.state().view.unwrap();
+    let (w, h) = ((r.max.x - r.min.x) as f64, (r.max.y - r.min.y) as f64);
+    t.screen_to_world(0.5 * w, 0.5 * h)
 }
 
 /// Where the world point `(x, y)` is drawn now (harness coordinates).
@@ -31,24 +34,35 @@ fn close(a: (f64, f64), b: (f64, f64)) -> bool {
 #[test]
 fn opening_and_closing_the_keyboard_keeps_the_drawing_in_place() {
     let mut h = harness("A = (1, 1)\n");
-    let corner = top_left(&h);
+    // Opening or closing the keyboard keeps the world point at the
+    // centre (`keepCenter`, spec D11): the drawing stays under the
+    // viewer.
+    let middle = centre(&h);
     open_keyboard(&mut h, ROW);
-    assert!(close(top_left(&h), corner), "opening moved the drawing");
+    assert!(close(centre(&h), middle), "opening moved the drawing");
     h.state_mut().keyboard.open = false;
     h.run();
-    assert!(close(top_left(&h), corner), "closing moved the drawing");
+    assert!(close(centre(&h), middle), "closing moved the drawing");
 }
 
 #[test]
 fn a_drag_with_the_keyboard_open_moves_the_point_not_the_view() {
     let mut h = harness("A = (1, 1)\n");
     open_keyboard(&mut h, ROW);
-    let corner = top_left(&h);
+    let middle = centre(&h);
     let (from, to) = (on_screen(&h, 1.0, 1.0), on_screen(&h, 3.0, 2.0));
     drag(&mut h, from, to);
     assert!(!h.state().keyboard.open, "the press put the keyboard away");
-    assert!(close(top_left(&h), corner), "the view panned");
-    assert!(close(point(&h, "A"), (3.0, 2.0)), "{:?}", point(&h, "A"));
+    assert!(close(centre(&h), middle), "the view panned");
+    // The press closed the keyboard, so the area grew mid-drag; the point
+    // stays under the finger it ended at.
+    let (r, t) = h.state().view.unwrap();
+    let (sx, sy) = t.world_to_screen(point(&h, "A").0, point(&h, "A").1);
+    let at = r.min.egui() + egui::vec2(sx as f32, sy as f32);
+    assert!(
+        (at - to).length() < 1e-3,
+        "A is at {at:?}, the finger at {to:?}"
+    );
 }
 
 #[test]
@@ -73,37 +87,37 @@ fn a_tool_click_with_the_keyboard_open_hits_what_is_under_the_pointer() {
 fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
     let mut h = harness("A = (0, 0)\nB = (2, 0)\nM = Midpoint(A, B)\n");
     open_keyboard(&mut h, 2.0 * ROW + ROW_DEPENDENT);
-    let corner = top_left(&h);
+    let corner = centre(&h);
     let (from, to) = (on_screen(&h, 1.0, 0.0), on_screen(&h, 3.0, 2.0));
     drag(&mut h, from, to);
-    assert!(close(top_left(&h), corner), "the view panned");
+    assert!(close(centre(&h), corner), "the view panned");
     assert!(close(point(&h, "M"), (1.0, 0.0)));
     assert!(!h.state().wb.can_undo());
     // With a construction tool a press on a free point does not pan either.
     h.state_mut().select_tool(Tool::Line);
     let (from, to) = (on_screen(&h, 0.0, 0.0), on_screen(&h, 2.0, 3.0));
     drag(&mut h, from, to);
-    assert!(close(top_left(&h), corner), "the view panned");
+    assert!(close(centre(&h), corner), "the view panned");
     assert!(close(point(&h, "A"), (0.0, 0.0)));
     // The press picked A and the release made the line's second point.
     assert_eq!(labels(&h), ["A", "B", "M", "C", "f"]);
-    // The move-view tool pans even from a point.
+    // The move-view tool pans even from a point — from one off the axes:
+    // a press on an axis rescales that axis instead (`scaleXAxis`, spec
+    // D10), and a drag from the origin, where no tick can follow, pans
+    // nothing.
     h.state_mut().select_tool(Tool::MoveView);
-    let (from, to) = (on_screen(&h, 0.0, 0.0), on_screen(&h, 1.0, 0.0));
+    let (from, to) = (on_screen(&h, 1.0, 1.0), on_screen(&h, 2.0, 1.5));
     drag(&mut h, from, to);
     assert!(close(point(&h, "A"), (0.0, 0.0)));
-    assert!(
-        !close(top_left(&h), corner),
-        "the move-view tool did not pan"
-    );
-    let corner = top_left(&h);
+    assert!(!close(centre(&h), corner), "the move-view tool did not pan");
+    let corner = centre(&h);
     // Away from objects the line tool's drag does not pan either: the press
     // places the first point, the release the second, and the line is made
     // (spec E1, `createNewPoint` on press, `wrapMouseReleased`).
     h.state_mut().select_tool(Tool::Line);
     let (from, to) = (on_screen(&h, -3.0, 3.0), on_screen(&h, -1.0, 3.0));
     drag(&mut h, from, to);
-    assert!(close(top_left(&h), corner), "the view panned");
+    assert!(close(centre(&h), corner), "the view panned");
     assert_eq!(labels(&h), ["A", "B", "M", "C", "f", "D", "E", "g"]);
     assert!(close(point(&h, "D"), (-3.0, 3.0)), "{:?}", point(&h, "D"));
     assert!(close(point(&h, "E"), (-1.0, 3.0)), "{:?}", point(&h, "E"));
@@ -113,7 +127,7 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
     h.state_mut().select_tool(Tool::Intersect);
     let (from, to) = (on_screen(&h, -3.0, -1.0), on_screen(&h, -1.0, -1.0));
     drag(&mut h, from, to);
-    assert!(!close(top_left(&h), corner), "the drag did not pan");
+    assert!(!close(centre(&h), corner), "the drag did not pan");
     assert_eq!(labels(&h), ["A", "B", "M", "C", "f", "D", "E", "g"]);
     assert!(h.state().tool.picks().is_empty());
 }
@@ -218,10 +232,10 @@ fn the_notice_card_takes_clicks_on_its_text_and_drags_from_its_button() {
     let text = Pos2::new(text.x - 30.0, text.y);
     click(&mut h, text);
     assert_eq!(labels(&h), ["A"], "a click on the text made a point");
-    let corner = top_left(&h);
+    let corner = centre(&h);
     let button = h.get_by_label("Zamknij komunikat").rect().center();
     drag(&mut h, button, button + egui::vec2(-120.0, -80.0));
-    assert!(close(top_left(&h), corner), "a drag from the button panned");
+    assert!(close(centre(&h), corner), "a drag from the button panned");
 }
 
 #[test]
@@ -270,25 +284,25 @@ fn a_drag_from_a_view_button_neither_pans_nor_takes_the_point_under_it() {
     let mut h = harness("");
     let button = zoom_in_button(&h);
     point_under(&mut h, "A", button);
-    let (a, corner) = (point(&h, "A"), top_left(&h));
-    let scale = h.state().camera.unwrap().scale;
+    let (a, corner) = (point(&h, "A"), centre(&h));
+    let scale = h.state().camera.unwrap().xscale;
     drag(&mut h, button, button + egui::vec2(-200.0, -120.0));
-    assert!(close(top_left(&h), corner), "the drag panned the view");
+    assert!(close(centre(&h), corner), "the drag panned the view");
     assert_eq!(
         point(&h, "A"),
         a,
         "the drag took the point under the button"
     );
-    assert_eq!(h.state().camera.unwrap().scale, scale, "it was a click");
+    assert_eq!(h.state().camera.unwrap().xscale, scale, "it was a click");
 }
 
 #[test]
 fn a_press_just_outside_a_view_button_is_the_drawings() {
     let mut h = harness("");
     let beside = zoom_in_button(&h) + egui::vec2(-19.0 - 12.0, 0.0);
-    let corner = top_left(&h);
+    let corner = centre(&h);
     drag(&mut h, beside, beside + egui::vec2(-200.0, -120.0));
-    assert!(!close(top_left(&h), corner), "the drag did not pan");
+    assert!(!close(centre(&h), corner), "the drag did not pan");
     h.state_mut().select_tool(Tool::Point);
     h.run();
     tap(&mut h, beside);

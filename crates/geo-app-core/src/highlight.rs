@@ -72,10 +72,13 @@ fn of_value_unchecked(
         }
         Value::Circle { cx, cy, r } if finite(&[cx, cy, r]) => {
             let (x, y) = t.world_to_screen(cx, cy);
+            // With the scales apart the circle is drawn as an ellipse; the
+            // highlight keeps one radius, the geometric mean of the scales
+            // (exact whenever they are equal).
             Some(Highlight::Circle {
                 x,
                 y,
-                r: r.abs() * t.scale(),
+                r: r.abs() * t.xscale().mul_add(t.yscale(), 0.0).sqrt(),
             })
         }
         Value::Line { a, b, c } if finite(&[a, b, c]) => {
@@ -89,7 +92,7 @@ fn of_value_unchecked(
             let (mx, my) = t.screen_to_world(0.5 * width, 0.5 * height);
             let d = a * mx + b * my + c;
             let (fx, fy) = (mx - a * d, my - b * d);
-            let reach = (width.hypot(height) + d.abs() * t.scale()) / t.scale();
+            let reach = (width / t.xscale()).hypot(height / t.yscale()) + d.abs();
             let (x1, y1) = t.world_to_screen(fx - reach * b, fy + reach * a);
             let (x2, y2) = t.world_to_screen(fx + reach * b, fy - reach * a);
             Some(Highlight::Stroke { x1, y1, x2, y2 })
@@ -107,7 +110,8 @@ mod tests {
         Camera {
             cx: 0.0,
             cy: 0.0,
-            scale: 10.0,
+            xscale: 10.0,
+            yscale: 10.0,
         }
         .transform(200.0, 100.0)
     }

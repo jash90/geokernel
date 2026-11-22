@@ -86,6 +86,21 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
         }) {
             app.view_request = Some(ViewRequest::Fit);
         }
+        // Ctrl + plus / equals zooms in, Ctrl + minus out, by the wheel
+        // factor about the last pointer position (`GlobalKeyDispatcher`;
+        // spec D14). The drawing applies it, with the view's own area.
+        let key = ctx.input_mut(|i| {
+            [
+                (egui::Key::Plus, 1.0),
+                (egui::Key::Equals, 1.0),
+                (egui::Key::Minus, -1.0),
+            ]
+            .into_iter()
+            .find_map(|(k, dir)| i.consume_key(egui::Modifiers::COMMAND, k).then_some(dir))
+        });
+        if let Some(dir) = key {
+            app.key_zoom = Some(geo_app_core::camera::KEY_ZOOM_FACTOR.powf(dir));
+        }
     }
 }
 

@@ -267,7 +267,7 @@ impl<'s> Runner<'s> {
                 Value::Circle { cx, cy, r } => inside(&[(cx - r, cy - r), (cx + r, cy + r)]),
                 v @ Value::Line { .. } => v.unit_line().is_some_and(|(a, b, k)| {
                     let (mx, my) = t.screen_to_world(w / 2.0, h / 2.0);
-                    (a * mx + b * my + k).abs() * t.scale() <= w.hypot(h) / 2.0
+                    (a * mx + b * my + k).abs() * t.xscale().max(t.yscale()) <= w.hypot(h) / 2.0
                 }),
                 Value::Polygon { .. } => {
                     let pts: Vec<(f64, f64)> = c.vertices(id).flatten().collect();
