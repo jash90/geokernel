@@ -1055,7 +1055,8 @@ pub fn find_unquoted(text: &str, ch: char) -> Option<usize> {
     unquoted(text).find_map(|(i, c)| (c == ch).then_some(i))
 }
 
-fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
+/// The characters outside string literals, with their byte positions.
+pub(crate) fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
     let mut quoted = false;
     let mut escaped = false;
     text.char_indices().filter(move |&(_, c)| {

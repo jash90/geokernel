@@ -128,6 +128,20 @@ fn an_initial_value_selects_one_root() {
 }
 
 #[test]
+fn a_text_with_an_equals_sign_is_a_text() {
+    let c = build(&[
+        "r1 = Simplify(\"\u{3b1}=\u{3b2}\")",
+        "r2 = Simplify(\"x+-1x=2\")",
+        "r3 = Simplify(\"a,b=c\")",
+        "r4 = Simplify(\"(a=b\")",
+    ]);
+    assert_eq!(c.text(id(&c, "r1")), Some("\u{3b1} = \u{3b2}"));
+    assert_eq!(c.text(id(&c, "r2")), Some("x \u{2212} x = 2"));
+    assert_eq!(c.text(id(&c, "r3")), Some("a,b = c"));
+    assert_eq!(c.text(id(&c, "r4")), Some("(a = b"));
+}
+
+#[test]
 fn hints_that_are_no_variable_or_value_are_refused() {
     let mut c = build(&["f(x) = x^2-3", "g: x+y=1"]);
     for line in [

@@ -347,6 +347,7 @@
     {"id": "cas-plot-023", "group": "cas", "script": ["k: x^2+y^2=4", "result = PlotSolve(k)"], "steps": [{"action": "initial"}]},
     {"id": "cas-plot-024", "group": "cas", "script": ["k: x*y=1", "result = PlotSolve(k)"], "steps": [{"action": "initial"}]},
     {"id": "cas-plot-025", "group": "cas", "script": ["f(x) = sin(x)", "result = PlotSolve(f)"], "steps": [{"action": "initial"}]},
-    {"id": "cas-conic-060", "group": "cas", "script": ["k: y=x^2+x", "result = Solve(k, y)"], "steps": [{"action": "initial"}]}
+    {"id": "cas-conic-060", "group": "cas", "script": ["k: y=x^2+x", "result = Solve(k, y)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-text-028", "group": "cas", "script": ["r1 = Simplify(\"\u03b1=\u03b2\")", "r2 = Simplify(\"a=b\")", "r3 = Simplify(\"x+-1x=2\")", "r4 = Simplify(\"a,b=c\")", "r5 = Simplify(\"(a=b\")"], "steps": [{"action": "initial"}]}
   ]
 }

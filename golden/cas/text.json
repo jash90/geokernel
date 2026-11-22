@@ -487,6 +487,29 @@
           "t": { "type": "text", "defined": true, "text": "" }
         }
       ]
+    },
+    {
+      "id": "cas-text-028",
+      "group": "cas",
+      "script": [
+        "r1 = Simplify(\"α=β\")",
+        "r2 = Simplify(\"a=b\")",
+        "r3 = Simplify(\"x+-1x=2\")",
+        "r4 = Simplify(\"a,b=c\")",
+        "r5 = Simplify(\"(a=b\")"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": { "type": "text", "defined": true, "text": "α = β" },
+          "r2": { "type": "text", "defined": true, "text": "a = b" },
+          "r3": { "type": "text", "defined": true, "text": "x − x = 2" },
+          "r4": { "type": "text", "defined": true, "text": "a,b = c" },
+          "r5": { "type": "text", "defined": true, "text": "(a = b" }
+        }
+      ]
     }
   ]
 }

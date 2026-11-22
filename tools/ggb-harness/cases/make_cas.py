@@ -415,4 +415,8 @@ c.case("plot", ["f(x) = sin(x)", "result = PlotSolve(f)"], [])
 # A parabola solved for its linear variable is the conic itself, which
 # the kernel cannot hold inside a list.
 c.case("conic", ["k: y=x^2+x", "result = Solve(k, y)"], [])
+
+# A text holding an equals sign is a text, not an equation.
+c.case("text", ['r1 = Simplify("α=β")', 'r2 = Simplify("a=b")', 'r3 = Simplify("x+-1x=2")',
+                'r4 = Simplify("a,b=c")', 'r5 = Simplify("(a=b")'], [])
 c.write()
