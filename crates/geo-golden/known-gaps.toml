@@ -922,6 +922,21 @@ reason = "UpperSum of a constant function over an infinite interval is positive 
 mismatches = ["0:u"]
 
 [[gap]]
+id = "georestsmall-matrixcurve-005"
+reason = "The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. ApplyMatrix with the projective matrix {{1, 0, 0}, {0, n, 0}, {0, 0, 1}} on Curve(t, sqrt(t), t, -1, 1): GeoCurveCartesian.matrixTransform builds each coordinate with ExpressionNode.multiply and plus, which turn a zero entry into the constant itself and leave out a zero addend. For t < 0, where sqrt(t) is NaN, the recording keeps x = t finite, and y = 0 while n = 0. Plain arithmetic computes 0 * NaN = NaN in x, y and the denominator."
+mismatches = ["0:d", "1:d", "2:d"]
+
+[[gap]]
+id = "georestsmall-matrixcurve-006"
+reason = "The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. The projective row (-1, 0, 0) applied to Curve(0, t, t, -1, 1): the reference multiplies the literal 0 coordinate into -0 and leaves out the zero addends, so the denominator is -0 and the recording has negative infinity in both coordinates. Plain arithmetic adds the +0 terms, gets a +0 denominator and positive infinity. The chain e through a zero row agrees."
+mismatches = ["0:q"]
+
+[[gap]]
+id = "georestsmall-matrixfunction-002"
+reason = "The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. ApplyMatrix({{1, 0}, {1, 2}}, f) for f = Function(sin(x) + x(A), -1, 2): outside its domain f is NaN, and the reference builds x = t * 1 + f(t) * 0 with the zero term left out, so the signed recording keeps x = t finite. Plain arithmetic computes 0 * NaN = NaN, so x is NaN. Main compared this case with its schema 2 recording, which wrote the whole coordinate pair as null."
+mismatches = ["0:c", "3:c"]
+
+[[gap]]
 id = "georestsmall-ifgeometry-003"
 reason = "The selected circle has an infinite radius, which Radius returns as positive infinity in the reference: infinity-legacy-075 records d as `infinity: 1` at step 1, where this schema 2 file writes an undefined number. The kernel represents that circle as undefined and Radius is undefined."
 mismatches = ["1:d"]
