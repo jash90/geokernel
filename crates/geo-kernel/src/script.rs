@@ -352,6 +352,10 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             .map_err(|e| e.to_string())?;
         return Ok(None);
     }
+    if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
+    {
+        return result;
+    }
     // `name = SetConstructionStep(n)` runs the script too: a scripting
     // command's returned argument is not labelable, so even the labelled
     // form creates no object (`CmdSetConstructionStep` via the algebra
@@ -482,15 +486,13 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
                 .or_else(|_| analysis::argument(c, args[1], Kind::Point))
                 .or_else(|_| analysis::argument(c, args[1], Kind::Number))?;
             let def = OptimizeDef::new(c, dependent, independent, func == "Maximize");
-            def.attach(c, name).map(Some).map_err(|e| e.to_string())
+            c.add(name, Def::Optimize(def))
+                .map(Some)
+                .map_err(|e| e.to_string())
         })();
         if result.is_err() {
             c.discard_since(start);
         }
-        return result;
-    }
-    if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
-    {
         return result;
     }
     let start = c.checkpoint();
@@ -558,18 +560,34 @@ fn implicit_multi_output(c: &Construction, rhs: &str) -> bool {
     })
 }
 
-/// Lowers an imported argument within its owning definition. Each temporary
-/// object is anonymous and shares the lifetime of that definition's replay.
+/// Lowers saved inputs and inline optimizers within their owning definition.
+/// Each temporary object is anonymous and shares the lifetime of that definition's replay.
 fn with_saved_arguments(
     c: &mut Construction,
     rhs: &str,
     run: impl FnOnce(&mut Construction, &str) -> Result<Option<Id>, String>,
 ) -> Option<Result<Option<Id>, String>> {
-    if !rhs.contains("$arg(") {
+    if !rhs.contains("$arg(") && !rhs.contains("Maximize") && !rhs.contains("Minimize") {
         return None;
     }
     let (command, args) = split_call(rhs)?;
-    if !args.iter().any(|arg| arg.starts_with("$arg(")) {
+    let sources: Vec<_> = args
+        .iter()
+        .map(|&arg| {
+            arg.strip_prefix("$arg(")
+                .and_then(|s| s.strip_suffix(')'))
+                .map(str::trim)
+                .or_else(|| {
+                    arg.split_once('(')
+                        .is_some_and(|(name, _)| {
+                            matches!(name.trim(), "Maximize" | "Minimize")
+                                && call_closes_at_end(arg, name.len())
+                        })
+                        .then_some(arg)
+                })
+        })
+        .collect();
+    if sources.iter().all(Option::is_none) {
         return None;
     }
     let before = c.len();
@@ -578,12 +596,11 @@ fn with_saved_arguments(
     let result = (|| {
         let args = args
             .iter()
-            .map(
-                |arg| match arg.strip_prefix("$arg(").and_then(|s| s.strip_suffix(')')) {
-                    Some(source) => saved_argument(c, source.trim(), 0),
-                    None => Ok((*arg).to_owned()),
-                },
-            )
+            .zip(sources)
+            .map(|(&arg, source)| match source {
+                Some(source) => saved_argument(c, source, 0),
+                None => Ok(arg.to_owned()),
+            })
             .collect::<Result<Vec<_>, String>>()?;
         let call = format!("{command}({})", args.join(", "));
         implicit = implicit_multi_output(c, &call);
@@ -627,10 +644,9 @@ fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<St
             }
         }
     }
-    let nested_vector = call
-        .as_ref()
-        .is_some_and(|(command, _)| *command == "Vector");
-    if !nested_vector && crate::expr::define_saved_argument(c, &label, source).is_ok() {
+    let optimize = matches!(call.as_ref(), Some(("Maximize" | "Minimize", _)));
+    let vector = matches!(call.as_ref(), Some(("Vector", _)));
+    if !optimize && !vector && crate::expr::define_saved_argument(c, &label, source).is_ok() {
         return Ok(label);
     }
     let Some((command, args)) = call else {
@@ -642,7 +658,7 @@ fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<St
     let args = args
         .into_iter()
         .map(|arg| {
-            if crate::expr::plain_number(arg).is_some() {
+            if !optimize && crate::expr::plain_number(arg).is_some() {
                 Ok(arg.to_owned())
             } else {
                 saved_argument(c, arg, depth + 1)

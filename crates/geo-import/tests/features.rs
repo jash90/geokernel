@@ -58,6 +58,45 @@ fn unindexed_intersect_maps_each_output_to_its_index() {
 }
 
 #[test]
+fn an_unlabelled_optimizer_input_is_live_after_import() {
+    use geo_kernel::{script, Construction, Value};
+
+    let imported = ok(
+        r#"<element type="numeric" label="a"><value val="0"/><slider min="0" max="6"/></element>
+           <element type="point" label="P"><coords x="3" y="0" z="1"/></element>
+           <element type="point" label="A"><coords x="0" y="0" z="1"/></element>
+           <expression label="f" exp="If(x(P) &gt; 0, a * (2 * x(P) - a))"/>
+           <element type="numeric" label="f"><value val="0"/></element>
+           <command name="Circle"><input a0="A" a1="Maximize(f, a)"/><output a0="c"/></command>"#,
+    );
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert_eq!(
+        imported.script.last().unwrap(),
+        "c = Circle(A, $arg(Maximize(f, a)))"
+    );
+
+    let mut c = script::load(&imported.script.join("\n")).unwrap();
+    let point = c.id("P").unwrap();
+    let objective = c.id("f").unwrap();
+    let circle = c.id("c").unwrap();
+    let radius = |c: &Construction| match c.value(circle) {
+        Value::Circle { r, .. } => Some(r),
+        other => {
+            assert_eq!(other, Value::Undefined);
+            None
+        }
+    };
+    assert_eq!(radius(&c), Some(3.0));
+    c.move_point(point, 2.0, 0.0).unwrap();
+    assert_eq!(c.value(objective), Value::Number(0.0));
+    assert_eq!(radius(&c), Some(2.0));
+    c.move_point(point, 0.0, 0.0).unwrap();
+    assert_eq!(radius(&c), None);
+    c.move_point(point, 4.0, 0.0).unwrap();
+    assert_eq!(radius(&c), Some(4.0));
+}
+
+#[test]
 fn the_saved_value_is_checked_against_the_computed_one() {
     let first = "<element type=\"point\" label=\"P\"><coords x=\"1\" y=\"0\" z=\"1\"/></element>";
     let second = "<element type=\"point\" label=\"Q\"><coords x=\"3\" y=\"0\" z=\"1\"/></element>";

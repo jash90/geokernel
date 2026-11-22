@@ -65,6 +65,11 @@ cases.case("optimize", [
 cases.case("optimize", [
     "a = 2", "f = (a - 3)^2", "m = Minimize(f, a)",
 ], [{"action": "set_slider_bounds", "label": "a", "min": 0, "max": 6}, setn("a", 4)])
+cases.case("optimize", [
+    "a = Slider(0, 6)", pt("P", 3, 0), pt("A", 0, 0),
+    "f = If(x(P) > 0, a * (2 * x(P) - a))", "g = -f",
+    "c = Circle(A, Maximize(f, a))", "d = Circle(A, Minimize(g, a))",
+], [mv("P", 2, 0), mv("P", 0, 0), mv("P", 4, 0)])
 
 # Hull: the convex hull of a list of points, as a locus.
 cases.case("hull", [

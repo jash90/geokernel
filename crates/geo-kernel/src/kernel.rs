@@ -1614,7 +1614,7 @@ impl Construction {
             ids.extend_from_slice(self.list(list));
         }
         if let Def::Optimize(d) = *def {
-            if let Some(watched) = d.watched {
+            if let Some(watched) = d.watched() {
                 ids.extend_from_slice(self.list(watched));
             }
         }
@@ -1651,6 +1651,9 @@ impl Construction {
         }
         self.check(&def)?;
         let mut def = algo::intersect::prepare(self, def);
+        if let Def::Optimize(d) = def {
+            def = Def::Optimize(d.attach(self)?);
+        }
 
         let id = Id(self.defs.len());
         // compute reads the hint of the new object from `hints`
@@ -1892,16 +1895,22 @@ impl Construction {
         make: impl FnOnce(IdList) -> Def,
     ) -> Result<Id, Error> {
         let start = self.lists.len();
-        let list = match (u32::try_from(start), u32::try_from(ids.len())) {
-            (Ok(start), Ok(len)) if start.checked_add(len).is_some() => IdList { start, len },
-            _ => return Err(Error::UnknownObject),
-        };
-        self.lists.extend_from_slice(ids);
+        let list = self.store_list(ids)?;
         let result = self.add(label, make(list));
         if result.is_err() {
             self.lists.truncate(start);
         }
         result
+    }
+
+    pub(crate) fn store_list(&mut self, ids: &[Id]) -> Result<IdList, Error> {
+        let start = self.lists.len();
+        let list = match (u32::try_from(start), u32::try_from(ids.len())) {
+            (Ok(start), Ok(len)) if start.checked_add(len).is_some() => IdList { start, len },
+            _ => return Err(Error::UnknownObject),
+        };
+        self.lists.extend_from_slice(ids);
+        Ok(list)
     }
 
     /// The objects of a stored list. A handle that this construction did not

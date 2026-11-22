@@ -2461,7 +2461,7 @@ cases = ["financial-npr-001", "financial-npr-002", "financial-npr-003"]
 [[form]]
 command = "Maximize"
 form = "number,number"
-cases = ["misc-optimize-001", "misc-optimize-004", "misc-optimize-006", "misc-optimize-011", "misc-optimize-012"]
+cases = ["misc-optimize-001", "misc-optimize-004", "misc-optimize-006", "misc-optimize-011", "misc-optimize-012", "misc-optimize-014"]
 
 # statistics
 

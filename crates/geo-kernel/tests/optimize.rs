@@ -1,7 +1,8 @@
 //! Mathematical properties of `Maximize` and `Minimize` over bounded numbers.
 //! The Java harness separately records the numerical search results.
 
-use geo_kernel::{script, Construction, Value};
+use geo_kernel::algo::polygon::PolygonDef;
+use geo_kernel::{script, Construction, Def, Value};
 
 fn build(lines: &[&str]) -> Construction {
     let mut c = Construction::new();
@@ -100,6 +101,36 @@ fn optimize_without_slider_bounds_is_undefined() {
     // an expression of an unbounded number is unbounded too
     let d = build(&["c = 2", "q = Maximize(3c, c)"]);
     assert_eq!(number(&d, "q"), Value::Undefined);
+}
+
+#[test]
+fn an_optimizer_over_its_dependency_budget_stays_undefined() {
+    let mut c = build(&["a = Slider(0, 6)", "A = (0, 0)"]);
+    let point = c.id("A").unwrap();
+    // The area is constant with respect to the slider, so each search trial
+    // only needs to recompute the objective.
+    for (label, count) in [("u", 5), ("v", 16_385)] {
+        c.add_with_list(label, &vec![point; count], |list| {
+            Def::Polygon(PolygonDef::AreaPoints(list))
+        })
+        .unwrap();
+        assert_eq!(number(&c, label), Value::Number(0.0));
+    }
+    for line in [
+        "f = u - (a - 3)^2",
+        "g = v - (a - 3)^2",
+        "m = Maximize(f, a)",
+        "n = Maximize(g, a)",
+        "b = Circle(A, $arg(Maximize(g, a)))",
+    ] {
+        script::exec(&mut c, line).unwrap();
+    }
+    for slider in [0.0, 2.0] {
+        c.set_number(c.id("a").unwrap(), slider).unwrap();
+        assert_eq!(number(&c, "m"), Value::Number(3.0));
+        assert_eq!(number(&c, "n"), Value::Undefined);
+        assert_eq!(number(&c, "b"), Value::Undefined);
+    }
 }
 
 #[test]

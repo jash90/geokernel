@@ -31,7 +31,14 @@ pub struct OptimizeDef {
     pub independent: Id,
     pub maximize: bool,
     point: bool,
-    pub(crate) watched: Option<IdList>,
+    watch: Watch,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Watch {
+    Unattached,
+    Attached(IdList),
+    OverBudget,
 }
 
 impl OptimizeDef {
@@ -41,13 +48,23 @@ impl OptimizeDef {
             independent,
             maximize,
             point: c.kind(independent) == Kind::Point,
-            watched: None,
+            watch: Watch::Unattached,
+        }
+    }
+
+    pub(crate) fn watched(self) -> Option<IdList> {
+        match self.watch {
+            Watch::Attached(list) => Some(list),
+            Watch::Unattached | Watch::OverBudget => None,
         }
     }
 
     // An edit can change the objective at a trial point while leaving its
     // value at the mover unchanged. Watch the objective's inputs directly.
-    pub(crate) fn attach(self, c: &mut Construction, label: &str) -> Result<Id, Error> {
+    pub(crate) fn attach(mut self, c: &mut Construction) -> Result<Self, Error> {
+        if self.watch != Watch::Unattached {
+            return Ok(self);
+        }
         const MAX_DEPENDENCY_EDGES: usize = 16_384;
         let mut remaining = MAX_DEPENDENCY_EDGES;
         let mut seen = HashSet::new();
@@ -59,18 +76,15 @@ impl OptimizeDef {
             }
             let parents = c.reads(id);
             let Some(left) = remaining.checked_sub(parents.len()) else {
-                return c.add(label, Def::Optimize(self));
+                self.watch = Watch::OverBudget;
+                return Ok(self);
             };
             remaining = left;
             watched.push(id);
             pending.extend(parents);
         }
-        c.add_with_list(label, &watched, |list| {
-            Def::Optimize(Self {
-                watched: Some(list),
-                ..self
-            })
-        })
+        self.watch = Watch::Attached(c.store_list(&watched)?);
+        Ok(self)
     }
 }
 
@@ -138,9 +152,9 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         independent,
         maximize,
         point,
-        watched,
+        watch,
     } = d;
-    if watched.is_none() {
+    if watch == Watch::OverBudget {
         return Value::Undefined;
     }
     let on_path = if point {
