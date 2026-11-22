@@ -7,6 +7,7 @@
 use super::equation::Builder;
 use super::{entry, Bin, IntersectionWork, Node, Ty, Un};
 use crate::algo::conic_nd::ConicData;
+use crate::algo::intersect::boundary::line_crossing;
 use crate::algo::intersect::helper_line_conic_points;
 use crate::algo::plane_polynomial::{self, PlanePolynomial};
 use crate::tol::STANDARD_PRECISION;
@@ -136,6 +137,18 @@ impl Border {
         };
         match (a.kind, b.kind) {
             (_, Implicit) | (OneVariableY, OneVariableY) => Some(Vec::new()),
+            (Line, Line) => {
+                // The line-border helper works in homogeneous coordinates and
+                // divides by any nonzero weight before testing the Boolean tree.
+                let line = |p: &Self| {
+                    (
+                        p.coefficient(1, 0),
+                        p.coefficient(0, 1),
+                        p.coefficient(0, 0),
+                    )
+                };
+                Some(line_crossing(line(a), line(b)).into_iter().collect())
+            }
             (Line, Conic) => {
                 let mut conic = ConicData::new();
                 conic.set_matrix([

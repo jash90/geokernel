@@ -61,6 +61,23 @@ fn multiply_add(to: &mut Vec<f64>, a: &[f64], b: &[f64], sign: f64) {
     }
 }
 
+fn scaled_rows(polynomial: &PlanePolynomial) -> Option<(PlanePolynomial, f64)> {
+    let scale = polynomial
+        .iter()
+        .flatten()
+        .map(|v| v.abs())
+        .fold(0.0, f64::max);
+    if scale == 0.0 || !scale.is_finite() {
+        return None;
+    }
+    let rows: PlanePolynomial = polynomial
+        .iter()
+        .map(|row| row.iter().map(|v| v / scale).collect())
+        .collect();
+    let row_norm = rows.iter().flatten().map(|v| v.abs()).sum::<f64>();
+    row_norm.is_finite().then_some((rows, row_norm))
+}
+
 /// Determinant of the Sylvester matrix, expanding rows and reusing minors
 /// with the same set of selected columns. A zero determinant indicates a
 /// shared component and supplies no isolated intersections.
@@ -78,11 +95,20 @@ fn resultant(
     if size > MAX_PLANE_DEGREE {
         return None;
     }
+    if !work.charge(3 * (evaluation_cost(a) + evaluation_cost(b))) {
+        return None;
+    }
+    let (a, a_norm) = scaled_rows(a)?;
+    let (b, b_norm) = scaled_rows(b)?;
+    // The product of row norms bounds the sum of absolute determinant terms.
+    // Compare against roundoff on that scale before normalizing for root finding.
+    let roundoff =
+        (size * size) as f64 * f64::EPSILON * a_norm.powi(n as i32) * b_norm.powi(m as i32);
     let mut minors = vec![Vec::<f64>::new(); 1 << size];
     minors[0].push(1.0);
     for mask in 0..(1usize << size) - 1 {
         let row = mask.count_ones() as usize;
-        let (polynomial, offset) = if row < n { (a, row) } else { (b, row - n) };
+        let (polynomial, offset) = if row < n { (&a, row) } else { (&b, row - n) };
         let (used, next) = minors.split_at_mut(mask + 1);
         let current = &used[mask];
         if current.is_empty() {
@@ -110,7 +136,14 @@ fn resultant(
             );
         }
     }
-    minors.pop()
+    let determinant = minors.pop()?;
+    if !work.charge(determinant.len() as u64) {
+        return None;
+    }
+    if determinant.iter().all(|v| v.abs() <= roundoff) {
+        return Some(Vec::new());
+    }
+    Some(determinant)
 }
 
 fn real_roots(coefficients: &[f64], work: &IntersectionWork) -> Vec<f64> {

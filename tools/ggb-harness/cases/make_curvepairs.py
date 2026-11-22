@@ -43,4 +43,9 @@ for height in (2, 3, 5, 7):
         "d = Curve(s, a, s, -4, 4)", "P = Intersect(c, d)",
     ], [setn("a", 4), setn("a", -1), setn("a", height)])
 
+cases.case("coincident", [
+    "c = Curve(t, 0.1t + 0.3, t, -5, 5)",
+    "d = Curve(0.7s + 0.2, 0.07s + 0.32, s, -5, 5)", "P = Intersect(c, d)",
+], [])
+
 cases.write()

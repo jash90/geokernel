@@ -419,7 +419,7 @@ impl Edge {
     }
 
     fn crosses(self, other: Self) -> Option<Point> {
-        let p = finite(cross(self.line, other.line))?;
+        let p = line_crossing(self.line, other.line)?;
         (self.distance(p) < STANDARD_PRECISION && other.distance(p) < STANDARD_PRECISION)
             .then_some(p)
     }
@@ -561,6 +561,10 @@ fn next_on_line(
 
 fn cross((a, b, d): Line, (u, v, w): Line) -> Line {
     (b * w - d * v, d * u - a * w, a * v - b * u)
+}
+
+pub(crate) fn line_crossing(a: Line, b: Line) -> Option<Point> {
+    finite(cross(a, b))
 }
 
 fn finite((x, y, z): Line) -> Option<Point> {
