@@ -269,7 +269,10 @@ impl Writer<'_> {
         }
 
         self.value(id)?;
-        let layout = saved.and_then(|style| style.slider.as_deref());
+        // Only a number or an angle takes the tag in the reference reader.
+        let layout = saved
+            .and_then(|style| style.slider.as_deref())
+            .filter(|_| matches!(object_kind, Kind::Number | Kind::Angle));
         if bounded || layout.is_some() {
             self.slider(bounds, layout)?;
         }

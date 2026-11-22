@@ -560,7 +560,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     let el = element.as_mut().expect("checked above");
                     // Only `true` shows the object, as in the reference reader.
                     el.shown = Some(attr(e, "object")?.is_some_and(|object| object == "true"));
-                    el.label_shown = attr(e, "label")?.map(|label| label == "true");
+                    el.label_shown = Some(attr(e, "label")?.is_some_and(|label| label == "true"));
                 }
                 "layer" if element.is_some() => {
                     if let Some(layer) = attr(e, "val")?.and_then(|v| v.parse::<i32>().ok()) {
