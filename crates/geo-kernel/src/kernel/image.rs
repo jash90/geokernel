@@ -1,4 +1,5 @@
-// Placement follows GeoGebra's DrawImage.java, commit 112919f2d450ec7430a5cd3b65dba226fdc43b74.
+// Placement follows DrawImage.java, GeoImage.java, GeoVec2D.java and AlgoImageCorner.java,
+// upstream revision 112919f2d450ec7430a5cd3b65dba226fdc43b74.
 // Copyright (c) GeoGebra GmbH. Licensed under the EUPL 1.2.
 
 //! Raster assets and the placement of their instances in a construction.
@@ -290,6 +291,8 @@ impl ImageFrame {
 
     fn map(self, transform: impl FnMut([f64; 2]) -> [f64; 2]) -> Self {
         let anchors = self.anchors.map(transform);
+        // The raster takes its defined state from its placement points.
+        // Infinite coordinates can be defined. NaN indicates an undefined anchor.
         let defined = anchors.iter().flatten().all(|v| !v.is_nan());
         Self { anchors, defined }
     }

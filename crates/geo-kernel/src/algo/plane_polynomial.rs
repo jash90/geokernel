@@ -10,6 +10,10 @@ pub(crate) const MAX_PLANE_DEGREE: usize = 8;
 /// polynomial in the first variable.
 pub(crate) type PlanePolynomial = Vec<Vec<f64>>;
 
+pub(crate) fn evaluation_cost(polynomial: &PlanePolynomial) -> u64 {
+    polynomial.len() as u64 + polynomial.iter().map(|row| row.len() as u64).sum::<u64>()
+}
+
 pub(crate) fn from_terms(terms: impl IntoIterator<Item = (usize, usize, f64)>) -> PlanePolynomial {
     let mut coefficients = Vec::new();
     for (x, y, value) in terms {
@@ -22,6 +26,15 @@ pub(crate) fn from_terms(terms: impl IntoIterator<Item = (usize, usize, f64)>) -
         row[x] += value;
     }
     coefficients
+}
+
+pub(crate) fn transpose(polynomial: &PlanePolynomial) -> PlanePolynomial {
+    from_terms(
+        polynomial
+            .iter()
+            .enumerate()
+            .flat_map(|(y, row)| row.iter().enumerate().map(move |(x, &value)| (y, x, value))),
+    )
 }
 
 fn evaluate(coefficients: &[f64], t: f64) -> f64 {
@@ -114,6 +127,10 @@ pub(crate) fn intersections(
     b: &PlanePolynomial,
     work: &IntersectionWork,
 ) -> Option<Vec<(f64, f64)>> {
+    let scan_cost = evaluation_cost(a) + evaluation_cost(b);
+    if !work.charge(scan_cost) {
+        return None;
+    }
     let xs = match (a.len(), b.len()) {
         (0, _) | (_, 0) | (1, 1) => return Some(Vec::new()),
         (1, _) => real_roots(&a[0], work),
@@ -122,6 +139,9 @@ pub(crate) fn intersections(
     };
     let mut points = Vec::new();
     for x in xs {
+        if !work.charge(scan_cost) {
+            return None;
+        }
         let p = slice(a, x);
         let q = slice(b, x);
         let accept = |coefficients: &[f64], y: f64| {

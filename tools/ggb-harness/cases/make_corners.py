@@ -123,4 +123,32 @@ cases.case("matrix", [
     "v = ApplyMatrix({{1, 2, 3}, {0, 1, 0}}, fixed)", "Q = Corner(v, 4)",
 ], [setn("n", 0), setn("n", -1)])
 
+cases.case("vertex", [
+    num("h", 4), "q(x,y) = x > 0 && y > 0 && x^2*y < h && x < 4", "P = Vertex(q)",
+], [setn("h", -1), setn("h", 4)])
+for sign in (1, -1):
+    cases.case("vertex", [
+        num("a", sign), num("h", 4),
+        "q(x,y) = x^2 + y^2 < h && a*(x+y) > 0", "P = Vertex(q)",
+    ], [setn("a", -sign), setn("h", -1), setn("h", 9), setn("a", sign)])
+cases.case("vertex", [
+    num("h", 2), "q(x,y) = abs(x) < h && y > 0 && y < 3", "P = Vertex(q)",
+], [setn("h", -1), setn("h", 3), setn("h", 2)])
+cases.case("vertex", [
+    num("h", 1), "q(x,y) = x > y^5-y && x < y^5+h", "P = Vertex(q)",
+], [setn("h", -1), setn("h", 0), setn("h", 2)])
+
+cases.case("dilate", [
+    image_asset, pt("A", 0, 0), pt("B", 3, 2), pt("D", 1, 4), num("n", 1), "r = 1/n",
+    image("im", f"world(false, false, point({encoded('A')}), point({encoded('B')}), point({encoded('D')}))"),
+    "u = Dilate(im, r)", "v = Dilate(im, r, D)",
+    "P = Corner(u, 1)", "Q = Corner(u, 2)", "R = Corner(v, 1)", "S = Corner(v, 4)",
+], [setn("n", 0), mv("A", 1, 2), setn("n", -1)])
+cases.case("matrix", [
+    image_asset, pt("A", 0, 0), pt("B", 3, 2), pt("D", 1, 4), num("n", 1),
+    image("im", f"world(false, false, point({encoded('A')}), point({encoded('B')}), point({encoded('D')}))"),
+    "u = ApplyMatrix({{1, 0, 0}, {0, 1, 0}, {1, 0, n}}, im)",
+    "P = Corner(u, 1)", "Q = Corner(u, 2)", "R = Corner(u, 3)", "S = Corner(u, 4)",
+], [setn("n", 0), mv("A", 1, 2), setn("n", 1)])
+
 cases.write()

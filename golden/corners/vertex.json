@@ -199,6 +199,570 @@
           "P_{3}": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 }
         }
       ]
+    },
+    {
+      "id": "corners-vertex-004",
+      "group": "corners",
+      "script": [
+        "h = 4",
+        "q(x,y) = x > 0 && y > 0 && x^2*y < h && x < 4",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "h", "value": -1.0 },
+        { "action": "set_number", "label": "h", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 4.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": -1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 4.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -0.0, "y": -0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-005",
+      "group": "corners",
+      "script": [
+        "a = 1",
+        "h = 4",
+        "q(x,y) = x^2 + y^2 < h && a*(x+y) > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "h", "value": -1.0 },
+        { "action": "set_number", "label": "h", "value": 9.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 4.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": -1.4142135623730951 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.414213562373095, "y": 1.414213562373095 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "h": { "type": "number", "defined": true, "value": 4.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.4142135623730951, "y": 1.4142135623730951 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.414213562373095, "y": -1.414213562373095 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "h": { "type": "number", "defined": true, "value": -1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "h": { "type": "number", "defined": true, "value": 9.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.1213203435596424, "y": 2.1213203435596424 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.121320343559643, "y": -2.121320343559643 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 9.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.1213203435596424, "y": -2.1213203435596424 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.121320343559643, "y": 2.121320343559643 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-006",
+      "group": "corners",
+      "script": [
+        "a = -1",
+        "h = 4",
+        "q(x,y) = x^2 + y^2 < h && a*(x+y) > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "h", "value": -1.0 },
+        { "action": "set_number", "label": "h", "value": 9.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "h": { "type": "number", "defined": true, "value": 4.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.4142135623730951, "y": 1.4142135623730951 },
+          "P_{2}": { "type": "point", "defined": true, "x": 1.414213562373095, "y": -1.414213562373095 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 4.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": -1.4142135623730951 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.414213562373095, "y": 1.414213562373095 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": -1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "h": { "type": "number", "defined": true, "value": 9.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 2.1213203435596424, "y": -2.1213203435596424 },
+          "P_{2}": { "type": "point", "defined": true, "x": -2.121320343559643, "y": 2.121320343559643 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "h": { "type": "number", "defined": true, "value": 9.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.1213203435596424, "y": 2.1213203435596424 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.121320343559643, "y": -2.121320343559643 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-007",
+      "group": "corners",
+      "script": [
+        "h = 2",
+        "q(x,y) = abs(x) < h && y > 0 && y < 3",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "h", "value": -1.0 },
+        { "action": "set_number", "label": "h", "value": 3.0 },
+        { "action": "set_number", "label": "h", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": -1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "P_{3}": { "type": "point", "defined": false },
+          "P_{4}": { "type": "point", "defined": false }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 3.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 3.0, "y": -0.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": -3.0, "y": 3.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-008",
+      "group": "corners",
+      "script": [
+        "h = 1",
+        "q(x,y) = x > y^5-y && x < y^5+h",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "h", "value": -1.0 },
+        { "action": "set_number", "label": "h", "value": 0.0 },
+        { "action": "set_number", "label": "h", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": -1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 0.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -30.0, "y": -2.0 }
+        }
+      ]
     }
   ]
 }
