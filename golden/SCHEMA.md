@@ -66,6 +66,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | `initial` | none | The state right after the script has run. |
 | `move` | `label`, `x`, `y` | Move the free point `label` to `(x, y)`, or set the free vector `label` to `(x, y)`. A point made by `Point(path)` moves too: GeoGebra puts it at the point of its path closest to `(x, y)` (`GeoPoint.setCoords` with `Path.pointChanged`) and keeps its path parameter. |
 | `set_number` | `label`, `value` | Set the free number `label` to `value`. |
+| `set_slider_bounds` | `label`, `min`, `max` | Edit the endpoints of a free number's slider. |
 | `reject` | `line`, optional `error` | Check that the command reports an error and creates no output. With `error`, the kernel's error must be exactly that text (GeoGebra's message is not recorded). |
 
 A `move` step may include `reference_parse_error`, which records whether the

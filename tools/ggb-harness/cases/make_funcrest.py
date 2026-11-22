@@ -1,0 +1,196 @@
+"""Remaining forms of the function group and single-form leftovers of other
+groups: `Function()`, `Function(list)` and the commands added after them,
+one topic per command form."""
+
+from caselib import Cases, mv, setn
+
+cases = Cases("funcrest")
+
+
+def case(topic, script, steps=()):
+    cases.case(topic, script.split("\n"), list(steps))
+
+
+def reject(line):
+    return {"action": "reject", "line": line}
+
+
+# ------------------------------------------------------------- Function()
+# The empty data function: defined, without a value anywhere, and usable
+# inside other expressions.
+cases.topic("emptyfunction")
+case("emptyfunction", "f = Function()")
+case("emptyfunction", "f = Function()\na = f(1)\ng(x) = f(x) + 1")
+case("emptyfunction", "f = Function()\nd = Derivative(f)\ni = Integral(f, 0, 1)")
+
+# --------------------------------------------------------- Function(list)
+# The freehand function of `{min, max, y1, y2, ...}`: linear between the
+# values at equal steps, undefined outside `[min, max]`.
+cases.topic("freehand")
+case("freehand", "f = Function({1, 2, 3, 4, 5})")
+case("freehand", "l = {1, 2, 3, 1, 5, 7, 9}\nf = Function(l)")
+case("freehand", "f = Function({1, 2, 3, 4, 5})\na = f(1.3)\nb = f(2)\nc = f(2.5)")
+case("freehand", "f = Function({-2, 4, 1, 5, 2})\nh(x) = 2 f(x)")
+# the interval follows a number: reversed, empty and wide again
+case("freehand", "n = 4\nl = {0, n, 1, 2, 4, 8}\nf = Function(l)\na = f(1)\nb = f(n)",
+     [setn("n", -1), setn("n", 0), setn("n", 10), setn("n", 0.5)])
+# fewer than four numbers, an empty list and a list of points are undefined
+case("freehand", "f = Function({1, 2, 3})\ng = Function({})\nh = Function({(1, 2), (3, 4), (5, 6), (7, 8)})")
+case("freehand", "f = Function({1, 2, 3, (1, 2), 4})")
+# the list grows past four elements and shrinks again
+case("freehand", "n = 2\nl = Sequence(k^2, k, 0, n)\nf = Function(l)",
+     [setn("n", 5), setn("n", 3), setn("n", 1), setn("n", 4)])
+# an element becomes undefined and defined again
+case("freehand", "a = 1\nl = {-8, 8, 1, 1 / a, 3, 2}\nf = Function(l)", [setn("a", 0), setn("a", 2)])
+# what reads a freehand function
+case("freehand", "f = Function({-2, 4, 1, 5, 2})\ng = Derivative(f)\ni = Integral(f, 0, 1)")
+# the integral sums the steps between the bounds, in either direction, and
+# is undefined past the interval
+case("freehand", "a = -2\nb = 4\nf = Function({-2, 4, 1, 5, 2, 0, 3})\ni = Integral(f, a, b)",
+     [setn("a", -1.5), setn("b", 3.25), setn("a", 3.5), setn("b", 5), setn("b", 1), setn("a", -3),
+      setn("a", 0.2), setn("b", 0.3)])
+# a number, a function and a second argument are errors
+case("freehand", "l = {1, 2, 3, 4}\nf(x) = x",
+     [reject("g = Function(3)"), reject("g = Function(f)"), reject("g = Function(l, 2)"),
+      reject("g = Function(1, 2)")])
+
+# what else reads a freehand function: it is sampled like any function
+cases.topic("freehandreaders")
+case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\nh(x) = 2 f(x)\ni = Integral(h, 0, 1)")
+case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\nl = Length(f, 0, 1)")
+case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\nt = Tangent(0, f)")
+case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\nM = Max(f, 0, 3)")
+case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\nr = Root(f, 0, 1)")
+case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\ni = Integral(f)")
+case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\ni = NIntegral(f, 0, 1)")
+case("freehandreaders",
+     "f = Function({-2, 4, 1, 5, 2})\ng(x) = 1\ni = IntegralBetween(f, g, 0, 1)")
+case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\nA = (1, f(1))\nB = (0.5, f(0.5))")
+# the numeric intersection with a freehand function (a known gap)
+case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\ng(x) = x\nS = Intersect(f, g, 0, 3)")
+
+# --------------------------------------------------------------- Normalize
+cases.topic("normalize")
+case("normalize", "l = {1, 3, 2}\nr = Normalize(l)\ns = Normalize({(1, 1), (3, 1), (2, 1)})")
+case("normalize", "A = (1, -2)\nB = (-3, 4)\nC = (2, 0)\nr = Normalize(A)\ns = Normalize(A, B, C)",
+     [mv("A", 2, 4), mv("B", 2, 4)])
+case("normalize", "n = 1\nA = (1/n, n)\nB = (0, 0)\nr = Normalize(A, B)\ns = Normalize({n, 1/n, 0})",
+     [setn("n", 0), setn("n", -2)])
+case("normalize", "r = Normalize({})\ns = Normalize({0, 0})\nt = Normalize({-3})\nu = Normalize({true, false})")
+case("normalize", "n = 2\nl = Sequence(k, k, 1, n)\nr = Normalize(l)",
+     [setn("n", 0), setn("n", 4)])
+case("normalize", "r = Normalize({1, (2, 2), 4})\ns = Normalize({1, true})\nt = Normalize({1, false, 2})")
+case("normalize", "A = (1, 2)", [reject("r = Normalize()"), reject("r = Normalize(1)"),
+                                 reject("r = Normalize(A, 2)")])
+case("normalize", 'r = Normalize({1, 2, true})\ns = Normalize({true, 1})\n'
+     'u = Normalize({1, "a"})', [reject("t = Normalize({1, (2, 2)})")])
+case("normalize", "r = Normalize({})\ns = Normalize({4, 4, 4})",
+     [reject("t = Normalize({(1, 2), 3, (4, 5)})")])
+
+# --------------------------------------------------------------------- SVD
+cases.topic("svd")
+case("svd", "s = SVD({{1}})\nt = SVD({{-2}})\nu = SVD({{0}})")
+case("svd", "s = SVD({{3, 0}, {0, 2}})\nt = SVD({{1, 0}, {0, 4}})")
+case("svd", "s = SVD({{3, 4}})\nt = SVD({{3}, {4}})")
+case("svd", "s = SVD({{1, 2}, {3, 4}})\nt = SVD({{1, 2, 3}, {4, 5, 6}})")
+case("svd", "s = SVD({{1, 2}, {2, 4}, {3, 6}})\nt = SVD({{1, 0}, {0, 1}})\nu = SVD({{0, 0}, {0, 0}})")
+case("svd", "n = 2\nl = Sequence({k, 0}, k, 1, n)\ns = SVD(l)",
+     [setn("n", 0), setn("n", 1), setn("n", 3)])
+case("svd", "s = SVD({})\nt = SVD({{}, {}})\nu = SVD({{1, 2}, {3}})\nv = SVD({1, 2})",
+     [reject("r = SVD(1)"), reject("r = SVD({{1}}, {{2}})")])
+case("svd", "n = 2\nl = {{1, 2}, Sequence(k + 2, k, 1, n)}\ns = SVD(l)",
+     [setn("n", 1), setn("n", 2)])
+case("svd", "s = SVD({{1/0}})\nt = SVD({{0/0}})")
+case("svd", "s = SVD({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})")
+case("svd", "d = IsDefined(SVD(Sequence(Sequence(sin(i*j), j, 1, 200), i, 1, 200)))")
+
+# ------------------------------------------------------------- IsVertexForm
+cases.topic("vertexform")
+case("vertexform", "f(x) = 4(x + 1)^2 + 3\na = IsVertexForm(f)\nb = IsVertexForm(4(-3/7 + x)^2 + 3/7 + sqrt(2))\nc = IsVertexForm(4(x - 3/7)^2 + 3/7 + sqrt(2))")
+case("vertexform", "a = IsVertexForm(x^2)\nb = IsVertexForm(4(-x - 3/7)^2 + 3/7 + sqrt(2))\nc = IsVertexForm((2x + 2)^2 + 3)")
+case("vertexform", "a = IsVertexForm((1 - x)^2)\nb = IsVertexForm(x^2 / 3)\nc = IsVertexForm(x^2 + x)\nd = IsVertexForm((x + 1)^(1 + 1))")
+case("vertexform", "n = 2\nf(x) = (x+1)^n\ng(x) = n*(x+1)^2\nh(x) = 4*(x+1)^2 + n\na = IsVertexForm(f)\nb = IsVertexForm(g)\nc = IsVertexForm(h)",
+     [setn("n", 0), setn("n", 2)])
+case("vertexform", "n = 1\nf(x) = (x+1)^2 + 0/n\ng = IsVertexForm(f)\nh = IsVertexForm(Function())",
+     [setn("n", 0), setn("n", 2), reject("a = IsVertexForm()"), reject("a = IsVertexForm({1,2})")])
+case("vertexform", "l = Line((0, 0), (1, 1))\nv = Line((0, 0), (0, 1))\n"
+     "a = IsVertexForm(3)\nb = IsVertexForm(l)\nd = IsVertexForm(v)",
+     [reject("s = IsVertexForm(Vector((1, 1)))")])
+case("vertexform", "F = (0, 1)\nl: y = -1\nc = Parabola(F, l)\ne = Circle((0, 0), 2)\n"
+     "a = IsVertexForm(c)\nb = IsVertexForm(e)", [mv("F", 0, -1), mv("F", 0, 2)])
+case("vertexform", "O = (0, 0)\nA = (1, 0)\nB = (0, 1)\ns = Segment(O, A)\nr = Ray(O, A)\n"
+     "c = CircularArc(O, A, B)\nd = CircularSector(O, A, B)\nn = 30°\na = IsVertexForm(s)\n"
+     "b = IsVertexForm(r)\ne = IsVertexForm(c)\nf = IsVertexForm(d)\ng = IsVertexForm(n)")
+
+# ---------------------------------------------------------------------- If
+cases.topic("conditional")
+case("conditional",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\nb = n > 0\ns = If(b, r, Segment(A, C))\nd = Length(s)",
+     [setn("n", 0), mv("C", 0, 2), setn("n", 1)])
+case("conditional",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\ns = If(n > 0, Line(A, B), n < 0, Line(A, C))",
+     [setn("n", 0), setn("n", -1), mv("C", 3, 3)])
+case("conditional",
+     "n = 1\nA = (3, 0)\nB = (0, 3)\nO = (0, 0)\na = CircularArc(O, A, B)\nb = CircularArc(O, B, A)\nc = If(n > 0, a, b)\nd = Length(c)\nP = Point(c, 0.5)",
+     [setn("n", -1), mv("A", 0, 0), mv("A", 3, 0), setn("n", 1)])
+case("conditional",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (0, -3)\np = Polygon(A, B, C)\nq = Polygon(A, B, D)\nr = If(n > 0, p, n < 0, q)\naa = Area(r)",
+     [setn("n", 0), setn("n", -1), mv("D", 0, -5), setn("n", 1)])
+case("conditional",
+     "n = 1\np = Curve(t, t^2, t, 0, 3)\nq = Curve(t, -t^2, t, 0, 3)\nr = If(n > 0, p, q)\nP = Point(r, 0.5)",
+     [setn("n", -1), setn("n", 1)])
+case("conditional",
+     "n = 1\nb = n > 0\na = If(b, true, 5)\nP = If(b, 3, (2, 1))\nq = If(b, {1, 2}, 3)",
+     [setn("n", 0), setn("n", 1)])
+# The original case 007 moved to the reference-only mixed geometry topic.
+cases.counters["conditional"] += 1
+case("conditional",
+     "a = 2\nt = true\nl = {1, 2}\np = If(a < 3, t, 2)\nq = If(a < 3, 3, a < 4)\nr = If(a < 3, l, 1)",
+     [setn("a", 3), setn("a", 4), setn("a", 2)])
+case("conditional",
+     'n = 1\nb = n > 0\na = If(b, 3, {1, 2})\nP = If(b, (1, 2), 3)\n'
+     'c = If(b, 30°, 5)\nd = If(b, 5, 30°)\ne = If(b, "a", 3)\nh = If(b, 3, "a")',
+     [setn("n", 0), setn("n", 1)])
+case("conditional", "n = 1\na = If(n > 0, 30°, n < 0, 5, 60°)\n"
+     "P = If(n > 0, 3, n < 0, {1, 2}, 5)\nQ = If(n > 0, (1, 2), n < 0, 3, (3, 4))",
+     [setn("n", -1), setn("n", 0), setn("n", 1)])
+
+# ---------------------------------------------------------------- SlowPlot
+cases.topic("slowplot")
+case("slowplot", "f(x) = sin(x)\ng = SlowPlot(f)\nu = g(-8)\nv = g(0)")
+case("slowplot", "n = 1\nf(x) = n*x\ng = SlowPlot(f, 0)\nh = SlowPlot(f, n + 1)\nu = h(-8)",
+     [setn("n", 0), setn("n", -2)])
+case("slowplot", "n = 1\nf(x) = x/n\ng = SlowPlot(f)\nu = g(-8)",
+     [setn("n", 0), setn("n", 2), reject("s = SlowPlot(3)")])
+case("slowplot", "f(x) = sin(x)\ng = SlowPlot(f)\na = 2\nu = g(0)\nv = g(8)")
+case("slowplot", "a = 1\nf(x) = sin(x)\ng = SlowPlot(f)\nv = g(0)\nw = g(8)",
+     [setn("b", 0.5), setn("b", 1), setn("b", 0)])
+case("slowplot", "A = (0, 0)\nB = (2, 2)\nl = Line(A, B)\ng = SlowPlot(l)\n"
+     "h = SlowPlot(Line(A, B), 0)\nu = g(-8)\nv = h(-8)",
+     [mv("B", 0, 2), mv("B", 2, 4)])
+
+# ---------------------------------------------------------------- Derivative
+case("derivative", "n = 0\nk = n/n\nf(x) = x^3 + 1\ng = Derivative(f, k)\nh = NDerivative(f, k)\n"
+     "p = Derivative(f, 2147483648)\nq = Derivative(f, 4294967296)\n"
+     "r = Derivative(f, -1.5)\ns = Derivative(f, -0.5)", [setn("n", 1), setn("n", 0)])
+case("derivative", "n = 0\nk = n/n\nc = Curve(t, t^2, t, 0, 1)\nd = Derivative(c, k)\n"
+     "e = NDerivative(c, t, k)\np = Derivative(c, 2147483648)", [setn("n", 1), setn("n", 0)])
+cases.cases[-1]["sample_curves"] = True
+case("derivative", "f(x) = x^3\nd = Derivative(Curve(t, t^2, t, 0, 1))\n"
+     "e = NDerivative(Curve(t^3, t^2, t, 0, 1), t, 2)\nh = Derivative(f, pi)",
+     [reject("g = Derivative(f, pi, 2)"),
+      reject("g = Derivative(Curve(t, t^2, t, 0, 1), pi, 2)")])
+cases.cases[-1]["sample_curves"] = True
+case("derivative", "n = 5\ns = Spline(Sequence((k, sin(k)), k, 1, n))\nd = Derivative(s)\ne = NDerivative(s)",
+     [setn("n", 260), setn("n", 5)])
+cases.cases[-1]["sample_curves"] = True
+
+cases.write()
+
+cases = Cases("funcrest")
+case("freehandpoints", "n = 2\nf = Function({-2, 4, 1, 5, 2})\nl = First(f, n)",
+     [setn("n", 4), setn("n", 1)])
+case("conditionalmixed",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\ng = Line(A, C)\ns = If(n > 0, r, g)",
+     [setn("n", -1), setn("n", 1)])
+cases.write("reference")

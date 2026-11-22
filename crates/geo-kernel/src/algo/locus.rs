@@ -155,6 +155,7 @@ impl LocusData {
 impl Construction {
     /// The points of the locus `id`; `None` for any other object.
     pub fn locus(&self, id: Id) -> Option<&LocusData> {
+        let id = self.conditional_source(id)?;
         match self.defs.get(id.0)? {
             Def::Locus(_) | Def::Discrete(_) => {
                 self.locus_slot(id.0).map(|slot| &self.loci[slot].1)
@@ -754,6 +755,23 @@ struct PathCopy {
     id: Id,
     path: Id,
     st: PathState,
+}
+
+pub(crate) fn sample_path_point(
+    c: &mut Construction,
+    id: Id,
+    path: Id,
+    state: PathState,
+    parameter: f64,
+) -> Value {
+    let mut point = PathCopy {
+        id,
+        path,
+        st: state,
+    };
+    point.calc(c, parameter);
+    point.apply(c);
+    c.value(id)
 }
 
 impl Moving for PathCopy {

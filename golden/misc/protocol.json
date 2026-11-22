@@ -228,6 +228,129 @@
           "aa": { "type": "number", "defined": true, "value": 4.0 }
         }
       ]
+    },
+    {
+      "id": "misc-protocol-009",
+      "group": "misc",
+      "script": [
+        "cs = ConstructionStep()",
+        "n = 1.6",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "SetConstructionStep(n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "cs": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 1.6 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "cs": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "cs": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "cs": { "type": "number", "defined": true, "value": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-protocol-010",
+      "group": "misc",
+      "script": [
+        "cs = ConstructionStep()",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "SetConstructionStep(-3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "cs": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-protocol-011",
+      "group": "misc",
+      "script": [
+        "cs = ConstructionStep()",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "SetConstructionStep(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "cs": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-protocol-012",
+      "group": "misc",
+      "script": [
+        "cs = ConstructionStep()",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "SetConstructionStep(0/0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "cs": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-protocol-013",
+      "group": "misc",
+      "script": [
+        "cs = ConstructionStep()",
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "SetConstructionStep(1.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "cs": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
     }
   ]
 }

@@ -2,6 +2,7 @@
 
 use super::{add_named_outputs, add_outputs, define_cartesian_curve, index_label, split_call};
 use crate::algo::analysis::{AnalysisDef, CurvatureKind, Mode, SplineInput};
+use crate::algo::calculus::CalculusDef;
 use crate::expr;
 use crate::kernel::locus::NumericLocus;
 use crate::{Construction, Def, Id, Kind, LocusDef};
@@ -29,6 +30,29 @@ pub(super) fn exec(c: &mut Construction, label: &str, rhs: &str) -> Option<Resul
             })());
         }
         "Function" if args.len() >= 3 => return Some(restrict(c, label, &args, false)),
+        // `Function()`: the empty data function
+        "Function" if args == [""] => {
+            return Some(
+                c.add(label, Def::Calculus(CalculusDef::EmptyData))
+                    .map_err(|e| e.to_string()),
+            );
+        }
+        // `Function(list)`: the freehand function of a list
+        "Function" if args.len() == 1 => {
+            return Some(argument(c, args[0], Kind::List).and_then(|list| {
+                let list = packed(list)?;
+                c.add(label, Def::Calculus(CalculusDef::Freehand { list }))
+                    .map_err(|e| e.to_string())
+            }));
+        }
+        "IsVertexForm" if matches!(&args[..], [arg] if arg.starts_with("Function(")) => {
+            return Some((|| {
+                let hidden = format!("\0arg{}", c.len());
+                let id = exec(c, &hidden, args[0]).ok_or("IsVertexForm needs a function")??;
+                let input = format!("IsVertexForm({})", c.label(id));
+                expr::define(c, label, &input, false)
+            })());
+        }
         "$functionInterval" => return Some(restrict(c, label, &args, true)),
         "Root" if args.len() == 2 && args.iter().all(|arg| is_function(c, arg)) => {
             return Some(
@@ -280,6 +304,46 @@ fn add_ode(c: &mut Construction, label: &str, command: &str, args: &[&str]) -> R
     if command == "NSolveODE" {
         let defs = resolve_system(c, args)?;
         return add_analysis_outputs(c, label, defs);
+    }
+    // the one- and two-argument symbolic forms (`AlgoSolveODECas`): a
+    // function, a function of two variables or a curve, and a point. A
+    // number is no function here (`CasEvaluableFunction`)
+    if command == "SolveODE" && matches!(args.len(), 1 | 2) {
+        let source = match c.id(args[0]) {
+            Some(id)
+                if matches!(
+                    c.kind(id),
+                    Kind::Function | Kind::FunctionNVar | Kind::Curve
+                ) =>
+            {
+                packed(id)?
+            }
+            Some(_) => return Err("SolveODE needs a function or a curve".into()),
+            None => match expr::slope_variables(c, args[0]) {
+                Some((false, false)) => {
+                    return Err("SolveODE needs a function or a curve".into());
+                }
+                // a slope in `x` alone is a function of one variable
+                Some((true, false)) => {
+                    let label = format!("\0arg{}", c.len());
+                    match expr::argument_function(c, args[0], &label) {
+                        Some(id) => packed(id)?,
+                        None => slope(c, args[0])?,
+                    }
+                }
+                _ => slope(c, args[0])?,
+            },
+        };
+        let point = match args.get(1) {
+            Some(point) => Some(packed(argument(c, point, Kind::Point)?)?),
+            None => None,
+        };
+        return c
+            .add(
+                label,
+                Def::Calculus(CalculusDef::SymbolicOde { source, point }),
+            )
+            .map_err(|e| e.to_string());
     }
     let functions = match (command, args.len()) {
         ("SlopeField", 2 | 3 | 7) | ("SolveODE", 5) => 1,

@@ -16,6 +16,7 @@
 
 use geo_golden::forms::{self, CommandForms, Evidence};
 use geo_golden::model::Case;
+use geo_golden::model::Step;
 use geo_golden::table::Table;
 use geo_golden::{gaps, model, repo_root};
 use geo_kernel::Kind;
@@ -77,6 +78,52 @@ fn kinds_of(case: &Case) -> BTreeMap<String, Kind> {
         .iter()
         .map(|(l, e)| (l.clone(), e.kind))
         .collect()
+}
+
+/// Which lines of a case show a form: its script and its `reject` steps; a
+/// refused form only its `reject` steps; a solving form only its script, as
+/// a refusal shows no solving variable.
+#[derive(Clone, Copy, PartialEq)]
+enum Lines {
+    All,
+    Script,
+    Rejected,
+}
+
+fn lines_of(e: &Evidence) -> Lines {
+    if e.refusal {
+        Lines::Rejected
+    } else if matches!(
+        e.command.as_str(),
+        "Solve" | "Solutions" | "NSolve" | "NSolutions"
+    ) {
+        Lines::Script
+    } else {
+        Lines::All
+    }
+}
+
+fn case_lines(case: &Case, which: Lines) -> impl Iterator<Item = &String> {
+    case.script
+        .iter()
+        .filter(move |_| which != Lines::Rejected)
+        .chain(case.steps.iter().filter_map(move |step| match step {
+            Step::Reject { line, .. } if which != Lines::Script => Some(line),
+            _ => None,
+        }))
+}
+
+fn case_uses_form(
+    case: &Case,
+    which: Lines,
+    names: &BTreeMap<String, String>,
+    command: &str,
+    form: &str,
+) -> bool {
+    let kinds = kinds_of(case);
+    case_lines(case, which).any(|line| {
+        forms::script_uses_form(std::slice::from_ref(line), &kinds, names, command, form)
+    })
 }
 
 #[test]
@@ -219,23 +266,11 @@ fn every_evidence_row_is_backed() {
                 errors.push(format!("{what}: no golden case `{id}`"));
                 continue;
             };
-            let rejected: Vec<String> = case
-                .steps
-                .iter()
-                .filter_map(|step| match step {
-                    model::Step::Reject { line, .. } => Some(line.clone()),
-                    _ => None,
-                })
-                .collect();
             if gaps.contains_key(id) {
                 errors.push(format!("{what}: `{id}` is a known gap"));
-            } else if e.refusal {
-                // A refused form is shown by a `reject` step in that form.
-                if !forms::script_uses_form(&rejected, &kinds_of(case), &names, &e.command, &e.form)
-                {
-                    errors.push(format!("{what}: `{id}` does not refuse it in this form"));
-                }
-            } else if !forms::script_calls(&case.script, &names, &e.command) {
+            } else if !case_lines(case, lines_of(&e))
+                .any(|line| forms::script_calls(std::slice::from_ref(line), &names, &e.command))
+            {
                 errors.push(format!("{what}: `{id}` does not use the command"));
             } else if let Some(required) = required {
                 let suffix = e.form.strip_prefix("any,").unwrap();
@@ -247,13 +282,7 @@ fn every_evidence_row_is_backed() {
                     errors.push(format!("{what}: `{id}` has no defined image in this form"));
                 }
                 covered.extend(kinds);
-            } else if !forms::script_uses_form(
-                &case.script,
-                &kinds_of(case),
-                &names,
-                &e.command,
-                &e.form,
-            ) {
+            } else if !case_uses_form(case, lines_of(&e), &names, &e.command, &e.form) {
                 errors.push(format!("{what}: `{id}` does not call it in this form"));
             }
         }
@@ -333,7 +362,7 @@ fn print_form_candidates() {
             let ids: Vec<&String> = cases
                 .values()
                 .filter(|c| !gaps.contains_key(&c.id))
-                .filter(|c| forms::script_uses_form(&c.script, &kinds_of(c), &names, command, form))
+                .filter(|c| case_uses_form(c, Lines::All, &names, command, form))
                 .map(|c| &c.id)
                 .take(3)
                 .collect();

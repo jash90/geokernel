@@ -203,6 +203,14 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
                 .map(|recomputed| (recomputed > 0).then_some(id))
                 .map_err(|e| format!("set `{label}`: {e}"))
         }
+        Step::SetSliderBounds { label, min, max } => {
+            script::saved::Property::SliderBounds {
+                label: label.clone(),
+                bounds: [Some(min.to_string()), Some(max.to_string())],
+            }
+            .apply(c)?;
+            Ok(None)
+        }
         Step::Reject { line, error } => {
             let len = c.len();
             match script::exec(c, line) {

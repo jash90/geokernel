@@ -54,6 +54,22 @@ cases.case("optimize", [
     "a = Slider(0, 6)", "t = Slider(1, 3)",
     "n = Minimize((a - t)^2, a)", "Q = (n, t)", "l = Locus(Q, t)",
 ], [])
+cases.case("optimize", [
+    "a = Slider(0, 6)", "b = 1", "f = sqrt(a - b)",
+    "m = Minimize(f, a)", "q = Maximize(f, a)",
+], [setn("b", 4), setn("b", -1), setn("b", 1)])
+cases.case("optimize", [
+    "a = Slider(0, 6)", "f = If(a != 3(3 - sqrt(5)), a)",
+    "m = Maximize(f, a)", "q = Minimize(f, a)",
+], [])
+cases.case("optimize", [
+    "a = 2", "f = (a - 3)^2", "m = Minimize(f, a)",
+], [{"action": "set_slider_bounds", "label": "a", "min": 0, "max": 6}, setn("a", 4)])
+cases.case("optimize", [
+    "a = Slider(0, 6)", pt("P", 3, 0), pt("A", 0, 0),
+    "f = If(x(P) > 0, a * (2 * x(P) - a))", "g = -f",
+    "c = Circle(A, Maximize(f, a))", "d = Circle(A, Minimize(g, a))",
+], [mv("P", 2, 0), mv("P", 0, 0), mv("P", 4, 0)])
 
 # Hull: the convex hull of a list of points, as a locus.
 cases.case("hull", [
@@ -188,12 +204,63 @@ cases.case("protocol", [
     "aa = ConstructionStep(A)",
 ], [])
 
+# Step arguments are rounded when the command runs. Later edits of the
+# argument do not navigate the protocol again.
+cases.case("protocol", [
+    "cs = ConstructionStep()", "n = 1.6", pt("A", 0, 0), pt("B", 1, 1),
+    "SetConstructionStep(n)",
+], [setn("n", 0), setn("n", 4), mv("B", 4, 5)])
+for target in ("-3", "0", "0/0", "1.5"):
+    cases.case("protocol", [
+        "cs = ConstructionStep()", pt("A", 0, 0), pt("B", 1, 1),
+        f"SetConstructionStep({target})",
+    ], [])
+
 # The view readers.
 cases.case("view", [
     "p = Corner(1)", "q = Corner(2)", "r = Corner(3)", "s = Corner(4)",
     "t = Corner(5)", "u = Corner(6)",
     "gx = AxisStepX()", "gy = AxisStepY()",
 ], [])
+
+# Optimize a live point on a bounded path.
+cases.case("maximizepoint", [
+    "C = (3, 4)", "c = Circle(C, 5)", "P = Point(c)", "a = y(P)", "M = Maximize(a, P)",
+], [mv("P", 8, 4), mv("P", -2, 4)])
+cases.case("maximizepoint", [
+    "A = (0, 0)", "B = (10, 0)", "s = Segment(A, B)", "P = Point(s)",
+    "n = 3", "f = If(n != 0, -(x(P) - n)^2)", "M = Maximize(f, P)", "w = x(P)",
+], [setn("n", 0), setn("n", 7), mv("B", 14, 0)])
+cases.case("maximizepoint", [
+    "P = (0, 0)", "a = x(P)", "M = Maximize(a, P)",
+], [mv("P", 4, 3)])
+cases.case("maximizepoint", [
+    "c = Curve(t, t^2, t, -4, 4)", "P = Point(c, 0.75)",
+    "M = Maximize(-(x(P) - 1)^2, P)", "w = x(P)",
+], [])
+cases.case("maximizepoint", [
+    "A = (0, 0)", "B = (6, 0)", "P = Point(Segment(A, B))",
+    "b = 1", "f = sqrt(x(P) - b)", "M = Maximize(f, P)", "w = x(P)",
+], [setn("b", 4), setn("b", -1), setn("b", 1)])
+
+cases.case("minimizepoint", [
+    "C = (3, 4)", "c = Circle(C, 5)", "P = Point(c)", "a = y(P)", "M = Minimize(a, P)",
+], [mv("P", 8, 4)])
+cases.case("minimizepoint", [
+    "A = (0, 0)", "B = (10, 0)", "s = Segment(A, B)", "P = Point(s)",
+    "n = 3", "f = If(n != 0, (x(P) - n)^2)", "M = Minimize(f, P)", "w = x(P)",
+], [setn("n", 0), setn("n", 7), mv("B", 14, 0)])
+cases.case("minimizepoint", [
+    "P = (2, 3)", "M = Minimize(y(P), P)",
+], [mv("P", 4, 3)])
+cases.case("minimizepoint", [
+    "c = Curve(t, t^2, t, -4, 4)", "P = Point(c, 0.75)",
+    "M = Minimize((x(P) + 1)^2, P)", "w = x(P)",
+], [])
+cases.case("minimizepoint", [
+    "A = (0, 0)", "B = (6, 0)", "P = Point(Segment(A, B))",
+    "b = 1", "f = sqrt(x(P) - b)", "M = Minimize(f, P)",
+], [setn("b", 4), setn("b", -1), setn("b", 1)])
 
 # The remaining Sum forms.
 cases.case("sum", [
@@ -237,6 +304,20 @@ cases.case("sum", [
     "h = Sum(x^2, x, 4, 2)", "a = Sum(7, x, 4, 2)",
     "p = Product(x^2, x, 1.2, 3.9)", "q = Product(x^2, x, 1, 3)",
 ], [])
+
+# Direct vector arguments are refused. A list of vectors does fold.
+cases.case("sum", [
+    "A = (0, 0)", "u = (1, 2)", "v = (-3, 5)", "w = (2, -7)",
+    "d = IsDefined(Sum({u, v, w}))",
+], [{"action": "reject", "line": "s1 = Sum(u)"},
+    {"action": "reject", "line": "s2 = Sum(u, v)"},
+    {"action": "reject", "line": "s3 = Sum(u, v, w)"},
+    {"action": "reject", "line": "s4 = Sum(u, v, w, u)"},
+    {"action": "reject", "line": "s5 = Sum(A, v, w)"}])
+cases.case("sum", [
+    "n = 1", "A = (0, 0)", "B = (1/n, n)", "u = Vector(A, B)",
+    "v = (-1, 2)", "w = (3, -4)", "d = IsDefined(Sum({u, v, w}))",
+], [setn("n", 0), setn("n", 2)])
 
 # The deprecated IntersectPath aliases.
 cases.case("alias", [

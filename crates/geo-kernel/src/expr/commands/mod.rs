@@ -102,7 +102,9 @@ pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
 
 /// Whether the result of the list command `op` is a list.
 pub(super) fn makes_list(op: ListOp) -> bool {
-    geometry::makes_list(op) || list::makes_list(op)
+    matches!(op, ListOp::Normalize | ListOp::Svd)
+        || geometry::makes_list(op)
+        || list::makes_list(op)
 }
 
 /// Whether the second operand of the list command `op` is an object rather
@@ -125,6 +127,12 @@ pub(super) fn list_type(
     l: u32,
     n: u32,
 ) -> Result<Ty, String> {
+    if op == ListOp::Normalize {
+        return Ok(Ty::List(elem));
+    }
+    if op == ListOp::Svd {
+        return Ok(Ty::List(Elem::List));
+    }
     let groups = [
         list::list_type,
         statistics::list_type,
@@ -165,9 +173,10 @@ pub(super) fn list_fn<const M: bool>(
     l: u32,
     n: u32,
 ) -> Option<(u32, u32)> {
-    if geometry::makes_list(op) {
-        geometry::list_fn(ctx, op, l, n)
-    } else {
-        ctx.list_fn(op, l, n)
+    match op {
+        ListOp::Normalize => function_analysis::normalize(ctx, l),
+        ListOp::Svd => function_analysis::svd(ctx, l),
+        _ if geometry::makes_list(op) => geometry::list_fn(ctx, op, l, n),
+        _ => ctx.list_fn(op, l, n),
     }
 }

@@ -35,7 +35,7 @@ Direction,,geometry,P1,done,2,2,"Direction(line, segment or ray)"
 Point,,geometry,P1,done,4,4,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
 Midpoint,,geometry,P0,done,4,4,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
-Intersect,,geometry,P0,partial,79,77,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
+Intersect,,geometry,P0,partial,79,76,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
 IntersectPath,,geometry,P1,done,9,9,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
 IntersectRegion,,english,P2,done,9,9,
 Distance,,geometry,P0,done,4,4,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
@@ -99,7 +99,7 @@ Ordinal,,text,P2,done,1,1,
 ContinuedFraction,,text,P2,done,4,4,
 ReplaceAll,,text,P2,done,1,1,
 Split,,text,P2,done,1,1,
-If,,logical,P2,partial,2,1,"Scalar, coordinate, boolean, text, list and numeric-function branches, and named alternatives of a single line, segment, ray, circle or conic kind."
+If,,logical,P2,partial,2,1,"Scalar, coordinate, boolean, text, list and numeric-function branches, plus same-kind geometry alternatives with live shape records."
 CountIf,,logical,P2,done,2,2,
 IsInteger,,logical,P2,done,1,1,
 KeepIf,,logical,P2,done,2,2,
@@ -110,13 +110,13 @@ Root,,function,P2,done,4,4,"Seed, interval, polynomial factors and legacy functi
 Roots,,function,P2,done,2,2,Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.
 TurningPoint,,function,P2,done,1,1,
 Polynomial,,function,P2,done,3,3,
-Function,,function,P2,partial,4,2,Domain restrictions with an optional local variable. Empty and freehand functions are pending.
+Function,,function,P2,done,4,4,"Domain restrictions with an optional local variable, the empty data function and freehand functions of a list."
 Extremum,,function,P2,done,2,2,Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.
 RemovableDiscontinuity,,function,P2,done,1,1,Rational holes have reference evidence. Other expressions use a bounded numerical estimate.
 CurveCartesian,,function,P2,done,3,3,
 ParametricDerivative,,function,P2,done,1,1,
-Derivative,,function,P2,partial,8,4,
-NDerivative,,function,P2,partial,9,2,
+Derivative,,function,P2,partial,8,7,
+NDerivative,,function,P2,partial,9,8,
 Integral,,function,P2,done,7,7,
 IntegralBetween,,function,P2,done,7,7,
 LowerSum,,function,P2,done,1,1,
@@ -135,7 +135,7 @@ PartialFractions,,function,,out_of_scope,,,Symbolic partial fraction decompositi
 Numerator,,function,P2,done,2,2,
 Denominator,,function,P2,done,2,2,
 ComplexRoot,,function,P2,done,1,1,"Numeric polynomial roots, returned as points with real and imaginary coordinates."
-SolveODE,,function,P2,partial,7,3,"Numeric first-order, parametric and second-order systems. Symbolic function and curve forms, with or without an initial point, use the CAS."
+SolveODE,,function,P2,partial,7,5,"Numeric first-order, parametric and second-order systems. The local symbolic solver handles polynomial slopes in x, with or without an initial point."
 SlopeField,,function,P2,done,4,4,
 Iteration,,function,P2,done,3,3,
 PathParameter,,function,P2,done,1,1,PathParameter(point on a path)
@@ -148,10 +148,10 @@ RootList,,function,P2,done,3,3,
 ImplicitCurve,,function,P2,done,3,3,
 ImplicitDerivative,,function,,out_of_scope,,,The implicit derivative command uses the CAS.
 NSolveODE,,function,P2,done,1,1,
-Spline,,function,P2,done,4,4,
+Spline,,function,P2,partial,4,3,
 BezierCurve,,function,P2,done,1,1,
 ImplicitSurface,,english,,out_of_scope,,,Implicit surfaces are 3D-only objects.
-Normalize,,function,P2,todo,3,0,
+Normalize,,function,P2,done,3,3,
 SVD,,function,P2,todo,1,0,
 Ellipse,,conic,P1,done,2,2,"Ellipse(focus, focus, point); Ellipse(focus, focus, semi-major axis length)"
 Hyperbola,,conic,P1,done,2,2,"Hyperbola(focus, focus, point); Hyperbola(focus, focus, semi-major axis length)"
@@ -174,7 +174,7 @@ Excentricity,,conic,P1,done,1,1,Excentricity(conic)
 Eccentricity,,conic,P1,done,1,1,Eccentricity(conic)
 Axes,,conic,P1,done,1,1,Axes(conic)
 Sort,,list,P2,done,3,3,"Sort(list of numbers, booleans or points); Sort(value list, key list); Sort(point, point, ...)"
-First,,list,P2,done,5,5,"First(list); First(list, number of elements); First(locus, number of elements)"
+First,,list,P2,partial,6,5,"Lists, text and loci. The freehand function point reader remains open."
 Last,,list,P2,done,5,5,"Last(list); Last(list, number of elements)"
 Take,,list,P2,done,4,4,"Take(list, from[, to])"
 RemoveUndefined,,list,P2,done,1,1,RemoveUndefined(list)
@@ -215,7 +215,7 @@ StepGraph,,charts,P2,done,6,6,
 LineGraph,,charts,P2,done,1,1,
 PieChart,,charts,P2,done,3,3,
 ContingencyTable,,charts,,out_of_scope,,,"Produces a LaTeX contingency table, optionally with a test report."
-Sum,,statistics,P2,partial,8,7,"Sum(list); Sum(list, number of elements); numbers, points or vectors"
+Sum,,statistics,P2,done,8,8,"List and indexed forms, plus variadic numbers, points, functions and text. Direct vector arguments are rejected."
 Mean,mean,statistics,,out_of_scope,,,
 mean,,statistics,,out_of_scope,,,
 Variance,,statistics,,out_of_scope,,,
@@ -428,12 +428,12 @@ AxisStepY,,geogebra,P2,done,1,1,
 ConstructionStep,,geogebra,P2,done,2,2,
 Object,,geogebra,P2,done,1,1,
 Name,,geogebra,P2,done,1,1,
-SlowPlot,,geogebra,P2,todo,2,0,
+SlowPlot,,geogebra,P2,todo,4,0,"Functions and lines follow an editable slider and the view bounds. Automatic animation, source visibility and repeat behavior remain open."
 ToolImage,,geogebra,,out_of_scope,,,"Draws a tool's icon image into the graphics view, not a construction object."
 DynamicCoordinates,,geogebra,P2,done,1,1,
-SetConstructionStep,,geogebra,P2,todo,1,0,
+SetConstructionStep,,geogebra,P2,done,1,1,
 Maximize,,optimization,P2,partial,2,1,
-Minimize,,optimization,P2,partial,2,1,
+Minimize,,optimization,P2,todo,2,0,
 ExportImage,,scripting,,out_of_scope,,,
 Curve,CurveCartesian,function,P2,done,,,
 FormulaText,LaTeX,text,P2,done,,,
@@ -551,7 +551,7 @@ TrigCombine,,function,,out_of_scope,,,Symbolic trigonometric combination uses th
 nCr,,english,P2,done,1,1,
 nPr,,english,P2,done,1,1,
 CASLoaded,,geogebra,,out_of_scope,,,"Reports whether the CAS view is part of the app, which the kernel has no view of."
-IsVertexForm,,function,P2,todo,1,0,
+IsVertexForm,,function,P2,done,10,10,
 TableToChart,,english,,out_of_scope,,,
 ExtendedGCD,,cas,,out_of_scope,,,
 ModularExponent,,cas,,out_of_scope,,,

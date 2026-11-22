@@ -1408,8 +1408,8 @@ mismatches = ["cv"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1245"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `(2`; the method's step `commands/CommandsTest.java:1243` fails earlier here, so the object is missing only in its wake"
+category = "redefine"
+reason = "the kernel refuses the input: object `\u0000arg4` already exists"
 mismatches = ["step"]
 
 [[gap]]
@@ -2128,9 +2128,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1875"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `DataFunction[{}, {},x]`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1876"
@@ -2140,9 +2140,9 @@ mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1877"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `freehand(x)`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:188"
@@ -2643,42 +2643,6 @@ reason = "the kernel refuses the input: unknown object `x+y=17`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2499"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2500"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2501"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2502"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2503"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2504"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsVertexForm`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2543"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `DataFunction`"
@@ -2770,33 +2734,33 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2588"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `freehand(x)`"
+mismatches = ["freehandFunc"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2589"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `freehandFunc`; the method's step `commands/CommandsTest.java:2576` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-command"
+reason = "the kernel refuses the input: `freehandFunc` is a function, expected a segment or point or locus"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2600"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Line` does not take 3 argument(s)"
+category = "error-behaviour"
+reason = "the kernel refuses the input: unknown object `x+y=17`"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2601"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Line` does not take 4 argument(s)"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no GeoGebra-style text yet; GeoGebra prints `0.5x + y = 1.5`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2602"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Line` does not take 4 argument(s)"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["tpairs_probe_2602_0"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2603"
@@ -3325,18 +3289,6 @@ id = "commands/CommandsTest.java:2962"
 category = "text-formatting"
 reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `NInvert[sin(x)]`"
 mismatches = ["ni"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2968"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Normalize`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2969"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Normalize`"
-mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2988"
@@ -5260,15 +5212,15 @@ mismatches = ["numericalIntegral3"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4238"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `SolveODE`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Function does not match `?` (expected undefined, kernel has a value): the upstream test runs without a CAS, where the symbolic SolveODE is undefined; with the CAS the reference answers the antiderivative of the polynomial right-hand side (golden group odesymbolic), and so does the kernel"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4239"
-category = "cas"
-reason = "the kernel refuses the input: unknown command `SolveODE`"
-mismatches = ["step"]
+category = "kernel-mismatch"
+reason = "Function does not match `?` (expected undefined, kernel has a value): the upstream test runs without a CAS, where the symbolic SolveODE is undefined; with the CAS the reference answers the antiderivative of the polynomial right-hand side (golden group odesymbolic), and so does the kernel"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:424"
@@ -5508,12 +5460,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4414"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Syy`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4419"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SVD`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6688,15 +6634,15 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:896"
-category = "error-behaviour"
-reason = "the kernel refuses the input: unknown object `(1`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoConic` of kind circle has no GeoGebra-style text yet; GeoGebra prints `(x - 1)² + (y - 1)² = 1764`"
+mismatches = ["c"]
 
 [[gap]]
 id = "commands/CommandsTest.java:897"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Circle` does not take 4 argument(s)"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoConic` of kind circle has no GeoGebra-style text yet; GeoGebra prints `(x - 1)² + (y - 1)² = 1.2500000000000002`"
+mismatches = ["d"]
 
 [[gap]]
 id = "commands/CommandsTest.java:898"
@@ -6958,9 +6904,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:82"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Derivative`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(6 * x)`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:83"
@@ -6976,9 +6922,9 @@ mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:85"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Derivative`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `(6 * x)`"
+mismatches = ["p"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:90"

@@ -266,4 +266,119 @@ case("polynomial", ["P = (1, 2)", "Q = (2, 5)", "g = Polynomial(P, Q, Q)"], [])
 # an object exponent: the expansion follows its whole-number value
 case("polynomial", nums(a=3) + ["f(x) = x^a", "g = Polynomial(f)"],
      [setn("a", 2.5), setn("a", 3)])
+
+# ------------------------------------------------------ curve derivatives
+# `Derivative` and `NDerivative` of a Cartesian curve differentiate both
+# coordinates (`GeoCurveCartesianND.setDerivative`) and keep the parent's
+# parameter interval. A curve always answers through the fast no-CAS path:
+# the polynomial coordinates exactly, everything else through the rule
+# trees, so `Derivative` and `NDerivative` agree.
+topic("curvederivative")
+CURVES = [
+    ["c = Curve(t^2, t^3, t, -2, 2)", "d = Derivative(c)", "e = NDerivative(c)",
+     "g = Derivative(c, 2)"],
+    ["c = Curve(sin(t), t^2, t, 0, 6)", "d = Derivative(c)", "e = Derivative(c, 2)",
+     "g = NDerivative(c, 3)"],
+    ["c = Curve(cos(t), sin(t), t, 0, 2pi)", "d = Derivative(c)"],
+    ["c = Curve(2t + 3, t^2 - t, t, -3, 3)", "d = Derivative(c, 3)",
+     "e = NDerivative(c, 2)"],
+]
+for script in CURVES:
+    case("curvederivative", script, [])
+    cases.cases[-1]["sample_curves"] = True
+# the order as a number object: rounded, 0 a copy, negative undefined
+case("curvederivative", nums(n=1) + ["c = Curve(t^2, t^3, t, -2, 2)", "d = Derivative(c, n)"],
+     [setn("n", 0), setn("n", 2), setn("n", -1), setn("n", 0.4), setn("n", 2.6), setn("n", 1)])
+cases.cases[-1]["sample_curves"] = True
+# the parameter-name form and its order form
+case("curvederivative",
+     ["c = Curve(t^2, t^3, t, -2, 2)", "d = Derivative(c, t)", "e = Derivative(c, t, 2)"], [])
+cases.cases[-1]["sample_curves"] = True
+# a coordinate that follows a number: the derivative follows it too
+case("curvederivative", nums(a=1) + ["c = Curve(a*t^2, t, t, 0, 3)", "d = Derivative(c)"],
+     [setn("a", 2), setn("a", 0), setn("a", -1)])
+cases.cases[-1]["sample_curves"] = True
+# a reversed interval makes the parent undefined and back
+case("curvederivative", nums(b=3) + ["c = Curve(t^2, t, t, 0, b)", "d = Derivative(c)"],
+     [setn("b", -1), setn("b", 5)])
+cases.cases[-1]["sample_curves"] = True
+# the derivative of a derivative keeps the whole chain
+case("curvederivative",
+     ["c = Curve(t^3, t^4, t, 0, 2)", "d = Derivative(c)", "e = Derivative(d)"], [])
+cases.cases[-1]["sample_curves"] = True
+# a spline curve: the piece polynomials differentiate through the rules
+case("curvederivative",
+     ["A = (0, 0)", "B = (1, 2)", "C = (3, 1)", "D = (4, 3)", "s = Spline(A, B, C, D)",
+      "d = Derivative(s)"], [])
+cases.cases[-1]["sample_curves"] = True
+# the three-argument forms read any name or label as the ignored variable
+# (`resArgsLocalNumVar`), so the third argument is the order
+case("curvederivative",
+     ["f(x) = x^3", "g(x) = sin(x)", "c = Curve(t^2, t^3, t, -2, 2)",
+      "d = NDerivative(f, g, 2)", "e = Derivative(f, g, 2)", "h = Derivative(f, x, 2)",
+      "i = NDerivative(c, g, 2)"], [])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative", nums(n=2) + ["f(x) = x^4", "d = NDerivative(f, n, 3)"],
+     [setn("n", 1)])
+# a curve with a labelled variable and an order
+case("curvederivative",
+     ["c = Curve(t^2, t^3, t, -2, 2)", "g(x) = sin(x)", "d = Derivative(c, g, 2)",
+      "e = NDerivative(c, g, 3)"], [])
+cases.cases[-1]["sample_curves"] = True
+# a curve with a number label as the ignored variable
+case("curvederivative", nums(n=2) + ["c = Curve(t^2, t^3, t, -2, 2)",
+                                     "d = NDerivative(c, n, 3)"], [])
+cases.cases[-1]["sample_curves"] = True
+# the forms the reference rejects: two functions in two arguments, a
+# number literal in the variable place, a name that is not the parameter
+case("curvederivative",
+     ["f(x) = x^3", "g(x) = sin(x)", "c = Curve(t^2, t^3, t, -2, 2)"],
+     [{"action": "reject", "line": "d = Derivative(f, g)"},
+      {"action": "reject", "line": "e = NDerivative(f, g)"},
+      {"action": "reject", "line": "h = Derivative(f, 2, 3)"},
+      {"action": "reject", "line": "i = Derivative(c, x)"},
+      {"action": "reject", "line": "j = Derivative(c, g)"}])
+
+case("curvederivative",
+     ["c = Curve(u^3, u^4, u, 0, 2)", "d = Derivative(c)", "e = Derivative(d, u)",
+      "g = NDerivative(d, u, 2)"], [])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     nums(r=2) + ["O = (1, -1)", "c = Curve(t^2, sin(t), t, 0, 3)",
+                  "a = Dilate(c, r, O)", "d = Derivative(a, t)", "e = NDerivative(a, 2)"],
+     [setn("r", 0), setn("r", -2)])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     nums(b=1) + ["c = Curve(t^2, t^3, t, -2, 2)", "m = {{2, b}, {0, 1}}",
+                  "a = ApplyMatrix(m, c)", "d = NDerivative(a)", "e = Derivative(a, 0)"],
+     [setn("b", -3)])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["c = Curve(t^2, t^3, t, -2, 2)", "a = ParametricDerivative(c)", "d = Derivative(a)"], [])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["c = Curve(t^2, t^3, t, -2, 2)", "g(x) = sin(x)"],
+     [{"action": "reject", "line": "d = NDerivative(c, g)"}])
+case("curvederivative",
+     nums(n=1, b=2) + ["c = Curve(t^2, t^3, t, 0, b)", "a = Curve(t, sin(t), t, -1, 1)",
+                       "q = If(n > 0, c, a)", "d = Derivative(q)", "e = NDerivative(q, t)"],
+     [setn("b", -1), setn("b", 3), setn("n", -1), setn("n", 1)])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["c = Curve(t^2, t^3, t, -2, 2)", "a = ApplyMatrix({{1, 0, 0}, {0, 1, 0}, {1, 0, 2}}, c)",
+      "d = NDerivative(a)"], [])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["f(x) = x^3", "a = ApplyMatrix({{2, 0}, {0, 3}}, f)", "d = Derivative(a)"], [])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["f(x) = x^3", "a = ApplyMatrix({{2, 0}, {0, 3}}, f)", "d = Derivative(a, t)"],
+     [{"action": "reject", "line": "e = Derivative(a, x)"}])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     nums(n=1) + ["k = 1 / n", "c = Curve(t^2, t^3, t, -2, 2)", "d = Derivative(c, k)",
+                  "e = NDerivative(c, t, k)"],
+     [setn("n", 0), setn("n", 0.5)])
+cases.cases[-1]["sample_curves"] = True
+
 cases.write()

@@ -514,7 +514,7 @@ impl Log {
         })
     }
 
-    /// Records the objects with index `from..` in `c`, or a protocol step.
+    /// Records new objects, a slider assignment or a protocol step.
     pub fn record(&mut self, c: &Construction, from: usize, line: &str) {
         let labels: Vec<String> = c
             .ids()
@@ -522,7 +522,10 @@ impl Log {
             .filter(|&id| !is_internal(c, id))
             .map(|id| c.label(id).to_owned())
             .collect();
-        if !labels.is_empty() || geo_kernel::script::is_construction_step_command(line) {
+        if !labels.is_empty()
+            || geo_kernel::script::is_construction_step_command(line)
+            || geo_kernel::script::is_slider_assignment(c, line)
+        {
             self.ops.push(Op::Define(Entry {
                 labels,
                 line: mark_inline_arguments(line.to_owned()),
@@ -1312,7 +1315,10 @@ impl Log {
                     .map(str::trim)
                     .filter(|l| !l.is_empty())
                     .collect(),
-                None if is_directive || geo_kernel::script::is_construction_step_command(&line) => {
+                None if is_directive
+                    || geo_kernel::script::is_construction_step_command(&line)
+                    || geo_kernel::script::is_slider_assignment(&c, &line) =>
+                {
                     Vec::new()
                 }
                 None => defined_labels(&line).collect(),
@@ -1366,6 +1372,11 @@ impl Log {
         line: &str,
         expected: Option<&[&str]>,
     ) -> Result<Option<Id>, String> {
+        if expected.is_some_and(|labels| !labels.is_empty())
+            && geo_kernel::script::is_slider_assignment(c, line)
+        {
+            return Err("a slider assignment creates no objects".into());
+        }
         let at = c.checkpoint();
         let before = c.len();
         // The checkpoint was taken just above and nothing rolls the
