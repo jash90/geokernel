@@ -1,0 +1,98 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomformsreview-functionofy-001",
+      "group": "geomformsreview",
+      "script": [
+        "f(y) = y>0",
+        "g(y) = y>=0",
+        "h(y) = 0<y",
+        "j(x) = x>0",
+        "u = AreEqual(f, g)",
+        "v = AreEqual(f, h)",
+        "w = AreEqual(f, j)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "j": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "w": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}

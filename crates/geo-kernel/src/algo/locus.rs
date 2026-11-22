@@ -4,6 +4,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDispatcher.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLocusND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLocus.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntegralODE.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoSlopeField.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLocusSliderND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLocusSlider.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLocusND.java
@@ -50,6 +52,7 @@
 use crate::algo::conic_nd::ConicType;
 use crate::algo::path::{self, inf_function, inverse_inf_function, Geom, PathDef, PathState};
 use crate::algo::{Group, Parents, NUMBER, POINT};
+use crate::expr::fraction::FunctionFraction;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use std::sync::Arc;
 
@@ -67,6 +70,8 @@ const NEG_MIN_STEP_WIDTH: f64 = -1e-8;
 const OPEN_BORDER_OFFSET: f64 = 1e-5;
 /// `PathMover.MAX_POINTS`.
 const MAX_POINTS: usize = 10000;
+/// Graphics window used by the reference harness.
+pub(crate) const HEADLESS_VIEW: [f64; 6] = [-4.3, 11.700000000000001, -5.7, 6.3, 50.0, 50.0];
 /// `AlgoLocusND.MAX_X_PIXEL_DIST` and `MAX_Y_PIXEL_DIST`.
 const MAX_PIXEL_DIST: f64 = 5.0;
 
@@ -77,23 +82,10 @@ pub enum LocusDef {
     Path { point: Id, mover: Id },
     /// `Locus(Q, a)` with `a` a slider (`AlgoLocusSlider`).
     Slider { point: Id, slider: Id },
-}
-
-impl LocusDef {
-    /// The point that traces the locus.
-    pub fn point(self) -> Id {
-        match self {
-            LocusDef::Path { point, .. } | LocusDef::Slider { point, .. } => point,
-        }
-    }
-
-    /// The point on a path or the slider that drives the locus.
-    pub fn mover(self) -> Id {
-        match self {
-            LocusDef::Path { mover, .. } => mover,
-            LocusDef::Slider { slider, .. } => slider,
-        }
-    }
+    /// Integral curve of a slope function through a point.
+    Ode { point: Id, source: Id },
+    /// A grid of line segments showing the slope at each sample.
+    SlopeField(Id),
 }
 
 /// One point of a locus (`MyPoint`): drawn with a line from the point before
@@ -172,24 +164,29 @@ impl Construction {
         yscale: f64,
     ) {
         let view = [xmin, xmax, ymin, ymax, xscale, yscale];
-        if !(view.iter().all(|v| v.is_finite())
+        let valid = view.iter().all(|v| v.is_finite())
             && xmax > xmin
             && ymax > ymin
             && xscale > 0.0
-            && yscale > 0.0)
-            || self.locus_view == Some(view)
-        {
+            && yscale > 0.0;
+        if !valid || self.locus_view == Some(view) {
             return;
         }
         self.locus_view = Some(view);
-        if self.has_loci() {
-            let mut dirty = std::mem::take(&mut self.dirty);
-            dirty.fit(self.defs.len());
-            for &(i, _) in &self.loci {
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.defs.len());
+        for &(i, _) in &self.loci {
+            dirty.insert(i);
+        }
+        for (i, def) in self.defs.iter().enumerate() {
+            if matches!(
+                def,
+                Def::Point(crate::algo::point::PointDef::ViewCorner { .. })
+            ) {
                 dirty.insert(i);
             }
-            self.propagate_dirty(dirty, 0);
         }
+        self.propagate_dirty(dirty, 0);
     }
 
     /// The interval of a free number made by `Slider(min, max)`; `None`
@@ -303,7 +300,17 @@ fn pointer_changeable(c: &Construction, id: Id) -> bool {
 /// `Q` depends on (`isChangeable`), so moving a point on a path that `Q`
 /// depends on does not recompute it.
 pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
-    let point = d.point();
+    let point = match d {
+        LocusDef::Ode { point, source } => {
+            let mut ids = vec![source, point];
+            if let Def::Locus(LocusDef::SlopeField(function)) = c.def(source) {
+                ids.push(function);
+            }
+            return ids;
+        }
+        LocusDef::SlopeField(source) => return vec![source],
+        LocusDef::Slider { point, .. } | LocusDef::Path { point, .. } => point,
+    };
     if point.0 >= c.len() {
         return Vec::new();
     }
@@ -316,6 +323,7 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
         let reads = match d {
             LocusDef::Path { mover, .. } => id != mover && pointer_changeable(c, id),
             LocusDef::Slider { .. } => c.def(id).is_free(),
+            LocusDef::Ode { .. } | LocusDef::SlopeField(_) => unreachable!(),
         };
         if is && reads {
             ids.push(id);
@@ -462,10 +470,98 @@ pub(crate) fn record(c: &mut Construction, d: LocusDef) -> LocusData {
     match d {
         LocusDef::Path { point, mover } => record_path(c, point, mover),
         LocusDef::Slider { point, slider } => record_slider(c, point, slider),
+        LocusDef::Ode { point, source } => record_ode(c, point, source),
+        LocusDef::SlopeField(source) => record_slope_field(c, source),
     }
 }
 
 /// `AlgoLocusND.compute` for `Locus(Q, P)`.
+// AlgoIntegralODE uses classical Runge-Kutta with step 0.02 and integrates
+// the numerator and denominator in both time directions for 20 units.
+fn record_ode(c: &Construction, point: Id, source: Id) -> LocusData {
+    let function = match c.def(source) {
+        Def::Locus(LocusDef::SlopeField(function)) => function,
+        _ => source,
+    };
+    let (Some((x, y)), Some(function)) = (c.point(point), FunctionFraction::new(c, function))
+    else {
+        return LocusData::default();
+    };
+    let mut points = Vec::with_capacity(2004);
+    for direction in [1.0, -1.0] {
+        let (mut x, mut y) = (x, y);
+        let mut time: f64 = 0.0;
+        let end = 20.0 * direction;
+        points.push(LocusPoint {
+            x,
+            y,
+            line_to: false,
+        });
+        for _ in 0..1001 {
+            let remaining = end - time;
+            let last = remaining.abs() <= 0.02;
+            let h = if last { remaining } else { direction * 0.02 };
+            let (dy1, dx1) = function.evaluate(x, y);
+            let (dy2, dx2) = function.evaluate(x + h * dx1 / 2.0, y + h * dy1 / 2.0);
+            let (dy3, dx3) = function.evaluate(x + h * dx2 / 2.0, y + h * dy2 / 2.0);
+            let (dy4, dx4) = function.evaluate(x + h * dx3, y + h * dy3);
+            x += h * (dx1 + 2.0 * dx2 + 2.0 * dx3 + dx4) / 6.0;
+            y += h * (dy1 + 2.0 * dy2 + 2.0 * dy3 + dy4) / 6.0;
+            points.push(LocusPoint {
+                x,
+                y,
+                line_to: true,
+            });
+            time += h;
+            if last {
+                break;
+            }
+        }
+    }
+    locus_from_points(points)
+}
+
+fn record_slope_field(c: &Construction, source: Id) -> LocusData {
+    let Some(function) = FunctionFraction::new(c, source) else {
+        return LocusData::default();
+    };
+    let [xmin, xmax, ymin, ymax, xs, ys] = c.locus_view.unwrap_or(HEADLESS_VIEW);
+    let ratio = ys / xs;
+    let x_step = (xmax - xmin) / 39.0;
+    let y_step = (ymax - ymin) / 39.0;
+    let length = x_step.min(y_step * ratio) * 0.25;
+    let mut points = Vec::with_capacity(3200);
+    let mut x = xmin;
+    for _ in 0..40 {
+        let mut y = ymin;
+        for _ in 0..40 {
+            let (dy, dx) = function.evaluate(x, y);
+            let scaled = dy * ratio;
+            let norm = (dx * dx + scaled * scaled).sqrt();
+            let (dx, dy) = if dx.abs() < crate::tol::STANDARD_PRECISION
+                && dy.abs() < crate::tol::STANDARD_PRECISION
+            {
+                (0.0, 0.0)
+            } else {
+                (dx * length / norm, dy * length / norm)
+            };
+            points.push(LocusPoint {
+                x: x - dx,
+                y: y - dy,
+                line_to: false,
+            });
+            points.push(LocusPoint {
+                x: x + dx,
+                y: y + dy,
+                line_to: true,
+            });
+            y += y_step;
+        }
+        x += x_step;
+    }
+    locus_from_points(points)
+}
+
 fn record_path(c: &mut Construction, q: Id, p: Id) -> LocusData {
     let (Def::Path(def), Some(path), Some(state)) = (c.def(p), path_of(c, p), c.path_state(p))
     else {
@@ -878,11 +974,6 @@ struct View {
 }
 
 impl View {
-    /// The window of the headless application the golden data are recorded
-    /// with (`AppCommon`): x from -4.3 to 11.7, y from -5.7 to 6.3, 50 pixels
-    /// per unit. `tools/ggb-harness` checks that GeoGebra uses it.
-    pub(crate) const HEADLESS: [f64; 6] = [-4.3, 11.700000000000001, -5.7, 6.3, 50.0, 50.0];
-
     /// `updateScreenBorders` and `setMaxDistances` for the shown view.
     fn new([xmin, xmax, ymin, ymax, xscale, yscale]: [f64; 6]) -> Self {
         let mut v = View {
@@ -1066,7 +1157,7 @@ fn sample<M: Moving>(
     mover: Mover,
     slider: bool,
 ) -> LocusData {
-    let view = View::new(c.locus_view.unwrap_or(View::HEADLESS));
+    let view = View::new(c.locus_view.unwrap_or(HEADLESS_VIEW));
     let views = view.count();
     let mut run = Run {
         q,
@@ -1167,8 +1258,12 @@ fn sample<M: Moving>(
         let line_to = run.distance_small(v, either);
         run.insert(v, line_to);
     }
+    locus_from_points(run.points)
+}
+
+fn locus_from_points(points: Vec<LocusPoint>) -> LocusData {
     let mut bounds: Option<[f64; 4]> = None;
-    for p in &run.points {
+    for p in &points {
         if p.x.is_finite() && p.y.is_finite() {
             bounds = Some(match bounds {
                 Some([xmin, xmax, ymin, ymax]) => {
@@ -1179,7 +1274,7 @@ fn sample<M: Moving>(
         }
     }
     LocusData {
-        points: Arc::new(run.points),
+        points: Arc::new(points),
         defined: true,
         bounds,
     }
@@ -1191,14 +1286,40 @@ impl Group for LocusDef {
     }
 
     fn parents(&self) -> Parents {
-        Parents::of(&[self.point(), self.mover()])
+        match *self {
+            LocusDef::Path { point, mover }
+            | LocusDef::Slider {
+                point,
+                slider: mover,
+            }
+            | LocusDef::Ode {
+                point,
+                source: mover,
+            } => Parents::of(&[point, mover]),
+            LocusDef::SlopeField(source) => Parents::of(&[source]),
+        }
     }
 
     /// `AlgoDispatcher.locusCheck`: the moving object is a point on a path
     /// or a slider, `Q` is not on a path, and `Q` depends on the moving
     /// object.
     fn check(&self, c: &Construction) -> Result<(), Error> {
-        let (point, mover) = (self.point(), self.mover());
+        let (point, mover) = match *self {
+            LocusDef::Ode { point, source } => {
+                c.expect(point, POINT)?;
+                return if matches!(c.def(source), Def::Locus(LocusDef::SlopeField(_))) {
+                    Ok(())
+                } else {
+                    c.expect(source, &[Kind::Function])
+                };
+            }
+            LocusDef::SlopeField(source) => return c.expect(source, &[Kind::Function]),
+            LocusDef::Path { point, mover }
+            | LocusDef::Slider {
+                point,
+                slider: mover,
+            } => (point, mover),
+        };
         c.expect(point, POINT)?;
         let wrong = |expected| Error::WrongKind {
             label: c.label(mover).to_owned(),
@@ -1222,6 +1343,7 @@ impl Group for LocusDef {
                     return Err(wrong(NUMBER));
                 }
             }
+            LocusDef::Ode { .. } | LocusDef::SlopeField(_) => unreachable!(),
         }
         if on_path(c, point) || !is_ancestor(c, mover, point) {
             return Err(Error::WrongKind {
@@ -1242,6 +1364,9 @@ impl Group for LocusDef {
     /// `CmdLocus` with two arguments. Of two points, the one on a path
     /// moves; a number must be a slider.
     fn parse(c: &Construction, func: &str, args: &[&str]) -> Option<Result<Self, String>> {
+        if let ("SlopeField", [source]) = (func, args) {
+            return Some(crate::script::object(c, source).map(LocusDef::SlopeField));
+        }
         if func != "Locus" {
             return None;
         }
@@ -1268,6 +1393,10 @@ fn parse_locus(c: &Construction, args: &[&str]) -> Result<LocusDef, String> {
             point: first,
             slider: second,
         },
+        (Kind::Function | Kind::Locus, Kind::Point) => LocusDef::Ode {
+            point: second,
+            source: first,
+        },
         (x, y) => return Err(format!("`Locus` of a {x} and a {y} is not supported")),
     };
     def.check(c).map_err(|_| match def {
@@ -1277,6 +1406,10 @@ fn parse_locus(c: &Construction, args: &[&str]) -> Result<LocusDef, String> {
         LocusDef::Slider { .. } => {
             format!("`Locus({a}, {b})` needs a point that depends on the slider `{b}`")
         }
+        LocusDef::Ode { .. } => {
+            format!("`Locus({a}, {b})` needs a slope function or field and a point")
+        }
+        LocusDef::SlopeField(_) => unreachable!(),
     })?;
     Ok(def)
 }

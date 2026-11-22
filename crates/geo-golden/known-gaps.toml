@@ -218,22 +218,10 @@ reason = "intended difference, recorded in DIFFERENCES.md: a part whose circumci
 mismatches = ["1:len", "1:ar", "1:sar", "1:slen", "2:len", "2:ar", "2:sar", "2:slen"]
 
 [[gap]]
-id = "geomforms-rigidpolygon-001"
-reason = "GeoGebra replaces B and C in place. The kernel creates dependent polygon vertices and preserves the original point objects and their other dependants."
-mismatches = ["1:B", "1:C"]
-
-[[gap]]
 id = "geomforms-closest-012"
 reason = "GeoGebra accepts an approximate Brent root for a non-polynomial function. The kernel refines the stationary point further, so the point coordinates differ while the distances agree."
 mismatches = [
   "0:X", "1:X",
-]
-
-[[gap]]
-id = "geomforms-pointin-007"
-reason = "The construction move dispatcher routes moves only to the original point-on-path definition."
-mismatches = [
-  "1:step",
 ]
 
 [[gap]]
@@ -290,7 +278,7 @@ mismatches = [
 
 [[gap]]
 id = "conicforms-namedinterval-001"
-reason = "Center accepts a named boolean function representing an interval in GeoGebra. The kernel's interval form only extracts bounds from inline inequalities."
+reason = "Center accepts the bounds of an inline inequality. Reading interval bounds from a named boolean function is unsupported."
 mismatches = ["0:script line 4"]
 
 # intersections
@@ -488,29 +476,9 @@ reason = "AlgoIdentity marks its list undefined at size zero and never marks it 
 mismatches = ["2:m"]
 
 [[gap]]
-id = "vectorforms-point-001"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 5"]
-
-[[gap]]
 id = "vectorforms-point-002"
 reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
 mismatches = ["0:script line 4"]
-
-[[gap]]
-id = "vectorforms-point-003"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 14"]
-
-[[gap]]
-id = "vectorforms-point-004"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 11"]
-
-[[gap]]
-id = "vectorforms-point-005"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 9"]
 
 [[gap]]
 id = "vectorforms-images-004"
@@ -523,55 +491,20 @@ reason = "GeoGebra multiplies and subtracts row lists inside the cross product, 
 mismatches = ["0:a"]
 
 [[gap]]
-id = "geomextras-conicparts-001"
-reason = "Arc with two points is restricted to circle objects. The conic arc implementation needs to project each point to the ellipse parameter."
-mismatches = ["0:script line 4"]
-
-[[gap]]
-id = "geomextras-conicparts-002"
-reason = "Sector with two points checks for the circle kind. A general conic that classifies as a circle still fails that check."
-mismatches = ["0:script line 4"]
-
-[[gap]]
 id = "geomextras-pointlist-007"
 reason = "GeoGebra appends point A as the list gains a row and retains it undefined when the list shrinks. The kernel only creates output slots for the initial rows."
 mismatches = ["1:A", "2:A"]
-
-[[gap]]
-id = "geomextras-rigidpoints-001"
-reason = "GeoGebra replaces B and C in place. The kernel creates dependent polygon vertices and preserves the original point objects and their other dependants."
-mismatches = ["1:B", "1:C", "2:B", "2:C"]
-
-[[gap]]
-id = "geomextras-lengthpoint-001"
-reason = "GeoGebra returns the length of the position vector. The current vector tests require Length(point) to be rejected."
-mismatches = ["0:script line 2"]
-
-[[gap]]
-id = "geomextras-polygonlist-001"
-reason = "Polygon dispatch expects point objects as separate arguments. A list-backed polygon needs to read the current list contents and update its vertices and sides as the list changes."
-mismatches = ["0:script line 7"]
-
-[[gap]]
-id = "geomextras-polylinelist-001"
-reason = "PolyLine dispatch expects point objects as separate arguments. A list-backed polyline needs to read the current list contents and update its vertices as the list changes."
-mismatches = ["0:script line 7"]
-
-[[gap]]
-id = "geomextras-polylinelist-002"
-reason = "The boolean argument is ignored by the reference list form. The kernel lacks the list-backed polyline that this form also needs."
-mismatches = ["0:script line 8"]
-
 
 # Matrix and dilation forms that need new object representations.
 # ApplyMatrix(list,curve) and ApplyMatrix(list,function) produce a parametric
 # curve. For a function, GeoGebra first builds the curve (t, f(t)) over the
 # view-dependent parameter interval. The matrix then transforms coordinate
 # functions, including homogeneous division for 3 x 3 matrices. The kernel
-# has no parametric curve kind.
+# does not yet transform parametric curves with matrices.
 # Dilate(curve,number) and Dilate(curve,number,point) transform both coordinate
 # functions about the origin or the center and retain the parameter interval.
-# Zero factor can leave a constant parametric curve. These need the same kind.
+# Zero factor can leave a constant parametric curve. Dilation of parametric
+# curves is also unsupported.
 # ApplyMatrix(list,image), Dilate(image,number) and Dilate(image,number,point)
 # transform the image's placement corners (GeoImage.initTransformPoints);
 # matrix images also support projective division. The kernel has no image

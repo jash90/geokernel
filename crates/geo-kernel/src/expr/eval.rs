@@ -540,6 +540,7 @@ fn degree() -> &'static Dec {
 pub(super) enum Env<'a, const M: bool> {
     None,
     Value(f64),
+    Pair(f64, f64),
     /// A subtree of the caller: the argument of an expanded function.
     Arg(&'a Ctx<'a, M>, u32),
 }
@@ -621,15 +622,16 @@ pub(super) fn root_list(
     lists.copy_out(c, start, len, out).then_some(len)
 }
 
-/// `Function.value`: a function entry at `x`.
+/// `Function.value`: a function entry at `x`, using the `y = 0` slice
+/// for a two-variable slope.
 pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
     if !e.inverts {
-        return Ctx::<false>::new(c, e, &Env::Value(x)).fast(e.root);
+        return Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).fast(e.root);
     }
     let meter = Lists::new(Vec::new());
     let y = Ctx::<true> {
         meter: Some(&meter),
-        ..Ctx::new(c, e, &Env::Value(x))
+        ..Ctx::new(c, e, &Env::Pair(x, 0.0))
     }
     .fast(e.root);
     if meter.over() {
@@ -704,14 +706,15 @@ impl<const M: bool> Ctx<'_, M> {
             },
             Node::Var => match *self.env {
                 Env::None => Ex::plain(N(f64::NAN)),
-                Env::Value(x) => Ex::plain(N(x)),
+                Env::Value(x) | Env::Pair(x, _) => Ex::plain(N(x)),
                 // `AlgoDependentFunction.substituteFunction` puts a copy of
                 // the argument in place of `x`: it keeps its decimal
                 Env::Arg(caller, a) => caller.full(a),
             },
-            // an equation's `y` never survives into a tree that is
-            // evaluated as a number (see `equation`)
-            Node::VarY => Ex::plain(N(f64::NAN)),
+            Node::VarY => Ex::plain(N(match *self.env {
+                Env::Pair(_, y) => y,
+                _ => f64::NAN,
+            })),
             Node::Obj(id) => object_ex(self.c, id),
             Node::Cmd(def, hint) => Ex {
                 obj: true,
@@ -778,9 +781,11 @@ impl<const M: bool> Ctx<'_, M> {
             },
             Node::ListOp(op, l, n) => self.list_command(i, op, l, n),
             // a list is only read through `list`
-            Node::FnName(_) | Node::List(..) | Node::Range(..) | Node::Seq(..) => {
-                Ex::plain(N(f64::NAN))
-            }
+            Node::FnName(_)
+            | Node::List(..)
+            | Node::ItemObject(_)
+            | Node::Range(..)
+            | Node::Seq(..) => Ex::plain(N(f64::NAN)),
         }
     }
 
@@ -818,8 +823,8 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
-    /// `f(a)`: expanded inside a function, in the current mode; elsewhere
-    /// `a` is evaluated and `f` sampled there (`GeoFunction.value`).
+    /// The fast path for `f(a)` inside a function, with the argument
+    /// substituted into the body.
     fn apply_fast(&self, f: Id, a: u32) -> f64 {
         let Some(e) = function_entry(self.c, f) else {
             return f64::NAN;
@@ -827,18 +832,24 @@ impl<const M: bool> Ctx<'_, M> {
         // the function's nodes are charged to the evaluation with lists
         // this one is part of, if any
         let env = Env::Arg(self, a);
-        let inner = Ctx {
+        Ctx {
             meter: self.meter,
             ..Ctx::new(self.c, e, &env)
-        };
-        inner.fast(e.root)
+        }
+        .fast(e.root)
     }
 
     /// `f(a)` in the full evaluation: inside a function the expanded tree
     /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
     fn apply_full(&self, f: Id, a: u32) -> Ex {
         let Some(e) = function_entry(self.c, f) else {
-            return Ex::plain(Val::N(f64::NAN));
+            return Ex::plain(
+                if super::function_signature(self.c, f).is_some_and(|f| f.boolean) {
+                    Val::B(false, false)
+                } else {
+                    Val::N(f64::NAN)
+                },
+            );
         };
         let env = if self.e.function {
             Env::Arg(self, a)
@@ -863,7 +874,7 @@ impl<const M: bool> Ctx<'_, M> {
     fn variable(&self) -> f64 {
         match *self.env {
             Env::None => f64::NAN,
-            Env::Value(x) => x,
+            Env::Value(x) | Env::Pair(x, _) => x,
             Env::Arg(ctx, a) => ctx.fast(a),
         }
     }
@@ -935,10 +946,13 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Un(Un::Sqrt, a) => self.fast(a).sqrt(),
             Node::Var => match *self.env {
                 Env::None => f64::NAN,
-                Env::Value(x) => x,
+                Env::Value(x) | Env::Pair(x, _) => x,
                 Env::Arg(caller, a) => caller.fast(a),
             },
-            Node::VarY => f64::NAN,
+            Node::VarY => match *self.env {
+                Env::Pair(_, y) => y,
+                _ => f64::NAN,
+            },
             Node::Apply(f, a) if self.e.function => self.apply_fast(f, a),
             Node::Obj(id) => object(self.c, id).num(),
             _ => self.full_number(i),
@@ -1132,6 +1146,7 @@ impl<const M: bool> Ctx<'_, M> {
     pub(super) fn element(&self, i: u32) -> Slot {
         let i = match self.node(i) {
             Node::Item(a) => a,
+            Node::ItemObject(id) => return Slot::object(self.c, id),
             _ => i,
         };
         if self.is_list(i) {

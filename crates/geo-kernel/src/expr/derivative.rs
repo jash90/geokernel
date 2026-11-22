@@ -161,6 +161,7 @@ impl Walker<'_> {
             | Node::Polar(..)
             | Node::List(..)
             | Node::Item(_)
+            | Node::ItemObject(_)
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..)

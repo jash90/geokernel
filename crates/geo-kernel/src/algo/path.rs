@@ -60,6 +60,7 @@ pub(crate) const PATH: &[Kind] = &[
     Kind::Segment,
     Kind::Ray,
     Kind::Circle,
+    Kind::Conic,
     Kind::Polygon,
     Kind::PolyLine,
     Kind::Arc,
@@ -73,6 +74,12 @@ pub enum PathDef {
     InRegion { region: Id },
     /// The second endpoint of `Segment(A, length)` on its internal circle.
     FixedEndpoint { start: Id, length: Count },
+    /// A rigid polygon's movable second point on a fixed-radius circle.
+    RigidEndpoint {
+        anchor: Id,
+        radius: f64,
+        bearing: f64,
+    },
     /// `Point(path)`: a point on `path` that the user can move along it.
     On { path: Id },
     /// `Point(path, t)`: the point at the parameter `t` from 0 to 1 along
@@ -892,7 +899,8 @@ impl PathDef {
             PathDef::OnParam { path, param } => Some((path, Some(param))),
             PathDef::Parameter { .. }
             | PathDef::InRegion { .. }
-            | PathDef::FixedEndpoint { .. } => None,
+            | PathDef::FixedEndpoint { .. }
+            | PathDef::RigidEndpoint { .. } => None,
         }
     }
 
@@ -913,6 +921,22 @@ impl PathDef {
                     let p = (st.x, st.y);
                     st.place_in_region(c, region, p);
                 }
+                return st;
+            }
+            PathDef::RigidEndpoint {
+                anchor,
+                radius,
+                bearing,
+            } => {
+                st.set_t(bearing);
+                follow(
+                    c,
+                    &fixed_circle(c, anchor, Count::Literal(radius)),
+                    None,
+                    &mut st,
+                );
+                st.temp_t = st.t;
+                st.temp_ty = st.ty;
                 return st;
             }
             PathDef::FixedEndpoint { start, length } => {
@@ -942,6 +966,14 @@ impl PathDef {
         let mut st = *old;
         match self {
             PathDef::InRegion { region } => st.follow_region(c, region),
+            PathDef::RigidEndpoint { anchor, radius, .. } => {
+                follow(
+                    c,
+                    &fixed_circle(c, anchor, Count::Literal(radius)),
+                    None,
+                    &mut st,
+                );
+            }
             PathDef::FixedEndpoint { start, length } => {
                 follow(c, &fixed_circle(c, start, length), None, &mut st);
             }
@@ -963,11 +995,15 @@ impl PathDef {
         x: f64,
         y: f64,
     ) -> Option<PathState> {
-        let PathDef::On { path } = self else {
-            return None;
-        };
         let mut st = *old;
-        st.set_coords(&geom(c, path), x, y);
+        match self {
+            PathDef::On { path } => st.set_coords(&geom(c, path), x, y),
+            PathDef::InRegion { region } => st.place_in_region(c, region, (x, y)),
+            PathDef::RigidEndpoint { anchor, radius, .. } => {
+                st.set_coords(&fixed_circle(c, anchor, Count::Literal(radius)), x, y)
+            }
+            _ => return None,
+        }
         Some(st)
     }
 
@@ -1055,14 +1091,17 @@ impl Group for PathDef {
             PathDef::On { .. }
             | PathDef::OnParam { .. }
             | PathDef::InRegion { .. }
-            | PathDef::FixedEndpoint { .. } => Kind::Point,
+            | PathDef::FixedEndpoint { .. }
+            | PathDef::RigidEndpoint { .. } => Kind::Point,
             PathDef::Parameter { .. } => Kind::Number,
         }
     }
 
     fn parents(&self) -> Parents {
         match *self {
-            PathDef::On { path } | PathDef::InRegion { region: path } => Parents::of(&[path]),
+            PathDef::On { path }
+            | PathDef::InRegion { region: path }
+            | PathDef::RigidEndpoint { anchor: path, .. } => Parents::of(&[path]),
             PathDef::FixedEndpoint { start, length } => {
                 if let Some(length) = length.id() {
                     Parents::of(&[start, length])
@@ -1078,17 +1117,25 @@ impl Group for PathDef {
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
             PathDef::InRegion { region } => c.expect(region, REGIONS),
+            PathDef::RigidEndpoint {
+                anchor,
+                radius,
+                bearing,
+            } => {
+                c.expect(anchor, POINT)?;
+                if radius.is_finite() && radius >= 0.0 && bearing.is_finite() {
+                    Ok(())
+                } else {
+                    Err(Error::NotFinite)
+                }
+            }
             PathDef::FixedEndpoint { start, length } => {
                 c.expect(start, POINT)?;
                 length.check(c)
             }
-            PathDef::On { path } => {
-                c.expect(path, PATH)?;
-                super::arc::expect_point_path(c, path)
-            }
+            PathDef::On { path } => c.expect(path, PATH),
             PathDef::OnParam { path, param } => {
                 c.expect(path, PATH)?;
-                super::arc::expect_point_path(c, path)?;
                 c.expect(param, NUMBER)
             }
             PathDef::Parameter { point } => c.expect(point, POINT),
@@ -1109,7 +1156,7 @@ impl Group for PathDef {
                 Ok(id)
             } else {
                 Err(format!(
-                    "`Point` needs a line, segment, ray, circle, polygon, polyline, arc \
+                    "`Point` needs a line, segment, ray, circle, conic, polygon, polyline, arc \
                      or sector, and `{label}` is a {}",
                     c.kind(id)
                 ))

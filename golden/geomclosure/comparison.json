@@ -1,0 +1,675 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomclosure-comparison-001",
+      "group": "geomclosure",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 1/2)",
+        "C = (0, 1)",
+        "D = (1, 0)",
+        "E = (-1, 0)",
+        "F = (0, -1)",
+        "s = Segment(C, D)",
+        "t = Segment(D, C)",
+        "u = Segment(E, F)",
+        "b = AreEqual(A, B)",
+        "c = AreCongruent(s, t)",
+        "d = AreCongruent(s, u)",
+        "equality = AreEqual(s, t)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "F", "x": 0.0, "y": -2.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "F", "x": -1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "u": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 0.0, "y2": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "equality": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "u": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 0.0, "y2": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "equality": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 0.0, "y2": 1.0 },
+          "u": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 0.0, "y2": -2.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": false },
+          "equality": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 0.0, "y2": 1.0 },
+          "t": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 0.0, "y2": 1.0 },
+          "u": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 0.0, "y2": -2.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": false },
+          "equality": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 0.0, "y2": 1.0 },
+          "t": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 0.0, "y2": 1.0 },
+          "u": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": -1.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": true },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "equality": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "geomclosure-comparison-002",
+      "group": "geomclosure",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (2, 3)",
+        "D = (1, 4)",
+        "E = (-1, 4)",
+        "p = Polygon(A, B, C, D, E)",
+        "q = Polygon(D, E, A, B, C)",
+        "r = Polygon(C, B, A, E, D)",
+        "u = AreCongruent(p, q)",
+        "v = AreCongruent(p, r)",
+        "equality = AreEqual(p, q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 4.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": 4.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.0, 3.0],
+              [1.0, 4.0],
+              [-1.0, 4.0]
+            ],
+            "area": 9.5,
+            "signed_area": 9.5
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "c": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 1.0, "y2": 4.0 },
+          "d": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": -1.0, "y2": 4.0 },
+          "e": { "type": "segment", "defined": true, "x1": -1.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 4.0],
+              [-1.0, 4.0],
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.0, 3.0]
+            ],
+            "area": 9.5,
+            "signed_area": 9.5
+          },
+          "d_1": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": -1.0, "y2": 4.0 },
+          "e_1": { "type": "segment", "defined": true, "x1": -1.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "c_1": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 1.0, "y2": 4.0 },
+          "r": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [2.0, 3.0],
+              [2.0, 0.0],
+              [0.0, 0.0],
+              [-1.0, 4.0],
+              [1.0, 4.0]
+            ],
+            "area": 9.5,
+            "signed_area": -9.5
+          },
+          "c_2": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 2.0, "y2": 0.0 },
+          "b_2": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "a_2": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -1.0, "y2": 4.0 },
+          "e_2": { "type": "segment", "defined": true, "x1": -1.0, "y1": 4.0, "x2": 1.0, "y2": 4.0 },
+          "d_2": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 2.0, "y2": 3.0 },
+          "u": { "type": "boolean", "defined": true, "value": true },
+          "v": { "type": "boolean", "defined": true, "value": true },
+          "equality": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 1.0, "y": 4.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": 4.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [2.0, 3.0],
+              [1.0, 4.0],
+              [-1.0, 4.0]
+            ],
+            "area": 6.5,
+            "signed_area": 6.5
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "c": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 1.0, "y2": 4.0 },
+          "d": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": -1.0, "y2": 4.0 },
+          "e": { "type": "segment", "defined": true, "x1": -1.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 4.0],
+              [-1.0, 4.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [2.0, 3.0]
+            ],
+            "area": 6.5,
+            "signed_area": 6.5
+          },
+          "d_1": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": -1.0, "y2": 4.0 },
+          "e_1": { "type": "segment", "defined": true, "x1": -1.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "c_1": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 1.0, "y2": 4.0 },
+          "r": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [2.0, 3.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [-1.0, 4.0],
+              [1.0, 4.0]
+            ],
+            "area": 6.5,
+            "signed_area": -6.5
+          },
+          "c_2": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "b_2": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "a_2": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -1.0, "y2": 4.0 },
+          "e_2": { "type": "segment", "defined": true, "x1": -1.0, "y1": 4.0, "x2": 1.0, "y2": 4.0 },
+          "d_2": { "type": "segment", "defined": true, "x1": 1.0, "y1": 4.0, "x2": 2.0, "y2": 3.0 },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "equality": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": 4.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [2.0, 3.0],
+              [0.0, 0.0],
+              [-1.0, 4.0]
+            ],
+            "area": 0.0,
+            "signed_area": 0.0
+          },
+          "a": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "c": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -1.0, "y2": 4.0 },
+          "e": { "type": "segment", "defined": true, "x1": -1.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [-1.0, 4.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [2.0, 3.0]
+            ],
+            "area": 0.0,
+            "signed_area": 0.0
+          },
+          "d_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -1.0, "y2": 4.0 },
+          "e_1": { "type": "segment", "defined": true, "x1": -1.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "c_1": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "r": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [2.0, 3.0],
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [-1.0, 4.0],
+              [0.0, 0.0]
+            ],
+            "area": 0.0,
+            "signed_area": 0.0
+          },
+          "c_2": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "b_2": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "a_2": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": -1.0, "y2": 4.0 },
+          "e_2": { "type": "segment", "defined": true, "x1": -1.0, "y1": 4.0, "x2": 0.0, "y2": 0.0 },
+          "d_2": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "u": { "type": "boolean", "defined": true, "value": false },
+          "v": { "type": "boolean", "defined": true, "value": false },
+          "equality": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "geomclosure-comparison-003",
+      "group": "geomclosure",
+      "script": [
+        "A = (0, 0)",
+        "P = (1, 0)",
+        "Q = (0, 1)",
+        "R = (0, 1)",
+        "k = Circle(A, P)",
+        "u = Arc(k, P, Q)",
+        "v = Arc(k, P, R)",
+        "s = Sector(k, P, Q)",
+        "b = AreEqual(u, v)",
+        "c = AreEqual(u, s)",
+        "d = AreEqual(k, u)",
+        "f = AreEqual(u, k)",
+        "l = {{P, Q}, {1, 2}}",
+        "m = {{P, R}, {1, 2}}",
+        "g = AreEqual(l, m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "R", "x": -1.0, "y": 0.0 },
+        { "action": "move", "label": "Q", "x": -1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "u": {
+            "type": "arc",
+            "defined": true,
+            "value": 1.5707963267948966,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 1.5707963267948966,
+            "area": 0.2853981633974483,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "v": {
+            "type": "arc",
+            "defined": true,
+            "value": 1.5707963267948966,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 1.5707963267948966,
+            "area": 0.2853981633974483,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "s": {
+            "type": "sector",
+            "defined": true,
+            "value": 0.7853981633974483,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 1.5707963267948966,
+            "area": 0.7853981633974483,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "f": { "type": "boolean", "defined": true, "value": false },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "u": {
+            "type": "arc",
+            "defined": true,
+            "value": 1.5707963267948966,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 1.5707963267948966,
+            "area": 0.2853981633974483,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "v": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 3.141592653589793,
+            "arc_length": 3.141592653589793,
+            "area": 1.5707963267948966,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "s": {
+            "type": "sector",
+            "defined": true,
+            "value": 0.7853981633974483,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 1.5707963267948966,
+            "area": 0.7853981633974483,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": { "type": "boolean", "defined": true, "value": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "f": { "type": "boolean", "defined": true, "value": false },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": -1.0, "y": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "g": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.0 },
+          "u": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 3.141592653589793,
+            "arc_length": 3.141592653589793,
+            "area": 1.5707963267948966,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "v": {
+            "type": "arc",
+            "defined": true,
+            "value": 3.141592653589793,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 3.141592653589793,
+            "arc_length": 3.141592653589793,
+            "area": 1.5707963267948966,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "s": {
+            "type": "sector",
+            "defined": true,
+            "value": 1.5707963267948966,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 3.141592653589793,
+            "arc_length": 3.141592653589793,
+            "area": 1.5707963267948966,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": false },
+          "d": { "type": "boolean", "defined": true, "value": true },
+          "f": { "type": "boolean", "defined": true, "value": false },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": -1.0, "y": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+                  { "type": "point", "defined": true, "x": -1.0, "y": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    }
+  ]
+}

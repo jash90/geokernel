@@ -140,6 +140,10 @@ pub enum ExpectedData {
         r: f64,
     },
     Number(f64),
+    Curve {
+        start: f64,
+        end: f64,
+    },
     Vector {
         x: f64,
         y: f64,
@@ -490,6 +494,7 @@ impl TryFrom<RawObject> for Expected {
             "arc" => (Kind::Arc, &[]),
             "sector" => (Kind::Sector, &[]),
             "locus" => (Kind::Locus, &["points"]),
+            "curve" => (Kind::Curve, &["start", "end"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if raw.samples.is_some() && (kind != Kind::Function || !raw.defined) {
@@ -616,6 +621,10 @@ impl TryFrom<RawObject> for Expected {
                 r: f("r"),
             },
             Kind::Number | Kind::Angle => ExpectedData::Number(f("value")),
+            Kind::Curve => ExpectedData::Curve {
+                start: f("start"),
+                end: f("end"),
+            },
             Kind::Vector => ExpectedData::Vector {
                 x: f("x"),
                 y: f("y"),
@@ -640,7 +649,7 @@ impl TryFrom<RawObject> for Expected {
 }
 
 /// Labels created by a script: the text before the first `=` of each line,
-/// without the `(x)` of a function.
+/// without the argument of a function.
 pub fn script_labels(script: &[String]) -> BTreeSet<String> {
     script
         .iter()
@@ -660,10 +669,11 @@ pub fn script_labels(script: &[String]) -> BTreeSet<String> {
         .collect()
 }
 
-/// The label of a script line's left-hand side: `f` for `f(x)`.
+/// The label of a script line's left-hand side, such as `f` for `f(x)`.
 pub fn line_label(lhs: &str) -> String {
     let lhs = lhs.trim();
     lhs.strip_suffix("(x)")
+        .or_else(|| lhs.strip_suffix("(y)"))
         .unwrap_or(lhs)
         .trim_end()
         .to_string()

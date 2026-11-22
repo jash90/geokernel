@@ -1,0 +1,189 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomclosure-openarc-001",
+      "group": "geomclosure",
+      "script": [
+        "k: y^2 = 4x",
+        "P = (1, -3)",
+        "Q = (2, 4)",
+        "a = Arc(k, P, Q)",
+        "R = Point(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "R", "x": 2.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": 3.0, "y": -1.0 },
+        { "action": "move", "label": "Q", "x": 0.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -2.0, 0.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": -3.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "arc", "defined": false },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -2.0, 0.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": -3.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "arc", "defined": false },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -2.0, 0.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "a": { "type": "arc", "defined": false },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -2.0, 0.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "a": { "type": "arc", "defined": false },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "geomclosure-openarc-002",
+      "group": "geomclosure",
+      "script": [
+        "k: x^2-y^2 = 1",
+        "P = (2, -2)",
+        "Q = (3, 1)",
+        "a = Arc(k, P, Q)",
+        "R = Point(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "R", "x": 2.0, "y": 1.0 },
+        { "action": "move", "label": "P", "x": 3.0, "y": -1.0 },
+        { "action": "move", "label": "Q", "x": -3.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "a": { "type": "arc", "defined": false },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -2.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "a": { "type": "arc", "defined": false },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "a": { "type": "arc", "defined": false },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "Q": { "type": "point", "defined": true, "x": -3.0, "y": 1.0 },
+          "a": { "type": "arc", "defined": false },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}
