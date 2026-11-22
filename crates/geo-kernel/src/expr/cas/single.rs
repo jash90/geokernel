@@ -200,14 +200,6 @@ impl Branch {
         }
     }
 
-    /// The rational slope of a branch of degree at most one.
-    fn slope(&self) -> Option<Rat> {
-        match self {
-            Self::Polynomial(c) if c.len() <= 2 => Some(c.get(1).copied().unwrap_or(Rat::ZERO)),
-            _ => None,
-        }
-    }
-
     fn slot(self, variable: usize, parameter: usize, mode: Mode) -> Option<Slot> {
         let linear = self.linear();
         if mode.points {
@@ -290,9 +282,12 @@ fn parametric(
         powers[k][j] = coefficient;
     }
     let mut common: Option<Vec<Rat>> = None;
+    // A coefficient that is a number leaves no common factor to look for.
+    let constant = powers.iter().any(|p| p.len() == 1);
     for p in powers.iter().filter(|p| !p.is_empty()) {
         common = Some(match common {
             None => p.clone(),
+            Some(_) if constant => vec![Rat::ONE],
             Some(g) => polynomial_gcd(&g, p, work)?,
         });
     }
@@ -303,7 +298,7 @@ fn parametric(
         }
     }
     integral(&mut powers)?;
-    let mut branches = match &powers[..] {
+    let branches = match &powers[..] {
         [constant, slope] => {
             let numerator = scale(constant, Rat::ONE.neg()?)?;
             vec![match slope[..] {
@@ -315,7 +310,9 @@ fn parametric(
                 }),
             }]
         }
-        [c, b, a] => {
+        // A quadratic with the shape of a conic: a constant leading
+        // coefficient, a linear middle one.
+        [c, b, a] if b.len() <= 2 && c.len() <= 3 => {
             let [a] = a[..] else {
                 return None;
             };
@@ -323,9 +320,6 @@ fn parametric(
         }
         _ => return None,
     };
-    if branches.iter().all(|b| b.linear().is_some()) {
-        branches.sort_by(linear_order);
-    }
     Some(branches)
 }
 
@@ -354,192 +348,272 @@ fn integral(powers: &mut [Vec<Rat>]) -> Option<()> {
     Some(())
 }
 
-/// The real roots of `a v^2 + b v + c` with `b` and `c` polynomials in the
-/// parameter.
+/// The real roots of `a v^2 + b v + c` with integer coefficients, `a`
+/// positive, `b` linear and `c` quadratic in the parameter, in the order
+/// GeoGebra lists them.
+///
+/// The CAS answers `(-b + sqrt(D)) / (2a)` before `(-b - sqrt(D)) / (2a)`,
+/// writes each in its normal form and sorts the pair
+/// (`ggbsort(normal(solve(...)))`). The sort puts the smaller root first
+/// where the CAS can tell the sign of the difference of the two normal
+/// forms, and the simpler expression first where it cannot. Which of the
+/// two happens was recorded for some three thousand conics through the
+/// harness oracle and follows the rules below; golden/cas/order.json holds
+/// a case for each of them.
 fn quadratic(a: Rat, b: &[Rat], c: &[Rat], work: &mut Work<'_>) -> Option<Vec<Branch>> {
     work.spend(b.len() * b.len() + c.len())?;
     let four_a = a.mul(Rat::new(4, 1)?)?;
     let discriminant = trimmed(subtract(&multiply(b, b)?, &scale(c, four_a)?)?);
-    let denominator = vec![a.mul(Rat::new(2, 1)?)?];
+    let two_a = a.mul(Rat::new(2, 1)?)?;
     let numerator = scale(b, Rat::ONE.neg()?)?;
-    let rational = |root: Vec<Rat>, negative: bool| {
-        // `(-b +- root) / (2 a)` with a polynomial root.
+    // `(-b + sign * root) / (2 a)` with a polynomial root.
+    let rational = |root: &[Rat], negative: bool| {
         let root = if negative {
-            scale(&root, Rat::ONE.neg()?)?
+            scale(root, Rat::ONE.neg()?)?
         } else {
-            root
+            root.to_vec()
         };
         let sum = subtract(&root, b)?;
         Some(Branch::Polynomial(trimmed(scale(
             &sum,
-            Rat::ONE.div(denominator[0])?,
+            Rat::ONE.div(two_a)?,
         )?)))
     };
-    // `(-b +- multiplier sqrt(radicand)) / (2 a)` in lowest terms, the
-    // negative root first or second, and whether the content of the
-    // radicand left a second radical factor.
-    let pair = |multiplier: &[Rat], radicand: &[Rat], work: &mut Work<'_>| {
-        let (outside, radicand, leftover) = square_content(radicand, work)?;
+    // `(-b + sign * multiplier * sqrt(radicand)) / (2 a)` in lowest terms.
+    let radical = |multiplier: &[Rat], radicand: &[Rat], negative: bool| {
         let content = |coefficients: &[Rat]| {
             coefficients.iter().try_fold(0, |g, c| {
                 (c.den == 1).then(|| crate::cas::integer_gcd(g, c.num.unsigned_abs()))
             })
         };
         let common = (|| {
-            let rational = crate::cas::integer_gcd(content(&numerator)?, content(&denominator)?);
-            let radical = content(multiplier)?.checked_mul(outside)?;
-            i128::try_from(crate::cas::integer_gcd(rational, radical)).ok()
+            let rational = crate::cas::integer_gcd(content(&numerator)?, content(&[two_a])?);
+            i128::try_from(crate::cas::integer_gcd(rational, content(multiplier)?)).ok()
         })()
         .filter(|&g| g != 0)
         .unwrap_or(1);
         let reduce = Rat::new(1, common)?;
-        let numerator = scale(&numerator, reduce)?;
-        let denominator = scale(&denominator, reduce)?;
-        let multiplier = scale(multiplier, Rat::new(i128::try_from(outside).ok()?, common)?)?;
-        let branch = move |negative| {
-            Branch::Function(Algebraic {
-                numerator: numerator.clone(),
-                denominator: denominator.clone(),
-                radical: Some(Radical {
-                    negative,
-                    multiplier: multiplier.clone(),
-                    radicand: radicand.clone(),
-                }),
-            })
-        };
-        Some((branch(false), branch(true), leftover))
+        Some(Branch::Function(Algebraic {
+            numerator: scale(&numerator, reduce)?,
+            denominator: vec![two_a.mul(reduce)?],
+            radical: Some(Radical {
+                negative,
+                multiplier: scale(multiplier, reduce)?,
+                radicand: radicand.to_vec(),
+            }),
+        }))
     };
-    // A discriminant `k q^2` gives two lines: with a square `k` over the
-    // rationals, otherwise with the irrational factor `sqrt(k)`.
-    let square = match discriminant[..] {
-        [] => Some((Rat::ZERO, vec![Rat::ONE])),
-        [k] => Some((k, vec![Rat::ONE])),
-        [d0, d1, d2] if d1.mul(d1)? == d2.mul(d0)?.mul(Rat::new(4, 1)?)? => {
-            // d2 (t + d1 / (2 d2))^2
-            Some((d2, vec![d1.div(d2.mul(Rat::new(2, 1)?)?)?, Rat::ONE]))
-        }
+    let pair = |multiplier: &[Rat], radicand: &[Rat], negative_first: bool| {
+        Some(vec![
+            radical(multiplier, radicand, negative_first)?,
+            radical(multiplier, radicand, !negative_first)?,
+        ])
+    };
+    // The integer content of the discriminant is `k m^2` with `k` free of
+    // squares: `sqrt(D) = m sqrt(k) sqrt(D / (k m^2))`.
+    let integers = discriminant
+        .iter()
+        .map(|c| (c.den == 1).then_some(c.num))
+        .collect::<Option<Vec<_>>>()?;
+    let content = integers
+        .iter()
+        .fold(0u128, |g, c| crate::cas::integer_gcd(g, c.unsigned_abs()));
+    if content == 0 {
+        // A double root.
+        return Some(vec![rational(&[], false)?]);
+    }
+    let (outside, free) = square_part(content, work)?;
+    let outside_rat = Rat::new(i128::try_from(outside).ok()?, 1)?;
+    let free_rat = Rat::new(i128::try_from(free).ok()?, 1)?;
+    let primitive = scale(&discriminant, Rat::new(1, i128::try_from(content).ok()?)?)?;
+    // `D = content * q^2` with a polynomial `q`: lines.
+    // A primitive quadratic is `+-(u t + v)^2` exactly when its outer
+    // coefficients are squares of whole numbers `u` and `v` up to that
+    // sign and the middle one is `+-2 u v`.
+    let squared = |d0: Rat, d1: Rat, d2: Rat| {
+        let sign = d2.num.signum();
+        let u = integer_sqrt(d2.num.checked_mul(sign)?)?;
+        let v = integer_sqrt(d0.num.checked_mul(sign)?)?;
+        let middle = u.checked_mul(v)?.checked_mul(2)?;
+        (d1.num.checked_abs()? == middle).then_some((sign, u, v * d1.num.signum() * sign))
+    };
+    let root_of_primitive = match primitive[..] {
+        [d0] if d0.num > 0 => Some(vec![Rat::ONE]),
+        [_] => return Some(Vec::new()),
+        [d0, d1, d2] => match squared(d0, d1, d2) {
+            // Never positive: at most one real point.
+            Some((-1, ..)) => return Some(Vec::new()),
+            Some((_, u, v)) => Some(vec![Rat::new(v, 1)?, Rat::new(u, 1)?]),
+            None => None,
+        },
         _ => None,
     };
-    if let Some((k, q)) = square {
-        if k.num < 0 {
-            // At most one real point.
-            return Some(Vec::new());
-        }
-        if k == Rat::ZERO {
-            return Some(vec![rational(Vec::new(), false)?]);
-        }
-        return Some(match rational_sqrt(k) {
-            Some(root) => {
-                let root = scale(&q, root)?;
-                vec![rational(root.clone(), false)?, rational(root, true)?]
+    if let Some(q) = root_of_primitive {
+        let slope_differs = q.len() == 2;
+        if free == 1 {
+            // Rational lines, in the order of their printed forms.
+            let root = scale(&q, outside_rat)?;
+            let mut lines = vec![rational(&root, false)?, rational(&root, true)?];
+            if rational_line_first(&lines[1], &lines[0])? {
+                lines.swap(0, 1);
             }
-            None => {
-                let (positive, negative, _) = pair(&q, &[k], work)?;
-                vec![positive, negative]
-            }
-        });
+            return Some(lines);
+        }
+        if slope_differs && outside % 2 == 1 {
+            // With an odd square part the CAS does not split the quadratic
+            // over the irrational `sqrt(k)` and keeps `sqrt(k) |q|`: no
+            // lines, and a difference whose sign it knows.
+            return pair(&[Rat::ONE], &discriminant, true);
+        }
+        // Irrational lines `(-b +- m sqrt(k) q) / (2 a)`: with different
+        // slopes the one with `+sqrt(k)` in its slope is the simpler
+        // expression; with equal slopes the constants decide.
+        let multiplier = scale(&q, outside_rat)?;
+        return pair(&multiplier, &[free_rat], !slope_differs);
     }
-    let has_real_root = match discriminant[..] {
-        [_, _] => true,
+    let positive_definite = match primitive[..] {
+        [_, _] => false,
         [d0, d1, d2] => {
-            let sign = d1.to_f64() * d1.to_f64() - 4.0 * d2.to_f64() * d0.to_f64();
-            if sign < 0.0 && d2.num < 0 {
+            // The sign of `d1^2 - 4 d2 d0`, which is not zero here: exact
+            // where it fits, in doubles where the two terms are clearly
+            // apart, undecided otherwise.
+            let exact = (|| {
+                let square = d1.num.checked_mul(d1.num)?;
+                let product = d2.num.checked_mul(d0.num)?.checked_mul(4)?;
+                Some(square.checked_sub(product)?.signum())
+            })();
+            let sign = match exact {
+                Some(sign) => sign,
+                None => {
+                    let square = d1.to_f64() * d1.to_f64();
+                    let product = 4.0 * d2.to_f64() * d0.to_f64();
+                    let apart = (square - product).abs() > 1e-9 * (square + product.abs());
+                    if !apart {
+                        return None;
+                    }
+                    if square > product {
+                        1
+                    } else {
+                        -1
+                    }
+                }
+            };
+            if sign < 0 && d2.num < 0 {
                 // Negative everywhere.
                 return Some(Vec::new());
             }
-            sign > 0.0
+            sign < 0
         }
         // More than a conic: not solved.
         _ => return None,
     };
-    // The order GeoGebra's CAS lists the two roots in, as recorded in
-    // golden/cas/conic.json: the negative root first when there is no
-    // rational part, when the discriminant has no real root, or when a
-    // monic equation leaves a second radical factor; otherwise the
-    // positive root first.
-    let (positive, negative, leftover) = pair(&[Rat::ONE], &discriminant, work)?;
+    // The coefficient of the root in the normal form is `q sqrt(k)` with
+    // `q = m / (2 a)`. The CAS knows the sign of the difference of the two
+    // roots, and lists the smaller first,
+    // * when there is no rational part, as the difference is a sum of
+    //   positive terms;
+    // * when the discriminant is positive everywhere;
+    // * with a second radical `sqrt(k)`, when `q` has the denominator 1
+    //   or 2;
+    // * without one, when `q` is a whole number above 1 and the rational
+    //   part has whole coefficients.
+    let q = outside_rat.div(two_a)?;
+    let whole_rational_part = b.iter().all(|c| c.div(two_a).is_some_and(|c| c.den == 1));
     let negative_first = b.iter().all(|c| c.num == 0)
-        || !has_real_root
-        || (a.num.abs() == 1 && a.den == 1 && leftover);
-    Some(if negative_first {
-        vec![negative, positive]
-    } else {
-        vec![positive, negative]
-    })
+        || positive_definite
+        || if free == 1 {
+            q.den == 1 && q.num >= 2 && whole_rational_part
+        } else {
+            q.den <= 2
+        };
+    let radicand = scale(&primitive, free_rat)?;
+    pair(&[outside_rat], &radicand, negative_first)
 }
 
-/// Splits the integer content of a discriminant into a square and the rest:
-/// the root of the square, the discriminant without it, and whether the
-/// rest of the content is more than one, so that the root keeps a second
-/// factor `sqrt(rest)`.
-fn square_content(discriminant: &[Rat], work: &mut Work<'_>) -> Option<(u128, Vec<Rat>, bool)> {
-    if discriminant.iter().any(|c| c.den != 1) {
-        return Some((1, discriminant.to_vec(), false));
-    }
-    let mut rest = discriminant.iter().fold(0u128, |g, c| {
-        crate::cas::integer_gcd(g, c.num.unsigned_abs())
-    });
+/// Splits a positive integer into `m^2 * k` with `k` free of squares.
+/// Squares of the numbers up to a hundred thousand are divided out; what is left
+/// is a square itself, or too small to hold the square of a larger number
+/// times anything, or the split is not known and the answer is `None`.
+fn square_part(mut n: u128, work: &mut Work<'_>) -> Option<(u128, u128)> {
+    const TRIED: u128 = 100_000;
     let mut outside = 1u128;
     let mut p = 2u128;
-    while p <= 1000 && p * p <= rest {
+    while p <= TRIED && p * p <= n {
         work.spend(1)?;
-        while rest % (p * p) == 0 {
-            rest /= p * p;
+        while n % (p * p) == 0 {
+            n /= p * p;
             outside *= p;
         }
         p += 1;
     }
-    let root = (rest as f64).sqrt().round() as u128;
-    if root.checked_mul(root) == Some(rest) {
-        outside = outside.checked_mul(root)?;
-        rest = 1;
+    if let Some(root) = i128::try_from(n).ok().and_then(integer_sqrt) {
+        return Some((outside.checked_mul(root.unsigned_abs())?, 1));
     }
-    let square = i128::try_from(outside.checked_mul(outside)?).ok()?;
-    let radicand = scale(discriminant, Rat::new(1, square)?)?;
-    Some((outside, radicand, rest != 1))
+    (n < 2 * (TRIED + 1) * (TRIED + 1)).then_some((outside, n))
 }
 
-fn rational_sqrt(value: Rat) -> Option<Rat> {
-    let root = |n: i128| {
-        let r = (n as f64).sqrt().round() as i128;
-        (r.checked_mul(r) == Some(n)).then_some(r)
-    };
-    Rat::new(root(value.num)?, root(value.den)?)
+/// The whole square root of a perfect square, `None` for anything else.
+fn integer_sqrt(n: i128) -> Option<i128> {
+    if n < 0 {
+        return None;
+    }
+    // A double holds 53 bits: the estimate is off by a few units in the
+    // last place of a root of up to 64 bits, which Newton steps on whole
+    // numbers remove.
+    let mut root = (n as f64).sqrt().round() as i128;
+    for _ in 0..8 {
+        if root <= 0 {
+            break;
+        }
+        let next = (root + n / root) / 2;
+        if next == root {
+            break;
+        }
+        root = next;
+    }
+    [root - 1, root, root + 1]
+        .into_iter()
+        .find(|r| *r >= 0 && r.checked_mul(*r) == Some(n))
 }
 
-/// The order of solutions that are lines, as recorded in
-/// golden/cas/conic.json: constants first, positive slopes before negative
-/// ones, whole slopes before fractions, the smaller first; equal slopes by
-/// their constants.
-fn linear_order(p: &Branch, q: &Branch) -> std::cmp::Ordering {
-    let key = |branch: &Branch| {
-        let [constant, slope] = branch.linear().unwrap_or([f64::NAN; 2]);
-        let class = if slope == 0.0 {
-            0
-        } else if slope > 0.0 {
-            1
-        } else {
-            2
-        };
-        let fraction = match branch.slope() {
-            Some(r) if r.den == 1 => (0, r.num.abs(), 1),
-            Some(r) => (1, r.num.abs(), r.den),
-            None => (2, 0, 1),
-        };
-        (class, fraction, slope, constant)
+/// Whether the line `p` comes before the line `q` in the answer of the
+/// reference. Lines with the same slope are sorted by their constants.
+/// Other pairs are listed in the order of their printed forms
+/// `slope * t + constant`, as recorded for sixteen hundred pairs
+/// (golden/cas/order.json holds a case for each class): a whole constant
+/// other than zero; then positive slopes without a constant, then with
+/// one; then negative slopes with a constant, then without; zero and
+/// fractions last. Within a class whole slopes come first by their size,
+/// then fractions by numerator and denominator.
+fn rational_line_first(p: &Branch, q: &Branch) -> Option<bool> {
+    let parts = |branch: &Branch| match branch {
+        Branch::Polynomial(c) if c.len() <= 2 => Some((
+            c.get(1).copied().unwrap_or(Rat::ZERO),
+            c.first().copied().unwrap_or(Rat::ZERO),
+        )),
+        _ => None,
     };
-    let (a, b) = (key(p), key(q));
-    a.0.cmp(&b.0)
-        .then_with(|| a.1.cmp(&b.1))
-        .then_with(|| {
-            if a.1 .0 == 2 {
-                // Conjugate irrational slopes keep their order.
-                std::cmp::Ordering::Equal
-            } else {
-                a.2.total_cmp(&b.2)
-            }
-        })
-        .then_with(|| a.3.total_cmp(&b.3))
+    let ((slope_p, constant_p), (slope_q, constant_q)) = (parts(p)?, parts(q)?);
+    if slope_p == slope_q {
+        return Some(constant_p.sub(constant_q)?.num < 0);
+    }
+    let key = |slope: Rat, constant: Rat| {
+        let size = (
+            u8::from(slope.den != 1),
+            slope.num.unsigned_abs(),
+            slope.den,
+        );
+        let class = match (slope.num.signum(), constant.num == 0) {
+            (0, _) if constant.num != 0 && constant.den == 1 => 0,
+            (0, _) => 5,
+            (1, true) => 1,
+            (1, false) => 2,
+            (_, false) => 3,
+            (_, true) => 4,
+        };
+        (class, size)
+    };
+    Some(key(slope_p, constant_p) < key(slope_q, constant_q))
 }
 
 fn trimmed(mut coefficients: Vec<Rat>) -> Vec<Rat> {
@@ -723,23 +797,113 @@ mod tests {
 
     #[test]
     fn the_order_of_two_roots_follows_the_recorded_cases() {
-        // (x - 1)^2 + (y - 2)^2 = 9: a rational part and a discriminant
-        // with real roots, positive first.
+        // (x - 1)^2 + (y - 2)^2 = 9: D = 4 (-y^2 + 4y + 5), the factor 1 in
+        // front of the root, positive first.
         let shifted = [(2, 0, 1), (1, 0, -2), (0, 2, 1), (0, 1, -4), (0, 0, -4)];
         assert_eq!(signs(&branches(&shifted, 0)), [false, true]);
         // 3x^2 - y^2 + x - 2 = 0: the discriminant 12 y^2 + 25 has no root.
         let definite = [(2, 0, 3), (0, 2, -1), (1, 0, 1), (0, 0, -2)];
         assert_eq!(signs(&branches(&definite, 0)), [true, false]);
-        // x^2 + x y + y^2 - 3 = 0: monic, the discriminant 3 (4 - y^2)
-        // leaves sqrt(3).
+        // x^2 + x y + y^2 - 3 = 0: D = 3 (4 - y^2) leaves sqrt(3) / 2.
         let content = [(2, 0, 1), (1, 1, 1), (0, 2, 1), (0, 0, -3)];
         assert_eq!(signs(&branches(&content, 0)), [true, false]);
-        // x^2 + 2 x y + 3 y^2 - 6 = 0 solved for y: not monic, positive first.
+        // x^2 + 2 x y + 3 y^2 - 6 = 0 solved for y: D = 8 (9 - x^2) leaves
+        // sqrt(2) / 3, positive first.
         let scaled = [(2, 0, 1), (1, 1, 2), (0, 2, 3), (0, 0, -6)];
         assert_eq!(signs(&branches(&scaled, 1)), [false, true]);
-        // x^2 + x y + y^2 - 1 = 0: the discriminant 4 - 3 y^2 has no content.
+        // x^2 + x y + y^2 - 1 = 0: D = 4 - 3 y^2 with the factor 1/2.
         let plain = [(2, 0, 1), (1, 1, 1), (0, 2, 1), (0, 0, -1)];
         assert_eq!(signs(&branches(&plain, 0)), [false, true]);
+    }
+
+    #[test]
+    fn every_rule_of_the_order_has_its_conic() {
+        // The conics of golden/cas/order.json, solved for x: `true` first
+        // is the root with the negative square root first.
+        for (terms, negative_first, rule) in [
+            // 2x^2 + 2xy + 2y^2 - 3: D = 12 (2 - y^2), sqrt(3) / 2.
+            (
+                &[(2, 0, 2), (1, 1, 2), (0, 2, 2), (0, 0, -3)][..],
+                true,
+                "a second radical with the factor 1/2",
+            ),
+            // 3x^2 + 6x - y^2 + 5y + 1: D = 12 (y^2 - 5y + 2), sqrt(3) / 3.
+            (
+                &[(2, 0, 3), (1, 0, 6), (0, 2, -1), (0, 1, 5), (0, 0, 1)][..],
+                false,
+                "a second radical with the factor 1/3",
+            ),
+            // x^2 + 6xy + 2x - 3y + 1: D = 36 (y^2 + y), the factor 3.
+            (
+                &[(2, 0, 1), (1, 1, 6), (1, 0, 2), (0, 1, -3), (0, 0, 1)][..],
+                true,
+                "a whole factor above 1",
+            ),
+            // x^2 - 4xy + 6y^2 + 4y - 1: D = 4 (-2y^2 - 4y + 1), the factor 1.
+            (
+                &[(2, 0, 1), (1, 1, -4), (0, 2, 6), (0, 1, 4), (0, 0, -1)][..],
+                false,
+                "the factor 1",
+            ),
+            // 5x^2 + 4y^2 + 3y - 3: no rational part.
+            (
+                &[(2, 0, 5), (0, 2, 4), (0, 1, 3), (0, 0, -3)][..],
+                true,
+                "no rational part",
+            ),
+            // x^2 + 6xy + 5x - y^2 - y - 5: D = 40y^2 + 64y + 45 > 0.
+            (
+                &[
+                    (2, 0, 1),
+                    (1, 1, 6),
+                    (1, 0, 5),
+                    (0, 2, -1),
+                    (0, 1, -1),
+                    (0, 0, -5),
+                ][..],
+                true,
+                "a discriminant without a root",
+            ),
+            // x^2 + xy - y^2: D = 5 y^2 with an odd square part, kept as
+            // sqrt(5 y^2).
+            (
+                &[(2, 0, 1), (1, 1, 1), (0, 2, -1)][..],
+                true,
+                "an odd square part",
+            ),
+            // (x - y)^2 - 2: equal slopes, the constants ascend.
+            (
+                &[(2, 0, 1), (1, 1, -2), (0, 2, 1), (0, 0, -2)][..],
+                true,
+                "equal irrational slopes",
+            ),
+        ] {
+            assert_eq!(
+                signs(&branches(terms, 0)),
+                [negative_first, !negative_first],
+                "{rule}"
+            );
+        }
+    }
+
+    #[test]
+    fn large_coefficients_keep_the_arithmetic_exact_or_give_up() {
+        let big = 1_000_000_000_000_000_003_i128;
+        assert_eq!(integer_sqrt(big * big), Some(big));
+        assert_eq!(integer_sqrt(big * big + 1), None);
+        assert_eq!(integer_sqrt(-4), None);
+        assert_eq!(integer_sqrt(0), Some(0));
+        let mut work = Work::new(&|_| true);
+        assert_eq!(square_part(12, &mut work), Some((2, 3)));
+        assert_eq!(square_part(1009 * 1009, &mut work), Some((1009, 1)));
+        assert_eq!(square_part(4 * 1_000_003, &mut work), Some((2, 1_000_003)));
+        assert_eq!(square_part(2 * 1009 * 1009, &mut work), Some((1009, 2)));
+        // 2 * 100003^2 hides a square the trial division does not reach.
+        assert_eq!(square_part(2 * 100_003 * 100_003, &mut work), None);
+        // 4 * 10^30 (x^2 + y^2) = 9 * 10^30 keeps its order.
+        let scale = 1_000_000_000_000_000_i128;
+        let circle = [(2, 0, 4 * scale), (0, 2, 4 * scale), (0, 0, -9 * scale)];
+        assert_eq!(signs(&branches(&circle, 0)), [true, false]);
     }
 
     #[test]

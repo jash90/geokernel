@@ -416,6 +416,120 @@ c.case("plot", ["f(x) = sin(x)", "result = PlotSolve(f)"], [])
 # the kernel cannot hold inside a list.
 c.case("conic", ["k: y=x^2+x", "result = Solve(k, y)"], [])
 
+# The order of the two branches of a conic. The solutions pass through the
+# sort of the CAS, which compares numerically where it can decide the sign
+# of a difference and by the structure of the printed terms otherwise. With
+# the equation as A s^2 + b s + c = 0 over the integers, A > 0, without a
+# common factor, D = b^2 - 4 A c = k m^2 D' (k square-free, D' primitive),
+# the roots are P +- q sqrt(k) sqrt(D') with P = -b / (2 A), q = m / (2 A).
+
+
+def swapped(equation):
+    """The same equation with x and y exchanged."""
+    return equation.replace("x", "#").replace("y", "x").replace("#", "y")
+
+
+def radical_order(equation):
+    c.case("order", [f"k: {equation}", f"j: {swapped(equation)}", "r1 = Solutions(k)",
+                     "r2 = Solutions(k, x)", "r3 = Solutions(j, y)", "r4 = Solve(j, y)"], [])
+
+
+def line_order(equation):
+    c.case("order", [f"k: {equation}", f"j: {swapped(equation)}", "r1 = Solve(k)",
+                     "r2 = Solutions(k)", "r3 = Solve(j, y)", "r4 = Solutions(j, y)"], [])
+
+
+# The inputs of the review.
+c.case("order", ["k: 2*x^2+2*x*y+2*y^2=3", "r1 = Solutions(k, x)", "r2 = Solutions(k)",
+                 "r3 = Solutions(k, y)", "r4 = Solve(k, y)"], [])
+c.case("order", ["a = 1", "k: a*x^2+x*y=0", "r1 = Solutions(k)", "r2 = Solve(k)",
+                 "r3 = Solutions(k, y)", "r4 = Solve(k, y)"],
+       [setn("a", 2), setn("a", -1), setn("a", 0.5), setn("a", 3), setn("a", -0.25)])
+c.case("order", ["k: y^2+x*y+y=3", "r1 = Solutions(k, y)", "r2 = Solve(k, y)",
+                 "r3 = Solutions(k)"], [])
+c.case("order", ["k: 2x^2+3x=y", "j: x^2+3x=3y", "r1 = Solutions(k)", "r2 = Solutions(j)",
+                 "r3 = Solutions(k, x)", "r4 = Solutions(j, x)"], [])
+c.case("order", ["k: y^2=x^2-1", "j: x^2-y^2=1", "r1 = Solutions(k)", "r2 = Solutions(j)",
+                 "r3 = Solutions(k, y)", "r4 = Solutions(j, y)", "r5 = Solve(k, y)",
+                 "r6 = Solve(j, y)"], [])
+# The same curve written differently gives the same order.
+c.case("order", ["k: 4x^2+4y^2=16", "j: x^2/2+y^2/2=2", "i: -x^2-y^2=-4", "h: 4=x^2+y^2"]
+       + results(f"Solutions({name}, y)" for name in "kjih"), [])
+c.case("order", ["k: 3=2x^2+2x*y+2y^2", "j: x^2+x*y+y^2=1.5", "i: -4x^2-4x*y-4y^2=-6"]
+       + results([f"Solutions({name})" for name in "kji"]
+                 + [f"Solutions({name}, y)" for name in "kji"]), [])
+# P = 0: the negative root first.
+for equation in ["5x^2+4y^2+3y-3=0", "4x^2-2y^2-4y-5=0", "3x^2-3y^2-2y-1=0"]:
+    radical_order(equation)
+# D' positive for every value of the parameter: the negative root first,
+# whatever k and q are.
+for equation in ["x^2+6x*y+5x-y^2-y-5=0", "2x^2-3x*y+x-4y^2-5=0", "x^2-2x*y+4x-5y^2+5y-3=0",
+                 "x^2-4x*y+4x-2y^2-3y-4=0", "5x^2-5x*y+5x-4y^2-4y-4=0",
+                 "6x^2+3x*y-6x-6y^2+2y-2=0", "x^2-4x*y+2x+y^2+2y-5=0", "x^2+6x*y-3y^2-6y-3=0"]:
+    radical_order(equation)
+# k > 1: the negative root first when q is an integer or a half.
+for equation in ["x^2+2x*y-y^2-4y+6=0", "x^2-4x*y+2x+6y^2-2y-1=0", "x^2+3x*y-2x+6y^2+6y+4=0",
+                 "2x^2-4x*y+4y^2-3y+1=0", "5x^2-5x*y+y^2-4y+4=0", "3x^2+6x-y^2+5y+1=0",
+                 "5x^2+2x*y-2x-y^2-4y+3=0"]:
+    radical_order(equation)
+# k = 1: the negative root first when q is an integer from 2 on.
+for equation in ["x^2-6x*y-4x-3y^2-4y=0", "x^2+6x*y+2x-3y+1=0", "x^2+2x*y+2x-3y^2+2y+5=0",
+                 "4x^2-4x*y+y^2+4y=0", "4x^2+4x+4y^2-4y-3=0", "x^2-4x*y+6y^2+4y-1=0",
+                 "x^2+2x*y-6x+6y^2-5y+1=0", "x^2-5x*y-5x-2y^2+y+5=0", "x^2-2x*y-3x+5y^2+3y-1=0",
+                 "2x^2-5x*y-x+3y^2-6y+2=0", "3x^2-3x*y+x+4y^2+2y=0", "6x^2-x*y+x+3y^2+y-1=0"]:
+    radical_order(equation)
+# Two lines with rational coefficients, s = a t + b, are ordered by the
+# shape of the printed term: a nonzero integer constant, then a > 0 without
+# and with a constant, then a < 0 with and without one, then zero or a
+# fraction; equal slopes by the constant.
+for equation in [
+    "(x-3)*(x-2y)=0", "(x-3)*(x-2y-1)=0", "(x-3)*(x+2y-1)=0", "(x-3)*(x+2y)=0", "(x+3)*(x-2y)=0",
+    "(x-2y)*(x-3y-1)=0", "(x-2y)*(x+3y-1)=0", "(x-2y)*(x+3y)=0", "x*(x-2y)=0", "(2x-1)*(x-2y)=0",
+    "(x-2y-1)*(x+3y-2)=0", "(x-2y-1)*(x+3y)=0", "x*(x-2y-1)=0", "(2x-1)*(x-2y-1)=0",
+    "(x+2y-1)*(x+3y)=0", "x*(x+2y-1)=0", "(2x+3)*(x+2y-1)=0", "x*(x+2y)=0", "(2x-1)*(x+2y)=0",
+    "(x-2y)*(2x-y)=0", "(2x-y)*(3x-y)=0", "(2x-3y)*(3x-2y)=0", "(3x-2y)*(5x-2y)=0",
+    "(x-2y-1)*(x-3y-1)=0", "(x-2y-1)*(2x-y-1)=0", "(2x-y-1)*(3x-y+2)=0", "(x-2y+3)*(x-5y-3)=0",
+    "(x+2y-1)*(x+3y-1)=0", "(x+2y-1)*(2x+y-1)=0", "(2x+y+1)*(3x+y-2)=0",
+    "(x+2y)*(x+3y)=0", "(x+2y)*(2x+y)=0", "(2x+y)*(3x+y)=0", "(2x+3y)*(3x+2y)=0",
+    "(x-2y+1)*(x-2y-1)=0", "(2x-y+3)*(2x-y-2)=0", "(x+3y+2)*(x+3y+5)=0", "(2x-3y)*(2x-3y+1)=0",
+]:
+    line_order(equation)
+# Two lines with an irrational slope: the one with +sqrt(k) first. With
+# equal slopes the constants ascend.
+for equation in ["(x-1)^2-2y^2=0", "x^2-3*(y+1)^2=0", "x^2+2x*y-2y^2=0", "x^2+2x*y-4y^2=0",
+                 "2x^2-4x*y-y^2=0", "(x-y)^2=2", "(x-2y)^2=3", "(x+y-1)^2=5", "(2x-y)^2=3"]:
+    line_order(equation)
+# D = k m^2 q(t)^2 with an odd m: the CAS answers P +- sqrt(k) |q(t)| / (2 A),
+# which are no lines, with the negative root first.
+for equation in ["x^2+x*y-y^2=0", "x^2+x*y-3y^2=0", "x^2+x*y+x-y^2-2y-1=0", "3x^2+x*y-y^2=0",
+                 "x^2-3x*y+y^2=0", "x^2+3x*y-y^2+3x-2y-1=0"]:
+    c.case("order", [f"k: {equation}", f"j: {swapped(equation)}", "r1 = Solutions(k)",
+                     "r2 = Solutions(j, y)", "r3 = Solve(j, y)"], [])
+# A conic in one variable: the constants ascend.
+c.case("order", ["k: 2x^2-3x-1=0", "j: 3y^2+y-1=0", "i: (x-3)*(2x-1)=0", "r1 = Solutions(k)",
+                 "r2 = Solve(k)", "r3 = Solutions(j)", "r4 = Solve(j, y)", "r5 = Solutions(i)",
+                 "r6 = Solve(i)"], [])
+# The conic changes its class while a number moves.
+c.case("order", ["a = 1", "k: x^2+a*x*y+y^2=4", "r1 = Solutions(k)", "r2 = Solutions(k, y)",
+                 "r3 = Solve(k, y)"],
+       [setn("a", 2), setn("a", 3), setn("a", 0), setn("a", -1), setn("a", -2), setn("a", 4)])
+c.case("order", ["a = 1", "k: y^2+2x*y+a*x^2=x+1", "r1 = Solutions(k, y)", "r2 = Solve(k, y)"],
+       [setn("a", 2), setn("a", 0), setn("a", -3), setn("a", 1), setn("a", 0.5)])
+# Decimal coefficients and conics that follow points.
+c.case("order", ["A = (0.37, -1.21)", "k = Circle(A, 1.7)", "r1 = Solutions(k)",
+                 "r2 = Solutions(k, y)", "r3 = Solve(k, y)"],
+       [mv("A", 0.123456, 0.654321), mv("A", -2.5, 0.75), mv("A", 0, 0)])
+c.case("order", ["k: 0.3x^2+0.7x*y-1.1y^2=2.3", "j: 1.5x^2-0.25x*y+0.125y^2+0.5x=1",
+                 "r1 = Solutions(k)", "r2 = Solutions(k, y)", "r3 = Solutions(j)",
+                 "r4 = Solutions(j, y)"], [])
+c.case("order", ["A = (1, 2)", "B = (3, -1)", "C = (-2, 0.5)", "D = (0.5, 3)", "E = (-1, -2)",
+                 "k = Conic(A, B, C, D, E)", "r1 = Solutions(k)", "r2 = Solutions(k, y)"],
+       [mv("A", 1.5, 2.5), mv("E", -1.25, -0.5)])
+c.case("order", ["F = (1, 1)", "g: x+y=-1", "k = Parabola(F, g)", "P = (0, 0)", "Q = (2, 1)",
+                 "R = (3, 2)", "h = Ellipse(P, Q, R)",
+                 "r1 = Solutions(k)", "r2 = Solutions(k, y)", "r3 = Solutions(h)",
+                 "r4 = Solutions(h, y)"], [])
+
 # The numeric solver from a start value: Newton's method where every step
 # lowers the residual, at most halved once, and ends on a simple root.
 c.case("start", ["f(x) = x^2-2"] + results(

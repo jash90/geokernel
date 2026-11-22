@@ -234,12 +234,56 @@ fn object_equation(c: &crate::Construction, id: crate::Id) -> Option<crate::cas:
 }
 
 fn as_equation(terms: &[([u8; 3], f64)]) -> Option<crate::cas::Quotient> {
+    // What a cancellation leaves of a coefficient that is zero, a few units
+    // in the last place of the largest one, is zero.
+    let largest = terms.iter().fold(0.0_f64, |m, (_, v)| m.max(v.abs()));
     let coefficients = terms
         .iter()
-        .filter(|(_, v)| *v != 0.0)
-        .map(|&(p, v)| Some((p, Rat::from_value(v)?)))
+        .filter(|(_, v)| v.abs() > largest * 1e-13)
+        .map(|&(p, v)| Some((p, fraction(v)?)))
         .collect::<Option<_>>()?;
     Some(crate::cas::Quotient::polynomial(Poly(coefficients)))
+}
+
+/// The coefficient of an object as the CAS reads it. The reference sends
+/// the equation of a line or a conic as it was entered, so `x y / 3` holds
+/// one third and not its nearest double: a fraction within a few units in
+/// the last place is that number, found by continued fractions. Its
+/// denominator `q` is kept so small that a number that is no fraction is
+/// not taken for one: fractions up to `q` lie `1 / q^2` apart, and the
+/// window around the double is a hundred million times narrower. Any other
+/// double is the decimal of its 15 significant digits, which is what the
+/// reference prints for the CAS.
+fn fraction(value: f64) -> Option<Rat> {
+    let magnitude = value.abs();
+    let tolerance = magnitude * 4.0 * f64::EPSILON;
+    let (mut p0, mut q0, mut p1, mut q1) = (0_i128, 1_i128, 1_i128, 0_i128);
+    let mut rest = magnitude;
+    // The denominators at least double every second term.
+    for _ in 0..40 {
+        let whole = rest.floor();
+        if !(whole < 1e15) {
+            break;
+        }
+        let term = whole as i128;
+        let (p, q) = (term * p1 + p0, term * q1 + q0);
+        if q > 1 && (q as f64) * (q as f64) * tolerance > 1e-8 {
+            break;
+        }
+        if (p as f64 / q as f64 - magnitude).abs() <= tolerance {
+            return Rat::new(if value < 0.0 { -p } else { p }, q);
+        }
+        (p0, q0, p1, q1) = (p1, q1, p, q);
+        let part = rest - whole;
+        if part <= 0.0 {
+            break;
+        }
+        rest = part.recip();
+    }
+    let text = format!("{value:.14e}");
+    let (mantissa, exponent) = text.split_once('e')?;
+    let digits = mantissa.replace('.', "").parse().ok()?;
+    Rat::decimal(digits, exponent.parse::<i64>().ok()? - 14)
 }
 
 pub(super) fn identity(axis: u8) -> Slot {
@@ -301,5 +345,33 @@ pub(super) fn exact(root: Root) -> Option<String> {
             Some(affine(offset, scale, power(radicand, degree)))
         }
         Root::Numeric(_) => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{fraction, Rat};
+
+    #[test]
+    fn a_coefficient_near_a_simple_fraction_is_that_fraction() {
+        let rat = |n, d| Rat::new(n, d);
+        assert_eq!(fraction(1.0 / 3.0), rat(1, 3));
+        assert_eq!(fraction(1.0 / 3.0 - 0.5), rat(-1, 6));
+        assert_eq!(fraction(0.1 + 0.2), rat(3, 10));
+        assert_eq!(fraction(-2.5), rat(-5, 2));
+        assert_eq!(fraction(7.0), rat(7, 1));
+        assert_eq!(fraction(0.0), rat(0, 1));
+        assert_eq!(fraction(0.3333), rat(3333, 10000));
+        // No fraction: 15 significant digits.
+        assert_eq!(
+            fraction(std::f64::consts::SQRT_2),
+            rat(141_421_356_237_310, 100_000_000_000_000)
+        );
+        // A convergent with a large denominator that happens to be close
+        // is no evidence of a fraction.
+        let close = -108_212_005.0 / 265_251.0;
+        assert_eq!(fraction(close).map(|r| r.den > 265_251), Some(true));
+        assert_eq!(fraction(f64::NAN), None);
+        assert_eq!(fraction(f64::INFINITY), None);
     }
 }
