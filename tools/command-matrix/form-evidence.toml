@@ -3936,3 +3936,27 @@ cases = ["implicit-conic-010"]
 command = "Intersect"
 form = "implicit,sector,number"
 cases = ["implicit-conic-010"]
+
+[[form]]
+command = "Cubic"
+form = "point,point,point,number"
+cases = [
+  "implicit-barycentric-001", "implicit-cubics-001", "implicit-cubics-002",
+  "implicit-cubics-003", "implicit-cubics-006", "implicit-cubics-007",
+  "implicit-cubics-008", "implicit-cubics-009", "implicit-cubics-010",
+  "implicit-cubics-011",
+]
+
+[[form]]
+command = "TriangleCurve"
+form = "point,point,point,implicit"
+cases = ["implicit-barycentric-002", "implicit-trianglecurve-001", "implicit-trianglecurve-002"]
+
+[[form]]
+command = "LocusEquation"
+form = "locus"
+cases = [
+  "locusequation-circle-002", "locusequation-midpointlocus-001",
+  "locusequation-midpointlocus-002", "locusequation-midpointlocus-003",
+  "locusequation-midpointlocus-004",
+]

@@ -132,6 +132,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         function_dependent: false,
         variable_powers: false,
         abort_at: u64::MAX,
+        coefficient_locals: None,
         expansion_work: None,
         max_degree: u32::MAX,
     };
@@ -366,6 +367,7 @@ pub(crate) struct Builder {
     pub(crate) abort_at: u64,
     expansion_work: Option<u64>,
     max_degree: u32,
+    coefficient_locals: Option<[f64; 9]>,
 }
 
 impl Builder {
@@ -391,6 +393,7 @@ impl Builder {
             abort_at: u64::MAX,
             expansion_work: None,
             max_degree: u32::MAX,
+            coefficient_locals: None,
         }
     }
 
@@ -406,6 +409,7 @@ impl Builder {
             abort_at: u64::MAX,
             expansion_work: None,
             max_degree: u32::MAX,
+            coefficient_locals: None,
         }
     }
 
@@ -420,6 +424,13 @@ impl Builder {
                 .ok_or(NotPolynomial::ImplicitCurve)?;
         }
         Ok(())
+    }
+
+    fn coefficient_local(&self, index: u32) -> Option<f64> {
+        self.coefficient_locals
+            .as_ref()?
+            .get((u32::MAX - index) as usize)
+            .copied()
     }
 
     /// `ExpressionNode.makePolynomialTree` of the subtree at `i`, with the
@@ -624,6 +635,7 @@ impl Builder {
             seen[i as usize] = true;
             match self.node(i) {
                 Node::Obj(_) | Node::Apply(..) | Node::Cmd(..) | Node::If(..) => return true,
+                Node::Local(index, _) if self.coefficient_local(index).is_some() => return true,
                 node => stack.extend(children(&node)),
             }
         }
@@ -684,6 +696,7 @@ impl Builder {
             Node::Num(v) => v,
             Node::MinusOne => -1.0,
             Node::Degree => math::PI_180,
+            Node::Local(index, _) => self.coefficient_local(index)?,
             Node::Obj(id) => match c.value(id) {
                 Value::Number(v) => v,
                 _ => return None,

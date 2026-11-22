@@ -58,8 +58,8 @@ Centroid,,geometry,P1,done,1,1,Centroid(polygon)
 TriangleCenter,,geometry,P1,done,1,1,"TriangleCenter(point, point, point, index)"
 Barycenter,,geometry,P1,done,1,1,
 Trilinear,,geometry,P1,done,1,1,"Trilinear(point, point, point, number, number, number)"
-Cubic,,geometry,P1,todo,1,0,
-TriangleCurve,,geometry,P1,todo,1,0,
+Cubic,,geometry,P1,done,1,1,
+TriangleCurve,,geometry,P1,done,1,1,
 Vertex,,geometry,P1,partial,12,9,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment and raster image corners. Polynomial inequality borders."
 PolyLine,,geometry,P1,done,4,4,Live list with optional Boolean or separate points with an optional false flag
 PenStroke,,geometry,P1,todo,2,0,
@@ -79,7 +79,7 @@ AreEqual,,geometry,P1,done,1,1,"Numeric equality by object kind, including cycli
 AreConcurrent,,geometry,P1,done,1,1,"AreConcurrent of three lines, segments or rays"
 AreCongruent,,geometry,P1,done,1,1,"Numeric congruence by object kind, including cyclic or reversed polygon congruence"
 IsTangent,,geometry,P1,done,1,1,"IsTangent(line, segment or ray, conic or conic part)"
-LocusEquation,,geometry,P1,todo,3,0,
+LocusEquation,,geometry,P1,partial,3,1,
 Envelope,,geometry,P1,todo,1,0,
 Volume,,3d,,out_of_scope,,,
 Difference,,geometry,P1,done,2,2,"Difference(polygon, polygon); Difference(polygon, polygon, boolean)"

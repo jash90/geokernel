@@ -1,8 +1,10 @@
 // Licensed under the EUPL 1.2.
 
 use crate::{Construction, Id, Value};
+pub(crate) mod barycentric;
 mod elimination;
 pub(super) mod intersection;
+pub(crate) mod locus_equation;
 mod polynomial;
 pub(crate) mod tangent;
 

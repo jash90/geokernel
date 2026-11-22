@@ -9,6 +9,7 @@ mod system;
 #[cfg(test)]
 mod tests;
 
+pub(super) use system::{add_shifted, basis, Equation};
 pub(crate) use system::{affine_system, systems, SystemRoots};
 
 const MAX_DEGREE: usize = 32;

@@ -102,6 +102,14 @@ pub(crate) fn parse_equation_left(c: &Construction, src: &str) -> Result<Parsed,
     parse_in(c, src, Mode::EquationLeft)
 }
 
+pub(super) fn parse_scoped_equation(
+    c: &Construction,
+    src: &str,
+    parameters: &[&str],
+) -> Result<Parsed, String> {
+    parse_in(c, src, Mode::ScopedEquation(parameters))
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Mode<'a> {
     Expression,
@@ -110,10 +118,14 @@ enum Mode<'a> {
     EquationLeft,
     Parameter(&'a str),
     System(&'a [&'a str]),
+    ScopedEquation(&'a [&'a str]),
 }
 
 fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, String> {
-    let equation = matches!(mode, Mode::Equation | Mode::EquationLeft);
+    let equation = matches!(
+        mode,
+        Mode::Equation | Mode::EquationLeft | Mode::ScopedEquation(_)
+    );
     let preprocessed = split_bars(src);
     let src: &str = &preprocessed;
     let toks = tokens(src)?;
@@ -152,7 +164,9 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
         },
         cas_variables: Vec::new(),
         locals: match mode {
-            Mode::System(names) => names.iter().map(|n| (n.to_string(), Elem::Num)).collect(),
+            Mode::System(names) | Mode::ScopedEquation(names) => {
+                names.iter().map(|n| (n.to_string(), Elem::Num)).collect()
+            }
             _ => Vec::new(),
         },
     };
@@ -160,7 +174,7 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
         return Err("empty expression".into());
     }
     let root = p.expression()?;
-    let root = if let Mode::System(names) = mode {
+    let root = if let Mode::System(names) | Mode::ScopedEquation(names) = mode {
         p.push(Node::SystemFunction(names.len() as u8, root))
     } else {
         root

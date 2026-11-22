@@ -1183,16 +1183,6 @@ reason = "The symbolic solution orders irrational roots negative first and switc
 mismatches = ["1:P_{1}", "1:P_{2}"]
 
 [[gap]]
-id = "implicit-barycentric-001"
-reason = "The numbered triangle cubic catalogue and its coefficient substitution have no kernel implementation."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "implicit-barycentric-002"
-reason = "The kernel has no scoped binding and substitution of the three barycentric coordinates in the command equation."
-mismatches = ["0:script line 4"]
-
-[[gap]]
 id = "implicit-graph-003"
 reason = "The oscillating graph reaches 66 reference outputs. Above the 64-slot budget, the kernel keeps its existing first slot undefined and skips growth. The first slot recovers after the frequency drops."
 mismatches = [
@@ -1245,3 +1235,33 @@ mismatches = [
   "0:P_{59}", "0:P_{5}", "0:P_{60}", "0:P_{61}", "0:P_{62}", "0:P_{63}", "0:P_{64}", "0:P_{65}",
   "0:P_{66}", "0:P_{6}", "0:P_{7}", "0:P_{8}", "0:P_{9}",
 ]
+
+[[gap]]
+id = "locusequation-boolean-001"
+reason = "The reference prover replaces the distance operands of the input Boolean with temporary segments. After an edit the Boolean reads those segment values. The kernel compares the current distances, and the implicit equation agrees."
+mismatches = ["2:b", "3:b"]
+
+[[gap]]
+id = "locusequation-boolean-003"
+reason = "After the prover substitutes temporary segments for the distances, the reference condition becomes true on edits of the fixed decimal point. The kernel compares the current distances, and the rounded implicit equation agrees."
+mismatches = ["1:b", "2:b", "3:b"]
+
+[[gap]]
+id = "locusequation-boolean-004"
+reason = "The reference condition reads temporary segment lengths after the edit of the fractional point. The kernel compares the current distances, and the implicit equation agrees."
+mismatches = ["1:b"]
+
+[[gap]]
+id = "locusequation-boolean-006"
+reason = "The reference condition reads temporary segment lengths after editing the circle intersection. The kernel compares the current distances, and the symbolic implicit equation agrees."
+mismatches = ["1:b"]
+
+[[gap]]
+id = "locusequation-boolean-007"
+reason = "The reference condition reads temporary segment lengths after rotating or resizing the carrier circle. The kernel compares the current distances, and the product representing the two solutions agrees."
+mismatches = ["1:b", "2:b"]
+
+[[gap]]
+id = "locusequation-boolean-008"
+reason = "Editing the fixed point changes the standalone distance comparison to false. The reference condition passed to the prover reads temporary segment lengths and stays true. Both kernel comparisons use the current distances."
+mismatches = ["2:b"]
