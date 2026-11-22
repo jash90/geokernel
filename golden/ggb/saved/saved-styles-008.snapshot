@@ -1,0 +1,56 @@
+{
+  "schema": 2,
+  "id": "saved-styles-008",
+  "script": [
+    "r = 0.25",
+    "g = 0.5",
+    "b = 0.75",
+    "show = true",
+    "A = (-2, -1)",
+    "B = (1, 0)",
+    "D = (-1, 2)"
+  ],
+  "objects": {
+    "r": { "type": "number", "defined": true, "value": 0.25 },
+    "g": { "type": "number", "defined": true, "value": 0.5 },
+    "b": { "type": "number", "defined": true, "value": 0.75 },
+    "show": { "type": "boolean", "defined": true, "value": true },
+    "A": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+    "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+    "D": { "type": "point", "defined": true, "x": -1.0, "y": 2.0 },
+    "art": {
+      "type": "image",
+      "defined": true,
+      "text": "art",
+      "file": "generated/tile.png",
+      "size": [
+        12,
+        8
+      ],
+      "background": false,
+      "alpha": 0.5,
+      "corners": [
+        [-1.0, 2.0],
+        [2.0, 3.0],
+        [1.0, 0.0],
+        [-2.0, -1.0]
+      ]
+    },
+    "pinned": {
+      "type": "image",
+      "defined": true,
+      "text": "pinned",
+      "file": "generated/tile.png",
+      "size": [
+        12,
+        8
+      ],
+      "background": false,
+      "alpha": 1.0,
+      "screen": [
+        41,
+        63
+      ]
+    }
+  }
+}

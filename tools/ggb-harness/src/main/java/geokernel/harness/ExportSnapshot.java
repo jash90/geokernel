@@ -24,6 +24,9 @@ import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.jre.io.MyXMLioJre;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.StringTemplate;
+import org.geogebra.common.kernel.geos.GeoAngle;
+import org.geogebra.common.kernel.geos.GeoBoolean;
 import org.geogebra.common.kernel.geos.GeoButton;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
@@ -33,6 +36,8 @@ import org.geogebra.common.kernel.geos.GeoInputBox;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
 import org.geogebra.common.kernel.geos.GeoText;
+import org.geogebra.common.kernel.geos.PointProperties;
+import org.geogebra.common.kernel.geos.Traceable;
 import org.geogebra.common.kernel.kernelND.GeoCurveCartesianND;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.debug.Log;
@@ -142,7 +147,12 @@ public final class ExportSnapshot {
         return Map.of("objects", objects, "styles", styles, "settings", settings);
     }
 
+    /**
+     * The presentation the reader gave an object, through GeoGebra's getters. A property that
+     * does not apply to the class of the object is {@code null}.
+     */
     private static Map<String, Object> describeStyle(GeoElement geo) {
+        StringTemplate xml = StringTemplate.xmlTemplate;
         Map<String, Object> fields = new LinkedHashMap<>();
         fields.put("shown", geo.isSetEuclidianVisible());
         fields.put("label_shown", geo.getLabelVisible());
@@ -152,24 +162,86 @@ public final class ExportSnapshot {
         fields.put("caption", geo.getRawCaption());
         var color = geo.getObjectColor();
         fields.put("color", List.of(color.getRed(), color.getGreen(), color.getBlue()));
-        fields.put("line_style", List.of(geo.getLineType(), geo.getLineThickness()));
-        if (geo instanceof GeoNumeric n && n.isIndependent()
-                && (n.isIntervalMinActive() || n.isIntervalMaxActive())) {
+        fields.put("alpha", geo.getAlphaValue());
+        Map<String, Object> line = new LinkedHashMap<>();
+        line.put("type", geo.getLineType());
+        line.put("thickness", geo.getLineThickness());
+        line.put("opacity", geo.getLineOpacity());
+        line.put("hidden_type", geo.getLineTypeHidden());
+        fields.put("line", line);
+        Map<String, Object> fill = new LinkedHashMap<>();
+        fill.put("type", geo.getFillType().name());
+        fill.put("angle", geo.getHatchingAngle());
+        fill.put("distance", geo.getHatchingDistance());
+        fill.put("symbol", Objects.toString(geo.getFillSymbol(), ""));
+        fill.put("inverse", geo.isInverseFill());
+        fields.put("fill", fill);
+        var dynamic = geo.getColorFunction();
+        if (dynamic != null) {
+            List<Object> channels = new ArrayList<>();
+            for (int i = 0; i < dynamic.size(); i++) {
+                channels.add(dynamic.get(i).getLabel(xml));
+            }
+            fields.put("dynamic_color", channels);
+            fields.put("color_space", geo.getColorSpace());
+        } else {
+            fields.put("dynamic_color", null);
+            fields.put("color_space", null);
+        }
+        var condition = geo.getShowObjectCondition();
+        fields.put("condition", condition == null ? null : condition.getLabel(xml));
+        var background = geo.getBackgroundColor();
+        fields.put("background", background == null ? null : List.of(background.getRed(),
+                background.getGreen(), background.getBlue(), background.getAlpha()));
+        fields.put("fixed", geo.isLocked());
+        fields.put("auxiliary", geo.isAuxiliaryObject());
+        fields.put("selection_allowed", geo.isSelectionAllowed(null));
+        fields.put("tooltip_mode", geo.getTooltipMode());
+        fields.put("decoration", geo.getDecorationType());
+        fields.put("trace", geo instanceof Traceable t ? t.getTrace() : null);
+        fields.put("point_size", geo instanceof PointProperties p ? p.getPointSize() : null);
+        fields.put("point_style", geo instanceof PointProperties p ? p.getPointStyle() : null);
+        fields.put("checkbox_fixed", geo instanceof GeoBoolean b ? b.isLockedPosition() : null);
+        Map<String, Object> animation = new LinkedHashMap<>();
+        boolean auto = geo instanceof GeoNumeric n && n.isAutoStep();
+        animation.put("step", auto ? null : geo.getAnimationStep());
+        animation.put("speed", geo.getAnimationSpeed());
+        animation.put("mode", geo.getAnimationType());
+        animation.put("playing", geo.isAnimating());
+        fields.put("animation", animation);
+        if (geo instanceof GeoNumeric n && n.isIndependent()) {
             Map<String, Object> slider = new LinkedHashMap<>();
             slider.put("min", n.isIntervalMinActive() ? n.getIntervalMin() : null);
             slider.put("max", n.isIntervalMaxActive() ? n.getIntervalMax() : null);
-            slider.put("step", n.isAutoStep() ? null : n.getAnimationStep());
-            slider.put("speed", n.getAnimationSpeed());
-            slider.put("mode", n.getAnimationType());
-            slider.put("playing", n.isAnimating());
             slider.put("position", List.of(n.getSliderX(), n.getSliderY()));
+            slider.put("width", n.getSliderWidth());
+            slider.put("horizontal", n.isSliderHorizontal());
+            slider.put("fixed", n.isLockedPosition());
+            slider.put("absolute", n.isAbsoluteScreenLocActive());
+            slider.put("show_algebra", n.isAVSliderOrCheckboxVisible());
             fields.put("slider", slider);
+        }
+        if (geo instanceof GeoAngle angle) {
+            fields.put("angle_style", angle.getAngleStyle().getXmlVal());
+            fields.put("emphasize_right_angle", angle.isEmphasizeRightAngle());
+            fields.put("arc_size", angle.getArcSize());
         }
         if (geo instanceof GeoPoint p && p.getPath() instanceof GeoCurveCartesianND) {
             fields.put("curve_parameter", p.getPathParameter().t);
         }
         if (geo instanceof GeoText text) {
             fields.put("latex", text.isLaTeX());
+            Map<String, Object> font = new LinkedHashMap<>();
+            font.put("size", text.getFontSizeMultiplier());
+            font.put("serif", text.isSerifFont());
+            font.put("style", text.getFontStyle());
+            fields.put("font", font);
+            fields.put("decimals", text.useSignificantFigures() ? -1 : text.getPrintDecimals());
+            fields.put("figures", text.useSignificantFigures() ? text.getPrintFigures() : -1);
+            var start = text.getStartPoint();
+            fields.put("screen_location", text.isAbsoluteScreenLocActive());
+            fields.put("start_point", start == null ? null : start.isLabelSet() ? start.getLabel(xml)
+                    : List.of(start.getInhomX(), start.getInhomY()));
         }
         return fields;
     }

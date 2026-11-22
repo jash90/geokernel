@@ -1,0 +1,146 @@
+{
+  "schema": 2,
+  "id": "saved-styles-002",
+  "script": [
+    "r = 0.25",
+    "g = 0.5",
+    "b = 0.75",
+    "show = true",
+    "M = (0, 0)",
+    "A = (4, 0)",
+    "B = (0, 4)",
+    "C = (-4, 0)",
+    "k = Circle(M, A)",
+    "k2 = Circle(M, 2)",
+    "len = 9",
+    "e = Ellipse(A, C, len)",
+    "e2 = Ellipse(A, B, len)",
+    "a = CircularArc(M, A, B)",
+    "a2 = CircumcircularArc(A, B, C)",
+    "d = CircularSector(M, A, B)",
+    "d2 = CircumcircularSector(A, B, C)",
+    "s = Semicircle(A, C)"
+  ],
+  "objects": {
+    "r": { "type": "number", "defined": true, "value": 0.25 },
+    "g": { "type": "number", "defined": true, "value": 0.5 },
+    "b": { "type": "number", "defined": true, "value": 0.75 },
+    "show": { "type": "boolean", "defined": true, "value": true },
+    "M": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+    "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+    "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+    "C": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+    "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+    "k2": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+    "len": { "type": "number", "defined": true, "value": 9.0 },
+    "e": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "ellipse",
+      "matrix": [1040.0, 1296.0, -84240.0, -0.0, -0.0, -0.0],
+      "midpoint": [0.0, 0.0],
+      "half_axes": [9.0, 8.06225774829855],
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    },
+    "e2": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "ellipse",
+      "matrix": [1232.0, 1232.0, -84240.0, 64.0, -2592.0, -2592.0],
+      "midpoint": [2.0, 2.0],
+      "half_axes": [9.0, 8.54400374531753],
+      "eigenvectors": [
+        [0.7071067811865475, -0.7071067811865475],
+        [0.7071067811865475, 0.7071067811865475]
+      ]
+    },
+    "a": {
+      "type": "arc",
+      "defined": true,
+      "value": 6.283185307179586,
+      "conic_type": "circle",
+      "orientation": "positive",
+      "start": 0.0,
+      "end": 1.5707963267948966,
+      "arc_length": 6.283185307179586,
+      "area": 4.5663706143591725,
+      "midpoint": [0.0, 0.0],
+      "half_axes": [4.0, 4.0],
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    },
+    "a2": {
+      "type": "arc",
+      "defined": true,
+      "value": 12.566370614359172,
+      "conic_type": "circle",
+      "orientation": "positive",
+      "start": 0.0,
+      "end": 3.141592653589793,
+      "arc_length": 12.566370614359172,
+      "area": 25.132741228718345,
+      "midpoint": [-0.0, 0.0],
+      "half_axes": [4.0, 4.0],
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    },
+    "d": {
+      "type": "sector",
+      "defined": true,
+      "value": 12.566370614359172,
+      "conic_type": "circle",
+      "orientation": "positive",
+      "start": 0.0,
+      "end": 1.5707963267948966,
+      "arc_length": 6.283185307179586,
+      "area": 12.566370614359172,
+      "midpoint": [0.0, 0.0],
+      "half_axes": [4.0, 4.0],
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    },
+    "d2": {
+      "type": "sector",
+      "defined": true,
+      "value": 25.132741228718345,
+      "conic_type": "circle",
+      "orientation": "positive",
+      "start": 0.0,
+      "end": 3.141592653589793,
+      "arc_length": 12.566370614359172,
+      "area": 25.132741228718345,
+      "midpoint": [-0.0, 0.0],
+      "half_axes": [4.0, 4.0],
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    },
+    "s": {
+      "type": "arc",
+      "defined": true,
+      "value": 12.566370614359172,
+      "conic_type": "circle",
+      "orientation": "positive",
+      "start": 3.141592653589793,
+      "end": 6.283185307179586,
+      "arc_length": 12.566370614359172,
+      "area": 25.132741228718345,
+      "midpoint": [0.0, 0.0],
+      "half_axes": [4.0, 4.0],
+      "eigenvectors": [
+        [1.0, 0.0],
+        [-0.0, 1.0]
+      ]
+    }
+  }
+}

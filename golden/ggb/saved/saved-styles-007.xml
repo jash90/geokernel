@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<uses3D val="true"/>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="r" exp="0.25"/>
+<element type="numeric" label="r">
+	<value val="0.25"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="g" exp="0.5"/>
+<element type="numeric" label="g">
+	<value val="0.5"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="b" exp="0.75"/>
+<element type="numeric" label="b">
+	<value val="0.75"/>
+	<show object="false" label="true"/>
+</element>
+<expression label="show" exp="true"/>
+<element type="boolean" label="show">
+	<value val="true"/>
+	<show object="false" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<checkbox fixed="true"/>
+</element>
+<element type="numeric" label="a">
+	<value val="0"/>
+	<slider min="0" max="8" absoluteScreenLocation="true" width="200" x="38" y="58" fixed="false" horizontal="true" showAlgebra="true"/>
+	<lineStyle thickness="10" type="0" typeHidden="1" opacity="100"/>
+	<show object="true" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="1"/>
+	<animation step="0.5" type="0" playing="false"/>
+</element>
+<element type="button" label="run">
+	<show object="true" label="false"/>
+	<condition showObject="show"/>
+	<objColor r="0" g="222" b="252" alpha="0" dynamicr="r" dynamicg="g" dynamicb="b" colorSpace="1"/>
+	<bgColor r="0" g="90" b="180" alpha="255"/>
+	<layer val="6"/>
+	<labelMode val="0"/>
+	<tooltipMode val="3"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<fixed val="true"/>
+	<selectionAllowed val="false"/>
+	<auxiliary val="true"/>
+	<caption val="Go"/>
+</element>
+<element type="button" label="run2">
+	<show object="false" label="true"/>
+	<objColor r="255" g="255" b="255" alpha="0"/>
+	<bgColor r="101" g="87" b="210" alpha="255"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="0" playing="false"/>
+	<auxiliary val="true"/>
+	<caption val="Reset"/>
+</element>
+<command name="Textfield">
+	<input a0="a"/>
+	<output a0="field"/>
+</command>
+<element type="textfield" label="field">
+	<show object="true" label="false"/>
+	<condition showObject="show"/>
+	<objColor r="40" g="36" b="106" alpha="0.75" dynamicr="r" dynamicg="g" dynamicb="b" dynamica="1 - r" colorSpace="2"/>
+	<bgColor r="230" g="255" b="230" alpha="255"/>
+	<layer val="7"/>
+	<labelOffset x="30" y="30"/>
+	<labelMode val="0"/>
+	<tooltipMode val="1"/>
+	<fixed val="true"/>
+	<selectionAllowed val="false"/>
+	<caption val="Value"/>
+	<symbolic val="true"/>
+	<contentSerif val="true"/>
+</element>
+<command name="Textfield">
+	<input/>
+	<output a0="empty"/>
+</command>
+<element type="textfield" label="empty">
+	<show object="false" label="true"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<bgColor r="255" g="255" b="255" alpha="255"/>
+	<layer val="0"/>
+	<labelOffset x="30" y="30"/>
+	<labelMode val="0"/>
+	<tooltipMode val="2"/>
+	<auxiliary val="true"/>
+	<symbolic val="true"/>
+	<contentSerif val="true"/>
+	<tempUserInput eval=""/>
+</element>
+</construction>
+</geogebra>

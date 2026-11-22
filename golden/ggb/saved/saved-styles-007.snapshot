@@ -1,0 +1,26 @@
+{
+  "schema": 2,
+  "id": "saved-styles-007",
+  "script": [
+    "r = 0.25",
+    "g = 0.5",
+    "b = 0.75",
+    "show = true",
+    "a = Slider(0, 8, 0.5)",
+    "run = Button(\"Apply\")",
+    "run2 = Button(\"Reset\")",
+    "field = InputBox(a)",
+    "empty = InputBox()"
+  ],
+  "objects": {
+    "r": { "type": "number", "defined": true, "value": 0.25 },
+    "g": { "type": "number", "defined": true, "value": 0.5 },
+    "b": { "type": "number", "defined": true, "value": 0.75 },
+    "show": { "type": "boolean", "defined": true, "value": true },
+    "a": { "type": "number", "defined": true, "value": 0.0 },
+    "run": { "type": "Button", "defined": true },
+    "run2": { "type": "Button", "defined": true },
+    "field": { "type": "TextField", "defined": true },
+    "empty": { "type": "TextField", "defined": true }
+  }
+}
