@@ -999,7 +999,7 @@ reason = "the minimum of the circle has the same y coordinate but the reference 
 mismatches = ["0:M", "1:M"]
 
 [[gap]]
-id = "funcrest-conditional-007"
+id = "funcrest-conditionalmixed-001"
 reason = "the reference keeps a segment result and its last copied endpoints when a plain line is selected; the kernel refuses mixed geometric kinds because a segment value has no independent supporting line or retained endpoints"
 mismatches = ["0:script line 7"]
 

@@ -757,49 +757,96 @@
       ]
     },
     {
-      "id": "funcrest-conditional-007",
+      "id": "funcrest-conditional-008",
       "group": "funcrest",
       "script": [
-        "n = 1",
-        "A = (0, 0)",
-        "B = (4, 0)",
-        "C = (0, 3)",
-        "r = Segment(A, B)",
-        "g = Line(A, C)",
-        "s = If(n > 0, r, g)"
+        "a = 2",
+        "t = true",
+        "l = {1, 2}",
+        "p = If(a < 3, t, 2)",
+        "q = If(a < 3, 3, a < 4)",
+        "r = If(a < 3, l, 1)"
       ],
       "steps": [
         { "action": "initial" },
-        { "action": "set_number", "label": "n", "value": -1.0 },
-        { "action": "set_number", "label": "n", "value": 1.0 }
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
       ],
       "snapshots": [
         {
-          "n": { "type": "number", "defined": true, "value": 1.0 },
-          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
-          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
-          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
-          "r": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
-          "g": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 0.0 },
-          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 }
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
         },
         {
-          "n": { "type": "number", "defined": true, "value": -1.0 },
-          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
-          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
-          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
-          "r": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
-          "g": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 0.0 },
-          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 }
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "list", "defined": false }
         },
         {
-          "n": { "type": "number", "defined": true, "value": 1.0 },
-          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
-          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
-          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
-          "r": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
-          "g": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 0.0 },
-          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 }
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "r": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
         }
       ]
     }

@@ -1,0 +1,5 @@
+{
+  "cases": [
+    {"id": "funcrest-conditionalmixed-001", "group": "funcrest", "script": ["n = 1", "A = (0, 0)", "B = (4, 0)", "C = (0, 3)", "r = Segment(A, B)", "g = Line(A, C)", "s = If(n > 0, r, g)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "n", "value": -1.0}, {"action": "set_number", "label": "n", "value": 1.0}]}
+  ]
+}

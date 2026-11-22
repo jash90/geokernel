@@ -125,9 +125,11 @@ case("conditional",
 case("conditional",
      "n = 1\nb = n > 0\na = If(b, true, 5)\nP = If(b, 3, (2, 1))\nq = If(b, {1, 2}, 3)",
      [setn("n", 0), setn("n", 1)])
+# The original case 007 moved to the reference-only mixed geometry topic.
+cases.counters["conditional"] += 1
 case("conditional",
-     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\ng = Line(A, C)\ns = If(n > 0, r, g)",
-     [setn("n", -1), setn("n", 1)])
+     "a = 2\nt = true\nl = {1, 2}\np = If(a < 3, t, 2)\nq = If(a < 3, 3, a < 4)\nr = If(a < 3, l, 1)",
+     [setn("a", 3), setn("a", 4), setn("a", 2)])
 
 # ---------------------------------------------------------------- SlowPlot
 cases.topic("slowplot")
@@ -138,3 +140,9 @@ case("slowplot", "n = 1\nf(x) = x/n\ng = SlowPlot(f)\nu = g(-8)",
      [setn("n", 0), setn("n", 2), reject("s = SlowPlot(3)")])
 
 cases.write()
+
+cases = Cases("funcrest")
+case("conditionalmixed",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\ng = Line(A, C)\ns = If(n > 0, r, g)",
+     [setn("n", -1), setn("n", 1)])
+cases.write("reference")
