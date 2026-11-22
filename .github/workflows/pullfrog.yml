@@ -16,7 +16,10 @@ permissions:
 
 jobs:
   pullfrog:
-    runs-on: ubuntu-latest
+    # The project's own Linux runners (geokernel-linux-*). `Linux` is required:
+    # Pullfrog's shell sandbox relies on unshare/setpriv.
+    runs-on: [self-hosted, geokernel, Linux]
+    timeout-minutes: 60
     permissions:
       id-token: write
       contents: read
