@@ -27,18 +27,12 @@
 //! 100 evaluations, midpoint start, exceptions treated as failure).
 
 use crate::expr::eval::{Ctx, Val};
+use crate::expr::math::{check_integer, is_equal, is_zero};
 use crate::expr::parse::Parser;
 use crate::expr::{Finance, Node, NONE};
-use crate::expr::math::{check_integer, is_equal, is_zero};
 
 /// The commands of this group (see `commands::is_command`).
-pub(super) const NAMES: &[&str] = &[
-    "Rate",
-    "Periods",
-    "Payment",
-    "FutureValue",
-    "PresentValue",
-];
+pub(super) const NAMES: &[&str] = &["Rate", "Periods", "Payment", "FutureValue", "PresentValue"];
 
 /// `Rate(nper, pmt, pv [, fv] [, type] [, guess])` and the closed forms of
 /// the other four; of anything else they are the commands of the script
@@ -154,9 +148,7 @@ enum Slot {
 /// `Rate` search; once it refuses, the rate is undefined.
 pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bool) -> f64 {
     let input = |slot: Slot| args.get(op.slot(slot).unwrap_or(usize::MAX)).copied();
-    let required = |slot: Slot| -> Option<f64> {
-        input(slot).filter(|v| v.is_finite())
-    };
+    let required = |slot: Slot| -> Option<f64> { input(slot).filter(|v| v.is_finite()) };
     // `setNper`: the number of periods must be a positive integer; only
     // `Periods` does not read it (it is that command's output).
     let nper = if op == Finance::Periods {
@@ -166,13 +158,16 @@ pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bo
             return f64::NAN;
         };
         let n = check_integer(v);
-        if !(n > 0.0) {
+        if n.is_nan() || n <= 0.0 {
             return f64::NAN;
         }
         n
     };
     // `setPmt`: every command but `Payment` reads it.
-    let Some(pmt) = (op == Finance::Payment).then_some(0.0).or(required(Slot::Pmt)) else {
+    let Some(pmt) = (op == Finance::Payment)
+        .then_some(0.0)
+        .or(required(Slot::Pmt))
+    else {
         return f64::NAN;
     };
     // `setPV`: read by every command but `PresentValue`, and absent only
@@ -207,7 +202,8 @@ pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bo
         Some(_) => return f64::NAN,
     };
     // `AlgoFinancial.pmtFactor`.
-    let factor = |rate: f64, nper: f64| (1.0 + rate * pmt_type) * ((1.0 + rate).powf(nper) - 1.0) / rate;
+    let factor =
+        |rate: f64, nper: f64| (1.0 + rate * pmt_type) * ((1.0 + rate).powf(nper) - 1.0) / rate;
     match op {
         Finance::Rate => {
             // The search brackets around the guess only when the form
@@ -528,7 +524,6 @@ fn newton_root(f: &RateFunction, min: f64, max: f64, start: f64) -> Option<f64> 
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -549,10 +544,7 @@ mod tests {
         assert!((ok - 0.021_750_422_875_496_778).abs() < 1e-15, "{ok}");
         assert!(rate(&[42.0, 4.0, 13.0, 1.0]).is_nan());
         let near = rate(&[42.0, 4.0, 13.0, 0.0, 1.0]);
-        assert!(
-            (near - (-0.999_999_999_999_720_4)).abs() < 1e-10,
-            "{near}"
-        );
+        assert!((near - (-0.999_999_999_999_720_4)).abs() < 1e-10, "{near}");
         assert!(rate(&[42.0, 4.0, 13.0, 0.0, 1.0, 42.0]).is_nan());
     }
 

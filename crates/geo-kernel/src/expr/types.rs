@@ -367,9 +367,8 @@ pub(crate) fn check(
                 };
                 let object = commands::takes_object(op);
                 // `Sum(list, frequencies)`: the second argument is a list
-                let frequencies = op == ListOp::Sum
-                    && n != NONE
-                    && matches!(tys[n as usize], Ty::List(_));
+                let frequencies =
+                    op == ListOp::Sum && n != NONE && matches!(tys[n as usize], Ty::List(_));
                 if n != NONE
                     && !object
                     && !frequencies

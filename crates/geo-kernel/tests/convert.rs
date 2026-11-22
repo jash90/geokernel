@@ -38,9 +38,18 @@ fn conversions_keep_the_value_and_set_the_printing_style() {
     assert_eq!(point(&c, "w"), (3.0, 0.0));
     assert_eq!(point(&c, "u"), (5.0, 2.0));
     use geo_kernel::algo::point::CoordMode;
-    assert_eq!(c.coordinate_mode(c.id("c1").unwrap()), Some(CoordMode::Complex));
-    assert_eq!(c.coordinate_mode(c.id("p").unwrap()), Some(CoordMode::Polar));
-    assert_eq!(c.coordinate_mode(c.id("q").unwrap()), Some(CoordMode::Cartesian));
+    assert_eq!(
+        c.coordinate_mode(c.id("c1").unwrap()),
+        Some(CoordMode::Complex)
+    );
+    assert_eq!(
+        c.coordinate_mode(c.id("p").unwrap()),
+        Some(CoordMode::Polar)
+    );
+    assert_eq!(
+        c.coordinate_mode(c.id("q").unwrap()),
+        Some(CoordMode::Cartesian)
+    );
     // a plain point has no style
     assert_eq!(c.coordinate_mode(c.id("A").unwrap()), None);
 }
@@ -69,12 +78,20 @@ fn dynamic_coordinates_follow_the_point_through_expressions() {
 fn dynamic_coordinates_refuses_what_it_cannot_move() {
     let mut c = build(&["A = (1, 2)", "C = (3, 4)", "B = Midpoint(A, C)"]);
     let error = script::exec(&mut c, "M = DynamicCoordinates(B, 1, 1)").unwrap_err();
-    assert!(error.contains("point") || error.contains("number"), "{error}");
+    assert!(
+        error.contains("point") || error.contains("number"),
+        "{error}"
+    );
 }
 
 #[test]
 fn name_gives_the_label_as_text() {
-    let c = build(&["txt = \"GeoGebra\"", "a = 5", "n = Name(txt)", "m = Name(a)"]);
+    let c = build(&[
+        "txt = \"GeoGebra\"",
+        "a = 5",
+        "n = Name(txt)",
+        "m = Name(a)",
+    ]);
     for (label, expected) in [("n", "txt"), ("m", "a")] {
         assert_eq!(c.text(c.id(label).unwrap()), Some(expected));
     }

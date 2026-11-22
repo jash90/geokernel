@@ -95,8 +95,10 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
         "Length" => TextOp::Length,
         "Take" => TextOp::Take,
         "Name" => return parse_name(p),
-        // `Sum` of texts concatenates them (`TextFold`); anything else is
-        // the statistics group's command, so it must fall through.
+        // `Sum` of texts concatenates them (`TextFold`); of one argument
+        // the list itself, of several the wrapped arguments — but never
+        // two (`CmdSum` wants a list first). Anything else is the
+        // statistics group's command, so it must fall through.
         "Sum" => {
             return p.list_command(|p, args, _| {
                 let texty = |p: &Parser<'_>, i: u32| {
@@ -105,7 +107,10 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
                 if args.is_empty() || !args.iter().all(|&a| texty(p, a)) {
                     return Ok(None);
                 }
-                Ok(Some(call_node(p, TextOp::Sum, &args)))
+                if args.len() == 2 || (args.len() == 1 && p.is_text(args[0])) {
+                    return Ok(None);
+                }
+                Ok(Some(call_node(p, TextOp::Sum, args)))
             });
         }
         _ => return Ok(None),
@@ -188,7 +193,7 @@ pub(in crate::expr) fn result_type(
         (UnicodeToText, [a]) | (Split, [Text, a]) => list(*a),
         (ReplaceAll, [Text, Text, Text]) => true,
         (Sum, [Text, ..]) => true,
-        (Sum, [list]) if matches!(list, Ty::List(Elem::Text)) => true,
+        (Sum, [Ty::List(Elem::Text)]) => true,
         (IndexOf, [Text, Text]) => true,
         (IndexOf, [Text, Text, n]) | (Take, [Text, n]) => number(*n),
         (Take, [Text, a, b]) => number(*a) && number(*b),

@@ -168,7 +168,10 @@ pub fn value_string(c: &Construction, id: Id) -> Option<String> {
     // `ToComplex` and `ToPolar` only change how the point prints
     // (`GeoPoint.buildValueString`)
     if let Some(mode) = c.coordinate_mode(id) {
-        if let (Value::Point { x, y }, true) = (&value, mode != geo_kernel::algo::point::CoordMode::Cartesian) {
+        if let (Value::Point { x, y }, true) = (
+            &value,
+            mode != geo_kernel::algo::point::CoordMode::Cartesian,
+        ) {
             return styled_point(*x, *y, mode);
         }
     }
@@ -343,11 +346,7 @@ fn normalize_syntax(input: &str) -> String {
         // A command's name carries an upper-case letter (`Vertex`,
         // `nCr`); a lower-case name before `[` is an old-style list index
         // (`l[2]`), which the parentheses form reads the same way.
-        if start == i
-            || !chars[start..i]
-                .iter()
-                .any(|c| c.is_ascii_uppercase())
-        {
+        if start == i || !chars[start..i].iter().any(|c| c.is_ascii_uppercase()) {
             continue;
         }
         // Find the matching `]`, counting brackets only: parentheses are

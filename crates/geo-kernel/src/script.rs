@@ -208,7 +208,10 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 /// the repeat flag only changes how the animation runs again.
 fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<Id>, String> {
     if args.is_empty() || args.len() > 2 {
-        return Err(format!("`SlowPlot` does not take {} argument(s)", args.len()));
+        return Err(format!(
+            "`SlowPlot` does not take {} argument(s)",
+            args.len()
+        ));
     }
     let start = c.checkpoint();
     let result = (|| {
@@ -226,9 +229,9 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
             // the repeat flag is read as a double: a number or a boolean
             let numeric = crate::expr::plain_number(repeat).is_some()
                 || matches!(*repeat, "true" | "false")
-                || c.id(repeat).is_some_and(|id| {
-                    matches!(c.kind(id), k if k.is_number() || k == Kind::Boolean)
-                });
+                || c.id(repeat).is_some_and(
+                    |id| matches!(c.kind(id), k if k.is_number() || k == Kind::Boolean),
+                );
             if !numeric {
                 return Err(format!("`{repeat}` is not a number"));
             }
@@ -273,7 +276,7 @@ fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
     if let Some(id) = c.id(arg) {
         return Ok(id);
     }
-    let label = format!("\\0conv{}", c.len());
+    let label = format!("\u{0}conv{}", c.len());
     for kind in [Kind::Point, Kind::Number] {
         if crate::expr::argument_object(c, arg, &label, kind) {
             return Ok(c.id(&label).unwrap());
@@ -776,13 +779,31 @@ fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> 
         // A call of a command keeps the command's own error.
         Err(e) if is_single_call(c, rhs) => Err(e),
         Err(_) => {
-            let vector = is_vector_label(name)
-                || rhs.split_once('(').is_some_and(|(name, _)| {
-                    VectorDef::vector_result(name.trim()) && call_closes_at_end(rhs, name.len())
-                });
+            let vector = !sum_fold_point(c, rhs)
+                && (is_vector_label(name)
+                    || rhs.split_once('(').is_some_and(|(name, _)| {
+                        VectorDef::vector_result(name.trim()) && call_closes_at_end(rhs, name.len())
+                    }));
             crate::expr::define(c, name, rhs, vector)
         }
     }
+}
+
+/// `Sum` of three or more points or vectors folds to a point: `CmdSum`
+/// wraps the arguments in a list of points, whatever the label says (the
+/// first argument decides; a folded expression that is not a literal or an
+/// object keeps the rule of the label).
+fn sum_fold_point(c: &Construction, rhs: &str) -> bool {
+    let Some(("Sum", args)) = split_call(rhs) else {
+        return false;
+    };
+    args.len() >= 3
+        && ({
+            let first = args[0].trim();
+            matches!(parse_def(c, first), Ok(Def::FreePoint { .. }))
+                || c.id(first)
+                    .is_some_and(|id| matches!(c.kind(id), Kind::Point | Kind::Vector))
+        })
 }
 
 /// `CmdVector` keeps a labelled vector and labels an anonymous one.
@@ -1994,12 +2015,18 @@ mod tests {
         assert_eq!(c.number(c.id("cs").unwrap()), Some(1.0));
         assert!(exec(&mut c, "SetConstructionStep(2)").unwrap().is_none());
         assert_eq!(c.number(c.id("cs").unwrap()), Some(1.0));
-        assert!(exec(&mut c, "a = SetConstructionStep(9)").unwrap().is_none());
+        assert!(exec(&mut c, "a = SetConstructionStep(9)")
+            .unwrap()
+            .is_none());
         assert!(c.id("a").is_none());
         assert_eq!(c.number(c.id("cs").unwrap()), Some(1.0));
 
         let err = load("SetConstructionStep(x)\n").err().unwrap();
-        assert!(err.message.contains("`x` is not a number"), "{}", err.message);
+        assert!(
+            err.message.contains("`x` is not a number"),
+            "{}",
+            err.message
+        );
     }
 
     #[test]

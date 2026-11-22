@@ -1,0 +1,134 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "financial-periods-001",
+      "group": "financial",
+      "script": [
+        "n = Periods(0.01, -200, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 5.15493355391486 }
+        }
+      ]
+    },
+    {
+      "id": "financial-periods-002",
+      "group": "financial",
+      "script": [
+        "n = Periods(0.01, -200, 1000, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 5.15493355391486 }
+        }
+      ]
+    },
+    {
+      "id": "financial-periods-003",
+      "group": "financial",
+      "script": [
+        "n = Periods(0.01, -200, 1000, 0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 5.15493355391486 }
+        }
+      ]
+    },
+    {
+      "id": "financial-periods-004",
+      "group": "financial",
+      "script": [
+        "r = 0.005",
+        "n = Periods(r, -100, 5000)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.01 },
+        { "action": "set_number", "label": "r", "value": 0.05 },
+        { "action": "set_number", "label": "r", "value": 0.1 },
+        { "action": "set_number", "label": "r", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.005 },
+          "n": { "type": "number", "defined": true, "value": 57.68013595777633 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.01 },
+          "n": { "type": "number", "defined": true, "value": 69.66071689357483 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.05 },
+          "n": { "type": "number", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.1 },
+          "n": { "type": "number", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 50.0 }
+        }
+      ]
+    },
+    {
+      "id": "financial-periods-005",
+      "group": "financial",
+      "script": [
+        "n = Periods(0, -100, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 10.0 }
+        }
+      ]
+    },
+    {
+      "id": "financial-periods-006",
+      "group": "financial",
+      "script": [
+        "n = Periods(0.01, -100, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-periods-007",
+      "group": "financial",
+      "script": [
+        "n = Periods(0.05, -100, 0, 0, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

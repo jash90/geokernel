@@ -1,0 +1,32 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "misc-protocol-001",
+      "group": "misc",
+      "script": [
+        "cs = ConstructionStep()",
+        "A = (1, 2)",
+        "i = ConstructionStep()",
+        "B = (3, 4)",
+        "j = ConstructionStep()",
+        "k = ConstructionStep(B)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "cs": { "type": "number", "defined": true, "value": 6.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "i": { "type": "number", "defined": true, "value": 6.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "j": { "type": "number", "defined": true, "value": 6.0 },
+          "k": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    }
+  ]
+}

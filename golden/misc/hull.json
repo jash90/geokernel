@@ -1,0 +1,323 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "misc-hull-001",
+      "group": "misc",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (4, 3)",
+        "D = (0, 3)",
+        "E = (2, 1)",
+        "l = {A, E, B, A, C, D}",
+        "h = Hull(l, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "E", "x": -1.0, "y": -1.0 },
+        { "action": "move", "label": "E", "x": 5.0, "y": 4.0 },
+        { "action": "move", "label": "D", "x": -3.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 3.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [0.0, 0.0, false],
+              [0.0, 3.0, true],
+              [4.0, 3.0, true],
+              [4.0, 0.0, true],
+              [0.0, 0.0, true]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 3.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [-1.0, -1.0, false],
+              [0.0, 3.0, true],
+              [4.0, 3.0, true],
+              [4.0, 0.0, true],
+              [-1.0, -1.0, true]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 4.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 3.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [0.0, 0.0, false],
+              [0.0, 3.0, true],
+              [5.0, 4.0, true],
+              [4.0, 0.0, true],
+              [0.0, 0.0, true]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 4.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": -3.0, "y": 3.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [-3.0, 3.0, false],
+              [5.0, 4.0, true],
+              [4.0, 0.0, true],
+              [0.0, 0.0, true],
+              [-3.0, 3.0, true]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "misc-hull-002",
+      "group": "misc",
+      "script": [
+        "A = (2, 3)",
+        "l = {A}",
+        "h = Hull(l, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -1.0, "y": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 3.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [2.0, 3.0, false],
+              [2.0, 3.0, true]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 5.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.0, "y": 5.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [-1.0, 5.0, false],
+              [-1.0, 5.0, true]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "misc-hull-003",
+      "group": "misc",
+      "script": [
+        "l = {}",
+        "h = Hull(l, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "h": { "type": "locus", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "misc-hull-004",
+      "group": "misc",
+      "script": [
+        "l = {1, 2}",
+        "h = Hull(l, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "h": { "type": "locus", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "misc-hull-005",
+      "group": "misc",
+      "script": [
+        "a = 1/0",
+        "B = (0, 0)",
+        "C = (5, 0)",
+        "D = (0, 5)",
+        "l = {B, D, C}",
+        "h = Hull(l, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 0.0 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [0.0, 0.0, false],
+              [0.0, 5.0, true],
+              [5.0, 0.0, true],
+              [0.0, 0.0, true]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "misc-hull-006",
+      "group": "misc",
+      "script": [
+        "l = {(1, 1), (2, 2), (3, 3), (4, 0.25), (5, 0.2)}",
+        "h = ConvexHull(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 0.2 }
+            ]
+          },
+          "h": {
+            "type": "locus",
+            "defined": true,
+            "points": [
+              [1.0, 1.0, false],
+              [3.0, 3.0, true],
+              [5.0, 0.2, true],
+              [4.0, 0.25, true],
+              [1.0, 1.0, true]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

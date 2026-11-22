@@ -517,9 +517,10 @@ impl Group for PointDef {
                 c.expect(path, CLOSEST_PATH)?;
                 c.expect(point, POINT)
             }
-            PointDef::Convert { source, .. } => {
-                c.expect(source, &[Kind::Point, Kind::Number, Kind::Vector, Kind::List])
-            }
+            PointDef::Convert { source, .. } => c.expect(
+                source,
+                &[Kind::Point, Kind::Number, Kind::Vector, Kind::List],
+            ),
             PointDef::Dynamic { point, x, y } => {
                 c.expect(point, POINT)?;
                 // `CmdDynamicCoordinates` needs a point the user can move

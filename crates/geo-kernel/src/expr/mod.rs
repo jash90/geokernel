@@ -416,9 +416,9 @@ pub(crate) enum Bin {
     Max,
     Min,
     /// `nCr(n, r)`, the binomial coefficient (`MyMath.binomial`).
-    NCR,
+    Ncr,
     /// `nPr(n, r)`, the number of permutations (`AlgoNpR.nPr`).
-    NPR,
+    Npr,
     /// `<`, `>`, `<=`, `>=`: numbers compared with the tolerance 1e-8.
     Less,
     Greater,
@@ -1733,7 +1733,8 @@ fn add_parsed(
             || matches!(
                 n,
                 Node::Cmd(..) | Node::If(IfMode::Algo, ..) | Node::Vector(_)
-            ) || matches!(n, Node::Financial(..))
+            )
+            || matches!(n, Node::Financial(..))
             || is_list_node(n)
     });
     // a constant boolean (`b = 1 < 2`) or list stays an expression: there

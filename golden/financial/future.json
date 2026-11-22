@@ -1,0 +1,149 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "financial-future-001",
+      "group": "financial",
+      "script": [
+        "f = FutureValue(10, 0.05, -100)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": true, "value": 1.2737820415783307 }
+        }
+      ]
+    },
+    {
+      "id": "financial-future-002",
+      "group": "financial",
+      "script": [
+        "f = FutureValue(10, 0.05, -100, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": true, "value": 1.2737820415783307 }
+        }
+      ]
+    },
+    {
+      "id": "financial-future-003",
+      "group": "financial",
+      "script": [
+        "f = FutureValue(10, 0.05, -100, 0, 500)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-future-004",
+      "group": "financial",
+      "script": [
+        "r = 0.03",
+        "f = FutureValue(12, r, -250)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 0.25 },
+        { "action": "set_number", "label": "r", "value": -0.25 },
+        { "action": "set_number", "label": "r", "value": 0.03 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.03 },
+          "f": { "type": "number", "defined": true, "value": 1.6663840591651518 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "f": { "type": "number", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.25 },
+          "f": { "type": "number", "defined": true, "value": 18.725602544082122 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -0.25 },
+          "f": { "type": "number", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.03 },
+          "f": { "type": "number", "defined": true, "value": 1.6663840591651518 }
+        }
+      ]
+    },
+    {
+      "id": "financial-future-005",
+      "group": "financial",
+      "script": [
+        "f = FutureValue(10, 0.05, -100, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": true, "value": 0.14640383742049767 }
+        }
+      ]
+    },
+    {
+      "id": "financial-future-006",
+      "group": "financial",
+      "script": [
+        "f = FutureValue(10, 0, -100)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-future-007",
+      "group": "financial",
+      "script": [
+        "f = FutureValue(4.5, 0.07, -13)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": true, "value": 0.36615033891950893 }
+        }
+      ]
+    },
+    {
+      "id": "financial-future-008",
+      "group": "financial",
+      "script": [
+        "f = FutureValue(-3, 0.07, -13)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

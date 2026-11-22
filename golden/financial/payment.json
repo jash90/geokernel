@@ -1,0 +1,149 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "financial-payment-001",
+      "group": "financial",
+      "script": [
+        "p = Payment(10, 0.05, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": -88506.36665915858 }
+        }
+      ]
+    },
+    {
+      "id": "financial-payment-002",
+      "group": "financial",
+      "script": [
+        "p = Payment(10, 0.05, 1000, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": -88506.36665915858 }
+        }
+      ]
+    },
+    {
+      "id": "financial-payment-003",
+      "group": "financial",
+      "script": [
+        "p = Payment(10, 0.05, 1000, 0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": -88506.36665915858 }
+        }
+      ]
+    },
+    {
+      "id": "financial-payment-004",
+      "group": "financial",
+      "script": [
+        "r = 0.04",
+        "p = Payment(24, r, 5000)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "r", "value": 0.08 },
+        { "action": "set_number", "label": "r", "value": 0.5 },
+        { "action": "set_number", "label": "r", "value": -0.5 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.04 },
+          "p": { "type": "number", "defined": true, "value": -993289.596562604 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "p": { "type": "number", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.08 },
+          "p": { "type": "number", "defined": true, "value": -528573.4600885584 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.5 },
+          "p": { "type": "number", "defined": true, "value": -150000.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -0.5 },
+          "p": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-payment-005",
+      "group": "financial",
+      "script": [
+        "p = Payment(10, 0.05, 1000, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": -88584.87302581774 }
+        }
+      ]
+    },
+    {
+      "id": "financial-payment-006",
+      "group": "financial",
+      "script": [
+        "p = Payment(10, 0, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-payment-007",
+      "group": "financial",
+      "script": [
+        "p = Payment(10, 0.05, 0, 0, 1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "financial-payment-008",
+      "group": "financial",
+      "script": [
+        "p = Payment(10, 0.05, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": { "type": "number", "defined": true, "value": -0.0 }
+        }
+      ]
+    }
+  ]
+}

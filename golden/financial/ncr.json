@@ -1,0 +1,85 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "financial-ncr-001",
+      "group": "financial",
+      "script": [
+        "a = nCr(5, 2)",
+        "b = nCr(5, 0)",
+        "c = nCr(5, 5)",
+        "d = nCr(5, 7)",
+        "e = nCr(5, -1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 10.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "e": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "financial-ncr-002",
+      "group": "financial",
+      "script": [
+        "a = nCr(10, 4)",
+        "b = nCr(20, 10)",
+        "c = nCr(37, 18)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 210.0 },
+          "b": { "type": "number", "defined": true, "value": 184756.0 },
+          "c": { "type": "number", "defined": true, "value": 1.76726319E10 }
+        }
+      ]
+    },
+    {
+      "id": "financial-ncr-003",
+      "group": "financial",
+      "script": [
+        "a = nCr(2.5, 2)",
+        "b = nCr(5, 2.5)",
+        "c = nCr(-3, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "financial-ncr-004",
+      "group": "financial",
+      "script": [
+        "a = nCr(1000000, 2)",
+        "b = nCr(1000000, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.999995E11 },
+          "b": { "type": "number", "defined": true, "value": 1.66666166667E17 }
+        }
+      ]
+    }
+  ]
+}

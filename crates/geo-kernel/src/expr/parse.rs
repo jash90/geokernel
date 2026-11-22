@@ -242,6 +242,22 @@ impl Parser<'_> {
         self.nodes[i as usize]
     }
 
+    /// The object a reference names when it is a function of one variable
+    /// (a `Node::FunctionObject` of kind `Function`), for a fold that
+    /// applies it.
+    pub(super) fn applied_function(&self, i: u32) -> Option<Id> {
+        match self.node(i) {
+            Node::FunctionObject(id) if self.c.kind(id) == Kind::Function => Some(id),
+            _ => None,
+        }
+    }
+
+    /// The variable `x`, marking the expression as one that uses it.
+    pub(super) fn push_var(&mut self) -> u32 {
+        self.uses_var = true;
+        self.push(Node::Var)
+    }
+
     /// A reference to the object `id`, registered as a parent — what
     /// writing its label would parse to (`Name` and `Object` insert these
     /// for the object their argument resolved to).
@@ -1097,11 +1113,6 @@ impl Parser<'_> {
     /// Whether the subtree at `i` is a list.
     fn is_list(&self, i: u32) -> bool {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::List(_)))
-    }
-
-    /// Whether the subtree at `i` is a function.
-    pub(super) fn is_function(&self, i: u32) -> bool {
-        matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if tys[i as usize] == Ty::Function)
     }
 
     pub(super) fn is_text(&self, i: u32) -> bool {

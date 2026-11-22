@@ -408,10 +408,10 @@ pub(crate) fn binomial(n0: f64, k: f64) -> f64 {
     }
     let (n, r) = (java_round(n0), java_round(r));
     // `binomLog`: exact for n <= 37.
-    let ncr = (0.5 + (ln_gamma(n as f64 + 1.0) - ln_gamma(r as f64 + 1.0)
-        - ln_gamma((n - r) as f64 + 1.0))
-        .exp())
-        .floor();
+    let ncr = (0.5
+        + (ln_gamma(n as f64 + 1.0) - ln_gamma(r as f64 + 1.0) - ln_gamma((n - r) as f64 + 1.0))
+            .exp())
+    .floor();
     if ncr == f64::INFINITY {
         return f64::INFINITY;
     }

@@ -46,25 +46,59 @@ fn a_negative_frequency_or_a_missing_element_is_undefined() {
 }
 
 #[test]
+fn lists_of_other_lengths_than_the_frequencies_are_undefined() {
+    // longer by more than one, shorter: only one more (class bounds) or
+    // equal lengths compute (`AlgoStats1D`)
+    let c = build(&["b = {1, 2, 3, 4}", "f = {1, 1}", "a = Sum(b, f)"]);
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Undefined);
+    let d = build(&["b = {1, 2, 3}", "f = {1}", "a = Sum(b, f)"]);
+    assert_eq!(d.value(d.id("a").unwrap()), Value::Undefined);
+    let e = build(&["b = {1, 2}", "f = {1, 1, 1}", "a = Sum(b, f)"]);
+    assert_eq!(e.value(e.id("a").unwrap()), Value::Undefined);
+}
+
+#[test]
 fn sum_folds_several_arguments() {
-    let c = build(&["a = Sum(1, 2, 3)", "b = Sum(1, 2)"]);
+    let c = build(&["a = Sum(1, 2, 3)"]);
     assert_eq!(number(&c, "a"), 6.0);
-    assert_eq!(number(&c, "b"), 3.0);
-    // points add coordinate-wise
+    // points add coordinate-wise, to a point whatever the label
+    // (`CmdSum` wraps them in a list of points)
     let p = build(&["s = Sum((1, 2), (3, 4), (5, 6))"]);
     assert_eq!(
         p.value(p.id("s").unwrap()),
-        Value::Vector {
-            x: 9.0,
-            y: 12.0
-        }
+        Value::Point { x: 9.0, y: 12.0 }
     );
+    assert_eq!(p.kind(p.id("s").unwrap()), geo_kernel::Kind::Point);
+    // of two arguments the fold never runs: `CmdSum` wants a list first
+    let mut e = Construction::new();
+    let error = script::exec(&mut e, "b = Sum(1, 2)").unwrap_err();
+    assert!(error.contains("Sum"), "{error}");
+    let error = script::exec(&mut e, "b = Sum((1, 2), (3, 4))").unwrap_err();
+    assert!(error.contains("Sum"), "{error}");
 }
 
 #[test]
 fn sum_of_texts_concatenates() {
     // GeoGebra's own test: Sum[{"Geo","Gebra"}] = GeoGebra
-    let c = build(&["t = Sum({\"Geo\", \"Gebra\"})", "u = Sum(\"ab\", \"cd\")"]);
+    let c = build(&[
+        "t = Sum({\"Geo\", \"Gebra\"})",
+        "u = Sum(\"ab\", \"cd\", \"ef\")",
+    ]);
     assert_eq!(c.text(c.id("t").unwrap()), Some("GeoGebra"));
-    assert_eq!(c.text(c.id("u").unwrap()), Some("abcd"));
+    assert_eq!(c.text(c.id("u").unwrap()), Some("abcdef"));
+    // two texts are not folded either (`CmdSum` `argErr`), nor one alone
+    let mut e = Construction::new();
+    let error = script::exec(&mut e, "v = Sum(\"ab\", \"cd\")").unwrap_err();
+    assert!(error.contains("Sum"), "{error}");
+    let error = script::exec(&mut e, "v = Sum(\"ab\")").unwrap_err();
+    assert!(error.contains("Sum"), "{error}");
+}
+
+#[test]
+fn sum_of_functions_splices_their_bodies() {
+    // GeoGebra's own test: Sum[sin(x), x] splices the bodies; here
+    // h = x + 2x + x, a function whatever the label
+    let c = build(&["f(x) = x", "g(x) = 2x", "h = Sum(f, g, f)", "w = h(3)"]);
+    assert_eq!(c.kind(c.id("h").unwrap()), geo_kernel::Kind::Function);
+    assert_eq!(number(&c, "w"), 12.0);
 }

@@ -1,0 +1,208 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "misc-sum-001",
+      "group": "misc",
+      "script": [
+        "l = {1, 10, 0.5}",
+        "a = Sum(l, l)",
+        "b = Sum(l)",
+        "c = Sum(l, 2)",
+        "d = Sum(l, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 10.0 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 101.25 },
+          "b": { "type": "number", "defined": true, "value": 11.5 },
+          "c": { "type": "number", "defined": true, "value": 11.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-sum-002",
+      "group": "misc",
+      "script": [
+        "b = {1, 2, 3}",
+        "f = {1, 1}",
+        "a = Sum(b, f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "f": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-sum-003",
+      "group": "misc",
+      "script": [
+        "b = {1, 2}",
+        "f = {1, -1}",
+        "a = Sum(b, f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "f": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -1.0 }
+            ]
+          },
+          "a": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "misc-sum-004",
+      "group": "misc",
+      "script": [
+        "a = Sum(1, 2, 3)",
+        "p = Sum((1, 2), (3, 4), (5, 6))",
+        "t = Sum(\"Geo\", \"Gebra\", \"!\")"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 6.0 },
+          "p": { "type": "point", "defined": true, "x": 9.0, "y": 12.0 },
+          "t": { "type": "text", "defined": true, "text": "GeoGebra!" }
+        }
+      ]
+    },
+    {
+      "id": "misc-sum-005",
+      "group": "misc",
+      "script": [
+        "t = Sum({\"Geo\", \"Gebra\"})",
+        "u = Sum({\"a\", \"b\", \"c\"})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "GeoGebra" },
+          "u": { "type": "text", "defined": true, "text": "abc" }
+        }
+      ]
+    },
+    {
+      "id": "misc-sum-006",
+      "group": "misc",
+      "script": [
+        "f(x) = x",
+        "g(x) = 2x",
+        "h = Sum(f, g, f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -16.0],
+              [-4.0, -8.0],
+              [-2.0, -4.0],
+              [-1.0, -2.0],
+              [-0.5, -1.0],
+              [0.0, 0.0],
+              [0.5, 1.0],
+              [1.0, 2.0],
+              [2.0, 4.0],
+              [4.0, 8.0],
+              [8.0, 16.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -32.0],
+              [-4.0, -16.0],
+              [-2.0, -8.0],
+              [-1.0, -4.0],
+              [-0.5, -2.0],
+              [0.0, 0.0],
+              [0.5, 2.0],
+              [1.0, 4.0],
+              [2.0, 8.0],
+              [4.0, 16.0],
+              [8.0, 32.0]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

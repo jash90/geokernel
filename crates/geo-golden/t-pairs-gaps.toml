@@ -6262,14 +6262,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4225"
-category = "app-command"
-reason = "the kernel refuses the input: unknown command `SlowPlot`"
+category = "kernel-mismatch"
+reason = "CmdSlowPlot builds its animation objects without returning an output, so GeoGebra's replay records none; the kernel's SlowPlot names the piecewise function under the probe label"
 mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4226"
-category = "app-command"
-reason = "the kernel refuses the input: unknown command `SlowPlot`"
+category = "kernel-mismatch"
+reason = "CmdSlowPlot builds its animation objects without returning an output, so GeoGebra's replay records none; the kernel's SlowPlot names the piecewise function under the probe label"
 mismatches = ["step"]
 
 [[gap]]

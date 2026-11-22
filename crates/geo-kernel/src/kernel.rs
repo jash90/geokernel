@@ -43,7 +43,6 @@ pub mod text;
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use self::locus::{LocusData, LocusDef};
 use crate::algo::arc::{ArcData, ArcDef};
-use crate::algo::optimize::OptimizeDef;
 use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
@@ -55,6 +54,7 @@ use crate::algo::intersect::{
 };
 use crate::algo::lines::{CommonTangentDef, LineDef};
 use crate::algo::measure::MeasureDef;
+use crate::algo::optimize::OptimizeDef;
 use crate::algo::path::{PathDef, PathState};
 use crate::algo::point::PointDef;
 use crate::algo::polygon::PolygonDef;

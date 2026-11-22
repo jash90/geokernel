@@ -817,7 +817,12 @@ fn validate_case(case: &Case) -> Result<(), String> {
                             }
                         }
                     }
-                    if let Some((label, "Difference" | "IntersectPath", _)) = command_args(line) {
+                    if let Some((
+                        label,
+                        "Difference" | "IntersectPath" | "IntersectRegion" | "IntersectionPaths",
+                        _,
+                    )) = command_args(line)
+                    {
                         clip_prefixes.insert(label_prefix(label));
                     }
                     if let Some((label, "Intersect", args)) = command_args(line) {
@@ -1019,12 +1024,14 @@ impl PolygonNames {
             };
             let point = |arg: &str| kind(arg) == Some(Kind::Point);
             if command == "Difference"
-                || command == "IntersectPath"
-                    && args
-                        .iter()
-                        .filter(|&&arg| kind(arg) == Some(Kind::Polygon))
-                        .count()
-                        == 2
+                || matches!(
+                    command,
+                    "IntersectPath" | "IntersectRegion" | "IntersectionPaths"
+                ) && args
+                    .iter()
+                    .filter(|&&arg| kind(arg) == Some(Kind::Polygon))
+                    .count()
+                    == 2
             {
                 names.default_points();
                 names.default_segments();

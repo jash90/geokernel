@@ -49,7 +49,12 @@ fn maximize_and_minimize_an_inline_expression() {
 fn optimize_without_dependency_still_runs_the_search() {
     // a constant dependent value: the finder stops somewhere in the
     // interval, at the same point GeoGebra's does
-    let c = build(&["a = Slider(-10, 10)", "b = 5", "g = b", "p = Minimize(g, a)"]);
+    let c = build(&[
+        "a = Slider(-10, 10)",
+        "b = 5",
+        "g = b",
+        "p = Minimize(g, a)",
+    ]);
     assert_eq!(number(&c, "p"), Value::Number(1.055728075070692));
 }
 

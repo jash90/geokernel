@@ -56,7 +56,6 @@ TriangleCurve,geometry,1,"point,point,point,implicit"
 Vertex,geometry,12,"conic | polygon | polyline | inequality | number | polygon,number | polyline,number | image,number | text,number | boolean,number | segment,number | number,number"
 PolyLine,geometry,4,"list | list,boolean | point,point,... | point,point,...,boolean"
 PenStroke,geometry,2,"point,point,... | number,number,..."
-PenStrokeBezier,english,1,"number,number,..."
 PointIn,geometry,1,region
 AffineRatio,geometry,1,"point,point,point"
 CrossRatio,geometry,1,"point,point,point,point"
@@ -142,7 +141,6 @@ ImplicitDerivative,function,1,function
 NSolveODE,function,1,"list,number,list,number"
 Spline,function,4,"list | list,number | list,number,function | point,point,..."
 BezierCurve,function,1,"point,point,point,point"
-ImplicitSurface,english,0,
 Normalize,function,3,"list | point | point,point,..."
 SVD,function,1,list
 Ellipse,conic,2,"point,point,number | point,point,point"
@@ -245,7 +243,6 @@ ConstructionStep,geogebra,2,() | any
 Object,geogebra,1,text
 Name,geogebra,1,any
 SlowPlot,geogebra,2,"function | function,number"
-ToolImage,geogebra,3,"number | number,point | number,point,point"
 DynamicCoordinates,geogebra,1,"point,number,number"
 SetConstructionStep,geogebra,1,number
 Maximize,optimization,2,"number,number | number,point"
@@ -265,5 +262,4 @@ TrigSimplify,function,4,function | list | curve | implicit
 TrigCombine,function,4,"function | curve | function,function | curve,function"
 nCr,english,1,"number,number"
 nPr,english,1,"number,number"
-CASLoaded,geogebra,1,()
 IsVertexForm,function,1,function

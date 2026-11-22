@@ -25,10 +25,17 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
     p.list_command(|p, args, lists| {
         // `Sum(a, b, ...)` of anything but a list folds the arguments,
         // which GeoGebra wraps in a list of the class of the first
-        // (`CmdSum`); functions add as one tree instead.
-        if op == ListOp::Sum && args.len() >= 2 && !lists[0] {
-            if args.iter().all(|&a| p.is_function(a)) {
-                let (last, init) = args.split_last().unwrap();
+        // (`CmdSum`). Functions splice their bodies into one sum
+        // (`FunctionFold`): applying them at a shared variable does the
+        // same. Of two arguments the fold never runs: `CmdSum` wants a
+        // list first (`argErr`).
+        if op == ListOp::Sum && args.len() >= 3 && !lists[0] {
+            let functions: Option<Vec<_>> = args.iter().map(|&a| p.applied_function(a)).collect();
+            if let Some(ids) = functions {
+                let var = p.push_var();
+                let applied: Vec<u32> =
+                    ids.iter().map(|&id| p.push(Node::Apply(id, var))).collect();
+                let (last, init) = applied.split_last().unwrap();
                 let mut acc = init[0];
                 for &a in &init[1..] {
                     acc = p.push(Node::Bin(Bin::Add, acc, a));
@@ -91,10 +98,7 @@ impl<const M: bool> Ctx<'_, M> {
         // `Sum(list, frequencies)`: a second list weights the elements,
         // and a list one longer than its frequencies holds class bounds
         // whose midpoints count instead (`AlgoStats1D`).
-        if op == ListOp::Sum
-            && n != NONE
-            && matches!(self.e.tys[n as usize], Ty::List(_))
-        {
+        if op == ListOp::Sum && n != NONE && matches!(self.e.tys[n as usize], Ty::List(_)) {
             return self.sum_frequencies(lists, l, n);
         }
         let Some((start, size)) = self.truncated(l, n) else {
@@ -123,13 +127,16 @@ impl<const M: bool> Ctx<'_, M> {
 
     /// `Sum(list, frequencies)` (`AlgoStats1D` with `STATS_SIGMAX`): the
     /// sum of each element times its frequency, with the midpoint rule for
-    /// class bounds; a negative frequency or a missing element makes the
-    /// sum undefined, and no elements sum to 0.
+    /// class bounds; lists of any other lengths, a negative frequency or a
+    /// missing element make the sum undefined, and no elements sum to 0.
     fn sum_frequencies(&self, lists: &crate::expr::eval::Lists, l: u32, f: u32) -> f64 {
         let (Some((start, len)), Some((fstart, flen))) = (self.list(l), self.list(f)) else {
             return f64::NAN;
         };
         let classes = len == flen + 1;
+        if !classes && len != flen {
+            return f64::NAN;
+        }
         let size = if classes { len - 1 } else { len };
         if size == 0 {
             return 0.0;
@@ -150,9 +157,6 @@ impl<const M: bool> Ctx<'_, M> {
             } else {
                 value
             };
-            if start + k >= fstart + flen {
-                return f64::NAN;
-            }
             let Some(frequency) = number_of(lists.read(self.c, fstart + k)) else {
                 return f64::NAN;
             };

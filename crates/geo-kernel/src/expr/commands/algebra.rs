@@ -48,8 +48,8 @@ pub(super) fn binary_command(name: &str) -> Option<Bin> {
         "CommonDenominator" => Bin::CommonDenominator,
         "Max" => Bin::Max,
         "Min" => Bin::Min,
-        "nCr" => Bin::NCR,
-        "nPr" => Bin::NPR,
+        "nCr" => Bin::Ncr,
+        "nPr" => Bin::Npr,
         _ => return None,
     })
 }
@@ -65,8 +65,8 @@ pub(super) fn is_binary_command(op: Bin) -> bool {
             | Bin::CommonDenominator
             | Bin::Max
             | Bin::Min
-            | Bin::NCR
-            | Bin::NPR
+            | Bin::Ncr
+            | Bin::Npr
     )
 }
 
@@ -80,8 +80,8 @@ pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
         Bin::CommonDenominator => common_denominator(a, b),
         Bin::Max => max(a, b),
         Bin::Min => min(a, b),
-        Bin::NCR => binomial(a, b),
-        Bin::NPR => n_pr(a, b),
+        Bin::Ncr => binomial(a, b),
+        Bin::Npr => n_pr(a, b),
         _ => f64::NAN,
     }
 }

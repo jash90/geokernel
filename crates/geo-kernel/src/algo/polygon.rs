@@ -1608,7 +1608,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
         }
     } else {
         let rings = def.rings(c);
-        let vertices = rings.iter().map(Vec::len).sum();
+        let vertices: usize = rings.iter().map(Vec::len).sum();
         for i in 0..rings.len().max(1) {
             let label = planned_index_label(c, &plan.taken, prefix);
             plan.push(
@@ -1619,11 +1619,15 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
             );
         }
         plan.taken.remove(name);
-        for (labels, output) in [
-            (POINT_LABELS, ClipOutput::Point),
-            (LINE_LABELS, ClipOutput::Edge),
+        // An empty result still has one output of each kind, of which only
+        // the point is ever labelled (`AlgoPolygonOperation` keeps the
+        // sizes at one); a labelled segment would show in the algebra view,
+        // so the kernel keeps the point alone.
+        for (labels, output, count) in [
+            (POINT_LABELS, ClipOutput::Point, vertices.max(1)),
+            (LINE_LABELS, ClipOutput::Edge, vertices),
         ] {
-            for i in 0..vertices {
+            for i in 0..count {
                 let label = next_indexed_label(c, &plan.taken, labels);
                 plan.push(
                     label,
@@ -1989,7 +1993,7 @@ mod tests {
                 c.value(c.id("r_{1}").unwrap()),
                 plain.value(plain.id("r_{1}").unwrap())
             );
-            assert_eq!(labels(c, 7), labels(&mut plain, 7));
+            assert_eq!(labels(c, 7), labels(&plain, 7));
         }
     }
 

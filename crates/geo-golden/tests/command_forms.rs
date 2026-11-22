@@ -161,6 +161,7 @@ fn numeric_wildcard(command: &str, form: &str) -> bool {
         (command, form),
         ("Dot" | "Relation", "any,any")
             | ("Defined", "any")
+            | ("Name" | "ConstructionStep", "any")
             | ("IsInRegion", "point,region")
             | ("If", "function,any,...")
             | ("CountIf", "any,any,list")

@@ -195,9 +195,7 @@ impl Construction {
 
     /// The graphics window the view-dependent objects read.
     pub fn view(&self) -> [f64; 6] {
-        self.view_state
-            .or(self.locus_view)
-            .unwrap_or(HEADLESS_VIEW)
+        self.view_state.or(self.locus_view).unwrap_or(HEADLESS_VIEW)
     }
 
     /// Sets the window the view-dependent objects read (`Corner`,
@@ -593,11 +591,13 @@ fn record_hull(c: &Construction, list: Id) -> LocusData {
     let is_equal = |a: f64, b: f64| (a - b).abs() <= crate::tol::STANDARD_PRECISION;
     for element in elements.iter() {
         // only the defined points of the list count, and each only once
-        let Element::Value(Kind::Point, Value::Point { x, y }) = element
-        else {
+        let Element::Value(Kind::Point, Value::Point { x, y }) = element else {
             continue;
         };
-        if points.iter().any(|&(a, b)| is_equal(a, x) && is_equal(b, y)) {
+        if points
+            .iter()
+            .any(|&(a, b)| is_equal(a, x) && is_equal(b, y))
+        {
             continue;
         }
         if x.is_nan() || y.is_nan() {
@@ -610,8 +610,16 @@ fn record_hull(c: &Construction, list: Id) -> LocusData {
         1 => {
             let (x, y) = points[0];
             locus_from_points(vec![
-                LocusPoint { x, y, line_to: false },
-                LocusPoint { x, y, line_to: true },
+                LocusPoint {
+                    x,
+                    y,
+                    line_to: false,
+                },
+                LocusPoint {
+                    x,
+                    y,
+                    line_to: true,
+                },
             ])
         }
         _ => {
@@ -657,7 +665,11 @@ fn record_hull(c: &Construction, list: Id) -> LocusData {
             }
             // close the polygon
             let (x, y) = hull[0];
-            run.push(LocusPoint { x, y, line_to: true });
+            run.push(LocusPoint {
+                x,
+                y,
+                line_to: true,
+            });
             locus_from_points(run)
         }
     }
@@ -1483,10 +1495,13 @@ impl Group for LocusDef {
         // (`CmdConvexHull` extends `CmdOneListFunction`).
         if func == "ConvexHull" {
             return Some(match args {
-                [list] => crate::script::object(c, list).map(LocusDef::Hull).and_then(
-                    |def| def.check(c).map_err(|e| e.to_string()).map(|_| def),
-                ),
-                _ => Err(format!("`ConvexHull` does not take {} argument(s)", args.len())),
+                [list] => crate::script::object(c, list)
+                    .map(LocusDef::Hull)
+                    .and_then(|def| def.check(c).map_err(|e| e.to_string()).map(|_| def)),
+                _ => Err(format!(
+                    "`ConvexHull` does not take {} argument(s)",
+                    args.len()
+                )),
             });
         }
         if func != "Locus" {
@@ -1542,7 +1557,10 @@ fn parse_locus(c: &Construction, args: &[&str]) -> Result<LocusDef, String> {
 fn parse_hull(c: &Construction, list: &str, number: &str) -> Result<LocusDef, String> {
     let list = crate::script::object(c, list)?;
     if c.kind(list) != Kind::List {
-        return Err(format!("`Hull` needs a list of points, found `{}`", c.label(list)));
+        return Err(format!(
+            "`Hull` needs a list of points, found `{}`",
+            c.label(list)
+        ));
     }
     let number_is_numeric = crate::expr::plain_number(number).is_some()
         || c.id(number).is_some_and(|id| c.kind(id) == Kind::Number);

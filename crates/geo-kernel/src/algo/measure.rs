@@ -115,7 +115,9 @@ pub enum MeasureDef {
     ConstructionStep(Option<Id>),
     /// `AxisStepX()` and `AxisStepY()` (`AlgoAxisStep`): the grid distance
     /// of the graphics view the kernel reads.
-    AxisStep { y: bool },
+    AxisStep {
+        y: bool,
+    },
 }
 
 /// `-eps < v < eps` (GeoGebra's `DoubleUtil.isZero`).
@@ -268,14 +270,14 @@ fn line_line_distance(g: (f64, f64, f64), h: (f64, f64, f64)) -> f64 {
     }
 }
 
-
 /// The construction index of `id`: its place in the construction, or -1
 /// for the built-in axes (`GeoElement.getConstructionIndex`).
 fn id_index(c: &Construction, id: Id) -> i32 {
-    c.label(id)
-        .is_empty()
-        .then_some(-1)
-        .unwrap_or_else(|| id.0 as i32)
+    if c.label(id).is_empty() {
+        -1
+    } else {
+        id.0 as i32
+    }
 }
 
 /// `ConstructionStep()` and `ConstructionStep(object)` (`AlgoConstructionStep`,
@@ -298,9 +300,9 @@ fn parse_construction_step(
         }
         _ => match args {
             [] => Ok(MeasureDef::ConstructionStep(None)),
-            [object] => Ok(MeasureDef::ConstructionStep(Some(
-                crate::script::object(c, object)?,
-            ))),
+            [object] => Ok(MeasureDef::ConstructionStep(Some(crate::script::object(
+                c, object,
+            )?))),
             _ => Err(format!("`{func}` does not take {} argument(s)", args.len())),
         },
     }
