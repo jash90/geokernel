@@ -299,7 +299,7 @@ pub(crate) enum Node {
     ObjectDefined(Id),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum IterationMode {
     Unary,
     Indexed,

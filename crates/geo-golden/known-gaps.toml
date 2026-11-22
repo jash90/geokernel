@@ -568,7 +568,6 @@ id = "discrete-upstream-019"
 reason = "The circumcircle test is sensitive to the last bit of cos(6) on approximately cocircular sites. The literal cocircular cases exercise the exact tie rule separately."
 mismatches = ["0:g"]
 
-<<<<<<< HEAD
 # Calculus
 
 [[gap]]
