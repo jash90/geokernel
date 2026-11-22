@@ -148,7 +148,11 @@ enum Slot {
 /// `Rate` search; once it refuses, the rate is undefined.
 pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bool) -> f64 {
     let input = |slot: Slot| args.get(op.slot(slot).unwrap_or(usize::MAX)).copied();
-    let required = |slot: Slot| -> Option<f64> { input(slot).filter(|v| v.is_finite()) };
+    // the setters of `AlgoFinancial` reject only an undefined input; an
+    // infinite one flows through (the kernel evaluates no expression to
+    // infinity, so none can arrive: the recorded cases with `1/0` and
+    // `10^400` payments are undefined because those inputs are)
+    let required = |slot: Slot| -> Option<f64> { input(slot).filter(|v| !v.is_nan()) };
     // `setNper`: the number of periods must be a positive integer; only
     // `Periods` does not read it (it is that command's output).
     let nper = if op == Finance::Periods {
@@ -175,7 +179,7 @@ pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bo
     let Some(pv) = (op == Finance::PresentValue)
         .then_some(0.0)
         .or_else(|| match input(Slot::Pv) {
-            Some(v) if v.is_finite() => Some(v),
+            Some(v) if !v.is_nan() => Some(v),
             Some(_) => None,
             None if op == Finance::FutureValue => Some(0.0),
             None => None,
@@ -188,7 +192,7 @@ pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bo
     let Some(fv) = (op == Finance::FutureValue)
         .then_some(0.0)
         .or_else(|| match input(Slot::Fv) {
-            Some(v) if v.is_finite() => Some(v),
+            Some(v) if !v.is_nan() => Some(v),
             Some(_) => None,
             None => Some(0.0),
         })
@@ -210,7 +214,7 @@ pub(crate) fn evaluate(op: Finance, args: &[f64], charge: &mut dyn FnMut() -> bo
             // supplied one; `setGuess` refuses an undefined guess.
             let guess = match input(Slot::Guess) {
                 None => None,
-                Some(v) if v.is_finite() => Some(v),
+                Some(v) if !v.is_nan() => Some(v),
                 Some(_) => return f64::NAN,
             };
             compute_rate(nper, pv, fv, pmt, pmt_type, guess, charge).unwrap_or(f64::NAN)
