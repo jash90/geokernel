@@ -56,15 +56,15 @@ pub struct ClipDef {
 
 #[derive(Default)]
 pub(crate) struct ClipCache {
-    conic_segments: Mutex<HashMap<[Id; 2], Arc<[Edge]>>>,
+    segments: Mutex<HashMap<[Id; 2], Arc<[Edge]>>>,
     rings: Mutex<HashMap<ClipDef, Arc<[Vec<XY>]>>>,
 }
 
 impl ClipCache {
     pub(crate) fn clear(&mut self) {
-        self.conic_segments
+        self.segments
             .get_mut()
-            .expect("conic clip cache")
+            .expect("path clip cache")
             .clear();
         self.rings.get_mut().expect("polygon overlay cache").clear();
     }
@@ -255,23 +255,22 @@ impl ClipDef {
     }
 
     pub(crate) fn segments(self, c: &Construction) -> Arc<[Edge]> {
-        if self.mode == ClipMode::Conic {
-            let key = [self.first, self.second];
-            let cache = &c.clips.conic_segments;
-            if let Some(segments) = cache.lock().expect("conic clip cache").get(&key) {
-                return Arc::clone(segments);
-            }
-            let segments = conic_segments(c, self.first, self.second).into();
-            cache
-                .lock()
-                .expect("conic clip cache")
-                .insert(key, Arc::clone(&segments));
-            return segments;
+        let key = [self.first, self.second];
+        let cache = &c.clips.segments;
+        if let Some(segments) = cache.lock().expect("path clip cache").get(&key) {
+            return Arc::clone(segments);
         }
-        let Some(vertices) = c.vertices(self.first).collect::<Option<Vec<_>>>() else {
-            return Arc::default();
+        let segments = if self.mode == ClipMode::Conic {
+            conic_segments(c, self.first, self.second)
+        } else {
+            carrier_segments(c, self.first, self.second).unwrap_or_default()
         };
-        carrier(c.value(self.second), &vertices).into()
+        let segments = segments.into();
+        cache
+            .lock()
+            .expect("path clip cache")
+            .insert(key, Arc::clone(&segments));
+        segments
     }
 
     pub(crate) fn compute(self, c: &Construction) -> Option<Value> {
@@ -354,6 +353,20 @@ fn restrict(cuts: &mut Vec<f64>, min: f64, max: f64) {
 }
 
 /// Intersect intervals along the carrier and combine consecutive inside intervals.
+fn carrier_segments(c: &Construction, polygon: Id, line: Id) -> Option<Vec<Edge>> {
+    let vertices = c.vertices(polygon);
+    let count = vertices.size_hint().0 as u64;
+    // An edge supplies at most two cuts and each resulting interval can
+    // require a full containment scan. Include the endpoint cuts as well.
+    let cuts = count.saturating_mul(2).saturating_add(2);
+    let work = IntersectionWork::new();
+    if !work.charge(count.saturating_add(1).saturating_mul(cuts)) {
+        return None;
+    }
+    let vertices = vertices.collect::<Option<Vec<_>>>()?;
+    Some(carrier(c.value(line), &vertices))
+}
+
 fn carrier(line: Value, polygon: &[XY]) -> Vec<Edge> {
     let (origin, dir, min, max) = match line {
         Value::Line { a, b, c } => {

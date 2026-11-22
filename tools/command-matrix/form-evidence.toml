@@ -3423,3 +3423,38 @@ cases = ["georestclip-polygon-002"]
 command = "IntersectPath"
 form = "conic,polygon"
 cases = ["georestclip-polygon-005"]
+
+[[form]]
+command = "IntersectRegion"
+form = "polygon,line"
+cases = ["georestclip-region-001"]
+
+[[form]]
+command = "IntersectRegion"
+form = "segment,conic"
+cases = ["georestclip-region-002"]
+
+[[form]]
+command = "IntersectRegion"
+form = "conic,segment"
+cases = ["georestclip-region-002"]
+
+[[form]]
+command = "IntersectRegion"
+form = "polyline,conic"
+cases = ["georestclip-region-003"]
+
+[[form]]
+command = "IntersectRegion"
+form = "conic,polyline"
+cases = ["georestclip-region-003"]
+
+[[form]]
+command = "IntersectRegion"
+form = "polygon,conic"
+cases = ["georestclip-region-004"]
+
+[[form]]
+command = "IntersectRegion"
+form = "conic,polygon"
+cases = ["georestclip-region-004"]

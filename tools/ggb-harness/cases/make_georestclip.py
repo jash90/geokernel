@@ -71,4 +71,25 @@ cases.case("polygon", ellipse + [
     "p = Polygon(A, B, C, D)", "q = IntersectPath(k, p)",
 ], [mv("N", 1, 2), setn("r", 0.5), setn("r", 3)])
 
+def alias_cases(topic, command):
+    # Use the same homogeneous point as the upstream polygon and line test.
+    cases.case(topic, [
+        "g: 100x = -300", "h: 100y = 200", "A = Intersect(g, h)",
+        pt("B", -3, -2), pt("C", 3, -2), "p = Polygon(A, B, C)",
+        pt("D", 0, 5), pt("E", 2, 8), "f = Line(D, E)",
+        f"q = {command}(p, f)",
+    ], [mv("E", 0, 5), mv("E", 2, 8), mv("D", 0, 10)])
+    for path, build in (
+        ("s", "Segment(A, B)"),
+        ("s", "PolyLine(A, B, C, D)"),
+        ("p", "Polygon(A, B, C, D)"),
+    ):
+        cases.case(topic, ellipse + [
+            pt("A", -4, 0), pt("B", 4, 0), pt("C", 4, 1), pt("D", -4, 1),
+            f"{path} = {build}", f"q = {command}({path}, k)", f"u = {command}(k, {path})",
+        ], [setn("r", 0.5), mv("N", 1, 2), setn("r", 3), mv("B", -4, 0)])
+
+
+alias_cases("region", "IntersectRegion")
+
 cases.write()
