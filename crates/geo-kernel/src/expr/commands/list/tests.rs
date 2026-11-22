@@ -1462,3 +1462,262 @@ fn first_and_last_read_a_locus() {
     assert_eq!(c.elements(b).unwrap().len(), 1);
     rebuilt(&c);
 }
+
+#[test]
+fn text_lists_take_the_list_commands() {
+    let c = load(
+        "l = {\"b\", \"a\", \"b\", \"c\", \"A\"}\n\
+         k = {\"a\", \"d\"}\n\
+         m = {\"é\", \"e\", \"È\", \"Z\", \"a\"}\n\
+         a = Sort(l)\n\
+         b = Sort(m)\n\
+         d = Sort({\"10\", \"9\", \"100\"})\n\
+         e = Sort({\"b\", 1})\n\
+         f = Sort({true, \"b\"})\n\
+         g = Unique(l)\n\
+         h = Unique({\"b\", \"a\", \"b\", \"B\"})\n\
+         i = Unique({\"é\", \"e\"})\n\
+         j = Frequency(l)\n\
+         p = Frequency({\"b\", \"a\", \"b\", \"B\"})\n\
+         q = Reverse(l)\n\
+         r = First(l, 2)\n\
+         s = Last(l, 2)\n\
+         t = Take(l, 2, 3)\n\
+         u = Element(l, 2)\n\
+         v = IndexOf(\"a\", l)\n\
+         w = IndexOf(\"b\", l, 3)\n\
+         x2 = IndexOf(\"x\", l)\n\
+         ap = Append(l, \"z\")\n\
+         ins = Insert(\"z\", l, 2)\n\
+         A = Remove(l, {\"b\"})\n\
+         B = Remove(l, k)\n\
+         C = Union(l, k)\n\
+         D = Intersection(l, k)",
+    )
+    .unwrap();
+    // `GeoText.getComparator`: accents folded away (which lowercases),
+    // then the raw UTF-16 units, so "A" folds to "a" but sorts before it
+    assert_eq!(elems(&c, "a"), "{A, a, b, b, c}");
+    assert_eq!(elems(&c, "b"), "{a, e, È, é, Z}");
+    // a string order, not a numeric one
+    assert_eq!(elems(&c, "d"), "{10, 100, 9}");
+    // one class of keys only (`geo.getClass()`)
+    assert_eq!(c.value(c.id("e").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("f").unwrap()), Value::Undefined);
+    // `AlgoUnique` sorts the equal strings away, case and all
+    assert_eq!(elems(&c, "g"), "{A, a, b, c}");
+    assert_eq!(elems(&c, "h"), "{B, a, b}");
+    assert_eq!(elems(&c, "i"), "{e, é}");
+    // counts in the sorted order of the strings
+    assert_eq!(elems(&c, "j"), "{1, 1, 2, 1}");
+    assert_eq!(elems(&c, "p"), "{1, 1, 2}");
+    assert_eq!(elems(&c, "q"), "{A, c, b, a, b}");
+    assert_eq!(elems(&c, "r"), "{b, a}");
+    assert_eq!(elems(&c, "s"), "{c, A}");
+    assert_eq!(elems(&c, "t"), "{a, b}");
+    assert_eq!(c.text(c.id("u").unwrap()), Some("a"));
+    assert_eq!(num(&c, "v"), 2.0);
+    assert_eq!(num(&c, "w"), 3.0);
+    assert_eq!(c.value(c.id("x2").unwrap()), Value::Undefined);
+    assert_eq!(elems(&c, "ap"), "{b, a, b, c, A, z}");
+    assert_eq!(elems(&c, "ins"), "{b, z, a, b, c, A}");
+    // one element of the removing list takes one element of the list out
+    assert_eq!(elems(&c, "A"), "{a, b, c, A}");
+    assert_eq!(elems(&c, "B"), "{b, b, c, A}");
+    assert_eq!(elems(&c, "C"), "{b, a, c, A, d}");
+    assert_eq!(elems(&c, "D"), "{a}");
+    rebuilt(&c);
+}
+
+#[test]
+fn first_last_and_element_read_utf16_units_of_a_text() {
+    let mut c = load(
+        "n = 2\n\
+         a = First(\"hello\")\n\
+         b = First(\"hello\", n)\n\
+         d = First(\"hello\", 0)\n\
+         e = First(\"hello\", 9)\n\
+         f = First(\"\", 2)\n\
+         g = Last(\"hello\")\n\
+         h = Last(\"hello\", n)\n\
+         i = Last(\"hello\", 0)\n\
+         j = Last(\"héllo\", 2)\n\
+         k = Last(\"\u{1f600}ab\", 2)\n\
+         m = Element(\"hello\", n)\n\
+         p = Element(\"hello\", 0)\n\
+         q = Element(\"hello\", 9)\n\
+         r = Element(\"héllo\", 2)\n\
+         s = Element(\"\u{1f600}ab\", 3)\n\
+         t = First(\"\u{1f600}ab\", 3)",
+    )
+    .unwrap();
+    let text = |c: &Construction, label: &str| c.text(c.id(label).unwrap()).map(str::to_owned);
+    // `AlgoFirstString`, `AlgoLastString`, `AlgoTextElement`: UTF-16
+    // units from either end, one at an index, the counts `(int)` casts
+    assert_eq!(text(&c, "a").as_deref(), Some("h"));
+    assert_eq!(text(&c, "b").as_deref(), Some("he"));
+    // a count of 0 is an empty text, past the end is undefined
+    assert_eq!(text(&c, "d").as_deref(), Some(""));
+    assert_eq!(c.value(c.id("e").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("f").unwrap()), Value::Undefined);
+    assert_eq!(text(&c, "g").as_deref(), Some("o"));
+    assert_eq!(text(&c, "h").as_deref(), Some("lo"));
+    assert_eq!(text(&c, "i").as_deref(), Some(""));
+    // é is one UTF-16 unit, an emoji two
+    assert_eq!(text(&c, "j").as_deref(), Some("lo"));
+    assert_eq!(text(&c, "k").as_deref(), Some("ab"));
+    assert_eq!(text(&c, "m").as_deref(), Some("e"));
+    assert_eq!(c.value(c.id("p").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("q").unwrap()), Value::Undefined);
+    assert_eq!(text(&c, "r").as_deref(), Some("é"));
+    assert_eq!(text(&c, "s").as_deref(), Some("a"));
+    assert_eq!(text(&c, "t").as_deref(), Some("\u{1f600}a"));
+    // the counts and indices are `(int)` casts of their numbers
+    c.set_number(c.id("n").unwrap(), 2.9).unwrap();
+    assert_eq!(text(&c, "b").as_deref(), Some("he"));
+    c.set_number(c.id("n").unwrap(), -1.0).unwrap();
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Undefined);
+    rebuilt(&c);
+}
+
+#[test]
+fn a_zip_does_not_retype_a_later_sequence_local() {
+    // the binding of the `Zip` local ends with its `Zip`: the `Sequence`
+    // later in the same list keeps its own number local
+    let c = load(
+        "p = {Zip(2 * f, f, {(1, 1)}), Sequence(g^2, g, 1, 3)}\n\
+         q = {Zip(f + (0, 1), f, {(1, 1), (2, 2)}), Sequence(g + g, g, 1, 3)}",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "p"), "{{(2, 2)}, {1, 4, 9}}");
+    // a second `Zip` in the same list, with its own local again
+    assert_eq!(elems(&c, "q"), "{{(1, 2), (2, 3)}, {2, 4, 6}}");
+    rebuilt(&c);
+}
+
+#[test]
+fn keyed_sort_takes_one_class_of_keys_and_keeps_equal_keys_in_order() {
+    let c = load(
+        "A = (1, 2)\n\
+         u = (1, 0)\n\
+         m = {A, (0, 0), (5, 5)}\n\
+         a = Sort(m, {A, u})\n\
+         b = Sort(m, {u, u, A})\n\
+         d = Sort({1, 2}, {45\u{b0}, 1})\n\
+         e = Sort({1, 2}, {1, 45\u{b0}})\n\
+         f = Sort({30, 10, 20}, {2, 1, 2})\n\
+         g = Sort({\"c\", \"a\", \"b\"}, {2, 1, 2})\n\
+         h = Sort({1, 2}, {A, (0, 0)})\n\
+         i = Sort({\"b\", \"a\"}, {2, 1})",
+    )
+    .unwrap();
+    // a vector is neither a point nor a number, an angle sits next to a
+    // number: mixed keys are undefined (`geo.getClass()`)
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("d").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("e").unwrap()), Value::Undefined);
+    // equal keys keep the order of the list: their construction indexes
+    // tie, so the comparator sends the later one to the right
+    assert_eq!(elems(&c, "f"), "{10, 30, 20}");
+    assert_eq!(elems(&c, "g"), "{a, c, b}");
+    // point keys sort by x then y; text values under number keys
+    assert_eq!(elems(&c, "h"), "{2, 1}");
+    assert_eq!(elems(&c, "i"), "{a, b}");
+    rebuilt(&c);
+}
+
+#[test]
+fn classes_charges_before_it_allocates_the_bounds() {
+    // a count that saturates `(int)` would allocate the bounds before any
+    // element was charged: the work is charged first now, so the command
+    // stops at once instead
+    let script = "l = {2, 3, 4}\na = Classes(l, 2000000000)\nb = Classes(l, 1E10)";
+    let (c, work) = work_of(|| load(script).unwrap());
+    assert!(!is_defined(&c, "a"));
+    assert!(!is_defined(&c, "b"));
+    assert!(work <= 1000, "the scripts did {work} units of work");
+    // a small count still cuts the range
+    let c = load("l = {2, 3, 4}\na = Classes(l, 2)").unwrap();
+    assert_eq!(elems(&c, "a"), "{2, 3, 4}");
+    rebuilt(&c);
+}
+
+#[test]
+fn unique_frequency_and_remove_charge_the_work_they_do() {
+    // `Sequence(1, k, 1, 500000)` holds half a million equal elements: a
+    // quadratic scan would cross the work bound, the charged ones finish
+    let script = |command: &str| format!("l = Sequence(1, k, 1, 500000)\n{command}");
+    let (c, work) = work_of(|| load(&script("a = Unique(l)")).unwrap());
+    assert_eq!(elems(&c, "a"), "{1}");
+    assert!(work < 80_000_000, "Unique did {work} units of work");
+    let (c, work) = work_of(|| load(&script("a = Frequency(l)")).unwrap());
+    assert_eq!(elems(&c, "a"), "{500000}");
+    assert!(work < 80_000_000, "Frequency did {work} units of work");
+    // one element of the removing list takes one element of the list out
+    // (`AlgoRemove` consumes its `geosToRemove` one by one)
+    let (c, work) = work_of(|| load(&script("a = Remove(l, {1})")).unwrap());
+    let kept = c.id("a").unwrap();
+    assert_eq!(c.elements(kept).unwrap().len(), 499999);
+    assert!(work < 80_000_000, "Remove did {work} units of work");
+    let (c, work) = work_of(|| load(&script("a = Remove(l, {2})")).unwrap());
+    let kept = c.id("a").unwrap();
+    assert_eq!(c.elements(kept).unwrap().len(), 500000, "the elements stay");
+    assert!(work < 80_000_000, "Remove did {work} units of work");
+    // half a million distinct values: a cumulative count that walked the
+    // buckets below every value again (as `getCumFreq` does) would be the
+    // work of a square, the running sums make every count a lookup
+    let (c, work) =
+        work_of(|| load("l = Sequence(k, k, 1, 500000)\na = Frequency(true, l)").unwrap());
+    let counts = c.id("a").unwrap();
+    assert_eq!(c.elements(counts).unwrap().len(), 500000);
+    assert!(c.value(c.id("l").unwrap()) != Value::Undefined);
+    assert!(
+        work < 80_000_000,
+        "cumulative Frequency did {work} units of work"
+    );
+    let (c, work) = work_of(|| {
+        load("l = Sequence(k, k, 1, 500000)\na = Frequency({0, 250000, 500001}, l)").unwrap()
+    });
+    // the first class holds its lower bound but not its upper one, the
+    // highest both
+    assert_eq!(elems(&c, "a"), "{249999, 250001}");
+    assert!(
+        work < 80_000_000,
+        "class Frequency did {work} units of work"
+    );
+    // the charged scans are the work of a product: removing the elements
+    // of a list by a list as long as it crosses the work bound and the
+    // command is undefined
+    let (c, work) = work_of(|| {
+        load("l = Sequence(1, k, 1, 20000)\na = Remove(l, Sequence(1, k, 1, 20000))").unwrap()
+    });
+    assert!(!is_defined(&c, "a"));
+    assert!(work < 80_000_000, "Remove did {work} units of work");
+}
+
+#[test]
+fn the_casts_of_a_start_and_a_fold_saturate_like_java() {
+    let c = load(
+        "l = {1, 2, 3}\n\
+         a = IndexOf(2, l, -1E300)\n\
+         b = IndexOf(2, l, 1E300)\n\
+         d = Product(k, k, 1E300, 1E300)\n\
+         e = Product(k, k, -5.5, -2.5)\n\
+         f = Product(k, k, 5.5, 2.5)",
+    )
+    .unwrap();
+    // `(int)` of a count past `int` saturates to MIN or MAX, and the
+    // index counted from it finds nothing; the fold compares its `int`
+    // counter with the doubles of its bounds
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("d").unwrap()), Value::Undefined);
+    // the value at `from` is folded in first, then the counter from
+    // `(int) from + 1` while it is `<= to`: -5.5, -4, -3
+    assert_eq!(num(&c, "e"), -66.0);
+    // the counter starts at `(int) 5.5 + 1 = 6` and stops at once: the
+    // value at `from` alone
+    assert_eq!(num(&c, "f"), 5.5);
+    rebuilt(&c);
+}

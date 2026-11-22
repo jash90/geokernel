@@ -4,13 +4,17 @@
 #[cfg(test)]
 use crate::describe;
 use crate::history::History;
+use crate::interact::TextMove;
 use crate::labels::next_label;
 use crate::scriptlog::{exec_definition, normalize, Log, Setting};
 use crate::snap::check_decimal_fraction;
 use crate::style::{Palette, Sides};
 use crate::undo::Undo;
 pub use file::{import_notice, rejected_notice, SNAPSHOT_VERSION};
-use geo_kernel::kernel::{Construction, Id, Kind, Value};
+use geo_kernel::kernel::text::{TextOverrides, TextPosition};
+use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
+use geo_kernel::script::text::Properties as TextProperties;
+use geo_kernel::script::{find_unquoted, BoundaryOutputs};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
@@ -56,6 +60,7 @@ struct ToolUse {
 pub struct Workbench {
     construction: Construction,
     log: Log,
+    boundary_outputs: BoundaryOutputs,
     version: u64,
     /// Counts the times the construction was rebuilt or replaced. Object ids
     /// are only valid within one such period.
@@ -152,12 +157,12 @@ impl Workbench {
                 None => log.clone(),
             };
             return if self.unshared {
-                log.rebuild_reference()
+                log.rebuild_reference(&self.construction)
             } else {
-                log.rebuild()
+                log.rebuild_with_text_anchors(Some(&self.construction))
             };
         }
-        log.rebuild()
+        log.rebuild_with_text_anchors(Some(&self.construction))
     }
 
     /// See the field of the same name.
@@ -212,6 +217,7 @@ impl Workbench {
 
     /// Makes `c` and `log` the whole document.
     fn replace(&mut self, c: Construction, log: Log) {
+        self.boundary_outputs = log.boundary_outputs(&c);
         self.construction = c;
         self.objects_changed();
         self.log = log;
@@ -233,12 +239,26 @@ impl Workbench {
         hidden: &[String],
         notice: Option<String>,
     ) -> Result<(), String> {
-        self.load_script(src)?;
+        self.load_imported_with_conditions(src, hidden, &[], notice)
+    }
+
+    fn load_imported_with_conditions(
+        &mut self,
+        src: &str,
+        hidden: &[String],
+        conditions: &[(String, String)],
+        notice: Option<String>,
+    ) -> Result<(), String> {
+        let (mut c, mut log) = Log::load(src)?;
         for label in hidden {
-            if self.construction.id(label).is_some() {
-                self.log.hidden.insert(label.clone());
+            if c.id(label).is_some() {
+                log.hidden.insert(label.clone());
             }
         }
+        for (target, source) in conditions {
+            log.set_condition(&mut c, target, source)?;
+        }
+        self.replace(c, log);
         self.notice = notice;
         Ok(())
     }
@@ -263,7 +283,7 @@ impl Workbench {
     /// `(1, 2)`. The label class follows the kind of the result, found by
     /// running the line on a scratch copy.
     fn with_label(&self, line: String) -> String {
-        if line.is_empty() || line.contains('=') {
+        if line.is_empty() || find_unquoted(&line, '=').is_some() {
             return line;
         }
         let kind = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
@@ -383,9 +403,17 @@ impl Workbench {
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
-                Ok(_) => {
+                Ok(first) => {
                     if self.construction.len() > before {
                         self.log.record(&self.construction, before, &line);
+                        if let Some(first) = first {
+                            self.boundary_outputs.record(
+                                &self.construction,
+                                &line,
+                                first,
+                                self.construction.len() - before,
+                            );
+                        }
                     }
                 }
                 Err(e) => {
@@ -472,6 +500,7 @@ impl Workbench {
         // with its label moved.
         kept.hidden.retain(|l| c.id(l).is_some());
         self.label_offsets.retain(|l, _| c.id(l).is_some());
+        self.boundary_outputs = kept.boundary_outputs(&c);
         self.construction = c;
         self.objects_changed();
         self.log = kept;
@@ -501,11 +530,31 @@ impl Workbench {
     fn delete_label(&mut self, label: &str) -> bool {
         let snapshot = self.copy(&self.log);
         let mut next = self.copy(&snapshot);
+        // Where the entry about to go was, so the start points it froze on
+        // the lines that stay are written at the same place again (GeoGebra
+        // installed them on the lines themselves and keeps them when the
+        // locus goes).
+        let Some((at, made)) = next.define_entry(label) else {
+            return false;
+        };
+        let made: Vec<String> = made.to_vec();
         if !next.remove(label) {
             return false;
         }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the
         // whole stroke is one undo step.
+        // Only the starts the deleted entry froze are written into the
+        // journal: every locus that stays freezes its start again as its
+        // own line replays. What is written survives every later rebuild
+        // (further deletions, the undo and redo of them), exactly as the
+        // construction being replaced had.
+        let mut placed = 0;
+        for (line, x, y, owner) in self.construction.frozen_line_starts() {
+            if made.iter().any(|m| m == &owner) {
+                next.keep_frozen_start(at + placed, &line, x, y);
+                placed += 1;
+            }
+        }
         let gesture = self.gesture.take();
         let restored = self.restore(next);
         self.gesture = gesture;
@@ -657,7 +706,17 @@ impl Workbench {
             return true;
         }
         let label = self.construction.label(id);
-        !crate::scriptlog::is_internal_label(label) && !self.log.hidden.contains(label)
+        if crate::scriptlog::is_internal_label(label) {
+            return false;
+        }
+        if let Some(condition) = self
+            .log
+            .condition(label)
+            .and_then(|label| self.construction.id(label))
+        {
+            return self.construction.value(condition) == Value::Bool(true);
+        }
+        !self.log.hidden.contains(label)
     }
 
     /// Shows or hides an object in the drawing, as one undo step.
@@ -710,7 +769,10 @@ impl Workbench {
         };
         let old = bits(self.construction.value(id));
         let same = old == Some((x.to_bits(), y.to_bits()));
-        if self.construction.move_point(id, x, y).is_err() || same {
+        let Ok(recomputed) = self.construction.move_point(id, x, y) else {
+            return false;
+        };
+        if same {
             return false;
         }
         // A point on a path goes where the kernel projects the position: it
@@ -725,9 +787,24 @@ impl Workbench {
             _ => self.note_change(),
         }
         let label = self.construction.label(id).to_owned();
-        self.log.record_set(&label, Setting::Point(x, y));
+        self.log
+            .record_update(&self.construction, &label, Setting::Point(x, y));
+        if recomputed > 0 {
+            self.grow_boundary_outputs(std::iter::once(id));
+        }
         self.version += 1;
         true
+    }
+
+    fn grow_boundary_outputs(&mut self, changed: impl Iterator<Item = Id> + Clone) {
+        let before = self.construction.len();
+        self.log
+            .grow_boundary_outputs(&mut self.construction, &mut self.boundary_outputs, changed);
+        if self.construction.len() != before {
+            self.objects_changed();
+            // Existing outputs acquire new siblings for the same command.
+            self.rows_at = None;
+        }
     }
 
     /// The point that `rhs` (such as `Intersect(c, f, 2)`) would make now,
@@ -755,9 +832,16 @@ impl Workbench {
     /// moved.
     pub fn translate(&mut self, ids: &[Id], (dx, dy): (f64, f64)) -> bool {
         const MIN_PRECISION: f64 = 1e-5;
-        let mut moved = false;
+        let free = |c: &Construction, id: Id| {
+            id.index() < c.len() && matches!(c.def(id), Def::FreePoint { .. })
+        };
+        if self.tool_use_pending() && ids.iter().any(|&id| free(&self.construction, id)) {
+            self.cancel_tool_use();
+        }
+
+        let mut positions = Vec::new();
         for &id in ids {
-            if id.index() >= self.construction.len() {
+            if !free(&self.construction, id) {
                 continue;
             }
             let Value::Point { x, y } = self.construction.value(id) else {
@@ -770,9 +854,26 @@ impl Workbench {
             if dy.abs() > MIN_PRECISION {
                 y1 = check_decimal_fraction(y1);
             }
-            moved |= self.move_point(id, x1, y1);
+            if x1.is_finite()
+                && y1.is_finite()
+                && (x.to_bits() != x1.to_bits() || y.to_bits() != y1.to_bits())
+            {
+                positions.push((id, x1, y1));
+            }
         }
-        moved
+        if positions.is_empty() {
+            return false;
+        }
+        let Ok(recomputed) = self.construction.move_points(&positions) else {
+            return false;
+        };
+        self.note_change();
+        self.log.record_move_points(&self.construction, &positions);
+        if recomputed > 0 {
+            self.grow_boundary_outputs(positions.iter().map(|&(id, _, _)| id));
+        }
+        self.version += 1;
+        true
     }
 
     /// The offset of the label of `id` from its place, in pixels.
@@ -797,6 +898,51 @@ impl Workbench {
         }
     }
 
+    /// Moves a text while keeping the other presentation properties and its definition.
+    pub fn move_text(&mut self, id: Id, movement: TextMove) {
+        let Some(style) = self.construction.text_presentation(id).filter(|s| !s.fixed) else {
+            return;
+        };
+        let (position, offset) = match (movement, style.position) {
+            (TextMove::World { x, y }, TextPosition::Origin | TextPosition::World { .. })
+                if x.is_finite() && y.is_finite() =>
+            {
+                let old = match style.position {
+                    TextPosition::World { x, y } => (x, y),
+                    _ => (0.0, 0.0),
+                };
+                if (x, y) == old {
+                    return;
+                }
+                (Some(TextPosition::World { x, y }), None)
+            }
+            (TextMove::Screen { x, y }, TextPosition::Screen { x: old_x, y: old_y }) => {
+                let (x, y) = (f64::from(x), f64::from(y));
+                if (x, y) == (old_x, old_y) {
+                    return;
+                }
+                (Some(TextPosition::Screen { x, y }), None)
+            }
+            (TextMove::Offset(offset), TextPosition::Point(_)) if offset != style.offset => {
+                (None, Some(offset))
+            }
+            _ => return,
+        };
+        let label = self.construction.label(id).to_owned();
+        let props = TextProperties {
+            label: &label,
+            overrides: TextOverrides {
+                position,
+                offset,
+                ..TextOverrides::default()
+            },
+        };
+        if props.apply(&mut self.construction).is_ok() {
+            self.note_change();
+            self.log.record_text_properties(props);
+        }
+    }
+
     pub fn set_number(&mut self, id: Id, v: f64) -> bool {
         if id.index() >= self.construction.len() {
             return false;
@@ -815,12 +961,39 @@ impl Workbench {
             // number): the use does not finish.
             self.cancel_tool_use();
         }
-        if self.construction.set_number(id, v).is_err() {
+        let Ok(recomputed) = self.construction.set_number(id, v) else {
             return false;
-        }
+        };
         self.note_change();
         let label = self.construction.label(id).to_owned();
-        self.log.record_set(&label, Setting::Number(v));
+        self.log
+            .record_update(&self.construction, &label, Setting::Number(v));
+        if recomputed > 0 {
+            self.grow_boundary_outputs(std::iter::once(id));
+        }
+        self.version += 1;
+        true
+    }
+
+    pub fn set_boolean(&mut self, id: Id, value: bool) -> bool {
+        if id.index() >= self.construction.len()
+            || self.construction.value(id) == Value::Bool(value)
+        {
+            return false;
+        }
+        if self.tool_use_pending() {
+            self.cancel_tool_use();
+        }
+        let Ok(recomputed) = self.construction.set_boolean(id, value) else {
+            return false;
+        };
+        self.note_change();
+        let label = self.construction.label(id).to_owned();
+        self.log
+            .record_update(&self.construction, &label, Setting::Boolean(value));
+        if recomputed > 0 {
+            self.grow_boundary_outputs(std::iter::once(id));
+        }
         self.version += 1;
         true
     }

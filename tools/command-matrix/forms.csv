@@ -5,11 +5,7 @@ Min,algebra,5,"list | interval | number,number | list,list | function,number,num
 Max,algebra,5,"list | interval | number,number | list,list | function,number,number"
 LCM,algebra,2,"list | number,number"
 GCD,algebra,2,"list | number,number"
-Expand,algebra,1,any
-Factor,algebra,1,any
-Simplify,algebra,5,function | list | curve | implicit | text
 PrimeFactors,algebra,1,number
-CompleteSquare,algebra,1,function
 ToBase,algebra,1,"number,number"
 FromBase,algebra,1,"text,number"
 Division,algebra,2,"number,number | function,function"
@@ -18,10 +14,7 @@ DivisorsList,algebra,1,number
 DivisorsSum,algebra,1,number
 IsPrime,algebra,1,number
 LeftSide,algebra,3,line | conic | implicit
-NextPrime,algebra,1,number
 RightSide,algebra,3,line | conic | implicit
-PreviousPrime,algebra,1,number
-IsFactored,algebra,1,function
 Line,geometry,5,"point,point | point,vector | point,line | point,segment | point,ray"
 Ray,geometry,2,"point,point | point,vector"
 AngularBisector,geometry,2,"line,line | point,point,point"
@@ -255,18 +248,11 @@ SetConstructionStep,geogebra,1,number
 Maximize,optimization,2,"number,number | number,point"
 Minimize,optimization,2,"number,number | number,point"
 IntersectionPaths,english,9,"line,polygon | polygon,line | segment,conic | conic,segment | polyline,conic | conic,polyline | polygon,conic | conic,polygon | polygon,polygon"
-IFactor,algebra,1,any
 CommonDenominator,algebra,2,"number,number | function,function"
 Cross,algebra,5,"point,point | point,vector | vector,point | vector,vector | list,list"
-CSolutions,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
-CSolve,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
 Dot,algebra,1,"any,any"
 NIntegral,function,6,"function | function,number | function,number,number | function,number,number,boolean | function,number,number,number | function,function,number,number,boolean"
 NInvert,function,1,function
-NSolve,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
-NSolutions,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
-Solutions,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
-Solve,algebra,10,"list | function | line | conic | implicit | list,any | function,any | line,any | conic,any | implicit,any"
 PlotSolve,function,5,list | function | line | conic | implicit
 ToComplex,geogebra,4,list | number | point | vector
 ToPolar,geogebra,4,list | number | point | vector

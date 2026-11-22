@@ -1,5 +1,17 @@
 use super::*;
 
+#[test]
+fn typed_text_preserves_punctuation_and_does_not_require_a_label() {
+    let mut wb = Workbench::from_script("P = (3, 4)").unwrap();
+    wb.run_line(r#""P = " + P"#).unwrap();
+    wb.run_line(r#""Heading: value #1""#).unwrap();
+    wb.run_line(r#"alias: "x = y""#).unwrap();
+    let c = wb.construction();
+    let texts: Vec<_> = c.ids().filter_map(|id| c.text(id)).collect();
+    assert_eq!(texts, ["P = (3, 4)", "Heading: value #1", "x = y"]);
+    assert_eq!(c.text(c.id("alias").unwrap()), Some("x = y"));
+}
+
 fn triangle() -> Workbench {
     Workbench::from_script(include_str!("../../../../examples/triangle.geo")).unwrap()
 }
@@ -212,6 +224,57 @@ fn rows_describe_free_and_dependent_objects() {
     assert_eq!(rows[3].head, "r =");
     assert_eq!(rows[4].head, "E = Midpoint(A, B)");
     assert_eq!(rows[4].value.as_deref(), Some("(-1.17, 3.89)"));
+}
+
+#[test]
+fn equation_rows_keep_the_typed_form_after_a_coefficient_edit() {
+    let mut w =
+        Workbench::from_script("a = 2\nl: y = a x + 1\nm: 2x - y = -1\np: y = a x^2 - x + 1\n")
+            .unwrap();
+    let expected = [
+        ("l", "y = 2 x + 1"),
+        ("m", "2x - y = -1"),
+        ("p", "y = 2 x² - x + 1"),
+    ];
+    for (label, value) in expected {
+        let row = w.rows().iter().find(|row| row.label == label).unwrap();
+        assert_eq!(row.value.as_deref(), Some(value), "{label}");
+    }
+    let a = w.construction().id("a").unwrap();
+    assert!(w.set_number(a, -3.0));
+    let row = w.rows().iter().find(|row| row.label == "p").unwrap();
+    assert_eq!(row.value.as_deref(), Some("y = -3 x² - x + 1"));
+}
+
+#[test]
+fn imported_equation_rows_keep_the_saved_form_through_replay() {
+    let saved = include_bytes!("../../../../golden/ggb/saved/saved-text-equations-001.xml");
+    let mut w = Workbench::default();
+    w.load_bytes(saved, "saved equation forms").unwrap();
+    let expected = [
+        ("l", "y = 2 x + 1"),
+        ("p", "y = 2 x² - x + 1"),
+        ("e", "y = 2x + 1"),
+        ("g", "-2x + y - 1 = 0"),
+        ("r", "X = (0, 1) + u (1, 2)"),
+    ];
+    let assert_rows = |w: &mut Workbench| {
+        for (label, value) in expected {
+            let row = w.rows().iter().find(|row| row.label == label).unwrap();
+            assert_eq!(row.value.as_deref(), Some(value), "{label}");
+        }
+    };
+    assert_rows(&mut w);
+
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_rows(&mut restored);
+    restored.run_line("B' = (2, 4)").unwrap();
+    assert!(restored.undo());
+    assert_rows(&mut restored);
 }
 
 #[test]
@@ -644,4 +707,552 @@ fn every_deletion_of_one_gesture_is_one_undo_step() {
     assert_eq!(w.undo_depth(), (1, 0));
     assert!(w.undo());
     assert_eq!(labels(&w), ["A", "B", "C"]);
+}
+
+/// A locus freezes the start point of a line without one (the foot from the
+/// origin, `PathMoverLine.init` installing `setStandardStartPoint`): the
+/// parameter of a point on the line is measured from it. GeoGebra keeps that
+/// start when the locus is deleted (it was installed on the line itself), so
+/// the point stays where it was; the rebuild of a deletion keeps it too.
+#[test]
+fn deleting_a_locus_keeps_the_frozen_start_of_its_line() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nt = PathParameter(P)\nB = (1, 3)\nC = Midpoint(P, B)\nL = Locus(C, P)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let t = w.construction().id("t").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    // the line moves after the locus froze its start: the parameter of P is
+    // measured from the start it had then, which stays with the line
+    assert!(w.move_point(q, 3.0, 2.0));
+    assert!(w.move_point(p, 1.0, 1.0));
+    let (at, param) = (w.construction().value(p), w.construction().value(t));
+    let l = w.construction().id("L").unwrap();
+    assert!(w.delete(l));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "the point stays where it was"
+    );
+    assert_eq!(
+        w.construction().value(t),
+        param,
+        "its parameter keeps the frozen start"
+    );
+}
+
+/// Moves recorded before the locus were made with no frozen start on the
+/// line: the live foot of the line was the origin (`PathMoverLine` before
+/// `init` installed the start point). A rebuild of a deletion must not
+/// install the start before the entry that froze it, or those moves
+/// replay from a different origin and the point ends up elsewhere. Moves
+/// after the locus are measured from the frozen start, as in GeoGebra, which
+/// does not rebuild on a deletion at all.
+#[test]
+fn a_deletion_keeps_a_point_moved_before_the_locus() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\nZ = (7, 7)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    // before the locus: P moves along h, then h itself moves and P follows
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    // the locus freezes the foot of h as it is then
+    w.run_line("L = Locus(C, P)").unwrap();
+    // after the locus: h moves again and P follows from the frozen start
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    let z = w.construction().id("Z").unwrap();
+    assert!(w.delete(z));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "P stays exactly where it was before the deletion"
+    );
+}
+
+/// A start whose locus entry is gone has to live in the journal, not only
+/// in the construction: GeoGebra keeps the start for the rest of the
+/// session (it installed it on the line itself), so deleting the locus
+/// writes the start where the locus entry was, and every later replay —
+/// further deletions, and the undo and redo of them — installs it at the
+/// same place again, reproducing the points bit for bit.
+#[test]
+fn later_deletions_and_their_undo_keep_the_frozen_start() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\nZ = (7, 7)\nY = (8, 8)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    // before the locus: P moves along h, then h itself moves and P follows
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    // the locus freezes the foot of h as it is then
+    w.run_line("L = Locus(C, P)").unwrap();
+    // after the locus: h moves again and P follows from the frozen start
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    // Every deletion rebuilds the construction, which renumbers the
+    // objects, so each id is read again just before it goes.
+    assert!(w.delete(w.construction().id("L").unwrap()));
+    assert_eq!(w.construction().value(p), at, "deleting the locus keeps P");
+    assert!(w.delete(w.construction().id("Z").unwrap()));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "the first later deletion keeps P"
+    );
+    assert!(w.delete(w.construction().id("Y").unwrap()));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "the second later deletion keeps P"
+    );
+    // the deletions undone replay the journal again, and the locus comes
+    // back with the state before its own deletion
+    assert!(w.undo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "undo of the second deletion keeps P"
+    );
+    assert!(w.undo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "undo of the first deletion keeps P"
+    );
+    assert!(w.undo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "undo of the locus deletion keeps P"
+    );
+    assert!(w.redo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "redo of the locus deletion keeps P"
+    );
+    assert!(w.redo());
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "redo of the first deletion keeps P"
+    );
+}
+
+/// A saved script does not keep the frozen start (GeoGebra's files do not
+/// save the point either): the journal entry that carries the start over
+/// rebuilds is internal and never written, so a reload starts without one —
+/// the moves replay from the live foot of the line — and the next locus
+/// computation installs a fresh one, on the line as it is then.
+#[test]
+fn a_saved_script_does_not_keep_the_frozen_start() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    w.run_line("L = Locus(C, P)").unwrap();
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    assert!(w.delete(w.construction().id("L").unwrap()));
+    assert_eq!(w.construction().value(p), at, "deleting the locus keeps P");
+
+    let mut re = Workbench::default();
+    assert!(re.restore_text(&w.snapshot_text()).unwrap().is_empty());
+    let value = |w: &Workbench| w.construction().value(w.construction().id("P").unwrap());
+    assert_ne!(
+        value(&re),
+        at,
+        "a reload does not keep the start the locus froze"
+    );
+    // the next locus computation installs a fresh one, and the entry its
+    // own deletion writes keeps that one too
+    re.run_line("L = Locus(C, P)").unwrap();
+    let fresh = value(&re);
+    assert!(re.delete(re.construction().id("L").unwrap()));
+    assert_eq!(
+        value(&re),
+        fresh,
+        "the fresh start stays when its locus goes"
+    );
+}
+
+/// A start entry whose line is deleted goes with the line: the rebuild
+/// drops it like the entries that used the line, instead of failing on a
+/// label that is no longer there.
+#[test]
+fn deleting_the_line_drops_the_start_entry_it_kept() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    assert!(w.move_point(p, 1.0, 1.0));
+    w.run_line("L = Locus(C, P)").unwrap();
+    assert!(w.move_point(q, 4.0, 1.0));
+    // the deletion of the locus writes the start entry into the journal
+    assert!(w.delete(w.construction().id("L").unwrap()));
+    // the circle goes, and with it the line, the point on it and the entry
+    // that kept the line's start
+    assert!(w.delete(w.construction().id("k").unwrap()));
+    assert!(w.construction().id("P").is_none());
+    assert!(w.construction().id("h").is_none());
+    assert_eq!(labels(&w), ["M", "R", "Q", "B"]);
+}
+
+/// The same with the locus itself deleted: the journal entry its deletion
+/// writes belongs after the moves the locus found in place (they replayed
+/// with no start, the live foot of the line) and before the moves made
+/// after it (measured from the start, as the frozen start stays with the
+/// line in GeoGebra).
+#[test]
+fn deleting_the_locus_keeps_a_point_moved_before_it() {
+    let src = "M = (0, 0)\nR = (2, 0)\nk = Circle(M, R)\nQ = (5, 1)\nh = Polar(Q, k)\n\
+               P = Point(h)\nB = (1, 3)\nC = Midpoint(P, B)\n";
+    let mut w = Workbench::from_script(src).unwrap();
+    let p = w.construction().id("P").unwrap();
+    let q = w.construction().id("Q").unwrap();
+    assert!(w.move_point(p, 1.0, 1.0));
+    assert!(w.move_point(q, 3.0, 2.0));
+    w.run_line("L = Locus(C, P)").unwrap();
+    assert!(w.move_point(q, 4.0, 1.0));
+    let at = w.construction().value(p);
+    let l = w.construction().id("L").unwrap();
+    assert!(w.delete(l));
+    assert_eq!(
+        w.construction().value(p),
+        at,
+        "P stays exactly where it was before the deletion"
+    );
+}
+
+const BOUNDARY_GROWTH: &str = "A = (0, 0)\nB = (2, 0)\nC = (2, 2)\nD = (0, 2)\n\
+    p = Polygon(A, B, C, D)\nG = (-1, 3)\nH = (3, 3)\ng = Line(G, H)\nR = Intersect(g, p)";
+
+#[test]
+fn boundary_outputs_grow_only_after_the_whole_translation() {
+    let mut w = Workbench::from_script(BOUNDARY_GROWTH).unwrap();
+    let points = ["G", "H"].map(|label| w.construction().id(label).unwrap());
+    let labels_before = labels(&w);
+    w.begin_gesture();
+    assert!(w.translate(&points, (0.0, -6.0)));
+    w.end_gesture();
+    // The intermediate tilted line crosses the square twice. The line as
+    // a whole has moved from above the square to below it.
+    assert_eq!(labels(&w), labels_before);
+    assert!(w.undo());
+    assert!(w.redo());
+    assert_eq!(labels(&w), labels_before);
+
+    let mut saved = Workbench::default();
+    saved
+        .load_bytes(w.snapshot_text().as_bytes(), "construction")
+        .unwrap();
+    assert_eq!(labels(&saved), labels_before);
+
+    let points = ["G", "H"].map(|label| saved.construction().id(label).unwrap());
+    assert!(saved.translate(&points, (0.0, 4.0)));
+    let second = saved.construction().id("R_{2}").unwrap();
+    assert!(matches!(
+        saved.construction().value(second),
+        Value::Point { y: 1.0, .. }
+    ));
+
+    assert!(saved.delete(points[0]));
+    let c = saved.construction();
+    assert_eq!(c.value(c.id("H").unwrap()), Value::Point { x: 3.0, y: 1.0 });
+    assert!(c.id("R_{2}").is_none());
+}
+
+#[test]
+fn interleaved_boundary_groups_replay_after_unrelated_deletion() {
+    let src = "Z = (9, 9)\nA = (0, 0)\nB = (2, 0)\nC = (2, 2)\nD = (0, 2)\n\
+        p = Polygon(A, B, C, D)\nn = 3\nE = (n, 0.5)\nF = (n + 2, 0.5)\n\
+        G = (n + 2, 1.5)\nH = (n, 1.5)\nq = Polygon(E, F, G, H)\nR = Intersect(p, q)\n\
+        u = 3\nsLine: y = u\nS = Intersect(sLine, p)\nv = 3\ntLine: y = v\nT = Intersect(tLine, q)";
+    let mut w = Workbench::from_script(src).unwrap();
+    let [n, u, v] = ["n", "u", "v"].map(|label| w.construction().id(label).unwrap());
+    for label in ["R_{2}", "S_{2}", "T_{2}"] {
+        assert!(w.construction().id(label).is_none());
+    }
+
+    assert!(w.set_number(u, 0.5));
+    assert!(w.set_number(n, 1.0));
+    let pair_points = ["R_{1}", "R_{2}"].map(|label| {
+        let c = w.construction();
+        c.value(c.id(label).unwrap())
+    });
+    assert!(pair_points.contains(&Value::Point { x: 2.0, y: 0.5 }));
+    assert!(pair_points.contains(&Value::Point { x: 2.0, y: 1.5 }));
+    assert!(w.set_number(u, 3.0));
+    assert!(w.set_number(v, 1.0));
+    assert!(w.set_number(n, 3.0));
+    w.run_line("W = Midpoint(T_{1}, T_{2})").unwrap();
+
+    let before = labels(&w);
+    assert!(w.delete(w.construction().id("Z").unwrap()));
+    let after = &before[1..];
+    assert_eq!(labels(&w), after);
+    assert!(w.undo());
+    assert_eq!(labels(&w), before);
+    assert!(w.redo());
+    assert_eq!(labels(&w), after);
+
+    let mut saved = Workbench::default();
+    assert!(saved.restore_text(&w.snapshot_text()).unwrap().is_empty());
+    assert_eq!(labels(&saved), after);
+    for (label, rhs) in [
+        ("R_{2}", "Intersect(p, q)"),
+        ("S_{2}", "Intersect(sLine, p)"),
+    ] {
+        let id = saved.construction().id(label).unwrap();
+        assert_eq!(saved.construction().value(id), Value::Undefined);
+        assert_eq!(saved.definition(label), Some(rhs));
+    }
+    let c = saved.construction();
+    assert_eq!(c.value(c.id("W").unwrap()), Value::Point { x: 4.0, y: 1.0 });
+    assert!(saved.set_number(c.id("n").unwrap(), 1.0));
+    assert_eq!(labels(&saved), after);
+}
+
+#[test]
+fn a_boundary_output_born_during_a_drag_survives_replay() {
+    let mut w = Workbench::from_script(BOUNDARY_GROWTH).unwrap();
+    let point = w.construction().id("G").unwrap();
+    assert!(w.construction().id("R_{2}").is_none());
+    w.begin_gesture();
+    assert!(w.move_point(point, -1.0, 1.0));
+    let born = w.construction().id("R_{2}").unwrap();
+    assert!(matches!(w.construction().value(born), Value::Point { .. }));
+    assert!(w.move_point(point, -1.0, 3.0));
+    w.end_gesture();
+    assert_eq!(w.construction().value(born), Value::Undefined);
+
+    assert!(w.undo());
+    assert!(w.construction().id("R_{2}").is_none());
+    assert!(w.redo());
+    assert_eq!(
+        w.construction()
+            .value(w.construction().id("R_{2}").unwrap()),
+        Value::Undefined
+    );
+
+    let mut saved = Workbench::default();
+    saved
+        .load_bytes(w.snapshot_text().as_bytes(), "construction")
+        .unwrap();
+    let born = saved.construction().id("R_{2}").unwrap();
+    assert_eq!(saved.construction().value(born), Value::Undefined);
+    assert_eq!(saved.definition("R_{2}"), Some("Intersect(g, p)"));
+    assert_eq!(
+        saved
+            .rows()
+            .iter()
+            .find(|row| row.id == born)
+            .unwrap()
+            .siblings,
+        ["R_{1}"]
+    );
+    saved.run_line("S = Midpoint(R_{1}, R_{2})").unwrap();
+    assert!(saved.delete(born));
+    for label in ["R_{1}", "R_{2}", "S"] {
+        assert!(saved.construction().id(label).is_none());
+    }
+    assert!(saved.undo());
+    assert!(saved.construction().id("R_{2}").is_some());
+}
+
+#[test]
+fn a_boundary_output_grown_by_a_slider_keeps_its_label_after_deletion() {
+    let src = "A = (0, 0)\nB = (2, 0)\nC = (2, 2)\nD = (0, 2)\np = Polygon(A, B, C, D)\n\
+        n = 3\ng: y = n\nR_{1} = (8, 9)\nR = Intersect(g, p)";
+    let mut w = Workbench::from_script(src).unwrap();
+    let number = w.construction().id("n").unwrap();
+    assert!(w.construction().id("R_{2}").is_some());
+    assert!(w.set_number(number, 1.0));
+    assert!(w.set_number(number, 3.0));
+    assert!(w.construction().id("R_{3}").is_some());
+
+    assert!(w.delete(w.construction().id("R_{1}").unwrap()));
+    assert!(w.construction().id("R_{1}").is_none());
+    for label in ["R_{2}", "R_{3}"] {
+        let id = w.construction().id(label).unwrap();
+        assert_eq!(w.construction().value(id), Value::Undefined);
+    }
+    let text = w.snapshot_text();
+    let mut restored = Workbench::default();
+    assert!(restored.restore_text(&text).unwrap().is_empty());
+    assert_eq!(restored.snapshot_text(), text);
+    let mut w = Workbench::from_script(&text).unwrap();
+    let number = w.construction().id("n").unwrap();
+    assert!(w.set_number(number, 1.0));
+    assert!(w.construction().id("R_{1}").is_none());
+    let id = w.construction().id("R_{3}").unwrap();
+    assert!(matches!(w.construction().value(id), Value::Point { .. }));
+}
+
+#[test]
+fn script_moves_can_reveal_boundary_outputs_used_by_later_lines() {
+    let script = format!("{BOUNDARY_GROWTH}\nSetCoords(G, -1, 1)\nS = Midpoint(R_{{1}}, R_{{2}})");
+    let w = Workbench::from_script(&script).unwrap();
+    let id = w.construction().id("S").unwrap();
+    assert!(matches!(w.construction().value(id), Value::Point { .. }));
+}
+
+#[test]
+fn automatic_intersection_follows_its_root_through_journal_replay() {
+    let mut w = Workbench::default();
+    for line in [
+        "a = 0",
+        "f(x) = sin(x - a)",
+        "R = Intersect(f, xAxis)",
+        "U = (2, 3)",
+    ] {
+        w.run_line(line).unwrap();
+    }
+    let a = w.construction().id("a").unwrap();
+    for x in 1..=4 {
+        assert!(w.set_number(a, f64::from(x)));
+    }
+    let check = |w: &Workbench, expected: f64| {
+        let c = w.construction();
+        let Value::Point { x, y } = c.value(c.id("R").unwrap()) else {
+            panic!("undefined intersection");
+        };
+        assert!(
+            (x - expected).abs() < 1e-9 && y.abs() < 1e-9,
+            "R = ({x}, {y})"
+        );
+    };
+    check(&w, 4.0);
+    assert!(w.undo());
+    check(&w, 3.0);
+    assert!(w.redo());
+    check(&w, 4.0);
+    assert!(w.delete(w.construction().id("U").unwrap()));
+    check(&w, 4.0);
+    let mut reloaded = Workbench::default();
+    let problems = reloaded.restore_text(&w.snapshot_text()).unwrap();
+    assert!(problems.is_empty(), "{problems:?}");
+    check(&reloaded, 4.0);
+}
+
+#[test]
+fn base_and_relation_text_rows_update_and_survive_undo() {
+    let mut w = Workbench::default();
+    for input in [
+        "a = 15",
+        "b = 15",
+        "s = ToBase(a, 16)",
+        "r = Relation(a, b)",
+    ] {
+        w.run_line(input).unwrap();
+    }
+    let text = |w: &mut Workbench, name: &str| {
+        w.rows()
+            .iter()
+            .find(|row| row.label == name)
+            .unwrap()
+            .value
+            .clone()
+            .unwrap()
+    };
+    assert_eq!(text(&mut w, "s"), "F");
+    let equal = text(&mut w, "r");
+    assert!(equal.contains("equal"));
+    let id = w.construction().id("a").unwrap();
+    assert!(w.set_number(id, 16.0));
+    assert_eq!(text(&mut w, "s"), "10");
+    assert_ne!(text(&mut w, "r"), equal);
+    assert!(w.undo());
+    assert_eq!(text(&mut w, "s"), "F");
+    assert_eq!(text(&mut w, "r"), equal);
+}
+
+#[test]
+fn a_literal_circle_radius_uses_no_object_id() {
+    let mut w = Workbench::from_script("A = (1, 2)\n").unwrap();
+    w.run_line("Circle(A, 2)").unwrap();
+    w.run_line("P = Center(c)").unwrap();
+    w.run_line("n = Radius(c)").unwrap();
+
+    let check = |w: &mut Workbench, cx, cy| {
+        let c = w.construction();
+        assert_eq!(c.len(), 4);
+        for (index, label) in ["A", "c", "P", "n"].into_iter().enumerate() {
+            assert_eq!(c.id(label).unwrap().index(), index);
+        }
+        assert_eq!(
+            c.value(c.id("c").unwrap()),
+            Value::Circle { cx, cy, r: 2.0 }
+        );
+        let rows: Vec<_> = w.rows().iter().map(|r| r.label.as_str()).collect();
+        assert_eq!(rows, ["A", "c", "P", "n"]);
+    };
+    check(&mut w, 1.0, 2.0);
+    assert!(w.move_point(w.construction().id("A").unwrap(), -3.0, 4.0));
+    check(&mut w, -3.0, 4.0);
+    assert!(w.undo());
+    check(&mut w, 1.0, 2.0);
+    assert!(w.redo());
+    check(&mut w, -3.0, 4.0);
+
+    let mut loaded = Workbench::default();
+    let issues = loaded.restore_text(&w.snapshot_text()).unwrap();
+    assert!(issues.is_empty(), "{issues:?}");
+    check(&mut loaded, -3.0, 4.0);
+}
+
+#[test]
+fn a_hash_inside_text_survives_a_script_and_saved_snapshot() {
+    let mut w = Workbench::default();
+    w.run_line(r#"n = Length("a# labels: b") # trailing comment"#)
+        .unwrap();
+    let mut loaded = Workbench::default();
+    let issues = loaded.restore_text(&w.snapshot_text()).unwrap();
+    assert!(issues.is_empty(), "{issues:?}");
+    let c = loaded.construction();
+    assert_eq!(c.value(c.id("n").unwrap()), Value::Number(12.0));
+}
+
+#[test]
+fn equation_sides_keep_their_inputs_through_rebuild_and_undo() {
+    let mut w = Workbench::from_script(
+        "unused(x) = x+1\n\
+         a = 2\n\
+         j: a*x+y = a*x+5*x+1\n\
+         f = LeftSide(j)\n\
+         g = RightSide(j)\n\
+         n = f(3,4)\n\
+         m = g(3,4)\n",
+    )
+    .unwrap();
+    let check = |w: &Workbench, left, right| {
+        let c = w.construction();
+        for (side, number, expected) in [("f", "n", left), ("g", "m", right)] {
+            assert_eq!(
+                c.function_value_xy(c.id(side).unwrap(), 3.0, 4.0),
+                Some(expected)
+            );
+            assert_eq!(c.value(c.id(number).unwrap()), Value::Number(expected));
+        }
+    };
+    check(&w, 10.0, 22.0);
+    // Both sides depend on a, although it cancels in the line's coefficients.
+    assert!(w.set_number(w.construction().id("a").unwrap(), -1.0));
+    check(&w, 1.0, 13.0);
+    assert!(w.undo());
+    check(&w, 10.0, 22.0);
+    assert!(w.redo());
+    check(&w, 1.0, 13.0);
+    assert!(w.delete(w.construction().id("unused").unwrap()));
+    check(&w, 1.0, 13.0);
+    assert!(w.undo());
+    check(&w, 1.0, 13.0);
 }

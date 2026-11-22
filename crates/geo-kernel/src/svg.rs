@@ -29,7 +29,7 @@ impl View {
             v.xmax = v.xmax.max(x);
             v.ymax = v.ymax.max(y);
         };
-        for id in c.ids() {
+        for id in c.ids().filter(|&id| !c.label(id).starts_with('\0')) {
             match c.value(id) {
                 Value::Point { x, y } => grow(x, y),
                 Value::Segment { x1, y1, x2, y2 } => {
@@ -112,6 +112,17 @@ impl View {
 
 /// Renders the construction into an SVG document of the given pixel size.
 pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
+    render_visible(c, view, width, height, |_| true)
+}
+
+/// Renders the objects selected by a caller's visibility state.
+pub fn render_visible(
+    c: &Construction,
+    view: View,
+    width: u32,
+    height: u32,
+    visible: impl Fn(crate::Id) -> bool,
+) -> String {
     let (w, h) = (width as f64, height as f64);
     let (vw, vh) = (view.xmax - view.xmin, view.ymax - view.ymin);
     let scale = (w / vw).min(h / vh);
@@ -127,6 +138,7 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
     let mut segments = String::new();
     let mut circles = String::new();
     let mut points = String::new();
+    let mut definitions = String::new();
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
@@ -134,7 +146,13 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
     // Conics and function graphs, cut to the image.
     let frame = crate::plot::Frame::fit(view, w, h);
 
-    for id in c.ids() {
+    for id in c
+        .ids()
+        .filter(|&id| !c.label(id).starts_with('\0') && visible(id))
+    {
+        if let Some(source) = c.construction_source(id) {
+            let _ = writeln!(definitions, "{} = {}", escape(c.label(id)), escape(source));
+        }
         match c.value(id) {
             v @ Value::Line { .. } => {
                 let Some((a, b, k)) = v.unit_line() else {
@@ -335,35 +353,17 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
                 let Some(locus) = c.locus(id) else {
                     continue;
                 };
-                // A point without `line_to` starts a new piece.
-                let mut pts = String::new();
-                let mut flush = |pts: &mut String| {
-                    if pts.matches(' ').count() > 1 {
-                        let _ = writeln!(
-                            segments,
-                            r##"<polyline points="{}" fill="none"/>"##,
-                            pts.trim_end()
-                        );
-                    }
-                    pts.clear();
-                };
-                for p in locus.points.iter() {
-                    if !p.line_to {
-                        flush(&mut pts);
-                    }
-                    // an undefined point (NaN) is a break too
-                    if p.x.is_finite() && p.y.is_finite() {
-                        let _ = write!(pts, "{:.2},{:.2} ", sx(p.x), sy(p.y));
-                    } else {
-                        flush(&mut pts);
-                    }
-                }
-                flush(&mut pts);
+                write_locus(&locus.points, &mut segments, |x, y| (sx(x), sy(y)));
             }
             Value::Number(_)
+            | Value::Text
+            | Value::FunctionNVar
             | Value::Bool(_)
             | Value::List { .. }
             | Value::HomogeneousPoint { .. }
+            | Value::Curve { .. }
+            | Value::Button
+            | Value::InputBox
             | Value::Undefined => {}
         }
     }
@@ -373,6 +373,9 @@ pub fn render(c: &Construction, view: View, width: u32, height: u32) -> String {
         out,
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">"##
     );
+    if !definitions.is_empty() {
+        let _ = writeln!(out, "<desc>{}</desc>", definitions.trim_end());
+    }
     let _ = writeln!(
         out,
         r##"<rect width="100%" height="100%" fill="#ffffff"/>"##
@@ -417,6 +420,54 @@ fn escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+}
+
+/// The pieces of a locus into `out` (the segments group): every run of
+/// samples joined by `line_to` as a polyline, and a run of a single sample
+/// as the round cap of the stroke, a dot — the drawing draws one too
+/// (`CurvePlotterUtils.moveTo`; a polyline of one point would be nothing).
+fn write_locus(
+    points: &[crate::LocusPoint],
+    out: &mut String,
+    at: impl Fn(f64, f64) -> (f64, f64),
+) {
+    let mut run: Vec<(f64, f64)> = Vec::new();
+    fn flush(run: &mut Vec<(f64, f64)>, out: &mut String) {
+        match run.as_slice() {
+            [] => {}
+            // the round cap of the 2 px stroke, like the drawing's dot
+            &[(x, y)] => {
+                let _ = writeln!(
+                    out,
+                    r##"<circle cx="{x:.2}" cy="{y:.2}" r="1" fill="#202124"/>"##
+                );
+            }
+            _ => {
+                let mut pts = String::new();
+                for &(x, y) in run.iter() {
+                    let _ = write!(pts, "{x:.2},{y:.2} ");
+                }
+                let _ = writeln!(
+                    out,
+                    r##"<polyline points="{}" fill="none"/>"##,
+                    pts.trim_end()
+                );
+            }
+        }
+        run.clear();
+    }
+    for p in points {
+        if !p.line_to {
+            flush(&mut run, out);
+        }
+        // an undefined point (NaN) is a break too
+        if p.x.is_finite() && p.y.is_finite() {
+            run.push(at(p.x, p.y));
+        } else {
+            flush(&mut run, out);
+        }
+    }
+    flush(&mut run, out);
 }
 
 /// The points of an arc or sector, sampled from its start to its end
@@ -493,5 +544,52 @@ mod angle_tests {
         assert_eq!(svg.matches("<path").count(), 2);
         assert!(svg.contains("M 200.00,200.00 L 221.21,200.00 L 221.21,178.79 L 200.00,178.79 Z"));
         assert!(svg.contains("A 30.00,30.00 0 1 0 230.00,200.00 Z"));
+    }
+
+    /// A piece of a locus with a single sample is drawn as the dot of its
+    /// stroke cap, not dropped (`DrawLocus` draws one as a dot).
+    #[test]
+    fn a_lone_locus_sample_is_drawn_as_a_dot() {
+        use crate::LocusPoint;
+        let points = [
+            LocusPoint {
+                x: 10.0,
+                y: 20.0,
+                line_to: false,
+            },
+            LocusPoint {
+                x: 30.0,
+                y: 20.0,
+                line_to: true,
+            },
+            // a lone point, then an undefined stretch, then a lone point
+            LocusPoint {
+                x: 50.0,
+                y: 40.0,
+                line_to: false,
+            },
+            LocusPoint {
+                x: f64::NAN,
+                y: f64::NAN,
+                line_to: true,
+            },
+            LocusPoint {
+                x: 60.0,
+                y: 41.0,
+                line_to: false,
+            },
+        ];
+        let mut out = String::new();
+        write_locus(&points, &mut out, |x, y| (x, y));
+        assert_eq!(out.matches("<polyline").count(), 1, "{out}");
+        assert_eq!(out.matches("<circle").count(), 2, "{out}");
+        assert!(
+            out.contains(r##"<circle cx="50.00" cy="40.00" r="1" fill="#202124"/>"##),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"<polyline points="10.00,20.00 30.00,20.00""#),
+            "{out}"
+        );
     }
 }

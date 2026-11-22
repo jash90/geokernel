@@ -46,6 +46,8 @@
 //! any label. `$point(x, y)` gives a free point for any label; GeoGebra's
 //! parser also has a `$point` but it follows the label rule, so this is a
 //! deliberate difference (see `DIFFERENCES.md`).
+//! Both forms can also enclose a coordinate expression to preserve the
+//! kind of a renamed point or vector when loading a construction.
 
 use crate::algo::arc::ArcDef;
 use crate::algo::conic::ConicDef;
@@ -60,10 +62,12 @@ use crate::algo::predicate::PredicateDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
 use crate::algo::Group;
-use crate::kernel::angle::{self, AngleDef, AngleSource};
+use crate::kernel::angle::{self, AngleDef, AngleSource, AngleStyle};
 use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
+
+pub use intersect::growth::{boundary_slot_owner, restore_boundary_labels, BoundaryOutputs};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScriptError {
@@ -92,15 +96,46 @@ pub fn load(src: &str) -> Result<Construction, ScriptError> {
     Ok(c)
 }
 
+pub mod equation;
+pub mod saved;
+pub mod text;
+
 /// Runs one line. Returns the first output, or `Ok(None)` if the line
 /// creates nothing. Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
-    let line = raw.split('#').next().unwrap_or("").trim();
+    let (line, comment) = split_comment(raw);
+    let line = line.trim();
+    let lowered = comment
+        .and_then(saved::inline_argument_positions)
+        .map(|positions| saved::lower_marked_arguments(line, positions))
+        .transpose()?;
+    let line = lowered.as_deref().unwrap_or(line);
     if line.is_empty() {
         return Ok(None);
     }
+    if let Some(property) = saved::parse(line) {
+        return property?.apply(c).map(|()| None);
+    }
+    if let Some(result) = text::apply(c, line) {
+        return result.map(|_| None);
+    }
+    if let Some(style) = equation::parse_style(line) {
+        return style?.apply(c).map(|_| None);
+    }
     if line.starts_with('{') {
         return exec_labelled(c, line);
+    }
+    if let Some(args) = line
+        .strip_prefix("$angleStyle(")
+        .and_then(|s| s.strip_suffix(')'))
+    {
+        let (label, style) = args
+            .split_once(',')
+            .ok_or("expected an angle and a style")?;
+        let style = style.trim().parse().map_err(|_| "invalid angle style")?;
+        c.set_angle_style(object(c, label.trim())?, AngleStyle::from_xml(style))
+            .map_err(|e| e.to_string())?;
+        return Ok(None);
     }
     // `name: definition`, the input bar's other form of a labelled line.
     // A definition with `=` in it is an equation (`a: 2x + 3y = 6`); the
@@ -128,13 +163,18 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     }
     let (name, rhs) = line.split_once('=').ok_or("expected `name = definition`")?;
     let name = name.trim();
-    // `f(x) = ...`: a function of `x`
-    if let Some(f) = name.strip_suffix("(x)").map(str::trim_end) {
-        if !is_identifier(f) {
+    // Named functions use `x`, and also `y` for inequalities.
+    let function = name
+        .strip_suffix("(x)")
+        .map(|f| (f, false))
+        .or_else(|| name.strip_suffix("(y)").map(|f| (f, true)));
+    if let Some((f, of_y)) = function {
+        let f = f.trim_end();
+        if !is_output_label(f) {
             return Err(format!("`{f}` is not a valid object name"));
         }
         check_label(f)?;
-        return crate::expr::define_function(c, f, rhs.trim()).map(Some);
+        return crate::expr::define_function(c, f, rhs.trim(), of_y).map(Some);
     }
     if !is_output_label(name) {
         return Err(format!("`{name}` is not a valid object name"));
@@ -146,23 +186,188 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
+    {
+        return result;
+    }
     let start = c.checkpoint();
-    let Some(call) = resolve_geometry_arguments(c, rhs) else {
-        return define_resolved(c, name, rhs);
+    if let Some(result) = define_inline_region(c, name, rhs) {
+        if result.is_err() {
+            c.discard_since(start);
+        }
+        return result;
+    }
+    let call = match resolve_text_argument(c, rhs) {
+        Ok(call) => call.or_else(|| resolve_geometry_arguments(c, rhs)),
+        Err(error) => {
+            c.discard_since(start);
+            return Err(error);
+        }
     };
-    let result = define_resolved(c, name, &call);
+    let result = define_resolved(c, name, call.as_deref().unwrap_or(rhs));
+    if let Ok(Some(id)) = result.as_ref() {
+        let numeric_expression = c.kind(*id).is_number()
+            && crate::expr::plain_number(rhs).is_none()
+            && !rhs.ends_with('°')
+            && split_call(rhs).is_none();
+        let coordinate_expression = c.kind(*id) == Kind::Point
+            && rhs
+                .strip_prefix('(')
+                .and_then(|s| s.strip_suffix(')'))
+                .is_some_and(|parts| {
+                    parts
+                        .split(',')
+                        .any(|arg| crate::expr::plain_number(arg.trim()).is_none())
+                });
+        if c.def(*id).is_free() && (numeric_expression || coordinate_expression) {
+            c.remember_construction_source(*id, rhs);
+        }
+    }
     if result.is_err() {
         c.discard_since(start);
     }
     result
 }
 
+/// Lowers an imported argument within its owning definition. Each temporary
+/// object is anonymous and shares the lifetime of that definition's replay.
+fn with_saved_arguments<T>(
+    c: &mut Construction,
+    rhs: &str,
+    run: impl FnOnce(&mut Construction, &str) -> Result<T, String>,
+) -> Option<Result<T, String>> {
+    if !rhs.contains("$arg(") {
+        return None;
+    }
+    let (command, args) = split_call(rhs)?;
+    if !args.iter().any(|arg| arg.starts_with("$arg(")) {
+        return None;
+    }
+    let before = c.len();
+    let start = c.checkpoint();
+    let result = (|| {
+        let args = args
+            .iter()
+            .map(
+                |arg| match arg.strip_prefix("$arg(").and_then(|s| s.strip_suffix(')')) {
+                    Some(source) => saved_argument(c, source.trim(), 0),
+                    None => Ok((*arg).to_owned()),
+                },
+            )
+            .collect::<Result<Vec<_>, String>>()?;
+        run(c, &format!("{command}({})", args.join(", ")))
+    })();
+    if result.is_err() {
+        c.discard_since(start);
+    } else {
+        let source = saved::command_with_inline_arguments(rhs).map(|(source, _)| source);
+        for index in before..c.len() {
+            let id = Id(index);
+            if !c.label(id).starts_with('\0') {
+                c.remember_construction_source(id, source.as_deref().unwrap_or(rhs));
+            }
+        }
+    }
+    Some(result)
+}
+
+fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<String, String> {
+    if depth >= 32 {
+        return Err("nested command inputs are too deep".into());
+    }
+    if let Some(id) = c.id(source) {
+        return Ok(c.label(id).to_owned());
+    }
+    let start = c.checkpoint();
+    let label = format!("\0arg{}", c.len());
+    let call = split_call(source);
+    if let Some(("Vector", args)) = &call {
+        if let [arg] = args.as_slice() {
+            if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+                return Ok((*arg).to_owned());
+            }
+        }
+    }
+    if call.is_some() {
+        if let Ok(def) = parse_def(c, source) {
+            if c.add(&label, def).is_ok() {
+                return Ok(label);
+            }
+        }
+    }
+    let nested_vector = call
+        .as_ref()
+        .is_some_and(|(command, _)| *command == "Vector");
+    if !nested_vector && crate::expr::define_saved_argument(c, &label, source).is_ok() {
+        return Ok(label);
+    }
+    let Some((command, args)) = call else {
+        if crate::expr::equation::split_equation(source).is_ok() {
+            return crate::expr::equation::define(c, &label, source).map(|_| label);
+        }
+        return Err(format!("cannot evaluate command input `{source}`"));
+    };
+    let args = args
+        .into_iter()
+        .map(|arg| {
+            if crate::expr::plain_number(arg).is_some() {
+                Ok(arg.to_owned())
+            } else {
+                saved_argument(c, arg, depth + 1)
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if let ("Vector", [arg]) = (command, args.as_slice()) {
+        if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+            return Ok(arg.clone());
+        }
+    }
+    let first_output = c.len();
+    let label = format!("\0arg{first_output}");
+    let id = define_after_label(c, &label, &format!("{command}({})", args.join(", ")))
+        .map_err(|error| format!("nested `{command}`: {error}"))?;
+    if id.is_some_and(|id| c.label(id) == label) && c.len() == first_output + 1 {
+        Ok(label)
+    } else {
+        c.discard_since(start);
+        Err(format!("nested `{command}` must produce a single object"))
+    }
+}
+
 fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
-    if let Some(def) = parse_forced(rhs) {
+    if rhs.starts_with('$') {
+        if let Some((form @ ("$checkBox" | "$button" | "$inputBox"), args)) = split_call(rhs) {
+            return crate::kernel::control::define(c, name, form, &args).map(Some);
+        }
+    }
+    if let Some(result) = define_saved(c, name, rhs) {
+        return result.map(Some);
+    }
+    if let Some(("Curve", args)) = split_call(rhs) {
+        return define_cartesian_curve(c, name, &args).map(Some);
+    }
+    if let Some(def) = intersect::growth::parse_slot(c, rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
+    }
+    if let Some((form @ ("$point" | "$vector"), args)) = split_call(rhs) {
+        match forced_coordinates(form, &args) {
+            Ok(def) => return c.add(name, def).map(Some).map_err(|e| e.to_string()),
+            Err(error) if args.len() > 2 => return Err(error),
+            Err(_) => {}
+        }
+        let open = rhs.find('(').expect("forced forms have parentheses");
+        return crate::expr::define_coordinates(c, name, &rhs[open..], form == "$vector").map(Some);
     }
     if rhs.starts_with("Vertex") {
         if let Some((func, args)) = split_call(rhs) {
+            if func == "Vertex" {
+                if let Some(def) = crate::algo::point::parse_view_corner(c, &args) {
+                    return c
+                        .add(name, Def::Point(def?))
+                        .map(Some)
+                        .map_err(|e| e.to_string());
+                }
+            }
             if let Some(def) = PointDef::parse_segment_vertex(c, func, &args) {
                 return c
                     .add(name, Def::Point(def?))
@@ -171,7 +376,22 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
             }
         }
     }
+    if let Some(result) = crate::expr::define_relation(c, name, rhs) {
+        return result.map(Some);
+    }
+    if let Some(result) = crate::expr::equation::define_side(c, name, rhs) {
+        return result.map(Some);
+    }
+    if let Some(result) = crate::expr::division_list(c, name, rhs) {
+        return result.map(Some);
+    }
+    if let Some(result) = crate::algo::discrete::exec(c, name, rhs) {
+        return result.map(Some);
+    }
     if let Some(result) = exec_polyline_flag(c, name, rhs) {
+        return result;
+    }
+    if let Some(result) = crate::algo::vector::matrix::exec(c, name, rhs) {
         return result;
     }
     if let Some(result) = crate::algo::polygon::exec(c, name, rhs) {
@@ -200,6 +420,108 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         }
     }
     define_expression_or_command(c, name, rhs).map(Some)
+}
+
+fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id, String>> {
+    if !rhs.starts_with("$saved(")
+        && !rhs.starts_with("$pointOnPath(")
+        && !rhs.starts_with("$slider(")
+    {
+        return None;
+    }
+    let mut parse = || {
+        let (form, args) = split_call(rhs).ok_or("invalid saved definition")?;
+        match (form, args.as_slice()) {
+            ("$slider", [value, min, max]) => c
+                .add_saved_slider(
+                    name,
+                    parse_number(value)?,
+                    parse_number(min)?,
+                    parse_number(max)?,
+                )
+                .map_err(|e| e.to_string()),
+            ("$saved", [literal, _definition]) => {
+                let def = if let Some(def) = parse_forced(literal) {
+                    def?
+                } else if let Some(radians) = literal.strip_suffix(" rad") {
+                    Def::Angle(parse_number(radians)?)
+                } else {
+                    Def::Number(parse_number(literal)?)
+                };
+                c.add(name, def).map_err(|e| e.to_string())
+            }
+            ("$pointOnPath", [path, x, y, bounds @ ..]) => {
+                let path = object(c, path)?;
+                let (x, y) = (parse_number(x)?, parse_number(y)?);
+                let bounds = match bounds {
+                    [] => None,
+                    [min, max] => Some([parse_number(min)?, parse_number(max)?]),
+                    _ => return Err("invalid function path bounds".into()),
+                };
+                c.add_saved_path_point(name, path, x, y, bounds)
+                    .map_err(|e| e.to_string())
+            }
+            _ => Err("invalid saved definition".into()),
+        }
+    };
+    Some(parse())
+}
+
+/// The definition text saved with an independent object's exact value.
+pub fn saved_definition(rhs: &str) -> Option<&str> {
+    if rhs.starts_with("$saved(") {
+        let ("$saved", args) = split_call(rhs)? else {
+            return None;
+        };
+        if let [_, definition] = args.as_slice() {
+            return Some(definition);
+        }
+    }
+    None
+}
+
+fn define_cartesian_curve(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
+    let [x, y, parameter, start, end] = *args else {
+        return Err("`Curve` needs two coordinates, a parameter and two bounds".into());
+    };
+    if !is_identifier(parameter) {
+        return Err("`Curve` needs a parameter name".into());
+    }
+    let checkpoint = c.checkpoint();
+    let result = (|| {
+        let packed = |id: Id| u32::try_from(id.0).map_err(|_| "too many objects".to_owned());
+        let mut coordinate = |text| {
+            let label = format!("\0arg{}", c.len());
+            packed(crate::expr::define_parametric_coordinate(
+                c, &label, text, parameter,
+            )?)
+        };
+        let coordinates = [coordinate(x)?, coordinate(y)?];
+        let mut bound = |text| {
+            if let Some(id) = c.id(text) {
+                return packed(id);
+            }
+            let label = format!("\0arg{}", c.len());
+            if crate::expr::argument_object(c, text, &label, Kind::Number) {
+                packed(object(c, &label)?)
+            } else {
+                Err(format!("`Curve` needs a numeric bound, got `{text}`"))
+            }
+        };
+        let bounds = [bound(start)?, bound(end)?];
+        c.add(
+            name,
+            Def::Measure(MeasureDef::CartesianCurve {
+                coordinates,
+                bounds,
+            }),
+        )
+        .map_err(|e| e.to_string())
+    })();
+    if result.is_err() {
+        c.discard_since(checkpoint);
+    }
+    result
 }
 
 fn define_expression_or_command(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
@@ -234,7 +556,7 @@ fn define_vector_call(
         return None;
     }
     let arg = rest.strip_suffix(')')?.trim();
-    if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
+    if !arg.starts_with('\0') && c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
         return Some(Ok(None));
     }
     match parse_forced(arg)? {
@@ -339,9 +661,64 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
     call_closes_at_end(rhs, open)
 }
 
+/// Split off a script comment, including its leading `#`. A matched string
+/// can contain a hash. An unterminated string leaves its first hash available
+/// as the comment marker, as in scripts that predate string literals.
+pub fn split_comment(line: &str) -> (&str, Option<&str>) {
+    let Some(first_hash) = line.find('#') else {
+        return (line, None);
+    };
+    if !line[..first_hash].contains('"') {
+        return (&line[..first_hash], Some(&line[first_hash..]));
+    }
+    let mut quote = None;
+    let mut escaped = false;
+    for (index, ch) in line.char_indices() {
+        if escaped {
+            escaped = false;
+        } else {
+            match ch {
+                '\\' if quote.is_some() => escaped = true,
+                '"' => quote = if quote.is_some() { None } else { Some(index) },
+                '#' if quote.is_none() => return (&line[..index], Some(&line[index..])),
+                _ => {}
+            }
+        }
+    }
+    if let Some(start) = quote {
+        if let Some(hash) = line[start..].find('#') {
+            let index = start + hash;
+            return (&line[..index], Some(&line[index..]));
+        }
+    }
+    (line, None)
+}
+
+/// The byte position of the first matching character outside a string literal.
+pub fn find_unquoted(text: &str, ch: char) -> Option<usize> {
+    unquoted(text).find_map(|(i, c)| (c == ch).then_some(i))
+}
+
+fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
+    let mut quoted = false;
+    let mut escaped = false;
+    text.char_indices().filter(move |&(_, c)| {
+        if escaped {
+            escaped = false;
+        } else if quoted && c == '\\' {
+            escaped = true;
+        } else if c == '"' {
+            quoted = !quoted;
+        } else {
+            return !quoted;
+        }
+        false
+    })
+}
+
 fn call_closes_at_end(rhs: &str, open: usize) -> bool {
     let mut depth = 0usize;
-    for (i, ch) in rhs.char_indices().skip_while(|&(i, _)| i < open) {
+    for (i, ch) in unquoted(rhs).skip_while(|&(i, _)| i < open) {
         match ch {
             '(' => depth += 1,
             ')' => {
@@ -367,7 +744,7 @@ pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     let mut args = Vec::new();
     let mut start = 0;
     let mut depth = 0usize;
-    for (i, ch) in inner.char_indices() {
+    for (i, ch) in unquoted(inner) {
         match ch {
             '(' | '{' | '[' => depth += 1,
             ')' | '}' | ']' => depth = depth.checked_sub(1)?,
@@ -385,13 +762,152 @@ pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     Some((rhs[..open].trim(), args))
 }
 
+/// Give unlabelled points and regions the same dependencies as named ones.
+fn define_inline_region(
+    c: &mut Construction,
+    label: &str,
+    rhs: &str,
+) -> Option<Result<Option<Id>, String>> {
+    if !rhs.starts_with("IsInRegion") {
+        return None;
+    }
+    let ("IsInRegion", args) = split_call(rhs)? else {
+        return None;
+    };
+    let &[point, region] = args.as_slice() else {
+        return None;
+    };
+    Some((|| {
+        let a = relation_or_region_argument(c, point)?;
+        let b = relation_or_region_argument(c, region)?;
+        c.add(label, Def::Predicate(PredicateDef::InRegion(a, b)))
+            .map(Some)
+            .map_err(|e| e.to_string())
+    })())
+}
+
+pub(crate) fn relation_or_region_argument(c: &mut Construction, arg: &str) -> Result<Id, String> {
+    if let Some(id) = c.id(arg) {
+        return Ok(id);
+    }
+    let call = match split_call(arg) {
+        Some(("Circle", args)) if args.len() == 2 => {
+            let a = relation_or_region_argument(c, args[0])?;
+            let radius = if crate::expr::plain_number(args[1]).is_some() {
+                args[1]
+            } else {
+                let b = relation_or_region_argument(c, args[1])?;
+                c.label(b)
+            };
+            format!("Circle({}, {radius})", c.label(a))
+        }
+        _ => arg.to_owned(),
+    };
+    let label = format!("\0region{}", c.len());
+    if crate::expr::equation::split_equation(&call).is_ok() {
+        return crate::expr::equation::define(c, &label, &call);
+    }
+    define_expression_or_command(c, &label, &call)
+}
+
+/// A formatting command accepts a geometry command as its first argument.
+fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<String>, String> {
+    let Some((name @ ("Text" | "FormulaText" | "LaTeX"), args)) = split_call(rhs) else {
+        return Ok(None);
+    };
+    let Some((first, rest)) = args.split_first() else {
+        return Ok(None);
+    };
+    let Some((command, args)) = split_call(first) else {
+        return Ok(None);
+    };
+    if crate::expr::is_expression_command(command) || crate::expr::accepts_text_argument(c, first) {
+        return Ok(None);
+    }
+    let label = format!("\0textarg{}", c.len());
+    let id = if command == "Polygon" && args.len() >= 2 {
+        let mut points = Vec::with_capacity(args.len());
+        for token in &args {
+            if let Some(id) = c.id(token).filter(|&id| c.kind(id) == Kind::Point) {
+                points.push(id);
+            } else {
+                let point = format!("\0textpoint{}", c.len());
+                if crate::expr::argument_object(c, token, &point, Kind::Point) {
+                    points.push(c.id(&point).unwrap());
+                } else {
+                    break;
+                }
+            }
+        }
+        let polygon = if points.len() == 2 && args.len() == 3 {
+            let n = crate::algo::polygon::count_arg(c, args[2])?;
+            c.add(
+                &label,
+                Def::Polygon(crate::algo::polygon::PolygonDef::Regular {
+                    a: points[0],
+                    b: points[1],
+                    n,
+                }),
+            )
+        } else if points.len() == args.len() && points.len() >= 3 {
+            c.add_with_list(&label, &points, |list| {
+                Def::Polygon(crate::algo::polygon::PolygonDef::Polygon(list))
+            })
+        } else {
+            return Err("expected points or two points and a vertex count".into());
+        };
+        polygon.map_err(|err| err.to_string())?
+    } else {
+        define_after_label(c, &label, first)?.ok_or("the text argument has no value")?
+    };
+    c.remember_construction_source(id, first);
+    Ok(Some(format!(
+        "{name}({})",
+        std::iter::once(label.as_str())
+            .chain(rest.iter().copied())
+            .collect::<Vec<_>>()
+            .join(", ")
+    )))
+}
+
 /// Give inline numeric and list inputs a live dependency, as for the
 /// named inputs of these commands. Their normal dispatch reads the labels.
 fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String> {
     let (name, _) = rhs.split_once('(')?;
+    if matches!(name.trim(), "Locus" | "SlopeField") {
+        let (func, args) = split_call(rhs)?;
+        let first = match (func, args.as_slice()) {
+            ("Locus", [slope, point])
+                if c.id(point).is_some_and(|id| c.kind(id) == Kind::Point) =>
+            {
+                *slope
+            }
+            ("SlopeField", [slope]) => *slope,
+            _ => return None,
+        };
+        if c.id(first).is_none() {
+            let label = format!("\0arg{}", c.len());
+            crate::expr::define_slope(c, &label, first).ok()?;
+            let suffix = if args.len() == 2 {
+                format!(", {}", args[1])
+            } else {
+                String::new()
+            };
+            return Some(format!("{func}({label}{suffix})"));
+        }
+    }
     if !matches!(
         name.trim(),
-        "Tangent" | "Length" | "Vertex" | "Point" | "Barycenter"
+        "Tangent"
+            | "Length"
+            | "Vertex"
+            | "Point"
+            | "Barycenter"
+            | "Polygon"
+            | "PolyLine"
+            | "Arc"
+            | "Sector"
+            | "Circle"
     ) {
         return None;
     }
@@ -399,19 +915,38 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
     let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
         ("Tangent", [_, f]) if is_kind(f, Kind::Function) => &[(0, Kind::Number)],
-        ("Length", [f, _, _]) if is_kind(f, Kind::Function) => {
+        ("Length", [f, _, _]) if is_kind(f, Kind::Function) || is_kind(f, Kind::Curve) => {
             &[(1, Kind::Number), (2, Kind::Number)]
         }
         ("Vertex", [s, _]) if is_kind(s, Kind::Segment) => &[(1, Kind::Number)],
-        ("Point", [_]) => &[(0, Kind::List)],
+        ("Point", [path, _])
+            if c.id(path)
+                .is_some_and(|id| crate::algo::path::PATH.contains(&c.kind(id))) =>
+        {
+            &[(1, Kind::Number)]
+        }
+        ("Arc" | "Sector", [path, _, _])
+            if is_kind(path, Kind::Circle) || is_kind(path, Kind::Conic) =>
+        {
+            &[(1, Kind::Number), (2, Kind::Number)]
+        }
+        ("Point" | "Polygon" | "PolyLine", [_]) | ("PolyLine", [_, _]) => &[(0, Kind::List)],
         ("Barycenter", [_, _]) => &[(0, Kind::List), (1, Kind::List)],
+        ("Circle", [center, radius])
+            if is_kind(center, Kind::Point) && crate::expr::plain_number(radius).is_none() =>
+        {
+            &[(1, Kind::Number)]
+        }
         _ => return None,
     };
     let replacements: Vec<_> = inputs
         .iter()
         .filter_map(|&(index, kind)| {
             let arg = args[index];
-            if c.id(arg).is_some() || crate::algo::polygon::decimal(arg).is_some() {
+            if c.id(arg).is_some()
+                || (!matches!(func, "Point" | "Arc" | "Sector" | "Circle")
+                    && crate::algo::polygon::decimal(arg).is_some())
+            {
                 return None;
             }
             let label = format!("\0arg{}", c.len());
@@ -467,14 +1002,14 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
 /// - two or more outputs defined at creation: every defined output is
 ///   created and gets the next free indexed label (`t_{1}`, `t_{2}`, ...);
 ///   `Vertex` of a hyperbola labels its two defined vertices only;
-/// - exactly one defined: only that output is created, indexed for a
-///   polygonal boundary intersection and labelled `name` otherwise;
+/// - exactly one defined: only that output is created, using an indexed
+///   label for algorithms that assign slots through an output handler;
 /// - none defined: only the first output is created, using the same rule.
 ///
-/// The set of created objects is fixed at creation: an output that was not
-/// created is not added later, even when it becomes defined.
+/// The workbench can record additional polygonal boundary outputs after a
+/// move reveals more crossings.
 /// Returns the id of the first object created.
-fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
+pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> Result<Id, String> {
     if c.id(name).is_some() {
         return Err(format!("object `{name}` already exists"));
     }
@@ -645,14 +1180,17 @@ fn is_finite(v: &Value) -> bool {
         Value::Vector { x, y } => x.is_finite() && y.is_finite(),
         Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
         Value::Bool(_) => true,
-        Value::Function | Value::List { .. } => true,
+        Value::Curve { start, end } => start.is_finite() && end.is_finite(),
+        Value::Function | Value::FunctionNVar | Value::Text | Value::List { .. } => true,
         Value::Polygon { area } => area.is_finite(),
         Value::PolyLine { length } => length.is_finite(),
         Value::Conic { .. } => true,
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
         Value::Locus { .. } => true,
-        Value::HomogeneousPoint { .. } | Value::Undefined => false,
+        Value::HomogeneousPoint { .. } | Value::Button | Value::InputBox | Value::Undefined => {
+            false
+        }
     }
 }
 
@@ -925,18 +1463,19 @@ fn parse_forced(rhs: &str) -> Option<Result<Def, String>> {
     if func != "$point" && func != "$vector" {
         return None;
     }
-    if args.len() != 2 {
-        return Some(Err(format!("`{func}` needs two coordinates")));
-    }
-    let (x, y) = match (parse_number(args[0]), parse_number(args[1])) {
-        (Ok(x), Ok(y)) => (x, y),
-        (Err(e), _) | (_, Err(e)) => return Some(Err(e)),
+    Some(forced_coordinates(func, &args))
+}
+
+fn forced_coordinates(func: &str, args: &[&str]) -> Result<Def, String> {
+    let [x, y] = args else {
+        return Err(format!("`{func}` needs two coordinates"));
     };
-    Some(Ok(if func == "$point" {
+    let (x, y) = (parse_number(x)?, parse_number(y)?);
+    Ok(if func == "$point" {
         Def::FreePoint { x, y }
     } else {
         Def::Vector(VectorDef::Free { x, y })
-    }))
+    })
 }
 
 /// Index of the `}` that closes the `{` at the start of `s`. Labels such as
@@ -1013,6 +1552,13 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         .strip_prefix('=')
         .ok_or("expected `=` after the output labels")?
         .trim();
+    if let Some(result) = with_saved_arguments(c, rhs, |c, call| exec_slots(c, &slots, call)) {
+        return result;
+    }
+    exec_slots(c, &slots, rhs)
+}
+
+fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<Id>, String> {
     // The command decides how many outputs it has; a longer list of labels is
     // refused before any label is looked at, so the work is bounded by the
     // command, not by the length of the line.
@@ -1023,7 +1569,14 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
             Ok(_) => "the command does not create several objects, write `name = ...`".into(),
         });
     };
-    let defs = defs?;
+    add_named_outputs(c, slots, defs?)
+}
+
+pub(crate) fn add_named_outputs(
+    c: &mut Construction,
+    slots: &[&str],
+    defs: Vec<Def>,
+) -> Result<Option<Id>, String> {
     // A command can make fewer outputs than GeoGebra's algorithm has (the
     // second tangent from a point on a circle is undefined at creation and
     // never created); slots for outputs that are not created may stay empty.
@@ -1035,7 +1588,7 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         ));
     }
     let mut seen = std::collections::HashSet::new();
-    for slot in &slots {
+    for slot in slots {
         if slot.is_empty() {
             continue;
         }
@@ -1081,6 +1634,18 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
 mod tests {
     use super::*;
     use crate::kernel::Value;
+
+    #[test]
+    fn comments_after_an_unmatched_quote_end_at_the_first_hash() {
+        let mut c = Construction::new();
+        let without_comment = exec(&mut c, "a\"").unwrap_err();
+        let with_comment = exec(&mut c, "a\" # this is not a definition = 2").unwrap_err();
+        assert_eq!(without_comment, with_comment);
+        let id = exec(&mut c, r#"n = Length("a#b") # unmatched " in the comment"#)
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.number(id), Some(3.0));
+    }
 
     #[test]
     fn inline_conic_coefficients_stay_within_the_evaluation_budget() {
@@ -1336,5 +1901,19 @@ mod tests {
         assert!(exec(&mut c, "d = $point(1)").is_err());
         assert!(exec(&mut c, "d = $point(1, x)").is_err());
         assert!(exec(&mut c, "a = $vector(1, 2)").is_err());
+    }
+
+    #[test]
+    fn labelled_common_tangents_of_coincident_conics_are_undefined() {
+        let c = load(
+            "k = Conic({1, 1, -1, 0, 0, 0})\nh = Conic({1, 1, -1, 0, 0, 0})\n\
+             {t_{1}, t_{2}, t_{3}, t_{4}} = Tangent(k, h)",
+        )
+        .unwrap();
+        for label in ["t_{1}", "t_{2}", "t_{3}", "t_{4}"] {
+            let id = c.id(label).unwrap();
+            assert_eq!(c.kind(id), Kind::Line);
+            assert_eq!(c.value(id), Value::Undefined);
+        }
     }
 }

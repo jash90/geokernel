@@ -8,10 +8,14 @@
 //! here that its commands need.
 
 mod algebra;
+
+pub(crate) use algebra::polynomial;
 mod geometry;
 mod list;
 mod logical;
+pub(crate) use logical::relation;
 mod statistics;
+pub(super) mod text;
 
 use super::eval::{Ctx, Val};
 use super::parse::Parser;
@@ -24,10 +28,12 @@ pub(in crate::expr) use list::{call_type, call_value, second_list};
 /// [`binary_command`]).
 pub(super) fn is_command(name: &str) -> bool {
     [
+        algebra::NAMES,
         logical::NAMES,
         list::NAMES,
         statistics::NAMES,
         geometry::NAMES,
+        text::NAMES,
     ]
     .iter()
     .any(|names| names.contains(&name))
@@ -37,6 +43,9 @@ pub(super) fn is_command(name: &str) -> bool {
 /// or `None`, with nothing read, when no group takes it (the two-number
 /// commands and the commands of the script parser are tried next).
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
+    if let Some(node) = text::parse(p, text)? {
+        return Ok(Some(node));
+    }
     if let Some(node) = logical::parse(p, text)? {
         return Ok(Some(node));
     }
@@ -69,13 +78,16 @@ pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
 
 /// Whether the result of the list command `op` is a list.
 pub(super) fn makes_list(op: ListOp) -> bool {
-    op == ListOp::Cross || list::makes_list(op)
+    geometry::makes_list(op) || list::makes_list(op)
 }
 
 /// Whether the second operand of the list command `op` is an object rather
 /// than a number.
 pub(super) fn takes_object(op: ListOp) -> bool {
-    matches!(op, ListOp::Dot | ListOp::Cross) || list::takes_object(op)
+    matches!(
+        op,
+        ListOp::Dot | ListOp::Cross | ListOp::ApplyMatrix | ListOp::Min | ListOp::Max
+    ) || list::takes_object(op)
 }
 
 /// The type of the list command `op` of the list `l`, whose elements are
@@ -121,14 +133,16 @@ pub(super) fn list_value<const M: bool>(
 
 /// The list that the list command `op` whose result is a list builds (see
 /// [`makes_list`]).
+pub(super) use geometry::map_list;
+
 pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,
     op: ListOp,
     l: u32,
     n: u32,
 ) -> Option<(u32, u32)> {
-    if op == ListOp::Cross {
-        geometry::cross_lists(ctx, l, n)
+    if geometry::makes_list(op) {
+        geometry::list_fn(ctx, op, l, n)
     } else {
         ctx.list_fn(op, l, n)
     }

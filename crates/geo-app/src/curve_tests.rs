@@ -53,6 +53,7 @@ fn stroke_triangles(
             generation: wb.rebuilds(),
             label_offset: &|_| None,
             label_rects: None,
+            text_rects: None,
         };
         draw::paint(&ui.painter_at(rect), rect, wb.construction(), t, &scene);
     });

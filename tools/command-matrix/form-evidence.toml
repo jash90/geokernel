@@ -1,25 +1,3 @@
-# The 2D forms of commands that are done, and the evidence for each.
-#
-# One row per form of tools/command-matrix/forms.csv:
-#
-# [[form]]
-# command = "Midpoint"          # the command as named in docs/command-matrix.csv
-# form = "point,point"          # one form of forms.csv, exactly as written there
-# cases = ["conic-midseg-001"]  # golden cases that call it in this form
-#
-# or, instead of `cases`, `difference = "section-slug: Area text"`: a row of
-# DIFFERENCES.md (the slug of the heading it is under and its first cell)
-# whose first cell names the form, such as `Mod(function, function)` in
-# backticks, and whose reason is a disposition, not "Not implemented".
-#
-# crates/geo-golden/tests/command_forms.rs checks every row: each case exists,
-# is not a known gap, and calls the command with arguments of exactly the
-# form's kinds. For a transformation's `any` source argument, the cited
-# cases together cover all supported core geometry kinds for that signature.
-# Other wildcard forms are covered through a difference row.
-# `forms_done` in docs/command-matrix.csv counts these rows; regenerate the
-# matrix after editing (README.md in this directory).
-
 [[form]]
 command = "AffineRatio"
 form = "point,point,point"
@@ -293,37 +271,27 @@ cases = ["conics-transform-005", "conics-transform-013", "conics-transform-021"]
 [[form]]
 command = "Dilate"
 form = "vector,number"
-cases = [
-  "transform-dilate-008",
-]
+cases = ["transform-dilate-008"]
 
 [[form]]
 command = "Dilate"
 form = "polygon,number"
-cases = [
-  "transform-dilate-009",
-]
+cases = ["transform-dilate-009"]
 
 [[form]]
 command = "Dilate"
 form = "polyline,number"
-cases = [
-  "transform-dilate-010",
-]
+cases = ["transform-dilate-010"]
 
 [[form]]
 command = "Dilate"
 form = "vector,number,point"
-cases = [
-  "transform-dilate-021",
-]
+cases = ["transform-dilate-021"]
 
 [[form]]
 command = "Dilate"
 form = "polyline,number,point"
-cases = [
-  "transform-dilate-023",
-]
+cases = ["transform-dilate-023"]
 
 [[form]]
 command = "Direction"
@@ -368,7 +336,7 @@ cases = ["lists-element2-001", "lists-element2-002", "lists-element2-003"]
 [[form]]
 command = "Element"
 form = "text,number"
-difference = "list-commands: `Element(text, number)`"
+cases = ["lists-textelem-013", "lists-textelem-016", "lists-textelem-018"]
 
 [[form]]
 command = "Ellipse"
@@ -403,12 +371,12 @@ cases = ["lists-locusfirst-001", "lists-locusfirst-002", "lists-locusfirst-003"]
 [[form]]
 command = "First"
 form = "text"
-difference = "list-commands: `First(text)`, `First(text, number)`, `Last(text)`, `Last(text, number)`"
+cases = ["lists-textelem-001"]
 
 [[form]]
 command = "First"
 form = "text,number"
-difference = "list-commands: `First(text)`, `First(text, number)`, `Last(text)`, `Last(text, number)`"
+cases = ["lists-textelem-002", "lists-textelem-019"]
 
 [[form]]
 command = "FirstAxis"
@@ -501,16 +469,6 @@ form = "any,list,number"
 difference = "list-commands: `IndexOf(any, list)` and `IndexOf(any, list, number)`"
 
 [[form]]
-command = "IndexOf"
-form = "text,text"
-difference = "list-commands: `IndexOf(text, text)`, `IndexOf(text, text, number)`"
-
-[[form]]
-command = "IndexOf"
-form = "text,text,number"
-difference = "list-commands: `IndexOf(text, text)`, `IndexOf(text, text, number)`"
-
-[[form]]
 command = "Insert"
 form = "any,list,number"
 difference = "list-commands: `Insert(any, list, number)`"
@@ -588,7 +546,7 @@ cases = ["intersections-boundary-002", "intersectconics-lineboundary-002"]
 [[form]]
 command = "Intersect"
 form = "line,polygon"
-cases = ["intersections-boundary-003", "intersectconics-lineboundary-003"]
+cases = ["intersections-boundary-003", "intersectconics-lineboundary-003", "intersectreview-growth-001", "intersectgrowth-slider-001"]
 
 [[form]]
 command = "Intersect"
@@ -598,7 +556,7 @@ cases = ["intersections-boundary-004", "intersectconics-lineboundary-004"]
 [[form]]
 command = "Intersect"
 form = "polyline,polyline"
-cases = ["intersections-boundary-005", "intersectconics-pathboundary-001"]
+cases = ["intersections-boundary-005", "intersectconics-pathboundary-001", "intersectreview-growth-004"]
 
 [[form]]
 command = "Intersect"
@@ -613,7 +571,7 @@ cases = ["intersections-boundary-007", "intersectconics-pathboundary-003"]
 [[form]]
 command = "Intersect"
 form = "polygon,polygon"
-cases = ["intersections-boundary-008", "intersectconics-pathboundary-004"]
+cases = ["intersections-boundary-008", "intersectconics-pathboundary-004", "intersectreview-growth-005"]
 
 [[form]]
 command = "Intersect"
@@ -713,12 +671,12 @@ cases = ["lists-objects-038", "lists-order-005", "lists-order-007"]
 [[form]]
 command = "Last"
 form = "text"
-difference = "list-commands: `First(text)`, `First(text, number)`, `Last(text)`, `Last(text, number)`"
+cases = ["lists-textelem-007"]
 
 [[form]]
 command = "Last"
 form = "text,number"
-difference = "list-commands: `First(text)`, `First(text, number)`, `Last(text)`, `Last(text, number)`"
+cases = ["lists-textelem-008", "lists-textelem-012"]
 
 [[form]]
 command = "Length"
@@ -818,48 +776,17 @@ cases = ["expr-special-018", "expr-special-020", "expr-special-022"]
 [[form]]
 command = "Mirror"
 form = "any,point"
-cases = [
-  "transform-mirrorpoint-001",
-  "transform-mirrorpoint-003",
-  "transform-mirrorpoint-005",
-  "transform-mirrorpoint-007",
-  "transform-mirrorpoint-011",
-  "transform-mirrorpoint-015",
-  "transform-mirrorpoint-017",
-  "transform-mirrorpoint-019",
-  "transform-mirrorpoint-021",
-  "transform-mirrorpoint-023",
-  "transform-mirrorpoint-025",
-]
+cases = ["transform-mirrorpoint-001", "transform-mirrorpoint-003", "transform-mirrorpoint-005", "transform-mirrorpoint-007", "transform-mirrorpoint-011", "transform-mirrorpoint-015", "transform-mirrorpoint-017", "transform-mirrorpoint-019", "transform-mirrorpoint-021", "transform-mirrorpoint-023", "transform-mirrorpoint-025"]
 
 [[form]]
 command = "Mirror"
 form = "any,line"
-cases = [
-  "transform-mirrorline-001",
-  "transform-mirrorline-002",
-  "transform-mirrorline-003",
-  "transform-mirrorline-004",
-  "transform-mirrorline-006",
-  "transform-mirrorline-008",
-  "transform-mirrorline-009",
-  "transform-mirrorline-010",
-  "transform-mirrorline-011",
-  "transform-mirrorline-012",
-  "transform-mirrorline-013",
-]
+cases = ["transform-mirrorline-001", "transform-mirrorline-002", "transform-mirrorline-003", "transform-mirrorline-004", "transform-mirrorline-006", "transform-mirrorline-008", "transform-mirrorline-009", "transform-mirrorline-010", "transform-mirrorline-011", "transform-mirrorline-012", "transform-mirrorline-013"]
 
 [[form]]
 command = "Mirror"
 form = "any,circle"
-cases = [
-  "transform-invert-001",
-  "transform-invert-011",
-  "transform-invert-013",
-  "transform-invert-015",
-  "transform-invert-019",
-  "transform-invert-021",
-]
+cases = ["transform-invert-001", "transform-invert-011", "transform-invert-013", "transform-invert-015", "transform-invert-019", "transform-invert-021"]
 
 [[form]]
 command = "Mod"
@@ -1024,37 +951,12 @@ cases = ["lists-wrapped-003"]
 [[form]]
 command = "Rotate"
 form = "any,number"
-cases = [
-  "transform-rotate-001",
-  "transform-rotate-002",
-  "transform-rotate-003",
-  "transform-rotate-004",
-  "transform-rotate-006",
-  "transform-rotate-008",
-  "transform-rotate-009",
-  "transform-rotate-010",
-  "transform-rotate-011",
-  "transform-rotate-012",
-  "transform-rotate-013",
-  "transformsreview-polyline-001",
-]
+cases = ["transform-rotate-001", "transform-rotate-002", "transform-rotate-003", "transform-rotate-004", "transform-rotate-006", "transform-rotate-008", "transform-rotate-009", "transform-rotate-010", "transform-rotate-011", "transform-rotate-012", "transform-rotate-013", "transformsreview-polyline-001"]
 
 [[form]]
 command = "Rotate"
 form = "any,number,point"
-cases = [
-  "transform-rotate-014",
-  "transform-rotate-015",
-  "transform-rotate-016",
-  "transform-rotate-017",
-  "transform-rotate-019",
-  "transform-rotate-021",
-  "transform-rotate-022",
-  "transform-rotate-023",
-  "transform-rotate-024",
-  "transform-rotate-025",
-  "transform-rotate-026",
-]
+cases = ["transform-rotate-014", "transform-rotate-015", "transform-rotate-016", "transform-rotate-017", "transform-rotate-019", "transform-rotate-021", "transform-rotate-022", "transform-rotate-023", "transform-rotate-024", "transform-rotate-025", "transform-rotate-026"]
 
 [[form]]
 command = "SecondAxis"
@@ -1109,33 +1011,12 @@ cases = ["lists-seq-003", "lists-seq-014", "lists-seq-015"]
 [[form]]
 command = "Shear"
 form = "any,line,number"
-cases = [
-  "transform-shear-001",
-  "transform-shear-002",
-  "transform-shear-003",
-  "transform-shear-004",
-  "transform-shear-005",
-  "transform-shear-007",
-  "transform-shear-008",
-  "transform-shear-009",
-  "transform-shear-010",
-  "transform-shear-011",
-]
+cases = ["transform-shear-001", "transform-shear-002", "transform-shear-003", "transform-shear-004", "transform-shear-005", "transform-shear-007", "transform-shear-008", "transform-shear-009", "transform-shear-010", "transform-shear-011"]
 
 [[form]]
 command = "Shear"
 form = "any,vector,number"
-cases = [
-  "transformsfix-shear-001",
-  "transformsfix-shear-002",
-  "transformsfix-shear-003",
-  "transformsfix-shear-004",
-  "transformsfix-shear-005",
-  "transformsfix-shear-006",
-  "transformsfix-shear-007",
-  "transformsfix-shear-008",
-  "transformsfix-shear-009",
-]
+cases = ["transformsfix-shear-001", "transformsfix-shear-002", "transformsfix-shear-003", "transformsfix-shear-004", "transformsfix-shear-005", "transformsfix-shear-006", "transformsfix-shear-007", "transformsfix-shear-008", "transformsfix-shear-009"]
 
 [[form]]
 command = "Slope"
@@ -1160,34 +1041,12 @@ cases = ["lists-wrapped-004"]
 [[form]]
 command = "Stretch"
 form = "any,vector"
-cases = [
-  "transform-stretchvec-001",
-  "transform-stretchvec-002",
-  "transform-stretchvec-003",
-  "transform-stretchvec-004",
-  "transform-stretchvec-005",
-  "transform-stretchvec-007",
-  "transform-stretchvec-008",
-  "transform-stretchvec-009",
-  "transform-stretchvec-010",
-  "transform-stretchvec-011",
-]
+cases = ["transform-stretchvec-001", "transform-stretchvec-002", "transform-stretchvec-003", "transform-stretchvec-004", "transform-stretchvec-005", "transform-stretchvec-007", "transform-stretchvec-008", "transform-stretchvec-009", "transform-stretchvec-010", "transform-stretchvec-011"]
 
 [[form]]
 command = "Stretch"
 form = "any,line,number"
-cases = [
-  "transform-stretch-001",
-  "transform-stretch-002",
-  "transform-stretch-003",
-  "transform-stretch-004",
-  "transform-stretch-005",
-  "transform-stretch-007",
-  "transform-stretch-008",
-  "transform-stretch-009",
-  "transform-stretch-010",
-  "transform-stretch-011",
-]
+cases = ["transform-stretch-001", "transform-stretch-002", "transform-stretch-003", "transform-stretch-004", "transform-stretch-005", "transform-stretch-007", "transform-stretch-008", "transform-stretch-009", "transform-stretch-010", "transform-stretch-011"]
 
 [[form]]
 command = "Sum"
@@ -1210,14 +1069,9 @@ form = "list,number,number"
 cases = ["lists-take-002", "lists-take-004", "lists-take-007"]
 
 [[form]]
-command = "Take"
-form = "text,number"
-difference = "list-commands: `Take(text, number)`, `Take(text, number, number)`"
-
-[[form]]
-command = "Take"
-form = "text,number,number"
-difference = "list-commands: `Take(text, number)`, `Take(text, number, number)`"
+command = "Tangent"
+form = "conic,conic"
+cases = ["commontangents-conics-001", "commontangents-conics-002"]
 
 [[form]]
 command = "Tangent"
@@ -1252,20 +1106,7 @@ cases = ["vector-free-007", "vector-translate-016"]
 [[form]]
 command = "Translate"
 form = "any,vector"
-cases = [
-  "transform-translate-001",
-  "transform-translate-002",
-  "transform-translate-003",
-  "transform-translate-004",
-  "transform-translate-005",
-  "transform-translate-006",
-  "transform-translate-007",
-  "transform-translate-008",
-  "vector-translate-001",
-  "vector-translate-004",
-  "vector-translate-006",
-  "transformsreview-polyline-001",
-]
+cases = ["transform-translate-001", "transform-translate-002", "transform-translate-003", "transform-translate-004", "transform-translate-005", "transform-translate-006", "transform-translate-007", "transform-translate-008", "vector-translate-001", "vector-translate-004", "vector-translate-006", "transformsreview-polyline-001"]
 
 [[form]]
 command = "Trilinear"
@@ -1587,3 +1428,793 @@ command = "Zip"
 form = "any,any,list,..."
 difference = "list-commands: `Zip(any, any, list, ...)`"
 
+[[form]]
+command = "Intersect"
+form = "function,conic"
+cases = ["intersections-functionconic-001", "intersectfunctions-conic-001", "intersectfunctions-conic-006", "intersectfunctions-degenerate-001", "intersectfunctions-tangency-001"]
+
+[[form]]
+command = "Intersect"
+form = "conic,function"
+cases = ["intersections-functionconic-002", "intersectfunctions-conic-002"]
+
+[[form]]
+command = "Intersect"
+form = "function,line"
+cases = ["intersections-functionline-001", "intersections-functionline-009", "intersectfunctions-line-003"]
+
+[[form]]
+command = "Intersect"
+form = "line,function"
+cases = ["intersections-functionline-002", "intersections-functionline-007", "intersectfunctions-line-006"]
+
+[[form]]
+command = "Intersect"
+form = "function,function"
+cases = ["intersections-functions-001", "intersections-functions-004", "intersections-functions-005"]
+
+[[form]]
+command = "Intersect"
+form = "function,line,number"
+cases = ["intersections-functionline-003", "intersectfunctions-line-004"]
+
+[[form]]
+command = "Intersect"
+form = "line,function,number"
+cases = ["intersections-functionline-004", "intersectfunctions-line-007"]
+
+[[form]]
+command = "Intersect"
+form = "function,function,number"
+cases = ["intersections-functions-002", "intersectfunctions-pair-004"]
+
+[[form]]
+command = "Intersect"
+form = "function,conic,number"
+cases = ["intersections-functionconic-003", "intersectfunctions-conic-003"]
+
+[[form]]
+command = "Intersect"
+form = "conic,function,number"
+cases = ["intersections-functionconic-004", "intersectfunctions-conic-004"]
+
+[[form]]
+command = "Intersect"
+form = "function,line,point"
+cases = ["intersections-functionline-005", "intersections-functionline-010", "intersectfunctions-line-005"]
+
+[[form]]
+command = "Intersect"
+form = "line,function,point"
+cases = ["intersections-functionline-006", "intersectfunctions-line-008"]
+
+[[form]]
+command = "Intersect"
+form = "function,function,point"
+cases = ["intersections-functions-003", "intersections-functions-006", "intersectfunctions-pair-005"]
+
+[[form]]
+command = "Intersect"
+form = "function,function,number,number"
+cases = ["intersections-interval-001", "intersectfunctions-interval-001", "intersectfunctions-interval-002"]
+
+[[form]]
+command = "Arc"
+form = "conic,point,point"
+cases = ["geomextras-conicparts-001", "geomclosure-openarc-001", "geomclosure-openarc-002"]
+
+[[form]]
+command = "AreCongruent"
+form = "any,any"
+cases = ["geomclosure-comparison-001", "geomclosure-comparison-002", "geomformsreview-angle-001"]
+difference = "geometry-command-arguments: `AreCongruent(any, any)`"
+
+[[form]]
+command = "AreEqual"
+form = "any,any"
+cases = ["geomclosure-comparison-001", "geomclosure-comparison-002", "geomclosure-comparison-003", "geomformsreview-angle-001", "geomformsreview-shapes-001", "geomformsreview-function-001", "geomformsreview-booleanfunction-001", "geomformsreview-functionofy-001"]
+difference = "geometry-command-arguments: `AreEqual(any, any)`"
+
+[[form]]
+command = "Circumference"
+form = "locus"
+cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
+
+[[form]]
+command = "ClosestPoint"
+form = "path,point"
+cases = ["geomclosure-projection-001"]
+difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
+
+[[form]]
+command = "ClosestPoint"
+form = "point,path"
+cases = ["geomclosure-projection-001"]
+difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
+
+[[form]]
+command = "Distance"
+form = "path,point"
+cases = ["geomclosure-projection-001"]
+difference = "geometry-command-arguments: `Distance(point, path)` and `Distance(path, point)`"
+
+[[form]]
+command = "Distance"
+form = "point,path"
+cases = ["geomclosure-projection-001"]
+difference = "geometry-command-arguments: `Distance(point, path)` and `Distance(path, point)`"
+
+[[form]]
+command = "Length"
+form = "conic"
+cases = ["geomclosure-partlength-001"]
+difference = "geometry-command-arguments: `Length(conic)`"
+
+[[form]]
+command = "Length"
+form = "curve,number,number"
+cases = ["geomclosure-curvelength-001"]
+
+[[form]]
+command = "Length"
+form = "curve,point,point"
+cases = ["geomclosure-curvelength-001"]
+
+[[form]]
+command = "Length"
+form = "locus"
+cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
+
+[[form]]
+command = "Length"
+form = "point"
+cases = ["geomclosure-pointlength-001", "geomextras-lengthpoint-001"]
+
+[[form]]
+command = "Length"
+form = "text"
+cases = ["geomclosure-textlength-001", "textobjects-dynamic-001", "textobjects-unicode-002"]
+
+[[form]]
+command = "Locus"
+form = "function,point"
+cases = ["geomclosure-ode-001", "geomformsreview-odenamed-001"]
+
+[[form]]
+command = "Locus"
+form = "locus,point"
+cases = ["geomclosure-slopefield-001"]
+
+[[form]]
+command = "Perimeter"
+form = "locus"
+cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
+
+[[form]]
+command = "Point"
+form = "path"
+cases = ["geomclosure-path-001", "geomclosure-openarc-001", "geomclosure-openarc-002"]
+difference = "geometry-command-arguments: `Point(path)` and `Point(path, number)`"
+
+[[form]]
+command = "Point"
+form = "path,number"
+cases = ["geomclosure-path-001"]
+difference = "geometry-command-arguments: `Point(path)` and `Point(path, number)`"
+
+[[form]]
+command = "PointIn"
+form = "region"
+cases = ["geomclosure-region-001", "geomclosure-region-002", "geomclosure-regionmoves-001"]
+difference = "geometry-command-arguments: `PointIn(region)`"
+
+[[form]]
+command = "PolyLine"
+form = "list"
+cases = ["geomextras-polylinelist-001", "geomclosure-shapelist-001"]
+
+[[form]]
+command = "PolyLine"
+form = "list,boolean"
+cases = ["geomextras-polylinelist-002", "geomclosure-shapelist-001"]
+
+[[form]]
+command = "PolyLine"
+form = "point,point,...,boolean"
+cases = ["geomclosure-polylineflag-001"]
+difference = "geometry-command-arguments: `PolyLine(point, point, ..., boolean)`"
+
+[[form]]
+command = "Polygon"
+form = "list"
+cases = ["geomextras-polygonlist-001", "geomclosure-shapelist-001"]
+
+[[form]]
+command = "RigidPolygon"
+form = "point,point,..."
+cases = ["geomclosure-rigid-001", "geomextras-rigidpoints-001"]
+
+[[form]]
+command = "Sector"
+form = "conic,point,point"
+cases = ["geomextras-conicparts-001", "geomextras-conicparts-002"]
+
+[[form]]
+command = "Vertex"
+form = "number"
+cases = ["geomclosure-viewcorner-001"]
+
+[[form]]
+command = "Vertex"
+form = "number,number"
+cases = ["geomclosure-viewcorner-001"]
+
+[[form]]
+command = "Invert"
+form = "list"
+cases = ["matrixdilate-upstream-001", "matrixdilate-elimination-002", "vectorforms-matrixlists-003"]
+
+[[form]]
+command = "Invert"
+form = "function"
+cases = ["vectorforms-matrixlists-009", "matrixdilate-inverse-001", "matrixdilate-inverse-002", "matrixdilate-inverse-003"]
+
+[[form]]
+command = "Transpose"
+form = "list"
+cases = ["matrixdilate-upstream-001", "matrixdilate-elimination-001", "matrixdilate-elimination-006", "vectorforms-matrixlists-001"]
+
+[[form]]
+command = "Transpose"
+form = "number,number,..."
+cases = ["vectorforms-matrixlists-005"]
+
+[[form]]
+command = "Transpose"
+form = "point,point,..."
+cases = ["vectorforms-matrixlists-006"]
+
+[[form]]
+command = "ReducedRowEchelonForm"
+form = "list"
+cases = ["matrixdilate-upstream-001", "matrixdilate-elimination-001", "matrixdilate-elimination-004", "vectorforms-matrixlists-002"]
+
+[[form]]
+command = "ReducedRowEchelonForm"
+form = "number,number,..."
+cases = ["vectorforms-matrixlists-007"]
+
+[[form]]
+command = "ReducedRowEchelonForm"
+form = "point,point,..."
+cases = ["vectorforms-matrixlists-008"]
+
+[[form]]
+command = "Dimension"
+form = "list"
+cases = ["vectorforms-matrixlists-004", "matrixdilate-elimination-001", "matrixdilate-elimination-005", "matrixdilate-elimination-007"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,conic"
+cases = ["matrixdilate-applyconic-002"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,polygon"
+cases = ["matrixdilate-upstream-009", "matrixdilate-applypoly-001", "matrixdilate-applypoly-002"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,polyline"
+cases = ["matrixdilate-applypoly-001", "matrixdilate-applypoly-002"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,list"
+cases = ["matrixdilate-applylist-001", "matrixdilate-applylist-002", "matrixdilate-applylist-003"]
+
+[[form]]
+command = "Dilate"
+form = "function,number"
+cases = ["matrixdilate-dilatefunction-001"]
+
+[[form]]
+command = "Dilate"
+form = "function,number,point"
+cases = ["matrixdilate-dilatefunction-001", "matrixdilate-dilatefunction-002", "matrixdilate-dilatefunction-003"]
+
+[[form]]
+command = "Dilate"
+form = "list,number"
+cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-002", "matrixdilate-dilatelist-003"]
+
+[[form]]
+command = "Dilate"
+form = "list,number,point"
+cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-003"]
+
+[[form]]
+command = "Mod"
+form = "function,function"
+cases = ["algebralogic-polynomial-001", "algebralogic-polynomial-002"]
+
+[[form]]
+command = "Div"
+form = "function,function"
+cases = ["algebralogic-polynomial-001", "algebralogic-polynomial-002"]
+
+[[form]]
+command = "Division"
+form = "function,function"
+cases = ["algebralogic-polynomial-001", "algebralogic-polynomial-002"]
+
+[[form]]
+command = "Division"
+form = "number,number"
+cases = ["algebralogic-integer-004", "algebralogic-integer-011", "algebralogic-integer-013", "algebralogic-integer-015", "algebralogic-integer-016"]
+
+[[form]]
+command = "GCD"
+form = "list"
+cases = ["algebralogic-integer-001", "algebralogic-integer-022", "algebralogic-integer-023", "algebralogic-integer-026"]
+
+[[form]]
+command = "LCM"
+form = "list"
+cases = ["algebralogic-integer-002", "algebralogic-integer-022", "algebralogic-integer-023", "algebralogic-integer-027"]
+
+[[form]]
+command = "PrimeFactors"
+form = "number"
+cases = ["algebralogic-integer-003", "algebralogic-integer-028"]
+
+[[form]]
+command = "Divisors"
+form = "number"
+cases = ["algebralogic-integer-005", "algebralogic-integer-028"]
+
+[[form]]
+command = "DivisorsList"
+form = "number"
+cases = ["algebralogic-integer-006", "algebralogic-integer-028"]
+
+[[form]]
+command = "DivisorsSum"
+form = "number"
+cases = ["algebralogic-integer-007", "algebralogic-integer-028", "algebraedge-integer-001", "algebraedge-integer-002"]
+
+[[form]]
+command = "IsPrime"
+form = "number"
+cases = ["algebralogic-integer-008", "algebralogic-integer-028"]
+
+[[form]]
+command = "IsInteger"
+form = "number"
+cases = ["algebralogic-logic-008", "algebralogic-integer-028"]
+
+[[form]]
+command = "CommonDenominator"
+form = "number,number"
+cases = ["algebralogic-integer-009", "algebralogic-integer-029"]
+
+[[form]]
+command = "Min"
+form = "interval"
+cases = ["algebralogic-extrema-003", "algebralogic-extrema-006"]
+
+[[form]]
+command = "Max"
+form = "interval"
+cases = ["algebralogic-extrema-006"]
+
+[[form]]
+command = "Min"
+form = "list,list"
+cases = ["algebralogic-extrema-004", "algebralogic-extrema-009", "algebralogic-extrema-012"]
+
+[[form]]
+command = "Max"
+form = "list,list"
+cases = ["algebralogic-extrema-005", "algebralogic-extrema-009", "algebralogic-extrema-012"]
+
+[[form]]
+command = "Min"
+form = "function,number,number"
+cases = ["algebralogic-extrema-006", "algebralogic-extrema-013", "algebraedge-minimum-001", "algebraedge-minimum-002", "algebraedge-minimum-003", "algebraedge-minimum-004", "algebraedge-minimum-005", "algebraedge-minimum-006"]
+
+[[form]]
+command = "Max"
+form = "function,number,number"
+cases = ["algebralogic-extrema-006", "algebralogic-extrema-013", "algebraedge-maximum-001", "algebraedge-maximum-002", "algebraedge-maximum-003", "algebraedge-maximum-004", "algebraedge-maximum-005", "algebraedge-maximum-006"]
+
+[[form]]
+command = "CountIf"
+form = "function,list"
+cases = ["algebralogic-logic-001", "algebralogic-logic-011", "algebralogic-logic-015"]
+
+[[form]]
+command = "CountIf"
+form = "any,any,list"
+cases = ["algebralogic-logic-002", "algebralogic-logic-013"]
+
+[[form]]
+command = "KeepIf"
+form = "function,list"
+cases = ["algebralogic-logic-003", "algebralogic-logic-012", "algebralogic-logic-015"]
+
+[[form]]
+command = "KeepIf"
+form = "boolean,any,list"
+cases = ["algebralogic-logic-004", "algebralogic-logic-016"]
+
+[[form]]
+command = "Defined"
+form = "any"
+cases = ["algebralogic-logic-013", "algebralogic-logic-014"]
+
+[[form]]
+command = "If"
+form = "function,any,..."
+cases = ["algebralogic-logic-015"]
+
+[[form]]
+command = "ToBase"
+form = "number,number"
+cases = ["algebralogic-base-001", "algebralogic-base-003", "algebraedge-base-001"]
+
+[[form]]
+command = "FromBase"
+form = "text,number"
+cases = ["algebralogic-base-002", "algebralogic-base-003", "algebralogic-base-004", "algebralogic-base-007"]
+
+[[form]]
+command = "LeftSide"
+form = "line"
+cases = ["algebralogic-sides-002", "algebralogic-sides-003", "algebralogic-sides-005", "algebrareviewshared-sides-001"]
+
+[[form]]
+command = "RightSide"
+form = "line"
+cases = ["algebralogic-sides-002", "algebralogic-sides-003", "algebralogic-sides-005", "algebrareviewshared-sides-001"]
+
+[[form]]
+command = "LeftSide"
+form = "conic"
+cases = ["algebralogic-sides-001", "algebralogic-sides-006"]
+
+[[form]]
+command = "RightSide"
+form = "conic"
+cases = ["algebralogic-sides-001", "algebralogic-sides-006"]
+
+[[form]]
+command = "Dot"
+form = "any,any"
+cases = ["algebralogic-products-001", "algebralogic-products-002", "algebralogic-products-003", "algebralogic-products-004", "algebralogic-products-007"]
+
+[[form]]
+command = "Cross"
+form = "list,list"
+cases = ["algebralogic-products-005", "algebralogic-products-006", "algebralogic-products-007"]
+
+[[form]]
+command = "IsInRegion"
+form = "point,region"
+cases = ["algebralogic-logic-013", "algebralogic-logic-019", "algebralogic-logic-020", "algebralogic-logic-021", "algebralogic-logic-023", "algebralogic-logic-024"]
+
+[[form]]
+command = "Relation"
+form = "any,any"
+cases = ["algebralogic-relation-001", "algebralogic-relation-002", "algebralogic-relation-004", "algebralogic-relation-005", "algebralogic-relation-006", "relationreview-paths-001", "relationreview-paths-002", "relationreview-segments-001", "relationreview-vectors-001", "relationreview-polygons-001", "relationreview-arcs-001", "relationreview-conics-001", "relationreview-conics-002", "relationreview-asymptotes-001"]
+
+[[form]]
+command = "Relation"
+form = "list"
+cases = ["algebralogic-relation-001", "algebralogic-relation-002", "algebralogic-relation-003"]
+
+[[form]]
+command = "Asymptote"
+form = "conic"
+cases = ["relationreview-asymptotes-001"]
+
+[[form]]
+command = "Text"
+form = "any"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean,boolean,number"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "Text"
+form = "any,point,boolean,boolean,number,number"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
+
+[[form]]
+command = "LaTeX"
+form = "any"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `LaTeX(any)`, `LaTeX(any, boolean)`, `LaTeX(any, boolean, boolean)`"
+
+[[form]]
+command = "LaTeX"
+form = "any,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `LaTeX(any)`, `LaTeX(any, boolean)`, `LaTeX(any, boolean, boolean)`"
+
+[[form]]
+command = "LaTeX"
+form = "any,boolean,boolean"
+cases = ["textformat-signatures-001"]
+difference = "text-objects-and-commands: `LaTeX(any)`, `LaTeX(any, boolean)`, `LaTeX(any, boolean, boolean)`"
+
+[[form]]
+command = "LetterToUnicode"
+form = "text"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "TextToUnicode"
+form = "text"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "UnicodeToText"
+form = "list"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "UnicodeToLetter"
+form = "number"
+cases = ["textobjects-unicode-001"]
+
+[[form]]
+command = "Ordinal"
+form = "number"
+cases = ["textnumbers-ordinalupstream-001"]
+
+[[form]]
+command = "FractionText"
+form = "number"
+cases = ["textnumbers-fractionupstream-001"]
+
+[[form]]
+command = "FractionText"
+form = "point"
+cases = ["textnumbers-fractionupstream-001"]
+
+[[form]]
+command = "FractionText"
+form = "number,boolean"
+cases = ["textnumbers-fractionupstream-001"]
+
+[[form]]
+command = "ScientificText"
+form = "number"
+cases = ["textnumbers-scientificupstream-001"]
+
+[[form]]
+command = "ScientificText"
+form = "number,number"
+cases = ["textnumbers-scientificedit-001"]
+
+[[form]]
+command = "SurdText"
+form = "number"
+cases = ["textnumbers-surdupstream-001"]
+
+[[form]]
+command = "SurdText"
+form = "number,list"
+cases = ["textnumbers-surdupstream-001"]
+
+[[form]]
+command = "TableText"
+form = "list"
+cases = ["textnumbers-tableshapes-001"]
+
+[[form]]
+command = "TableText"
+form = "list,text"
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "TableText"
+form = "list,list"
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "TableText"
+form = "list,number"
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "TableText"
+form = "list,text,number"
+cases = ["textnumbers-tableupstream-001"]
+
+[[form]]
+command = "TableText"
+form = "list,list,..."
+cases = ["textnumbers-tablelayout-001"]
+
+[[form]]
+command = "VerticalText"
+form = "text"
+cases = ["textformat-vertical-001"]
+
+[[form]]
+command = "VerticalText"
+form = "text,point"
+cases = ["textformat-vertical-002"]
+
+[[form]]
+command = "RotateText"
+form = "text,number"
+cases = ["textformat-signatures-001"]
+
+[[form]]
+command = "RotateText"
+form = "text,number,point"
+cases = ["textformat-rotate-002"]
+
+[[form]]
+command = "ReplaceAll"
+form = "text,text,text"
+cases = ["textobjects-replace-001"]
+
+[[form]]
+command = "Split"
+form = "text,list"
+cases = ["textobjects-split-001"]
+
+[[form]]
+command = "IndexOf"
+form = "text,text"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "IndexOf"
+form = "text,text,number"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "Take"
+form = "text,number"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "Take"
+form = "text,number,number"
+cases = ["textobjects-search-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number,boolean"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number,number"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "ContinuedFraction"
+form = "number,number,boolean"
+cases = ["textnumbers-continuedlong-001"]
+
+[[form]]
+command = "CurveCartesian"
+form = "number,number,number,number,number"
+cases = ["importgaps-curve-001"]
+
+[[form]]
+command = "ConvexHull"
+form = "list"
+cases = ["discrete-upstream-001", "discrete-hull-006", "discrete-hull-007"]
+
+[[form]]
+command = "ConvexHull"
+form = "point,point,..."
+cases = ["discrete-upstream-008", "discrete-hull-001"]
+
+[[form]]
+command = "Hull"
+form = "list,number"
+cases = ["discrete-upstream-006"]
+
+[[form]]
+command = "DelauneyTriangulation"
+form = "list"
+cases = ["discrete-upstream-002", "discrete-delaunay-009"]
+
+[[form]]
+command = "DelauneyTriangulation"
+form = "point,point,..."
+cases = ["discrete-delaunay-001"]
+
+[[form]]
+command = "MinimumSpanningTree"
+form = "list"
+cases = ["discrete-upstream-003", "discrete-tree-006", "discrete-tree-008"]
+
+[[form]]
+command = "MinimumSpanningTree"
+form = "number,number,..."
+difference = "discrete-geometry: `MinimumSpanningTree(number, number, ...)`"
+
+[[form]]
+command = "MinimumSpanningTree"
+form = "point,point,..."
+cases = ["discrete-tree-004"]
+
+[[form]]
+command = "ShortestDistance"
+form = "list,point,point,boolean"
+cases = ["discrete-path-001", "discrete-path-002", "discrete-path-003"]
+
+[[form]]
+command = "TravelingSalesman"
+form = "list"
+cases = ["discrete-upstream-004", "discrete-tour-008"]
+
+[[form]]
+command = "TravelingSalesman"
+form = "number,number,..."
+cases = ["discrete-tour-007"]
+
+[[form]]
+command = "TravelingSalesman"
+form = "point,point,..."
+cases = ["discrete-tour-001"]
+
+[[form]]
+command = "Voronoi"
+form = "list"
+cases = ["discrete-upstream-005", "discrete-voronoi-009"]
+
+[[form]]
+command = "Voronoi"
+form = "number,number,..."
+cases = ["discrete-voronoi-008"]
+
+[[form]]
+command = "Voronoi"
+form = "point,point,..."
+cases = ["discrete-voronoi-001"]

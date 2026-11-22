@@ -77,6 +77,8 @@ pub enum GeneralConicDef {
     FociLength { f1: Id, f2: Id, length: Id },
     /// `Parabola(F, g)`: focus and directrix (a line, segment or ray).
     Parabola { focus: Id, directrix: Id },
+    /// `ApplyMatrix(matrix, conic)`; a circle can become a general conic.
+    ApplyMatrix { matrix: Id, src: Id },
     /// `Translate(k, v)`.
     Translate { kind: Kind, src: Id, by: Id },
     /// `Rotate(k, angle)` and `Rotate(k, angle, Q)`.
@@ -211,6 +213,18 @@ impl GeneralConicDef {
                         d.set_parabola(f, [a, b, z]);
                     }
                     _ => d.defined = false,
+                }
+            }
+            GeneralConicDef::ApplyMatrix { matrix, src } => {
+                if set_out(c, src, &mut d) {
+                    if let Some(m) = c
+                        .elements(matrix)
+                        .and_then(super::vector::matrix::Matrix::read)
+                    {
+                        m.conic(&mut d);
+                    } else {
+                        d.defined = false;
+                    }
                 }
             }
             GeneralConicDef::Translate { src, by, .. } => {
@@ -504,7 +518,7 @@ impl Group for GeneralConicDef {
             | GeneralConicDef::ShearStretch { kind, .. }
             | GeneralConicDef::StretchVector { kind, .. }
             | GeneralConicDef::Invert { kind, .. } => kind,
-            GeneralConicDef::InvertLine { .. } => Kind::Conic,
+            GeneralConicDef::InvertLine { .. } | GeneralConicDef::ApplyMatrix { .. } => Kind::Conic,
         }
     }
 
@@ -519,6 +533,7 @@ impl Group for GeneralConicDef {
             } => Parents::of(&[f1, f2, through]),
             GeneralConicDef::FociLength { f1, f2, length } => Parents::of(&[f1, f2, length]),
             GeneralConicDef::Parabola { focus, directrix } => Parents::of(&[focus, directrix]),
+            GeneralConicDef::ApplyMatrix { matrix, src } => Parents::of(&[matrix, src]),
             GeneralConicDef::Translate { src, by, .. } => Parents::of(&[src, by]),
             GeneralConicDef::Rotate {
                 src,
@@ -601,6 +616,10 @@ impl Group for GeneralConicDef {
             GeneralConicDef::Parabola { focus, directrix } => {
                 c.expect(focus, POINT)?;
                 c.expect(directrix, LINE_OR_RAY)
+            }
+            GeneralConicDef::ApplyMatrix { matrix, src } => {
+                c.expect(matrix, &[Kind::List])?;
+                c.expect(src, &[Kind::Conic, Kind::Circle])
             }
             GeneralConicDef::Translate { kind, src, by } => {
                 c.expect(src, kind_of(kind)?)?;

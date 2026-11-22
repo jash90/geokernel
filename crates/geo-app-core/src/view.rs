@@ -5,6 +5,7 @@
 //! area size with [`Camera::transform`].
 
 use crate::interact::ViewTransform;
+use geo_kernel::kernel::text::TextPosition;
 use geo_kernel::kernel::{Construction, Value};
 use geo_kernel::svg::View;
 
@@ -34,7 +35,7 @@ impl Bounds {
     }
 }
 
-/// The bounding box of defined points, segment ends, circles and locus samples.
+/// The bounding box of points, segment ends, circles, loci and world text anchors.
 /// Lines are unbounded and are ignored. `None` when nothing is bounded.
 pub fn content_bounds(c: &Construction) -> Option<Bounds> {
     let mut b = Bounds {
@@ -65,6 +66,11 @@ pub fn content_bounds(c: &Construction) -> Option<Bounds> {
                 if let Some([xmin, xmax, ymin, ymax]) = c.locus(id).and_then(|l| l.bounds()) {
                     add(&mut b, xmin, ymin);
                     add(&mut b, xmax, ymax);
+                }
+            }
+            Value::Text => {
+                if let Some(TextPosition::World { x, y }) = c.text_position(id) {
+                    add(&mut b, x, y);
                 }
             }
             _ => {}

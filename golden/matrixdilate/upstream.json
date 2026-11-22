@@ -1,0 +1,381 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "matrixdilate-upstream-001",
+      "group": "matrixdilate",
+      "script": [
+        "a = Invert({{1, 1}, {0, 2}})",
+        "b = Transpose({{1, 2}, {3, 4}})",
+        "c = ReducedRowEchelonForm({{1, 2}, {3, 4}})",
+        "d = Dimension((3, 7))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": -0.5 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 0.5 }
+                ]
+              }
+            ]
+          },
+          "b": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 4.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-upstream-002",
+      "group": "matrixdilate",
+      "script": [
+        "g = Invert(sin(x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, -1.5707963267948966],
+              [-0.5, -0.5235987755982989],
+              [0.0, 0.0],
+              [0.5, 0.5235987755982989],
+              [1.0, 1.5707963267948966],
+              [2.0, null],
+              [4.0, null],
+              [8.0, null]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-upstream-003",
+      "group": "matrixdilate",
+      "script": [
+        "g = Invert(If(x > 1, x^3 + 1))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, 1.4422495703074083],
+              [8.0, 1.912931182772389]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-upstream-004",
+      "group": "matrixdilate",
+      "script": [
+        "g = Invert(If(x > 2, x) + 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, null],
+              [0.5, null],
+              [1.0, null],
+              [2.0, null],
+              [4.0, 3.0],
+              [8.0, 7.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-upstream-005",
+      "group": "matrixdilate",
+      "script": [
+        "g = Invert(If(x > 2, sin(x) - x))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-upstream-006",
+      "group": "matrixdilate",
+      "script": [
+        "g = Invert(3 + 0/x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-upstream-007",
+      "group": "matrixdilate",
+      "script": [
+        "g = Invert(3 + x/0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-upstream-008",
+      "group": "matrixdilate",
+      "script": [
+        "g = Invert(3 + 2/x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.18181818181818182],
+              [-4.0, -0.2857142857142857],
+              [-2.0, -0.4],
+              [-1.0, -0.5],
+              [-0.5, -0.5714285714285714],
+              [0.0, -0.6666666666666666],
+              [0.5, -0.8],
+              [1.0, -1.0],
+              [2.0, -2.0],
+              [4.0, 2.0],
+              [8.0, 0.4]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-upstream-009",
+      "group": "matrixdilate",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 0.5)",
+        "p = Polygon(A, B, 4)",
+        "q = ApplyMatrix({{1, 2}, {3, 4}}, p)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 0.5],
+              [2.5, 1.5],
+              [1.5000000000000002, 2.0]
+            ],
+            "area": 1.25,
+            "signed_area": 1.25
+          },
+          "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 2.0, "y2": 0.5 },
+          "g": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.5, "x2": 2.5, "y2": 1.5 },
+          "h": { "type": "segment", "defined": true, "x1": 2.5, "y1": 1.5, "x2": 1.5000000000000002, "y2": 2.0 },
+          "i": { "type": "segment", "defined": true, "x1": 1.5000000000000002, "y1": 2.0, "x2": 1.0, "y2": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.5, "y": 1.5 },
+          "D": { "type": "point", "defined": true, "x": 1.5000000000000002, "y": 2.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [3.0, 7.0],
+              [3.0, 8.0],
+              [5.5, 13.5],
+              [5.5, 12.5]
+            ],
+            "area": 2.5,
+            "signed_area": -2.5
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [0.0, 2.0],
+              [-1.0, 1.0000000000000002],
+              [-1.2818586864084514E-16, 0.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "f": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 0.0, "y2": 2.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 2.0, "x2": -1.0, "y2": 1.0000000000000002 },
+          "h": { "type": "segment", "defined": true, "x1": -1.0, "y1": 1.0000000000000002, "x2": -1.2818586864084514E-16, "y2": 0.0 },
+          "i": { "type": "segment", "defined": true, "x1": -1.2818586864084514E-16, "y1": 0.0, "x2": 1.0, "y2": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -1.0, "y": 1.0000000000000002 },
+          "D": { "type": "point", "defined": true, "x": -1.2818586864084514E-16, "y": 0.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [3.0, 7.0],
+              [4.0, 8.0],
+              [1.0000000000000004, 1.0000000000000009],
+              [-1.2818586864084514E-16, -3.8455760592253543E-16]
+            ],
+            "area": 4.0,
+            "signed_area": -4.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-upstream-010",
+      "group": "matrixdilate",
+      "script": [
+        "A = (4, 5)",
+        "B = (1, 1)",
+        "n = 2",
+        "P = Dilate(A, n, B)",
+        "Q = Dilate(A, n)",
+        "g: y = -3x - 6",
+        "r = Dilate(g, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 7.0, "y": 9.0 },
+          "Q": { "type": "point", "defined": true, "x": 8.0, "y": 10.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": 1.0, "c": 6.0 },
+          "r": { "type": "line", "defined": true, "a": 6.0, "b": 2.0, "c": 24.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 8.0, "y": 10.0 },
+          "Q": { "type": "point", "defined": true, "x": 8.0, "y": 10.0 },
+          "g": { "type": "line", "defined": true, "a": 3.0, "b": 1.0, "c": 6.0 },
+          "r": { "type": "line", "defined": true, "a": 6.0, "b": 2.0, "c": 24.0 }
+        }
+      ]
+    }
+  ]
+}

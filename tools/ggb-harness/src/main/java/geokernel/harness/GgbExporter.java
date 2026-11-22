@@ -114,7 +114,7 @@ public final class GgbExporter {
     }
 
     /** The entries (name and content) of two zip archives are equal. */
-    private static boolean sameEntries(byte[] a, byte[] b) throws IOException {
+    static boolean sameEntries(byte[] a, byte[] b) throws IOException {
         return entries(a).equals(entries(b));
     }
 

@@ -15,7 +15,7 @@
 //! so rejecting the same trees here gives the same lines errors.
 
 use super::commands;
-use super::{Bin, CallOp, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
+use super::{AlgebraOp, Bin, CallOp, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Kind};
 
 /// Types, depths, costs and variable counts of the nodes reachable from
@@ -28,20 +28,25 @@ struct State {
     depth: Vec<u32>,
     cost: Vec<u64>,
     vars: Vec<u64>,
-    /// the type of the variable of every `Zip` seen so far
-    /// (`GeoList.createTemplateElement`), newest last
+    /// the type of the variable of every `Zip` whose expression is being
+    /// typed (`GeoList.createTemplateElement`), newest last; scoped to it
     zip_locals: Vec<(u32, Ty)>,
 }
 
 impl State {
     /// The type of the variable of the `Zip` of `depth`: the innermost one
-    /// that binds it, a number for a `Sequence`.
-    fn local(&self, depth: u32) -> Ty {
-        self.zip_locals
+    /// that binds it, the element its parse-time type names otherwise.
+    fn local(&self, depth: u32, elem: Elem) -> Result<Ty, String> {
+        match self
+            .zip_locals
             .iter()
             .rev()
             .find(|&&(d, _)| d == depth)
-            .map_or(Ty::Num(0), |&(_, t)| t)
+            .map(|&(_, t)| t)
+        {
+            Some(t) => Ok(t),
+            None => ty_of(elem),
+        }
     }
 }
 
@@ -113,6 +118,60 @@ fn type_node(
     let (ty, d, k, v) = match nodes[i] {
         Node::Num(_) | Node::MinusOne => (Ty::Num(0), 1, 1, 0),
         Node::Bool(_) => (Ty::Bool, 1, 1, 0),
+        Node::Text | Node::Relation { .. } => (Ty::Text, 1, 1, 0),
+        Node::TextCmd(op, first, count) => {
+            let end = (first + count) as usize;
+            let first = first as usize;
+            let ty = commands::text::result_type(c, op, nodes, &state.tys, first..end)?;
+            let v = state.vars[first..end]
+                .iter()
+                .fold(0u64, |a, b| a.saturating_add(*b));
+            let k = state.cost[first..end]
+                .iter()
+                .fold(1u64, |a, b| a.saturating_add(*b));
+            (
+                ty,
+                1 + state.depth[first..end].iter().copied().max().unwrap_or(0),
+                k,
+                v,
+            )
+        }
+        Node::Base { to, value, radix } => {
+            let (v, r) = (value as usize, radix as usize);
+            if !matches!(state.tys[r], Ty::Num(_))
+                || if to {
+                    !matches!(state.tys[v], Ty::Num(_))
+                } else {
+                    state.tys[v] != Ty::Text
+                }
+                || state.vars[v].saturating_add(state.vars[r]) != 0
+            {
+                return Err("invalid base conversion arguments".into());
+            }
+            let ty = if to { Ty::Text } else { Ty::Num(0) };
+            (
+                ty,
+                1 + state.depth[v].max(state.depth[r]),
+                1u64.saturating_add(state.cost[v])
+                    .saturating_add(state.cost[r]),
+                0,
+            )
+        }
+        Node::Side(..) => (Ty::Num(0), 1, 1, 0),
+        Node::Apply2(_, a, b) => {
+            let (a, b) = (a as usize, b as usize);
+            if !matches!((state.tys[a], state.tys[b]), (Ty::Num(_), Ty::Num(_))) {
+                return Err("function coordinates must be numbers".into());
+            }
+            (
+                Ty::Num(0),
+                1 + state.depth[a].max(state.depth[b]),
+                1u64.saturating_add(state.cost[a])
+                    .saturating_add(state.cost[b]),
+                state.vars[a].saturating_add(state.vars[b]),
+            )
+        }
+        Node::FunctionObject(_) => (Ty::Function, 1, 1, 0),
         Node::Degree => (Ty::Num(1), 1, 1, 0),
         Node::Var | Node::VarY => (Ty::Num(0), 1, 1, 1),
         Node::Obj(id) => (object_type(c, id)?, 1, 1, 0),
@@ -156,6 +215,68 @@ fn type_node(
                 state.vars[a].saturating_add(state.vars[b]),
             )
         }
+        Node::Algebra(op, a, b) => {
+            let (a, b) = (a as usize, b as usize);
+            if !matches!(state.tys[a], Ty::Num(_))
+                || b != NONE as usize && !matches!(state.tys[b], Ty::Num(_))
+            {
+                return Err("the command needs numeric arguments".into());
+            }
+            let (bd, bc, bv) = if b == NONE as usize {
+                (0, 0, 0)
+            } else {
+                (state.depth[b], state.cost[b], state.vars[b])
+            };
+            if state.vars[a].saturating_add(bv) != 0 {
+                return Err("a command cannot take `x`".into());
+            }
+            let ty = if op.makes_list() {
+                Ty::List(Elem::Num)
+            } else if matches!(op, AlgebraOp::IsPrime | AlgebraOp::IsInteger) {
+                Ty::Bool
+            } else {
+                Ty::Num(0)
+            };
+            (
+                ty,
+                1 + state.depth[a].max(bd),
+                state.cost[a].saturating_add(bc).saturating_add(1),
+                0,
+            )
+        }
+        Node::Extremum(_, f, a, b) => {
+            let [f, a, b] = [f, a, b].map(|i| i as usize);
+            if [f, a, b]
+                .iter()
+                .any(|&i| !matches!(state.tys[i], Ty::Num(_)))
+            {
+                return Err("an extremum needs a numeric function and two numbers".into());
+            }
+            if state.vars[a] != 0 || state.vars[b] != 0 {
+                return Err("an extremum needs fixed bounds".into());
+            }
+            (
+                Ty::Vec,
+                1 + state.depth[f].max(state.depth[a]).max(state.depth[b]),
+                1u64.saturating_add(state.cost[f])
+                    .saturating_add(state.cost[a])
+                    .saturating_add(state.cost[b]),
+                0,
+            )
+        }
+        Node::PolynomialPart(_, a, b) => {
+            let (a, b) = (a as usize, b as usize);
+            if !matches!((state.tys[a], state.tys[b]), (Ty::Num(_), Ty::Num(_))) {
+                return Err("polynomial division needs numeric functions".into());
+            }
+            (
+                Ty::Num(0),
+                1 + state.depth[a].max(state.depth[b]),
+                1u64.saturating_add(state.cost[a])
+                    .saturating_add(state.cost[b]),
+                1,
+            )
+        }
         Node::If(mode, cond, then, rest) => {
             let (cond, then) = (cond as usize, then as usize);
             if state.tys[cond] != Ty::Bool {
@@ -194,18 +315,112 @@ fn type_node(
                 return Err("a function takes a number".into());
             }
             let (fd, fc, fv) = super::function_metrics(c, f);
+            let ty = if super::function_signature(c, f).is_some_and(|f| f.boolean) {
+                Ty::Bool
+            } else {
+                Ty::Num(0)
+            };
             (
-                Ty::Num(0),
+                ty,
                 fd.saturating_add(state.depth[a]),
-                fc.saturating_add(fv.saturating_mul(state.cost[a])),
+                1u64.saturating_add(fc)
+                    .saturating_add(fv.max(1).saturating_mul(state.cost[a])),
                 fv.saturating_mul(state.vars[a]),
             )
         }
-        Node::Local(depth_of) => (state.local(depth_of), 1, 1, 0),
+        Node::Inverse(a) => {
+            let a = a as usize;
+            if !matches!(state.tys[a], Ty::Num(_)) {
+                return Err("`Invert` needs a function or matrix".into());
+            }
+            // Inverting an inverse visits its source to check for an
+            // inverse and again to evaluate the original function.
+            (
+                Ty::Num(0),
+                1 + state.depth[a],
+                state.cost[a].saturating_mul(2).saturating_add(1),
+                1,
+            )
+        }
+        Node::Dilate(src, factor, center) => {
+            let (s, f, p) = (src as usize, factor as usize, center as usize);
+            if !matches!(state.tys[f], Ty::Num(_))
+                || center != NONE
+                    && (state.tys[p] != Ty::Vec
+                        || vec_kind(c, nodes, &state.tys, center) != Kind::Point)
+            {
+                return Err("`Dilate` needs a numeric factor and an optional point".into());
+            }
+            let ty = match state.tys[s] {
+                ty @ (Ty::List(_) | Ty::Bool) => ty,
+                Ty::Num(_) => Ty::Num(0),
+                _ => return Err("expected a list or a function".into()),
+            };
+            let (pd, pc, pv) = if center == NONE {
+                (0, 0, 0)
+            } else {
+                (state.depth[p], state.cost[p], state.vars[p])
+            };
+            (
+                ty,
+                1 + state.depth[s].max(state.depth[f]).max(pd),
+                state.cost[s]
+                    .saturating_add(state.cost[f])
+                    .saturating_add(pc)
+                    .saturating_add(1),
+                state.vars[s]
+                    .saturating_add(state.vars[f])
+                    .saturating_add(pv),
+            )
+        }
+        Node::Local(depth, elem) => (state.local(depth, elem)?, 1, 1, 0),
+        Node::ObjectDefined(_) => (Ty::Bool, 1, 1, 0),
+        Node::Defined(a) => {
+            let a = a as usize;
+            (
+                Ty::Bool,
+                1 + state.depth[a],
+                1u64.saturating_add(state.cost[a]),
+                state.vars[a],
+            )
+        }
+        Node::Filter {
+            keep,
+            list,
+            condition,
+            ..
+        } => {
+            let (l, cond) = (list as usize, condition as usize);
+            let Ty::List(elem) = state.tys[l] else {
+                return Err("the filter needs a list".into());
+            };
+            if state.tys[cond] != Ty::Bool {
+                return Err("the filter needs a boolean condition".into());
+            }
+            let ty = if keep { Ty::List(elem) } else { Ty::Num(0) };
+            (
+                ty,
+                1 + state.depth[l].max(state.depth[cond]),
+                state.cost[l]
+                    .saturating_add(state.cost[cond])
+                    .saturating_add(1),
+                state.vars[l].saturating_add(state.vars[cond]),
+            )
+        }
+        Node::Vector(a) => {
+            let a = a as usize;
+            (
+                Ty::Vec,
+                1 + state.depth[a],
+                state.cost[a].saturating_add(1),
+                state.vars[a],
+            )
+        }
         Node::Item(a) => {
             let a = a as usize;
             (state.tys[a], state.depth[a], state.cost[a], state.vars[a])
         }
+        Node::ItemObject(_) => (Ty::Object, 1, 1, 0),
         Node::List(first, len) => {
             let mut elem = Elem::Empty;
             let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
@@ -217,57 +432,6 @@ fn type_node(
                 v = v.saturating_add(state.vars[item]);
             }
             (Ty::List(elem), 1 + d, k, v)
-        }
-        Node::Call(CallOp::Zip, first, len) => {
-            // the variables of the `Zip` take the elements of their lists;
-            // the expression, parsed before them, is typed again with every
-            // variable bound, as `resArgsForZip` resolves it last
-            let expression = match nodes[first as usize] {
-                Node::Item(e) => e,
-                _ => return Err("the expression of a `Zip` is missing".into()),
-            };
-            for k in 0..(len - 1) / 2 {
-                let local = nodes[(first + 1 + 2 * k) as usize];
-                let list = match nodes[(first + 2 + 2 * k) as usize] {
-                    Node::Item(a) => a,
-                    _ => return Err("the list of a `Zip` variable is missing".into()),
-                };
-                if let (Node::Local(d), Ty::List(e)) = (local, state.tys[list as usize]) {
-                    let elem = ty_of(e).unwrap_or(Ty::Num(0));
-                    state.zip_locals.retain(|&(depth_of, _)| depth_of != d);
-                    state.zip_locals.push((d, elem));
-                }
-            }
-            // the whole expression is typed again, now with its variables
-            // bound (`check` leaves it out of its own walk)
-            let block = subtree_min(nodes, expression);
-            for j in block..=first {
-                if (j as usize) < i {
-                    type_node(c, nodes, state, j)?;
-                }
-            }
-            let tys = &state.tys[..i];
-            let (mut md, mut mk, mut mv) = (0u32, 1u64, 0u64);
-            for arg in first..first.saturating_add(len) {
-                let arg = arg as usize;
-                if arg < tys.len() {
-                    md = md.max(state.depth[arg]);
-                    mk = mk.saturating_add(state.cost[arg]);
-                    mv = mv.saturating_add(state.vars[arg]);
-                }
-            }
-            (Ty::List(elem_of(state.tys[first as usize])), 1 + md, mk, mv)
-        }
-        Node::Call(op, first, len) => {
-            let ty = commands::call_type(op, c, nodes, &state.tys[..i], first, len)?;
-            let (mut md, mut mk, mut mv) = (0u32, 1u64, 0u64);
-            for arg in first..first.saturating_add(len) {
-                let arg = arg as usize;
-                md = md.max(state.depth[arg]);
-                mk = mk.saturating_add(state.cost[arg]);
-                mv = mv.saturating_add(state.vars[arg]);
-            }
-            (ty, 1 + md, mk, mv)
         }
         Node::ListOp(op, l, n) => {
             let elem = match state.tys[l as usize] {
@@ -345,6 +509,76 @@ fn type_node(
             }
             (Ty::List(elem), 1 + d, k, v)
         }
+        Node::Call(CallOp::Zip, first, len) => {
+            // the variables of the `Zip` take the elements of their lists;
+            // the expression, parsed before them, is typed again with every
+            // variable bound, as `resArgsForZip` resolves it last
+            let expression = match nodes[first as usize] {
+                Node::Item(e) => e,
+                _ => return Err("the expression of a `Zip` is missing".into()),
+            };
+            // the bindings of this `Zip` only: they are popped again once
+            // its expression is typed, so a `Zip` never retypes the
+            // variable of a later `Sequence` of the same depth
+            let bound = state.zip_locals.len();
+            for k in 0..(len - 1) / 2 {
+                let local = nodes[(first + 1 + 2 * k) as usize];
+                let list = match nodes[(first + 2 + 2 * k) as usize] {
+                    Node::Item(a) => a,
+                    _ => return Err("the list of a `Zip` variable is missing".into()),
+                };
+                if let (Node::Local(d, _), Ty::List(e)) = (local, state.tys[list as usize]) {
+                    let elem = ty_of(e).unwrap_or(Ty::Num(0));
+                    state.zip_locals.push((d, elem));
+                }
+            }
+            // the expressions of `Zip` calls nested in this one are typed
+            // by their own arms, with their own variables bound
+            let block = subtree_min(nodes, expression);
+            let mut nested: Vec<(u32, u32)> = Vec::new();
+            for j in block..=first {
+                if let Node::Call(CallOp::Zip, inner_first, _) = nodes[j as usize] {
+                    if let Node::Item(inner_expression) = nodes[inner_first as usize] {
+                        nested.push((subtree_min(nodes, inner_expression), inner_expression));
+                    }
+                }
+            }
+            // the whole expression is typed again, now with its variables
+            // bound (`check` leaves it out of its own walk)
+            for j in block..=first {
+                if (j as usize) < i && !nested.iter().any(|&(lo, hi)| lo <= j && j <= hi) {
+                    type_node(c, nodes, state, j)?;
+                }
+            }
+            state.zip_locals.truncate(bound);
+            let tys = &state.tys[..i];
+            let (mut md, mut mk, mut mv) = (0u32, 1u64, 0u64);
+            for arg in first..first.saturating_add(len) {
+                let arg = arg as usize;
+                if arg < tys.len() {
+                    md = md.max(state.depth[arg]);
+                    mk = mk.saturating_add(state.cost[arg]);
+                    mv = mv.saturating_add(state.vars[arg]);
+                }
+            }
+            (
+                Ty::List(elem_of(state.tys[expression as usize])),
+                1 + md,
+                mk,
+                mv,
+            )
+        }
+        Node::Call(op, first, len) => {
+            let ty = commands::call_type(op, c, nodes, &state.tys[..i], first, len)?;
+            let (mut md, mut mk, mut mv) = (0u32, 1u64, 0u64);
+            for arg in first..first.saturating_add(len) {
+                let arg = arg as usize;
+                md = md.max(state.depth[arg]);
+                mk = mk.saturating_add(state.cost[arg]);
+                mv = mv.saturating_add(state.vars[arg]);
+            }
+            (ty, 1 + md, mk, mv)
+        }
     };
     state.tys[i] = ty;
     state.depth[i] = d;
@@ -374,13 +608,38 @@ fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
     }
 }
 
+/// A coordinate expression keeps the kind of an object or command. Bare
+/// coordinates are points, as are operations that have a point operand.
+pub(super) fn vec_kind(c: &Construction, nodes: &[Node], tys: &[Ty], i: u32) -> Kind {
+    let kind = |k| if k == Kind::Vector { k } else { Kind::Point };
+    match nodes[i as usize] {
+        Node::Obj(id) => kind(c.kind(id)),
+        Node::Cmd(def, _) => kind(def.kind()),
+        Node::Vector(_) => Kind::Vector,
+        Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => vec_kind(c, nodes, tys, a),
+        Node::Bin(_, a, b) => {
+            let kinds =
+                [a, b].map(|j| (tys[j as usize] == Ty::Vec).then(|| vec_kind(c, nodes, tys, j)));
+            if kinds.contains(&Some(Kind::Point)) || !kinds.contains(&Some(Kind::Vector)) {
+                Kind::Point
+            } else {
+                Kind::Vector
+            }
+        }
+        _ => Kind::Point,
+    }
+}
+
 /// The element type of a list of elements of type `t`.
 pub(super) fn elem_of(t: Ty) -> Elem {
     match t {
         Ty::Num(_) => Elem::Num,
         Ty::Vec => Elem::Vec,
         Ty::Bool => Elem::Bool,
+        Ty::Function => Elem::Function,
+        Ty::Text => Elem::Text,
         Ty::List(_) => Elem::List,
+        Ty::Object => Elem::Object,
     }
 }
 
@@ -399,7 +658,10 @@ pub(super) fn ty_of(e: Elem) -> Result<Ty, String> {
         Elem::Num | Elem::Empty => Ok(Ty::Num(0)),
         Elem::Vec => Ok(Ty::Vec),
         Elem::Bool => Ok(Ty::Bool),
+        Elem::Function => Ok(Ty::Function),
+        Elem::Text => Ok(Ty::Text),
         Elem::List => Ok(Ty::List(Elem::Any)),
+        Elem::Object => Err("geometric list elements cannot be used as operands".into()),
         Elem::Any => Err("the elements of the list have different types".into()),
     }
 }
@@ -419,7 +681,8 @@ fn result_type(kind: Kind) -> Result<Ty, String> {
         Kind::Angle => Ok(Ty::Num(1)),
         Kind::Point | Kind::Vector => Ok(Ty::Vec),
         Kind::Boolean => Ok(Ty::Bool),
-        other => Err(format!("a {other} cannot be used in an expression")),
+        Kind::Text => Ok(Ty::Text),
+        _ => Ok(Ty::Object),
     }
 }
 
@@ -451,12 +714,24 @@ fn scalar_unary_type(op: Un, a: Ty) -> Result<Ty, String> {
         (Un::AsinD | Un::AcosD | Un::AtanD, Ty::Num(_)) => Ok(Ty::Num(1)),
         (_, Ty::Num(_) | Ty::Bool) => Ok(Ty::Num(0)),
         (_, Ty::List(_)) => Err("a list of lists cannot be used here".into()),
+        (_, Ty::Object) => Err("geometric list elements cannot be used as operands".into()),
+        (_, Ty::Function | Ty::Text) => Err("this operand needs a number".into()),
     }
 }
 
 /// `MyDouble.add`, `mult`, `div`, `pow` for the angle dimension; vectors
 /// add, scale and multiply to the scalar product.
 fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
+    if a == Ty::Text || b == Ty::Text {
+        return if op == Bin::Add {
+            Ok(Ty::Text)
+        } else {
+            Err("text operands require concatenation".into())
+        };
+    }
+    if matches!(a, Ty::Object | Ty::Function) || matches!(b, Ty::Object | Ty::Function) {
+        return Err("geometric objects cannot be used as arithmetic operands".into());
+    }
     let list = |t: Ty| match t {
         Ty::List(e) => ty_of(e).map(Some),
         _ => Ok(None),
@@ -483,7 +758,7 @@ fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     }
 }
 
-fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
+pub(super) fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     use Ty::{Num, Vec};
     if matches!(a, Ty::List(_)) || matches!(b, Ty::List(_)) {
         return Err("arithmetic on lists of lists is not supported".into());

@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-"""Writes saved/saved.json: constructions that are saved after their free
-points were moved.
+"""Writes saved/saved.json: constructions saved after edits.
 
-Each case gives raw GeoGebra input lines, `move` steps, and optionally the
-angle unit of the kernel. The harness (`harness.sh saved`) runs the lines, moves
-the points, and writes the construction file together with GeoGebra's own values
-at that moment, so the importer can be checked against the state the file was
-saved from: the order of the outputs of a command that makes several objects
-(`Intersect` of a line and a circle, of two circles; `Tangent`) after the
-points moved, and angles saved under each angle unit. The input is
-deterministic (fixed seeds); new cases are appended to their topic.
+Each case gives raw GeoGebra input lines and optional steps to move points,
+change a number, enable animation, set an angle style, or rename an object.
+It can also set the angle unit or hide specific objects. The harness
+(`harness.sh saved`) writes the construction file and GeoGebra's own values
+at that moment. The importer checks intersection and tangent output order
+after edits, angles under both units, and values of saved expressions.
+Fixed seeds keep the input deterministic. New cases are appended to their topic.
 """
 
 import json
@@ -39,11 +37,15 @@ def topic(name):
     rng.seed(f"saved-{name}", version=2)
 
 
-def case(name, script, steps, unit=None):
+def case(name, script, steps, unit=None, hidden=None, archive=False):
     counters[name] = counters.get(name, 0) + 1
     entry = {"id": f"saved-{name}-{counters[name]:03d}"}
     if unit:
         entry["angle_unit"] = unit
+    if hidden:
+        entry["hidden"] = hidden
+    if archive:
+        entry["archive"] = True
     entry["script"] = script
     entry["steps"] = steps
     cases.append(entry)
@@ -165,6 +167,166 @@ for unit in ("degree", "radiant"):
                  mv("C", c[0] + r2(-1, 1), c[1] + r2(-1, 1))]
         case("angle", [pt("A", *a), pt("B", *b), pt("C", *c),
                        "a = Angle(B, A, C)", "b = Angle(C, A, B)"], steps, unit)
+
+expressions = [
+    "A = (1, 2)", "B = (4, -1)", "v_{0x} = 2",
+    "C = (x(A), y(B) + 2)", "s = Segment(A, C)",
+    "φ = x(C) + π", "a = sin(30° + v_{0x}°)",
+    "f(x) = If[-4 < x, v_{0x} ⋅ x² + y(C), x - 1]",
+    "t(x) = If[f(x) > 0 ∧ x > 0, f(x)]",
+    "g(x) = If[x ≤ -2 ∨ x ≥ 2, t(x) + 1, If[x ≠ 0, f(x), a]]",
+    "n = If[x(A) ≥ 0, g(x(A)), φ]",
+    "Q = (n, f(y(A)))", "valid = x(A) ≥ 0",
+    "j_{xy}(x) = f(x) + 1", "d = j_{xy}(y(A))",
+    "ang = (v_{0x} + 30)°",
+    "bad = x(A) + NextPrime(v_{0x})", "lost = bad + 1",
+    "multi(x, y) = x + y", "control = Checkbox()",
+    "button = Button()", "field = InputBox(v_{0x})",
+]
+hidden = ["C", "s"]
+case("expressions", expressions, [], hidden=hidden)
+move = mv("A", 2, 1)
+case("expressions", expressions, [move], hidden=hidden)
+case("expressions", expressions,
+     [move, {"action": "set_number", "label": "v_{0x}", "value": 5}], hidden=hidden)
+
+paths = [
+    "A = (1, 2)", "B = (9, 6)", "s = Segment(A, B)", "l = Line(A, B)",
+    "f(x) = x² + y(A) - 3", "c = Circle(A, 3)", "S = Point(s)", "L = Point(l)",
+    "F = Point(f)", "C = Point(c)", "D = Point(s, 0.25)", "u = Vector(S, L)",
+    "d = Segment(F, C)", "p = PerpendicularLine(S, l)", "q = PerpendicularLine(L, l)",
+    "ts = PathParameter(S)", "tl = PathParameter(L)", "tf = PathParameter(F)",
+    "tc = PathParameter(C)",
+]
+dragged = [mv("S", 5, 5), mv("L", -3, 1), mv("F", 2.25, 3), mv("C", 2, -4),
+           {"action": "animate", "label": "S"}]
+case("paths", paths, dragged)
+case("paths", paths, dragged + [mv("B", 7, 3), mv("A", -1, 1), mv("F", -2.5, 2)])
+
+case("review", ["n = 400", "ang = (n + 30)°", "acute = (n - 10)°",
+                "reflex = (n + 30)°", "raw = (n + 30)°", "turn = ang / 1°",
+                "A = (sqrt(2), 1)", "B = (3, 4)", "C = (2, 5)",
+                "a = 2π", "d = 1/3", "P = If(n > 0, A, B)",
+                "q = {A, d, 5, a}", "flat(x) = 4", "tri = Polygon(A, B, C)",
+                "len = 5", "el = Ellipse(A, B, len)",
+                "e = x(A) + NextPrime(n)", "lost = e + 1", "Euler = ℯ + 1"],
+     [{"action": "angle_style", "label": "ang", "value": 0},
+      {"action": "angle_style", "label": "acute", "value": 1},
+      {"action": "angle_style", "label": "reflex", "value": 2},
+      {"action": "rename", "label": "P", "name": "chosen"}])
+
+case("coordinates", ["a = 2", "b = 3", "P = $point(a, b)",
+                     "Q = $point(1/2, 3)", "v = $vector(a, b)",
+                     "w = $vector(1/2, 3)"], [])
+
+inline = ["A = (1, 2)", "u = (2, -1)", "a = 3", "v = Vector(A, (4, 1))",
+          "s = Segment(A, A + (2, 0))", "w = Vector(2u)",
+          "d = UnitVector(2u)", "c = Circle(A, 2a)", "t = Tangent(a, x^2 + a)",
+          "e1 = Segment(A, (x(u), y(u)))", "e2 = Segment(A, A + u)",
+          # CommandsTest.cmdCircle
+          "k = Circle((1, 1), 42)", "j = Circle((1, 1), (2, 1/2))"]
+case("inline", inline, [])
+case("inline", inline, [mv("A", 4, 1), {"action": "set_number", "label": "a", "value": 2}])
+
+controls = ["A = (2, 1)", "B = (4, 3)", "a = Slider(0, 8, 0.5)",
+            "s = Segment(A, B)", "check = Checkbox(\"Show\", {A, s})",
+            "run = Button(\"Apply\")", "field = InputBox(a)", "empty = InputBox()",
+            "pos = a > 2"]
+edits = [{"action": "set_number", "label": "a", "value": 3},
+         {"action": "condition", "label": "B", "expression": "a > 2"},
+         {"action": "click_script", "label": "run", "text": "SetValue(a, 7)\nSetValue(a, 6)"}]
+case("controls", controls, edits)
+case("controls", controls, edits + [{"action": "set_boolean", "label": "check", "value": False}])
+
+case("elements", ["A = (0, 0)", "B = (3, 0)", "C = (4, 2)",
+                  "p = PolyLine({A, B, C})", "P = Point(p)", "Q = (x(P), y(P)^2)",
+                  "trace = Locus(Q, P)", "f = Curve(cos(t), sin(t), t, 0, 2)",
+                  "n = Length(f, 0, 1)"], [])
+
+texts = [
+    'marker = "Anchor label"',
+    "P = (1.235, -2.246)", "a = 4.1256", "theta = 30.1256°",
+    'caption = "Fixed panel #1 & notes"',
+    'note = "Survey note\nsecond line"',
+    'readout = "a = " + a + "; P = " + P + "; θ = " + theta',
+    r'formula = "\frac{1}{2}\\\frac{3}{4}"',
+    "turned = VerticalText(formula)",
+    'hiddenText = "Hidden label"',
+    'atPoint = Text("Placed by command", P, true, false, 0, 1)',
+]
+text_placement = [
+    {"action": "text_screen", "label": "caption", "x": 51, "y": 73},
+    {"action": "text_world", "label": "note", "x": -3, "y": 2},
+    {"action": "text_anchor", "label": "marker", "point": "P"},
+    {"action": "text_world", "label": "readout", "x": -1, "y": 3},
+    {"action": "text_font", "label": "formula", "latex": True, "serif": True,
+     "size": 1.4, "style": 3},
+]
+case("texts", texts, text_placement, hidden=["hiddenText"], archive=True)
+case("texts", texts, text_placement + [mv("P", 3.456, 2.468),
+     {"action": "set_number", "label": "a", "value": 8.5678}],
+     hidden=["hiddenText"], archive=True)
+
+text_equations = [
+    "a = 2", "l: y = a x + 1", "p: y = a x^2 - x + 1",
+    "A = (0, 1)", "B = (1, 3)", "e = Line(A, B)", "g = Line(A, B)", "r = Line(A, B)",
+    "lText = Text(l)", "pTex = FormulaText(p)", "eText = Text(e)",
+    "gText = Text(g)", "rText = Text(r)",
+]
+equation_styles = [
+    {"action": "line_style", "label": "e", "form": "EXPLICIT"},
+    {"action": "line_style", "label": "g", "form": "GENERAL"},
+    {"action": "line_style", "label": "r", "form": "PARAMETRIC", "parameter": "u"},
+]
+case("text-equations", text_equations, equation_styles)
+case("text-equations", text_equations, equation_styles + [
+    {"action": "set_number", "label": "a", "value": -3},
+])
+
+conic_styles = [
+    ("pe", "pe: y = x^2 - 4x + 7", "EXPLICIT"),
+    ("pv", "pv: y = x^2 - 4x + 7", "VERTEX"),
+    ("pc", "pc: x = 2y^2 + 8y + 11", "CONICFORM"),
+    ("ps", "ps: y^2 = 4x", "SPECIFIC"),
+    ("s", "s = Circle(C, 3)", "SPECIFIC"),
+    ("cp", "cp = Circle(O, 3)", "PARAMETRIC"),
+    ("ee", "ee: 4x^2 + 9y^2 = 36", "SPECIFIC"),
+    ("h", "h: 4x^2 - 9y^2 = 36", "SPECIFIC"),
+    ("di", "di: x^2 - y^2 = 0", "SPECIFIC"),
+    ("dp", "dp: x^2 - y^2 = 0", "PARAMETRIC"),
+    ("pp", "pp: (x - 1)^2 = 4", "PARAMETRIC"),
+    ("pl", "pl: (x - 1)^2 = 0", "PARAMETRIC"),
+    ("sp", "sp: x^2 + y^2 = 0", "PARAMETRIC"),
+]
+case("text-conic-styles",
+     ["C = (1, -2)", "O = (0, 0)"] + [source for _, source, _ in conic_styles]
+     + [f"{label}Text = Text({label})" for label, _, _ in conic_styles]
+     + [f"{label}TeX = FormulaText({label})" for label, _, _ in conic_styles],
+     [{"action": "conic_style", "label": label, "form": form}
+      for label, _, form in conic_styles])
+
+text_template = ["a = 3", 't = "value: " + a']
+latex = {"action": "text_font", "label": "t", "latex": True, "size": 1, "style": 0}
+case("text-template", text_template, [latex])
+case("text-template", text_template,
+     [latex, {"action": "set_number", "label": "a", "value": 3.141592653589793}])
+
+case("slider-bounds", ["n = Slider(0, 10)", "m = Slider(0, 10)", "k = Slider(0, 10)", "a = 2", "q = 2n"],
+     [{"action": "set_number", "label": "n", "value": 9},
+      {"action": "slider_bounds", "label": "n", "max": "a + 3"},
+      {"action": "slider_bounds", "label": "m", "min": "a - 1"},
+      {"action": "slider_bounds", "label": "k", "min": "-3", "max": "NextPrime(a)"}])
+
+case("object-scripts", ["A = (1, 2)", "check = false", "a = 2"],
+     [{"action": "condition", "label": "A", "expression": "check"},
+      {"action": "click_script", "label": "A", "text": "SetValue(a, 7)"},
+      {"action": "object_script", "label": "A", "event": "UPDATE",
+       "language": "GGBSCRIPT", "text": "SetValue(a, 8)"},
+      {"action": "object_script", "label": "A", "event": "DRAG_END",
+       "language": "JAVASCRIPT", "text": 'ggbApplet.setValue("a", 9);'},
+      {"action": "object_script", "label": "A", "event": "EDITOR_KEY_TYPED",
+       "language": "JAVASCRIPT", "text": 'ggbApplet.setValue("a", 10);'}],
+     hidden=["check"])
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)

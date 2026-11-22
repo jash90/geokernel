@@ -4,6 +4,9 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNodeEvaluator.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdCAStoOperation.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoIdentity.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoTranspose.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDimension.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdOneListFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
@@ -14,13 +17,14 @@
 mod conic_coefficients;
 #[path = "../../algo/conic_interval.rs"]
 mod conic_interval;
+pub(super) mod function_roots;
 
 use crate::algo::intersect::Hint;
 use crate::algo::vector::{matrix, VectorDef};
-use crate::expr::eval::{combine, number_of, slot_val, Ctx, Env, Val};
+use crate::expr::eval::{combine, number_of, slot_val, Ctx, Val};
 use crate::expr::list::Slot;
 use crate::expr::parse::{list_form, Parser};
-use crate::expr::{self, math, Bin, Elem, IfMode, ListOp, Node, Ty, Un, NONE};
+use crate::expr::{self, Bin, Elem, Entry, IfMode, ListOp, Node, Raw, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 
 /// The commands of this group (see `commands::is_command`).
@@ -32,6 +36,11 @@ pub(super) const NAMES: &[&str] = &[
     "MatrixRank",
     "Identity",
     "Dimension",
+    "Invert",
+    "Transpose",
+    "ReducedRowEchelonForm",
+    "ApplyMatrix",
+    "Dilate",
     "Vector",
     "Direction",
     "UnitVector",
@@ -44,6 +53,18 @@ pub(super) const NAMES: &[&str] = &[
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
     match text {
         "Length" => p.list_command(length),
+        "Distance" => p.list_command(|p, args, _| {
+            let &[a, b] = args else { return Ok(None) };
+            if [a, b]
+                .iter()
+                .any(|&i| matches!(p.node(i), Node::Local(_, Elem::Vec)))
+                && [a, b].iter().all(|&i| p.is_point_or_vector(i))
+            {
+                let difference = p.push(Node::Bin(Bin::Sub, a, b));
+                return Ok(Some(Node::Un(Un::Abs, difference)));
+            }
+            Ok(None)
+        }),
         "Cross" => p.list_command(cross),
         "Dot" => p.list_command(dot),
         "Determinant" => p.list_command(|_, args, lists| {
@@ -53,6 +74,42 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
             p.list_command(|_, args, lists| list_form(text, ListOp::MatrixRank, false, args, lists))
         }
         "Dimension" => p.list_command(dimension),
+        "Invert" => p.function_command(|p, args, lists| match (args, lists) {
+            (&[a], [false]) if p.uses_function_variable(a) => Ok(Some(Node::Inverse(a))),
+            _ => list_form(text, ListOp::Invert, false, args, lists),
+        }),
+        "Dilate" => p.function_command(|p, args, lists| {
+            let (src, factor, center) = match *args {
+                [src, factor] => (src, factor, NONE),
+                [src, factor, center] => (src, factor, center),
+                _ => return Ok(None),
+            };
+            Ok((lists[0] || p.uses_function_variable(src))
+                .then_some(Node::Dilate(src, factor, center)))
+        }),
+        "Transpose" | "ReducedRowEchelonForm" => p.list_command(|p, args, lists| {
+            let op = if text == "Transpose" {
+                ListOp::Transpose
+            } else {
+                ListOp::Rref
+            };
+            if args.len() >= 2
+                && lists.iter().all(|&list| !list)
+                && (args.iter().all(|&arg| p.is_number(arg))
+                    || args.iter().all(|&arg| p.is_point_or_vector(arg)))
+            {
+                return Ok(Some(Node::ListOp(op, p.wrap_list(args), NONE)));
+            }
+            list_form(text, op, false, args, lists)
+        }),
+        "ApplyMatrix" => p.list_command(|_, args, lists| {
+            Ok(match (args, lists) {
+                (&[matrix, src], [true, true]) => {
+                    Some(Node::ListOp(ListOp::ApplyMatrix, matrix, src))
+                }
+                _ => None,
+            })
+        }),
         _ if VectorDef::vector_result(text) => {
             p.list_command(|p, args, lists| Ok(vector(p, text, args, lists)))
         }
@@ -102,13 +159,18 @@ fn vector(p: &mut Parser, command: &str, args: &[u32], lists: &[bool]) -> Option
     } else {
         p.push(tuple)
     };
-    // An inline coordinate pair belongs to this command. Even with literal
-    // arguments the result is dependent and cannot be dragged as a free vector.
-    let yes = p.push(Node::Bool(true));
-    Some(Node::If(IfMode::Algo, yes, output, NONE))
+    Some(Node::Vector(output))
 }
 
 fn dimension(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
+    if let (&[a], [true]) = (args, lists) {
+        let op = if p.is_matrix(a) {
+            ListOp::MatrixDimension
+        } else {
+            ListOp::Dimension
+        };
+        return Ok(Some(Node::ListOp(op, a, NONE)));
+    }
     let (&[a], [false]) = (args, lists) else {
         return Ok(None);
     };
@@ -185,8 +247,8 @@ fn identity(p: &mut Parser, n: u32) -> u32 {
     let size = p.push(Node::If(IfMode::Algo, rounded_up, below, floor));
     let nonempty = p.push(Node::Bin(Bin::GreaterEqual, size, one));
     let depth = p.locals.len() as u32;
-    let i = p.push(Node::Local(depth));
-    let j = p.push(Node::Local(depth + 1));
+    let i = p.push(Node::Local(depth, Elem::Num));
+    let j = p.push(Node::Local(depth + 1, Elem::Num));
     let on_diagonal = p.push(Node::Bin(Bin::Equal, i, j));
     let entry = p.push(Node::If(IfMode::Algo, on_diagonal, one, zero));
     let row = p.push(Node::Seq(entry, one, size, NONE, depth + 1));
@@ -205,7 +267,17 @@ pub(super) fn list_type(
     n: u32,
 ) -> Result<Option<Ty>, String> {
     Ok(match op {
-        ListOp::Length | ListOp::Determinant | ListOp::MatrixRank | ListOp::Dot => Some(Ty::Num(0)),
+        ListOp::Length
+        | ListOp::Determinant
+        | ListOp::MatrixRank
+        | ListOp::Dot
+        | ListOp::Dimension => Some(Ty::Num(0)),
+        ListOp::MatrixDimension => Some(Ty::List(Elem::Num)),
+        ListOp::Transpose | ListOp::Rref | ListOp::Invert => Some(Ty::List(Elem::List)),
+        ListOp::ApplyMatrix => match tys[n as usize] {
+            ty @ Ty::List(_) => Some(ty),
+            _ => return Err("`ApplyMatrix` needs a list to transform".into()),
+        },
         ListOp::Cross => {
             let Ty::List(right) = tys[n as usize] else {
                 return Err("`Cross` needs two lists".into());
@@ -231,7 +303,9 @@ pub(super) fn list_value<const M: bool>(
     n: u32,
 ) -> Option<Val> {
     Some(match op {
-        ListOp::Length => Val::N(ctx.list(l).map_or(f64::NAN, |(_, len)| f64::from(len))),
+        ListOp::Length | ListOp::Dimension => {
+            Val::N(ctx.list(l).map_or(f64::NAN, |(_, len)| f64::from(len)))
+        }
         ListOp::Dot => Val::N(dot_lists(ctx, l, n).unwrap_or(f64::NAN)),
         ListOp::Determinant | ListOp::MatrixRank => {
             Val::N(matrix_number(ctx, op, l).unwrap_or(f64::NAN))
@@ -254,11 +328,153 @@ fn dot_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option<f
     })
 }
 
-pub(super) fn cross_lists<const M: bool>(
+pub(super) fn makes_list(op: ListOp) -> bool {
+    matches!(
+        op,
+        ListOp::Cross
+            | ListOp::Transpose
+            | ListOp::Rref
+            | ListOp::Invert
+            | ListOp::MatrixDimension
+            | ListOp::ApplyMatrix
+    )
+}
+
+pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,
-    left: u32,
-    right: u32,
+    op: ListOp,
+    l: u32,
+    n: u32,
 ) -> Option<(u32, u32)> {
+    if op == ListOp::Cross {
+        return cross_lists(ctx, l, n);
+    }
+    let lists = ctx.lists?;
+    let (start, len) = ctx.list(l)?;
+    if op == ListOp::Transpose {
+        if len == 0 {
+            return Some((lists.len(), 0));
+        }
+        let (_, cols) = lists.read(ctx.c, start).run()?;
+        if !lists.charge(u64::from(len) * (1 + u64::from(cols))) {
+            return None;
+        }
+        for k in 0..len {
+            if lists.read(ctx.c, start + k).run()?.1 != cols {
+                return None;
+            }
+        }
+        let out = lists.reserve(cols)?;
+        for col in 0..cols {
+            let column = lists.reserve(len)?;
+            for row in 0..len {
+                let (source, _) = lists.read(ctx.c, start + row).run()?;
+                lists.set(column + row, lists.read(ctx.c, source + col));
+            }
+            lists.set(out + col, Slot::list(column, len));
+        }
+        return Some((out, cols));
+    }
+    if op == ListOp::ApplyMatrix {
+        let m = lists.with_list(ctx.c, start, len, |list| Some(matrix::Matrix::read(list)))?;
+        let source = ctx.list(n)?;
+        return map_list(ctx, source, |value| m?.apply(value));
+    }
+    if op == ListOp::MatrixDimension {
+        if len == 0 {
+            return None;
+        }
+        let (_, cols) = lists.read(ctx.c, start).run()?;
+        if !lists.charge(u64::from(len)) {
+            return None;
+        }
+        for k in 1..len {
+            if lists.read(ctx.c, start + k).run()?.1 != cols {
+                return None;
+            }
+        }
+        let out = lists.reserve(2)?;
+        lists.set(out, Slot::number(len as f64));
+        lists.set(out + 1, Slot::number(cols as f64));
+        return Some((out, 2));
+    }
+    // The matrix may borrow the arena. Stage numbers outside it until the
+    // borrow ends, then reserve and fill the result's runs.
+    let (data, rows, cols) = lists.with_list(ctx.c, start, len, |m| {
+        let charge = |work| lists.charge(work);
+        let output = |data: &[f64], rows, cols| {
+            charge(data.len() as u64).then(|| (data.to_vec(), rows as u32, cols as u32))
+        };
+        match op {
+            ListOp::Rref => matrix::rref(m, charge, output),
+            ListOp::Invert => matrix::inverse(m, charge, output),
+            _ => unreachable!("no matrix list result for {op:?}"),
+        }
+    })?;
+    let out = lists.reserve(rows)?;
+    for (row, entries) in data.chunks_exact(cols as usize).enumerate() {
+        let run = lists.reserve(cols)?;
+        for (col, &cell) in entries.iter().enumerate() {
+            lists.set(run + col as u32, Slot::number(cell));
+        }
+        lists.set(out + row as u32, Slot::list(run, cols));
+    }
+    Some((out, rows))
+}
+
+/// Transform leaves in depth-first order. A scalar is copied, while the
+/// transformation reuses its last point or vector output.
+pub(in crate::expr) fn map_list<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    (start, len): (u32, u32),
+    transform: impl Fn(Value) -> Option<Value>,
+) -> Option<(u32, u32)> {
+    let lists = ctx.lists?;
+    let transformed = |slot: Slot| match transform(slot.value) {
+        Some(point @ (Value::Point { .. } | Value::HomogeneousPoint { .. })) => Slot::point(point),
+        Some(Value::Vector { x, y }) => Slot::coords(Kind::Vector, x, y),
+        _ => Slot::undefined(slot.kind),
+    };
+    let out = lists.reserve(len)?;
+    let mut pending = Vec::new();
+    let mut current = (start, out, len);
+    let mut last = None;
+    loop {
+        let (source, target, size) = current;
+        if size == 0 {
+            let Some(next) = pending.pop() else {
+                return Some((out, len));
+            };
+            current = next;
+            continue;
+        }
+        if !lists.charge(1) {
+            return None;
+        }
+        current = (source + 1, target + 1, size - 1);
+        let slot = lists.read(ctx.c, source);
+        let result = if let Some((list, len)) = slot.run() {
+            let dest = lists.reserve(len)?;
+            if len != 0 {
+                pending.push(current);
+                current = (list, dest, len);
+            }
+            Slot::list(dest, len)
+        } else if matches!(slot.kind, Kind::Point | Kind::Vector) {
+            last = Some(target);
+            transformed(slot)
+        } else {
+            if slot.kind != Kind::List {
+                let previous = last?;
+                lists.set(previous, transformed(lists.read(ctx.c, previous)));
+            }
+            slot
+        };
+        lists.set(target, result);
+    }
+}
+
+fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option<(u32, u32)> {
     let lists = ctx.lists?;
     let (a, len) = ctx.list(left)?;
     let (b, other) = ctx.list(right)?;
@@ -269,9 +485,9 @@ pub(super) fn cross_lists<const M: bool>(
         return None;
     }
     let product = |i, j| {
-        let x = slot_val(lists.read(ctx.c, a + i));
-        let y = slot_val(lists.read(ctx.c, b + j));
-        slot_val(combine(Bin::Mul, x, y))
+        let x = slot_val(&lists.read(ctx.c, a + i));
+        let y = slot_val(&lists.read(ctx.c, b + j));
+        slot_val(&combine(Bin::Mul, x, y))
     };
     let component = |i, j| combine(Bin::Sub, product(i, j), product(j, i));
     let start = lists.reserve(3)?;
@@ -299,148 +515,33 @@ fn matrix_number<const M: bool>(ctx: &Ctx<'_, M>, op: ListOp, matrix: u32) -> Op
     })
 }
 
-type Polynomial = [f64; 5];
-
 impl Construction {
-    /// Coefficients in ascending degree for a polynomial function of degree
-    /// at most four. Coefficients can read other construction objects.
-    pub(crate) fn function_polynomial(&self, id: Id) -> Option<Polynomial> {
-        let ctx = function_context(self, id, &Env::None)?;
-        let p = polynomial(&ctx, ctx.e.root)?;
-        p.iter().all(|x| x.is_finite()).then_some(p)
+    /// Store an argument tree without creating a labelled construction object.
+    pub(crate) fn store_intersection_argument(
+        &mut self,
+        text: &str,
+    ) -> Result<(u32, Kind), String> {
+        let parsed = crate::expr::parse::parse(self, text)?;
+        let kind = match (parsed.uses_var, parsed.tys[parsed.root as usize]) {
+            (false, Ty::Num(1)) => Kind::Angle,
+            (false, Ty::Num(_)) => Kind::Number,
+            (false, Ty::Vec) => Kind::Point,
+            _ => return Err(format!("invalid intersection argument `{text}`")),
+        };
+        let index = u32::try_from(self.exprs.entries.len())
+            .map_err(|_| "too many expression arguments".to_string())?;
+        let entry = Entry::new(self, parsed, false);
+        self.exprs.entries.push(entry);
+        Ok((index, kind))
     }
 
-    /// The derivative at a seed for Newton iteration, when the expression
-    /// tree consists of operations with scalar differentiation rules.
-    pub(crate) fn function_derivative(&self, id: Id, x: f64) -> Option<f64> {
-        let env = Env::Value(x);
-        let ctx = function_context(self, id, &env)?;
-        derivative(&ctx, ctx.e.root).filter(|d| d.is_finite())
+    pub(crate) fn intersection_argument_parents(&self, index: u32) -> Option<&[Id]> {
+        Some(&self.exprs.entries.get(index as usize)?.parents)
     }
-}
 
-fn function_context<'a>(
-    c: &'a Construction,
-    id: Id,
-    env: &'a Env<'a, false>,
-) -> Option<Ctx<'a, false>> {
-    let (Def::Expr(def), Value::Function) = (c.def(id), c.value(id)) else {
-        return None;
-    };
-    Some(Ctx {
-        c,
-        e: expr::entry(c, def),
-        env,
-        lists: None,
-        meter: None,
-        locals: None,
-    })
-}
-
-fn scalar_polynomial(x: f64) -> Polynomial {
-    [x, 0.0, 0.0, 0.0, 0.0]
-}
-
-fn product(a: Polynomial, b: Polynomial) -> Option<Polynomial> {
-    let mut out = [0.0; 5];
-    for (i, x) in a.into_iter().enumerate().filter(|&(_, x)| x != 0.0) {
-        for (j, y) in b.into_iter().enumerate().filter(|&(_, y)| y != 0.0) {
-            *out.get_mut(i + j)? += x * y;
-        }
+    pub(crate) fn intersection_argument_value(&self, index: u32) -> Option<Raw> {
+        let entry = self.exprs.entries.get(index as usize)?;
+        let lists = entry.lists.then(|| expr::eval::Lists::new(Vec::new()));
+        Some(expr::eval::root(self, entry, lists.as_ref()).0)
     }
-    Some(out)
-}
-
-fn has_variable(ctx: &Ctx<'_, false>, i: u32) -> bool {
-    let node = ctx.node(i);
-    matches!(node, Node::Var) || expr::children(&node).any(|child| has_variable(ctx, child))
-}
-
-fn polynomial(ctx: &Ctx<'_, false>, i: u32) -> Option<Polynomial> {
-    if !has_variable(ctx, i) {
-        return Some(scalar_polynomial(ctx.full_number(i)));
-    }
-    match ctx.node(i) {
-        Node::Var => Some([0.0, 1.0, 0.0, 0.0, 0.0]),
-        Node::Bin(op, a, b) => {
-            let a = polynomial(ctx, a)?;
-            let b = polynomial(ctx, b)?;
-            let b_is_scalar = b[1..].iter().all(|&x| x == 0.0);
-            match op {
-                Bin::Add => Some(std::array::from_fn(|i| a[i] + b[i])),
-                Bin::Sub => Some(std::array::from_fn(|i| a[i] - b[i])),
-                Bin::Mul => product(a, b),
-                Bin::Div if b_is_scalar => Some(a.map(|x| x / b[0])),
-                Bin::Pow if b_is_scalar && (0.0..=4.0).contains(&b[0]) && b[0].fract() == 0.0 => (0
-                    ..b[0] as usize)
-                    .try_fold(scalar_polynomial(1.0), |power, _| product(power, a)),
-                _ => None,
-            }
-        }
-        Node::Apply(f, arg) => {
-            let a = polynomial(ctx, arg)?;
-            let p = ctx.c.function_polynomial(f)?;
-            let degree = p.iter().rposition(|&x| x != 0.0).unwrap_or(0);
-            let mut out = scalar_polynomial(p[degree]);
-            for &constant in p[..degree].iter().rev() {
-                out = product(out, a)?;
-                out[0] += constant;
-            }
-            Some(out)
-        }
-        _ => None,
-    }
-}
-
-fn derivative(ctx: &Ctx<'_, false>, i: u32) -> Option<f64> {
-    if !has_variable(ctx, i) {
-        return Some(0.0);
-    }
-    Some(match ctx.node(i) {
-        Node::Var => 1.0,
-        Node::Apply(f, arg) => {
-            derivative(ctx, arg)? * ctx.c.function_derivative(f, ctx.full_number(arg))?
-        }
-        Node::Bin(op, a, b) => {
-            let (da, db) = (derivative(ctx, a)?, derivative(ctx, b)?);
-            match op {
-                Bin::Add => da + db,
-                Bin::Sub => da - db,
-                _ => {
-                    let (a, b) = (ctx.full_number(a), ctx.full_number(b));
-                    match op {
-                        Bin::Mul => da * b + a * db,
-                        Bin::Div => (da * b - a * db) / (b * b),
-                        Bin::Pow if db == 0.0 => b * a.powf(b - 1.0) * da,
-                        Bin::Pow => a.powf(b) * (db * a.ln() + b * da / a),
-                        _ => return None,
-                    }
-                }
-            }
-        }
-        Node::Un(op, arg) => {
-            let x = ctx.full_number(arg);
-            let factor = match op {
-                Un::Sin => math::cos(x),
-                Un::Cos => -math::sin(x),
-                Un::Tan => 1.0 / math::cos(x).powi(2),
-                Un::Sinh => x.cosh(),
-                Un::Cosh => x.sinh(),
-                Un::Tanh => 1.0 / x.cosh().powi(2),
-                Un::Asin => 1.0 / (1.0 - x * x).sqrt(),
-                Un::Acos => -1.0 / (1.0 - x * x).sqrt(),
-                Un::Atan => 1.0 / (1.0 + x * x),
-                Un::Sqrt => 0.5 / x.sqrt(),
-                Un::Cbrt => 1.0 / (3.0 * x.cbrt().powi(2)),
-                Un::Abs => x / x.abs(),
-                Un::Exp => x.exp(),
-                Un::Ln => x.recip(),
-                Un::Log2 => 1.0 / (x * std::f64::consts::LN_2),
-                Un::Log10 => 1.0 / (x * std::f64::consts::LN_10),
-                _ => return None,
-            };
-            factor * derivative(ctx, arg)?
-        }
-        _ => return None,
-    })
 }

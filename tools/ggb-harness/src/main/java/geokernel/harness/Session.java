@@ -15,7 +15,9 @@ import org.geogebra.common.factories.AwtFactoryCommon;
 import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
+import org.geogebra.common.kernel.RelationNumerical;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.advanced.AlgoLeftRightSide;
 import org.geogebra.common.kernel.algos.AlgoConicPartCircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartConicPoints;
@@ -28,12 +30,15 @@ import org.geogebra.common.kernel.algos.AlgoPointsFromList;
 import org.geogebra.common.kernel.algos.AlgoPointOnPath;
 import org.geogebra.common.kernel.algos.AlgoPointInRegion;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
+import org.geogebra.common.kernel.algos.AlgoRoots;
 import org.geogebra.common.kernel.algos.AlgoSemicircle;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
 import org.geogebra.common.kernel.geos.GeoElement;
 import org.geogebra.common.kernel.geos.GeoFunction;
+import org.geogebra.common.kernel.geos.GeoFunctionNVar;
+import org.geogebra.common.kernel.geos.GeoText;
 import org.geogebra.common.kernel.geos.GeoLine;
 import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoLocus;
@@ -46,6 +51,7 @@ import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoRay;
 import org.geogebra.common.kernel.geos.GeoSegment;
 import org.geogebra.common.kernel.geos.GeoVector;
+import org.geogebra.common.kernel.geos.GeoCurveCartesian;
 import org.geogebra.common.kernel.kernelND.GeoConicND;
 import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
@@ -53,6 +59,7 @@ import org.geogebra.common.kernel.kernelND.GeoPointND;
 import org.geogebra.common.kernel.matrix.Coords;
 import org.geogebra.common.main.App;
 import org.geogebra.common.main.error.ErrorHandler;
+import org.geogebra.common.util.debug.Log;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.AsyncOperation;
 import org.geogebra.common.util.StringUtil;
@@ -65,7 +72,7 @@ import org.geogebra.common.util.StringUtil;
 final class Session {
 
     private static final Pattern LINE =
-            Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?)(\\(x\\))? = (.+)$");
+            Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?)(\\([xy]\\))? = (.+)$");
     /** `label: lhs = rhs`, an equation line (its `=` belongs to the definition). */
     private static final Pattern EQUATION =
             Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
@@ -97,6 +104,7 @@ final class Session {
      * on to the objects themselves instead of looking labels up.
      */
     private final Map<String, GeoElement> objects = new LinkedHashMap<>();
+    private final Map<String, List<GeoElement>> relations = new LinkedHashMap<>();
     /**
      * The scripted objects recorded as general conics (type `conic`): those
      * made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, and the images
@@ -106,15 +114,17 @@ final class Session {
     private final Set<GeoElement> conics = Collections.newSetFromMap(new IdentityHashMap<>());
     private final boolean trackBoundaryGrowth;
     private final boolean trackPointListGrowth;
+    private final boolean trackRootGrowth;
     private final Map<AlgoElement, String> growingPoints = new LinkedHashMap<>();
 
     Session() {
-        this(false, false);
+        this(false, false, false);
     }
 
-    Session(boolean trackBoundaryGrowth, boolean trackPointListGrowth) {
+    Session(boolean trackBoundaryGrowth, boolean trackPointListGrowth, boolean trackRootGrowth) {
         this.trackBoundaryGrowth = trackBoundaryGrowth;
         this.trackPointListGrowth = trackPointListGrowth;
+        this.trackRootGrowth = trackRootGrowth;
         LocalizationCommon loc = new LocalizationCommon(2);
         loc.setResourceBundleControl(new Utf8Control());
         app = new AppCommon(loc, new AwtFactoryCommon(), new AppConfigDefault());
@@ -133,8 +143,18 @@ final class Session {
             throw new IllegalArgumentException("expected an assignment to a new label: " + line);
         }
         CommandErrorHandler errors = new CommandErrorHandler(line, true);
-        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
-                line, false, errors, false, null);
+        Log logger = Log.getLogger();
+        Log.Level level = logger.getLogLevel();
+        GeoElementND[] out;
+        // AppCommon's debug logger throws on runtime exceptions before the
+        // command dispatcher can turn them into errors for the handler.
+        logger.setLogLevel(Log.Level.ERROR);
+        try {
+            out = processor.processAlgebraCommandNoExceptionHandling(
+                    line, false, errors, false, null);
+        } finally {
+            logger.setLogLevel(level);
+        }
         if (!errors.reported || (out != null && out.length != 0)
                 || kernel.lookupLabel(matcher.group(1)) != null) {
             throw new IllegalStateException("GeoGebra did not reject: " + line);
@@ -171,12 +191,36 @@ final class Session {
         if (objects.containsKey(label) || kernel.lookupLabel(label) != null) {
             throw new IllegalArgumentException("label used twice: " + label);
         }
+        if (definition.startsWith("Relation(")) {
+            List<String> args = arguments(definition);
+            if (args.size() == 1 && args.get(0).startsWith("{")) {
+                String list = args.get(0);
+                args = arguments("Relation(" + list.substring(1, list.length() - 1) + ")");
+            }
+            List<GeoElement> items = new ArrayList<>();
+            for (String arg : args) {
+                GeoElement geo = kernel.lookupLabel(arg);
+                if (geo == null) {
+                    throw new IllegalArgumentException("unknown relation input: " + arg);
+                }
+                items.add(geo);
+            }
+            if (items.size() < 2 || items.size() > 4) {
+                throw new IllegalArgumentException("a relation needs two to four inputs");
+            }
+            // Relation is a dialog command and creates no output object.
+            // Record the numerical reports directly, without localized text.
+            relations.put(label, items);
+            return null;
+        }
         GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
                 line, false, new CommandErrorHandler(line, false), false, null);
-        if ((trackBoundaryGrowth || trackPointListGrowth) && out != null && out.length > 0) {
+        if ((trackBoundaryGrowth || trackPointListGrowth || trackRootGrowth)
+                && out != null && out.length > 0) {
             GeoElement first = out[0].toGeoElement();
             AlgoElement parent = first.getParentAlgorithm();
-            if (trackPointListGrowth && parent instanceof AlgoPointsFromList) {
+            if ((trackPointListGrowth && parent instanceof AlgoPointsFromList)
+                    || (trackRootGrowth && parent instanceof AlgoRoots)) {
                 growingPoints.put(parent, "");
             }
             if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLinePolyLine
@@ -207,7 +251,8 @@ final class Session {
                 && out[1].toGeoElement() instanceof GeoPoint) {
             return runFixedAngle(line, label, out);
         }
-        if (out != null && out.length == 2 && isMultiOutput(definition)) {
+        if (out != null && ((out.length == 2 && isMultiOutput(definition))
+                || (out.length == 4 && definition.startsWith("Tangent(")))) {
             return runMulti(line, expected, out);
         }
         if (out != null && out.length > 0 && definition.startsWith("Intersect(")
@@ -514,7 +559,43 @@ final class Session {
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
             snap.put(e.getKey(), describe(e.getValue(), schemaType(e.getValue())));
         }
+        for (Map.Entry<String, List<GeoElement>> e : relations.entrySet()) {
+            List<GeoElement> args = e.getValue();
+            GeoElement third = args.size() >= 3 ? args.get(2) : null;
+            GeoElement fourth = args.size() == 4 ? args.get(3) : null;
+            List<String> facts = new ArrayList<>();
+            GeoElement first = args.get(0);
+            GeoElement second = args.get(1);
+            RelationNumerical relation = new RelationNumerical(kernel);
+            for (RelationNumerical.Report report
+                    : relation.relation(first, second, third, fourth)) {
+                String kind = third == null && first instanceof GeoConic && second instanceof GeoConic
+                        ? conicRelationKind(relation, first, second, report) : "";
+                facts.add(report.symbolicCheck + "=" + report.boolResult + kind);
+            }
+            facts.sort(String::compareTo);
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("type", "relation");
+            result.put("defined", true);
+            result.put("reports", facts);
+            snap.put(e.getKey(), result);
+        }
         return snap;
+    }
+
+    /** Conic intersection reports share the same outcome, including disjointness. */
+    private String conicRelationKind(RelationNumerical relation, GeoElement first, GeoElement second,
+            RelationNumerical.Report report) {
+        if (report.stringResult.equals(relation.touchString(first, second, true, app.getLocalization()))) {
+            return "/touch";
+        }
+        if (report.stringResult.equals(relation.intersectString(first, second, true, app.getLocalization()))) {
+            return "/intersect";
+        }
+        if (report.stringResult.equals(relation.intersectString(first, second, false, app.getLocalization()))) {
+            return "/disjoint";
+        }
+        return "";
     }
 
     private void recordGrowingPoints() {
@@ -554,6 +635,8 @@ final class Session {
             case "number":
             case "angle":
             case "function":
+            case "function_nvar":
+            case "text":
             case "boolean":
             case "list":
                 return actual;
@@ -656,8 +739,12 @@ final class Session {
         return false;
     }
 
-    /** The schema type of a scripted object: `conic` for a general conic, else {@link #typeOf}. */
+    /** The schema type of a scripted object, including two-variable slopes. */
     private String schemaType(GeoElement geo) {
+        if (geo instanceof GeoFunctionNVar
+                && !(geo.getParentAlgorithm() instanceof AlgoLeftRightSide)) {
+            return "function";
+        }
         return conics.contains(geo) ? "conic" : typeOf(geo);
     }
 
@@ -706,6 +793,15 @@ final class Session {
         }
         if (geo instanceof GeoFunction) {
             return "function";
+        }
+        if (geo instanceof GeoCurveCartesian) {
+            return "curve";
+        }
+        if (geo instanceof GeoFunctionNVar) {
+            return "function_nvar";
+        }
+        if (geo instanceof GeoText) {
+            return "text";
         }
         if (geo instanceof GeoLocus) {
             return "locus";
@@ -799,6 +895,10 @@ final class Session {
 
     /** Whether the definition transforms a polygon (it creates the sides too). */
     private boolean isTransformedPoly(String definition) {
+        if (definition.startsWith("ApplyMatrix(")) {
+            List<String> args = arguments(definition);
+            return args.size() == 2 && objects.get(args.get(1).trim()) instanceof GeoPolygon;
+        }
         if (transformCommand(definition) == null
                 || !(transformedSource(definition) instanceof GeoPolygon)) {
             return false;
@@ -900,7 +1000,7 @@ final class Session {
     /**
      * Whether the definition is a command that creates two objects by design:
      * `Tangent` and `AngularBisector` (`AngleBisector`) of two lines, and
-     * `Focus`, `Axes` and `Directrix` of a conic. Any other command must
+     * `Focus`, `Axes`, `Directrix` and `Asymptote` of a conic. Any other command must
      * create exactly one object (see `run`).
      */
     private static boolean isMultiOutput(String definition) {
@@ -915,6 +1015,7 @@ final class Session {
             case "Focus":
             case "Axes":
             case "Directrix":
+            case "Asymptote":
                 return true;
             default:
                 return false;
@@ -973,7 +1074,8 @@ final class Session {
             case "ApplyMatrix":
                 List<String> args = arguments(definition);
                 GeoElement target = args.size() == 2 ? objects.get(args.get(1).trim()) : null;
-                return target == null ? null : schemaType(target);
+                return target instanceof GeoConic ? "conic"
+                        : target == null ? null : schemaType(target);
             case "Polar":
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":
@@ -997,11 +1099,23 @@ final class Session {
             case "MinorAxis":
             case "SecondAxis":
             case "Directrix":
+            case "Asymptote":
                 return "line";
             case "Segment":
                 return "segment";
+            case "ConvexHull":
+            case "Hull":
+            case "DelauneyTriangulation":
+            case "DelaunayTriangulation":
+            case "MinimumSpanningTree":
+            case "ShortestDistance":
+            case "TravelingSalesman":
+            case "Voronoi":
             case "Locus":
+            case "SlopeField":
                 return "locus";
+            case "Curve":
+                return "curve";
             case "Slider":
                 return "number";
             case "Intersect":
@@ -1116,15 +1230,28 @@ final class Session {
             return obj;
         }
         if (type.equals("function")) {
-            GeoFunction f = (GeoFunction) geo;
+            obj.put("defined", geo.isDefined());
+            if (geo.isDefined()) {
+                List<Object> samples = new ArrayList<>();
+                for (double x : SAMPLES) {
+                    double v = sampleFunction(geo, x);
+                    samples.add(Arrays.asList(x, Double.isFinite(v) ? (Object) v : null));
+                }
+                obj.put("samples", samples);
+            }
+            return obj;
+        }
+        if (type.equals("function_nvar")) {
+            GeoFunctionNVar f = (GeoFunctionNVar) geo;
             obj.put("defined", f.isDefined());
             if (f.isDefined()) {
                 List<Object> samples = new ArrayList<>();
                 for (double x : SAMPLES) {
-                    double v = f.isBooleanFunction() ? (f.evaluateBoolean(x) ? 1.0 : 0.0) : f.value(x);
-                    samples.add(Arrays.asList(x, Double.isFinite(v) ? (Object) v : null));
+                    double y = 1 - 2 * x;
+                    double v = f.evaluate(x, y);
+                    samples.add(Arrays.asList(x, y, Double.isFinite(v) ? (Object) v : null));
                 }
-                obj.put("samples", samples);
+                obj.put("samples_xy", samples);
             }
             return obj;
         }
@@ -1136,6 +1263,14 @@ final class Session {
             obj.put("defined", false);
         }
         return obj;
+    }
+
+    private static double sampleFunction(GeoElement geo, double argument) {
+        if (geo instanceof GeoFunction f) {
+            return f.isBooleanFunction() ? (f.evaluateBoolean(argument) ? 1.0 : 0.0)
+                    : f.value(argument);
+        }
+        return ((GeoFunctionNVar) geo).evaluate(argument, 0);
     }
 
     /** Whether a field is finite: a number, or a list of finite fields or nulls; a name is. */
@@ -1217,6 +1352,9 @@ final class Session {
             case "arc":
             case "sector":
                 return arcFields((GeoConicPart) geo);
+            case "text":
+                f.put("text", ((GeoText) geo).getTextString());
+                return f;
             case "angle":
             case "number":
                 f.put("value", ((GeoNumeric) geo).getDouble());
@@ -1263,6 +1401,12 @@ final class Session {
                 }
                 f.put("vertices", vertices);
                 f.put("length", poly.getLength());
+                return f;
+            }
+            case "curve": {
+                GeoCurveCartesian curve = (GeoCurveCartesian) geo;
+                f.put("start", curve.getMinParameter());
+                f.put("end", curve.getMaxParameter());
                 return f;
             }
             case "locus": {

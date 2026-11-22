@@ -1,0 +1,53 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textformat-rotate-001",
+      "group": "textformat",
+      "script": [
+        "t = RotateText(\"sample\", 30°)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "\\rotatebox{30.000000000000004}{ \\text{ sample }  }" }
+        }
+      ]
+    },
+    {
+      "id": "textformat-rotate-002",
+      "group": "textformat",
+      "script": [
+        "a = 1",
+        "t = RotateText(\"sample\", a, (1,1))",
+        "u = RotateText(FormulaText(1 / 3), -90°)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "text", "defined": true, "text": "\\rotatebox{57.29577951308232}{ \\text{ sample }  }" },
+          "u": { "type": "text", "defined": true, "text": "\\rotatebox{-90.0}{ 0.33 }" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "\\rotatebox{0.0}{ \\text{ sample }  }" },
+          "u": { "type": "text", "defined": true, "text": "\\rotatebox{-90.0}{ 0.33 }" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "t": { "type": "text", "defined": true, "text": "\\rotatebox{-57.29577951308232}{ \\text{ sample }  }" },
+          "u": { "type": "text", "defined": true, "text": "\\rotatebox{-90.0}{ 0.33 }" }
+        }
+      ]
+    }
+  ]
+}

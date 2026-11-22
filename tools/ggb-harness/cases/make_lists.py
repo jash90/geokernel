@@ -8,7 +8,10 @@ indices), `Length`, `Sum` (with a truncation), the forms of `Sequence`
 element-wise arithmetic, with lists of unequal length, and a list minus a
 point; `Product`, `Min`, `Max`, `Mean` and `Sum` of points; `Reverse`,
 `First`, `Last` and `Sort`; `Append` and `Join`; the same operations
-and commands on list objects; `If` with list branches.
+and commands on list objects; `If` with list branches; the same
+commands on lists of texts (`Sort` by `GeoText.getComparator`,
+`Unique`, `Frequency`, the element and set commands) and the string
+forms of `First`, `Last` and `Element` (UTF-16 units).
 
 The steps set the free numbers (`set_number`) and move the free points so
 that lists grow, shrink and change, and come back to the first state.
@@ -295,7 +298,8 @@ topic("indexof")
 for rhs in ("IndexOf(a, l)", "IndexOf(5, l)", "IndexOf(5, l, n)", "IndexOf(5, l, 4)",
             "IndexOf(5, l, 6)", "IndexOf(5, l, 0)", "IndexOf(5, l, 2.9)", "IndexOf(3, l)",
             "IndexOf(a, l, 2)", "IndexOf((1, 2), m)", "IndexOf(A, m)", "IndexOf(true, b)",
-            "IndexOf(A, m, 2)", "IndexOf(a, {})", "IndexOf(a, l) + 1"):
+            "IndexOf(A, m, 2)", "IndexOf(a, {})", "IndexOf(a, l) + 1",
+            "IndexOf(2, l, -1E300)", "IndexOf(2, l, 1E300)"):
     case("indexof", nums(a=2, n=4) + [pt("A", 1, 2), "l = {1, 3, a, 2, a, 4}",
                                       "m = {A, (1, 2), (0, 0)}", "b = {false, true}",
                                       f"c = {rhs}"],
@@ -326,7 +330,9 @@ for rhs in ("Intersection(l, k)", "Intersection(k, l)", "Intersection(l, {})",
 
 # ------------------------------------------------------- Sort of two lists
 # `AlgoSort` with a value list: the keys sort, the values follow their
-# first equal key.
+# keys; every key must be of one class (`geo.getClass()`), and equal
+# keys keep the order of the list (their construction indexes tie, so
+# the comparator sends the later one to the right).
 # ------------------------------------------------------- wrapped forms
 topic("wrapped")
 for rhs in ("Last(l)", "Reverse(a, b, 3)", "Reverse(A, (0, 1))",
@@ -338,8 +344,11 @@ for rhs in ("Last(l)", "Reverse(a, b, 3)", "Reverse(A, (0, 1))",
 topic("sort2")
 for rhs in ("Sort(l, k)", "Sort(k, l)", "Sort({3, 1, 2}, {10, 20, 30})",
             "Sort({3, 1, 3}, {10, 20, 30})", "Sort({3, 1, 2}, {10, 20})",
-            "Sort({3, 1, 2}, m)", "Sort({2.800000000000001, 1}, {10, 20})"):
-    case("sort2", nums(a=2) + [pt("A", 1, 2), "l = {a, 1, 2}", "k = {10, 20, 30}",
+            "Sort({3, 1, 2}, m)", "Sort({2.800000000000001, 1}, {10, 20})",
+            "Sort(m, {A, u})", "Sort(m, {u, u, A})", "Sort({1, 2}, {45°, 1})",
+            "Sort({1, 2}, {1, 45°})", "Sort({30, 10, 20}, {2, 1, 2})",
+            "Sort({\"c\", \"a\", \"b\"}, {2, 1, 2})", "Sort(l, {2, 1, 2})"):
+    case("sort2", nums(a=2) + [pt("A", 1, 2), "u = (1, 0)", "l = {a, 1, 2}", "k = {10, 20, 30}",
                                "m = {A, (0, 0), (5, 5)}", f"p = {rhs}"],
          [setn("a", 3), setn("a", 1), setn("a", 2)])
 
@@ -378,6 +387,14 @@ for rhs in ("Zip(t^2, t, l)", "Zip(t, t, l)", "Zip(t + u, t, l, u, k)",
                              "w = {v, (0, 2)}", "q = {{1}, {2}}", f"p = {rhs}"],
          [setn("n", 2), setn("n", 5), mv("A", 3, 3), mv("B", 4, 4), setn("n", 4),
           mv("A", 1, 2), mv("B", 2, 1)])
+# a `Zip` earlier in a list of expressions must not retype the local of a
+# `Sequence` later in it: the binding of `f` ends with its `Zip`
+case("zip", nums(n=4) + [pt("A", 1, 2), pt("B", 2, 1), "v = (1, 1)",
+                         "l = {1, 2, 3}", "k = {4, 5, 6}", "m = {A, B}",
+                         "w = {v, (0, 2)}", "q = {{1}, {2}}",
+                         "p = {Zip(2 * f, f, {(1, 1)}), Sequence(g^2, g, 1, 3)}"],
+     [setn("n", 2), setn("n", 5), mv("A", 3, 3), mv("B", 4, 4), setn("n", 4),
+      mv("A", 1, 2), mv("B", 2, 1)])
 
 # ------------------------------------------------------- Product of an expression
 # `AlgoFoldExpression`: the expression at `from` and at every whole number
@@ -410,5 +427,41 @@ for rhs in ("Element(m, 1, 2)", "Element(m, 2, 1)", "Element(m, 1, 3)", "Element
             "Element(m, n, 2)", "Element(m, 1, n)", "Element(q, 1, 1)", "Element(m, n)"):
     case("element2", nums(n=1) + ["m = {{1, 2}, {3, 4}}", "q = {{5}}", f"c = {rhs}"],
          [setn("n", 2), setn("n", 3), setn("n", 0), setn("n", 1)])
+
+# ------------------------------------------------------- commands on text lists
+# `AlgoSort` orders texts by `GeoText.getComparator` (accents folded away,
+# then the raw strings), `AlgoUnique` and `AlgoFrequency` count equal
+# strings, and the element and set commands read texts like any other
+# kind.
+topic("textlists")
+for rhs in ("Sort(l)", "Sort(m)", "Sort({})", "Sort({\"b\", \"a\"})",
+            "Sort({\"10\", \"9\", \"100\"})", "Sort({\"b\", 1})", "Sort({true, \"b\"})",
+            "Unique(l)", "Unique({\"b\", \"a\", \"b\", \"B\"})", "Unique({})",
+            "Unique({\"é\", \"e\"})", "Frequency(l)",
+            "Frequency({\"b\", \"a\", \"b\", \"B\"})", "Reverse(l)", "First(l)",
+            "First(l, n)", "Last(l, n)", "Take(l, 2, 3)", "Take(l, n, 4)",
+            "Element(l, n)", "Element(l, 0)", "IndexOf(\"a\", l)", "IndexOf(\"b\", l, 3)",
+            "IndexOf(\"x\", l)", "Append(l, \"z\")", "Append(\"z\", l)",
+            "Insert(\"z\", l, 2)", "Insert(\"z\", l, 0)", "Remove(l, {\"b\"})",
+            "Remove(l, k)", "Remove(l, {\"x\"})", "Union(l, k)", "Union(k, l)",
+            "Intersection(l, k)", "Intersection(k, l)", "Length(Unique(l))"):
+    case("textlists", nums(n=2) + ["l = {\"b\", \"a\", \"b\", \"c\", \"A\"}",
+                                   "k = {\"a\", \"d\"}",
+                                   "m = {\"é\", \"e\", \"È\", \"Z\", \"a\"}", f"p = {rhs}"],
+         [setn("n", 0), setn("n", 1), setn("n", 5), setn("n", 3), setn("n", -1), setn("n", 2)])
+
+# ------------------------------------------------------- First, Last, Element of a text
+# The string forms of the element commands: a count of UTF-16 units from
+# either end, one unit at an index (`AlgoFirstString`, `AlgoLastString`,
+# `AlgoTextElement`), all `(int)` casts of their counts and indices.
+topic("textelem")
+for rhs in ("First(\"hello\")", "First(\"hello\", n)", "First(\"\", 2)", "First(\"hello\", 0)",
+            "First(\"hello\", 9)", "First(\"hello\", 1.9)", "Last(\"hello\")", "Last(\"hello\", n)",
+            "Last(\"hello\", 0)", "Last(\"hello\", 9)", "Last(\"héllo\", 2)",
+            "Last(\"😀ab\", 2)", "Element(\"hello\", n)", "Element(\"hello\", 0)",
+            "Element(\"hello\", 9)", "Element(\"hello\", 2.9)", "Element(\"héllo\", 2)",
+            "Element(\"😀ab\", 3)", "First(\"😀ab\", 3)"):
+    case("textelem", nums(n=2) + [f"p = {rhs}"],
+         [setn("n", 0), setn("n", 1), setn("n", 5), setn("n", 6), setn("n", -1), setn("n", 2)])
 
 cases.write()

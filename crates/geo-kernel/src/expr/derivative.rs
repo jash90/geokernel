@@ -122,6 +122,20 @@ impl Walker<'_> {
                 .gradient(e.root, depth)?;
                 df * self.gradient(arg, depth)?
             }
+            Node::Dilate(source, factor, center) => {
+                let (r, sx, _) = self.ctx.dilation(factor, center);
+                let x = crate::algo::transform::dilation_preimage(self.x, r, sx);
+                let dx = Walker {
+                    ctx: Ctx {
+                        env: &Env::Value(x),
+                        ..self.ctx
+                    },
+                    x,
+                    budget: self.budget,
+                }
+                .gradient(source, depth)?;
+                (dx * (1.0 / r)) * r
+            }
             Node::If(mode, cond, then, rest) => {
                 // `Operation.IF` and `IF_LIST` keep the condition and
                 // differentiate the branches, so evaluating the derivative
@@ -141,14 +155,30 @@ impl Walker<'_> {
                 }
             }
             Node::Cmd(..)
+            | Node::Inverse(_)
             | Node::Tuple(..)
+            | Node::Vector(_)
             | Node::Polar(..)
             | Node::List(..)
             | Node::Item(_)
+            | Node::ItemObject(_)
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..)
-            | Node::Local(_) => f64::NAN,
+            | Node::Local(..)
+            | Node::Apply2(..)
+            | Node::Side(..)
+            | Node::Relation { .. }
+            | Node::Text
+            | Node::TextCmd(..)
+            | Node::Base { .. }
+            | Node::FunctionObject(_)
+            | Node::Extremum(..)
+            | Node::PolynomialPart(..)
+            | Node::Algebra(..)
+            | Node::ObjectDefined(_)
+            | Node::Defined(_)
+            | Node::Filter { .. } => f64::NAN,
         })
     }
 
@@ -334,7 +364,7 @@ impl Walker<'_> {
                 return None;
             }
             match self.node(i) {
-                Node::Var | Node::VarY | Node::Local(_) => return Some(true),
+                Node::Var | Node::VarY | Node::Local(..) => return Some(true),
                 node => stack.extend(children(&node)),
             }
         }
@@ -345,7 +375,7 @@ impl Walker<'_> {
 /// `AlgoFractionText.decimalToFraction(decimal, accuracyFactor)`: a
 /// continued fraction `numerator / denominator` within `accuracy` of
 /// `decimal`.
-fn decimal_to_fraction(decimal: f64, accuracy: f64) -> (f64, f64) {
+pub(super) fn decimal_to_fraction(decimal: f64, accuracy: f64) -> (f64, f64) {
     if decimal.is_nan() {
         return (0.0, 0.0);
     }

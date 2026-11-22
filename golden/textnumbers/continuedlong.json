@@ -1,0 +1,44 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textnumbers-continuedlong-001",
+      "group": "textnumbers",
+      "script": [
+        "ta = ContinuedFraction(sqrt(3)/3, true)",
+        "a = 43",
+        "tb = ContinuedFraction(sqrt(a), true)",
+        "tc = ContinuedFraction(0.625)",
+        "td = ContinuedFraction(0.625, true)",
+        "te = ContinuedFraction(0.625, 4)",
+        "tf = ContinuedFraction(0.625, 4, true)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 44.0 }
+      ],
+      "snapshots": [
+        {
+          "ta": { "type": "text", "defined": true, "text": "[0;1,1,2,1,2,1,2,1,2,1,2,1,2,1,2,\\ldots]" },
+          "a": { "type": "number", "defined": true, "value": 43.0 },
+          "tb": { "type": "text", "defined": true, "text": "[6;1,1,3,1,5,1,3,1,1,12,1,\\ldots]" },
+          "tc": { "type": "text", "defined": true, "text": "0+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1}}}}}" },
+          "td": { "type": "text", "defined": true, "text": "[0;1,1,1,1,1]" },
+          "te": { "type": "text", "defined": true, "text": "0+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\cdots}}}" },
+          "tf": { "type": "text", "defined": true, "text": "[0;1,1,1,\\ldots]" }
+        },
+        {
+          "ta": { "type": "text", "defined": true, "text": "[0;1,1,2,1,2,1,2,1,2,1,2,1,2,1,2,\\ldots]" },
+          "a": { "type": "number", "defined": true, "value": 44.0 },
+          "tb": { "type": "text", "defined": true, "text": "[6;1,1,1,2,1,1,1,12,1,1,1,2,1,1,1,\\ldots]" },
+          "tc": { "type": "text", "defined": true, "text": "0+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1}}}}}" },
+          "td": { "type": "text", "defined": true, "text": "[0;1,1,1,1,1]" },
+          "te": { "type": "text", "defined": true, "text": "0+\\frac{1}{1+\\frac{1}{1+\\frac{1}{1+\\cdots}}}" },
+          "tf": { "type": "text", "defined": true, "text": "[0;1,1,1,\\ldots]" }
+        }
+      ]
+    }
+  ]
+}

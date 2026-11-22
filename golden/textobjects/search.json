@@ -1,0 +1,32 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textobjects-search-001",
+      "group": "textobjects",
+      "script": [
+        "a = IndexOf(\"GeoGebra\", \"GeoGebra\")",
+        "b = IndexOf(\"Ge\", \"GeoGebra\", 4)",
+        "c = IndexOf(\"Ge\", \"GeoGebra\", 5)",
+        "n = Length(\"GeoGebra\")",
+        "s = Take(\"GeoGebra\", 1, 5)",
+        "t = Take(\"GeoGebra\", 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 4.0 },
+          "c": { "type": "number", "defined": false },
+          "n": { "type": "number", "defined": true, "value": 8.0 },
+          "s": { "type": "text", "defined": true, "text": "GeoGe" },
+          "t": { "type": "text", "defined": true, "text": "oGebra" }
+        }
+      ]
+    }
+  ]
+}

@@ -3,18 +3,26 @@
 //! A list keeps its elements in its expression's entry, flattened: the
 //! top-level elements come first, and an element that is itself a list
 //! names the run of slots, further on in the same buffer, that holds its
-//! elements. The object's [`Value::List`] only carries the length, so values
-//! stay `Copy` and of fixed size; [`List`] reads the elements.
+//! elements. The object's [`Value::List`] only carries the length. The
+//! slots can own text, and [`List`] reads the elements from the buffer.
 
-use crate::kernel::{Kind, Value};
+use crate::kernel::{Construction, Id, Kind, Value};
+use std::sync::Arc;
+
+// The largest two ids belong to the axes. Ordinary ids index vectors.
+const NO_OBJECT: Id = Id(usize::MAX - 2);
 
 /// One element of a list: its kind (also when it is undefined), its value,
 /// and for a nested list where its elements start.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Slot {
     pub(crate) kind: Kind,
     pub(crate) value: Value,
     pub(crate) start: u32,
+    /// A named geometric object whose equality uses its construction data.
+    object: Id,
+    equation_revision: u64,
+    text: Option<Arc<String>>,
 }
 
 impl Slot {
@@ -23,6 +31,9 @@ impl Slot {
             kind,
             value: Value::Undefined,
             start: 0,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
         }
     }
 
@@ -34,9 +45,24 @@ impl Slot {
                 kind: Kind::Number,
                 value: Value::Number(v),
                 start: 0,
+                object: NO_OBJECT,
+                equation_revision: 0,
+                text: None,
             }
         } else {
-            Slot::undefined(Kind::Number)
+            // Non-list slots can keep the sign of infinity in the run
+            // offset. Ordinary list readers still see an undefined number.
+            let start = if v == f64::INFINITY {
+                1
+            } else if v == f64::NEG_INFINITY {
+                2
+            } else {
+                0
+            };
+            Slot {
+                start,
+                ..Slot::undefined(Kind::Number)
+            }
         }
     }
 
@@ -54,7 +80,60 @@ impl Slot {
             kind,
             value,
             start: 0,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
         }
+    }
+
+    pub(crate) fn point(value: Value) -> Slot {
+        debug_assert!(matches!(
+            value,
+            Value::Point { .. } | Value::HomogeneousPoint { .. } | Value::Undefined
+        ));
+        Slot {
+            kind: Kind::Point,
+            value,
+            start: 0,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
+        }
+    }
+
+    pub(crate) fn text(value: impl Into<String>, object: Option<Id>) -> Slot {
+        Slot {
+            kind: Kind::Text,
+            value: Value::Text,
+            start: 0,
+            object: object.unwrap_or(NO_OBJECT),
+            equation_revision: 0,
+            text: Some(Arc::new(value.into())),
+        }
+    }
+
+    pub(crate) fn text_value(&self) -> Option<&str> {
+        self.text.as_deref().map(String::as_str)
+    }
+
+    pub(crate) fn object_id(&self) -> Option<Id> {
+        (self.object != NO_OBJECT).then_some(self.object)
+    }
+
+    pub(crate) fn with_object(mut self, object: Id) -> Slot {
+        self.object = object;
+        self
+    }
+
+    pub(super) fn detach_graph_object(mut self) -> Self {
+        if matches!(self.kind, Kind::Point | Kind::Segment) {
+            self.object = NO_OBJECT;
+        }
+        self
+    }
+
+    pub(crate) fn shown(&self) -> Value {
+        self.value.cartesian()
     }
 
     pub(crate) fn boolean(b: bool) -> Slot {
@@ -62,6 +141,9 @@ impl Slot {
             kind: Kind::Boolean,
             value: Value::Bool(b),
             start: 0,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
         }
     }
 
@@ -71,6 +153,27 @@ impl Slot {
             kind: Kind::List,
             value: Value::List { len },
             start,
+            object: NO_OBJECT,
+            equation_revision: 0,
+            text: None,
+        }
+    }
+
+    pub(super) fn object(c: &Construction, id: Id) -> Self {
+        let kind = c.kind(id);
+        let equation_revision = match kind {
+            Kind::Line | Kind::Ray | Kind::Circle | Kind::Conic => c
+                .equation_display_revision(id)
+                .map_or(0, |rev| rev.wrapping_add(1)),
+            _ => 0,
+        };
+        Self {
+            kind,
+            value: c.value(id),
+            start: 0,
+            object: id,
+            equation_revision,
+            text: None,
         }
     }
 
@@ -84,20 +187,78 @@ impl Slot {
 
     /// Bit equality, so that a change from `0` to `-0` is seen.
     fn same(&self, other: &Slot) -> bool {
-        let bits = |v: &Value| -> [u64; 2] {
+        if self.text != other.text
+            || self.object != other.object
+            || self.equation_revision != other.equation_revision
+        {
+            return false;
+        }
+        if self.object != NO_OBJECT
+            && (self.value != other.value
+                || self.kind == Kind::Line && !self.value.is_defined()
+                || matches!(
+                    self.kind,
+                    Kind::Conic | Kind::Curve | Kind::Function | Kind::FunctionNVar
+                ))
+        {
+            // An undefined line retains coefficients used by equality. Functions,
+            // curves, and conics can change data held outside their value.
+            return false;
+        }
+        let bits = |v: &Value| -> [u64; 3] {
             match *v {
-                Value::Number(x) => [x.to_bits(), 0],
-                Value::Point { x, y } | Value::Vector { x, y } => [x.to_bits(), y.to_bits()],
-                Value::Bool(b) => [u64::from(b), 0],
-                Value::List { len } => [u64::from(len), 0],
-                _ => [u64::MAX, u64::MAX],
+                Value::Number(x) => [x.to_bits(), 0, 0],
+                Value::Point { x, y } | Value::Vector { x, y } => [x.to_bits(), y.to_bits(), 0],
+                Value::HomogeneousPoint { x, y, z } => [x.to_bits(), y.to_bits(), z.to_bits()],
+                Value::Bool(b) => [u64::from(b), 0, 0],
+                Value::List { len } => [u64::from(len), 0, 0],
+                _ => [u64::MAX; 3],
             }
         };
+        if let (
+            Value::Segment { x1, y1, x2, y2 },
+            Value::Segment {
+                x1: a,
+                y1: b,
+                x2: c,
+                y2: d,
+            },
+        ) = (self.value, other.value)
+        {
+            return [x1, y1, x2, y2].map(f64::to_bits) == [a, b, c, d].map(f64::to_bits);
+        }
         self.kind == other.kind
             && self.start == other.start
             && std::mem::discriminant(&self.value) == std::mem::discriminant(&other.value)
             && bits(&self.value) == bits(&other.value)
     }
+}
+
+/// Named geometric objects supported as entries in a literal list.
+pub(super) fn object_kind(kind: Kind) -> bool {
+    matches!(
+        kind,
+        Kind::Arc
+            | Kind::Circle
+            | Kind::Conic
+            | Kind::Curve
+            | Kind::Line
+            | Kind::Locus
+            | Kind::Polygon
+            | Kind::PolyLine
+            | Kind::Ray
+            | Kind::Sector
+            | Kind::Segment
+    )
+}
+
+/// Parents whose changes can alter an undefined named line's equality.
+pub(super) fn object_parents(c: &Construction, id: Id) -> Vec<Id> {
+    let mut parents = Vec::new();
+    if c.kind(id) == Kind::Line {
+        crate::algo::vector::line_hidden(c, id, &mut parents);
+    }
+    parents
 }
 
 /// Whether two flattened lists are the same, bit for bit.
@@ -135,9 +296,11 @@ pub struct List<'a> {
 /// One element of a [`List`].
 #[derive(Clone, Copy, Debug)]
 pub enum Element<'a> {
-    /// A number, point, vector or boolean, with its kind; an undefined
-    /// element (of any kind, a list too) is [`Value::Undefined`].
+    /// A non-list element and its kind; an undefined element is
+    /// [`Value::Undefined`].
     Value(Kind, Value),
+    /// The exact contents of a defined text.
+    Text(&'a str),
     /// A defined list.
     List(List<'a>),
 }
@@ -220,15 +383,59 @@ impl<'a> List<'a> {
         if k >= self.len() {
             return None;
         }
-        let slot = self.slots[self.start as usize + k];
+        let slot = &self.slots[self.start as usize + k];
         Some(match slot.run() {
             Some((start, len)) => Element::List(List {
                 slots: self.slots,
                 start,
                 len,
             }),
-            None => Element::Value(slot.kind, slot.value),
+            None => slot
+                .text_value()
+                .map_or_else(|| Element::Value(slot.kind, slot.shown()), Element::Text),
         })
+    }
+
+    /// The original object when the element is a named geometry object.
+    pub(crate) fn object(&self, k: usize) -> Option<Id> {
+        (k < self.len())
+            .then(|| self.slots[self.start as usize + k].object_id())
+            .flatten()
+    }
+
+    /// The stored point value, including homogeneous coordinates.
+    pub(crate) fn raw_point(&self, k: usize) -> Option<Value> {
+        if k >= self.len() {
+            return None;
+        }
+        let slot = &self.slots[self.start as usize + k];
+        (slot.kind == Kind::Point).then_some(slot.value)
+    }
+
+    /// The construction object supplying the function at this list position.
+    pub fn function_at(&self, k: usize) -> Option<Id> {
+        if k >= self.len() {
+            return None;
+        }
+        let slot = &self.slots[self.start as usize + k];
+        (slot.kind == Kind::Function)
+            .then(|| slot.object_id())
+            .flatten()
+    }
+
+    /// The raw numeric field read by GgbMat, including NaN and infinity.
+    pub(crate) fn numeric_cell(&self, k: usize) -> Option<f64> {
+        if k >= self.len() {
+            return None;
+        }
+        let slot = &self.slots[self.start as usize + k];
+        match (slot.kind, slot.value, slot.start) {
+            (_, Value::Number(v), _) => Some(v),
+            (Kind::Number, Value::Undefined, 1) => Some(f64::INFINITY),
+            (Kind::Number, Value::Undefined, 2) => Some(f64::NEG_INFINITY),
+            (Kind::Number | Kind::Angle, Value::Undefined, _) => Some(f64::NAN),
+            _ => None,
+        }
     }
 
     /// The elements in order.

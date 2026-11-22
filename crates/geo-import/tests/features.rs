@@ -69,20 +69,12 @@ fn the_saved_value_is_checked_against_the_computed_one() {
         "<output a0=\"P\" a1=\"Q\"/>",
         &(second.replace('Q', "P") + &first.replace('P', "Q")),
     ));
-    // Exactly one of the two orders agrees with the kernel's index order,
-    // and the other is reported, not dropped.
-    assert_eq!(
-        r.mismatched.len() + swapped.mismatched.len(),
-        2,
-        "{:?} {:?}",
-        r.mismatched,
-        swapped.mismatched
-    );
-    let wrong = if r.mismatched.is_empty() {
-        &swapped
-    } else {
-        &r
-    };
+    assert!(r.mismatched.is_empty());
+    assert!(swapped.mismatched.is_empty());
+    let wrong = ok(&line_circle(
+        "<output a0=\"P\" a1=\"Q\"/>",
+        &(first.replace("y=\"0\"", "y=\"9\"") + &second.replace("y=\"0\"", "y=\"9\"")),
+    ));
     assert_eq!(wrong.mismatched.len(), 2);
     assert!(wrong.script.iter().any(|l| l == "P = Intersect(f, k, 1)"));
     assert_eq!(wrong.mismatched[0].label, "P");
@@ -141,9 +133,96 @@ fn constant_expressions_are_free_objects_with_the_saved_value() {
                 <element type=\"numeric\" label=\"n\"><value val=\"1024\"/></element>\
                 <expression label=\"m\" exp=\"n + 1\" type=\"numeric\"/>\
                 <element type=\"numeric\" label=\"m\"><value val=\"1025\"/></element>");
-    assert_eq!(r.script, ["A = (0.5, 3)", "n = 1024"]);
-    assert_eq!(r.skipped.len(), 1);
-    assert_eq!(r.skipped[0].label, "m");
+    assert_eq!(
+        r.script,
+        [
+            "A = $saved($point(0.5, 3), (1/2, 3))",
+            "n = $saved(1024, 2^10)",
+            "m = n + 1"
+        ]
+    );
+    assert!(r.skipped.is_empty());
+}
+
+#[test]
+fn older_expression_spellings_and_invalid_expressions() {
+    let r = ok(
+        "<element type=\"numeric\" label=\"n\"><value val=\"2\"/></element>\
+                <expression label=\"f\" exp=\"f(x) = If[x ≥ 0, n · x² + π]\"/>\
+                <element type=\"function\" label=\"f\"/>\
+                <expression label=\"bad\" exp=\"If[n ≥ 0, n)\"/>\
+                <element type=\"numeric\" label=\"bad\"/>\
+                <expression label=\"g\" exp=\"g(x) = If[x ≠ 0, n, bad]\"/>\
+                <element type=\"function\" label=\"g\"/>\
+                <expression label=\"text\" exp=\"&quot;[text]&quot;\"/>\
+                <element type=\"text\" label=\"text\"/>\
+                <expression label=\"injection\" exp=\"n + 1 # comment&#10; extra = 2\"/>\
+                <element type=\"numeric\" label=\"injection\"/>\
+                <expression label=\"after\" exp=\"f(n)\"/>\
+                <element type=\"numeric\" label=\"after\"/>",
+    );
+    assert_eq!(
+        r.script,
+        [
+            "n = 2",
+            "f(x) = If(x ≥ 0, n * x² + π)",
+            "text = \"[text]\"",
+            "after = f(n)"
+        ]
+    );
+    let skips: Vec<_> = r
+        .skipped
+        .iter()
+        .map(|s| (s.label.as_str(), s.reason.as_str()))
+        .collect();
+    assert_eq!(skips.len(), 3);
+    assert_eq!(skips[0].0, "bad");
+    assert!(skips[0].1.contains("square bracket"));
+    assert_eq!(skips[1], ("g", "depends on the skipped object `bad`"));
+    assert_eq!(skips[2].0, "injection");
+    assert!(skips[2].1.contains("comment marker"));
+}
+
+#[test]
+fn expressions_keep_saved_point_and_vector_types_after_renaming() {
+    let r = ok(
+        "<element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/></element>\
+                <expression label=\"p\" exp=\"(x(A), y(A) + 1)\" type=\"point\"/>\
+                <element type=\"point\" label=\"p\"/>\
+                <expression label=\"V\" exp=\"(y(p), x(p))\" type=\"vector\"/>\
+                <element type=\"vector\" label=\"V\"/>",
+    );
+    assert!(r.skipped.is_empty(), "{:?}", r.skipped);
+    let mut c = geo_kernel::script::load(&r.script.join("\n")).unwrap();
+    c.move_point(c.id("A").unwrap(), 3.0, 5.0).unwrap();
+    assert_eq!(c.kind(c.id("p").unwrap()), geo_kernel::Kind::Point);
+    assert_eq!(c.kind(c.id("V").unwrap()), geo_kernel::Kind::Vector);
+    assert_eq!(
+        c.value(c.id("V").unwrap()),
+        geo_kernel::Value::Vector { x: 6.0, y: 3.0 }
+    );
+}
+
+#[test]
+fn rejecting_a_multi_output_expression_releases_its_labels() {
+    let r = ok(
+        "<element type=\"point\" label=\"A\"><coords x=\"0\" y=\"0\" z=\"1\"/></element>\
+                <element type=\"point\" label=\"B\"><coords x=\"1\" y=\"0\" z=\"1\"/></element>\
+                <element type=\"point\" label=\"C\"><coords x=\"0\" y=\"1\" z=\"1\"/></element>\
+                <expression label=\"bad\" exp=\"Polygon[A, B, C]\"/>\
+                <element type=\"numeric\" label=\"bad\"/>\
+                <command name=\"Polygon\"><input a0=\"A\" a1=\"B\" a2=\"C\"/>\
+                <output a0=\"p\" a1=\"a\" a2=\"b\" a3=\"c\"/></command>",
+    );
+    assert_eq!(r.skipped.len(), 1, "{:?}", r.skipped);
+    assert_eq!(r.skipped[0].label, "bad");
+    assert!(r.skipped[0].reason.contains("exactly one object"));
+    assert!(r.hidden.is_empty());
+    let c = geo_kernel::script::load(&r.script.join("\n")).unwrap();
+    assert!(c.id("bad").is_none());
+    for label in ["p", "a", "b", "c"] {
+        assert!(c.id(label).is_some(), "{label}");
+    }
 }
 
 #[test]
@@ -173,7 +252,10 @@ fn ignored_properties_are_listed_in_the_notes() {
     let notes = r.notes.join("\n");
     assert!(notes.contains("1 fixed"), "{notes}");
     assert!(notes.contains("1 auxiliary"), "{notes}");
-    assert!(notes.contains("1 objects with a condition"), "{notes}");
+    assert!(
+        notes.contains("visibility condition for `A`: `A` is not a boolean"),
+        "{notes}"
+    );
     assert!(notes.contains("1 vectors with a start point"), "{notes}");
     assert_eq!(r.script.len(), 3);
 }

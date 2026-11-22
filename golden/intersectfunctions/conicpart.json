@@ -1,0 +1,196 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersectfunctions-conicpart-001",
+      "group": "intersectfunctions",
+      "script": [
+        "O = (0, 0)",
+        "A = (1, 0)",
+        "B = (0, 1)",
+        "k = CircularArc(O, A, B)",
+        "a = -0.5",
+        "f(x) = a",
+        "R = Intersect(f, k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "move", "label": "A", "x": -1.0, "y": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": {
+            "type": "arc",
+            "defined": true,
+            "value": 1.5707963267948966,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 1.5707963267948966,
+            "area": 0.2853981633974483,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": -0.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.5],
+              [-4.0, -0.5],
+              [-2.0, -0.5],
+              [-1.0, -0.5],
+              [-0.5, -0.5],
+              [0.0, -0.5],
+              [0.5, -0.5],
+              [1.0, -0.5],
+              [2.0, -0.5],
+              [4.0, -0.5],
+              [8.0, -0.5]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": -0.8660254037844386, "y": -0.5 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.8660254037844386, "y": -0.5 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": {
+            "type": "arc",
+            "defined": true,
+            "value": 1.5707963267948966,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 1.5707963267948966,
+            "area": 0.2853981633974483,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.5],
+              [-4.0, 0.5],
+              [-2.0, 0.5],
+              [-1.0, 0.5],
+              [-0.5, 0.5],
+              [0.0, 0.5],
+              [0.5, 0.5],
+              [1.0, 0.5],
+              [2.0, 0.5],
+              [4.0, 0.5],
+              [8.0, 0.5]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": -0.8660254037844386, "y": 0.5 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.8660254037844386, "y": 0.5 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.71238898038469,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 3.141592653589793,
+            "end": 1.5707963267948966,
+            "arc_length": 4.71238898038469,
+            "area": 2.856194490192345,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.5],
+              [-4.0, 0.5],
+              [-2.0, 0.5],
+              [-1.0, 0.5],
+              [-0.5, 0.5],
+              [0.0, 0.5],
+              [0.5, 0.5],
+              [1.0, 0.5],
+              [2.0, 0.5],
+              [4.0, 0.5],
+              [8.0, 0.5]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": -0.8660254037844386, "y": 0.5 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.8660254037844386, "y": 0.5 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.71238898038469,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 3.141592653589793,
+            "end": 1.5707963267948966,
+            "arc_length": 4.71238898038469,
+            "area": 2.856194490192345,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "R_{2}": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

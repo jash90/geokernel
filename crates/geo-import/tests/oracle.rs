@@ -21,31 +21,9 @@ use std::path::{Path, PathBuf};
 /// At the time of writing (see the assertions below for the exact counts).
 const MIN_FILES: usize = 1636;
 const MIN_ZIPS: usize = 37;
-const MIN_COMPARED: usize = 13085;
-/// Objects the importer may skip in the whole corpus (listed in `EXPECTED_SKIPPED`).
-const MAX_SKIPPED: usize = 10;
-/// Every object the importer may skip, as `case:label`. `polygon-small-001`
-/// is `Polygon(A)` of one point, which GeoGebra saves with the list `{A}` as
-/// its argument (an expression), and the three objects measured on it. The
-/// `m` of the `arcpart`/`secpart` cases is the image of `Arc(k, P, Q)` /
-/// `Sector(k, P, Q)` under a shear or a stretch: GeoGebra saves it as
-/// `Arc(Shear[k, n, f], P', Q')`, the part of an elliptic conic, which the
-/// kernel refuses on purpose (a part is taken of a circle). Nothing else may
-/// be skipped: the image of `Ray(A, u)`, which GeoGebra saves as
-/// `Ray(A', Vector[<transform>[Direction[g]]])`, and the images whose
-/// conic stays a circle are read as objects of the script first.
-const EXPECTED_SKIPPED: &[&str] = &[
-    "polygon-small-001:p",
-    "polygon-small-001:ar",
-    "polygon-small-001:pe",
-    "polygon-small-001:M",
-    "transform-arcpart-005:m",
-    "transform-arcpart-006:m",
-    "transform-arcpart-007:m",
-    "transform-secpart-005:m",
-    "transform-secpart-006:m",
-    "transform-secpart-007:m",
-];
+const MIN_COMPARED: usize = 13091;
+/// Every labelled output in this corpus is importable.
+const MAX_SKIPPED: usize = 0;
 
 /// An entry of `known-import-gaps.toml`.
 #[derive(Deserialize)]
@@ -452,25 +430,8 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         );
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
-    assert!(
-        totals.objects_skipped <= MAX_SKIPPED,
-        "{} objects skipped, at most {MAX_SKIPPED} are documented",
-        totals.objects_skipped
-    );
-    for key in totals.skipped_by_reason.keys() {
-        assert!(
-            key.contains("is an expression")
-                || key.contains("depends on a skipped object")
-                // the part of an elliptic conic, which the kernel refuses on
-                // purpose (see `EXPECTED_SKIPPED`)
-                || key.contains("expected a circle"),
-            "an undocumented reason for skipping: {key}"
-        );
-    }
-    assert_eq!(
-        totals.skipped_by_group.keys().collect::<Vec<_>>(),
-        ["polygon", "transform"]
-    );
+    assert_eq!(totals.objects_skipped, MAX_SKIPPED);
+    assert!(totals.skipped_by_group.is_empty());
     assert!(
         totals.unlabelled <= MAX_UNLABELLED,
         "{} unlabelled",
@@ -486,11 +447,10 @@ fn imported_constructions_agree_with_the_golden_snapshots() {
         used_import_gaps, listed,
         "known-import-gaps.toml is stale or incomplete"
     );
-    let expected_skipped: BTreeSet<String> =
-        EXPECTED_SKIPPED.iter().map(|s| s.to_string()).collect();
-    assert_eq!(
-        totals.skipped_labels, expected_skipped,
-        "the set of skipped objects changed"
+    assert!(
+        totals.skipped_labels.is_empty(),
+        "{:?}",
+        totals.skipped_labels
     );
     // Every disagreement with the saved value is documented: a pinned import
     // gap, a kernel gap at step 0 (whose golden value is the saved one), or a

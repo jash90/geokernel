@@ -1,0 +1,106 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "textequations-typed-001",
+      "group": "textequations",
+      "script": [
+        "a = 2",
+        "l: y = a x + 1",
+        "m: 2x - y = -1",
+        "p: y = a x^2 - x + 1",
+        "q: x^2 + y^2 = 9",
+        "lText = Text(l)",
+        "lTex = FormulaText(l)",
+        "mText = Text(m)",
+        "mTex = FormulaText(m)",
+        "pText = Text(p)",
+        "pTex = FormulaText(p)",
+        "qText = Text(q)",
+        "qTex = FormulaText(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "l": { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": -1.0 },
+          "m": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": 1.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-2.0, 0.0, -1.0, 0.0, 0.5, 0.5],
+            "vertex": [0.25, 0.875],
+            "p": 0.25,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "q": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -9.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "lText": { "type": "text", "defined": true, "text": "y = 2 x + 1" },
+          "lTex": { "type": "text", "defined": true, "text": "y\\, = \\,2 \\; x + 1" },
+          "mText": { "type": "text", "defined": true, "text": "2x - y = -1" },
+          "mTex": { "type": "text", "defined": true, "text": "2 \\; x - y\\, = \\,-1" },
+          "pText": { "type": "text", "defined": true, "text": "y = 2 x² - x + 1" },
+          "pTex": { "type": "text", "defined": true, "text": "y\\, = \\,2 \\; x^{2} - x + 1" },
+          "qText": { "type": "text", "defined": true, "text": "x² + y² = 9" },
+          "qTex": { "type": "text", "defined": true, "text": "x^{2} + y^{2}\\, = \\,9" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.0 },
+          "l": { "type": "line", "defined": true, "a": 3.0, "b": 1.0, "c": -1.0 },
+          "m": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": 1.0 },
+          "p": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [3.0, 0.0, -1.0, 0.0, 0.5, 0.5],
+            "vertex": [-0.16666666666666666, 1.0833333333333333],
+            "p": 0.16666666666666666,
+            "eigenvectors": [
+              [-0.0, -1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "q": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -9.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "lText": { "type": "text", "defined": true, "text": "y = -3 x + 1" },
+          "lTex": { "type": "text", "defined": true, "text": "y\\, = \\,-3 \\; x + 1" },
+          "mText": { "type": "text", "defined": true, "text": "2x - y = -1" },
+          "mTex": { "type": "text", "defined": true, "text": "2 \\; x - y\\, = \\,-1" },
+          "pText": { "type": "text", "defined": true, "text": "y = -3 x² - x + 1" },
+          "pTex": { "type": "text", "defined": true, "text": "y\\, = \\,-3 \\; x^{2} - x + 1" },
+          "qText": { "type": "text", "defined": true, "text": "x² + y² = 9" },
+          "qTex": { "type": "text", "defined": true, "text": "x^{2} + y^{2}\\, = \\,9" }
+        }
+      ]
+    }
+  ]
+}

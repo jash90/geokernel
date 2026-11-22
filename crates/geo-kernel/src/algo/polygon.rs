@@ -65,8 +65,9 @@
 use super::measure::{angle_of_points, segment_length};
 use super::polygon_clip::{ClipDef, ClipOutput};
 use super::transform::{parse_transform_for, source_of, Map};
-use super::vector::VectorDef;
+use super::vector::{matrix::Matrix, VectorDef};
 use super::{Group, Parents, NUMBER, POINT};
+use crate::expr::{Element, List};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use crate::script::{object, split_call};
 use crate::tol::STANDARD_PRECISION;
@@ -123,7 +124,18 @@ pub enum PolygonDef {
     /// A polygon, vertex or segment produced by clipping a polygon.
     Clip(ClipDef),
     /// A vertex in a rigid polygon made from points, in its initial local frame.
-    RigidVertex { anchor: Id, x: f64, y: f64 },
+    RigidVertex {
+        anchor: Id,
+        x: f64,
+        y: f64,
+    },
+    /// A point of a rigid polygon, expressed in the frame of its first edge.
+    RigidFrameVertex {
+        anchor: Id,
+        pivot: Id,
+        along: f64,
+        across: f64,
+    },
     /// A vertex in a rigid copy whose shape follows its source polygon.
     RigidCopyVertex {
         poly: Id,
@@ -133,14 +145,30 @@ pub enum PolygonDef {
     },
     /// `Polygon(A, B, n)`: the regular polygon with `round(n)` vertices
     /// counter-clockwise from `A` and `B` (`AlgoPolygonRegular`).
-    Regular { a: Id, b: Id, n: Count },
+    Regular {
+        a: Id,
+        b: Id,
+        n: Count,
+    },
     /// Vertex `k` (2 or more) of `Polygon(A, B, n)`, one of the points the
     /// command creates.
-    RegularVertex { a: Id, b: Id, n: Count, k: u32 },
+    RegularVertex {
+        a: Id,
+        b: Id,
+        n: Count,
+        k: u32,
+    },
     /// Side `k` of `Polygon(A, B, n)`, from vertex `k` to the next one.
-    RegularSide { a: Id, b: Id, n: Count, k: u32 },
+    RegularSide {
+        a: Id,
+        b: Id,
+        n: Count,
+        k: u32,
+    },
     /// `PolyLine(A, B, ...)` (`AlgoPolyLine`).
     PolyLine(IdList),
+    PolygonFromList(Id),
+    PolyLineFromList(Id),
     /// `Area(polygon)` (`AlgoAreaPolygon`).
     Area(Id),
     /// `Perimeter(polygon)` (`AlgoPerimeterPoly`).
@@ -148,14 +176,27 @@ pub enum PolygonDef {
     /// `Centroid(polygon)` (`AlgoCentroidPolygon`).
     Centroid(Id),
     /// `Vertex(polygon or polyline, n)`: vertex `floor(n)`, counted from 1.
-    Vertex { poly: Id, index: Count },
+    Vertex {
+        poly: Id,
+        index: Count,
+    },
     /// Output `k` (from 0) of `Vertex(polygon or polyline)`.
-    VertexAt { poly: Id, k: u32 },
+    VertexAt {
+        poly: Id,
+        k: u32,
+    },
     /// A named vertex created by the same command as its polygon or polyline image.
-    ImageVertex { poly: Id, source: Id },
+    ImageVertex {
+        poly: Id,
+        source: Id,
+    },
     /// Output `k` (from 0) of `InteriorAngles(polygon)` (`internal`) or
     /// `Angle(polygon)` (`AlgoAnglePolygon`).
-    Angle { poly: Id, k: u32, internal: bool },
+    Angle {
+        poly: Id,
+        k: u32,
+        internal: bool,
+    },
 }
 
 /// `DoubleUtil.isEpsilon(e, x, y)`: whether `e` is zero compared with
@@ -305,6 +346,7 @@ pub(super) fn has_fixed_vertices(c: &Construction, poly: Id) -> bool {
 #[derive(Clone, Debug)]
 enum Shape<'a> {
     Points(&'a [Id]),
+    List(List<'a>),
     Regular(Regular),
     Clipped(Vec<(f64, f64)>),
     /// The image of another shape under a map: a polygon or polyline under
@@ -314,6 +356,7 @@ enum Shape<'a> {
     Moved(Box<Shape<'a>>, Option<Map>),
     /// Another shape translated by a vector (`GeoPoly.translate`).
     Shifted(Box<Shape<'a>>, Option<(f64, f64)>),
+    Applied(Box<Shape<'a>>, Option<Matrix>),
     Empty,
 }
 
@@ -327,6 +370,9 @@ impl<'a> Shape<'a> {
             Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
                 Shape::Points(c.list(list))
             }
+            Def::Polygon(PolygonDef::PolygonFromList(id) | PolygonDef::PolyLineFromList(id)) => {
+                point_list(c, id).map_or(Shape::Empty, Shape::List)
+            }
             Def::Polygon(PolygonDef::Regular { a, b, n }) => {
                 match Regular::new(c, a, b, vertex_count(n.value(c))) {
                     Some(r) => Shape::Regular(r),
@@ -339,6 +385,14 @@ impl<'a> Shape<'a> {
             Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
                 Shape::Moved(Box::new(Shape::of(c, source_of(&def))), def.map(c))
             }
+            Def::Vector(VectorDef::ApplyMatrix {
+                kind: Kind::Polygon | Kind::PolyLine,
+                src,
+                matrix,
+            }) => Shape::Applied(
+                Box::new(Shape::of(c, src)),
+                c.elements(matrix).and_then(Matrix::read),
+            ),
             Def::Vector(VectorDef::Translate {
                 kind: Kind::Polygon | Kind::PolyLine,
                 src,
@@ -357,16 +411,36 @@ impl<'a> Shape<'a> {
     fn len(&self) -> usize {
         match self {
             Shape::Points(ids) => ids.len(),
+            Shape::List(list) => list.len(),
             Shape::Regular(r) => r.n,
             Shape::Clipped(vertices) => vertices.len(),
-            Shape::Moved(inner, ..) | Shape::Shifted(inner, ..) => inner.len(),
+            Shape::Moved(inner, ..) | Shape::Shifted(inner, ..) | Shape::Applied(inner, ..) => {
+                inner.len()
+            }
             Shape::Empty => 0,
+        }
+    }
+
+    fn raw_vertex(&self, c: &Construction, k: usize) -> Option<Value> {
+        match self {
+            Shape::Points(ids) => Some(c.stored_value(*ids.get(k)?)),
+            Shape::List(list) => list.raw_point(k),
+            Shape::Applied(inner, matrix) => (*matrix)?.apply(inner.raw_vertex(c, k)?),
+            _ => {
+                let (x, y) = self.vertex(c, k)?;
+                Some(Value::Point { x, y })
+            }
         }
     }
 
     fn vertex(&self, c: &Construction, k: usize) -> Option<(f64, f64)> {
         match self {
-            Shape::Points(ids) => c.point(*ids.get(k)?),
+            Shape::Points(_) | Shape::List(_) | Shape::Applied(..) => {
+                match self.raw_vertex(c, k)?.cartesian() {
+                    Value::Point { x, y } => Some((x, y)),
+                    _ => None,
+                }
+            }
             Shape::Regular(r) => (k < r.n).then(|| r.vertex(k)),
             Shape::Clipped(vertices) => vertices.get(k).copied(),
             Shape::Moved(inner, map) => {
@@ -380,6 +454,33 @@ impl<'a> Shape<'a> {
             Shape::Empty => None,
         }
     }
+}
+
+fn point_list(c: &Construction, id: Id) -> Option<List<'_>> {
+    let list = c.elements(id)?;
+    list.iter()
+        .all(|element| matches!(element, Element::Value(Kind::Point, _)))
+        .then_some(list)
+}
+
+fn list_point(element: Element<'_>) -> Option<(f64, f64)> {
+    match element {
+        Element::Value(Kind::Point, Value::Point { x, y }) => Some((x, y)),
+        _ => None,
+    }
+}
+
+fn polyline_length(vertices: impl Iterator<Item = Option<(f64, f64)>>) -> Value {
+    let mut length = 0.0;
+    let mut previous = None;
+    for current in vertices {
+        if let (Some((x, y)), Some((u, v))) = (current, previous) {
+            let (dx, dy): (f64, f64) = (x - u, y - v);
+            length += (dx * dx + dy * dy).sqrt();
+        }
+        previous = current;
+    }
+    Value::PolyLine { length }
 }
 
 /// The vertices of a polygon or polyline, in order (see
@@ -437,6 +538,9 @@ pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
         Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
             c.list(list).to_vec()
         }
+        Def::Polygon(PolygonDef::PolygonFromList(list) | PolygonDef::PolyLineFromList(list)) => {
+            vec![list]
+        }
         Def::Polygon(PolygonDef::Regular { a, b, n }) => {
             let mut ids = vec![a, b];
             ids.extend(n.id());
@@ -451,6 +555,15 @@ pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
         // the objects they come from
         Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
             inputs(c, source_of(&def))
+        }
+        Def::Vector(VectorDef::ApplyMatrix {
+            kind: Kind::Polygon | Kind::PolyLine,
+            src,
+            matrix,
+        }) => {
+            let mut ids = inputs(c, src);
+            ids.push(matrix);
+            ids
         }
         Def::Vector(VectorDef::Translate {
             kind: Kind::Polygon | Kind::PolyLine,
@@ -487,11 +600,18 @@ pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
         Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
             inputs(c, source_of(&def))
         }
-        Def::Vector(VectorDef::Translate {
-            kind: Kind::Polygon | Kind::PolyLine,
-            src,
-            ..
-        }) => inputs(c, src),
+        Def::Vector(
+            VectorDef::Translate {
+                kind: Kind::Polygon | Kind::PolyLine,
+                src,
+                ..
+            }
+            | VectorDef::ApplyMatrix {
+                kind: Kind::Polygon | Kind::PolyLine,
+                src,
+                ..
+            },
+        ) => inputs(c, src),
         _ => Vec::new(),
     };
     parents.extend(super::transform::shear_start_parent(c, def));
@@ -510,9 +630,13 @@ impl Group for PolygonDef {
                 Kind::Number
             }
             PolygonDef::Angle { .. } => Kind::Number,
-            PolygonDef::RigidVertex { .. } | PolygonDef::RigidCopyVertex { .. } => Kind::Point,
-            PolygonDef::Polygon(_) | PolygonDef::Regular { .. } => Kind::Polygon,
-            PolygonDef::PolyLine(_) => Kind::PolyLine,
+            PolygonDef::RigidVertex { .. }
+            | PolygonDef::RigidCopyVertex { .. }
+            | PolygonDef::RigidFrameVertex { .. } => Kind::Point,
+            PolygonDef::Polygon(_)
+            | PolygonDef::PolygonFromList(_)
+            | PolygonDef::Regular { .. } => Kind::Polygon,
+            PolygonDef::PolyLine(_) | PolygonDef::PolyLineFromList(_) => Kind::PolyLine,
             PolygonDef::RegularSide { .. } => Kind::Segment,
             PolygonDef::RegularVertex { .. }
             | PolygonDef::Centroid(_)
@@ -526,6 +650,7 @@ impl Group for PolygonDef {
         match *self {
             PolygonDef::Clip(d) => d.parents(),
             PolygonDef::RigidVertex { anchor, .. } => Parents::of(&[anchor]),
+            PolygonDef::RigidFrameVertex { anchor, pivot, .. } => Parents::of(&[anchor, pivot]),
             PolygonDef::ImageVertex { poly, source } => Parents::of(&[poly, source]),
             PolygonDef::RigidCopyVertex { poly, anchor, .. } => Parents::of(&[poly, anchor]),
             PolygonDef::AreaPoints(_) | PolygonDef::Polygon(_) | PolygonDef::PolyLine(_) => {
@@ -537,7 +662,9 @@ impl Group for PolygonDef {
                 Some(n) => Parents::of(&[a, b, n]),
                 None => Parents::of(&[a, b]),
             },
-            PolygonDef::Area(p)
+            PolygonDef::PolygonFromList(p)
+            | PolygonDef::PolyLineFromList(p)
+            | PolygonDef::Area(p)
             | PolygonDef::Perimeter(p)
             | PolygonDef::Centroid(p)
             | PolygonDef::VertexAt { poly: p, .. }
@@ -570,6 +697,23 @@ impl Group for PolygonDef {
     fn check(&self, c: &Construction) -> Result<(), Error> {
         match *self {
             PolygonDef::Clip(d) => d.check(c),
+            PolygonDef::PolygonFromList(id) | PolygonDef::PolyLineFromList(id) => {
+                c.expect(id, &[Kind::List])
+            }
+            PolygonDef::RigidFrameVertex {
+                anchor,
+                pivot,
+                along,
+                across,
+            } => {
+                c.expect(anchor, POINT)?;
+                c.expect(pivot, POINT)?;
+                if along.is_finite() && across.is_finite() {
+                    Ok(())
+                } else {
+                    Err(Error::NotFinite)
+                }
+            }
             PolygonDef::RigidVertex { anchor, x, y } => {
                 c.expect(anchor, POINT)?;
                 if x.is_finite() && y.is_finite() {
@@ -620,6 +764,12 @@ impl Group for PolygonDef {
             PolygonDef::Clip(d) => d.compute(c),
             PolygonDef::ImageVertex { poly, source } => match c.def(poly) {
                 Def::Transform(def) => def.of(Kind::Point, source).compute(c),
+                Def::Vector(VectorDef::ApplyMatrix { matrix, .. }) => VectorDef::ApplyMatrix {
+                    matrix,
+                    src: source,
+                    kind: Kind::Point,
+                }
+                .compute(c),
                 Def::Vector(VectorDef::Translate { by, .. }) => VectorDef::Translate {
                     kind: Kind::Point,
                     src: source,
@@ -628,6 +778,22 @@ impl Group for PolygonDef {
                 .compute(c),
                 _ => None,
             },
+            PolygonDef::RigidFrameVertex {
+                anchor,
+                pivot,
+                along,
+                across,
+            } => {
+                let (x, y) = c.point(anchor)?;
+                let (px, py) = c.point(pivot)?;
+                let (dx, dy) = (px - x, py - y);
+                let length = dx.hypot(dy);
+                let (cos, sin) = (dx / length, dy / length);
+                point((
+                    x + along * cos - across * sin,
+                    y + along * sin + across * cos,
+                ))
+            }
             PolygonDef::RigidVertex { anchor, x, y } => {
                 let (ax, ay) = c.point(anchor)?;
                 point((ax + x, ay + y))
@@ -665,19 +831,14 @@ impl Group for PolygonDef {
                 (k < r.n).then(|| r.vertex(k)).and_then(point)
             }
             PolygonDef::RegularSide { a, b, n, k } => regular_side(c, a, b, n, k as usize),
+            PolygonDef::PolygonFromList(id) => Some(Value::Polygon {
+                area: area_of(point_list(c, id)?.iter().map(list_point))?,
+            }),
+            PolygonDef::PolyLineFromList(id) => {
+                Some(polyline_length(point_list(c, id)?.iter().map(list_point)))
+            }
             PolygonDef::PolyLine(list) => {
-                // `GeoPolyLine.calcLength`: an undefined point makes a hole.
-                let ids = c.list(list);
-                let mut length = 0.0;
-                for pair in ids.windows(2) {
-                    if let (Some(p), Some(q)) = (c.point(pair[0]), c.point(pair[1])) {
-                        // `GeoPointND.distance`: the norm of the difference
-                        // of the 3D coordinates (`Coords.distance`).
-                        let (dx, dy) = (p.0 - q.0, p.1 - q.1);
-                        length += (dx * dx + dy * dy).sqrt();
-                    }
-                }
-                Some(Value::PolyLine { length })
+                Some(polyline_length(c.list(list).iter().map(|&id| c.point(id))))
             }
             PolygonDef::Area(p) => match c.value(p) {
                 Value::Polygon { area } => Some(Value::Number(area.abs())),
@@ -1142,6 +1303,16 @@ pub(crate) fn exec(
         {
             fixed_segment_line(c, name, args[0], args[1])
         }
+        "PolyLine" if kind_of(c, args[0]) == Some(Kind::List) && n <= 2 => {
+            if n == 1
+                || matches!(args[1], "true" | "false")
+                || kind_of(c, args[1]) == Some(Kind::Boolean)
+            {
+                single(c, name, args[0], PolygonDef::PolyLineFromList)
+            } else {
+                Err("`PolyLine` needs a boolean second argument with a list".into())
+            }
+        }
         "PolyLine" => {
             // `CmdPolyLine`: a single argument must be a list.
             if n < 2 {
@@ -1198,7 +1369,6 @@ fn transform_line(
     args: &[&str],
     src: Id,
 ) -> Result<Id, String> {
-    let mut plan = Plan::new(c, name)?;
     let kind = c.kind(src);
     let def = if func == "Translate" {
         if args.len() != 2 {
@@ -1215,6 +1385,17 @@ fn transform_line(
     } else {
         Def::Transform(parse_transform_for(c, func, args, POLY)?)
     };
+    add_transform(c, name, src, def)
+}
+
+pub(super) fn add_transform(
+    c: &mut Construction,
+    name: &str,
+    src: Id,
+    def: Def,
+) -> Result<Id, String> {
+    let mut plan = Plan::new(c, name)?;
+    let kind = c.kind(src);
     let source = match c.def(src) {
         Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
             c.list(list).to_vec()
@@ -1252,6 +1433,45 @@ fn transform_line(
         c.discard_since(checkpoint);
     }
     result
+}
+
+/// ApplyMatrix rebuilds fixed polygons from transformed vertices. For a
+/// variable-size polygon GeoPolygon retains the area scale of the 2D block.
+pub(super) fn apply_matrix(
+    c: &Construction,
+    src: Id,
+    kind: Kind,
+    matrix: Option<Matrix>,
+) -> Option<Value> {
+    let source = Shape::of(c, src);
+    let vertices = (0..source.len()).map(|k| matrix?.apply(source.raw_vertex(c, k)?));
+    if kind == Kind::Polygon {
+        let area = area_of(vertices.map(|v| match v?.cartesian() {
+            Value::Point { x, y } => Some((x, y)),
+            _ => None,
+        }))?;
+        let area = if has_fixed_vertices(c, src) {
+            area
+        } else if let Value::Polygon { area } = c.value(src) {
+            area * matrix?.area_scale()
+        } else {
+            return None;
+        };
+        return Some(Value::Polygon { area });
+    }
+    if source.len() == 0 || matrix.is_none() && !has_fixed_vertices(c, src) {
+        return None;
+    }
+    let mut length = 0.0;
+    let mut prev = None;
+    for value in vertices {
+        let point = value.and_then(Value::point_coords);
+        if let (Some((x, y, w)), Some((u, v, z))) = (prev, point) {
+            length += segment_length(x / w, y / w, u / z, v / z);
+        }
+        prev = point;
+    }
+    length.is_finite().then_some(Value::PolyLine { length })
 }
 
 /// The number of arguments as GeoGebra counts them: `F()` has none.
@@ -1468,6 +1688,12 @@ fn rigid_polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result
             side_names = points(c, args)?;
             let anchor = side_names[0];
             let a = c.point(anchor).ok_or("the first point is undefined")?;
+            if let Some(defs) = rigid_point_definitions(c, &side_names, a) {
+                plan_polygon_sides(c, &mut plan, name, &side_names, &side_names)?;
+                let polygon = plan.commit(c)?;
+                c.rigidify_points(polygon, defs);
+                return Ok(polygon);
+            }
             vertices.push(anchor);
             for &id in &side_names[1..] {
                 let p = c.point(id).ok_or("a vertex is undefined")?;
@@ -1489,11 +1715,70 @@ fn rigid_polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result
     result
 }
 
+/// Keep point identities and their existing dependants when the replacement
+/// fits the construction's creation-order dependency graph.
+fn rigid_point_definitions(
+    c: &Construction,
+    points: &[Id],
+    (x, y): (f64, f64),
+) -> Option<Vec<(Id, Def)>> {
+    let &[anchor, pivot, ref rest @ ..] = points else {
+        return None;
+    };
+    if anchor >= pivot
+        || rest.iter().any(|&id| id <= pivot)
+        || points[1..]
+            .iter()
+            .any(|&id| !matches!(c.def(id), Def::FreePoint { .. }))
+    {
+        return None;
+    }
+    let (px, py) = c.point(pivot)?;
+    let (dx, dy) = (px - x, py - y);
+    let radius = dx.hypot(dy);
+    if !radius.is_finite() || radius == 0.0 {
+        return None;
+    }
+    let (cos, sin) = (dx / radius, dy / radius);
+    let mut defs = Vec::with_capacity(points.len() - 1);
+    defs.push((
+        pivot,
+        Def::Path(super::path::PathDef::RigidEndpoint {
+            anchor,
+            radius,
+            bearing: dy.atan2(dx),
+        }),
+    ));
+    for &id in rest {
+        let (u, v) = c.point(id)?;
+        let (u, v) = (u - x, v - y);
+        let (along, across) = (u * cos + v * sin, v * cos - u * sin);
+        if !(along.is_finite() && across.is_finite()) {
+            return None;
+        }
+        defs.push((
+            id,
+            Def::Polygon(PolygonDef::RigidFrameVertex {
+                anchor,
+                pivot,
+                along,
+                across,
+            }),
+        ));
+    }
+    defs.sort_unstable_by_key(|&(id, _)| id);
+    defs.dedup_by_key(|item| item.0);
+    Some(defs)
+}
+
 /// `CmdPolygon`.
 fn polygon_line(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
     let n = arg_count(args);
     if n == 0 {
         return Err("`Polygon` does not take 0 argument(s)".into());
+    }
+    if n == 1 && c.id(args[0]).is_some_and(|id| c.kind(id) == Kind::List) {
+        return single(c, name, args[0], PolygonDef::PolygonFromList);
     }
     let mut plan = Plan::new(c, name)?;
     if n == 3 {
@@ -1679,6 +1964,25 @@ mod tests {
             .skip(from)
             .map(|id| c.label(id).to_string())
             .collect()
+    }
+
+    #[test]
+    fn rolling_back_a_rigid_polygon_releases_its_existing_points() {
+        let mut c = load("A = (0, 0)\nB = (2, 0)\nC = (0, 1)\nP = (B + C) / 2\n").unwrap();
+        let checkpoint = c.checkpoint();
+        crate::script::exec(&mut c, "p = RigidPolygon(A, B, C)").unwrap();
+        let a = c.id("A").unwrap();
+        let b = c.id("B").unwrap();
+        let vertex = c.id("C").unwrap();
+        let p = c.id("P").unwrap();
+        assert!(c.is_movable(b));
+        assert!(!c.is_movable(vertex));
+        c.rollback(checkpoint).unwrap();
+        assert!(c.is_movable(vertex));
+        c.move_point(a, 3.0, 4.0).unwrap();
+        assert_eq!(c.point(b), Some((2.0, 0.0)));
+        c.move_point(vertex, 4.0, 2.0).unwrap();
+        assert_eq!(c.point(p), Some((3.0, 1.0)));
     }
 
     #[test]
@@ -2148,6 +2452,19 @@ mod tests {
         );
         let e = run(&mut c, "a = Area(pl)").unwrap_err();
         assert!(e.contains("expected a circle"), "{e}");
+    }
+
+    #[test]
+    fn matrix_can_restore_a_projective_vertex_of_a_list_backed_polyline() {
+        let c = load(
+            "A = (0, 1)\nB = (1, 1)\nC = (2, 2)\n\
+             I = ApplyMatrix({{1,0,0},{0,1,0},{1,0,0}}, A)\n\
+             l = {I, B, C}\np = PolyLine(l)\n\
+             q = ApplyMatrix({{1,0,0},{0,0,1},{0,1,0}}, p)\nR = Vertex(q, 1)",
+        )
+        .unwrap();
+        assert_eq!(c.value(c.id("I").unwrap()), Value::Undefined);
+        assert_eq!(c.value(c.id("R").unwrap()), Value::Point { x: 0.0, y: 0.0 });
     }
 
     #[test]

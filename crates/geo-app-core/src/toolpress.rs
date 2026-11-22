@@ -53,12 +53,16 @@ pub struct ToolPress {
 }
 
 /// The kinds a new point can be put on (`Path` in the reference; polygons
-/// are left out, `hits.removePolygons`, their sides are segments).
+/// are left out, `hits.removePolygons`, their sides are segments). A conic
+/// of any type is a path there, hit by its stroked outline
+/// (`PATH_NO_FILL_HIT`).
 fn is_path(c: &geo_kernel::kernel::Construction, id: Id) -> bool {
     use geo_kernel::algo::arc::ArcDef;
     use geo_kernel::kernel::Def;
     match c.kind(id) {
-        Kind::Line | Kind::Segment | Kind::Ray | Kind::Circle | Kind::PolyLine => true,
+        Kind::Line | Kind::Segment | Kind::Ray | Kind::Circle | Kind::Conic | Kind::PolyLine => {
+            true
+        }
         Kind::Arc | Kind::Sector => match c.def(id) {
             Def::Arc(ArcDef::ConicParameters { conic, .. }) => c.kind(conic) == Kind::Circle,
             _ => true,
@@ -358,8 +362,11 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::interact;
     use crate::view::Camera;
     use crate::workbench::Workbench;
+    use geo_kernel::algo::path::PathDef;
+    use geo_kernel::kernel::Def;
 
     /// The origin at (400, 300), 50 pixels per unit.
     fn t() -> ViewTransform {
@@ -500,6 +507,72 @@ mod tests {
         assert_eq!(app.preview_end(&t(), on_line, &r), on_line);
         let far = (a.0 + 40.0, a.1);
         assert_eq!(app.preview_end(&t(), far, &r), far);
+    }
+
+    /// A click on a non-circle conic puts the new point on it, as on a
+    /// circle (`GeoConicND` is a path and the boundary hit is a path hit,
+    /// `PATH_NO_FILL_HIT`); the point tool places it there and drags it
+    /// along the conic.
+    #[test]
+    fn a_new_point_on_a_conic_is_a_point_on_it() {
+        const SRC: &str = "F = (-2, 0)\nG = (2, 0)\nR = (0, 1.5)\nk = Ellipse(F, G, R)\n";
+        let on_conic = at(1.5, 1.2);
+        let mut app = app(SRC, Tool::Point);
+        let r = reach(&app);
+        assert!(matches!(
+            app.new_point_at(&t(), on_conic, &r),
+            NewPoint::OnPath { path, .. } if path == "k"
+        ));
+        let press = app.press_tool(&t(), on_conic, &r);
+        let p = press.point.expect("the point was placed");
+        let c = app.wb.construction();
+        assert_eq!(
+            c.def(p),
+            Def::Path(PathDef::On {
+                path: c.id("k").unwrap()
+            })
+        );
+        assert!(interact::movable(c, p), "the point moves along its conic");
+        let Value::Point { x, y } = c.value(p) else {
+            panic!("the point is defined");
+        };
+        assert!(
+            (x - 1.5).abs() < 1e-9 && (y - 1.2).abs() < 1e-9,
+            "({x}, {y})"
+        );
+        // and a drag of it stays on the ellipse
+        app.wb.move_point(p, 5.0, 5.0);
+        let c = app.wb.construction();
+        let Value::Point { x, y } = c.value(p) else {
+            panic!("the point stays defined");
+        };
+        let d = c.conic(c.id("k").unwrap()).unwrap();
+        let [a, b] = d.half_axes;
+        let on = (x / a).hypot(y / b);
+        assert!((on - 1.0).abs() < 1e-9, "({x}, {y}) is not on the ellipse");
+    }
+
+    /// A construction tool that makes its points on objects does so on a
+    /// non-circle conic too: the first pick of the segment and polygon tools
+    /// is a point on the conic (`new_points_on_objects` routes them all
+    /// through the same path hit).
+    #[test]
+    fn the_segment_and_polygon_tools_pick_points_on_a_conic() {
+        const SRC: &str = "F = (-2, 0)\nG = (2, 0)\nR = (0, 1.5)\nk = Ellipse(F, G, R)\n";
+        for tool in [Tool::Segment, Tool::Polygon] {
+            let mut app = app(SRC, tool);
+            let r = reach(&app);
+            let press = app.press_tool(&t(), at(1.5, 1.2), &r);
+            assert!(press.acted && !press.deferred, "{tool:?}");
+            let c = app.wb.construction();
+            assert_eq!(
+                c.def(c.id("A").expect("the pick made a point")),
+                Def::Path(PathDef::On {
+                    path: c.id("k").unwrap()
+                }),
+                "{tool:?}"
+            );
+        }
     }
 
     /// The eraser deletes what the square around the pointer meets, points

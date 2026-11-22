@@ -33,8 +33,12 @@
 pub mod angle;
 #[path = "algo/axis.rs"]
 mod axis;
+#[path = "control.rs"]
+pub mod control;
 #[path = "algo/locus.rs"]
 pub mod locus;
+mod slider;
+pub mod text;
 
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
 use self::locus::{LocusData, LocusDef};
@@ -43,11 +47,12 @@ use crate::algo::conic::ConicDef;
 use crate::algo::conic_nd::{ConicData, ConicType};
 use crate::algo::conic_parts::ConicPartDef;
 use crate::algo::general_conic::GeneralConicDef;
+use crate::algo::intersect::common_tangents::CommonTangentState;
 use crate::algo::intersect::{
     boundary::BoundaryDef,
     pair::{PairDef, PairState},
 };
-use crate::algo::lines::LineDef;
+use crate::algo::lines::{CommonTangentDef, LineDef};
 use crate::algo::measure::MeasureDef;
 use crate::algo::path::{PathDef, PathState};
 use crate::algo::point::PointDef;
@@ -122,10 +127,14 @@ pub enum Kind {
     Boolean,
     /// A function of `x`, `f(x) = ...`; see [`Construction::function_value`].
     Function,
+    /// Text produced by an expression, read with [`Construction::text`].
+    Text,
+    /// A scalar function of two coordinates, such as one side of an equation.
+    FunctionNVar,
     Polygon,
     PolyLine,
-    /// A list of numbers, points, vectors, booleans or lists, such as
-    /// `{1, 2, 3}`; its elements are read with [`Construction::elements`].
+    /// A list of values such as `{1, 2, 3}`. Read its elements with
+    /// [`Construction::elements`].
     List,
     /// A general conic (`Conic`, `Ellipse`, `Hyperbola`, `Parabola` and
     /// their images); its state is read with [`Construction::conic`].
@@ -139,6 +148,9 @@ pub enum Kind {
     /// slider runs through its interval; its points are read with
     /// [`Construction::locus`].
     Locus,
+    Curve,
+    Button,
+    InputBox,
 }
 
 impl Kind {
@@ -161,6 +173,8 @@ impl fmt::Display for Kind {
             Kind::Ray => "ray",
             Kind::Boolean => "boolean",
             Kind::Function => "function",
+            Kind::Text => "text",
+            Kind::FunctionNVar => "function_nvar",
             Kind::Polygon => "polygon",
             Kind::PolyLine => "polyline",
             Kind::List => "list",
@@ -168,6 +182,9 @@ impl fmt::Display for Kind {
             Kind::Arc => "arc",
             Kind::Sector => "sector",
             Kind::Locus => "locus",
+            Kind::Curve => "curve",
+            Kind::Button => "button",
+            Kind::InputBox => "input box",
         })
     }
 }
@@ -229,9 +246,18 @@ pub enum Value {
     /// prover's "unknown" answer, so the kernel reports `Undefined` only when
     /// a predicate cannot decide.
     Bool(bool),
+    Button,
+    InputBox,
     /// A defined function; its values come from
     /// [`Construction::function_value`].
     Function,
+    /// The parameter interval of a defined Cartesian curve.
+    Curve {
+        start: f64,
+        end: f64,
+    },
+    Text,
+    FunctionNVar,
     /// A polygon with its signed area: positive when the vertices run
     /// counter-clockwise. The vertices are not copied into the value; read
     /// them with [`Construction::vertices`].
@@ -340,12 +366,15 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
-            Value::Bool(_) => true,
+            Value::Bool(_) | Value::Button | Value::InputBox => true,
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
             Value::Arc { length } => length.is_finite(),
             Value::Sector { area } => area.is_finite(),
+            Value::Curve { start, end } => start.is_finite() && end.is_finite(),
             Value::Function
+            | Value::Text
+            | Value::FunctionNVar
             | Value::List { .. }
             | Value::Conic { .. }
             | Value::Locus { .. }
@@ -375,6 +404,9 @@ pub enum Def {
     },
     /// A number the user can change (a slider).
     Number(f64),
+    Boolean(bool),
+    Button,
+    InputBox(Option<Id>),
     /// A free angle in radians, such as `c = 30°`: a number the user can
     /// change that `floor`, `ceil` and `round` treat in whole degrees
     /// (GeoGebra's independent `GeoAngle`).
@@ -470,6 +502,8 @@ pub enum Def {
     /// `Locus(Q, P)` and `Locus(Q, slider)`; the construction keeps the
     /// points of each locus (see [`Construction::locus`]).
     Locus(LocusDef),
+    /// A locus built from points or a segment graph.
+    Discrete(algo::discrete::DiscreteDef),
     /// A line or conic defined by an equation in `x` and `y`
     /// (`a: 2x + 3y = 6`, `y = m x + b`); the construction keeps the trees
     /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
@@ -499,6 +533,51 @@ impl EquationDef {
 #[derive(Clone, Debug, PartialEq)]
 pub struct EquationRecord {
     pub(crate) coeffs: Vec<u32>,
+    pub(crate) sides: [u32; 2],
+}
+
+/// The presentation of a line or conic, independent of its coefficients.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum EquationForm {
+    Implicit,
+    Explicit,
+    General,
+    Specific,
+    Parametric(String),
+    User,
+    Vertex,
+    Conic,
+}
+
+impl EquationForm {
+    /// The style and optional parameter from a saved equation.
+    pub fn from_xml(style: &str, parameter: Option<&str>) -> Option<Self> {
+        Some(match style {
+            "implicit" => Self::Implicit,
+            "explicit" => Self::Explicit,
+            "general" => Self::General,
+            "specific" => Self::Specific,
+            "parametric" => Self::Parametric(parameter.unwrap_or("t").to_owned()),
+            "user" => Self::User,
+            "vertex" => Self::Vertex,
+            "conic" => Self::Conic,
+            _ => return None,
+        })
+    }
+
+    /// The style name used in saved files.
+    pub fn xml_style(&self) -> &'static str {
+        match self {
+            Self::Implicit => "implicit",
+            Self::Explicit => "explicit",
+            Self::General => "general",
+            Self::Specific => "specific",
+            Self::Parametric(_) => "parametric",
+            Self::User => "user",
+            Self::Vertex => "vertex",
+            Self::Conic => "conic",
+        }
+    }
 }
 
 impl Def {
@@ -517,6 +596,9 @@ impl Def {
             Def::Segment(..) => Kind::Segment,
             Def::CircleThrough { .. } | Def::CircleRadius { .. } => Kind::Circle,
             Def::Number(_) | Def::Distance(..) => Kind::Number,
+            Def::Boolean(_) => Kind::Boolean,
+            Def::Button => Kind::Button,
+            Def::InputBox(_) => Kind::InputBox,
             Def::Angle(_)
             | Def::Measure(MeasureDef::Angle(..))
             | Def::Polygon(PolygonDef::Angle { .. }) => Kind::Angle,
@@ -544,6 +626,7 @@ impl Def {
                 }
             }
             Def::Locus(d) => d.kind(),
+            Def::Discrete(_) => Kind::Locus,
         }
     }
 
@@ -571,6 +654,9 @@ impl Def {
             self,
             Def::FreePoint { .. }
                 | Def::Number(_)
+                | Def::Boolean(_)
+                | Def::Button
+                | Def::InputBox(None)
                 | Def::Angle(_)
                 | Def::Vector(VectorDef::Free { .. })
         ) || matches!(*self, Def::AngleObject(d) if d.is_free())
@@ -585,9 +671,13 @@ impl Def {
             | Def::YAxis
             | Def::FreePoint { .. }
             | Def::Number(_)
+            | Def::Boolean(_)
+            | Def::Button
+            | Def::InputBox(None)
             | Def::Angle(_)
             | Def::Expr(_)
             | Def::Equation(_) => Parents::none(),
+            Def::InputBox(Some(id)) => Parents::of(&[id]),
             Def::Line(p, q)
             | Def::Segment(p, q)
             | Def::Midpoint(p, q)
@@ -616,6 +706,7 @@ impl Def {
             Def::Path(d) => d.parents(),
             Def::Arc(d) => d.parents(),
             Def::Locus(d) => d.parents(),
+            Def::Discrete(d) => d.parents(),
         }
     }
 }
@@ -705,6 +796,11 @@ pub struct Construction {
     /// objects, decided when it is created (see [`algo::intersect::Hint`]).
     hints: Vec<algo::intersect::Hint>,
     by_label: HashMap<String, Id>,
+    text_presentations: HashMap<Id, text::TextOverrides>,
+    /// Selected equation forms and their display revisions.
+    equation_forms: HashMap<Id, (EquationForm, u64)>,
+    /// Original expressions whose structure is lost when bound to a value.
+    construction_sources: HashMap<Id, String>,
     /// The stored lists of parents, one after the other (see [`IdList`]).
     lists: Vec<Id>,
     /// For each family of generated labels (see [`Construction::label_hint`]),
@@ -724,9 +820,14 @@ pub struct Construction {
     /// The output permutation and previous positions of conic intersections.
     conic_intersections: Vec<(usize, PairState)>,
     continuous_conic_intersections: bool,
+    pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
+    last_update_changed_automatic_root: bool,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
+    rigid_replacements: Vec<(Id, Id, Def)>,
+    /// Helper intersection states for common tangents starting on an arc.
+    limited_common_tangents: Vec<(usize, CommonTangentState)>,
     /// The records of the arcs and sectors, with the index of each object,
     /// in creation order.
     arcs: Vec<(usize, ArcData)>,
@@ -740,11 +841,17 @@ pub struct Construction {
     /// uses the reference window.
     locus_view: Option<[f64; 6]>,
     /// Line starts installed by the path mover, with their insertion order
-    /// so a rollback can remove starts added to pre-existing lines.
-    pub(crate) frozen_line_starts: HashMap<Id, (f64, f64, usize)>,
+    /// so a rollback can remove starts added to pre-existing lines. The
+    /// `Option<Id>` is the locus that installed the start, so a rebuild that
+    /// drops the locus knows which starts it has to place itself; a start a
+    /// rebuild installed carries no locus.
+    pub(crate) frozen_line_starts: HashMap<Id, (f64, f64, usize, Option<Id>)>,
     /// The intervals of the free numbers made by `Slider`, with the index of
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
+    saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
+    controls: Vec<(Id, control::Control)>,
+    pub(crate) object_scripts: HashMap<String, Vec<control::ControlScript>>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -890,6 +997,13 @@ impl Construction {
                     .expect("conic intersection state");
                 Def::IntersectConics(d.with_state(&self.conic_intersections[slot].1))
             }
+            Def::Lines(LineDef::CommonTangent(d)) => {
+                self.common_tangent_slot(id.0).map_or(def, |slot| {
+                    Def::Lines(LineDef::CommonTangent(
+                        d.with_state(&self.limited_common_tangents[slot].1),
+                    ))
+                })
+            }
             _ => def,
         }
     }
@@ -898,8 +1012,49 @@ impl Construction {
         self.def(id).kind()
     }
 
+    /// Whether `id` names an object of this construction, an axis included.
+    /// An id of a deleted object (the construction shrank, or a rebuild
+    /// renumbered everything after it) is not one, and the accessors above
+    /// panic on it.
+    pub fn exists(&self, id: Id) -> bool {
+        id.0 < self.defs.len() || axis::get(id).is_some()
+    }
+
     pub fn value(&self, id: Id) -> Value {
         self.stored_value(id).cartesian()
+    }
+
+    /// An object's selected equation form, if it has one.
+    pub fn equation_form(&self, id: Id) -> Option<&EquationForm> {
+        self.equation_forms.get(&id).map(|(form, _)| form)
+    }
+
+    /// A cache key for the equation's display state within this construction.
+    pub fn equation_display_revision(&self, id: Id) -> Option<u64> {
+        self.equation_forms.get(&id).map(|(_, revision)| *revision)
+    }
+
+    /// Changes the display form and refreshes texts that read it.
+    pub fn set_equation_form(&mut self, id: Id, form: EquationForm) -> Result<usize, Error> {
+        const EQUATIONS: &[Kind] = &[Kind::Line, Kind::Ray, Kind::Circle, Kind::Conic];
+        let kind = self.defs.get(id.0).ok_or(Error::UnknownObject)?.kind();
+        if !EQUATIONS.contains(&kind) {
+            return Err(Error::WrongKind {
+                label: self.label(id).to_owned(),
+                expected: EQUATIONS,
+                found: kind,
+            });
+        }
+        let revision = match self.equation_forms.get(&id) {
+            Some((previous, _)) if *previous == form => return Ok(0),
+            Some((_, revision)) => revision.wrapping_add(1),
+            None => 0,
+        };
+        self.equation_forms.insert(id, (form, revision));
+        if self.children[id.0].is_empty() {
+            return Ok(0);
+        }
+        Ok(self.propagate(id))
     }
 
     /// Includes homogeneous coordinates so algorithms that read the raw
@@ -1096,8 +1251,20 @@ impl Construction {
     /// at or before it and stays valid, and the generation does not change.
     pub(crate) fn discard_since(&mut self, at: Checkpoint) {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
+        self.controls
+            .truncate(self.controls.partition_point(|(id, _)| id.0 < at.len));
+        self.saved_slider_bounds.retain(|id, bounds| {
+            id.0 < at.len
+                && bounds
+                    .iter()
+                    .flatten()
+                    .all(|bound| bound.exists_before(at.len))
+        });
+        self.discard_text_presentations(at.len);
+        self.equation_forms.retain(|id, _| id.0 < at.len);
+        self.construction_sources.retain(|id, _| id.0 < at.len);
         self.frozen_line_starts
-            .retain(|_, &mut (_, _, order)| order < at.frozen_line_starts);
+            .retain(|_, &mut (_, _, order, _)| order < at.frozen_line_starts);
         while self.defs.len() > at.len {
             let id = self.defs.len() - 1;
             let def = self.defs[id];
@@ -1115,10 +1282,12 @@ impl Construction {
             self.hints.pop();
             if let Some(label) = self.labels.pop() {
                 self.by_label.remove(&label);
+                self.object_scripts.remove(&label);
             }
         }
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
+        self.function_roots.clear();
         self.conic_intersections.truncate(
             self.conic_intersections
                 .partition_point(|&(owner, _)| owner < at.len),
@@ -1136,6 +1305,10 @@ impl Construction {
         while self.arcs.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.arcs.pop();
         }
+        self.limited_common_tangents.truncate(
+            self.limited_common_tangents
+                .partition_point(|&(owner, _)| owner < at.len),
+        );
         while self
             .equations
             .last()
@@ -1152,6 +1325,26 @@ impl Construction {
             .is_some_and(|&(owner, _, _)| owner >= at.len)
         {
             self.sliders.pop();
+        }
+        while self
+            .rigid_replacements
+            .last()
+            .is_some_and(|&(owner, _, _)| owner.0 >= at.len)
+        {
+            let (_, id, prior) = self.rigid_replacements.pop().expect("replacement");
+            if id.0 >= at.len {
+                continue;
+            }
+            let def = self.defs[id.0];
+            for parent in def.parents().as_slice() {
+                self.children[parent.0].retain(|&child| child != id);
+            }
+            if let Some(slot) = self.path_slot(id.0) {
+                self.paths.remove(slot);
+            }
+            self.defs[id.0] = prior;
+            self.values[id.0] = self.compute(prior, id.0);
+            self.propagate(id);
         }
         // Labels became free again, so the hints may be too high.
         self.label_hints
@@ -1172,6 +1365,7 @@ impl Construction {
         ids.extend(algo::vector::hidden_parents(self, def));
         ids.extend(algo::predicate::hidden_parents(self, def));
         ids.extend(algo::polygon::hidden_parents(self, def));
+        ids.extend(algo::measure::hidden_parents(self, def));
         ids.extend(angle::hidden_parents(self, def));
         ids.extend(expr::parents(self, def));
         if let Def::Equation(d) = *def {
@@ -1186,6 +1380,15 @@ impl Construction {
 
     /// Adds an object and computes its value.
     pub fn add(&mut self, label: &str, def: Def) -> Result<Id, Error> {
+        self.add_with_path_state(label, def, None)
+    }
+
+    fn add_with_path_state(
+        &mut self,
+        label: &str,
+        def: Def,
+        saved_path: Option<PathState>,
+    ) -> Result<Id, Error> {
         if label.is_empty() {
             return Err(Error::EmptyLabel);
         }
@@ -1196,13 +1399,13 @@ impl Construction {
             return Err(Error::DuplicateLabel(axis.label.to_string()));
         }
         self.check(&def)?;
-        let def = algo::intersect::prepare(self, def);
+        let mut def = algo::intersect::prepare(self, def);
 
         let id = Id(self.defs.len());
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
-            Def::Expr(d) => expr::update(self, d).0,
+            Def::Expr(d) => expr::update(self, id, d).0,
             Def::IntersectConics(d) => {
                 let mut state = self.create_conic_intersection(d);
                 let value = state.value(d, self).unwrap_or(Value::Undefined);
@@ -1215,7 +1418,7 @@ impl Construction {
                 algo::general_conic::value(d.kind(), &data)
             }
             Def::Path(d) if d.has_state() => {
-                let state = d.create(self);
+                let state = saved_path.unwrap_or_else(|| d.create(self));
                 self.paths.push((id.0, state));
                 PathDef::value(&state)
             }
@@ -1223,6 +1426,11 @@ impl Construction {
                 let record = d.record(self);
                 self.arcs.push((id.0, record));
                 algo::arc::value(d.kind() == Kind::Sector, &record)
+            }
+            Def::Lines(LineDef::CommonTangent(d)) if d.has_state(self) => {
+                let (state, value) = d.create(self);
+                self.limited_common_tangents.push((id.0, state));
+                value.unwrap_or(Value::Undefined)
             }
             Def::Equation(d) => {
                 let (value, record) = crate::expr::equation::initialize(self, d);
@@ -1232,13 +1440,17 @@ impl Construction {
                 value
             }
             Def::Locus(d) => {
-                let data = locus::record(self, d);
-                let value = data.value();
-                self.loci.push((id.0, data));
-                value
+                let data = locus::record(self, d, id);
+                self.store_locus(id, data)
             }
+            Def::Discrete(d) => self.store_locus(id, d.record(self, None)),
             _ => self.compute(def, id.0),
         };
+        if let Def::IntersectBoundary(intersection) = def {
+            if let Some(saved) = intersection.with_root(value) {
+                def = Def::IntersectBoundary(saved);
+            }
+        }
         // An object that is read twice is still one child.
         let mut parents = self.read_ids(&def);
         parents.sort_unstable();
@@ -1254,6 +1466,30 @@ impl Construction {
         self.children.push(Vec::new());
         self.by_label.insert(label.to_string(), id);
         Ok(id)
+    }
+
+    /// Installs rigid constraints on existing free points after all outputs
+    /// of the polygon have been validated and added.
+    pub(crate) fn rigidify_points(&mut self, owner: Id, defs: Vec<(Id, Def)>) {
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        for (id, def) in defs {
+            let prior = self.defs[id.0];
+            debug_assert!(matches!(prior, Def::FreePoint { .. }));
+            self.rigid_replacements.push((owner, id, prior));
+            self.defs[id.0] = def;
+            for parent in def.parents().as_slice() {
+                let children = &mut self.children[parent.0];
+                let slot = children.partition_point(|&child| child < id);
+                children.insert(slot, id);
+            }
+            if let Def::Path(path) = def {
+                let slot = self.paths.partition_point(|&(other, _)| other < id.0);
+                self.paths.insert(slot, (id.0, path.create(self)));
+            }
+            dirty.insert(id.0);
+        }
+        self.propagate_dirty(dirty, 0);
     }
 
     /// The elements of the list object `id`; `None` when it is not a list
@@ -1340,11 +1576,15 @@ impl Construction {
     /// its `special` flag is set; with the flag false, moving that point
     /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
+        self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
-        if let Def::Path(d @ PathDef::On { .. }) = *def {
+        if let Def::Path(
+            d @ (PathDef::On { .. } | PathDef::InRegion { .. } | PathDef::RigidEndpoint { .. }),
+        ) = *def
+        {
             return self.move_on_path(id, d, x, y);
         }
         // The value of a free point or vector is always its coordinates.
@@ -1367,9 +1607,46 @@ impl Construction {
         if same(old.0, x) && same(old.1, y) {
             return Ok(0);
         }
+        self.construction_sources.remove(&id);
         self.defs[id.0] = def;
         self.values[id.0] = new;
         Ok(self.propagate(id))
+    }
+
+    /// Moves free points together, recomputing their shared descendants once.
+    pub fn move_points(&mut self, points: &[(Id, f64, f64)]) -> Result<usize, Error> {
+        for &(id, x, y) in points {
+            if let Some(axis) = axis::get(id) {
+                return Err(Error::NotFree(axis.label.to_string()));
+            }
+            let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
+            if !matches!(def, Def::FreePoint { .. }) {
+                return Err(Error::NotFree(self.labels[id.0].clone()));
+            }
+            if !(x.is_finite() && y.is_finite()) {
+                return Err(Error::NotFinite);
+            }
+        }
+
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.defs.len());
+        let mut first = self.defs.len();
+        for &(id, x, y) in points {
+            let Def::FreePoint { x: old_x, y: old_y } = self.defs[id.0] else {
+                unreachable!("all points were validated before moving");
+            };
+            if old_x.to_bits() == x.to_bits() && old_y.to_bits() == y.to_bits() {
+                continue;
+            }
+            self.construction_sources.remove(&id);
+            self.defs[id.0] = Def::FreePoint { x, y };
+            self.values[id.0] = Value::Point { x, y };
+            first = first.min(id.0);
+            for &child in &self.children[id.0] {
+                dirty.insert(child.0);
+            }
+        }
+        Ok(self.propagate_dirty(dirty, first))
     }
 
     /// [`Self::move_point`] for a point made by `Point(path)`:
@@ -1398,6 +1675,7 @@ impl Construction {
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -1414,23 +1692,17 @@ impl Construction {
         if !v.is_finite() {
             return Err(Error::NotFinite);
         }
-        // A slider keeps its value in its interval (`GeoNumeric.setValue`).
-        let (new_def, v) = match (new_def, self.slider_interval(id)) {
-            (Def::Number(_), Some((min, max))) => {
-                let v = if v < min {
-                    min
-                } else if v > max {
-                    max
-                } else {
-                    v
-                };
-                (Def::Number(v), v)
-            }
-            (d, _) => (d, v),
+        // A slider keeps its value in its active interval.
+        let (new_def, v) = if matches!(new_def, Def::Number(_)) {
+            let v = self.clamp_slider(id, v);
+            (Def::Number(v), v)
+        } else {
+            (new_def, v)
         };
         // A changed number loses its exact decimal (`GeoNumeric.setValue`),
         // which changes what reads it even when the value stays.
         let had_decimal = expr::forget_decimal(self, id);
+        let had_source = self.construction_sources.remove(&id).is_some();
         // Bit equality: `0` to `-0` is a change (`1/a` flips its sign).
         let old = match def {
             Def::Number(old)
@@ -1441,12 +1713,22 @@ impl Construction {
             }) => old,
             _ => unreachable!("the definition is a free scalar"),
         };
-        if !had_decimal && old.to_bits() == v.to_bits() && self.values[id.0].is_defined() {
+        if !had_decimal
+            && !had_source
+            && old.to_bits() == v.to_bits()
+            && self.values[id.0].is_defined()
+        {
             return Ok(0);
         }
         self.defs[id.0] = new_def;
         self.values[id.0] = self.compute(new_def, id.0);
         Ok(self.propagate(id))
+    }
+
+    /// True when the last coordinate or value update moved an automatic
+    /// intersection's hidden Newton start point.
+    pub fn last_update_changed_automatic_root(&self) -> bool {
+        self.last_update_changed_automatic_root
     }
 
     /// Recomputes the descendants of `start` in creation order.
@@ -1469,6 +1751,8 @@ impl Construction {
     }
 
     fn propagate_dirty(&mut self, mut dirty: DirtySet, mut from: usize) -> usize {
+        self.last_update_changed_automatic_root = false;
+        self.function_roots.clear();
         let mut recomputed = 0;
         while let Some(i) = dirty.pop_first(from) {
             // children only add larger indices
@@ -1501,19 +1785,37 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Lines(LineDef::CommonTangent(d)) if d.has_state(self) => {
+                    if !self.update_common_tangent(i, d) {
+                        continue;
+                    }
+                }
                 Def::Equation(d) => {
                     if !self.update_equation(i, d) {
                         continue;
                     }
                 }
                 Def::Locus(d) => {
-                    if !self.update_locus(i, d) {
+                    if !self.update_locus(i, |c| locus::record(c, d, Id(i))) {
+                        continue;
+                    }
+                }
+                Def::Discrete(d) => {
+                    if !self.update_locus(i, |c| d.record(c, c.locus(Id(i)))) {
                         continue;
                     }
                 }
                 _ => {
                     let new = self.compute(def, i);
-                    if new == self.values[i] {
+                    if let Def::IntersectBoundary(intersection) = def {
+                        if let Some(saved) = intersection.with_root(new) {
+                            self.defs[i] = Def::IntersectBoundary(saved);
+                            self.last_update_changed_automatic_root = true;
+                        }
+                    }
+                    if new == self.values[i]
+                        && !matches!(def, Def::Measure(MeasureDef::CartesianCurve { .. }))
+                    {
                         // Nothing downstream can change because of this object.
                         continue;
                     }
@@ -1534,14 +1836,9 @@ impl Construction {
     /// Kept out of line so that the loop of [`Self::propagate`] stays small.
     #[inline(never)]
     fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
-        if expr::has_lists(self, d) {
-            let (value, changed) = expr::update_lists(self, d);
-            self.values[i] = value;
-            return changed;
-        }
-        let out = expr::evaluate(self, d);
-        self.values[i] = expr::value(d, out.raw);
-        expr::store(self, d, out)
+        let (value, changed) = expr::update(self, Id(i), d);
+        self.values[i] = value;
+        changed
     }
 
     /// Recomputes the conic record of object `i` from its previous record;
@@ -1571,6 +1868,25 @@ impl Construction {
         self.conic_intersections
             .binary_search_by_key(&i, |&(owner, _)| owner)
             .ok()
+    }
+
+    fn common_tangent_slot(&self, i: usize) -> Option<usize> {
+        self.limited_common_tangents
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+            .ok()
+    }
+
+    #[inline(never)]
+    fn update_common_tangent(&mut self, i: usize, d: CommonTangentDef) -> bool {
+        let slot = self
+            .common_tangent_slot(i)
+            .expect("limited common tangent state");
+        let mut state = std::mem::take(&mut self.limited_common_tangents[slot].1);
+        let value = state.update(self, d).unwrap_or(Value::Undefined);
+        self.limited_common_tangents[slot].1 = state;
+        let changed = value != self.values[i];
+        self.values[i] = value;
+        changed
     }
 
     fn create_conic_intersection(&self, d: PairDef) -> PairState {
@@ -1634,8 +1950,8 @@ impl Construction {
     }
 
     /// Recomputes the record of the arc or sector `i`; tells whether its
-    /// children must follow: whether the record changed, bit for bit. Out
-    /// of line like [`Self::update_expr`].
+    /// children must follow: whether the record changed or is undefined.
+    /// Out of line like [`Self::update_expr`].
     #[inline(never)]
     fn update_arc(&mut self, i: usize, d: ArcDef) -> bool {
         let Some(slot) = self.arc_slot(i) else {
@@ -1643,7 +1959,9 @@ impl Construction {
         };
         let new = d.record(self);
         if new.same(&self.arcs[slot].1) {
-            return false;
+            // A point can be placed directly on an undefined arc. Its next
+            // AlgoPointOnPath update clears it even when the arc stays undefined.
+            return !new.defined;
         }
         self.arcs[slot].1 = new;
         self.values[i] = algo::arc::value(d.kind() == Kind::Sector, &new);
@@ -1652,7 +1970,8 @@ impl Construction {
 
     /// Recomputes the equation object `i` from its coefficients; tells
     /// whether its children must follow: whether any coefficient changed,
-    /// bit for bit. A conic is classified again from its record, as
+    /// bit for bit, or its display uses the original expression sides.
+    /// A conic is classified again from its record, as
     /// `AlgoDependentConic.compute` calls `setCoeffs`. Out of line like
     /// [`Self::update_expr`].
     #[inline(never)]
@@ -1665,8 +1984,15 @@ impl Construction {
             ConicData::new()
         };
         let (changed, value, record) = crate::expr::equation::recompute(self, d, prev);
+        let user_form =
+            if let Some((EquationForm::User, revision)) = self.equation_forms.get_mut(&Id(i)) {
+                *revision = revision.wrapping_add(1);
+                true
+            } else {
+                false
+            };
         if !changed {
-            return false;
+            return user_form;
         }
         if let Some(record) = record {
             if let Some(slot) = self.conic_slot(i) {
@@ -1707,6 +2033,21 @@ impl Construction {
             Def::Path(d) if d.has_state() => self.path_slot(id.0).map(|slot| self.paths[slot].1),
             _ => None,
         }
+    }
+
+    pub(crate) fn add_saved_path_point(
+        &mut self,
+        label: &str,
+        path: Id,
+        x: f64,
+        y: f64,
+        bounds: Option<[f64; 2]>,
+    ) -> Result<Id, Error> {
+        if bounds.is_some_and(|[min, max]| min >= max || self.kind(path) != Kind::Function) {
+            return Err(Error::NotFinite);
+        }
+        let state = PathState::saved(self, path, x, y, bounds);
+        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
     }
 
     /// Gives the point on a path `id` the state `state` read from another
@@ -1752,7 +2093,11 @@ impl Construction {
             Some(
                 Def::FreePoint { .. }
                     | Def::Vector(VectorDef::Free { .. })
-                    | Def::Path(PathDef::On { .. })
+                    | Def::Path(
+                        PathDef::On { .. }
+                            | PathDef::InRegion { .. }
+                            | PathDef::RigidEndpoint { .. }
+                    )
             )
         )
     }
@@ -1781,6 +2126,37 @@ impl Construction {
         }
     }
 
+    /// The current contents of a text object.
+    pub fn is_independent_text(&self, id: Id) -> bool {
+        self.defs
+            .get(id.0)
+            .is_some_and(|def| def.kind() == Kind::Text)
+            && expr::is_independent_text(self, id)
+    }
+
+    /// Original source retained for definitions that need it for display.
+    pub fn construction_source(&self, id: Id) -> Option<&str> {
+        self.construction_sources.get(&id).map(String::as_str)
+    }
+
+    pub(crate) fn remember_construction_source(&mut self, id: Id, source: &str) {
+        self.construction_sources.insert(id, source.to_owned());
+    }
+
+    pub fn text(&self, id: Id) -> Option<&str> {
+        expr::text_value(self, id)
+    }
+
+    /// The current numerical findings of a Relation command.
+    pub fn relation_reports(&self, id: Id) -> Option<Vec<algo::predicate::RelationReport>> {
+        expr::relation_reports(self, id)
+    }
+
+    /// Evaluates a two-variable function at the given coordinates.
+    pub fn function_value_xy(&self, id: Id, x: f64, y: f64) -> Option<f64> {
+        expr::equation::side_value(self, id, x, y)
+    }
+
     /// The coefficient entries of the equation object `id` (see
     /// [`Def::Equation`]), `None` for any other object. The entries are
     /// indices into the construction's expression table; a number of
@@ -1797,7 +2173,14 @@ impl Construction {
 
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
-            Def::XAxis | Def::YAxis => Ok(()),
+            Def::XAxis | Def::YAxis | Def::Boolean(_) | Def::Button | Def::InputBox(None) => Ok(()),
+            Def::InputBox(Some(linked)) => {
+                if self.defs.get(linked.0).is_some() || axis::get(linked).is_some() {
+                    Ok(())
+                } else {
+                    Err(Error::UnknownObject)
+                }
+            }
             Def::FreePoint { x, y } => {
                 if x.is_finite() && y.is_finite() {
                     Ok(())
@@ -1866,6 +2249,7 @@ impl Construction {
             // the coefficient entries were checked when they were parsed
             Def::Equation(d) => crate::expr::equation::check(self, d),
             Def::Locus(d) => d.check(self),
+            Def::Discrete(d) => d.check(self),
         }
     }
 
@@ -1922,6 +2306,9 @@ impl Construction {
             Def::XAxis | Def::YAxis => axis::definition(def).map(|axis| axis.value),
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
+            Def::Boolean(v) => Some(Value::Bool(v)),
+            Def::Button => Some(Value::Button),
+            Def::InputBox(_) => Some(Value::InputBox),
             Def::Line(p, q) => algo::basic::line(self, p, q),
             Def::Segment(p, q) => algo::basic::segment(self, p, q),
             Def::Midpoint(p, q) => algo::basic::midpoint(self, p, q),
@@ -1960,6 +2347,7 @@ impl Construction {
             Def::Arc(d) => d.compute(self),
             Def::Equation(d) => Some(expr::equation::current(self, d)),
             Def::Locus(d) => d.compute(self),
+            Def::Discrete(_) => None,
         }
     }
 

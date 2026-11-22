@@ -140,6 +140,10 @@ pub enum ExpectedData {
         r: f64,
     },
     Number(f64),
+    Curve {
+        start: f64,
+        end: f64,
+    },
     Vector {
         x: f64,
         y: f64,
@@ -159,6 +163,10 @@ pub enum ExpectedData {
     Function {
         samples: Vec<Option<f64>>,
     },
+    Text(String),
+    Relation(Vec<String>),
+    /// Two-coordinate values of an equation side.
+    FunctionNVar(Vec<(f64, f64, Option<f64>)>),
     /// Vertices in order, area (never negative) and signed area (positive
     /// counter-clockwise).
     Polygon {
@@ -392,6 +400,7 @@ struct RawObject {
     defined: bool,
     /// Only for a function: `[x, y]` pairs, `y` null where not finite.
     samples: Option<Vec<(f64, Option<f64>)>>,
+    samples_xy: Option<Vec<(f64, f64, Option<f64>)>>,
     #[serde(flatten)]
     fields: BTreeMap<String, serde_json::Value>,
 }
@@ -483,6 +492,9 @@ impl TryFrom<RawObject> for Expected {
             "ray" => (Kind::Ray, &["x", "y", "a", "b", "c"]),
             "boolean" => (Kind::Boolean, &["value"]),
             "function" => (Kind::Function, &[]),
+            "function_nvar" => (Kind::FunctionNVar, &[]),
+            "text" => (Kind::Text, &["text"]),
+            "relation" => (Kind::Text, &["reports"]),
             "polygon" => (Kind::Polygon, &["vertices", "area", "signed_area"]),
             "polyline" => (Kind::PolyLine, &["vertices", "length"]),
             "list" => (Kind::List, &["elements"]),
@@ -490,6 +502,7 @@ impl TryFrom<RawObject> for Expected {
             "arc" => (Kind::Arc, &[]),
             "sector" => (Kind::Sector, &[]),
             "locus" => (Kind::Locus, &["points"]),
+            "curve" => (Kind::Curve, &["start", "end"]),
             other => return Err(format!("unknown object type `{other}`")),
         };
         if raw.samples.is_some() && (kind != Kind::Function || !raw.defined) {
@@ -497,6 +510,9 @@ impl TryFrom<RawObject> for Expected {
                 "only a defined function carries samples, not this {}",
                 raw.ty
             ));
+        }
+        if raw.samples_xy.is_some() && (kind != Kind::FunctionNVar || !raw.defined) {
+            return Err("only a defined two-variable function carries samples_xy".into());
         }
         if !raw.defined {
             if !raw.fields.is_empty() {
@@ -513,6 +529,24 @@ impl TryFrom<RawObject> for Expected {
                 legacy_angle_number: false,
                 kind,
                 data: Some(function_samples(&raw)?),
+            });
+        }
+        if kind == Kind::FunctionNVar {
+            let samples = raw
+                .samples_xy
+                .ok_or("defined two-variable function needs samples_xy")?;
+            if !raw.fields.is_empty()
+                || samples.len() != SAMPLE_XS.len()
+                || samples.iter().zip(SAMPLE_XS).any(|(&(x, y, v), want_x)| {
+                    x != want_x || y != 1.0 - 2.0 * want_x || v.is_some_and(|v| !v.is_finite())
+                })
+            {
+                return Err("unexpected two-variable function samples".into());
+            }
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::FunctionNVar(samples)),
+                legacy_angle_number: false,
             });
         }
         if kind == Kind::Conic {
@@ -536,6 +570,25 @@ impl TryFrom<RawObject> for Expected {
                 "defined {} must carry exactly {names:?}, got {got:?}",
                 raw.ty
             ));
+        }
+        if raw.ty == "relation" {
+            let reports = serde_json::from_value(raw.fields["reports"].clone())
+                .map_err(|e| format!("invalid relation reports: {e}"))?;
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::Relation(reports)),
+                legacy_angle_number: false,
+            });
+        }
+        if kind == Kind::Text {
+            let text = raw.fields["text"]
+                .as_str()
+                .ok_or("a text's content must be a string")?;
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::Text(text.to_owned())),
+                legacy_angle_number: false,
+            });
         }
         if kind == Kind::Boolean {
             return match raw.fields["value"].as_bool() {
@@ -616,6 +669,10 @@ impl TryFrom<RawObject> for Expected {
                 r: f("r"),
             },
             Kind::Number | Kind::Angle => ExpectedData::Number(f("value")),
+            Kind::Curve => ExpectedData::Curve {
+                start: f("start"),
+                end: f("end"),
+            },
             Kind::Vector => ExpectedData::Vector {
                 x: f("x"),
                 y: f("y"),
@@ -640,7 +697,7 @@ impl TryFrom<RawObject> for Expected {
 }
 
 /// Labels created by a script: the text before the first `=` of each line,
-/// without the `(x)` of a function.
+/// without the argument of a function.
 pub fn script_labels(script: &[String]) -> BTreeSet<String> {
     script
         .iter()
@@ -660,10 +717,11 @@ pub fn script_labels(script: &[String]) -> BTreeSet<String> {
         .collect()
 }
 
-/// The label of a script line's left-hand side: `f` for `f(x)`.
+/// The label of a script line's left-hand side, such as `f` for `f(x)`.
 pub fn line_label(lhs: &str) -> String {
     let lhs = lhs.trim();
     lhs.strip_suffix("(x)")
+        .or_else(|| lhs.strip_suffix("(y)"))
         .unwrap_or(lhs)
         .trim_end()
         .to_string()
@@ -737,6 +795,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
     let mut previous_keys: Option<BTreeSet<String>> = None;
     let mut boundary_prefixes = BTreeSet::new();
     let mut has_point_list = false;
+    let mut has_root_interval = false;
     for (i, snap) in case.snapshots.iter().enumerate() {
         let keys: BTreeSet<String> = snap.keys().cloned().collect();
         match &previous_keys {
@@ -762,17 +821,25 @@ fn validate_case(case: &Case) -> Result<(), String> {
                         clip_prefixes.insert(label_prefix(label));
                     }
                     if let Some((label, "Intersect", args)) = command_args(line) {
-                        if let [a, b] = args.as_slice() {
-                            let kind = |name: &str| snap.get(name).map(|o| o.kind);
-                            let boundary = |k| matches!(k, Some(Kind::Polygon | Kind::PolyLine));
-                            let carrier =
-                                |k| matches!(k, Some(Kind::Line | Kind::Segment | Kind::Ray));
-                            let (a, b) = (kind(a), kind(b));
-                            if boundary(a) && (boundary(b) || carrier(b))
-                                || boundary(b) && carrier(a)
-                            {
-                                boundary_prefixes.insert(label_prefix(label));
+                        let kind = |name: &str| snap.get(name).map(|o| o.kind);
+                        match args.as_slice() {
+                            [a, b] => {
+                                let boundary =
+                                    |k| matches!(k, Some(Kind::Polygon | Kind::PolyLine));
+                                let carrier =
+                                    |k| matches!(k, Some(Kind::Line | Kind::Segment | Kind::Ray));
+                                let (a, b) = (kind(a), kind(b));
+                                if boundary(a) && (boundary(b) || carrier(b))
+                                    || boundary(b) && carrier(a)
+                                {
+                                    boundary_prefixes.insert(label_prefix(label));
+                                }
                             }
+                            [a, b, _, _] => {
+                                has_root_interval |= (kind(a), kind(b))
+                                    == (Some(Kind::Function), Some(Kind::Function));
+                            }
+                            _ => {}
                         }
                     }
                     if let Some((_, "Point", args)) = command_args(line) {
@@ -834,7 +901,8 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     || keys.difference(previous).any(|key| {
                         snap[key].kind != Kind::Point
                             || !(indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
-                                || has_point_list && POINT_LABELS.contains(&label_prefix(key)))
+                                || (has_point_list || has_root_interval)
+                                    && POINT_LABELS.contains(&label_prefix(key)))
                     })
                 {
                     return Err(format!("snapshot {i} labels differ from snapshot 0"));
@@ -1068,13 +1136,16 @@ fn transformed_arg(line: &str) -> Option<&str> {
     let (_, rhs) = line.split('#').next()?.split_once('=')?;
     let rhs = rhs.trim();
     let (func, rest) = rhs.split_once('(')?;
+    let inner = rest.strip_suffix(')')?;
+    if func == "ApplyMatrix" {
+        return inner.rsplit(',').next().map(str::trim);
+    }
     if !matches!(
         func,
         "Mirror" | "Reflect" | "Rotate" | "Dilate" | "Shear" | "Stretch" | "Translate"
     ) {
         return None;
     }
-    let inner = rest.strip_suffix(')')?;
     inner.split(',').map(str::trim).next()
 }
 

@@ -2,8 +2,8 @@
 //!
 //! The items arrive in construction order. Free objects (a point, a vector,
 //! a number) become `A = (x, y)` and `r = 3` with the exact value of the
-//! element; a command becomes `label = Name(args)`, or
-//! `{label, label} = Name(args)` when it has several outputs. Each line is
+//! element. An expression keeps its definition and a command becomes
+//! `label = Name(args)` or `{label, label} = Name(args)`. Each line is
 //! executed on a scratch [`Construction`] before it is accepted, so whatever
 //! the kernel cannot do is skipped with the kernel's message.
 
@@ -11,19 +11,25 @@ use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
-use geo_kernel::kernel::Def;
+use geo_kernel::kernel::control::{encode_scripts, encode_text, visibility_boolean};
+use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
+use geo_kernel::kernel::{angle::AngleStyle, Def};
+use geo_kernel::script::equation::Style as EquationStyle;
+use geo_kernel::script::saved::Property;
+use geo_kernel::script::text::{
+    literal as text_literal, push_escaped_char, Properties as TextProperties,
+};
 use geo_kernel::script::{exec, is_vector_label, multi_output_count};
-use geo_kernel::{Construction, Kind, Value};
+use geo_kernel::{Construction, Id, Kind, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The longest text a reason may quote from the file, in characters.
 const QUOTE_CHARS: usize = 60;
 
-/// The longest label or number literal the importer passes into a script
-/// line (anything longer is not a label the script can use).
 /// The longest reason kept for a skipped object, in characters.
 const MAX_REASON_CHARS: usize = 300;
 
+/// The longest plain label or number passed as an ordinary command argument.
 const MAX_TOKEN_BYTES: usize = 256;
 
 /// `text`, cut to [`QUOTE_CHARS`] characters (with `...`) so that a reason
@@ -37,41 +43,87 @@ pub fn quote(text: &str) -> String {
 
 /// Runs the whole conversion.
 pub fn convert(doc: Document) -> Result<Imported, ImportError> {
-    let mut c = Converter::default();
+    let mut c = Converter {
+        function_path_bounds: doc.function_path_bounds,
+        ..Converter::default()
+    };
     let mut flags = Flags::default();
+    let mut elements = BTreeMap::new();
+    let mut polygon_inputs = BTreeMap::new();
     for item in &doc.items {
         match item {
-            Item::Expression { label, .. } => {
-                c.file_labels.insert(label.clone());
-            }
+            Item::Expression { .. } => {}
             // A command that makes several objects: every output is a label.
-            Item::Command { outputs, .. } => {
-                for output in outputs {
-                    if !output.is_empty() {
-                        c.file_labels.insert(output.clone());
+            Item::Command {
+                name,
+                inputs,
+                outputs,
+            } => {
+                if name == "Polygon" && inputs.len() >= 3 {
+                    if let Some(label) = outputs.first() {
+                        polygon_inputs.insert(label.as_str(), inputs.as_slice());
                     }
                 }
             }
             Item::Element(el) => {
-                c.file_labels.insert(el.label.clone());
+                elements.insert(el.label.as_str(), el.as_ref());
             }
         }
     }
-    for item in doc.items {
+    for item in &doc.items {
         match item {
             Item::Expression { label, exp } => {
-                c.expressions.insert(label, exp);
+                c.expressions.insert(label.clone(), exp.clone());
             }
             Item::Command {
                 name,
                 inputs,
                 outputs,
-            } => c.command(&name, &inputs, &outputs)?,
+            } => c.command(name, inputs, outputs, &elements)?,
             Item::Element(el) => {
-                flags.count(&el);
-                c.element(*el)?;
+                flags.count(el);
+                let points = polygon_inputs.get(el.label.as_str()).and_then(|inputs| {
+                    inputs
+                        .iter()
+                        .map(|label| {
+                            let point = elements
+                                .get(label.as_str())
+                                .filter(|el| el.kind == "point")?;
+                            let [x, y, z] = coords3(point)?;
+                            let (x, y) = (x / z, y / z);
+                            (x.is_finite() && y.is_finite()).then_some([x, y])
+                        })
+                        .collect::<Option<Vec<_>>>()
+                });
+                c.element(el, points.as_deref(), doc.gui_font_size.unwrap_or(12.0))?;
             }
         }
+    }
+    for el in elements.values() {
+        c.restore_slider(el);
+        c.retain_scripts(el);
+    }
+    for (&label, element) in &elements {
+        if let Some(condition) = &element.condition {
+            if c.kernel.id(label).is_some() {
+                let result = expression_line(condition).and_then(|source| {
+                    visibility_boolean(&mut c.kernel, label, &source)?;
+                    Ok(source)
+                });
+                match result {
+                    Ok(source) => c.out.conditions.push((label.to_owned(), source)),
+                    Err(reason) => c.out.notes.push(format!(
+                        "visibility condition for `{}`: {}",
+                        quote(label),
+                        quote(&reason)
+                    )),
+                }
+            }
+        }
+    }
+    // A text start point may be named later in the construction.
+    for el in elements.values() {
+        c.apply_text_position(el);
     }
     let mut out = c.out;
     out.settings = doc.settings;
@@ -99,26 +151,25 @@ pub fn convert(doc: Document) -> Result<Imported, ImportError> {
 struct Flags {
     fixed: usize,
     auxiliary: usize,
-    conditional: usize,
     start_points: usize,
+    has_scripts: bool,
 }
 
 impl Flags {
     fn count(&mut self, el: &Element) {
         self.fixed += el.fixed as usize;
         self.auxiliary += el.auxiliary as usize;
-        self.conditional += el.conditional as usize;
         self.start_points += el.start_point as usize;
+        self.has_scripts |= !el.scripts.is_empty();
     }
 
     fn notes(&self, notes: &mut Vec<String>) {
+        if self.has_scripts {
+            notes.push("object scripts are not executed".into());
+        }
         for (n, what) in [
             (self.fixed, "fixed (the kernel has no fixed flag)"),
             (self.auxiliary, "auxiliary objects"),
-            (
-                self.conditional,
-                "objects with a condition for showing them (not used)",
-            ),
             (
                 self.start_points,
                 "vectors with a start point (the kernel draws none)",
@@ -144,9 +195,7 @@ struct Converter {
     skipped: BTreeMap<String, String>,
     /// `<expression>` texts waiting for their element.
     expressions: BTreeMap<String, String>,
-    /// Every label the file names anywhere, so a label the importer makes up
-    /// for a helper object cannot collide with one read later.
-    file_labels: BTreeSet<String>,
+    function_path_bounds: Option<[f64; 2]>,
 }
 
 /// One script line and the labels it has to create.
@@ -194,6 +243,7 @@ impl Converter {
         name: &str,
         inputs: &[String],
         outputs: &[String],
+        elements: &BTreeMap<&str, &Element>,
     ) -> Result<(), ImportError> {
         for label in outputs {
             self.claim(label)?;
@@ -213,12 +263,59 @@ impl Converter {
                 "`{}` is not a label the script can use",
                 quote(bad)
             )),
-            None if matches!(name, "Ray" | "Arc" | "Sector")
-                && inputs.iter().any(|arg| bracketed(arg.trim()).is_some()) =>
-            {
-                return self.nested_command(name, inputs, outputs);
+            None if name == "If" && outputs.len() == 1 => {
+                let label = &outputs[0];
+                let element = elements.get(label.as_str());
+                let result = inputs
+                    .iter()
+                    .map(|arg| expression_line(arg))
+                    .collect::<Result<Vec<_>, _>>()
+                    .and_then(|args| {
+                        let rhs = format!("If({})", args.join(", "));
+                        let Some(el) = element else {
+                            return Ok((format!("{label} = {rhs}"), None));
+                        };
+                        let kind = expression_kind(&el.kind)?;
+                        object_expression(label, kind, &rhs).map(|line| (line, Some(kind)))
+                    });
+                return self.accept_expression(label, name, result, None);
             }
-            None => self.steps(name, inputs, outputs),
+            None if matches!(
+                name,
+                "Button" | "Checkbox" | "CheckBox" | "Textfield" | "InputBox"
+            ) && outputs.len() == 1 =>
+            {
+                let label = &outputs[0];
+                let element = elements.get(label.as_str()).copied();
+                let result = match name {
+                    "Button" => Ok(control_line(label, "$button", None, element)),
+                    "Checkbox" | "CheckBox" => Ok(control_line(
+                        label,
+                        "$checkBox",
+                        Some(boolean_value(element)),
+                        element,
+                    )),
+                    _ => match inputs {
+                        [] => Ok(control_line(label, "$inputBox", Some(""), element)),
+                        [linked] if is_label(linked) && self.kernel.id(linked).is_some() => {
+                            Ok(control_line(label, "$inputBox", Some(linked), element))
+                        }
+                        [linked] => Err(format!(
+                            "the linked object `{}` was not imported",
+                            quote(linked)
+                        )),
+                        _ => Err("an input box can link to one object".into()),
+                    },
+                };
+                result.map(|line| {
+                    vec![Step {
+                        line,
+                        labels: vec![label.clone()],
+                        auto: false,
+                    }]
+                })
+            }
+            None => self.steps(name, inputs, outputs, elements),
         };
         match steps {
             Ok(steps) => {
@@ -270,8 +367,13 @@ impl Converter {
     fn run(&mut self, line: &str, expected: &[String]) -> Result<Result<(), String>, ImportError> {
         let before = self.kernel.len();
         let result = exec(&mut self.kernel, line);
-        // Exactly the expected labels, and nothing else, were added.
-        let created = self.kernel.len() - before;
+        // Inline arguments can make anonymous objects in addition to the outputs.
+        let created = self
+            .kernel
+            .ids()
+            .skip(before)
+            .filter(|&id| !self.kernel.label(id).starts_with('\0'))
+            .count();
         let matches = created == expected.len()
             && expected
                 .iter()
@@ -309,7 +411,9 @@ impl Converter {
             .kernel
             .ids()
             .skip(before)
-            .map(|id| self.kernel.label(id).to_string())
+            .map(|id| self.kernel.label(id))
+            .filter(|label| !label.starts_with('\0'))
+            .map(str::to_owned)
             .collect();
         for label in &made {
             // A name the file uses later for another object cannot be told
@@ -333,29 +437,99 @@ impl Converter {
         name: &str,
         inputs: &[String],
         outputs: &[String],
+        elements: &BTreeMap<&str, &Element>,
     ) -> Result<Vec<Step>, String> {
         if name.is_empty() || !name.bytes().all(|b| b.is_ascii_alphanumeric()) {
             return Err(format!("`{}` is not a command name", quote(name)));
         }
+        // A malformed wide command must not cause repeated processing or
+        // replication of a large serialized input for each claimed output.
+        if inputs
+            .iter()
+            .map(String::len)
+            .sum::<usize>()
+            .saturating_mul(outputs.len())
+            > crate::xml::MAX_ATTRIBUTE_BYTES
+        {
+            return Err("command inputs are too long for the number of outputs".into());
+        }
+        let text_command = match name {
+            "Text" | "LaTeX" | "FormulaText" | "LetterToUnicode" | "TextToUnicode"
+            | "UnicodeToLetter" | "UnicodeToText" | "Ordinal" | "FractionText"
+            | "ScientificText" | "SurdText" | "ContinuedFraction" | "TableText"
+            | "VerticalText" | "RotateText" | "ReplaceAll" | "Split" => true,
+            "Length" | "Take" | "IndexOf" => inputs.first().is_some_and(|arg| {
+                arg.contains('"')
+                    || self
+                        .kernel
+                        .id(arg)
+                        .is_some_and(|id| self.kernel.kind(id) == Kind::Text)
+            }),
+            _ => false,
+        };
         let mut args = Vec::with_capacity(inputs.len());
-        for arg in inputs {
-            for token in tokens(arg) {
-                if self.skipped.contains_key(token) {
+        for (index, arg) in inputs.iter().enumerate() {
+            let raw = text_command
+                || matches!(name, "Curve" | "CurveCartesian" | "Slider")
+                || (index == 0 && matches!(name, "Locus" | "SlopeField"));
+            let arg = expression_line(arg)?;
+            if !self.skipped.is_empty() {
+                if let Some(token) = geo_kernel::expr::expression_names(&arg)
+                    .into_iter()
+                    .find(|name| self.skipped.contains_key(*name))
+                {
                     return Err(format!("depends on the skipped object `{}`", quote(token)));
                 }
             }
-            args.push(pass_argument(arg)?);
+            args.push(pass_argument(&arg, raw)?);
+        }
+        let name = if name == "CurveCartesian" {
+            "Curve"
+        } else {
+            name
+        };
+        if let ("Point", [path], [label]) = (name, args.as_slice(), outputs) {
+            if let Some([x, y, z]) = elements
+                .get(label.as_str())
+                .and_then(|el| coords3(el))
+                .filter(|_| {
+                    self.kernel
+                        .id(path)
+                        .is_some_and(|id| self.kernel.kind(id) != Kind::List)
+                })
+            {
+                let (x, y) = (x / z, y / z);
+                if x.is_finite() && y.is_finite() {
+                    let bounds = self
+                        .kernel
+                        .id(path)
+                        .filter(|&id| self.kernel.kind(id) == Kind::Function)
+                        .and(self.function_path_bounds)
+                        .map_or_else(String::new, |[min, max]| format!(", {min}, {max}"));
+                    return Ok(vec![Step {
+                        line: format!("{label} = $pointOnPath({path}, {x}, {y}{bounds})"),
+                        labels: vec![label.clone()],
+                        auto: false,
+                    }]);
+                }
+            }
         }
         // GeoGebra saves `Intersect(a, b)` of a line and a conic (or two
         // conics) without an index and lists both points as outputs; the
         // kernel takes the n-th point as `Intersect(a, b, n)`.
         if name == "Intersect" && args.len() == 2 && outputs.len() >= 2 {
+            let swapped = self.circle_intersection_swapped(&args, outputs, elements)?;
             return Ok(outputs
                 .iter()
                 .enumerate()
                 .filter(|(_, label)| !label.is_empty())
                 .map(|(n, label)| Step {
-                    line: format!("{label} = Intersect({}, {}, {})", args[0], args[1], n + 1),
+                    line: format!(
+                        "{label} = Intersect({}, {}, {})",
+                        args[0],
+                        args[1],
+                        if swapped { 2 - n } else { n + 1 }
+                    ),
                     labels: vec![label.clone()],
                     auto: false,
                 })
@@ -370,10 +544,15 @@ impl Converter {
                 auto: true,
             }]);
         }
-        let line = match multi_output_count(&self.kernel, &call) {
+        let lowered = args.iter().any(|arg| arg.starts_with("$arg("));
+        let line = match (!lowered)
+            .then(|| multi_output_count(&self.kernel, &call))
+            .flatten()
+        {
             // A command that makes several objects: every output gets its label.
             Some(_) => format!("{{{}}} = {call}", outputs.join(", ")),
             None if outputs.len() == 1 => format!("{} = {call}", outputs[0]),
+            None if lowered => format!("{{{}}} = {call}", outputs.join(", ")),
             None => {
                 return Err(format!(
                     "the file lists {} outputs, the kernel makes one object for this command",
@@ -388,159 +567,393 @@ impl Converter {
         }])
     }
 
-    /// GeoGebra saves the transformed direction of a ray and the conic
-    /// of an arc or sector as nested calls. Commit their helpers only when
-    /// the outer command succeeds.
-    fn nested_command(
+    /// A saved pair can keep the permutation from an earlier edit. Select
+    /// the opposite slots only when both saved coordinates prove a swap.
+    fn circle_intersection_swapped(
         &mut self,
-        name: &str,
-        inputs: &[String],
+        args: &[String],
         outputs: &[String],
-    ) -> Result<(), ImportError> {
-        let labels: Vec<String> = outputs.iter().filter(|l| !l.is_empty()).cloned().collect();
-        let checkpoint = self.kernel.checkpoint();
-        let mut helpers = Vec::new();
-        let args = inputs
-            .iter()
-            .map(|arg| self.expand_call(arg.trim(), &mut helpers))
-            .collect::<Result<Vec<_>, _>>();
-        let result = match args {
-            Ok(args) => {
-                let line = format!("{} = {name}({})", labels[0], args.join(", "));
-                self.run(&line, &labels)?.map(|()| line)
-            }
-            Err(reason) => Err(reason),
+        elements: &BTreeMap<&str, &Element>,
+    ) -> Result<bool, String> {
+        let [first, second, rest @ ..] = outputs else {
+            return Ok(false);
         };
-        match result {
-            Ok(line) => {
-                for (label, line) in helpers {
-                    self.out.hidden.push(label);
-                    self.out.script.push(line);
-                }
-                self.out.script.push(line);
+        if rest.iter().any(|label| !label.is_empty()) {
+            return Ok(false);
+        }
+        let [a, b] = args else { return Ok(false) };
+        let kind = |label: &str| self.kernel.id(label).map(|id| self.kernel.kind(id));
+        if !matches!(
+            (kind(a), kind(b)),
+            (Some(Kind::Line), Some(Kind::Circle | Kind::Conic))
+                | (
+                    Some(Kind::Circle | Kind::Conic),
+                    Some(Kind::Line | Kind::Circle | Kind::Conic)
+                )
+        ) {
+            return Ok(false);
+        }
+        let point = |label: &str| {
+            let [x, y, z] = coords3(elements.get(label)?)?;
+            let xy = [x / z, y / z];
+            xy.iter().all(|v| v.is_finite()).then_some(xy)
+        };
+        let (Some(p), Some(q)) = (point(first), point(second)) else {
+            return Ok(false);
+        };
+        let agrees = |p: [f64; 2], q: [f64; 2]| close(p[0], q[0]) && close(p[1], q[1]);
+        if agrees(p, q) {
+            return Ok(false);
+        }
+        let start = self.kernel.checkpoint();
+        let mut probe = |label: &str, slot| {
+            let id = exec(
+                &mut self.kernel,
+                &format!("{label} = Intersect({a}, {b}, {slot})"),
+            )
+            .ok()??;
+            match self.kernel.value(id) {
+                Value::Point { x, y } => Some([x, y]),
+                _ => None,
             }
-            Err(reason) => {
-                self.kernel
-                    .rollback(checkpoint)
-                    .map_err(|e| ImportError::Internal(e.to_string()))?;
-                for label in labels {
-                    self.skip(&label, name, reason.clone());
-                }
-            }
+        };
+        let actual_first = probe(first, 1);
+        let actual_second = probe(second, 2);
+        self.kernel.rollback(start).map_err(|e| e.to_string())?;
+        Ok(actual_first.is_some_and(|actual| agrees(actual, q))
+            && actual_second.is_some_and(|actual| agrees(actual, p)))
+    }
+
+    fn element(
+        &mut self,
+        el: &Element,
+        polygon: Option<&[[f64; 2]]>,
+        font_size: f64,
+    ) -> Result<(), ImportError> {
+        let expression = self.expressions.remove(&el.label);
+        if !self.produced.contains(&el.label) {
+            self.claim(&el.label)?;
+            self.define_element(el, expression.as_deref())?;
+        }
+        self.apply_text_style(el, font_size);
+        self.record_element(el, expression.as_deref(), polygon);
+        Ok(())
+    }
+
+    fn define_element(
+        &mut self,
+        el: &Element,
+        expression: Option<&str>,
+    ) -> Result<(), ImportError> {
+        if let Some(exp) = expression.filter(|exp| !has_saved_literal(el, exp)) {
+            let result = expression_kind(&el.kind).and_then(|kind| {
+                object_expression(&el.label, kind, exp).map(|line| (line, Some(kind)))
+            });
+            return self.accept_expression(&el.label, &el.kind, result, Some((el, exp)));
+        }
+        match self.free_object(el)? {
+            Ok(line) => match self.run(&line, std::slice::from_ref(&el.label))? {
+                Ok(()) => self.out.script.push(line),
+                Err(e) => self.skip(&el.label, &el.kind, e),
+            },
+            Err(reason) => self.skip(&el.label, &el.kind, reason),
         }
         Ok(())
     }
 
-    /// Lower the innermost calls first, so `Vector[...]` can distinguish a
-    /// vector it wraps from a point whose position vector it constructs.
-    fn expand_call(
+    fn record_element(
         &mut self,
-        arg: &str,
-        helpers: &mut Vec<(String, String)>,
-    ) -> Result<String, String> {
-        let Some((command, body)) = bracketed(arg) else {
-            let arg = pass_argument(arg)?;
-            if self.skipped.contains_key(&arg) {
-                return Err(format!("depends on the skipped object `{}`", quote(&arg)));
-            }
-            return Ok(arg);
-        };
-        if !command.bytes().all(|b| b.is_ascii_alphanumeric()) {
-            return Err(format!("invalid nested command name `{}`", quote(command)));
-        }
-        let args = split_parts(body)
-            .iter()
-            .map(|part| self.expand_call(part.trim(), helpers))
-            .collect::<Result<Vec<_>, _>>()?;
-        if let ("Vector", [arg]) = (command, args.as_slice()) {
-            if self
-                .kernel
-                .id(arg)
-                .is_some_and(|id| self.kernel.kind(id) == Kind::Vector)
+        el: &Element,
+        expression: Option<&str>,
+        polygon: Option<&[[f64; 2]]>,
+    ) {
+        if let Some(id) = self.kernel.id(&el.label) {
+            if let Some(form) = el
+                .equation_form
+                .as_ref()
+                .filter(|form| self.kernel.equation_form(id) != Some(*form))
             {
-                return Ok(arg.clone());
-            }
-        }
-        let prefix = if command == "Direction" { "dir" } else { "img" };
-        let label = self.helper_label(prefix);
-        let line = format!("{label} = {command}({})", args.join(", "));
-        let before = self.kernel.len();
-        exec(&mut self.kernel, &line)?;
-        if self.kernel.len() != before + 1 || self.kernel.id(&label).is_none() {
-            return Err(format!(
-                "nested command `{}` must create one object",
-                quote(command)
-            ));
-        }
-        helpers.push((label.clone(), line));
-        Ok(label)
-    }
-
-    /// A label for a helper object: `prefix`, then `prefix_1`, `prefix_2`, ...,
-    /// the first one neither the file nor the scratch construction uses.
-    fn helper_label(&self, prefix: &str) -> String {
-        let taken =
-            |label: &str| self.file_labels.contains(label) || self.kernel.id(label).is_some();
-        let mut label = prefix.to_string();
-        let mut index = 0;
-        while taken(&label) {
-            index += 1;
-            label = format!("{prefix}_{index}");
-        }
-        label
-    }
-
-    fn element(&mut self, el: Element) -> Result<(), ImportError> {
-        if self.produced.contains(&el.label) {
-            // The result of a command: its value is the kernel's business.
-            self.expressions.remove(&el.label);
-            if let Some(id) = self.kernel.id(&el.label) {
-                let image = is_transform_image(&self.kernel.def(id));
-                if let Some((saved, computed)) = cross_check(&el, &self.kernel.value(id), image) {
-                    self.out.mismatched.push(Mismatch {
-                        label: el.label.clone(),
-                        saved,
-                        computed,
-                    });
+                let line = EquationStyle {
+                    label: &el.label,
+                    form: form.clone(),
                 }
-                if !el.shown {
-                    self.out.hidden.push(el.label);
+                .to_string();
+                match exec(&mut self.kernel, &line) {
+                    Ok(_) => self.out.script.push(line),
+                    Err(e) => self
+                        .out
+                        .notes
+                        .push(format!("equation style for `{}`: {e}", quote(&el.label))),
                 }
             }
-            return Ok(());
-        }
-        self.claim(&el.label)?;
-        let expression = self.expressions.remove(&el.label);
-        let (label, kind) = (el.label.clone(), el.kind.clone());
-        match self.free_object(&el, expression.as_deref())? {
-            Ok(line) => match self.run(&line, std::slice::from_ref(&label))? {
-                Ok(()) => {
-                    self.out.script.push(line);
-                    if !el.shown {
-                        self.out.hidden.push(label);
+            if let Some(code) = el
+                .angle_style
+                .filter(|_| self.kernel.kind(id) == Kind::Angle)
+            {
+                let style = AngleStyle::from_xml(code);
+                if self.kernel.angle_style(id) != Some(style) {
+                    let line = format!("$angleStyle({}, {})", el.label, style.xml_code());
+                    match exec(&mut self.kernel, &line) {
+                        Ok(_) => self.out.script.push(line),
+                        Err(e) => self
+                            .out
+                            .notes
+                            .push(format!("angle style for `{}`: {e}", quote(&el.label))),
                     }
                 }
-                Err(e) => self.skip(&label, &kind, e),
+            }
+            if let Some((saved, computed)) = cross_check(el, &self.kernel, id, expression, polygon)
+            {
+                self.out.mismatched.push(Mismatch {
+                    label: el.label.clone(),
+                    saved,
+                    computed,
+                });
+            }
+            if !el.shown {
+                self.out.hidden.push(el.label.clone());
+            }
+        }
+    }
+
+    fn restore_slider(&mut self, el: &Element) {
+        let Some(saved) = &el.slider else { return };
+        if literal_slider_bounds(el).is_some_and(|[min, max]| {
+            self.kernel
+                .id(&el.label)
+                .and_then(|id| self.kernel.slider_interval(id))
+                == Some((min, max))
+        }) {
+            return;
+        }
+
+        let label = quote(&el.label);
+        let mut bounds = [None, None];
+        for ((bound, saved), endpoint) in bounds.iter_mut().zip(saved).zip(["minimum", "maximum"]) {
+            if let Some(source) = saved {
+                match expression_line(source) {
+                    Ok(source) => *bound = Some(source),
+                    Err(reason) => self
+                        .out
+                        .notes
+                        .push(format!("slider `{label}` {endpoint}: {}", quote(&reason))),
+                }
+            }
+        }
+        if bounds == [None, None] {
+            if *saved == [None, None] {
+                self.out
+                    .notes
+                    .push(format!("slider `{label}` has no saved endpoints"));
+            }
+            return;
+        }
+        let property = Property::SliderBounds {
+            label: el.label.clone(),
+            bounds,
+        };
+        let (restored, errors) = property.restore(&mut self.kernel);
+        if let Some(property) = restored {
+            self.out.script.push(property.to_string());
+        }
+        for reason in errors {
+            self.out
+                .notes
+                .push(format!("slider `{label}` bounds: {}", quote(&reason)));
+        }
+    }
+
+    fn retain_scripts(&mut self, el: &Element) {
+        if el.scripts.is_empty()
+            || self
+                .kernel
+                .id(&el.label)
+                .is_some_and(|id| self.kernel.control(id).is_some())
+        {
+            return;
+        }
+        self.out.script.push(
+            Property::ObjectScripts {
+                label: el.label.clone(),
+                scripts: el.scripts.clone(),
+            }
+            .to_string(),
+        );
+    }
+
+    fn apply_text_style(&mut self, el: &Element, font_size: f64) {
+        let Some(style) = el
+            .text
+            .as_deref()
+            .filter(|_| self.kernel.id(&el.label).is_some())
+        else {
+            return;
+        };
+        self.apply_text_overrides(
+            &el.label,
+            TextOverrides {
+                latex: style.latex,
+                font: style.font.as_ref().map(|font| TextFont {
+                    size: font.multiplier.unwrap_or_else(|| {
+                        font.legacy_size.map_or(1.0, |size| {
+                            (font_size + f64::from(size)).max(4.0) / font_size
+                        })
+                    }),
+                    serif: font.serif,
+                    bold: font.style & 1 != 0,
+                    italic: font.style & 2 != 0,
+                }),
+                offset: style.offset,
+                ..TextOverrides::default()
             },
-            Err(reason) => self.skip(&label, &kind, reason),
+        );
+    }
+
+    fn apply_text_position(&mut self, el: &Element) {
+        let Some((saved, id)) = el
+            .text
+            .as_deref()
+            .and_then(|style| style.position.as_ref())
+            .zip(self.kernel.id(&el.label))
+            .filter(|&(_, id)| self.kernel.kind(id) == Kind::Text)
+        else {
+            return;
+        };
+        let from_command = self.produced.contains(&el.label)
+            && self.kernel.text_position(id) != Some(TextPosition::Origin);
+        let position = match saved {
+            TextPosition::Point(label) | TextPosition::ScreenPoint(label) => {
+                if !self
+                    .kernel
+                    .id(label)
+                    .is_some_and(|p| self.kernel.kind(p) == Kind::Point)
+                {
+                    self.out.notes.push(format!(
+                        "text `{}` has an unavailable start point `{}`",
+                        quote(&el.label),
+                        quote(label)
+                    ));
+                    None
+                } else if matches!(saved, TextPosition::ScreenPoint(_)) {
+                    Some(TextPosition::ScreenPoint(label.as_str()))
+                } else {
+                    Some(TextPosition::Point(label.as_str()))
+                }
+            }
+            TextPosition::World { x, y } if !from_command => {
+                Some(TextPosition::World { x: *x, y: *y })
+            }
+            TextPosition::Screen { x, y } => Some(TextPosition::Screen { x: *x, y: *y }),
+            TextPosition::Undefined if !from_command => Some(TextPosition::Undefined),
+            _ => None,
+        };
+        self.apply_text_overrides(
+            &el.label,
+            TextOverrides {
+                position,
+                ..TextOverrides::default()
+            },
+        );
+    }
+
+    fn apply_text_overrides(&mut self, label: &str, overrides: TextOverrides<&str>) {
+        if overrides == TextOverrides::default() {
+            return;
+        }
+        let properties = TextProperties { label, overrides };
+        match properties.apply(&mut self.kernel) {
+            Ok(()) => self.out.script.push(properties.to_string()),
+            Err(e) => self
+                .out
+                .notes
+                .push(format!("text properties for `{}`: {e}", quote(label))),
+        }
+    }
+
+    /// Roll back any objects that script dispatch creates while trying a
+    /// definition that doesn't yield exactly the saved object.
+    fn accept_expression(
+        &mut self,
+        label: &str,
+        saved_type: &str,
+        line: Result<(String, Option<Kind>), String>,
+        expression: Option<(&Element, &str)>,
+    ) -> Result<(), ImportError> {
+        let before = self.kernel.len();
+        let checkpoint = self.kernel.checkpoint();
+        let result = line.and_then(|(line, kind)| {
+            let rhs = line.split_once('=').map_or("", |(_, rhs)| rhs.trim_start());
+            let rhs = rhs
+                .strip_prefix("$point")
+                .or_else(|| rhs.strip_prefix("$vector"))
+                .unwrap_or(rhs);
+            if !self.skipped.is_empty() {
+                if let Some(name) = geo_kernel::expr::expression_names(rhs)
+                    .into_iter()
+                    .find(|name| self.skipped.contains_key(*name))
+                {
+                    return Err(format!("depends on the skipped object `{}`", quote(name)));
+                }
+            }
+            let id = exec(&mut self.kernel, &line).map_err(|error| {
+                for prefix in ["unknown object `", "unknown command `"] {
+                    if let Some(name) = error.strip_prefix(prefix).and_then(|e| e.strip_suffix('`'))
+                    {
+                        if self.skipped.contains_key(name) {
+                            return format!("depends on the skipped object `{}`", quote(name));
+                        }
+                    }
+                }
+                format!("expression: {error}")
+            })?;
+            let Some(id) = id.filter(|&id| {
+                self.kernel.label(id) == label
+                    && (id.index() == before && self.kernel.len() == before + 1
+                        || kind == Some(Kind::Text)
+                            && id.index() >= before
+                            && self.kernel.ids().skip(before).all(|made| {
+                                made == id || self.kernel.label(made).starts_with('\0')
+                            }))
+            }) else {
+                return Err(
+                    "the expression must create exactly one object with the saved label".into(),
+                );
+            };
+            let actual = self.kernel.kind(id);
+            if let Some(kind) = kind.filter(|&kind| kind != actual) {
+                return Err(format!(
+                    "the expression gives a {actual}, expected a {kind}"
+                ));
+            }
+            if let Some((el, exp)) = expression.filter(|_| self.kernel.reads(id).is_empty()) {
+                if let Some(literal) = exact_literal(el) {
+                    let line = format!("{label} = $saved({literal}, {})", expression_line(exp)?);
+                    self.kernel
+                        .rollback(checkpoint)
+                        .map_err(|e| e.to_string())?;
+                    exec(&mut self.kernel, &line)?;
+                    return Ok(line);
+                }
+            }
+            Ok(line)
+        });
+        match result {
+            Ok(line) => self.out.script.push(line),
+            Err(reason) => {
+                if self.kernel.len() != before {
+                    self.kernel
+                        .rollback(checkpoint)
+                        .map_err(|e| ImportError::Internal(e.to_string()))?;
+                }
+                self.skip(label, saved_type, reason);
+            }
         }
         Ok(())
     }
 
     /// The script line of an element that no command made, or why there is
     /// none. The outer `Result` is for a file that is damaged.
-    fn free_object(
-        &self,
-        el: &Element,
-        expression: Option<&str>,
-    ) -> Result<Result<String, String>, ImportError> {
-        if let Some(exp) = expression {
-            // A constant expression (`(1/2, 3)`, `2^10`) is an independent
-            // object for GeoGebra, whose value is the one the element saved.
-            if !is_literal(exp) && !is_constant_expression(exp) {
-                return Ok(expression_line(exp));
-            }
-        }
+    fn free_object(&self, el: &Element) -> Result<Result<String, String>, ImportError> {
         let label = el.label.as_str();
         if !is_label(label) {
             return Ok(Err(format!(
@@ -594,45 +1007,247 @@ impl Converter {
                 };
                 let v = number(text)?;
                 if v.is_finite() {
-                    Ok(format!("{label} = {v}"))
+                    if let Some([min, max]) = literal_slider_bounds(el) {
+                        Ok(format!("{label} = $slider({v}, {min}, {max})"))
+                    } else {
+                        Ok(format!("{label} = {v}"))
+                    }
                 } else {
                     Err("the value is not finite".into())
                 }
             }
-            "angle" => Err("a free angle: the kernel has no angle objects".into()),
-            "boolean" => {
-                Err("a free boolean (a check box): the kernel has no free booleans".into())
-            }
+            "angle" => Err("the angle has no saved definition".into()),
+            "boolean" => Ok(control_line(
+                label,
+                "$checkBox",
+                Some(boolean_value(Some(el))),
+                Some(el),
+            )),
+            "button" => Ok(control_line(label, "$button", None, Some(el))),
+            "textfield" => Ok(control_line(label, "$inputBox", Some(""), Some(el))),
+            "text" => el
+                .value
+                .as_ref()
+                .map(|s| format!("{label} = {}", text_literal(s)))
+                .ok_or_else(|| "the text has no saved expression or value".into()),
             "conic" => Err("a conic that no command made: the kernel only has circles".into()),
-            other => Err(format!("the element type `{other}` is not supported")),
+            other => Err(unsupported_element(other)),
         })
     }
 }
 
-/// An `<expression>` that defines an object (`a + b`, `2 * r`). The kernel has
-/// no expression engine yet; this is where one would plug in, by returning
-/// the script line.
-pub fn expression_line(exp: &str) -> Result<String, String> {
-    Err(format!(
-        "the object is defined by the expression `{}`; the kernel has no expressions yet",
-        quote(exp)
-    ))
+fn boolean_value(element: Option<&Element>) -> &'static str {
+    if element.and_then(|el| el.value.as_deref()) == Some("false") {
+        "false"
+    } else {
+        "true"
+    }
 }
 
-/// An argument of a command as a script argument. A label or a number goes
-/// through unchanged; anything else is an expression (`(1, 2)`, `2 * r`,
-/// `{A, B}`), which the kernel cannot read yet. Like [`expression_line`] this
-/// is the place to add one.
-pub fn pass_argument(arg: &str) -> Result<String, String> {
-    let arg = arg.trim();
-    let short = arg.len() <= MAX_TOKEN_BYTES;
-    if short && (is_label(arg) || arg.parse::<f64>().is_ok_and(f64::is_finite)) {
-        Ok(arg.to_string())
+fn control_line(label: &str, form: &str, value: Option<&str>, element: Option<&Element>) -> String {
+    let caption = element.map_or("", |el| el.caption.as_str());
+    let mut args = vec![encode_text(caption)];
+    if let Some(value) = value {
+        args.insert(0, value.to_string());
+    }
+    if let Some(el) = element {
+        args.extend(encode_scripts(&el.scripts));
+    }
+    format!("{label} = {form}({})", args.join(", "))
+}
+
+fn unsupported_element(kind: &str) -> String {
+    let reason = match kind {
+        "audio" | "video" | "embed" => "out of scope: media playback and embedded applications",
+        "image" => "there is no raster image kind or asset renderer",
+        "implicitpoly" => "there is no implicit curve kind",
+        "penstroke" | "turtle" => "there is no corresponding stroke or turtle kind",
+        _ => return format!("the element type `{}` is not supported", quote(kind)),
+    };
+    format!("element type `{kind}`: {reason}")
+}
+
+fn literal_slider_bounds(el: &Element) -> Option<[f64; 2]> {
+    let [min, max] = el.slider.as_ref()?;
+    Some([num(min.as_deref()?)?, num(max.as_deref()?)?])
+}
+
+fn expression_kind(saved_type: &str) -> Result<Kind, String> {
+    Ok(match saved_type {
+        "point" => Kind::Point,
+        "vector" => Kind::Vector,
+        "numeric" => Kind::Number,
+        "button" => Kind::Button,
+        "textfield" => Kind::InputBox,
+        "angle" => Kind::Angle,
+        "function" => Kind::Function,
+        "functionnvar" => return Err("a function with multiple variables is unsupported".into()),
+        "boolean" => Kind::Boolean,
+        "list" => Kind::List,
+        "text" => Kind::Text,
+        "line" => Kind::Line,
+        "conic" => Kind::Conic,
+        other => return Err(unsupported_element(other)),
+    })
+}
+
+/// Literal objects use the full precision of the saved value.
+fn has_saved_literal(el: &Element, exp: &str) -> bool {
+    if el.kind == "boolean" && el.value.is_some() {
+        return matches!(exp.trim(), "true" | "false" | "True" | "False");
+    }
+    let has_value = match el.kind.as_str() {
+        "point" | "vector" => el.coords.is_some(),
+        "numeric" => el.value.is_some(),
+        _ => false,
+    };
+    has_value && is_literal(exp)
+}
+
+fn exact_literal(el: &Element) -> Option<String> {
+    match el.kind.as_str() {
+        "point" | "vector" => {
+            let [mut x, mut y, z] = coords3(el)?;
+            let form = if el.kind == "point" {
+                x /= z;
+                y /= z;
+                "$point"
+            } else {
+                "$vector"
+            };
+            (x.is_finite() && y.is_finite()).then(|| format!("{form}({x}, {y})"))
+        }
+        "numeric" => Some(num(el.value.as_deref()?)?.to_string()),
+        "angle" => Some(format!("{} rad", num(el.value.as_deref()?)?)),
+        _ => None,
+    }
+}
+
+fn object_expression(label: &str, kind: Kind, exp: &str) -> Result<String, String> {
+    if !is_label(label) {
+        return Err(format!(
+            "`{}` is not a label the script can use",
+            quote(label)
+        ));
+    }
+    if kind == Kind::Function {
+        // The XML writer includes the signature of a named function in `exp`.
+        let signature = exp.split_once('=').and_then(|(lhs, rhs)| {
+            let (name, parameter) = lhs.trim_end().strip_suffix(')')?.split_once('(')?;
+            (!rhs.starts_with('=')).then_some((name.trim(), parameter.trim(), rhs.trim()))
+        });
+        let (parameter, body) = if let Some((name, parameter, body)) = signature {
+            if name != label {
+                return Err(format!(
+                    "the function signature names `{}`, expected `{}`",
+                    quote(name),
+                    quote(label)
+                ));
+            }
+            if parameter.contains(',') {
+                return Err("a function with multiple variables is unsupported".into());
+            }
+            if !matches!(parameter, "x" | "y") {
+                return Err(format!(
+                    "the function parameter `{}` is unsupported",
+                    quote(parameter)
+                ));
+            }
+            (parameter, body)
+        } else {
+            ("x", exp)
+        };
+        return Ok(format!("{label}({parameter}) = {}", expression_line(body)?));
+    }
+    let rhs = expression_line(exp)?;
+    Ok(match kind {
+        Kind::Line | Kind::Conic => format!("{label}: {rhs}"),
+        Kind::Point if is_vector_label(label) => format!("{label} = $point({rhs})"),
+        Kind::Vector if !is_vector_label(label) => format!("{label} = $vector({rhs})"),
+        _ => format!("{label} = {rhs}"),
+    })
+}
+
+/// Convert saved command brackets to parentheses. The kernel already reads
+/// the saved spellings of comparisons, logical operators, powers and degrees.
+pub fn expression_line(exp: &str) -> Result<String, String> {
+    let mut out = String::with_capacity(exp.len());
+    let mut closers = Vec::new();
+    let mut quoted = false;
+    for ch in exp.trim().chars() {
+        if quoted {
+            if ch == '"' {
+                quoted = false;
+                out.push(ch);
+            } else {
+                push_escaped_char(&mut out, ch);
+            }
+            continue;
+        }
+        let normalized = match ch {
+            '#' => {
+                return Err("a script comment marker `#` in an expression is unsupported".into())
+            }
+            '"' => {
+                quoted = true;
+                ch
+            }
+            '[' => {
+                let end = out.trim_end().len();
+                let name = out[..end]
+                    .rsplit(|ch: char| !ch.is_ascii_alphanumeric())
+                    .next()
+                    .unwrap_or("");
+                if !name.starts_with(|ch: char| ch.is_ascii_uppercase()) {
+                    return Err("a square bracket must follow a command name".into());
+                }
+                out.truncate(end);
+                closers.push(']');
+                '('
+            }
+            '(' | '{' => {
+                closers.push(if ch == '(' { ')' } else { '}' });
+                ch
+            }
+            ')' | ']' | '}' => {
+                let expected = closers.pop();
+                if expected != Some(ch) {
+                    if ch == ']' || expected == Some(']') {
+                        return Err("mismatched command square brackets in expression".into());
+                    }
+                    return Err(format!("unexpected `{ch}` in expression"));
+                }
+                if ch == ']' {
+                    ')'
+                } else {
+                    ch
+                }
+            }
+            '·' => '*',
+            '\r' | '\n' => ' ',
+            _ => ch,
+        };
+        out.push(normalized);
+    }
+    if quoted {
+        return Err("unclosed text literal in expression".into());
+    }
+    if let Some(closer) = closers.pop() {
+        return Err(format!("missing `{closer}` in expression"));
+    }
+    Ok(out)
+}
+
+/// Labels and numbers keep the command's ordinary overload resolution.
+/// The remaining arguments can create anonymous expression objects on demand.
+fn pass_argument(arg: &str, raw: bool) -> Result<String, String> {
+    if arg.contains('\0') || arg.is_empty() {
+        return Err("invalid command input".into());
+    }
+    if raw || (arg.len() <= MAX_TOKEN_BYTES && (is_label(arg) || num(arg).is_some())) {
+        Ok(arg.to_owned())
     } else {
-        Err(format!(
-            "the argument `{}` is an expression; the kernel has no expressions yet",
-            quote(arg)
-        ))
+        Ok(format!("$arg({arg})"))
     }
 }
 
@@ -648,10 +1263,8 @@ fn is_literal(s: &str) -> bool {
 
 /// An expression with no object in it, only numbers and operators:
 /// digits, `.`, `,`, `+ - * / ^`, parentheses, white space, and an exponent
-/// `E` or `e` right after a digit or `.`. GeoGebra treats it as an
-/// independent object (`isIndependent = !n.any(isDynamicGeoElement)`), so the
-/// importer reads the value from the element, as for a literal. Any
-/// identifier (`pi`, `sqrt`, a label) makes it an ordinary expression.
+/// `E` or `e` right after a digit or `.`. The importer uses parsed dependencies
+/// to recognize independent objects, including expressions with named constants.
 pub fn is_constant_expression(s: &str) -> bool {
     let mut previous = ' ';
     let mut digits = false;
@@ -688,54 +1301,11 @@ fn is_label(s: &str) -> bool {
     ok_index && first && chars.all(word)
 }
 
-/// The label-like words of an argument.
-fn tokens(arg: &str) -> impl Iterator<Item = &str> {
-    arg.split(|c: char| !(c.is_alphanumeric() || matches!(c, '_' | '\'' | '{' | '}')))
-        .filter(|t| !t.is_empty())
-}
-
-/// `Name[body]` as GeoGebra writes a nested command call: the name before the
-/// first `[` and everything between that bracket and the matching `]` at the
-/// end (a `]` inside the body belongs to an inner call). `None` when the
-/// argument is not that form.
-fn bracketed(arg: &str) -> Option<(&str, &str)> {
-    let (name, rest) = arg.split_once('[')?;
-    let body = rest.strip_suffix(']')?;
-    (!name.is_empty() && !body.is_empty()).then_some((name, body))
-}
-
-/// The top-level comma-separated parts of a saved argument list, keeping
-/// bracketed calls and parenthesised points together.
-fn split_parts(s: &str) -> Vec<String> {
-    let mut parts = Vec::new();
-    let mut depth = 0usize;
-    let mut current = String::new();
-    for ch in s.chars() {
-        match ch {
-            '[' | '(' => {
-                depth += 1;
-                current.push(ch);
-            }
-            ']' | ')' => {
-                depth = depth.saturating_sub(1);
-                current.push(ch);
-            }
-            ',' if depth == 0 => {
-                parts.push(current.clone());
-                current.clear();
-            }
-            _ => current.push(ch),
-        }
-    }
-    parts.push(current);
-    parts
-}
-
 const TOLERANCE: f64 = 1e-9;
 
 /// `|p - q| <= 1e-9 * max(1, |p|, |q|)`, the comparison of the golden files.
 fn close(p: f64, q: f64) -> bool {
-    (p - q).abs() <= TOLERANCE * 1.0_f64.max(p.abs()).max(q.abs())
+    p.is_finite() && q.is_finite() && (p - q).abs() <= TOLERANCE * 1.0_f64.max(p.abs()).max(q.abs())
 }
 
 fn num(text: &str) -> Option<f64> {
@@ -881,23 +1451,101 @@ fn saved_defined(el: &Element) -> Option<bool> {
 /// Compares what the kernel computed with what the file saved for the same
 /// object. `Some((saved, computed))` for a disagreement: a different value,
 /// or one side defined and the other not. `None` when they agree or when the
-/// file saved nothing to compare with (a polygon, a polyline: GeoGebra saves
-/// neither the vertices nor the area; a segment or a ray: only its line, the
-/// end points are the objects it was made from).
-///
-/// `image` says whether the object is the image of a transformation, the
-/// only place where GeoGebra classifies the transformed matrix again, so the
-/// only objects for which a saved matrix of a single point stands for
-/// radius 0 (see [`saved_single_point`]).
-fn cross_check(el: &Element, value: &Value, image: bool) -> Option<(String, String)> {
-    let report = || Some((saved_text(el), format!("{value:?}")));
-    let saved_defined = saved_defined(el);
+/// file saved nothing to compare with. Explicit polygons also provide the
+/// ordered vertex labels in the command and their coordinates in the elements.
+fn cross_check(
+    el: &Element,
+    c: &Construction,
+    id: Id,
+    expression: Option<&str>,
+    polygon: Option<&[[f64; 2]]>,
+) -> Option<(String, String)> {
+    let kind = c.kind(id);
+    let value = c.value(id);
+    let kind_matches = kind_agrees(&el.kind, kind);
+    // GeoGebra writes independent text as a quoted expression. Dependent
+    // texts normally save their definition or command and omit the result.
+    let saved_string = (el.kind == "text")
+        .then(|| {
+            el.value.as_deref().or_else(|| {
+                let body = expression?.trim().strip_prefix('"')?.strip_suffix('"')?;
+                (!body.contains('"')).then_some(body)
+            })
+        })
+        .flatten();
+    let report = || {
+        let saved =
+            saved_string.map_or_else(|| saved_text(el), |s| format!("value {:?}", quote(s)));
+        let computed = if let Some(text) = c.text(id) {
+            format!("{kind}, {:?}", quote(text))
+        } else if kind == Kind::Conic {
+            format!(
+                "{kind}, {value:?}, matrix {:?}",
+                c.conic(id).map(|d| d.matrix)
+            )
+        } else {
+            format!("{kind}, {value:?}")
+        };
+        let saved = if !saved.is_empty() {
+            if kind_matches {
+                saved
+            } else {
+                format!("{} {saved}", el.kind)
+            }
+        } else if let Some(exp) = expression {
+            format!("{} definition `{}`", el.kind, quote(exp))
+        } else if let Some(points) = polygon {
+            format!("{} vertices {}", el.kind, points.len())
+        } else {
+            el.kind.clone()
+        };
+        Some((saved, computed))
+    };
+    if !kind_matches {
+        return report();
+    }
+    if polygon.is_some_and(|points| !polygon_agrees(c, id, points)) {
+        return report();
+    }
+    if let Some(saved) = saved_string {
+        return (c.text(id) != Some(saved)).then(report).flatten();
+    }
+    if let Some(exp) = expression {
+        let exp = exp.trim();
+        match kind {
+            Kind::Function => {
+                let body = exp.split_once('=').map_or(exp, |(_, body)| body.trim());
+                if let Some(expected) = num(body) {
+                    if ![-1.0, 0.0, 1.0].into_iter().all(|x| {
+                        c.function_value(id, x)
+                            .is_some_and(|actual| close(actual, expected))
+                    }) {
+                        return report();
+                    }
+                }
+            }
+            Kind::List => {
+                if let Some(parts) = geo_kernel::expr::list_literal_elements(exp) {
+                    if let Some(list) = c.elements(id) {
+                        if !list_agrees(list, parts) {
+                            return report();
+                        }
+                    } else if parts.iter().all(|s| num(s).is_some()) {
+                        return report();
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    let saved_defined =
+        saved_defined(el).or_else(|| expression.filter(|exp| exp.trim() == "?").map(|_| false));
     match (value.is_defined(), saved_defined) {
         (false, Some(true)) | (true, Some(false)) => return report(),
         (false, _) | (_, None) => return None,
         (true, Some(true)) => {}
     }
-    let agrees: Option<bool> = match *value {
+    let agrees: Option<bool> = match value {
         Value::Point { x, y } => {
             coords3(el).map(|[sx, sy, sz]| close(x, sx / sz) && close(y, sy / sz))
         }
@@ -913,19 +1561,32 @@ fn cross_check(el: &Element, value: &Value, image: bool) -> Option<(String, Stri
                 same_line([y1 - y2, x2 - x1, x1 * y2 - y1 * x2], saved)
             }
         }),
-        Value::Circle { cx, cy, r } => saved_circle(el).flatten().map(|s| {
-            // Centre and radius at the golden rules. The saved radius comes
-            // from a difference of terms of size `scale`, so it is no more
-            // precise than that: its error is bounded by the rounding of the
-            // matrix, not by 1e-9 of the (possibly tiny) radius.
-            let rs = s.r2.max(0.0).sqrt();
-            let r2_error = MATRIX_ULPS * f64::EPSILON * s.scale;
-            let radius_ok = close(r, rs)
-                || (r * r - s.r2).abs() <= r2_error
-                || (image && r == 0.0 && saved_single_point(el));
-            close(cx, s.cx) && close(cy, s.cy) && radius_ok
+        Value::Circle { cx, cy, r } => saved_circle(el).map(|s| {
+            s.is_some_and(|s| {
+                // Centre and radius at the golden rules. The saved radius comes
+                // from a difference of terms of size `scale`, so it is no more
+                // precise than that: its error is bounded by the rounding of the
+                // matrix, not by 1e-9 of the (possibly tiny) radius.
+                let rs = s.r2.max(0.0).sqrt();
+                let r2_error = MATRIX_ULPS * f64::EPSILON * s.scale;
+                let radius_ok = close(r, rs)
+                    || (r * r - s.r2).abs() <= r2_error
+                    || (r == 0.0 && is_transform_image(&c.def(id)) && saved_single_point(el));
+                close(cx, s.cx) && close(cy, s.cy) && radius_ok
+            })
         }),
-        Value::Number(n) => el.value.as_deref().and_then(num).map(|s| close(n, s)),
+        Value::Conic { .. } => matrix6(el)
+            .zip(c.conic(id))
+            .map(|(saved, computed)| same_matrix(saved, computed.matrix)),
+        Value::Number(n) => el.value.as_deref().and_then(num).map(|s| {
+            let s = if kind == Kind::Angle {
+                el.angle_style
+                    .map_or(s, |code| AngleStyle::from_xml(code).value(s))
+            } else {
+                s
+            };
+            close(n, s)
+        }),
         Value::Bool(b) => el
             .value
             .as_deref()
@@ -935,10 +1596,184 @@ fn cross_check(el: &Element, value: &Value, image: bool) -> Option<(String, Stri
     (agrees == Some(false)).then(report).flatten()
 }
 
+fn polygon_agrees(c: &Construction, id: Id, saved: &[[f64; 2]]) -> bool {
+    let mut vertices = c.vertices(id);
+    saved.iter().all(|&[x, y]| {
+        vertices
+            .next()
+            .flatten()
+            .is_some_and(|(px, py)| close(x, px) && close(y, py))
+    }) && vertices.next().is_none()
+}
+
+fn kind_agrees(saved: &str, actual: Kind) -> bool {
+    let expected = match saved {
+        "point" => Kind::Point,
+        "vector" => Kind::Vector,
+        "line" => Kind::Line,
+        "ray" => Kind::Ray,
+        "segment" => Kind::Segment,
+        "conic" => return matches!(actual, Kind::Conic | Kind::Circle),
+        "conicpart" => return matches!(actual, Kind::Arc | Kind::Sector),
+        "numeric" => Kind::Number,
+        "button" => Kind::Button,
+        "textfield" => Kind::InputBox,
+        "angle" => Kind::Angle,
+        "boolean" => Kind::Boolean,
+        "function" => Kind::Function,
+        "functionnvar" => Kind::FunctionNVar,
+        "list" => Kind::List,
+        "polygon" => Kind::Polygon,
+        "polyline" => Kind::PolyLine,
+        "text" => Kind::Text,
+        "locus" => Kind::Locus,
+        "curvecartesian" => Kind::Curve,
+        _ => return true,
+    };
+    expected == actual
+}
+
+fn matrix6(el: &Element) -> Option<[f64; 6]> {
+    let mut matrix = [0.0; 6];
+    for (slot, text) in matrix.iter_mut().zip(el.matrix.as_ref()?) {
+        *slot = num(text)?;
+    }
+    Some(matrix)
+}
+
+fn same_matrix(saved: [f64; 6], actual: [f64; 6]) -> bool {
+    let pivot = (0..6)
+        .max_by(|&a, &b| saved[a].abs().total_cmp(&saved[b].abs()))
+        .unwrap();
+    saved[pivot] != 0.0
+        && actual[pivot] != 0.0
+        && actual.iter().all(|x| x.is_finite())
+        && (0..6).all(|i| close(saved[i] / saved[pivot], actual[i] / actual[pivot]))
+}
+
+fn list_agrees(list: geo_kernel::expr::List<'_>, parts: Vec<&str>) -> bool {
+    list.len() == parts.len()
+        && list
+            .iter()
+            .zip(parts)
+            .all(|(actual, saved)| list_item_agrees(actual, saved))
+}
+
+fn list_item_agrees(actual: geo_kernel::expr::Element<'_>, saved: &str) -> bool {
+    use geo_kernel::expr::Element as ListElement;
+    if let Some(n) = num(saved) {
+        matches!(actual, ListElement::Value(Kind::Number, Value::Number(v)) if close(v, n))
+    } else if matches!(saved, "true" | "false") {
+        matches!(actual, ListElement::Value(Kind::Boolean, Value::Bool(v)) if v == (saved == "true"))
+    } else if let Some(parts) = geo_kernel::expr::list_literal_elements(saved) {
+        matches!(actual, ListElement::List(inner) if list_agrees(inner, parts))
+    } else {
+        true
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::import;
     use geo_kernel::{script, Value};
+
+    #[test]
+    fn saved_text_verification_reports_exact_string_differences() {
+        use super::cross_check;
+        use crate::xml::{parse, Item};
+        let xml = crate::archive::extract_xml(include_bytes!(
+            "../../../golden/ggb/saved/saved-texts-001.ggb"
+        ))
+        .unwrap();
+        let mut doc = parse(&xml).unwrap();
+        let label = "note";
+        let (el, exp) = (
+            doc.items
+                .iter()
+                .find_map(|item| match item {
+                    Item::Element(el) if el.label == label => Some(el.as_ref()),
+                    _ => None,
+                })
+                .unwrap(),
+            doc.items
+                .iter()
+                .find_map(|item| match item {
+                    Item::Expression { label: name, exp } if name == label => Some(exp.as_str()),
+                    _ => None,
+                })
+                .unwrap(),
+        );
+        let c = script::load(r#"note = "Survey note second line""#).unwrap();
+        assert!(cross_check(el, &c, c.id(label).unwrap(), Some(exp), None).is_some());
+
+        // Supply a cached value alongside the saved expression to exercise
+        // mismatch reporting through the converter's normal entry point.
+        for item in &mut doc.items {
+            if let Item::Element(el) = item {
+                if el.label == label {
+                    el.value = c.text(c.id(label).unwrap()).map(str::to_owned);
+                }
+            }
+        }
+        let imported = super::convert(doc).unwrap();
+        assert_eq!(imported.mismatched.len(), 1, "{:?}", imported.mismatched);
+        let mismatch = &imported.mismatched[0];
+        assert_eq!(mismatch.label, label);
+        assert!(mismatch.saved.contains("Survey note second line"));
+        assert!(mismatch.computed.contains(r"Survey note\nsecond line"));
+    }
+
+    #[test]
+    fn saved_verification_detects_different_kinds_and_serialized_values() {
+        use super::{coords3, cross_check};
+        use crate::xml::{parse, Item};
+        let doc = parse(include_str!(
+            "../../../golden/ggb/saved/saved-review-001.xml"
+        ))
+        .unwrap();
+        let element = |label| {
+            doc.items
+                .iter()
+                .find_map(|item| match item {
+                    Item::Element(el) if el.label == label => Some(el.as_ref()),
+                    _ => None,
+                })
+                .unwrap()
+        };
+        let exp = |label| {
+            doc.items.iter().find_map(|item| match item {
+                Item::Expression { label: l, exp } if l == label => Some(exp.as_str()),
+                _ => None,
+            })
+        };
+        let c = script::load(
+            "chosen = (1.4142135623730951, 1)\nflat(x) = 6\nq = {(1, 1), 1/3, 6, 2pi}\n\
+             A = (1, 1)\nB = (3, 4)\nC = (2, 5)\ntri = Polygon(A, B, C)\n\
+             n = 6\nel = Ellipse(A, B, n)",
+        )
+        .unwrap();
+        for label in ["chosen", "flat", "q", "el"] {
+            assert!(
+                cross_check(element(label), &c, c.id(label).unwrap(), exp(label), None).is_some(),
+                "{label}"
+            );
+        }
+        let points: Vec<_> = ["A", "B", "C"]
+            .into_iter()
+            .map(|label| {
+                let [x, y, z] = coords3(element(label)).unwrap();
+                [x / z, y / z]
+            })
+            .collect();
+        assert!(cross_check(
+            element("tri"),
+            &c,
+            c.id("tri").unwrap(),
+            None,
+            Some(&points)
+        )
+        .is_some());
+    }
 
     #[test]
     fn saved_transform_ray_uses_hidden_helpers() {
@@ -948,18 +1783,25 @@ mod tests {
         .unwrap();
         assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
         let c = script::load(&imported.script.join("\n")).unwrap();
-        for helper in ["dir", "img"] {
-            assert!(c.id(helper).is_some());
-            assert!(imported.hidden.iter().any(|label| label == helper));
-        }
+        let helpers: Vec<_> = c
+            .ids()
+            .filter(|&id| c.label(id).starts_with('\0'))
+            .collect();
+        assert_eq!(helpers.len(), 2);
+        assert!(c.id("dir").is_none() && c.id("img").is_none());
     }
 
     #[test]
     fn skipped_arc_leaves_no_helpers() {
-        let imported = import(include_bytes!(
-            "../../../golden/ggb/transform/transform-arcpart-005.xml"
-        ))
-        .unwrap();
+        let xml = include_str!("../../../golden/ggb/transform/transform-arcpart-005.xml");
+        // Use a line for the end point so the arc fails after expanding its
+        // transformed conic into a helper.
+        let broken = xml.replace(
+            "a0=\"Shear[k, n, f]\" a1=\"P&apos;\" a2=\"Q&apos;\"",
+            "a0=\"Shear[k, n, f]\" a1=\"P&apos;\" a2=\"n\"",
+        );
+        assert_ne!(xml, broken);
+        let imported = import(broken.as_bytes()).unwrap();
         assert_eq!(imported.skipped.len(), 1, "{:?}", imported.skipped);
         assert_eq!(imported.skipped[0].label, "m");
         let c = script::load(&imported.script.join("\n")).unwrap();

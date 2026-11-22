@@ -5,7 +5,7 @@ use geo_kernel::{script, Construction, Def, Error, Kind, Value};
 
 /// Number of cases recorded by `ggb-harness` so far. Raise it when adding cases,
 /// so that losing a file is noticed.
-const MIN_GOLDEN_CASES: usize = 3811;
+const MIN_GOLDEN_CASES: usize = 4365;
 
 #[test]
 fn kernel_agrees_with_golden_data() {
@@ -24,6 +24,34 @@ fn kernel_agrees_with_golden_data() {
         r.summary(),
         r.failures.join("\n")
     );
+}
+
+#[test]
+fn reduced_row_echelon_form_preserves_the_reference_zero_sign() {
+    let cases = model::load_all(&repo_root()).unwrap();
+    let case = cases
+        .iter()
+        .find(|c| c.id == "matrixdilate-elimination-011")
+        .unwrap();
+    let Some(model::ExpectedData::List(rows)) = &case.snapshots[0]["a"].data else {
+        panic!("expected a matrix snapshot");
+    };
+    let Some(model::ExpectedData::List(row)) = &rows[0].data else {
+        panic!("expected a matrix row");
+    };
+    let Some(model::ExpectedData::Number(want)) = row[1].data else {
+        panic!("expected a number");
+    };
+    let c = script::load(&case.script.join("\n")).unwrap();
+    let matrix = c.elements(c.id("a").unwrap()).unwrap();
+    let Some(geo_kernel::expr::Element::List(row)) = matrix.get(0) else {
+        panic!("expected a matrix row");
+    };
+    let Some(geo_kernel::expr::Element::Value(Kind::Number, Value::Number(actual))) = row.get(1)
+    else {
+        panic!("expected a number");
+    };
+    assert_eq!(actual.to_bits(), want.to_bits());
 }
 
 #[test]

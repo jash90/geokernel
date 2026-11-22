@@ -78,7 +78,13 @@ const DIRECTED: &[Kind] = &[
     Kind::Segment,
     Kind::Ray,
 ];
-const MATRIX_TARGET: &[Kind] = &[Kind::Point, Kind::Vector, Kind::Line];
+const MATRIX_TARGET: &[Kind] = &[
+    Kind::Point,
+    Kind::Vector,
+    Kind::Line,
+    Kind::Polygon,
+    Kind::PolyLine,
+];
 const LIST: &[Kind] = &[Kind::List];
 /// Kinds of object `Translate` moves here. A circle is translated by
 /// [`crate::algo::general_conic::GeneralConicDef`], which keeps its axes,
@@ -104,6 +110,8 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Ray => &[Kind::Ray],
         Kind::Boolean => &[Kind::Boolean],
         Kind::Function => &[Kind::Function],
+        Kind::Text => &[Kind::Text],
+        Kind::FunctionNVar => &[Kind::FunctionNVar],
         Kind::Polygon => &[Kind::Polygon],
         Kind::PolyLine => &[Kind::PolyLine],
         Kind::List => &[Kind::List],
@@ -111,6 +119,8 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Arc => &[Kind::Arc],
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
+        Kind::Curve => &[Kind::Curve],
+        Kind::Button | Kind::InputBox => &[],
     }
 }
 
@@ -149,7 +159,7 @@ pub enum VectorDef {
     Length(Id),
     /// `Dimension(A)` and `Dimension(v)`.
     Dimension(Id),
-    /// `ApplyMatrix(matrix, object)` for a 2D point, vector or line.
+    /// `ApplyMatrix(matrix, object)` for a point, vector, line, polygon or polyline.
     ApplyMatrix { matrix: Id, src: Id, kind: Kind },
     /// `Determinant(matrix)` of a square matrix.
     Determinant(Id),
@@ -461,11 +471,16 @@ fn translate(v: Value, dx: f64, dy: f64) -> Option<Value> {
         | Value::Number(_)
         | Value::Bool(_)
         | Value::Function
+        | Value::Text
+        | Value::FunctionNVar
         | Value::List { .. }
         | Value::Conic { .. }
         | Value::Arc { .. }
         | Value::Sector { .. }
         | Value::Locus { .. }
+        | Value::Curve { .. }
+        | Value::Button
+        | Value::InputBox
         | Value::Undefined => return None,
     })
 }
@@ -666,8 +681,14 @@ impl Group for VectorDef {
                 Some(Value::Number(ggb_length(x, y)))
             }
             VectorDef::Dimension(v) => c.stored_value(v).is_defined().then_some(Value::Number(2.0)),
-            VectorDef::ApplyMatrix { matrix, src, .. } => {
-                matrix::apply(c.elements(matrix)?, c.stored_value(src))
+            VectorDef::ApplyMatrix { matrix, src, kind } => {
+                let transform = c.elements(matrix).and_then(matrix::Matrix::read);
+                match kind {
+                    Kind::Polygon | Kind::PolyLine => {
+                        super::polygon::apply_matrix(c, src, kind, transform)
+                    }
+                    _ => transform?.apply(c.stored_value(src)),
+                }
             }
             VectorDef::Determinant(l) => {
                 matrix::determinant(c.elements(l)?, matrix::budget()).map(Value::Number)
@@ -951,8 +972,7 @@ mod tests {
         assert!(err(&mut c, "a = Translate(A, B)").contains("expected a vector"));
         assert!(err(&mut c, "a = Translate(r, u)").contains("`r` is a number"));
         assert!(err(&mut c, "a = Ray(A, l)").contains("expected a point"));
-        // `Length` of a point is not handled here and not by any other group.
-        assert!(exec(&mut c, "a = Length(A)").is_err());
+        assert!(err(&mut c, "a = Length(l)").contains("expected a segment"));
         // Nothing was added by the failed lines.
         assert_eq!(c.len(), load(BASE).unwrap().len());
     }

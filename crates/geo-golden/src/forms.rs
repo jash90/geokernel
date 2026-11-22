@@ -2,19 +2,18 @@
 //!
 //! `tools/command-matrix/forms.csv` lists every 2D form of every in-scope
 //! command, as an argument signature such as `point,point` (`()` takes no
-//! argument, a trailing `...` repeats the token before it). A form is done
-//! when `tools/command-matrix/form-evidence.toml` names golden cases that
-//! call the command with arguments of exactly those kinds, or a row of
-//! `DIFFERENCES.md` that gives it a disposition. The rules are checked by
-//! `tests/command_forms.rs`; `tools/command-matrix/README.md` explains them.
+//! argument, and `...` repeats the token before it). A form is done
+//! when `tools/command-matrix/form-evidence.toml` names matching golden cases,
+//! a row of `DIFFERENCES.md` that gives it a disposition, or both.
+//! `tests/command_forms.rs` checks the rules in `tools/command-matrix/README.md`.
 
 use crate::table::Table;
 use geo_kernel::Kind;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
-/// Tokens that stand for many kinds. One golden case cannot show that every
-/// kind such a form accepts works, so these forms are never done by cases.
+/// Tokens that stand for many kinds. A wildcard form needs a disposition or
+/// full case coverage of its supported input kinds.
 pub const WILDCARDS: [&str; 3] = ["any", "path", "region"];
 
 /// The columns of `forms.csv`.
@@ -90,7 +89,7 @@ struct EvidenceFile {
     form: Vec<Evidence>,
 }
 
-/// Reads `form-evidence.toml`: every row has either cases or a difference,
+/// Reads `form-evidence.toml`: every row has cases, a difference, or both,
 /// and no form appears twice.
 pub fn parse_evidence(text: &str) -> Result<Vec<Evidence>, String> {
     let file: EvidenceFile =
@@ -98,8 +97,8 @@ pub fn parse_evidence(text: &str) -> Result<Vec<Evidence>, String> {
     let mut seen = std::collections::BTreeSet::new();
     for e in &file.form {
         let what = format!("form-evidence.toml: `{}` `{}`", e.command, e.form);
-        if e.cases.is_empty() == e.difference.is_none() {
-            return Err(format!("{what}: needs either `cases` or `difference`"));
+        if e.cases.is_empty() && e.difference.is_none() {
+            return Err(format!("{what}: needs `cases` or `difference`"));
         }
         if !seen.insert((e.command.clone(), e.form.clone())) {
             return Err(format!("{what} is listed twice"));
@@ -134,8 +133,37 @@ fn tokens_of(k: Kind) -> &'static [&'static str] {
         Kind::PolyLine => &["polyline"],
         Kind::List => &["list"],
         Kind::Function => &["function"],
+        Kind::Curve => &["curve"],
+        Kind::Text => &["text"],
         Kind::Locus => &["locus"],
         _ => &[],
+    }
+}
+
+fn token_matches(token: &str, kind: Kind) -> bool {
+    match token {
+        "any" => true,
+        "path" => matches!(
+            kind,
+            Kind::Arc
+                | Kind::Circle
+                | Kind::Conic
+                | Kind::Curve
+                | Kind::Function
+                | Kind::Line
+                | Kind::List
+                | Kind::Locus
+                | Kind::Polygon
+                | Kind::PolyLine
+                | Kind::Ray
+                | Kind::Sector
+                | Kind::Segment
+        ),
+        "region" => matches!(
+            kind,
+            Kind::Arc | Kind::Circle | Kind::Conic | Kind::Polygon | Kind::Sector | Kind::Function
+        ),
+        _ => tokens_of(kind).contains(&token),
     }
 }
 
@@ -146,23 +174,19 @@ pub fn form_matches(form: &str, args: &[Option<Kind>]) -> bool {
     } else {
         form.split(',').collect()
     };
-    if toks.last() == Some(&"...") {
-        toks.pop();
-        let Some(&rep) = toks.last() else {
-            return false;
-        };
-        if args.len() < toks.len() {
+    if let Some(repeat) = toks.iter().position(|&token| token == "...") {
+        if repeat == 0 || args.len() < toks.len() - 1 {
             return false;
         }
-        while toks.len() < args.len() {
-            toks.push(rep);
-        }
+        let token = toks[repeat - 1];
+        let extra = args.len() - (toks.len() - 1);
+        toks.splice(repeat..=repeat, std::iter::repeat_n(token, extra));
     }
     toks.len() == args.len()
         && toks
             .iter()
             .zip(args)
-            .all(|(t, a)| a.is_some_and(|k| tokens_of(k).contains(t)))
+            .all(|(token, arg)| arg.is_some_and(|kind| token_matches(token, kind)))
 }
 
 fn is_ident_char(c: char) -> bool {
@@ -244,6 +268,9 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     if let Some(&k) = labels.get(a) {
         return Some(k);
     }
+    if a.starts_with('"') && a.ends_with('"') {
+        return Some(Kind::Text);
+    }
     if a == "true" || a == "false" {
         return Some(Kind::Boolean);
     }
@@ -293,9 +320,9 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
 /// The right-hand sides of a script, without comments.
 fn definitions(script: &[String]) -> impl Iterator<Item = &str> {
     script.iter().filter_map(|l| {
-        l.split('#')
-            .next()
-            .and_then(|l| l.split_once('='))
+        geo_kernel::script::split_comment(l)
+            .0
+            .split_once('=')
             .map(|(_, rhs)| rhs)
     })
 }
@@ -316,7 +343,32 @@ pub fn script_uses_form(
                 if matches!(form, "inequality" | "interval") {
                     return matches!(args.as_slice(), [arg] if inline_inequality(arg));
                 }
-                let kinds: Vec<Option<Kind>> = args.iter().map(|a| arg_kind(a, labels)).collect();
+                let mut kinds: Vec<Option<Kind>> =
+                    args.iter().map(|a| arg_kind(a, labels)).collect();
+                if matches!(command, "If" | "CountIf" | "KeepIf") {
+                    match (args.as_slice(), kinds.as_mut_slice()) {
+                        ([test, ..], [first, ..]) if inline_inequality(test) => {
+                            *first = Some(Kind::Function);
+                        }
+                        ([test, variable, _], [first, binding, _])
+                            if matches!(command, "CountIf" | "KeepIf")
+                                && variable.chars().all(is_ident_char)
+                                && test.contains(['<', '>', '≤', '≥', '=']) =>
+                        {
+                            *first = Some(Kind::Boolean);
+                            // Only the name of the bound local matters for this form.
+                            *binding = Some(Kind::Number);
+                        }
+                        _ => {}
+                    }
+                }
+                // Length's conic overload measures the arc of a conic part.
+                if command == "Length"
+                    && form == "conic"
+                    && matches!(kinds.as_slice(), [Some(Kind::Arc | Kind::Sector)])
+                {
+                    return true;
+                }
                 form_matches(form, &kinds)
             }
         })
@@ -487,7 +539,9 @@ mod tests {
         assert!(parse_evidence(&format!("{one}{one}")).is_err());
         let both =
             "[[form]]\ncommand = \"M\"\nform = \"x\"\ncases = [\"a\"]\ndifference = \"s: a\"\n";
-        assert!(parse_evidence(both).is_err());
+        let evidence = parse_evidence(both).unwrap();
+        assert_eq!(evidence[0].cases, ["a"]);
+        assert_eq!(evidence[0].difference.as_deref(), Some("s: a"));
         assert!(parse_evidence("[[form]]\ncommand = \"M\"\nform = \"x\"\nwhy = 1\n").is_err());
     }
 
@@ -502,6 +556,13 @@ mod tests {
         assert!(form_matches("point,point,...", &[p, p, p, p]));
         assert!(!form_matches("point,point,...", &[p]));
         assert!(form_matches("point,number,...", &[p, n, n]));
+        let b = Some(Kind::Boolean);
+        assert!(form_matches("point,point,...,boolean", &[p, p, p, b]));
+        assert!(!form_matches("point,point,...,boolean", &[p, p, b, p]));
+        assert!(form_matches("any,any", &[p, b]));
+        assert!(form_matches("path,number", &[Some(Kind::Arc), n]));
+        assert!(form_matches("region", &[Some(Kind::Polygon)]));
+        assert!(!form_matches("region", &[Some(Kind::Line)]));
         assert!(!form_matches("conic", &[Some(Kind::Circle)]));
         assert!(!form_matches("line", &[Some(Kind::Segment)]));
         assert!(!form_matches("number", &[None]));

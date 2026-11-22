@@ -187,6 +187,51 @@ pub(super) fn sample(c: &Construction, label: &str, x: f64) -> Option<f64> {
 }
 
 #[test]
+fn inverse_chains_are_bounded_at_creation_update_and_sampling() {
+    let mut c = load("n = 2\ng0(x) = x + n\ng1 = Invert(g0)\ng2 = Invert(g1)").unwrap();
+    let before = super::work_done();
+    exec(&mut c, "g3 = Invert(g2)").unwrap();
+    assert!(super::work_done() > before, "inversion was not metered");
+
+    let mut last = 3;
+    for index in 4..=50 {
+        let before = super::work_done();
+        let len = c.len();
+        match exec(&mut c, &format!("g{index} = Invert(g{last})")) {
+            Ok(_) => last = index,
+            Err(error) => {
+                assert!(error.contains("the expression is too large to evaluate"));
+                assert_eq!(c.len(), len);
+            }
+        }
+        assert!(super::work_done() - before <= super::MAX_EVALUATION_WORK + super::MAX_OVERRUN);
+    }
+    assert!(last < 50, "the static cost did not stop the chain");
+    let inline = format!("g = {}x{}", "Invert(".repeat(50), ")".repeat(50));
+    assert!(exec(&mut c, &inline)
+        .unwrap_err()
+        .contains("the expression is too large to evaluate"));
+
+    let last_label = format!("g{last}");
+    let n = c.id("n").unwrap();
+    let before = super::work_done();
+    super::eval::with_work_limit(10, || c.set_number(n, 4.0)).unwrap();
+    assert!(!c.value(c.id(&last_label).unwrap()).is_defined());
+    assert!(super::work_done() > before);
+
+    c.set_number(n, 5.0).unwrap();
+    assert_eq!(sample(&c, "g2", 7.0), Some(12.0));
+    assert_eq!(sample(&c, "g3", 7.0), Some(2.0));
+    let before = super::work_done();
+    assert!(sample(&c, &last_label, 7.0).is_some_and(f64::is_finite));
+    assert!((1..=super::MAX_EVALUATION_WORK + super::MAX_OVERRUN)
+        .contains(&(super::work_done() - before)));
+    assert!(
+        super::eval::with_work_limit(10, || sample(&c, &last_label, 7.0)).is_some_and(f64::is_nan)
+    );
+}
+
+#[test]
 fn functions_are_sampled_expanded_and_applied() {
     let mut c = load(
         "a = 2\n\
@@ -315,7 +360,7 @@ fn literals_names_and_commands_follow_the_input_bar() {
     for bad in [
         "b = 1e3",
         "b = 1.2.3",
-        "b = 1..2",
+        "b = 1..",
         "x = 5",
         "y = a",
         "pi = 3",
@@ -324,6 +369,8 @@ fn literals_names_and_commands_follow_the_input_bar() {
         assert!(exec(&mut c, bad).is_err(), "{bad}");
     }
     assert!(exec(&mut c, "sin(x) = x").is_err());
+    exec(&mut c, "r_{range} = 1..2").unwrap();
+    assert_eq!(c.value(c.id("r_{range}").unwrap()), Value::List { len: 2 });
     // the old forms keep working, and `+5` and `inf` go through expressions
     for (line, label, def) in [
         ("r = 3", "r", Some(Def::Number(3.0))),
@@ -478,7 +525,7 @@ fn unsupported_syntax_is_an_error_and_leaves_nothing_behind() {
         "b = A < 3",
         "b = \u{ac}a",
         "b = a && true",
-        "b = 1..2",
+        "b = 2 ** ..",
         "b = random()",
         "b = \u{663}",
         "b = 2\u{966}",
@@ -638,6 +685,7 @@ pub(super) fn flat(c: &Construction, id: crate::kernel::Id) -> Option<String> {
                     out.push_str(&format!("v({x}, {y})"));
                 }
                 super::Element::Value(_, Value::Bool(b)) => out.push_str(&format!("{b}")),
+                super::Element::Text(s) => out.push_str(s),
                 super::Element::Value(kind, _) => out.push_str(&format!("?{kind}")),
             }
         }

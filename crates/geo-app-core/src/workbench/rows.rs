@@ -20,7 +20,7 @@
 
 use super::{Row, Workbench};
 use crate::describe;
-use crate::scriptlog::Log;
+use crate::scriptlog::{GrownOutputs, Log};
 use geo_kernel::kernel::{Construction, Def, Id, Kind, Value};
 #[cfg(test)]
 use std::collections::HashMap;
@@ -67,14 +67,15 @@ pub(crate) fn same_value(a: Value, b: Value) -> bool {
         (Value::Bool(p), Value::Bool(q)) => p == q,
         (Value::Polygon { area }, Value::Polygon { area: a2 }) => s(area, a2),
         (Value::PolyLine { length }, Value::PolyLine { length: l2 }) => s(length, l2),
-        (Value::Function, Value::Function) | (Value::Undefined, Value::Undefined) => true,
+        (Value::Function, Value::Function)
+        | (Value::FunctionNVar, Value::FunctionNVar)
+        | (Value::Undefined, Value::Undefined) => true,
         _ => false,
     }
 }
 
-/// What a row was made from: the value and, for a conic, the bits of its
-/// matrix (zero for any other kind).
-pub(crate) type RowKey = (Value, [u64; 6]);
+/// A row's value, conic matrix, and equation display revision.
+pub(crate) type RowKey = (Value, [u64; 6], Option<u64>);
 
 /// The [`RowKey`] of `id`, without allocating.
 fn row_key(c: &Construction, id: Id) -> RowKey {
@@ -85,15 +86,45 @@ fn row_key(c: &Construction, id: Id) -> RowKey {
             .map_or([u64::MAX; 6], |d| d.matrix.map(f64::to_bits)),
         _ => [0; 6],
     };
-    (value, matrix)
+    let display = match value {
+        Value::Line { .. }
+        | Value::Ray { .. }
+        | Value::Circle { .. }
+        | Value::Conic { .. }
+        | Value::Undefined => c.equation_display_revision(id),
+        _ => None,
+    };
+    (value, matrix, display)
 }
 
 /// Whether two row keys are the same bit for bit.
 fn same_key(a: RowKey, b: RowKey) -> bool {
+    if a.2 != b.2 {
+        return false;
+    }
     match (a.0, b.0) {
         (Value::Conic { ty }, Value::Conic { ty: ty2 }) => ty == ty2 && a.1 == b.1,
         _ => same_value(a.0, b.0),
     }
+}
+
+fn same_row_value(c: &Construction, id: Id, row: &Row, old: RowKey, new: RowKey) -> bool {
+    if matches!((old.0, new.0), (Value::Text, Value::Text)) {
+        if row.free {
+            is_joined(
+                &row.head,
+                &[&row.label, " = ", c.text(id).unwrap_or_default()],
+            )
+        } else {
+            row.value.as_deref() == c.text(id)
+        }
+    } else {
+        same_key(old, new)
+    }
+}
+
+fn is_free(c: &Construction, id: Id) -> bool {
+    c.def(id).is_free() || (c.kind(id) == Kind::Text && c.is_independent_text(id))
 }
 
 /// The number of a free number or angle, edited in place.
@@ -116,7 +147,12 @@ struct Source<'a> {
 /// over the journal and as a search of it by label finds them: the
 /// definition of the newest line that names the object, and the labels of
 /// the oldest line with several outputs that names it.
-fn sources<'a>(c: &Construction, log: &'a Log, from: usize) -> Vec<Source<'a>> {
+fn sources<'a>(
+    c: &Construction,
+    log: &'a Log,
+    grown: &'a [GrownOutputs<'a>],
+    from: usize,
+) -> Vec<Source<'a>> {
     let mut out = vec![Source::default(); c.len().saturating_sub(from)];
     for e in log.entries_rev() {
         let multi = e.labels.len() > 1;
@@ -133,6 +169,18 @@ fn sources<'a>(c: &Construction, log: &'a Log, from: usize) -> Vec<Source<'a>> {
             }
             if multi {
                 s.group = Some(e.labels.as_slice());
+            }
+        }
+    }
+    for command in grown {
+        for label in &command.labels {
+            if let Some(src) = c
+                .id(label)
+                .and_then(|id| id.index().checked_sub(from))
+                .and_then(|i| out.get_mut(i))
+            {
+                src.rhs = Some(command.rhs);
+                src.group = Some(&command.labels);
             }
         }
     }
@@ -208,7 +256,7 @@ fn value_parts(c: &Construction, id: Id) -> (String, Option<f64>) {
 /// The row of `id` made from scratch.
 fn make_row(c: &Construction, id: Id, src: Source) -> Row {
     let label = c.label(id);
-    let free = c.def(id).is_free();
+    let free = is_free(c, id);
     let mut row = Row {
         id,
         kind: c.kind(id),
@@ -266,7 +314,7 @@ fn still_fits(
     made_from: RowKey,
     key: RowKey,
 ) -> bool {
-    let free = c.def(id).is_free();
+    let free = is_free(c, id);
     let number = free_number(c, id);
     // A free object's or number's head follows from its label and value.
     let same_head = free || number.is_some() || {
@@ -277,9 +325,11 @@ fn still_fits(
         && row.free == free
         && row.angle == (c.kind(id) == Kind::Angle)
         && row.free_number == number
-        && same_key(made_from, key)
+        && same_row_value(c, id, row, made_from, key)
         && row.siblings.iter().eq(siblings(src, &row.label))
         && same_head
+        // Revision counters identify changes only within a construction.
+        && (key.2.is_none() || row.value.as_deref() == Some(&describe::object_text(c, id)))
 }
 
 /// Puts the value parts into `row`, whose definition part is in place: a
@@ -293,7 +343,7 @@ fn set_value(row: &mut Row, text: String, free_number: Option<f64>) -> bool {
         let head = format!("{} =", row.label);
         changed |= row.head != head;
         row.head = head;
-    } else if row.kind == Kind::Function {
+    } else if matches!(row.kind, Kind::Function | Kind::FunctionNVar) {
         // A function's value is the expression its definition shows.
         changed |= row.value.is_some();
         row.value = None;
@@ -357,7 +407,7 @@ impl Workbench {
         for (row, old) in self.rows.iter_mut().zip(&mut self.row_values) {
             let id = row.id;
             let key = row_key(c, id);
-            if same_key(*old, key) {
+            if same_row_value(c, id, row, *old, key) {
                 continue;
             }
             *old = key;
@@ -368,7 +418,8 @@ impl Workbench {
         // Rows of new objects.
         let from = self.rows.last().map_or(0, |row| row.id.index() + 1);
         if from < c.len() {
-            let sources = sources(c, &self.log, from);
+            let grown = self.log.grown_groups();
+            let sources = sources(c, &self.log, &grown, from);
             for (id, src) in c.ids().skip(from).zip(sources) {
                 if crate::scriptlog::is_internal(c, id) {
                     continue;
@@ -402,7 +453,8 @@ impl Workbench {
                 kept[id.index()].1 = j;
             }
         }
-        let sources = sources(c, &self.log, 0);
+        let grown = self.log.grown_groups();
+        let sources = sources(c, &self.log, &grown, 0);
         let mut last = None;
         let mut count = 0;
         for ((id, k), &src) in kept.iter_mut().zip(&sources) {
@@ -463,8 +515,16 @@ impl Workbench {
     #[cfg(test)]
     pub(crate) fn rows_reference(&self) -> Vec<Row> {
         let c = &self.construction;
-        let rhs: HashMap<&str, &str> = self.log.definitions().collect();
-        let groups: Vec<&[String]> = self.log.multi_output().collect();
+        let grown = self.log.grown_groups();
+        let mut rhs: HashMap<&str, &str> = self.log.definitions().collect();
+        for group in &grown {
+            rhs.extend(group.labels.iter().map(|label| (label.as_str(), group.rhs)));
+        }
+        let groups: Vec<&[String]> = grown
+            .iter()
+            .map(|group| group.labels.as_slice())
+            .chain(self.log.multi_output())
+            .collect();
         self.object_ids()
             .map(|id| {
                 let value = c.value(id);
@@ -481,7 +541,7 @@ impl Workbench {
                 };
                 let (head, second) = if free_number.is_some() {
                     (format!("{label} ="), None)
-                } else if kind == Kind::Function {
+                } else if matches!(kind, Kind::Function | Kind::FunctionNVar) {
                     let head = match rhs.get(label.as_str()) {
                         Some(rhs) => format!("{label} = {rhs}"),
                         None => label.clone(),

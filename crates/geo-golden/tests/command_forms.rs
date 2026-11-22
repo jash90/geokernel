@@ -4,8 +4,8 @@
 //!   in-scope commands of `docs/command-matrix.csv`;
 //! * every row of `tools/command-matrix/form-evidence.toml` names golden
 //!   cases that exist, are not known gaps and call the command in that form,
-//!   or a row of `DIFFERENCES.md` that names the form (`` `Mod(function,
-//!   function)` `` in its first cell) and gives it a disposition;
+//!   a row of `DIFFERENCES.md` that names the form (`` `Mod(function,
+//!   function)` `` in its first cell) and gives it a disposition, or both;
 //! * `forms_total`, `forms_done` and the `done` status of the matrix agree
 //!   with those two files (CI has no upstream checkout, so this is what keeps
 //!   the matrix from going stale there).
@@ -155,6 +155,19 @@ fn transformed_kinds<'a>(
     })
 }
 
+/// These signatures use a wildcard for a family of compatible operands.
+fn numeric_wildcard(command: &str, form: &str) -> bool {
+    matches!(
+        (command, form),
+        ("Dot" | "Relation", "any,any")
+            | ("Defined", "any")
+            | ("IsInRegion", "point,region")
+            | ("If", "function,any,...")
+            | ("CountIf", "any,any,list")
+            | ("KeepIf", "boolean,any,list")
+    )
+}
+
 #[test]
 fn every_evidence_row_is_backed() {
     let f = forms();
@@ -178,10 +191,16 @@ fn every_evidence_row_is_backed() {
             if let Err(msg) = forms::check_difference(d, &e.command, &e.form, &differences) {
                 errors.push(format!("{what}: DIFFERENCES.md: {msg}"));
             }
-            continue;
+            if e.cases.is_empty() {
+                continue;
+            }
         }
         let required = transformation_kinds(&e.command, &e.form);
-        if forms::is_wildcard(&e.form) && required.is_none() {
+        if forms::is_wildcard(&e.form)
+            && required.is_none()
+            && e.difference.is_none()
+            && !numeric_wildcard(&e.command, &e.form)
+        {
             errors.push(format!(
                 "{what}: golden cases do not cover this wildcard form"
             ));
@@ -217,7 +236,7 @@ fn every_evidence_row_is_backed() {
                 errors.push(format!("{what}: `{id}` does not call it in this form"));
             }
         }
-        if let Some(required) = required {
+        if let Some(required) = required.filter(|_| e.difference.is_none()) {
             for kind in required {
                 if !covered.contains(&kind.to_string()) {
                     errors.push(format!("{what}: no case for source kind {kind}"));

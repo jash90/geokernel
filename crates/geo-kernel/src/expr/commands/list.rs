@@ -72,6 +72,7 @@ use crate::expr::parse::{list_arity, list_form, Parser};
 use crate::expr::types::{elem_of, join_elem, of_numbers, ty_of};
 use crate::expr::{CallOp, Elem, ListOp, Node, Ty, NONE};
 use crate::kernel::{Construction, Kind, Value};
+use std::collections::{BTreeMap, BTreeSet};
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &[
@@ -152,6 +153,119 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         _ => return Ok(None),
     };
     p.list_command(|_, args, lists| list_form(text, op, count, args, lists))
+}
+
+/// `Kernel.STANDARD_PRECISION`, the window `DoubleUtil.isEqual` reads two
+/// numbers in.
+const STANDARD_PRECISION: f64 = 1e-8;
+
+/// `DoubleUtil.isEqual`: equal, or within `STANDARD_PRECISION` of each
+/// other.
+fn near(a: f64, b: f64) -> bool {
+    a == b || (a - STANDARD_PRECISION..=a + STANDARD_PRECISION).contains(&b)
+}
+
+/// A number as the key of an ordered table (`Frequency`'s `TreeMap`): the
+/// total order of `total_cmp`; -0 and 0 never both live in one.
+#[derive(Clone, Copy)]
+struct Known(f64);
+
+impl PartialEq for Known {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.total_cmp(&other.0).is_eq()
+    }
+}
+
+impl Eq for Known {}
+
+impl PartialOrd for Known {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Known {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.total_cmp(&other.0)
+    }
+}
+
+/// The window a bucket lookup starts from, widened for the rounding of its
+/// bounds; `near` picks among the few buckets inside (they are never near
+/// each other).
+fn bucket_window(v: f64) -> std::ops::RangeInclusive<Known> {
+    Known(v - 3.0 * STANDARD_PRECISION)..=Known(v + 3.0 * STANDARD_PRECISION)
+}
+
+/// `Frequency.getCount(v)`: the count of the bucket equal to `v` within
+/// `STANDARD_PRECISION`.
+fn table_count(table: &BTreeMap<Known, u64>, v: f64) -> u64 {
+    table
+        .range(bucket_window(v))
+        .find(|&(kept, _)| near(kept.0, v))
+        .map_or(0, |(_, &count)| count)
+}
+
+/// `Frequency.getCumFreq(v)`: the counts of every bucket below `v`, and of
+/// the one equal to it within `STANDARD_PRECISION`, over the running
+/// sums of the table (a lookup each, where GeoGebra walks every bucket
+/// below `v` again).
+struct Cumulative<'t> {
+    keys: Vec<Known>,
+    /// `sums[i]` holds the counts of `keys[0..=i]`.
+    sums: Vec<u64>,
+    table: &'t BTreeMap<Known, u64>,
+}
+
+impl<'t> Cumulative<'t> {
+    fn new(table: &'t BTreeMap<Known, u64>) -> Self {
+        let mut keys = Vec::with_capacity(table.len());
+        let mut sums = Vec::with_capacity(table.len());
+        let mut total = 0u64;
+        for (k, &count) in table {
+            total += count;
+            keys.push(*k);
+            sums.push(total);
+        }
+        Cumulative { keys, sums, table }
+    }
+
+    /// The buckets the window of `v` starts at.
+    fn at(&self, v: f64) -> usize {
+        self.keys
+            .partition_point(|&k| k.0 < v - 3.0 * STANDARD_PRECISION)
+    }
+
+    /// The counts of every bucket below the window of `v`.
+    fn below(&self, at: usize) -> u64 {
+        if at == 0 {
+            0
+        } else {
+            self.sums[at - 1]
+        }
+    }
+
+    /// The counts of every bucket below `v` and of the one equal to it
+    /// (the buckets of one table are never near each other, so the
+    /// candidates in the window are few).
+    fn up_to(&self, v: f64) -> u64 {
+        let at = self.at(v);
+        let mut sum = self.below(at);
+        for (&Known(k), &count) in self.table.range(bucket_window(v)) {
+            if k < v || near(k, v) {
+                sum += count;
+            }
+        }
+        sum
+    }
+}
+
+/// The bucket table of `Frequency` (`AlgoFrequency`): numbers with the
+/// rounding comparator of `FrequencyGgb`, or exact strings in natural
+/// order.
+enum Table {
+    Numbers(BTreeMap<Known, u64>, u32),
+    Texts(BTreeMap<Vec<u16>, u64>),
 }
 
 /// The commands of one list argument (`CmdOneListFunction`); the loose
@@ -571,7 +685,7 @@ pub(super) fn list_value<const M: bool>(
         | ListOp::Intersect
         | ListOp::Remove => Val::N(f64::NAN),
         ListOp::Index | ListOp::Element => match (ctx.pick(op, l, n), ctx.e.tys[i as usize]) {
-            (Some(slot), _) => slot_val(slot),
+            (Some(slot), _) => slot_val(&slot),
             (None, Ty::Vec) => Val::V(f64::NAN, f64::NAN),
             (None, Ty::Bool) => Val::B(false, true),
             (None, _) => Val::N(f64::NAN),
@@ -612,7 +726,9 @@ fn zip_element<const M: bool>(ctx: &Ctx<'_, M>, expression: u32, bound: &[(u32, 
         Some(((depth, slot), rest)) => {
             let local = Local {
                 depth: *depth,
-                slot: *slot,
+                value: slot_val(slot),
+                run: slot.run(),
+                vector: slot.kind == Kind::Vector,
                 up: ctx.locals,
             };
             zip_element(
@@ -629,14 +745,12 @@ fn zip_element<const M: bool>(ctx: &Ctx<'_, M>, expression: u32, bound: &[(u32, 
 }
 
 impl Parser<'_> {
-    /// Whether the subtree at `i` is a number (`GeoNumberValue`).
-    pub(crate) fn is_number(&self, i: u32) -> bool {
-        matches!(self.ty_of_arg(i), Some(Ty::Num(_)))
-    }
-
     /// Whether the subtree at `i` is a boolean.
     pub(crate) fn is_bool(&self, i: u32) -> bool {
-        matches!(self.ty_of_arg(i), Some(Ty::Bool))
+        matches!(
+            crate::expr::types::check(self.c, &self.nodes, i),
+            Ok((tys, ..)) if tys[i as usize] == Ty::Bool
+        )
     }
 
     /// Whether the subtree at `i` is a locus object.
@@ -653,14 +767,7 @@ impl Parser<'_> {
     /// Whether every subtree in `args` is a point or a vector
     /// (`wrapInList` with `POINT`).
     pub(crate) fn are_points(&self, args: &[u32]) -> bool {
-        !args.is_empty() && args.iter().all(|&a| self.ty_of_arg(a) == Some(Ty::Vec))
-    }
-
-    /// The type of the subtree at `i`, where `check` gives one.
-    fn ty_of_arg(&self, i: u32) -> Option<Ty> {
-        crate::expr::types::check(self.c, &self.nodes, i)
-            .ok()
-            .map(|(tys, ..)| tys[i as usize])
+        !args.is_empty() && args.iter().all(|&a| self.is_point_or_vector(a))
     }
 
     /// `Sequence(n)`, `Sequence(a, b)`, `Sequence(a, b, step)` and
@@ -679,7 +786,7 @@ impl Parser<'_> {
         };
         self.expect(&Tok::LParen, "(")?;
         let depth = self.locals.len() as u32;
-        self.locals.push(variable);
+        self.locals.push((variable, Elem::Num));
         let expression = self.expression();
         self.locals.pop();
         let expression = expression?;
@@ -701,21 +808,7 @@ impl Parser<'_> {
     /// The variable of a `Sequence` with four or five arguments, found
     /// before its expression is parsed; `None` with fewer arguments.
     fn sequence_variable(&self) -> Result<Option<String>, String> {
-        let mut depth = 0usize;
-        let mut commas = Vec::new();
-        for (j, t) in self.toks.iter().enumerate().skip(self.pos) {
-            match t.tok {
-                Tok::LParen | Tok::LBrace => depth += 1,
-                Tok::RParen | Tok::RBrace => {
-                    depth = depth.saturating_sub(1);
-                    if depth == 0 {
-                        break;
-                    }
-                }
-                Tok::Comma if depth == 1 => commas.push(j),
-                _ => {}
-            }
-        }
+        let commas = self.argument_commas();
         if commas.len() < 3 {
             return Ok(None);
         }
@@ -797,7 +890,10 @@ impl Parser<'_> {
         };
         let depth = self.locals.len() as u32;
         for name in &variables {
-            self.locals.push(name.clone());
+            // the lists are parsed after the expression, so the element
+            // type is only known when they are; a list is what a variable
+            // of a `Zip` reads as when its expression uses it as one
+            self.locals.push((name.clone(), Elem::List));
         }
         self.expect(&Tok::LParen, "(")?;
         let expression = self.expression()?;
@@ -815,7 +911,7 @@ impl Parser<'_> {
         let first = self.nodes.len() as u32;
         self.push(Node::Item(expression));
         for (k, list) in lists.iter().enumerate() {
-            self.push(Node::Local(depth + k as u32));
+            self.push(Node::Local(depth + k as u32, Elem::List));
             self.push(Node::Item(*list));
         }
         let len = self.nodes.len() as u32 - first;
@@ -849,7 +945,7 @@ impl Parser<'_> {
             _ => return Ok(None),
         };
         let local = self.locals.len() as u32;
-        self.locals.push(variable);
+        self.locals.push((variable, Elem::Num));
         self.expect(&Tok::LParen, "(")?;
         let expression = self.expression()?;
         self.locals.pop();
@@ -862,7 +958,7 @@ impl Parser<'_> {
         self.expect(&Tok::RParen, ")")?;
         let first = self.nodes.len() as u32;
         self.push(Node::Item(expression));
-        self.push(Node::Local(local));
+        self.push(Node::Local(local, Elem::Num));
         self.push(Node::Item(from));
         self.push(Node::Item(to));
         let _ = text;
@@ -1005,7 +1101,9 @@ impl<const M: bool> Ctx<'_, M> {
             }
             let local = Local {
                 depth,
-                slot: Slot::number(v),
+                value: Val::N(v),
+                run: None,
+                vector: false,
                 up: self.locals,
             };
             let slot = Ctx {
@@ -1020,29 +1118,24 @@ impl<const M: bool> Ctx<'_, M> {
         (!lists.over()).then_some((start, n))
     }
 
-    /// `Kernel.STANDARD_PRECISION`, the window `DoubleUtil.isEqual` reads
-    /// two numbers in.
-    const STANDARD_PRECISION: f64 = 1e-8;
-
-    /// `DoubleUtil.isEqual`: equal, or within `STANDARD_PRECISION` of each
-    /// other.
-    fn near(a: f64, b: f64) -> bool {
-        a == b || (a - Self::STANDARD_PRECISION..=a + Self::STANDARD_PRECISION).contains(&b)
-    }
-
     /// `GeoElement.isEqual` of two list elements: numbers, booleans and
     /// points compare by value (points per coordinate, `isEqualPoint2D`),
-    /// undefined elements and lists never equal (two lists are distinct
-    /// objects in GeoGebra).
-    pub(super) fn same_element(&self, a: Slot, b: Slot) -> bool {
+    /// texts by their string (`GeoText.isEqualExtended`), undefined
+    /// elements and lists never equal (two lists are distinct objects in
+    /// GeoGebra).
+    pub(super) fn same_element(&self, a: &Slot, b: &Slot) -> bool {
         match (a.kind, a.value, b.value) {
-            (Kind::Number | Kind::Angle, Value::Number(x), Value::Number(y)) => Self::near(x, y),
+            (Kind::Number | Kind::Angle, Value::Number(x), Value::Number(y)) => near(x, y),
             (Kind::Boolean, Value::Bool(x), Value::Bool(y)) => x == y,
             (
                 Kind::Point | Kind::Vector,
                 Value::Point { x, y } | Value::Vector { x, y },
                 Value::Point { x: u, y: v } | Value::Vector { x: u, y: v },
-            ) => Self::near(x, u) && Self::near(y, v),
+            ) => near(x, u) && near(y, v),
+            (Kind::Text, _, _) => match (a.text_value(), b.text_value()) {
+                (Some(x), Some(y)) => x == y,
+                _ => false,
+            },
             // `GeoList.isEqualExtended`: two lists are equal when they have
             // as many elements and every pair of them is equal
             (Kind::List, Value::List { len: a_len }, Value::List { len: b_len }) => {
@@ -1050,8 +1143,8 @@ impl<const M: bool> Ctx<'_, M> {
                     && self.lists.is_some_and(|lists| {
                         (0..a_len).all(|k| {
                             self.same_element(
-                                lists.read(self.c, a.start + k),
-                                lists.read(self.c, b.start + k),
+                                &lists.read(self.c, a.start + k),
+                                &lists.read(self.c, b.start + k),
                             )
                         })
                     })
@@ -1115,8 +1208,10 @@ impl<const M: bool> Ctx<'_, M> {
         let Some(lists) = self.lists else {
             return f64::NAN;
         };
+        // `(int) start - 1`, which wraps like the int arithmetic of Java
+        // (`IndexOf(1, l, -1e300)` starts at `int` max, one past the wrap)
         let start = if len == 3 {
-            self.full_number(first + 2) as i32 - 1
+            (self.full_number(first + 2) as i32).wrapping_sub(1)
         } else {
             0
         };
@@ -1131,7 +1226,7 @@ impl<const M: bool> Ctx<'_, M> {
             return f64::NAN;
         }
         for k in u32::try_from(start).unwrap_or(0)..size {
-            if self.same_element(lists.read(self.c, s + k), needle) {
+            if self.same_element(&lists.read(self.c, s + k), &needle) {
                 return f64::from(k) + 1.0;
             }
         }
@@ -1146,7 +1241,7 @@ impl<const M: bool> Ctx<'_, M> {
             return f64::NAN;
         };
         let (expression, variable) = (first, first + 1);
-        let Node::Local(depth) = self.node(variable) else {
+        let Node::Local(depth, _) = self.node(variable) else {
             return f64::NAN;
         };
         let _ = depth;
@@ -1157,7 +1252,9 @@ impl<const M: bool> Ctx<'_, M> {
         let value = |v: f64| -> f64 {
             let local = Local {
                 depth,
-                slot: Slot::number(v),
+                value: Val::N(v),
+                run: None,
+                vector: false,
                 up: self.locals,
             };
             let slot = Ctx {
@@ -1171,13 +1268,15 @@ impl<const M: bool> Ctx<'_, M> {
             }
         };
         let mut product = value(a);
-        let mut k = a as i32 + 1;
-        while k <= b as i32 {
+        // `(int) from + 1`, which wraps like the int arithmetic of Java,
+        // and the loop compares the plain value of `to` (`i <= to.getDouble()`)
+        let mut k = (a as i32).wrapping_add(1);
+        while f64::from(k) <= b {
             if !lists.charge(1) {
                 return f64::NAN;
             }
             product *= value(f64::from(k));
-            k += 1;
+            k = k.wrapping_add(1);
         }
         product
     }
@@ -1243,6 +1342,23 @@ impl<const M: bool> Ctx<'_, M> {
                 } else {
                     s + len - count
                 };
+                if matches!(
+                    self.e.tys[l as usize],
+                    Ty::List(Elem::Vec | Elem::Object | Elem::Any)
+                ) {
+                    // AlgoFirst and AlgoLast copy graph points and segments.
+                    let start = lists.reserve(count)?;
+                    if !lists.charge(u64::from(count)) {
+                        return None;
+                    }
+                    for k in 0..count {
+                        lists.set(
+                            start + k,
+                            lists.read(self.c, from + k).detach_graph_object(),
+                        );
+                    }
+                    return Some((start, count));
+                }
                 if s >> OBJECT_SHIFT != 0 {
                     // a part of a list object read in place: it never
                     // changes, so it is read where it is
@@ -1263,19 +1379,28 @@ impl<const M: bool> Ctx<'_, M> {
             }
             ListOp::Sort if n == NONE => {
                 let (s, len) = self.list(l)?;
-                let first = (len > 0).then(|| lists.read(self.c, s).kind)?;
+                let first = (len > 0).then(|| lists.read(self.c, s))?;
                 if !lists.charge(u64::from(len) * u64::from(1 + len.ilog2())) {
                     return None;
                 }
-                // numbers or booleans (`GeoNumeric.getComparator`) or
-                // points (`GeoPoint.getComparatorX`), all of the same class
-                if !matches!(first, Kind::Number | Kind::Boolean | Kind::Point)
-                    || (0..len).any(|k| lists.read(self.c, s + k).kind != first)
+                // one class for every element (`AlgoSort`: `geo.getClass()`),
+                // of a kind its comparator knows: a number, an angle or a
+                // boolean (all `NumberValue`, `GeoNumeric.getComparator`),
+                // a point (`GeoPoint.getComparatorX`) or a text
+                // (`GeoText.getComparator`)
+                if !matches!(
+                    first.kind,
+                    Kind::Number | Kind::Angle | Kind::Boolean | Kind::Point | Kind::Text
+                ) || (0..len).any(|k| lists.read(self.c, s + k).kind != first.kind)
                 {
                     return None;
                 }
                 let (start, len) = self.copy_run(s, len)?;
-                lists.sort(start, len);
+                if first.kind == Kind::Text {
+                    lists.sort_texts(start, len);
+                } else {
+                    lists.sort(start, len);
+                }
                 Some((start, len))
             }
             ListOp::Join => {
@@ -1317,43 +1442,69 @@ impl<const M: bool> Ctx<'_, M> {
                 if len == 0 || vlen != len {
                     return None;
                 }
+                // every key of the class of the first one (`geo.getClass()`),
+                // of a kind its comparator knows: a number (an angle is a
+                // class of its own, `GeoAngle` next to `GeoNumeric`), a
+                // point or a text; a vector is neither a point nor a number
+                let class = |slot: &Slot| -> Option<u8> {
+                    match (slot.kind, slot.value) {
+                        (Kind::Number, Value::Number(_)) => Some(0),
+                        (Kind::Angle, Value::Number(_)) => Some(1),
+                        (Kind::Point, Value::Point { .. }) => Some(2),
+                        (Kind::Text, _) => Some(3),
+                        _ => None,
+                    }
+                };
+                let first = class(&lists.read(self.c, s))?;
+                if (0..len).any(|k| class(&lists.read(self.c, s + k)) != Some(first)) {
+                    return None;
+                }
                 let mut order: Vec<u32> = (0..len).collect();
-                let key = |k: u32| {
+                let number_key = |k: u32| {
                     let slot = lists.read(self.c, s + k);
                     match slot.value {
                         Value::Number(v) => (v + 0.0, 0.0),
-                        Value::Point { x, y } | Value::Vector { x, y } => (x + 0.0, y + 0.0),
+                        Value::Point { x, y } => (x + 0.0, y + 0.0),
                         _ => (f64::NAN, f64::NAN),
                     }
                 };
-                // the keys must all be of the kind of the first one
-                // (`AlgoSort`: one class for every element or undefined)
-                let point_keys = matches!(lists.read(self.c, s).value, Value::Point { .. });
-                for k in 0..len {
-                    let matches_kind = match lists.read(self.c, s + k).value {
-                        Value::Number(_) => !point_keys,
-                        Value::Point { .. } | Value::Vector { .. } => point_keys,
-                        _ => false,
-                    };
-                    if !matches_kind {
-                        return None;
-                    }
-                }
-                order.sort_by(|&a, &b| {
-                    let (ka, kb) = (key(a), key(b));
-                    ka.0.is_nan()
-                        .cmp(&kb.0.is_nan())
-                        .then(ka.0.total_cmp(&kb.0))
-                        .then(ka.1.total_cmp(&kb.1))
-                        .then(a.cmp(&b))
-                });
+                let text_key = |k: u32| {
+                    let slot = lists.read(self.c, s + k);
+                    let text = slot.text_value().unwrap_or("").to_owned();
+                    (
+                        crate::expr::commands::text::strings::remove_accents(&text),
+                        text,
+                    )
+                };
                 if !lists.charge(u64::from(len) * u64::from(1 + len.ilog2())) {
                     return None;
                 }
                 // `GeoNumeric.getComparator` never returns 0 for two keys,
-                // so the `TreeSet` keeps both of them in the order of the
+                // so the `TreeSet` keeps both of them; the construction
+                // indexes of the elements of one list are all equal, so the
+                // comparator answers `+1` for two of them and the later one
+                // lands to the right: equal keys keep the order of the
                 // list, and `GeoList.find` (`indexOf`) returns the position
                 // of each key itself: a stable sort of the values
+                if first == 3 {
+                    order.sort_by(|&a, &b| {
+                        let (ka, kb) = (text_key(a), text_key(b));
+                        crate::expr::commands::text::strings::java_cmp(&ka.0, &kb.0)
+                            .then_with(|| {
+                                crate::expr::commands::text::strings::java_cmp(&ka.1, &kb.1)
+                            })
+                            .then(a.cmp(&b))
+                    });
+                } else {
+                    order.sort_by(|&a, &b| {
+                        let (ka, kb) = (number_key(a), number_key(b));
+                        ka.0.is_nan()
+                            .cmp(&kb.0.is_nan())
+                            .then(ka.0.total_cmp(&kb.0))
+                            .then(ka.1.total_cmp(&kb.1))
+                            .then(a.cmp(&b))
+                    });
+                }
                 let start = lists.reserve(len)?;
                 for (at, &k) in order.iter().enumerate() {
                     lists.set(start + at as u32, lists.read(self.c, vs + k));
@@ -1385,7 +1536,7 @@ impl<const M: bool> Ctx<'_, M> {
                 }
                 let start = lists.reserve(leaves.len() as u32)?;
                 for (k, slot) in leaves.iter().enumerate() {
-                    lists.set(start + k as u32, *slot);
+                    lists.set(start + k as u32, slot.clone());
                 }
                 Some((start, leaves.len() as u32))
             }
@@ -1421,7 +1572,7 @@ impl<const M: bool> Ctx<'_, M> {
                 }
                 let start = lists.reserve(points.len() as u32)?;
                 for (k, slot) in points.iter().enumerate() {
-                    lists.set(start + k as u32, *slot);
+                    lists.set(start + k as u32, slot.clone());
                 }
                 Some((start, points.len() as u32))
             }
@@ -1486,13 +1637,13 @@ impl<const M: bool> Ctx<'_, M> {
                             if !lists.charge(u64::from(out.len() as u32) + 1) {
                                 return None;
                             }
-                            if !out.iter().any(|&kept| self.same_element(kept, slot)) {
+                            if !out.iter().any(|kept| self.same_element(kept, &slot)) {
                                 out.push(slot);
                             }
                         }
                         let start = lists.reserve(out.len() as u32)?;
                         for (k, slot) in out.iter().enumerate() {
-                            lists.set(start + k as u32, *slot);
+                            lists.set(start + k as u32, slot.clone());
                         }
                         Some((start, out.len() as u32))
                     }
@@ -1504,14 +1655,14 @@ impl<const M: bool> Ctx<'_, M> {
                             if !lists.charge(u64::from(len) + 1) {
                                 return None;
                             }
-                            let shared = (0..len).any(|j| self.same_element(read(s + j), slot));
-                            if shared && !out.iter().any(|&kept| self.same_element(kept, slot)) {
+                            let shared = (0..len).any(|j| self.same_element(&read(s + j), &slot));
+                            if shared && !out.iter().any(|kept| self.same_element(kept, &slot)) {
                                 out.push(slot);
                             }
                         }
                         let start = lists.reserve(out.len() as u32)?;
                         for (k, slot) in out.iter().enumerate() {
-                            lists.set(start + k as u32, *slot);
+                            lists.set(start + k as u32, slot.clone());
                         }
                         Some((start, out.len() as u32))
                     }
@@ -1528,7 +1679,11 @@ impl<const M: bool> Ctx<'_, M> {
                                 remove.push(slot);
                             }
                         }
-                        if !lists.charge(u64::from(len) + u64::from(tlen)) {
+                        // every element scans the ones still to remove
+                        // (`AlgoRemove`), and a removal shifts the rest of
+                        // them, which is the work of a product
+                        let scans = u64::from(len).saturating_mul(u64::from(tlen));
+                        if !lists.charge(scans) {
                             return None;
                         }
                         let mut out: Vec<Slot> = Vec::new();
@@ -1540,8 +1695,8 @@ impl<const M: bool> Ctx<'_, M> {
                                 drop = true;
                             }
                             if !drop {
-                                if let Some(j) =
-                                    (0..remove.len()).find(|&j| self.same_element(remove[j], slot))
+                                if let Some(j) = (0..remove.len())
+                                    .find(|&j| self.same_element(&remove[j], &slot))
                                 {
                                     remove.remove(j);
                                     drop = true;
@@ -1553,7 +1708,7 @@ impl<const M: bool> Ctx<'_, M> {
                         }
                         let start = lists.reserve(out.len() as u32)?;
                         for (k, slot) in out.iter().enumerate() {
-                            lists.set(start + k as u32, *slot);
+                            lists.set(start + k as u32, slot.clone());
                         }
                         Some((start, out.len() as u32))
                     }
@@ -1599,10 +1754,12 @@ impl<const M: bool> Ctx<'_, M> {
         Some(run)
     }
 
-    /// `Unique(list)` (`AlgoUnique`): the numbers of `FrequencyGgb`, in its
-    /// order, every value within `STANDARD_PRECISION` of an earlier one
-    /// left out; other kinds keep their first appearance
-    /// (`AlgoUnion.addToOutputList`).
+    /// `Unique(list)` (`AlgoUnique`): the numbers of `FrequencyGgb` — its
+    /// `TreeMap` with the rounding comparator, so one bucket per value and
+    /// the buckets in order — every value within `STANDARD_PRECISION` of an
+    /// earlier one left out; texts come out as the strings of `new
+    /// Frequency()`, deduplicated and in natural order; other kinds keep
+    /// their first appearance (`AlgoUnion.addToOutputList`).
     fn unique(&self, l: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
         let (s, len) = self.list(l)?;
@@ -1610,29 +1767,43 @@ impl<const M: bool> Ctx<'_, M> {
             // `dataList.size() == 0`: undefined
             return None;
         }
-        if !lists.charge(u64::from(len)) {
+        // one ordered lookup per element, like the sort of the output
+        if !lists.charge(u64::from(len).saturating_mul(u64::from(1 + len.ilog2()))) {
             return None;
         }
         let numbers =
             (0..len).all(|k| matches!(lists.read(self.c, s + k).kind, Kind::Number | Kind::Angle));
-        let mut out: Vec<Slot> = Vec::new();
-        for k in 0..len {
-            let slot = lists.read(self.c, s + k);
-            if numbers {
-                // `FrequencyGgb.addValue` first pulls a value close to a
-                // five-digit decimal fraction onto it
-                let v = Self::check_decimal_fraction(number_of(slot)?);
-                if !out
-                    .iter()
-                    .any(|&kept| self.same_element(kept, Slot::number(v)))
-                {
+        let texts = (0..len).all(|k| lists.read(self.c, s + k).kind == Kind::Text);
+        let out: Vec<Slot> = if numbers {
+            // `FrequencyGgb.addValue` first pulls a value close to a
+            // five-digit decimal fraction onto it, and a value within
+            // `STANDARD_PRECISION` of a kept one joins its bucket; the
+            // buckets of one table are never near each other, so the
+            // candidates in the window are few
+            let mut kept: BTreeSet<Known> = BTreeSet::new();
+            let near_kept = |kept: &BTreeSet<Known>, v: f64| {
+                // the window is widened, for the subtraction of its bounds
+                // rounds; the kept buckets are never near each other, so
+                // the candidates in it are few
+                kept.range(
+                    Known(v - 3.0 * STANDARD_PRECISION)..=Known(v + 3.0 * STANDARD_PRECISION),
+                )
+                .any(|&Known(k)| near(k, v))
+            };
+            let mut out = Vec::new();
+            let mut undefined = 0u32;
+            for k in 0..len {
+                let v = Self::check_decimal_fraction(number_of(lists.read(self.c, s + k))?);
+                if v.is_nan() {
+                    // no two undefined values are equal (`DoubleUtil.isEqual`)
+                    undefined += 1;
+                    continue;
+                }
+                if !near_kept(&kept, v) {
+                    kept.insert(Known(v));
                     out.push(Slot::number(v));
                 }
-            } else if !out.iter().any(|&kept| self.same_element(kept, slot)) {
-                out.push(slot);
             }
-        }
-        if numbers {
             out.sort_unstable_by(|a, b| {
                 let key = |s: &Slot| match s.value {
                     Value::Number(v) => v,
@@ -1640,10 +1811,50 @@ impl<const M: bool> Ctx<'_, M> {
                 };
                 key(a).total_cmp(&key(b))
             });
-        }
+            out.extend(std::iter::repeat_n(
+                Slot::undefined(Kind::Number),
+                undefined as usize,
+            ));
+            out
+        } else if texts {
+            let mut strings: BTreeSet<Vec<u16>> = BTreeSet::new();
+            for k in 0..len {
+                strings.insert(
+                    lists
+                        .read(self.c, s + k)
+                        .text_value()
+                        .unwrap_or("")
+                        .encode_utf16()
+                        .collect(),
+                );
+            }
+            strings
+                .iter()
+                .map(|units| {
+                    Slot::text(
+                        crate::expr::commands::text::strings::from_utf16(units),
+                        None,
+                    )
+                })
+                .collect()
+        } else {
+            // the first appearance is found by a scan, whose whole work is
+            // charged like any other (`addToOutputList`)
+            if !lists.charge(u64::from(len).saturating_mul(u64::from(len))) {
+                return None;
+            }
+            let mut out: Vec<Slot> = Vec::new();
+            for k in 0..len {
+                let slot = lists.read(self.c, s + k);
+                if !out.iter().any(|kept| self.same_element(kept, &slot)) {
+                    out.push(slot);
+                }
+            }
+            out
+        };
         let start = lists.reserve(out.len() as u32)?;
         for (k, slot) in out.iter().enumerate() {
-            lists.set(start + k as u32, *slot);
+            lists.set(start + k as u32, slot.clone());
         }
         Some((start, out.len() as u32))
     }
@@ -1679,7 +1890,7 @@ impl<const M: bool> Ctx<'_, M> {
     fn check_decimal_fraction(val: f64) -> f64 {
         let frac = val * 1e5;
         let round = frac.round();
-        if (frac - round).abs() <= Self::STANDARD_PRECISION {
+        if (frac - round).abs() <= STANDARD_PRECISION {
             round / 1e5
         } else {
             val
@@ -1712,6 +1923,11 @@ impl<const M: bool> Ctx<'_, M> {
             if n < 1 {
                 return None;
             }
+            // the bounds are charged before they are built: a huge number
+            // of classes must not allocate first
+            if !lists.charge(u64::from(n as u32) + 1) {
+                return None;
+            }
             let width = (max - min) / f64::from(n);
             let mut out: Vec<f64> = (0..n).map(|k| min + f64::from(k) * width).collect();
             out.push(max);
@@ -1736,7 +1952,9 @@ impl<const M: bool> Ctx<'_, M> {
             out
         };
         let start = lists.reserve(bounds.len() as u32)?;
-        if !lists.charge(u64::from(bounds.len() as u32)) {
+        if len != 2 && !lists.charge(u64::from(bounds.len() as u32)) {
+            // the bounds of a number of classes are charged before they
+            // are built
             return None;
         }
         for (k, v) in bounds.iter().enumerate() {
@@ -1784,46 +2002,103 @@ impl<const M: bool> Ctx<'_, M> {
         if dsize == 0 {
             return None;
         }
-        let mut buckets: Vec<(f64, u64)> = Vec::new();
-        for k in 0..dsize {
-            let slot = lists.read(self.c, ds + k);
-            let v = matches!(slot.kind, Kind::Number | Kind::Angle)
-                .then(|| number_of(slot))
-                .flatten()?;
-            if !lists.charge(1) {
-                return None;
-            }
-            let v = Self::check_decimal_fraction(v);
-            match buckets.iter_mut().find(|(rep, _)| Self::near(*rep, v)) {
-                Some((_, count)) => *count += 1,
-                None => buckets.push((v, 1)),
-            }
+        // the table of `Frequency`: one ordered bucket per value, so both
+        // building it and reading a count cost a lookup, not a scan
+        if !lists.charge(u64::from(dsize).saturating_mul(u64::from(1 + dsize.ilog2()))) {
+            return None;
         }
-        let count = |v: f64| -> u64 {
-            buckets
-                .iter()
-                .filter(|&&(rep, _)| Self::near(rep, v))
-                .map(|&(_, c)| c)
-                .sum()
-        };
-        let cum_freq = |v: f64| -> u64 {
-            buckets
-                .iter()
-                .filter(|&&(rep, _c)| rep < v || Self::near(rep, v))
-                .map(|&(_, c)| c)
-                .sum()
+        let texts = (0..dsize).all(|k| lists.read(self.c, ds + k).kind == Kind::Text);
+        let table = if texts {
+            // `new Frequency()`: exact strings, in natural order
+            let mut table: BTreeMap<Vec<u16>, u64> = BTreeMap::new();
+            for k in 0..dsize {
+                let slot = lists.read(self.c, ds + k);
+                let text = slot.text_value().unwrap_or("").to_owned();
+                *table.entry(text.encode_utf16().collect()).or_insert(0) += 1;
+            }
+            Table::Texts(table)
+        } else {
+            // `FrequencyGgb.addValue` first pulls a value close to a
+            // five-digit decimal fraction onto it, and a value within
+            // `STANDARD_PRECISION` of a kept one joins its bucket; the
+            // buckets of one table are never near each other, so the
+            // candidates in the window are few
+            let mut table: BTreeMap<Known, u64> = BTreeMap::new();
+            let mut undefined = 0u32;
+            for k in 0..dsize {
+                let v = Self::check_decimal_fraction(
+                    matches!(lists.read(self.c, ds + k).kind, Kind::Number | Kind::Angle)
+                        .then(|| number_of(lists.read(self.c, ds + k)))
+                        .flatten()?,
+                );
+                if v.is_nan() {
+                    // no two undefined values are equal, so each is its own
+                    // bucket (`DoubleUtil.isEqual`)
+                    undefined += 1;
+                    continue;
+                }
+                let near = table
+                    .range(
+                        Known(v - 3.0 * STANDARD_PRECISION)..=Known(v + 3.0 * STANDARD_PRECISION),
+                    )
+                    .find(|&(kept, _)| near(kept.0, v))
+                    .map(|(kept, _)| *kept);
+                match near {
+                    Some(kept) => *table.get_mut(&kept).unwrap() += 1,
+                    None => {
+                        table.insert(Known(v), 1);
+                    }
+                }
+            }
+            Table::Numbers(table, undefined)
         };
         let mut out: Vec<f64> = Vec::new();
         if class_list == NONE {
             // one count per value, in the order of `Frequency.valuesIterator`
-            let mut values: Vec<f64> = buckets.iter().map(|&(rep, _)| rep).collect();
-            values.sort_unstable_by(f64::total_cmp);
-            for v in values {
-                let c = if cumulative { cum_freq(v) } else { count(v) };
+            let mut write = |value: f64| -> bool {
                 if !lists.charge(1) {
-                    return None;
+                    return false;
                 }
-                out.push(c as f64);
+                out.push(value);
+                true
+            };
+            match &table {
+                Table::Texts(table) => {
+                    let mut cumulative_count = 0u64;
+                    for count in table.values() {
+                        cumulative_count += count;
+                        let c = if cumulative { cumulative_count } else { *count };
+                        if !write(c as f64) {
+                            return None;
+                        }
+                    }
+                }
+                Table::Numbers(table, undefined) => {
+                    // a cumulative count reads the running sums, a lookup
+                    // per value like the one of a plain count
+                    let running = cumulative.then(|| Cumulative::new(table));
+                    if running.is_some()
+                        && !lists.charge(u64::from(dsize) * u64::from(1 + dsize.ilog2()))
+                    {
+                        return None;
+                    }
+                    for (v, count) in table {
+                        let c = match &running {
+                            Some(running) => running.up_to(v.0),
+                            None => *count,
+                        };
+                        if !write(c as f64) {
+                            return None;
+                        }
+                    }
+                    for _ in 0..*undefined {
+                        // an undefined value counts one, and nothing is
+                        // below it
+                        if !write(if cumulative { 0.0 } else { 1.0 }) {
+                            return None;
+                        }
+                    }
+                }
             }
         } else {
             let (cs, csize) = self.list(class_list)?;
@@ -1838,9 +2113,17 @@ impl<const M: bool> Ctx<'_, M> {
                     .flatten()?;
                 bounds.push(Self::check_decimal_fraction(v));
             }
-            if !lists.charge(u64::from(csize)) {
+            // every class reads its bounds off the running sums of the
+            // table (a lookup each) and its two counts
+            if !lists.charge(u64::from(csize) * u64::from(1 + dsize.ilog2())) {
                 return None;
             }
+            // the classes of a text table would compare a string with a
+            // number, which GeoGebra refuses with an error
+            let Table::Numbers(table, _) = &table else {
+                return None;
+            };
+            let running = Cumulative::new(table);
             let mut cumulative_sum = 0.0;
             for i in 1..bounds.len() {
                 let (lower, upper, increasing) = if bounds[i - 1] > bounds[i] {
@@ -1848,11 +2131,11 @@ impl<const M: bool> Ctx<'_, M> {
                 } else {
                     (bounds[i - 1], bounds[i], true)
                 };
-                let mut freq =
-                    cum_freq(upper) as f64 - cum_freq(lower) as f64 + count(lower) as f64;
+                let mut freq = running.up_to(upper) as f64 - running.up_to(lower) as f64
+                    + table_count(table, lower) as f64;
                 // the highest class holds both its bounds
                 if (i != bounds.len() - 1 && increasing) || (i != 1 && !increasing) {
-                    freq -= count(upper) as f64;
+                    freq -= table_count(table, upper) as f64;
                 }
                 if cumulative {
                     cumulative_sum += freq;
@@ -1889,7 +2172,7 @@ impl<const M: bool> Ctx<'_, M> {
                 Node::Item(a) => a,
                 _ => return None,
             };
-            let Node::Local(depth) = self.node(local) else {
+            let Node::Local(depth, _) = self.node(local) else {
                 return None;
             };
             // an undefined list makes the whole result undefined
@@ -1965,7 +2248,7 @@ impl<const M: bool> Ctx<'_, M> {
                         }
                     }
                     None => {
-                        lists.set(*at, object);
+                        lists.set(*at, object.clone());
                         *at += 1;
                     }
                 };

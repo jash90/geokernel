@@ -1,0 +1,7 @@
+{
+  "cases": [
+    {"id": "algebrareviewshared-circle-001", "group": "algebrareviewshared", "script": ["A = (1,2)", "c = Circle(A,2)", "P = Center(c)", "n = Radius(c)"], "steps": [{"action": "initial"}, {"action": "move", "label": "A", "x": -3.0, "y": 4.0}]},
+    {"id": "algebrareviewshared-sides-001", "group": "algebrareviewshared", "script": ["a = 2", "j: a*x+y = a*x+5*x+1", "f = LeftSide(j)", "g = RightSide(j)", "n = f(3,4)", "m = g(3,4)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": -1.0}]},
+    {"id": "algebrareviewshared-text-001", "group": "algebrareviewshared", "script": ["n = Length(\"a#b\")"], "steps": [{"action": "initial"}]}
+  ]
+}

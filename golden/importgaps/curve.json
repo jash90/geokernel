@@ -1,0 +1,46 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "importgaps-curve-001",
+      "group": "importgaps",
+      "script": [
+        "t = 2",
+        "a = 1",
+        "b = 3",
+        "f = Curve(3t, 4t, t, 0, 10)",
+        "l = Length(f, a, b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 8.0 },
+        { "action": "set_number", "label": "b", "value": 5.0 }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "f": { "type": "curve", "defined": true, "start": 0.0, "end": 10.0 },
+          "l": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 8.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 },
+          "f": { "type": "curve", "defined": true, "start": 0.0, "end": 10.0 },
+          "l": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "t": { "type": "number", "defined": true, "value": 8.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": { "type": "curve", "defined": true, "start": 0.0, "end": 10.0 },
+          "l": { "type": "number", "defined": true, "value": 20.0 }
+        }
+      ]
+    }
+  ]
+}
