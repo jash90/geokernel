@@ -110,4 +110,27 @@ case("dilatelist", ["A = (0, 1)", "B = (1, 0)", "n = 1", "l = {A, Element({B}, n
                     "p = Dilate(l, 0, A)", "e_{m} = {}", "q = Dilate(e_{m}, 2)"],
      [setn("n", 2), mv("A", 0, 0), setn("n", 1)])
 
+case("elimination", ["a = Invert({{1, 0}, {0, 0/0}})"], [])
+case("elimination", ["a = ReducedRowEchelonForm({{-1, 0, 2}, {0, 1, 1}})"], [])
+case("inverse", ["f(x) = 3", "h(x) = f(x) + x", "g = Invert(h)"], [])
+case("inverse", ["f(x) = x^(-0.0099)", "g = Invert(f)"], [])
+case("dilatefunction", ["A = (2, 7)", "n = 2", "f(x) = x > 1",
+                        "g = Dilate(f, n)", "h = Dilate(f, n, A)", "j(x) = !h(x)"],
+     [setn("n", -2), setn("n", 0), setn("n", 1)])
+case("dilatefunction", ["v = (2, 7)", "A = (1, 2)", "f(x) = x + 1", "l = {A}",
+                        "h = Dilate(f, 2, (2, 7))"],
+     [{"action": "reject", "line": line} for line in (
+         "g = Dilate(f, 2, v)", "p = Dilate(l, 2, v)", "B = Dilate(A, 2, v)",
+         "g = Dilate(f, 2, 2v)", "g = Dilate(f, 2, Vector((2, 7)))")])
+
+for topic, command, prefix in (
+    ("dilatelist", "Dilate(l, 2)", []),
+    ("applylist", "ApplyMatrix(m, l)", ["m = {{2, 0}, {0, 2}}"]),
+):
+    for src in ("{A, 1}", "{A, {1, A, 1}, 1}"):
+        case(topic, ["A = (1, 3)", *prefix, f"l = {src}", f"t = {command}"],
+             [mv("A", 2, -1)])
+    case(topic, ["A = (1, 3)", *prefix, "l = {1, A}"],
+         [{"action": "reject", "line": f"t = {command}"}])
+
 cases.write()

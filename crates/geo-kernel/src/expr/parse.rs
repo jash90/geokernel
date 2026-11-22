@@ -944,7 +944,7 @@ impl Parser<'_> {
         let Some(parsed) = super::reparse(self.c, Kind::List, &self.nodes, &self.lits, i) else {
             return false;
         };
-        let entry = super::Entry::new(parsed, false);
+        let entry = super::Entry::new(self.c, parsed, false);
         let mut items = Vec::new();
         super::eval::root_list(
             self.c,

@@ -5,13 +5,8 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::eval::{function_entry, scalar, Ctx, Env, Val};
-use super::{children, math, Bin, Entry, Node, Un, NONE};
+use super::{children, function_metrics, math, Bin, Node, Un, NONE};
 use crate::algo::transform::zero_dilation;
-use crate::kernel::Construction;
-
-pub(super) fn has_inverse(c: &Construction, e: &Entry, source: u32) -> bool {
-    sample(&Ctx::<false>::new(c, e, &Env::None), source, 1.0).is_some()
-}
 
 /// Peel off operations along the path to x. An unsupported operation gives
 /// no inverse, while a sample outside the inverse's domain gives NaN.
@@ -41,7 +36,11 @@ pub(super) fn sample<const M: bool>(ctx: &Ctx<'_, M>, node: u32, y: f64) -> Opti
         }
         Node::Apply(f, a) => {
             let e = function_entry(ctx.c, f)?;
-            let inner = Ctx { e, ..*ctx };
+            let inner = Ctx {
+                e,
+                env: &Env::None,
+                ..*ctx
+            };
             sample(ctx, a, sample(&inner, e.root, y)?)
         }
         Node::Dilate(src, factor, center) => {
@@ -68,9 +67,15 @@ pub(super) fn sample<const M: bool>(ctx: &Ctx<'_, M>, node: u32, y: f64) -> Opti
 }
 
 fn uses_x<const M: bool>(ctx: &Ctx<'_, M>, i: u32) -> bool {
-    !ctx.stop(1)
-        && (matches!(ctx.node(i), Node::Var | Node::Inverse(_))
-            || children(&ctx.node(i)).any(|child| uses_x(ctx, child)))
+    if ctx.stop(1) {
+        return false;
+    }
+    match ctx.node(i) {
+        Node::Var | Node::Inverse(_) => true,
+        // The expanded function may discard its argument altogether.
+        Node::Apply(f, a) => function_metrics(ctx.c, f).2 != 0 && uses_x(ctx, a),
+        node => children(&node).any(|child| uses_x(ctx, child)),
+    }
 }
 
 fn undo_unary(op: Un, y: f64) -> Option<f64> {
@@ -143,10 +148,11 @@ fn inverse_power<const M: bool>(ctx: &Ctx<'_, M>, exponent: u32, b: f64, y: f64)
         Node::Bin(Bin::Div, n, d) => Some((ctx.full_number(d), ctx.full_number(n))),
         _ => {
             let (n, d) = super::derivative::decimal_to_fraction(b, crate::tol::STANDARD_PRECISION);
+            let (n, d) = if n < 0.0 { (-n, -d) } else { (n, d) };
             if n == 0.0 || d == 0.0 {
                 return f64::NAN;
             }
-            (n.abs() < 100.0 && d.abs() < 100.0).then_some((d, n))
+            (n < 100.0 && d < 100.0).then_some((d, n))
         }
     };
     if let Some((n, d)) = fraction {

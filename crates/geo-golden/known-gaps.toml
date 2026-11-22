@@ -295,8 +295,8 @@ mismatches = ["0:script line 3"]
 
 [[gap]]
 id = "conicforms-namedinterval-001"
-reason = "A named inequality is a boolean-valued function in GeoGebra. Kernel functions are numeric, so the named input fails before Center can read its bounds."
-mismatches = ["0:script line 3"]
+reason = "Center accepts a named boolean function representing an interval in GeoGebra. The kernel's interval form only extracts bounds from inline inequalities."
+mismatches = ["0:script line 4"]
 
 # intersections
 
@@ -713,11 +713,21 @@ mismatches = ["0:script line 8"]
 # object with placement corners.
 # Invert(function) handles the symbolic inversion rules. The fallback through
 # AlgoFunctionInvert.computeOutputUsingCAS requires a CAS.
-# List transforms operate on the point and vector leaves supported by the
-# kernel's list evaluator. Lists of other geometry need corresponding list
-# element representations, including curve and conic records.
+# List transforms handle points, vectors, and the scalar entries interleaved
+# with them. Lists of other geometry need corresponding element
+# representations, including curve and conic records.
 
 [[gap]]
 id = "matrixdilate-elimination-009"
 reason = "AlgoTranspose clears its output on empty input but preserves the defined flag from the previous update. After a ragged matrix, the reference keeps the empty transpose undefined until it sees a valid nonempty matrix. The kernel computes the empty list from the current input."
 mismatches = ["2:a"]
+
+[[gap]]
+id = "matrixdilate-applylist-006"
+reason = "ApplyMatrix reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
+mismatches = ["1:step"]
+
+[[gap]]
+id = "matrixdilate-dilatelist-006"
+reason = "Dilate reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
+mismatches = ["1:step"]

@@ -1664,6 +1664,80 @@
           }
         }
       ]
+    },
+    {
+      "id": "matrixdilate-elimination-010",
+      "group": "matrixdilate",
+      "script": [
+        "a = Invert({{1, 0}, {0, 0/0}})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": false }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": false },
+                  { "type": "number", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "matrixdilate-elimination-011",
+      "group": "matrixdilate",
+      "script": [
+        "a = ReducedRowEchelonForm({{-1, 0, 2}, {0, 1, 1}})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

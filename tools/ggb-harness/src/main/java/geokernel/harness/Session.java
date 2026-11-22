@@ -53,6 +53,7 @@ import org.geogebra.common.kernel.kernelND.GeoPointND;
 import org.geogebra.common.kernel.matrix.Coords;
 import org.geogebra.common.main.App;
 import org.geogebra.common.main.error.ErrorHandler;
+import org.geogebra.common.util.debug.Log;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.AsyncOperation;
 import org.geogebra.common.util.StringUtil;
@@ -133,8 +134,18 @@ final class Session {
             throw new IllegalArgumentException("expected an assignment to a new label: " + line);
         }
         CommandErrorHandler errors = new CommandErrorHandler(line, true);
-        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
-                line, false, errors, false, null);
+        Log logger = Log.getLogger();
+        Log.Level level = logger.getLogLevel();
+        GeoElementND[] out;
+        // AppCommon's debug logger throws on runtime exceptions before the
+        // command dispatcher can turn them into errors for the handler.
+        logger.setLogLevel(Log.Level.ERROR);
+        try {
+            out = processor.processAlgebraCommandNoExceptionHandling(
+                    line, false, errors, false, null);
+        } finally {
+            logger.setLogLevel(level);
+        }
         if (!errors.reported || (out != null && out.length != 0)
                 || kernel.lookupLabel(matcher.group(1)) != null) {
             throw new IllegalStateException("GeoGebra did not reject: " + line);

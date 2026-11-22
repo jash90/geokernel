@@ -173,7 +173,7 @@ pub(crate) fn rank(list: List<'_>, charge: impl FnMut(u64) -> bool) -> Option<f6
         finite_cell,
         charge,
         |data, rows, cols, mut charge| {
-            reduce(data, rows, cols, &mut charge)?;
+            reduce(data, rows, cols, false, &mut charge)?;
             if !charge(data.len() as u64) {
                 return None;
             }
@@ -190,6 +190,7 @@ fn reduce(
     data: &mut [f64],
     rows: usize,
     cols: usize,
+    preserve_zero_sign: bool,
     mut charge: impl FnMut(u64) -> bool,
 ) -> Option<()> {
     // `GgbMat.reducedRowEchelonFormImmediate`: the first sufficiently
@@ -215,10 +216,13 @@ fn reduce(
         for j in 0..cols {
             data[r * cols + j] /= divisor;
         }
-        let finite = data[r * cols..(r + 1) * cols].iter().all(|v| v.is_finite());
+        // Rank only counts nonzero values, so it can skip finite rows
+        // when a subtraction would only change the sign of zero.
+        let skip_zero =
+            !preserve_zero_sign && data[r * cols..(r + 1) * cols].iter().all(|v| v.is_finite());
         for i in (0..rows).filter(|&i| i != r) {
             let factor = data[i * cols + lead];
-            if factor == 0.0 && finite {
+            if factor == 0.0 && skip_zero {
                 continue;
             }
             if !charge(cols as u64) {
@@ -264,7 +268,7 @@ pub(crate) fn rref<T>(
     output: impl FnOnce(&[f64], usize, usize) -> Option<T>,
 ) -> Option<T> {
     eliminate(list, false, raw_cell, charge, |data, rows, cols, charge| {
-        reduce(data, rows, cols, charge)?;
+        reduce(data, rows, cols, true, charge)?;
         output(data, rows, cols)
     })
 }
@@ -342,13 +346,11 @@ pub(crate) fn inverse<T>(
         }
         let mut subtract_row = |result: &mut [f64], row: usize, col: usize| {
             let scale = lu[row * n + col];
-            if scale != 0.0 {
-                if !charge(n as u64) {
-                    return None;
-                }
-                for k in 0..n {
-                    result[row * n + k] -= result[col * n + k] * scale;
-                }
+            if !charge(n as u64) {
+                return None;
+            }
+            for k in 0..n {
+                result[row * n + k] -= result[col * n + k] * scale;
             }
             Some(())
         };

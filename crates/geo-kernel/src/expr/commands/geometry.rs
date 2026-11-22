@@ -146,10 +146,7 @@ fn vector(p: &mut Parser, command: &str, args: &[u32], lists: &[bool]) -> Option
     } else {
         p.push(tuple)
     };
-    // An inline coordinate pair belongs to this command. Even with literal
-    // arguments the result is dependent and cannot be dragged as a free vector.
-    let yes = p.push(Node::Bool(true));
-    Some(Node::If(IfMode::Algo, yes, output, NONE))
+    Some(Node::Vector(output))
 }
 
 fn dimension(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
@@ -368,7 +365,7 @@ pub(super) fn list_fn<const M: bool>(
     if op == ListOp::ApplyMatrix {
         let m = lists.with_list(ctx.c, start, len, |list| Some(matrix::Matrix::read(list)))?;
         let source = ctx.list(n)?;
-        return map_list(ctx, source, |slot| m?.apply(slot.value));
+        return map_list(ctx, source, |value| m?.apply(value));
     }
     if op == ListOp::MatrixDimension {
         if len == 0 {
@@ -412,44 +409,55 @@ pub(super) fn list_fn<const M: bool>(
     Some((out, rows))
 }
 
-/// Transform each leaf recursively while preserving the shape of the list.
+/// Transform leaves in depth-first order. A scalar is copied, while the
+/// transformation reuses its last point or vector output.
 pub(in crate::expr) fn map_list<const M: bool>(
     ctx: &Ctx<'_, M>,
     (start, len): (u32, u32),
-    transform: impl Fn(Slot) -> Option<Value>,
+    transform: impl Fn(Value) -> Option<Value>,
 ) -> Option<(u32, u32)> {
     let lists = ctx.lists?;
-    let mut pending = Vec::new();
+    let transformed = |slot: Slot| match transform(slot.value) {
+        Some(point @ (Value::Point { .. } | Value::HomogeneousPoint { .. })) => Slot::point(point),
+        Some(Value::Vector { x, y }) => Slot::coords(Kind::Vector, x, y),
+        _ => Slot::undefined(slot.kind),
+    };
     let out = lists.reserve(len)?;
-    let mut run = (start, len, out);
+    let mut pending = Vec::new();
+    let mut current = (start, out, len);
+    let mut last = None;
     loop {
-        let (source, size, target) = run;
-        if !lists.charge(u64::from(size)) {
+        let (source, target, size) = current;
+        if size == 0 {
+            let Some(next) = pending.pop() else {
+                return Some((out, len));
+            };
+            current = next;
+            continue;
+        }
+        if !lists.charge(1) {
             return None;
         }
-        for k in 0..size {
-            let slot = lists.read(ctx.c, source + k);
-            let result = if let Some((list, len)) = slot.run() {
-                let dest = lists.reserve(len)?;
-                if len != 0 {
-                    pending.push((list, len, dest));
-                }
-                Slot::list(dest, len)
-            } else {
-                match transform(slot) {
-                    Some(point @ (Value::Point { .. } | Value::HomogeneousPoint { .. })) => {
-                        Slot::point(point)
-                    }
-                    Some(Value::Vector { x, y }) => Slot::coords(Kind::Vector, x, y),
-                    _ => Slot::undefined(slot.kind),
-                }
-            };
-            lists.set(target + k, result);
-        }
-        let Some(next) = pending.pop() else {
-            return Some((out, len));
+        current = (source + 1, target + 1, size - 1);
+        let slot = lists.read(ctx.c, source);
+        let result = if let Some((list, len)) = slot.run() {
+            let dest = lists.reserve(len)?;
+            if len != 0 {
+                pending.push(current);
+                current = (list, dest, len);
+            }
+            Slot::list(dest, len)
+        } else if matches!(slot.kind, Kind::Point | Kind::Vector) {
+            last = Some(target);
+            transformed(slot)
+        } else {
+            if slot.kind != Kind::List {
+                let previous = last?;
+                lists.set(previous, transformed(lists.read(ctx.c, previous)));
+            }
+            slot
         };
-        run = next;
+        lists.set(target, result);
     }
 }
 

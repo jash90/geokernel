@@ -157,6 +157,7 @@ impl Walker<'_> {
             Node::Cmd(..)
             | Node::Inverse(_)
             | Node::Tuple(..)
+            | Node::Vector(_)
             | Node::Polar(..)
             | Node::List(..)
             | Node::Item(_)

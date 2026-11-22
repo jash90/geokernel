@@ -137,6 +137,8 @@ pub(crate) enum Node {
     Tuple(u32, u32),
     /// `(r; φ)`.
     Polar(u32, u32),
+    /// Inline vector command with a coordinate expression.
+    Vector(u32),
     Un(Un, u32),
     Bin(Bin, u32, u32),
     /// A function object applied to an argument.
@@ -432,9 +434,11 @@ pub(crate) struct Entry {
     parents: Vec<Id>,
     /// Whether this is a function of `x`.
     function: bool,
-    /// Whether a function's tree has an `If`, which changes what decides
-    /// whether it is defined (see [`inputs_defined`]).
+    /// Whether a function's tree requires checking its branches or transforms
+    /// to decide whether it is defined (see [`inputs_defined`]).
     checks_branches: bool,
+    /// Whether this tree or an applied function performs symbolic inversion.
+    inverts: bool,
     /// The objects named in the tree (a function's inputs).
     inputs: Vec<Id>,
     /// The last result; for a function, 0 when it is defined and `NaN`
@@ -455,14 +459,20 @@ pub(crate) struct Entry {
 }
 
 impl Entry {
-    fn new(p: parse::Parsed, function: bool) -> Self {
+    fn new(c: &Construction, p: parse::Parsed, function: bool) -> Self {
         let checks_branches = function
             && p.nodes
                 .iter()
                 .any(|n| matches!(n, Node::If(..) | Node::Inverse(_) | Node::Dilate(..)));
+        let inverts = p.nodes.iter().any(|node| match *node {
+            Node::Inverse(_) => true,
+            Node::Apply(f, _) => matches!(c.def(f), Def::Expr(d) if entry(c, d).inverts),
+            _ => false,
+        });
         let lists = reads_list(&p.nodes, &p.tys);
         Entry {
             checks_branches,
+            inverts,
             lists,
             items: Vec::new(),
             coordinate_layout: None,
@@ -559,7 +569,9 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) | Node::ListOp(_, a, b) => {
             fixed[..2].copy_from_slice(&[a, b]);
         }
-        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) | Node::Inverse(a) => fixed[0] = a,
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) | Node::Inverse(a) | Node::Vector(a) => {
+            fixed[0] = a;
+        }
         Node::If(_, a, b, c) | Node::Range(a, b, c) | Node::Dilate(a, b, c) => {
             fixed[..3].copy_from_slice(&[a, b, c])
         }
@@ -585,7 +597,9 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(a);
             shift(b);
         }
-        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) | Node::Inverse(a) => shift(a),
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) | Node::Inverse(a) | Node::Vector(a) => {
+            shift(a);
+        }
         Node::If(_, a, b, c) | Node::Range(a, b, c) | Node::Dilate(a, b, c) => {
             shift(a);
             shift(b);
@@ -926,7 +940,12 @@ pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
 /// an infinite raw value counts as defined, as in GeoGebra.
 fn inputs_defined(c: &Construction, e: &Entry) -> bool {
     if e.checks_branches {
-        return defined_below(c, e, e.root);
+        let meter = eval::Lists::new(Vec::new());
+        let ctx = eval::Ctx::<true> {
+            meter: Some(&meter),
+            ..eval::Ctx::new(c, e, &eval::Env::None)
+        };
+        return defined_below(&ctx, e.root) && !meter.over();
     }
     e.inputs.iter().all(|&id| object_defined(c, id))
         && e.nodes.iter().all(|n| match *n {
@@ -955,25 +974,28 @@ fn command_defined(c: &Construction, def: Def, hint: crate::algo::intersect::Hin
 /// operation do not count (`ExpressionNode.getUnconditionalVars`); an
 /// `AlgoIf` (an `If` whose conditions do not read `x`) is a helper
 /// function, defined when a condition is true and the branch it picks is.
-fn defined_below(c: &Construction, e: &Entry, i: u32) -> bool {
-    match e.nodes[i as usize] {
-        Node::Obj(id) => object_defined(c, id),
-        Node::Apply(f, a) => object_defined(c, f) && defined_below(c, e, a),
-        Node::Cmd(def, hint) => command_defined(c, def, hint),
-        Node::Inverse(a) => defined_below(c, e, a) && inverse::has_inverse(c, e, a),
+fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
+    if ctx.stop(1) {
+        return false;
+    }
+    match ctx.node(i) {
+        Node::Obj(id) => object_defined(ctx.c, id),
+        Node::Apply(f, a) => object_defined(ctx.c, f) && defined_below(ctx, a),
+        Node::Cmd(def, hint) => command_defined(ctx.c, def, hint),
+        Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),
         Node::Dilate(source, factor, _) => {
-            defined_below(c, e, source)
-                && !crate::algo::transform::zero_dilation(eval::number(c, e, factor))
+            defined_below(ctx, source)
+                && !crate::algo::transform::zero_dilation(ctx.full_number(factor))
         }
         Node::If(IfMode::Algo, cond, then, rest) => {
-            if eval::condition(c, e, cond) {
-                defined_below(c, e, then)
+            if matches!(ctx.full(cond).val, eval::Val::B(true, _)) {
+                defined_below(ctx, then)
             } else {
-                rest != NONE && defined_below(c, e, rest)
+                rest != NONE && defined_below(ctx, rest)
             }
         }
         Node::If(..) => true,
-        node => children(&node).all(|child| defined_below(c, e, child)),
+        node => children(&node).all(|child| defined_below(ctx, child)),
     }
 }
 
@@ -1073,7 +1095,7 @@ pub(crate) fn constant_number(c: &Construction, text: &str) -> Option<(f64, bool
     if parsed.uses_var || !parsed.parents.is_empty() {
         return None;
     }
-    let entry = Entry::new(parsed, false);
+    let entry = Entry::new(c, parsed, false);
     let (raw, _) = eval::root(c, &entry, None);
     match raw {
         Raw::Num(v) if v.is_finite() => Some((v, entry.root_ty() == Ty::Num(1))),
@@ -1114,9 +1136,8 @@ pub(crate) fn define_function(c: &mut Construction, name: &str, rhs: &str) -> Re
 fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<Id, String> {
     match parsed.tys[parsed.root as usize] {
         Ty::Vec => return Err("a function must give a number".into()),
-        Ty::Bool => return Err("a function that gives a boolean is not supported".into()),
         Ty::List(_) => return Err("a function cannot give a list".into()),
-        Ty::Num(_) => {}
+        Ty::Num(_) | Ty::Bool => {}
     }
     if reads_list(&parsed.nodes, &parsed.tys) {
         return Err("a list in a function is not supported".into());
@@ -1141,7 +1162,10 @@ fn add_parsed(
     // expression with one is dependent even on constants.
     let has_command = parsed.nodes.iter().any(|n| {
         matches!(n, Node::Bin(op, ..) if op.is_command())
-            || matches!(n, Node::Cmd(..) | Node::If(IfMode::Algo, ..))
+            || matches!(
+                n,
+                Node::Cmd(..) | Node::If(IfMode::Algo, ..) | Node::Vector(_)
+            )
             || is_list_node(n)
     });
     // a constant boolean (`b = 1 < 2`) or list stays an expression: there
@@ -1151,7 +1175,7 @@ fn add_parsed(
         && !has_command
         && !matches!(kind, Kind::Boolean | Kind::List);
     let vector_label = kind == Kind::Vector;
-    let entry = Entry::new(parsed, function);
+    let entry = Entry::new(c, parsed, function);
     if constant {
         // `AlgebraProcessor`: an expression without objects is free.
         let angle = entry.root_ty() == Ty::Num(1);

@@ -544,9 +544,8 @@ pub(super) enum Env<'a, const M: bool> {
     Arg(&'a Ctx<'a, M>, u32),
 }
 
-/// An evaluation; `M` when it is part of an evaluation with lists, which
-/// charges every node visited: an evaluation without lists is compiled
-/// without the charges and checks.
+/// An evaluation. `M` enables the work meter for lists, derivatives, and
+/// function inverses.
 #[derive(Clone, Copy)]
 pub(super) struct Ctx<'a, const M: bool> {
     pub(super) c: &'a Construction,
@@ -554,9 +553,8 @@ pub(super) struct Ctx<'a, const M: bool> {
     pub(super) env: &'a Env<'a, M>,
     /// The scratch of a tree with lists; `None` for a tree without.
     pub(super) lists: Option<&'a Lists>,
-    /// The evaluation with lists this one is part of when `M`, which is
-    /// charged for every node visited (see [`Lists::step`]); functions it
-    /// samples or expands are charged too, but read no lists.
+    /// The budget when `M`, charged for every node visited (see [`Lists::step`]),
+    /// including the functions sampled or expanded.
     pub(super) meter: Option<&'a Lists>,
     /// The variables of the `Sequence`s around the node being evaluated.
     pub(super) locals: Option<&'a Local<'a>>,
@@ -579,16 +577,17 @@ impl<'a, const M: bool> Ctx<'a, M> {
 /// a number result (`toDecimal`).
 #[inline]
 pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, Option<Exact>) {
-    let x = match lists {
+    let inverse_meter = (lists.is_none() && e.inverts).then(|| Lists::new(Vec::new()));
+    let x = match lists.or(inverse_meter.as_ref()) {
         None => Ctx::<false>::new(c, e, &Env::None).full(e.root),
-        Some(lists) => {
+        Some(meter) => {
             let x = Ctx::<true> {
-                lists: Some(lists),
-                meter: Some(lists),
+                lists,
+                meter: Some(meter),
                 ..Ctx::new(c, e, &Env::None)
             }
             .full(e.root);
-            if lists.over() {
+            if meter.over() {
                 return (Raw::Num(f64::NAN), None);
             }
             x
@@ -624,20 +623,20 @@ pub(super) fn root_list(
 
 /// `Function.value`: a function entry at `x`.
 pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
-    Ctx::<false>::new(c, e, &Env::Value(x)).fast(e.root)
-}
-
-pub(super) fn number(c: &Construction, e: &Entry, i: u32) -> f64 {
-    Ctx::<false>::new(c, e, &Env::None).full_number(i)
-}
-
-/// The value of the condition at `i` of an entry's `AlgoIf`, which reads
-/// no `x`.
-pub(super) fn condition(c: &Construction, e: &Entry, i: u32) -> bool {
-    matches!(
-        Ctx::<false>::new(c, e, &Env::None).full(i).val,
-        Val::B(true, _)
-    )
+    if !e.inverts {
+        return Ctx::<false>::new(c, e, &Env::Value(x)).fast(e.root);
+    }
+    let meter = Lists::new(Vec::new());
+    let y = Ctx::<true> {
+        meter: Some(&meter),
+        ..Ctx::new(c, e, &Env::Value(x))
+    }
+    .fast(e.root);
+    if meter.over() {
+        f64::NAN
+    } else {
+        y
+    }
 }
 
 /// The tree of the function object `f`, when it is defined.
@@ -764,10 +763,14 @@ impl<const M: bool> Ctx<'_, M> {
                     )),
                     ..*self
                 };
-                Ex::plain(N(f.fast(src) * r + (-sy * r + sy)))
+                if self.e.tys[src as usize] == Ty::Bool {
+                    f.full(src)
+                } else {
+                    Ex::plain(N(f.fast(src) * r + (-sy * r + sy)))
+                }
             }
             Node::If(mode, cond, then, rest) => self.conditional(i, mode, cond, then, rest),
-            Node::Item(a) => self.full(a),
+            Node::Item(a) | Node::Vector(a) => self.full(a),
             // the variable of a `Sequence` is a `GeoNumeric`
             Node::Local(depth) => Ex {
                 obj: true,
@@ -817,12 +820,26 @@ impl<const M: bool> Ctx<'_, M> {
 
     /// `f(a)`: expanded inside a function, in the current mode; elsewhere
     /// `a` is evaluated and `f` sampled there (`GeoFunction.value`).
-    fn apply(&self, f: Id, a: u32, fast: bool) -> f64 {
+    fn apply_fast(&self, f: Id, a: u32) -> f64 {
         let Some(e) = function_entry(self.c, f) else {
             return f64::NAN;
         };
         // the function's nodes are charged to the evaluation with lists
         // this one is part of, if any
+        let env = Env::Arg(self, a);
+        let inner = Ctx {
+            meter: self.meter,
+            ..Ctx::new(self.c, e, &env)
+        };
+        inner.fast(e.root)
+    }
+
+    /// `f(a)` in the full evaluation: inside a function the expanded tree
+    /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
+    fn apply_full(&self, f: Id, a: u32) -> Ex {
+        let Some(e) = function_entry(self.c, f) else {
+            return Ex::plain(Val::N(f64::NAN));
+        };
         let env = if self.e.function {
             Env::Arg(self, a)
         } else {
@@ -832,29 +849,11 @@ impl<const M: bool> Ctx<'_, M> {
             meter: self.meter,
             ..Ctx::new(self.c, e, &env)
         };
-        if fast || !self.e.function {
-            // `sample`
-            inner.fast(e.root)
+        if self.e.function || e.root_ty() == Ty::Bool {
+            inner.full(e.root)
         } else {
-            inner.full_number(e.root)
+            Ex::plain(Val::N(inner.fast(e.root)))
         }
-    }
-
-    /// `f(a)` in the full evaluation: inside a function the expanded tree
-    /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
-    fn apply_full(&self, f: Id, a: u32) -> Ex {
-        if !self.e.function {
-            return Ex::plain(Val::N(self.apply(f, a, false)));
-        }
-        let Some(e) = function_entry(self.c, f) else {
-            return Ex::plain(Val::N(f64::NAN));
-        };
-        let env = Env::Arg(self, a);
-        Ctx {
-            meter: self.meter,
-            ..Ctx::new(self.c, e, &env)
-        }
-        .full(e.root)
     }
 
     pub(super) fn full_number(&self, i: u32) -> f64 {
@@ -940,7 +939,7 @@ impl<const M: bool> Ctx<'_, M> {
                 Env::Arg(caller, a) => caller.fast(a),
             },
             Node::VarY => f64::NAN,
-            Node::Apply(f, a) if self.e.function => self.apply(f, a, true),
+            Node::Apply(f, a) if self.e.function => self.apply_fast(f, a),
             Node::Obj(id) => object(self.c, id).num(),
             _ => self.full_number(i),
         }
@@ -1119,8 +1118,8 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Dilate(src, factor, center) => {
                 let (r, sx, sy) = self.dilation(factor, center);
                 let source = self.list(src)?;
-                commands::map_list(self, source, |slot| {
-                    crate::algo::transform::dilate_element(slot.value, r, sx, sy)
+                commands::map_list(self, source, |value| {
+                    crate::algo::transform::dilate_element(value, r, sx, sy)
                 })
             }
             _ => None,
@@ -1153,35 +1152,12 @@ impl<const M: bool> Ctx<'_, M> {
         }
         match x {
             Val::N(v) => Slot::number(v),
-            Val::V(x, y) => Slot::coords(self.vec_kind(i), x, y),
+            Val::V(x, y) => Slot::coords(
+                super::types::vec_kind(self.c, &self.e.nodes, &self.e.tys, i),
+                x,
+                y,
+            ),
             Val::B(b, _) => Slot::boolean(b),
-        }
-    }
-
-    /// Whether a point or vector element is a point or a vector: an object
-    /// or a command keeps its kind, coordinates are a point, and an
-    /// operation is a point when a point takes part.
-    fn vec_kind(&self, i: u32) -> Kind {
-        let kind = |k: Kind| {
-            if k == Kind::Vector {
-                Kind::Vector
-            } else {
-                Kind::Point
-            }
-        };
-        match self.node(i) {
-            Node::Obj(id) => kind(self.c.kind(id)),
-            Node::Cmd(def, _) => kind(def.kind()),
-            Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => self.vec_kind(a),
-            Node::Bin(_, a, b) => {
-                let kinds = [a, b].map(|j| self.is_vec(j).then(|| self.vec_kind(j)));
-                if kinds.contains(&Some(Kind::Point)) || !kinds.contains(&Some(Kind::Vector)) {
-                    Kind::Point
-                } else {
-                    Kind::Vector
-                }
-            }
-            _ => Kind::Point,
         }
     }
 
