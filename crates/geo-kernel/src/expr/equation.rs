@@ -47,17 +47,17 @@
 //!   are: `0x + 0y = 1` is the undefined line `(0, 0, -1)`;
 //! - degree 2: a conic with the coefficients `a x^2 + b xy + c y^2 + dx +
 //!   ey + f = 0` (`GeoConic(coeffs)`);
-//! - anything else, or an equation that is no polynomial (`sin(x) = 0`):
-//!   `y = <rhs in x>` makes a function, as an `f(x) = ...` line does;
-//!   everything else would be an implicit curve or, when an exponent reads
-//!   an object (`x^n`), an implicit polynomial, which this kernel does not
-//!   have and refuses.
+//! - higher-degree polynomials are implicit curves, except that the
+//!   explicit graph form `y = <rhs in x>` makes a function. Equations
+//!   with a dynamic exponent can change kinds when recomputed.
 //!
 //! The line or conic is dependent when a coefficient reads an object, as
 //! `AlgoDependentLine` and `AlgoDependentConic` are: the construction
 //! keeps one expression entry per coefficient (three for a line, six for a
 //! conic) in its equation table (see [`kernel::EquationDef`]), recomputes
 //! them when an object changes and classifies the conic again.
+
+pub(crate) mod implicit;
 
 use super::parse;
 use super::{children, eval, math, shift_children, types, Bin, Entry, Lit, Node, Raw, Ty, NONE};
@@ -102,7 +102,7 @@ const MAX_COEFFICIENT_DEPTH: u32 = 2 * MAX_TERMS as u32;
 /// end.
 const MAX_FUNCTION_NODES: usize = 4096;
 
-/// Defines `name: lhs = rhs` as the line, conic or function the equation
+/// Defines `name: lhs = rhs` as the line, conic, function or implicit curve the equation
 /// makes, as GeoGebra's algebra processor does. The equation must have one
 /// top-level `=`; inequalities are refused.
 pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id, String> {
@@ -132,17 +132,17 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         function_dependent: false,
         variable_powers: false,
         abort_at: u64::MAX,
+        max_degree: u32::MAX,
     };
 
     let poly = match build_normal(c, &mut builder, lhs.root, rhs_root) {
         Ok(poly) => poly,
         Err(why) => {
             let what = match why {
-                NotPolynomial::VariableDegree => {
-                    "a variable exponent, like `x^n`, would make an implicit \
-                     polynomial, which is not supported: write the exponent \
-                     as a number"
+                NotPolynomial::VariableDegree if !is_function_form(lhs_text, rhs.uses_y) => {
+                    return implicit::definition(c, name, sides).map_err(|e| e.to_string());
                 }
+                NotPolynomial::VariableDegree => "unsupported variable exponent",
                 NotPolynomial::ImplicitCurve => {
                     "implicit curves are not supported: write a line or a conic in x and y"
                 }
@@ -174,14 +174,10 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
             )?;
             add(c, name, true, coeffs, sides).map_err(|e| e.to_string())
         }
-        _ => function_or_refuse(
-            c,
-            name,
-            lhs_text,
-            rhs_text,
-            rhs.uses_y,
-            "implicit curves are not supported: write a line or a conic in x and y",
-        ),
+        _ if is_function_form(lhs_text, rhs.uses_y) => {
+            super::define_function(c, name, rhs_text.trim(), false)
+        }
+        _ => implicit::definition(c, name, sides).map_err(|e| e.to_string()),
     }
 }
 
@@ -208,10 +204,7 @@ fn is_function_form(lhs_text: &str, rhs_uses_y: bool) -> bool {
     lhs_text.trim() == "y" && !rhs_uses_y
 }
 
-/// `AlgebraProcessor.functionOrImplicitPoly` for an equation this kernel
-/// has no implicit curve or implicit polynomial for: `y = <rhs in x>` makes
-/// a function, exactly as an `f(x) = ...` line does; everything else is
-/// refused with `what`.
+/// Non-polynomial equations of the form `y = <rhs in x>` make functions.
 fn function_or_refuse(
     c: &mut Construction,
     name: &str,
@@ -359,6 +352,7 @@ pub(crate) struct Builder {
     /// no-CAS rules set it so that one pass of `rule_derivative` cannot
     /// build a tree far past the budget before the next pass is checked.
     pub(crate) abort_at: u64,
+    max_degree: u32,
 }
 
 impl Builder {
@@ -382,6 +376,7 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            max_degree: u32::MAX,
         }
     }
 
@@ -395,6 +390,7 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            max_degree: u32::MAX,
         }
     }
 
@@ -542,13 +538,20 @@ impl Builder {
                 if !math::is_integer(value) || value < -STANDARD_PRECISION {
                     return Err(NotPolynomial::VariableDegree);
                 }
-                p.pow(java_int(value).max(0) as u32, self)?;
+                let power = java_int(value).max(0) as u32;
+                if p.degree().saturating_mul(power) > self.max_degree {
+                    return Err(NotPolynomial::ImplicitCurve);
+                }
+                p.pow(power, self)?;
                 return Ok(p);
             }
             let Some(power) = self.number_value(c, exp_coeff) else {
                 return Err(NotPolynomial::ImplicitCurve);
             };
             if !math::is_integer(power) || !(0.0..=MAX_ALLOWED_DEGREE).contains(&power) {
+                return Err(NotPolynomial::ImplicitCurve);
+            }
+            if p.degree().saturating_mul(power as u32) > self.max_degree {
                 return Err(NotPolynomial::ImplicitCurve);
             }
             p.pow(power as u32, self)?;
@@ -933,7 +936,9 @@ impl Poly {
     /// `Polynomial.multiply`: every term of this polynomial times every
     /// term of `e`, the variables joined, then [`Poly::simplify`].
     fn mul(&mut self, e: &Poly, b: &mut Builder) -> Result<(), NotPolynomial> {
-        if self.0.len().saturating_mul(e.0.len()) > MAX_PRODUCT_TERMS {
+        if self.0.len().saturating_mul(e.0.len()) > MAX_PRODUCT_TERMS
+            || (b.max_degree != u32::MAX && self.degree().saturating_add(e.degree()) > b.max_degree)
+        {
             return Err(NotPolynomial::ImplicitCurve);
         }
         let mut out = Vec::with_capacity(self.0.len() * e.0.len());
@@ -1126,13 +1131,14 @@ pub(crate) fn parents(c: &Construction, d: EquationDef) -> Vec<Id> {
 
 /// The original side of a user equation, with its free coordinate variables.
 pub(super) fn side_entry(c: &Construction, equation: Id, left: bool) -> Option<&Entry> {
-    let Def::Equation(def) = c.def(equation) else {
-        return None;
+    let sides = match c.def(equation) {
+        Def::Equation(def) => c.equations.get(def.index as usize)?.1.sides,
+        Def::ImplicitCurve(index) if c.equation_form(equation) == Some(&EquationForm::User) => {
+            c.implicit_curves.get(index as usize)?.1.sides()?
+        }
+        _ => return None,
     };
-    let (_, record) = c.equations.get(def.index as usize)?;
-    c.exprs
-        .entries
-        .get(record.sides[usize::from(!left)] as usize)
+    c.exprs.entries.get(sides[usize::from(!left)] as usize)
 }
 
 pub(super) fn side_parents(c: &Construction, equation: Id, left: bool) -> &[Id] {
@@ -1173,6 +1179,18 @@ pub(super) fn sample_side(
             (a / g * x + b / g * y, -c / g)
         }
         Value::Circle { cx, cy, r } => ((x - cx).powi(2) + (y - cy).powi(2), r * r),
+        Value::ImplicitCurve => {
+            let coefficients = c.implicit_coefficients(equation)?;
+            let constant = coefficients
+                .first()
+                .and_then(|row| row.first())
+                .copied()
+                .unwrap_or(0.0);
+            (
+                crate::plot::implicit::evaluate(coefficients, x, y) - constant,
+                -constant,
+            )
+        }
         Value::Conic { .. } => {
             let [a, b, constant, h, u, v] = c.conic(equation)?.matrix;
             let coefficients = [a, 2.0 * h, b, 2.0 * u, 2.0 * v, constant];
@@ -1213,10 +1231,13 @@ pub(crate) fn define_side(
             let hidden = format!("\0equation{}", c.len());
             define(c, &hidden, arg)?
         } else {
-            return Err(format!("expected a line or conic, got `{arg}`"));
+            return Err(format!("expected an equation, got `{arg}`"));
         };
-        if !matches!(c.kind(equation), Kind::Line | Kind::Circle | Kind::Conic) {
-            return Err(format!("expected a line or conic, got `{arg}`"));
+        if !matches!(
+            c.kind(equation),
+            Kind::Line | Kind::Circle | Kind::Conic | Kind::ImplicitCurve
+        ) {
+            return Err(format!("expected an equation, got `{arg}`"));
         }
         let node = Node::Side(equation, command == "LeftSide");
         let parsed = super::reparse(c, Kind::FunctionNVar, &[node], &[Lit::default()], 0)
@@ -1511,16 +1532,15 @@ mod tests {
     }
 
     #[test]
-    fn a_variable_exponent_is_refused_with_its_own_message() {
-        // GeoGebra makes an implicit polynomial of `x^n`, which this kernel
-        // does not have
+    fn a_variable_exponent_reclassifies_an_equation() {
         let mut c = Construction::new();
-        exec(&mut c, "n = 2").unwrap();
-        let err = exec(&mut c, "a: x^n = 1").unwrap_err();
-        assert!(err.contains("variable exponent"), "{err}");
-        assert!(!err.contains("implicit curves"), "{err}");
-        let err = exec(&mut c, "a: x^n + y = 1").unwrap_err();
-        assert!(err.contains("variable exponent"), "{err}");
+        let n = exec(&mut c, "n = 3").unwrap().unwrap();
+        let a = exec(&mut c, "a: x^n + y = 1").unwrap().unwrap();
+        assert_eq!(c.kind(a), Kind::ImplicitCurve);
+        c.set_number(n, 2.0).unwrap();
+        assert_eq!(c.kind(a), Kind::Conic);
+        c.set_number(n, 1.0).unwrap();
+        assert_eq!(c.kind(a), Kind::Line);
         // `y = <rhs in x>` is still the function form, whatever the exponent
         exec(&mut c, "f: y = x^n").unwrap();
         assert_eq!(c.kind(c.id("f").unwrap()), Kind::Function);
@@ -1683,9 +1703,8 @@ mod tests {
     }
 
     #[test]
-    fn implicit_curves_and_inequalities_are_refused() {
+    fn nonpolynomial_implicit_curves_and_inequalities_are_refused() {
         for line in [
-            "a: y^2 = x^3",
             "a: sin(x) = 0",
             "a: x / y = 1",
             "a: sqrt(x) = 1",

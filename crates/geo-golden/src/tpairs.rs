@@ -698,6 +698,26 @@ fn compare_probed(
     }
 }
 
+fn legacy_implicit(c: &Construction, id: Id, equation: &str) -> Option<Result<(), String>> {
+    if c.equation_form(id) != Some(&geo_kernel::kernel::EquationForm::Implicit) {
+        return None;
+    }
+    let actual = c.implicit_coefficients(id)?;
+    let (lhs, rhs) = equation.split_once('=')?;
+    let expected =
+        script::load(&format!("f(x,y) = ({lhs}) - ({rhs})\nc = ImplicitCurve(f)")).ok()?;
+    let expected = expected.implicit_coefficients(expected.id("c")?)?;
+    Some(
+        if crate::compare::implicit_matrices_agree(expected, actual) {
+            Ok(())
+        } else {
+            Err(format!(
+                "implicit coefficients {actual:?} do not match {expected:?}"
+            ))
+        },
+    )
+}
+
 /// Compares the recorded output against the kernel's object `id`, printed
 /// as `label` in messages.
 fn compare_at(
@@ -709,6 +729,20 @@ fn compare_at(
 ) -> Vec<Disagreement> {
     let mut bad = Vec::new();
     let Some(raw) = out.object.as_ref() else {
+        // Older pairs recorded generated implicit polynomials as equation
+        // strings. Recover their numeric coefficients for the same comparison
+        // used by the structured snapshots.
+        if out.class == "GeoImplicitCurve" {
+            if let Some(result) = legacy_implicit(c, id, &out.string) {
+                if let Err(why) = result {
+                    bad.push(Disagreement {
+                        label: label.into(),
+                        why,
+                    });
+                }
+                return bad;
+            }
+        }
         // The schema has no type for this class; only a 3D object that left
         // the plane (or a 3D-only class) keeps `object` empty, every other
         // class is simply not supported by the schema.
@@ -755,7 +789,10 @@ fn compare_at(
                 .err()
         } else if kind == Kind::List {
             compare_list(c, &expected, kind, c.elements(id)).err()
-        } else if matches!(kind, Kind::Text | Kind::FunctionNVar | Kind::Curve) {
+        } else if matches!(
+            kind,
+            Kind::Text | Kind::FunctionNVar | Kind::Curve | Kind::ImplicitCurve
+        ) {
             compare_extra(c, id, &expected).err()
         } else {
             let vertices: Vec<_> = c.vertices(id).collect();

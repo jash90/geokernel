@@ -113,7 +113,7 @@ pub fn curves_plot_cost() -> u64 {
 /// What plotting `id` counts against [`REPLOTS_PER_FRAME`].
 fn plot_cost(c: &Construction, id: Id) -> usize {
     match c.value(id) {
-        Value::Function => FUNCTION_COST,
+        Value::Function | Value::ImplicitCurve => FUNCTION_COST,
         _ => 1,
     }
 }
@@ -588,6 +588,8 @@ impl Curves {
         let label = c.label(id);
         let data = match c.value(id) {
             Value::Conic { .. } => key::conic_data(&c.conic(id)?),
+            Value::ImplicitCurve => Data::Implicit(c.implicit_revision(id)?),
+
             Value::Function => {
                 let closure = cache
                     .closures
@@ -872,6 +874,27 @@ impl Curves {
                 }
                 None => (Vec::new(), None, None, None, None, false),
             },
+            Value::ImplicitCurve => {
+                let paths: Vec<_> =
+                    c.implicit_coefficients(id)
+                        .map_or_else(Vec::new, |coefficients| {
+                            let grown = self.frame.grown(margin);
+                            plot::implicit::plot(coefficients, &grown)
+                                .into_iter()
+                                .map(|path| {
+                                    path.into_iter()
+                                        .map(|(x, y)| at((x - margin, y - margin)))
+                                        .collect()
+                                })
+                                .collect()
+                        });
+                let label = paths
+                    .iter()
+                    .flatten()
+                    .next()
+                    .map(|p: &Pos2| (f64::from(p.x), f64::from(p.y)));
+                (paths, None, None, label, None, false)
+            }
             Value::Function => {
                 let mut f = |x: f64| c.function_value(id, x).unwrap_or(f64::NAN);
                 let p = plot::function::plot_with_margin(&mut f, &self.frame, margin);

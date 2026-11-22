@@ -237,6 +237,13 @@ pub fn hit(
             let d = c.conic(id)?;
             boundary(conic_meets_square(&d, tr, p, t + CURVE_STROKE / 2.0))
         }
+        Value::ImplicitCurve => {
+            let coefficients = c.implicit_coefficients(id)?;
+            let t = t + CURVE_STROKE / 2.0;
+            let lo = tr.screen_to_world(p.0 - t, p.1 + t);
+            let hi = tr.screen_to_world(p.0 + t, p.1 - t);
+            boundary(geo_kernel::plot::implicit::meets_box(coefficients, lo, hi))
+        }
         Value::Function => boundary(function_meets_square(c, id, tr, p, t + CURVE_STROKE / 2.0)),
         Value::Number(_) if c.kind(id) == Kind::Angle => {
             let angle = c.angle_geometry(id)?;

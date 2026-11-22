@@ -231,7 +231,7 @@ fn quartic_candidates(coefficients: [f64; 5]) -> Option<[f64; 4]> {
     Some(roots)
 }
 
-fn newton(
+pub(in crate::algo) fn newton(
     coefficients: &[f64],
     derivative: &[f64],
     mut x: f64,
