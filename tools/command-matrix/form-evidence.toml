@@ -3055,6 +3055,16 @@ cases = ["funcanalysis-rootlistedge-004"]
 
 [[form]]
 command = "Function"
+form = "()"
+cases = ["funcrest-emptyfunction-001", "funcrest-emptyfunction-002"]
+
+[[form]]
+command = "Function"
+form = "list"
+cases = ["funcrest-freehand-002", "funcrest-freehand-005", "funcrest-freehand-008"]
+
+[[form]]
+command = "Function"
 form = "function,number,number"
 cases = ["funcanalysis-forms-009"]
 

@@ -160,6 +160,13 @@ pub enum CalculusDef {
     /// when there is one); everything else needs the CAS and is undefined,
     /// and a curve is undefined in the reference too.
     SymbolicOde { source: u32, point: Option<u32> },
+    /// `Function(list)` (`AlgoFunctionFreehand`): the freehand function of
+    /// the list `{min, max, y1, y2, ...}`, the values `y` at equal steps
+    /// over `[min, max]`, linear between them and undefined outside.
+    Freehand { list: u32 },
+    /// `Function()` (`CmdDataFunction.emptyFunction`): the data function
+    /// of no points, a defined function with no value anywhere.
+    EmptyData,
 }
 
 /// The object index `x` as an `Id` again.
@@ -179,6 +186,8 @@ impl CalculusDef {
                 | CalculusDef::NumericInterval { .. }
                 | CalculusDef::PolynomialPoints { .. }
                 | CalculusDef::SymbolicOde { .. }
+                | CalculusDef::Freehand { .. }
+                | CalculusDef::EmptyData
         )
     }
 
@@ -192,10 +201,15 @@ impl CalculusDef {
         x: f64,
     ) -> Option<f64> {
         let _ = owner;
-        record
-            .tree
-            .as_ref()
-            .map(|entry| expr::sample_tree(c, entry, x))
+        match *self {
+            // these two keep no tree: their values come from the list
+            CalculusDef::Freehand { list } => Some(freehand_value(c, gid(list), x)),
+            CalculusDef::EmptyData => Some(f64::NAN),
+            _ => record
+                .tree
+                .as_ref()
+                .map(|entry| expr::sample_tree(c, entry, x)),
+        }
     }
 }
 
@@ -230,6 +244,8 @@ pub(crate) fn refresh(c: &Construction, d: &CalculusDef) -> (Value, CalcRecord) 
             }
             _ => Value::Undefined,
         },
+        CalculusDef::Freehand { list } if freehand_defined(c, gid(list)) => Value::Function,
+        CalculusDef::EmptyData => Value::Function,
         _ if defined(&tree) => Value::Function,
         _ => Value::Undefined,
     };
@@ -246,7 +262,9 @@ impl Group for CalculusDef {
             | CalculusDef::Derivative { .. }
             | CalculusDef::NumericInterval { .. }
             | CalculusDef::PolynomialPoints { .. }
-            | CalculusDef::SymbolicOde { .. } => Kind::Function,
+            | CalculusDef::SymbolicOde { .. }
+            | CalculusDef::Freehand { .. }
+            | CalculusDef::EmptyData => Kind::Function,
             CalculusDef::CurveDerivative { .. } => Kind::Curve,
         }
     }
@@ -303,6 +321,8 @@ impl Group for CalculusDef {
                 Some(point) => Parents::of(&[gid(source), gid(point)]),
                 None => Parents::of(&[gid(source)]),
             },
+            CalculusDef::Freehand { list } => Parents::of(&[gid(list)]),
+            CalculusDef::EmptyData => Parents::none(),
         }
     }
 
@@ -392,12 +412,19 @@ impl Group for CalculusDef {
                     c.expect(gid(point), POINT)?;
                 }
             }
+            CalculusDef::Freehand { list } => {
+                c.expect(gid(list), &[Kind::List])?;
+            }
+            CalculusDef::EmptyData => {}
         }
         Ok(())
     }
 
     fn compute(&self, c: &Construction) -> Option<Value> {
         match *self {
+            CalculusDef::Freehand { .. } | CalculusDef::EmptyData => {
+                Some(refresh(c, self).0).filter(Value::is_defined)
+            }
             CalculusDef::Sum { .. } => sum_value(c, self),
             CalculusDef::DefiniteIntegral { .. } => definite_integral(c, self),
             CalculusDef::IntegralFunctions { .. } => integral_functions(c, self),
@@ -723,6 +750,12 @@ fn definite_integral(c: &Construction, d: &CalculusDef) -> Option<Value> {
     if shade_only {
         return None;
     }
+    // a freehand function is summed over its own steps
+    // (`freehandIntegration`)
+    if let Def::Calculus(CalculusDef::Freehand { list }) = c.def(function) {
+        let value = freehand_integration(c, gid(list), lower, upper);
+        return value.is_finite().then_some(Value::Number(value));
+    }
     let entry = source_entry(c, function)?;
     let conditional = is_conditional(entry, entry.root);
     let div_by_var = includes_division_by_var(&entry.nodes, entry.root);
@@ -867,6 +900,117 @@ fn boolean(c: &Construction, id: Id) -> Option<bool> {
 /// `DoubleUtil.isEqual(x, y, eps)`.
 fn is_equal(x: f64, y: f64, eps: f64) -> bool {
     x == y || (x - eps) < y && y < (x + eps)
+}
+
+// --------------------------------------------------------- the freehand function
+
+/// `AlgoFunctionFreehand.compute`: the function is defined for a defined
+/// list of at least four numbers.
+fn freehand_defined(c: &Construction, list: Id) -> bool {
+    c.elements(list).is_some_and(|list| {
+        list.len() >= 4
+            && list
+                .iter()
+                .all(|item| matches!(item, Element::Value(Kind::Number, _)))
+    })
+}
+
+/// `Operation.FREEHAND`: the value at `x` of the freehand function of the
+/// list `{min, max, y1, ..., yn+1}`. The `n` steps divide `[min, max]`
+/// evenly; outside the interval and for a reversed interval the value is
+/// undefined.
+fn freehand_value(c: &Construction, list: Id, x: f64) -> f64 {
+    let Some(list) = c.elements(list) else {
+        return f64::NAN;
+    };
+    if list.len() < 4 {
+        return f64::NAN;
+    }
+    let at = |k: usize| list.numeric_cell(k).unwrap_or(f64::NAN);
+    let n = list.len() - 3;
+    let (min, max) = (at(0), at(1));
+    if min > max || x > max || x < min {
+        return f64::NAN;
+    }
+    let step = (max - min) / n as f64;
+    // Java's `(int) Math.floor(...)`: a NaN is 0, the rest saturates
+    let index = ((x - min) / step).floor() as i32;
+    if index < 0 {
+        return f64::NAN;
+    }
+    let index = index as usize;
+    if index > n - 1 {
+        return at(n + 2);
+    }
+    let (y1, y2) = (at(index + 2), at(index + 3));
+    let x1 = min + index as f64 * step;
+    y1 + (x - x1) * (y2 - y1) / step
+}
+
+/// `AlgoIntegralDefinite.freehandIntegration`: the trapezoidal rule over
+/// the steps of the freehand list that lie between the bounds, plus one
+/// trapezium at each end. Bounds outside the list's interval are
+/// undefined.
+fn freehand_integration(c: &Construction, list_id: Id, lower: f64, upper: f64) -> f64 {
+    let (lower, upper, sign) = if lower > upper {
+        (upper, lower, -1.0)
+    } else {
+        (lower, upper, 1.0)
+    };
+    let Some(list) = c.elements(list_id) else {
+        return f64::NAN;
+    };
+    let at = |k: i64| {
+        usize::try_from(k)
+            .ok()
+            .and_then(|k| list.numeric_cell(k))
+            .unwrap_or(f64::NAN)
+    };
+    let (a1, b1) = (at(0), at(1));
+    if lower < a1 || upper > b1 {
+        return f64::NAN;
+    }
+    let step = (b1 - a1) / (list.len() as f64 - 3.0);
+    // Java's `(int)` of a double: a NaN is 0, the rest saturates
+    let start_gap = ((lower - a1) / step).ceil() as i32 as i64;
+    let end_gap = ((b1 - upper) / step).ceil() as i32 as i64;
+    let start_x = a1 + step * start_gap as f64;
+    let end_x = b1 - step * end_gap as f64;
+    let steps = (((b1 - a1) / step - end_gap as f64 - start_gap as f64 + 0.5).floor() as i32
+        as i64)
+        .saturating_add(1);
+    let f = |x: f64| freehand_value(c, list_id, x);
+    let area = if steps > 0 {
+        if steps > list.len() as i64 {
+            // past the list: the reference fails on the missing element
+            return f64::NAN;
+        }
+        let mut sum = 0.0;
+        for i in 0..steps {
+            let y = at(2 + i + start_gap);
+            sum += if i == 0 || i == steps - 1 { y } else { 2.0 * y };
+        }
+        let mut area = sum * step / 2.0;
+        if !is_zero(start_x - lower) {
+            area += (start_x - lower) * (f(start_x) + f(lower)) / 2.0;
+        }
+        if !is_zero(end_x - upper) {
+            area += (upper - end_x) * (f(end_x) + f(upper)) / 2.0;
+        }
+        area
+    } else {
+        (upper - lower) * (f(lower) + f(upper)) / 2.0
+    };
+    // `DoubleUtil.checkDecimalFraction`: a value close to a multiple of
+    // `1e-5` snaps to it
+    let scaled = area * 1e5;
+    let rounded = (scaled + 0.5).floor();
+    let area = if is_equal(scaled, rounded, STANDARD_PRECISION) {
+        rounded / 1e5
+    } else {
+        area
+    };
+    area * sign
 }
 
 // ------------------------------------------------------------- the polynomials

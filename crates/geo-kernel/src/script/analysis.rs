@@ -2,6 +2,7 @@
 
 use super::{add_named_outputs, add_outputs, define_cartesian_curve, index_label, split_call};
 use crate::algo::analysis::{AnalysisDef, CurvatureKind, Mode, SplineInput};
+use crate::algo::calculus::CalculusDef;
 use crate::expr;
 use crate::kernel::locus::NumericLocus;
 use crate::{Construction, Def, Id, Kind, LocusDef};
@@ -29,6 +30,21 @@ pub(super) fn exec(c: &mut Construction, label: &str, rhs: &str) -> Option<Resul
             })());
         }
         "Function" if args.len() >= 3 => return Some(restrict(c, label, &args, false)),
+        // `Function()`: the empty data function
+        "Function" if args == [""] => {
+            return Some(
+                c.add(label, Def::Calculus(CalculusDef::EmptyData))
+                    .map_err(|e| e.to_string()),
+            );
+        }
+        // `Function(list)`: the freehand function of a list
+        "Function" if args.len() == 1 => {
+            return Some(argument(c, args[0], Kind::List).and_then(|list| {
+                let list = packed(list)?;
+                c.add(label, Def::Calculus(CalculusDef::Freehand { list }))
+                    .map_err(|e| e.to_string())
+            }));
+        }
         "$functionInterval" => return Some(restrict(c, label, &args, true)),
         "Root" if args.len() == 2 && args.iter().all(|arg| is_function(c, arg)) => {
             return Some(
@@ -317,7 +333,7 @@ fn add_ode(c: &mut Construction, label: &str, command: &str, args: &[&str]) -> R
         return c
             .add(
                 label,
-                Def::Calculus(crate::algo::calculus::CalculusDef::SymbolicOde { source, point }),
+                Def::Calculus(CalculusDef::SymbolicOde { source, point }),
             )
             .map_err(|e| e.to_string());
     }

@@ -887,3 +887,10 @@ mismatches = ["0:g"]
 id = "odesymbolic-cas-006"
 reason = "intended difference, recorded in DIFFERENCES.md: the symbolic SolveODE forms answer through the CAS for a right-hand side that is no polynomial in x of a one-variable function (a power with an exponent that is no whole number); the kernel has no symbolic solver for ordinary differential equations beyond polynomials and leaves the function undefined"
 mismatches = ["1:g", "2:g"]
+
+# funcrest
+
+[[gap]]
+id = "funcrest-freehandreaders-010"
+reason = "intended difference, recorded in DIFFERENCES.md: the numeric intersection of two functions reads the expression trees of both, and a freehand function has none, so the kernel leaves the point undefined where GeoGebra iterates on the sampled values"
+mismatches = ["0:S"]

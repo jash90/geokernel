@@ -1,0 +1,393 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcrest-freehandreaders-001",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "h(x) = 2 f(x)",
+        "i = Integral(h, 0, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 2.0],
+              [-1.0, 4.666666666666666],
+              [-0.5, 6.0],
+              [0.0, 7.333333333333333],
+              [0.5, 8.666666666666668],
+              [1.0, 10.0],
+              [2.0, 8.0],
+              [4.0, 4.0],
+              [8.0, null]
+            ]
+          },
+          "i": { "type": "number", "defined": true, "value": 8.666666666666666 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandreaders-002",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "l = Length(f, 0, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "l": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandreaders-003",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "t = Tangent(0, f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "t": { "type": "line", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandreaders-004",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "M = Max(f, 0, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "M": { "type": "point", "defined": true, "x": 1.000000003374523, "y": 4.999999996625477 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandreaders-005",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "r = Root(f, 0, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "r": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandreaders-006",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "i = Integral(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "i": { "type": "function", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandreaders-007",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "i = NIntegral(f, 0, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "i": { "type": "number", "defined": true, "value": 11.833333333333332 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandreaders-008",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "g(x) = 1",
+        "i = IntegralBetween(f, g, 0, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "i": { "type": "number", "defined": true, "value": 10.833333333333332 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandreaders-009",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "A = (1, f(1))",
+        "B = (0.5, f(0.5))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "B": { "type": "point", "defined": true, "x": 0.5, "y": 4.333333333333334 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandreaders-010",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "g(x) = x",
+        "S = Intersect(f, g, 0, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "S": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 }
+        }
+      ]
+    }
+  ]
+}

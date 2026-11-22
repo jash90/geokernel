@@ -996,11 +996,10 @@ impl<const M: bool> Ctx<'_, M> {
     /// substituted into the body.
     fn apply_fast(&self, f: Id, a: u32) -> f64 {
         let Some(e) = function_entry(self.c, f) else {
-            return match self.c.def(f) {
-                Def::Chart(_) if !self.stop(32) => {
-                    super::function_value(self.c, f, self.fast(a)).unwrap_or(f64::NAN)
-                }
-                _ => f64::NAN,
+            return if super::is_sampled_function(self.c, f) && !self.stop(32) {
+                super::function_value(self.c, f, self.fast(a)).unwrap_or(f64::NAN)
+            } else {
+                f64::NAN
             };
         };
         // the function's nodes are charged to the evaluation with lists
@@ -1017,7 +1016,7 @@ impl<const M: bool> Ctx<'_, M> {
     /// keeps its decimals; elsewhere `f` is sampled at the value of `a`.
     fn apply_full(&self, f: Id, a: u32) -> Ex {
         let Some(e) = function_entry(self.c, f) else {
-            if matches!(self.c.def(f), Def::Chart(_)) && !self.stop(32) {
+            if super::is_sampled_function(self.c, f) && !self.stop(32) {
                 let x = self.full_number(a);
                 return Ex::plain(Val::N(
                     super::function_value(self.c, f, x).unwrap_or(f64::NAN),

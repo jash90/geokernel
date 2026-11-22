@@ -2134,9 +2134,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1875"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `DataFunction[{}, {},x]`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1876"
@@ -2146,9 +2146,9 @@ mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1877"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `freehand(x)`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:188"
@@ -2776,14 +2776,14 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2588"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `freehand(x)`"
+mismatches = ["freehandFunc"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2589"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `freehandFunc`; the method's step `commands/CommandsTest.java:2576` fails earlier here, so the object is missing only in its wake"
+category = "unsupported-command"
+reason = "the kernel refuses the input: `freehandFunc` is a function, expected a segment or point or locus"
 mismatches = ["step"]
 
 [[gap]]

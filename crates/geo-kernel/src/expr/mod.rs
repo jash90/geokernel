@@ -1634,6 +1634,15 @@ pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
     }
 }
 
+/// Whether the function object `f` has no expression tree and answers by
+/// sampling: a chart function or a freehand function of a list.
+pub(crate) fn is_sampled_function(c: &Construction, f: Id) -> bool {
+    matches!(
+        c.def(f),
+        Def::Chart(_) | Def::Calculus(crate::algo::calculus::CalculusDef::Freehand { .. })
+    )
+}
+
 /// The attributes that must agree before comparing two univariate functions.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) struct FunctionSignature {

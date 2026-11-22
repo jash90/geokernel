@@ -110,7 +110,7 @@ Root,,function,P2,done,4,4,"Seed, interval, polynomial factors and legacy functi
 Roots,,function,P2,done,2,2,Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.
 TurningPoint,,function,P2,done,1,1,
 Polynomial,,function,P2,done,3,3,
-Function,,function,P2,partial,4,2,Domain restrictions with an optional local variable. Empty and freehand functions are pending.
+Function,,function,P2,done,4,4,"Domain restrictions with an optional local variable, the empty data function and freehand functions of a list."
 Extremum,,function,P2,done,2,2,Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.
 RemovableDiscontinuity,,function,P2,done,1,1,Rational holes have reference evidence. Other expressions use a bounded numerical estimate.
 CurveCartesian,,function,P2,done,3,3,

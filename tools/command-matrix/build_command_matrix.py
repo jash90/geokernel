@@ -83,7 +83,7 @@ FORM_NOTES = {
     "Root": "Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending.",
     "Roots": "Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.",
     "Extremum": "Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.",
-    "Function": "Domain restrictions with an optional local variable. Empty and freehand functions are pending.",
+    "Function": "Domain restrictions with an optional local variable, the empty data function and freehand functions of a list.",
     "SolveODE": "Numeric first-order, parametric and second-order systems. The symbolic forms solve a polynomial right-hand side in x, with or without an initial point; other right-hand sides use the CAS.",
     "ComplexRoot": "Numeric polynomial roots, returned as points with real and imaginary coordinates.",
 
