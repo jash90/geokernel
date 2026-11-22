@@ -744,3 +744,41 @@ fn a_slider_tag_is_read_up_to_the_number_the_reference_reader_stops_at() {
     let c = geo_kernel::script::load(&r.script.join("\n")).unwrap();
     assert_eq!(c.slider_bounds(c.id("n").unwrap()), [Some(0.0), Some(5.0)]);
 }
+
+#[test]
+fn a_show_tag_shows_only_what_it_says() {
+    // Without `object="true"` the reference reader hides the object and the
+    // label follows `label`; earlier versions of the importer showed an
+    // object unless the tag said `false`.
+    let r = ok("<element type=\"point\" label=\"A\"><show label=\"true\"/>\
+         <coords x=\"1\" y=\"2\" z=\"1\"/></element>\
+         <element type=\"point\" label=\"B\"><show object=\"yes\"/>\
+         <coords x=\"1\" y=\"2\" z=\"1\"/></element>\
+         <element type=\"point\" label=\"C\"><show object=\"true\"/>\
+         <coords x=\"1\" y=\"2\" z=\"1\"/></element>\
+         <element type=\"point\" label=\"D\"><coords x=\"1\" y=\"2\" z=\"1\"/></element>");
+    assert_eq!(r.hidden, ["A", "B"]);
+    assert_eq!(r.object_styles["A"].show_label, Some(true));
+    assert_eq!(r.object_styles["C"].show_label, Some(false));
+    // No tag at all leaves the object visible in the editor.
+    assert!(r.object_styles["D"].untagged);
+}
+
+#[test]
+fn a_style_expression_the_kernel_cannot_evaluate_is_reported() {
+    let r = ok(
+        "<element type=\"numeric\" label=\"n\"><value val=\"2\"/></element>\
+         <element type=\"point\" label=\"A\"><coords x=\"1\" y=\"2\" z=\"1\"/>\
+         <animation step=\"n / 4\" speed=\"Limit[x^2, 2]\" type=\"1\" playing=\"false\"/></element>",
+    );
+    let animation = r.object_styles["A"].animation.clone().unwrap();
+    assert_eq!(animation.step.as_deref(), Some("n / 4"));
+    assert_eq!(animation.speed, None);
+    assert!(
+        r.notes
+            .iter()
+            .any(|note| note.starts_with("animation speed of `A`:")),
+        "{:?}",
+        r.notes
+    );
+}

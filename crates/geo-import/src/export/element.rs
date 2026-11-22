@@ -429,7 +429,7 @@ impl Writer<'_> {
         // the kernel itself evaluates is written, in the kernel's syntax.
         let dynamic = saved
             .and_then(|style| style.dynamic_color.as_deref())
-            .and_then(|dynamic| crate::convert::kernel_dynamic_color(c, dynamic).ok());
+            .and_then(|dynamic| self.expressions.dynamic_color(c, dynamic).ok());
         if let Some(dynamic) = dynamic {
             attrs.push(("dynamicr", dynamic.red));
             attrs.push(("dynamicg", dynamic.green));
@@ -517,10 +517,11 @@ impl Writer<'_> {
     /// `<animation>` of a saved object. The step and the speed are numeric
     /// expressions; one the kernel cannot evaluate any more is left out.
     fn animation(&mut self, animation: &SliderAnimation) -> Result<(), ExportError> {
-        let numeric = |source: &Option<String>| {
+        let c = self.c;
+        let mut numeric = |source: &Option<String>| {
             source
                 .as_deref()
-                .and_then(|source| crate::convert::kernel_number(self.c, source).ok())
+                .and_then(|source| self.expressions.number(c, source).ok())
         };
         let step = numeric(&animation.step);
         let speed = numeric(&animation.speed);

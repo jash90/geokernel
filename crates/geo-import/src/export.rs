@@ -316,6 +316,7 @@ pub fn ggb<'a>(
         xml: Xml::default(),
         images: BTreeMap::new(),
         sliders: 0,
+        expressions: crate::convert::StyleExpressions::default(),
     };
     writer.xml.buffer.push_str(
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<geogebra format=\"5.0\" app=\"classic\">\n",
@@ -389,6 +390,8 @@ struct Writer<'a> {
     xml: Xml,
     images: BTreeMap<u64, (String, &'a RasterAsset)>,
     sliders: usize,
+    /// The budget of the style expressions written in this export.
+    expressions: crate::convert::StyleExpressions,
 }
 
 impl Writer<'_> {

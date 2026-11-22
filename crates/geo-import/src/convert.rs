@@ -159,6 +159,7 @@ pub(crate) fn convert_with_assets(
     for el in elements.values() {
         c.apply_text_position(el);
     }
+    let mut expressions = StyleExpressions::default();
     for el in elements.values() {
         let Some(id) = c.kernel.id(&el.label) else {
             continue;
@@ -183,7 +184,7 @@ pub(crate) fn convert_with_assets(
         }
         let label = quote(&el.label);
         if let Some(dynamic) = saved_style.dynamic_color.take() {
-            match kernel_dynamic_color(&c.kernel, &dynamic) {
+            match expressions.dynamic_color(&c.kernel, &dynamic) {
                 Ok(dynamic) => saved_style.dynamic_color = Some(Box::new(dynamic)),
                 Err(reason) => c
                     .out
@@ -226,7 +227,7 @@ pub(crate) fn convert_with_assets(
                 (&mut animation.speed, "speed"),
             ] {
                 let Some(source) = text.take() else { continue };
-                match kernel_number(&c.kernel, &source) {
+                match expressions.number(&c.kernel, &source) {
                     Ok(source) => *text = Some(source),
                     Err(reason) => c
                         .out
@@ -270,7 +271,7 @@ pub(crate) fn convert_with_assets(
     if doc.constructions > 1 {
         out.notes.push(format!(
             "the file has {} construction sections; their elements are appended one after \
-             the other, as GeoGebra's reader does",
+             the other, as the reader of the format does",
             doc.constructions
         ));
     }
@@ -278,31 +279,73 @@ pub(crate) fn convert_with_assets(
     Ok(out)
 }
 
-/// A saved numeric expression in the kernel's syntax, when the kernel
-/// evaluates it over the construction as it stands.
-pub fn kernel_number(c: &Construction, source: &str) -> Result<String, String> {
-    let line = expression_line(source)?;
-    c.numeric_value(&line)
-        .map(|_| line)
-        .ok_or_else(|| format!("`{source}` is not a number of the construction"))
+/// The evaluation work all style expressions of one document may take
+/// together, on import and again on each export: the budget of a single
+/// evaluation. Past it the remaining expressions are not kept.
+pub const STYLE_EVALUATION_WORK: u64 = geo_kernel::expr::MAX_EVALUATION_WORK;
+
+/// Evaluates the numeric expressions of saved styles (dynamic colour
+/// channels, animation steps and speeds) within one budget per document.
+pub struct StyleExpressions {
+    used: u64,
+    budget: u64,
 }
 
-/// The channels of a dynamic colour as expressions the kernel evaluates.
-pub fn kernel_dynamic_color(
-    c: &Construction,
-    saved: &DynamicColor,
-) -> Result<DynamicColor, String> {
-    Ok(DynamicColor {
-        red: kernel_number(c, &saved.red)?,
-        green: kernel_number(c, &saved.green)?,
-        blue: kernel_number(c, &saved.blue)?,
-        alpha: saved
-            .alpha
-            .as_deref()
-            .map(|alpha| kernel_number(c, alpha))
-            .transpose()?,
-        space: saved.space,
-    })
+impl Default for StyleExpressions {
+    fn default() -> Self {
+        Self::with_budget(STYLE_EVALUATION_WORK)
+    }
+}
+
+impl StyleExpressions {
+    /// A budget other than [`STYLE_EVALUATION_WORK`], for tests.
+    pub fn with_budget(budget: u64) -> Self {
+        Self { used: 0, budget }
+    }
+
+    /// The work done so far, in the units of the kernel's evaluation budget.
+    pub fn work(&self) -> u64 {
+        self.used
+    }
+
+    /// A saved numeric expression in the kernel's syntax, when the kernel
+    /// evaluates it over the construction as it stands.
+    pub fn number(&mut self, c: &Construction, source: &str) -> Result<String, String> {
+        if self.used >= self.budget {
+            return Err("the style expressions of the file exceed the evaluation budget".into());
+        }
+        let line = expression_line(source)?;
+        let before = geo_kernel::expr::work_done();
+        let value = c.numeric_value(&line);
+        // A parsed expression costs at least one unit, so that a file of
+        // many cheap ones is bounded as well.
+        self.used += (geo_kernel::expr::work_done() - before).max(1);
+        // Only a value the kernel computed counts: a command it parses
+        // without running gives no number.
+        value
+            .filter(|value| !value.is_nan())
+            .map(|_| line)
+            .ok_or_else(|| format!("`{source}` is not a number of the construction"))
+    }
+
+    /// The channels of a dynamic colour as expressions the kernel evaluates.
+    pub fn dynamic_color(
+        &mut self,
+        c: &Construction,
+        saved: &DynamicColor,
+    ) -> Result<DynamicColor, String> {
+        Ok(DynamicColor {
+            red: self.number(c, &saved.red)?,
+            green: self.number(c, &saved.green)?,
+            blue: self.number(c, &saved.blue)?,
+            alpha: saved
+                .alpha
+                .as_deref()
+                .map(|alpha| self.number(c, alpha))
+                .transpose()?,
+            space: saved.space,
+        })
+    }
 }
 
 /// Properties of elements that no value depends on and the kernel has no
