@@ -62,6 +62,7 @@ struct Counts {
     shapes: u64,
     texts: u64,
     vertices: u64,
+    raster_quads: u64,
     allocs: u64,
     bytes: u64,
     /// Objects looked through for polygon sides (`style::objects_scanned`).
@@ -142,6 +143,9 @@ impl Window {
         for p in self.ctx.tessellate(out.shapes, out.pixels_per_point) {
             if let epaint::Primitive::Mesh(m) = p.primitive {
                 c.vertices += m.vertices.len() as u64;
+                if m.texture_id != epaint::TextureId::default() {
+                    c.raster_quads += (m.indices.len() / 6) as u64;
+                }
             }
         }
         c
@@ -537,6 +541,113 @@ fn locus_frames_stay_within_the_budget() {
     assert!(idle.allocs <= 2_850 && idle.bytes <= 560_000, "{idle:?}");
     assert_eq!((idle.rows_formatted, idle.rows_built), (0, 0));
     assert!(!idle.immediate);
+}
+
+#[test]
+fn large_chart_frames_stay_within_the_budget() {
+    let (mut script, mid) = grid(83);
+    script += "edges = Sequence(k / 250, k, -1000, 1000)\n";
+    script += "samples = Sequence((k + 0.5) / 250, k, -1000, 999)\n";
+    script += "histogram = Histogram(edges, samples, false)\n";
+    script += "dots = DotPlot(samples)\n";
+    let mut w = Window::with(&script, mid);
+    let c = w.app.wb.construction();
+    assert_eq!(
+        c.ids().filter(|&id| !c.label(id).starts_with('\0')).count(),
+        1000
+    );
+    for label in ["histogram", "dots"] {
+        let chart = c.chart(c.id(label).unwrap()).unwrap();
+        assert!(chart.marks.len() >= 2000, "{label}: {}", chart.marks.len());
+    }
+    w.settled(1);
+    let builds = crate::draw::charts::builds();
+    let mut measure = |panning| {
+        let mut times = [0.0_f64; 31];
+        let mut counts = Counts::default();
+        for (i, ms) in times.iter_mut().enumerate() {
+            if panning {
+                let dx = if i % 2 == 0 { 6.0 } else { -6.0 };
+                w.app.camera.as_mut().unwrap().pan_pixels(dx, 0.0);
+            }
+            let start = std::time::Instant::now();
+            counts = w.frames(1);
+            *ms = start.elapsed().as_secs_f64() * 1000.0;
+            assert_eq!(crate::draw::charts::builds(), builds);
+            assert_eq!(counts.raster_quads, 2, "{counts:?}");
+            assert!(
+                counts.shapes <= 2_600 && counts.texts <= 1_040,
+                "{counts:?}"
+            );
+            assert!(counts.vertices <= 100_000, "{counts:?}");
+            assert!(
+                counts.allocs <= 3_100 && counts.bytes <= 850_000,
+                "{counts:?}"
+            );
+            assert_eq!((counts.rows_formatted, counts.rows_built), (0, 0));
+        }
+        times.sort_by(f64::total_cmp);
+        (counts, times[15], times[29])
+    };
+    let (idle, idle_median, idle_p95) = measure(false);
+    let (pan, pan_median, pan_p95) = measure(true);
+    println!(
+        "charts idle (median {idle_median:.2} ms, p95 {idle_p95:.2} ms): {idle:?}; \
+         pan (median {pan_median:.2} ms, p95 {pan_p95:.2} ms): {pan:?}"
+    );
+}
+
+#[test]
+fn raster_frames_stay_within_the_budget() {
+    use geo_kernel::kernel::image::{ImagePlacement, ImageStyle};
+    use geo_kernel::script::image::definition;
+
+    let (mut script, mid) = grid(82);
+    let mut fixture = Workbench::default();
+    fixture
+        .load_bytes(
+            include_bytes!("../../../golden/ggb/saved/saved-images-001.ggb"),
+            "raster",
+        )
+        .unwrap();
+    let snapshot = fixture.snapshot_text();
+    script += snapshot
+        .lines()
+        .find(|line| line.starts_with("$imageAsset("))
+        .unwrap();
+    script.push('\n');
+    let name = &fixture
+        .construction()
+        .image(fixture.construction().id("fixedImage").unwrap())
+        .unwrap()
+        .name;
+    for i in 0..16 {
+        let placement = ImagePlacement::Screen([30.0 + f64::from(i) * 14.0, 60.0]);
+        let style = ImageStyle {
+            background: i % 2 == 0,
+            ..ImageStyle::default()
+        };
+        script += &format!("image_{{{i}}} = {}\n", definition(name, placement, style));
+    }
+
+    let mut w = Window::with(&script, mid);
+    assert_eq!(w.app.wb.construction().len(), 1000);
+    let idle = w.settled(1);
+    w.app.camera.as_mut().unwrap().cx += 1.0;
+    let panned = w.frames(1);
+    for counts in [idle, panned] {
+        assert_eq!(counts.raster_quads, 16, "{counts:?}");
+        assert!(
+            counts.shapes <= 2_600 && counts.texts <= 1_040,
+            "{counts:?}"
+        );
+        assert!(counts.vertices <= 95_000, "{counts:?}");
+        assert!(
+            counts.allocs <= 2_900 && counts.bytes <= 575_000,
+            "{counts:?}"
+        );
+        assert_eq!((counts.rows_formatted, counts.rows_built), (0, 0));
+    }
 }
 
 /// The benchmark's grid of 45 cells (540 objects, with the triangles'

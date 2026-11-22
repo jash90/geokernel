@@ -700,3 +700,18 @@ pub(super) fn flat(c: &Construction, id: crate::kernel::Id) -> Option<String> {
 pub(super) fn elems(c: &Construction, label: &str) -> String {
     flat(c, c.id(label).unwrap()).unwrap_or_else(|| "undefined".into())
 }
+
+#[test]
+fn histogram_respects_the_work_allowance_for_named_lists() {
+    let mut c =
+        crate::script::load("borders = Sequence(0, 100)\ndata = Sequence(1, 100)\ndensity = true")
+            .unwrap();
+    let before = super::work_done();
+    let id = super::eval::with_work_limit(600, || {
+        crate::script::exec(&mut c, "h = Histogram(borders, data, density)")
+            .unwrap()
+            .unwrap()
+    });
+    assert_eq!(c.value(id), crate::Value::Undefined);
+    assert!(super::work_done() - before <= 600);
+}

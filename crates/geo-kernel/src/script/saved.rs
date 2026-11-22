@@ -2,13 +2,24 @@
 
 use super::{object, split_call};
 use crate::kernel::control::{
-    decode_scripts, decode_text, encode_scripts, encode_text, ControlScript,
+    decode_bytes, decode_scripts, decode_text, encode_scripts, encode_text, ControlScript,
 };
+use crate::kernel::image::{RasterAsset, MAX_ASSET_BYTES};
+use crate::kernel::DrawingStyle;
 use crate::Construction;
 use std::fmt;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Property {
+    ImageAsset {
+        name: Arc<str>,
+        asset: Arc<RasterAsset>,
+    },
+    DrawingStyle {
+        label: String,
+        style: DrawingStyle,
+    },
     SliderBounds {
         label: String,
         bounds: [Option<String>; 2],
@@ -20,14 +31,22 @@ pub enum Property {
 }
 
 impl Property {
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Option<&str> {
         match self {
-            Self::SliderBounds { label, .. } | Self::ObjectScripts { label, .. } => label,
+            Self::DrawingStyle { label, .. }
+            | Self::SliderBounds { label, .. }
+            | Self::ObjectScripts { label, .. } => Some(label),
+            Self::ImageAsset { .. } => None,
         }
     }
 
     pub fn apply(&self, c: &mut Construction) -> Result<(), String> {
         match self {
+            Self::ImageAsset { name, asset } => c.register_image_asset(name.clone(), asset.clone()),
+            Self::DrawingStyle { label, style } => {
+                c.set_drawing_style(object(c, label)?, *style);
+                Ok(())
+            }
             Self::SliderBounds { label, bounds } => {
                 let id = object(c, label)?;
                 let [min, max] = bounds;
@@ -77,6 +96,21 @@ impl Property {
 impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ImageAsset { name, asset } => {
+                write!(f, "$imageAsset({}, _", encode_text(name))?;
+                for byte in asset.bytes() {
+                    write!(f, "{byte:02x}")?;
+                }
+                f.write_str(")")
+            }
+            Self::DrawingStyle { label, style } => write!(
+                f,
+                "$drawingStyle({}, {}, {}, {})",
+                encode_text(label),
+                style.layer,
+                style.show_label,
+                style.line_thickness
+            ),
             Self::SliderBounds {
                 label,
                 bounds: [min, max],
@@ -103,13 +137,50 @@ impl fmt::Display for Property {
     }
 }
 
+/// Load a raster declaration before normalizing or copying the script line.
+pub fn load_image_asset(
+    c: &mut Construction,
+    raw: &str,
+) -> Option<Result<Option<Property>, String>> {
+    let raw = raw.trim_start().strip_prefix("$imageAsset(")?;
+    Some((|| {
+        let body = raw.split_once('#').map_or(raw, |(body, _)| body).trim_end();
+        let (name, bytes) = body
+            .strip_suffix(')')
+            .and_then(|body| body.split_once(','))
+            .ok_or("invalid saved image asset")?;
+        let (name, bytes) = (name.trim(), bytes.trim());
+        if name.len() > 2 * 65535 + 1 || bytes.len() as u64 > 2 * MAX_ASSET_BYTES + 1 {
+            return Err("image asset is too large".into());
+        }
+        c.reserve_image_input(((bytes.len() + name.len()) / 2) as u64)?;
+        let name: Arc<str> = decode_text(name)?.into();
+        let asset = c.decode_image_asset(name.clone(), decode_bytes(bytes)?)?;
+        Ok(asset.map(|asset| Property::ImageAsset { name, asset }))
+    })())
+}
+
 pub fn parse(line: &str) -> Option<Result<Property, String>> {
-    if !line.starts_with("$sliderBounds(") && !line.starts_with("$objectScripts(") {
+    if !line.starts_with("$sliderBounds(")
+        && !line.starts_with("$objectScripts(")
+        && !line.starts_with("$drawingStyle(")
+    {
         return None;
     }
     Some((|| {
         let (form, args) = split_call(line).ok_or("invalid saved property")?;
         match (form, args.as_slice()) {
+            ("$drawingStyle", [label, layer, shown, thickness]) => {
+                let style = DrawingStyle {
+                    layer: layer.parse().map_err(|_| "invalid drawing layer")?,
+                    show_label: shown.parse().map_err(|_| "invalid label visibility")?,
+                    line_thickness: thickness.parse().map_err(|_| "invalid line thickness")?,
+                };
+                Ok(Property::DrawingStyle {
+                    label: decode_text(label)?,
+                    style,
+                })
+            }
             ("$sliderBounds", [label, min, max]) => {
                 let bound = |field| (field != "_").then(|| decode_text(field)).transpose();
                 Ok(Property::SliderBounds {

@@ -1,0 +1,22 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "charts-boxplotfrequency-001",
+      "group": "charts",
+      "script": [
+        "chart = BoxPlot(0, 1, {5}, {3}, false)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "chart": { "type": "number", "defined": false }
+        }
+      ]
+    }
+  ]
+}

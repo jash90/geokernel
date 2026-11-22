@@ -1863,30 +1863,6 @@ reason = "the kernel refuses the input: unknown command `ZoomIn`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1539"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `DotPlot`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1540"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `DotPlot`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1541"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `DotPlot`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1542"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `DotPlot`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1547"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `DynamicCoordinates`"
@@ -2350,21 +2326,21 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1827"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `FrequencyPolygon`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoPolyLine` of kind polyline has no GeoGebra-style text yet; GeoGebra prints `0`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1828"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `FrequencyPolygon`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoPolyLine` of kind polyline has no GeoGebra-style text yet; GeoGebra prints `0`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1829"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `FrequencyPolygon`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoPolyLine` of kind polyline has no GeoGebra-style text yet; GeoGebra prints `0`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:183"
@@ -2520,42 +2496,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:1934"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `HideLayer`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1939"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Histogram`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1940"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Histogram`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1941"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Histogram`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1946"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `HistogramRight`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1947"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `HistogramRight`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1948"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `HistogramRight`"
 mismatches = ["step"]
 
 [[gap]]
@@ -3514,45 +3454,39 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2619"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `LineGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2620"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `f`; the method's step `commands/CommandsTest.java:2619` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `DataFunction[{1, 2}, {3, 4},x]`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2621"
-category = "cascade"
-reason = "the kernel refuses the input: unknown object `f`; the method's step `commands/CommandsTest.java:2619` fails earlier here, so the object is missing only in its wake"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["tpairs_probe_2621_0"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2626"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `LineGraph`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2627"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `LineGraph`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["g"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2628"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `LineGraph`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["h"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2629"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `LineGraph`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style text yet; GeoGebra prints `?`"
+mismatches = ["p"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2634"
@@ -4228,9 +4162,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3020"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `NormalQuantilePlot`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{(2, -0.8193286198336103), (3, 0), (4, 0.8193286198336103), 2.8284271247461903}`"
+mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3023"
@@ -5268,12 +5202,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:361"
 category = "incomplete-context"
 reason = "the kernel refuses the input: `f(t)` is not a valid object name"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3612"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ResidualPlot`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6369,87 +6297,9 @@ reason = "the kernel refuses the input: unknown command `Zip`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4315"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StickGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4316"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StickGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4317"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StickGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4318"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StickGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4323"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StepGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4324"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StepGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4325"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StepGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4326"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StepGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4327"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StepGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4328"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StepGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4329"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StepGraph`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:433"
 category = "incomplete-context"
 reason = "the kernel refuses the input: unknown command `Zip`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4330"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StepGraph`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4331"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `StepGraph`"
 mismatches = ["step"]
 
 [[gap]]
@@ -6928,21 +6778,21 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4672"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `PieChart`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoPieChart` has no schema object (unsupported-type); string `PieChart`"
+mismatches = ["p1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4673"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `PieChart`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoPieChart` has no schema object (unsupported-type); string `PieChart`"
+mismatches = ["p2"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4675"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `PieChart`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoPieChart` has no schema object (unsupported-type); string `PieChart`"
+mismatches = ["p3"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4699"
@@ -7809,42 +7659,6 @@ reason = "the kernel refuses the input: unknown command `AxisStepY`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:776"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BarChart`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:777"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BarChart`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:778"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BarChart`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:779"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BarChart`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:780"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BarChart`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:781"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BarChart`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:793"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Bernoulli`"
@@ -7878,30 +7692,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:815"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Bottom`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:820"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BoxPlot`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:821"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BoxPlot`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:822"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BoxPlot`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:823"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `BoxPlot`"
 mismatches = ["step"]
 
 [[gap]]

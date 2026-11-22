@@ -453,6 +453,7 @@ pub(crate) fn check(
 fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
     match (c.kind(id), c.def(id)) {
         (Kind::List, Def::Expr(d)) => Ok(super::entry(c, d).root_ty()),
+        (Kind::List, Def::Chart(_)) => Ok(Ty::List(Elem::Any)),
         (kind, _) => result_type(kind),
     }
 }

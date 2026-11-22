@@ -55,26 +55,33 @@ impl Construction {
 
 // Encode arbitrary captions and inert script text as single-line fields.
 pub fn encode_text(text: &str) -> String {
+    encode_bytes(text.as_bytes())
+}
+
+pub(crate) fn encode_bytes(bytes: &[u8]) -> String {
     use std::fmt::Write as _;
-    let mut encoded = String::with_capacity(1 + 2 * text.len());
+    let mut encoded = String::with_capacity(1 + 2 * bytes.len());
     encoded.push('_');
-    for byte in text.bytes() {
+    for byte in bytes {
         let _ = write!(encoded, "{byte:02x}");
     }
     encoded
 }
 
 pub fn decode_text(encoded: &str) -> Result<String, String> {
+    String::from_utf8(decode_bytes(encoded)?).map_err(|_| "invalid control text".into())
+}
+
+pub(crate) fn decode_bytes(encoded: &str) -> Result<Vec<u8>, String> {
     let encoded = encoded.strip_prefix('_').ok_or("invalid control text")?;
     if !encoded.is_ascii() || !encoded.len().is_multiple_of(2) {
         return Err("invalid control text".into());
     }
-    let bytes = (0..encoded.len())
+    (0..encoded.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&encoded[i..i + 2], 16))
         .collect::<Result<Vec<_>, _>>()
-        .map_err(|_| "invalid control text")?;
-    String::from_utf8(bytes).map_err(|_| "invalid control text".into())
+        .map_err(|_| "invalid control text".into())
 }
 
 /// Uses a named boolean directly or adds an anonymous boolean expression.

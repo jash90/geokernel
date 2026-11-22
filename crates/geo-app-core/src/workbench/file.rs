@@ -21,11 +21,13 @@ impl Workbench {
     /// unchanged.
     pub fn load_bytes(&mut self, bytes: &[u8], name: &str) -> Result<(), String> {
         if geo_import::looks_like_construction(bytes) {
-            let imported = geo_import::import(bytes).map_err(|e| format!("{name}: {e}"))?;
+            let imported =
+                geo_import::import_for_replay(bytes).map_err(|e| format!("{name}: {e}"))?;
             let notice = import_notice(&imported);
             return self
                 .load_imported_with_conditions(
                     &imported.script.join("\n"),
+                    &imported.image_assets,
                     &imported.hidden,
                     &imported.conditions,
                     notice,
@@ -403,8 +405,65 @@ mod tests {
         }
     }
 
+    #[test]
+    fn image_rows_and_assets_survive_editing_and_snapshot_restore() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-images-001.ggb"),
+            "raster",
+        )
+        .unwrap();
+        assert_eq!(wb.notice, None);
+        let row = wb
+            .rows()
+            .iter()
+            .find(|row| row.label == "anchoredImage")
+            .unwrap();
+        assert_eq!(row.head, "anchoredImage");
+        assert_eq!(row.value, None);
+
+        let anchor = wb.construction().id("A").unwrap();
+        assert!(wb.move_point(anchor, -3.0, 0.0));
+        let image = wb.construction().id("anchoredImage").unwrap();
+        let quad = wb.construction().image_quad(image, 50.0).unwrap();
+        let asset = wb.construction().image(image).unwrap().asset.clone();
+        assert_round_trip(&mut wb, "images");
+        let mut copy = Workbench::default();
+        copy.restore_text(&wb.snapshot_text()).unwrap();
+        let image = copy.construction().id("anchoredImage").unwrap();
+        assert_eq!(*copy.construction().image(image).unwrap().asset, *asset);
+        let anchor = copy.construction().id("A").unwrap();
+        assert!(copy.move_point(anchor, -3.0, 0.0));
+        let d = copy.construction().id("D").unwrap();
+        assert!(copy.move_point(d, -1.0, 2.0));
+        let b = copy.construction().id("B").unwrap();
+        assert!(copy.move_point(b, 1.0, 0.0));
+        assert_eq!(copy.construction().image_quad(image, 50.0), Some(quad));
+    }
+
+    #[test]
+    fn deleting_the_last_image_omits_its_asset_from_save_and_undo_restores_it() {
+        let mut wb = Workbench::default();
+        wb.load_bytes(
+            include_bytes!("../../../../golden/ggb/saved/saved-images-001.ggb"),
+            "raster",
+        )
+        .unwrap();
+        let id = wb.construction().id("animatedImage").unwrap();
+        let asset = wb.construction().image(id).unwrap().asset.clone();
+        assert!(wb.delete(id));
+        assert_eq!(wb.snapshot_text().matches("$imageAsset(").count(), 2);
+        assert_eq!(wb.log.to_script().matches("$imageAsset(").count(), 2);
+        assert!(wb.undo());
+        let c = wb.construction();
+        assert!(std::sync::Arc::ptr_eq(
+            &c.image(c.id("animatedImage").unwrap()).unwrap().asset,
+            &asset
+        ));
+    }
+
     /// The saved files of the golden set, and those of them that do not load.
-    const GOLDEN_FILES: usize = 39;
+    const GOLDEN_FILES: usize = 41;
     const GOLDEN_FILES_NOT_LOADED: &[&str] = &[];
 
     #[test]
