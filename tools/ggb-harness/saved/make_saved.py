@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-"""Writes saved/saved.json: constructions that are saved after their free
-points were moved.
+"""Writes saved/saved.json: constructions saved after edits.
 
-Each case gives raw GeoGebra input lines, `move` steps, and optionally the
-angle unit of the kernel. The harness (`harness.sh saved`) runs the lines, moves
-the points, and writes the construction file together with GeoGebra's own values
-at that moment, so the importer can be checked against the state the file was
-saved from: the order of the outputs of a command that makes several objects
-(`Intersect` of a line and a circle, of two circles; `Tangent`) after the
-points moved, and angles saved under each angle unit. The input is
-deterministic (fixed seeds); new cases are appended to their topic.
+Each case gives raw GeoGebra input lines and optional steps to move points,
+change a number, enable animation, set an angle style, or rename an object.
+It can also set the angle unit or hide specific objects. The harness
+(`harness.sh saved`) writes the construction file and GeoGebra's own values
+at that moment. The importer checks intersection and tangent output order
+after edits, angles under both units, and values of saved expressions.
+Fixed seeds keep the input deterministic. New cases are appended to their topic.
 """
 
 import json
@@ -39,11 +37,13 @@ def topic(name):
     rng.seed(f"saved-{name}", version=2)
 
 
-def case(name, script, steps, unit=None):
+def case(name, script, steps, unit=None, hidden=None):
     counters[name] = counters.get(name, 0) + 1
     entry = {"id": f"saved-{name}-{counters[name]:03d}"}
     if unit:
         entry["angle_unit"] = unit
+    if hidden:
+        entry["hidden"] = hidden
     entry["script"] = script
     entry["steps"] = steps
     cases.append(entry)
@@ -165,6 +165,57 @@ for unit in ("degree", "radiant"):
                  mv("C", c[0] + r2(-1, 1), c[1] + r2(-1, 1))]
         case("angle", [pt("A", *a), pt("B", *b), pt("C", *c),
                        "a = Angle(B, A, C)", "b = Angle(C, A, B)"], steps, unit)
+
+expressions = [
+    "A = (1, 2)", "B = (4, -1)", "v_{0x} = 2",
+    "C = (x(A), y(B) + 2)", "s = Segment(A, C)",
+    "φ = x(C) + π", "a = sin(30° + v_{0x}°)",
+    "f(x) = If[-4 < x, v_{0x} ⋅ x² + y(C), x - 1]",
+    "t(x) = If[f(x) > 0 ∧ x > 0, f(x)]",
+    "g(x) = If[x ≤ -2 ∨ x ≥ 2, t(x) + 1, If[x ≠ 0, f(x), a]]",
+    "n = If[x(A) ≥ 0, g(x(A)), φ]",
+    "Q = (n, f(y(A)))", "valid = x(A) ≥ 0",
+    "j_{xy}(x) = f(x) + 1", "d = j_{xy}(y(A))",
+    "ang = (v_{0x} + 30)°",
+    "bad = x(A) + NextPrime(v_{0x})", "lost = bad + 1",
+    "multi(x, y) = x + y", "control = Checkbox()",
+    "button = Button()", "field = InputBox(v_{0x})",
+]
+hidden = ["C", "s"]
+case("expressions", expressions, [], hidden=hidden)
+move = mv("A", 2, 1)
+case("expressions", expressions, [move], hidden=hidden)
+case("expressions", expressions,
+     [move, {"action": "set_number", "label": "v_{0x}", "value": 5}], hidden=hidden)
+
+paths = [
+    "A = (1, 2)", "B = (9, 6)", "s = Segment(A, B)", "l = Line(A, B)",
+    "f(x) = x² + y(A) - 3", "c = Circle(A, 3)", "S = Point(s)", "L = Point(l)",
+    "F = Point(f)", "C = Point(c)", "D = Point(s, 0.25)", "u = Vector(S, L)",
+    "d = Segment(F, C)", "p = PerpendicularLine(S, l)", "q = PerpendicularLine(L, l)",
+    "ts = PathParameter(S)", "tl = PathParameter(L)", "tf = PathParameter(F)",
+    "tc = PathParameter(C)",
+]
+dragged = [mv("S", 5, 5), mv("L", -3, 1), mv("F", 2.25, 3), mv("C", 2, -4),
+           {"action": "animate", "label": "S"}]
+case("paths", paths, dragged)
+case("paths", paths, dragged + [mv("B", 7, 3), mv("A", -1, 1), mv("F", -2.5, 2)])
+
+case("review", ["n = 400", "ang = (n + 30)°", "acute = (n - 10)°",
+                "reflex = (n + 30)°", "raw = (n + 30)°", "turn = ang / 1°",
+                "A = (sqrt(2), 1)", "B = (3, 4)", "C = (2, 5)",
+                "a = 2π", "d = 1/3", "P = If(n > 0, A, B)",
+                "q = {A, d, 5, a}", "flat(x) = 4", "tri = Polygon(A, B, C)",
+                "len = 5", "el = Ellipse(A, B, len)",
+                "e = x(A) + NextPrime(n)", "lost = e + 1", "Euler = ℯ + 1"],
+     [{"action": "angle_style", "label": "ang", "value": 0},
+      {"action": "angle_style", "label": "acute", "value": 1},
+      {"action": "angle_style", "label": "reflex", "value": 2},
+      {"action": "rename", "label": "P", "name": "chosen"}])
+
+case("coordinates", ["a = 2", "b = 3", "P = $point(a, b)",
+                     "Q = $point(1/2, 3)", "v = $vector(a, b)",
+                     "w = $vector(1/2, 3)"], [])
 
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)

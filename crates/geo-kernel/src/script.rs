@@ -46,6 +46,8 @@
 //! any label. `$point(x, y)` gives a free point for any label; GeoGebra's
 //! parser also has a `$point` but it follows the label rule, so this is a
 //! deliberate difference (see `DIFFERENCES.md`).
+//! Both forms can also enclose a coordinate expression to preserve the
+//! kind of a renamed point or vector when loading a construction.
 
 use crate::algo::arc::ArcDef;
 use crate::algo::conic::ConicDef;
@@ -60,7 +62,7 @@ use crate::algo::predicate::PredicateDef;
 use crate::algo::transform::TransformDef;
 use crate::algo::vector::VectorDef;
 use crate::algo::Group;
-use crate::kernel::angle::{self, AngleDef, AngleSource};
+use crate::kernel::angle::{self, AngleDef, AngleSource, AngleStyle};
 use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
@@ -104,6 +106,18 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if line.starts_with('{') {
         return exec_labelled(c, line);
     }
+    if let Some(args) = line
+        .strip_prefix("$angleStyle(")
+        .and_then(|s| s.strip_suffix(')'))
+    {
+        let (label, style) = args
+            .split_once(',')
+            .ok_or("expected an angle and a style")?;
+        let style = style.trim().parse().map_err(|_| "invalid angle style")?;
+        c.set_angle_style(object(c, label.trim())?, AngleStyle::from_xml(style))
+            .map_err(|e| e.to_string())?;
+        return Ok(None);
+    }
     // `name: definition`, the input bar's other form of a labelled line.
     // A definition with `=` in it is an equation (`a: 2x + 3y = 6`); the
     // rest is the same as after `=`. A `:` after the first `=` belongs to
@@ -137,7 +151,7 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         .or_else(|| name.strip_suffix("(y)").map(|f| (f, true)));
     if let Some((f, of_y)) = function {
         let f = f.trim_end();
-        if !is_identifier(f) {
+        if !is_output_label(f) {
             return Err(format!("`{f}` is not a valid object name"));
         }
         check_label(f)?;
@@ -171,6 +185,9 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
 }
 
 fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
+    if let Some(result) = define_saved(c, name, rhs) {
+        return result.map(Some);
+    }
     if let Some(("Curve", args)) = split_call(rhs) {
         return define_cartesian_curve(c, name, &args).map(Some);
     }
@@ -183,8 +200,14 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(def) = intersect::growth::parse_slot(c, rhs) {
         return c.add(name, def?).map(Some).map_err(|e| e.to_string());
     }
-    if let Some(def) = parse_forced(rhs) {
-        return c.add(name, def?).map(Some).map_err(|e| e.to_string());
+    if let Some((form @ ("$point" | "$vector"), args)) = split_call(rhs) {
+        match forced_coordinates(form, &args) {
+            Ok(def) => return c.add(name, def).map(Some).map_err(|e| e.to_string()),
+            Err(error) if args.len() > 2 => return Err(error),
+            Err(_) => {}
+        }
+        let open = rhs.find('(').expect("forced forms have parentheses");
+        return crate::expr::define_coordinates(c, name, &rhs[open..], form == "$vector").map(Some);
     }
     if rhs.starts_with("Vertex") {
         if let Some((func, args)) = split_call(rhs) {
@@ -245,6 +268,53 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
         }
     }
     define_expression_or_command(c, name, rhs).map(Some)
+}
+
+fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id, String>> {
+    if !rhs.starts_with("$saved(") && !rhs.starts_with("$pointOnPath(") {
+        return None;
+    }
+    let mut parse = || {
+        let (form, args) = split_call(rhs).ok_or("invalid saved definition")?;
+        match (form, args.as_slice()) {
+            ("$saved", [literal, _definition]) => {
+                let def = if let Some(def) = parse_forced(literal) {
+                    def?
+                } else if let Some(radians) = literal.strip_suffix(" rad") {
+                    Def::Angle(parse_number(radians)?)
+                } else {
+                    Def::Number(parse_number(literal)?)
+                };
+                c.add(name, def).map_err(|e| e.to_string())
+            }
+            ("$pointOnPath", [path, x, y, bounds @ ..]) => {
+                let path = object(c, path)?;
+                let (x, y) = (parse_number(x)?, parse_number(y)?);
+                let bounds = match bounds {
+                    [] => None,
+                    [min, max] => Some([parse_number(min)?, parse_number(max)?]),
+                    _ => return Err("invalid function path bounds".into()),
+                };
+                c.add_saved_path_point(name, path, x, y, bounds)
+                    .map_err(|e| e.to_string())
+            }
+            _ => Err("invalid saved definition".into()),
+        }
+    };
+    Some(parse())
+}
+
+/// The definition text saved with an independent object's exact value.
+pub fn saved_definition(rhs: &str) -> Option<&str> {
+    if rhs.starts_with("$saved(") {
+        let ("$saved", args) = split_call(rhs)? else {
+            return None;
+        };
+        if let [_, definition] = args.as_slice() {
+            return Some(definition);
+        }
+    }
+    None
 }
 
 fn define_cartesian_curve(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
@@ -1182,18 +1252,19 @@ fn parse_forced(rhs: &str) -> Option<Result<Def, String>> {
     if func != "$point" && func != "$vector" {
         return None;
     }
-    if args.len() != 2 {
-        return Some(Err(format!("`{func}` needs two coordinates")));
-    }
-    let (x, y) = match (parse_number(args[0]), parse_number(args[1])) {
-        (Ok(x), Ok(y)) => (x, y),
-        (Err(e), _) | (_, Err(e)) => return Some(Err(e)),
+    Some(forced_coordinates(func, &args))
+}
+
+fn forced_coordinates(func: &str, args: &[&str]) -> Result<Def, String> {
+    let [x, y] = args else {
+        return Err(format!("`{func}` needs two coordinates"));
     };
-    Some(Ok(if func == "$point" {
+    let (x, y) = (parse_number(x)?, parse_number(y)?);
+    Ok(if func == "$point" {
         Def::FreePoint { x, y }
     } else {
         Def::Vector(VectorDef::Free { x, y })
-    }))
+    })
 }
 
 /// Index of the `}` that closes the `{` at the start of `s`. Labels such as

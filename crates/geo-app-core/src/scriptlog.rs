@@ -41,6 +41,7 @@ pub const DIRECTIVES: [&str; 3] = ["SetCoords", "SetValue", "SetVisibleInView"];
 /// Starts the list of labels after a definition in a snapshot.
 const LABELS: &str = "# labels: ";
 const MOVE_POINTS: &str = "$movePoints";
+const ANGLE_STYLE: &str = "$angleStyle";
 
 fn has_recorded_growth(src: &str) -> bool {
     src.lines().any(|line| {
@@ -65,10 +66,12 @@ impl Entry {
     /// line keeps its `:` (`a: 2x + 3y = 6`), so its definition is the
     /// whole equation.
     pub fn rhs(&self) -> &str {
-        self.line
+        let rhs = self
+            .line
             .find([':', '='])
             .and_then(|i| self.line.get(i + 1..))
-            .map_or("", str::trim)
+            .map_or("", str::trim);
+        geo_kernel::script::saved_definition(rhs).unwrap_or(rhs)
     }
 
     fn replay(&self, c: &mut Construction) -> Result<Option<Id>, String> {
@@ -92,6 +95,7 @@ pub(crate) struct GrownOutputs<'a> {
 pub enum Setting {
     Point(f64, f64),
     Number(f64),
+    AngleStyle(geo_kernel::kernel::angle::AngleStyle),
 }
 
 type Position<L> = (L, f64, f64);
@@ -142,7 +146,7 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     }
     let (name, rest) = line.split_once('(')?;
     let name = name.trim();
-    if name != MOVE_POINTS && !DIRECTIVES.contains(&name) {
+    if name != MOVE_POINTS && name != ANGLE_STYLE && !DIRECTIVES.contains(&name) {
         return None;
     }
     let parse = || -> Option<Directive<'_>> {
@@ -161,6 +165,12 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
                     .map(Directive::MovePoints)
             }
             ("SetValue", [l, v]) => Some(Directive::Set(l, Setting::Number(num(v)?))),
+            (ANGLE_STYLE, [l, style]) => Some(Directive::Set(
+                l,
+                Setting::AngleStyle(geo_kernel::kernel::angle::AngleStyle::from_xml(
+                    style.parse().ok()?,
+                )),
+            )),
             ("SetVisibleInView", [l, "1", shown]) => {
                 Some(Directive::Visible(l, shown.parse().ok()?))
             }
@@ -560,6 +570,7 @@ impl Log {
                     let result = match *to {
                         Setting::Point(x, y) => c.move_point(id, x, y),
                         Setting::Number(v) => c.set_number(id, v),
+                        Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     // A set right after a set of the same object is merged
@@ -662,6 +673,7 @@ impl Log {
                     let result = match *to {
                         Setting::Point(x, y) => c.move_point(id, x, y),
                         Setting::Number(v) => c.set_number(id, v),
+                        Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     kept.push_set(
@@ -761,6 +773,11 @@ impl Log {
                     to: Setting::Number(v),
                     ..
                 } => writeln!(out, "SetValue({label}, {v})"),
+                Op::Set {
+                    label,
+                    to: Setting::AngleStyle(style),
+                    ..
+                } => writeln!(out, "{ANGLE_STYLE}({label}, {})", style.xml_code()),
                 Op::MovePoints(points) => {
                     let _ = write!(out, "{MOVE_POINTS}(");
                     for (i, (label, x, y)) in points.iter().enumerate() {
@@ -806,9 +823,14 @@ impl Log {
         let result = match to {
             Setting::Point(x, y) => c.move_point(id, x, y),
             Setting::Number(v) => c.set_number(id, v),
+            Setting::AngleStyle(style) => c.set_angle_style(id, style),
         };
         result.map_err(|e| format!("`{label}`: {e}"))?;
-        self.record_update(c, label, to);
+        if matches!(to, Setting::AngleStyle(_)) {
+            self.push_set(label, to, true);
+        } else {
+            self.record_update(c, label, to);
+        }
         Ok(vec![id])
     }
 

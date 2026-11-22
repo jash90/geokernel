@@ -1,0 +1,97 @@
+{
+  "schema": 2,
+  "id": "saved-review-001",
+  "script": [
+    "n = 400",
+    "ang = (n + 30)°",
+    "acute = (n - 10)°",
+    "reflex = (n + 30)°",
+    "raw = (n + 30)°",
+    "turn = ang / 1°",
+    "A = (sqrt(2), 1)",
+    "B = (3, 4)",
+    "C = (2, 5)",
+    "a = 2π",
+    "d = 1/3",
+    "P = If(n > 0, A, B)",
+    "q = {A, d, 5, a}",
+    "flat(x) = 4",
+    "tri = Polygon(A, B, C)",
+    "len = 5",
+    "el = Ellipse(A, B, len)",
+    "e = x(A) + NextPrime(n)",
+    "lost = e + 1",
+    "Euler = ℯ + 1"
+  ],
+  "objects": {
+    "n": { "type": "number", "defined": true, "value": 400.0 },
+    "ang": { "type": "angle", "defined": true, "value": 1.221730476396031 },
+    "acute": { "type": "angle", "defined": true, "value": 0.5235987755982991 },
+    "reflex": { "type": "angle", "defined": true, "value": 5.061454830783555 },
+    "raw": { "type": "angle", "defined": true, "value": 7.504915783575617 },
+    "turn": { "type": "number", "defined": true, "value": 70.00000000000001 },
+    "A": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 1.0 },
+    "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+    "C": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 },
+    "a": { "type": "number", "defined": true, "value": 6.283185307179586 },
+    "d": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+    "chosen": { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 1.0 },
+    "q": {
+      "type": "list",
+      "defined": true,
+      "elements": [
+        { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 1.0 },
+        { "type": "number", "defined": true, "value": 0.3333333333333333 },
+        { "type": "number", "defined": true, "value": 5.0 },
+        { "type": "number", "defined": true, "value": 6.283185307179586 }
+      ]
+    },
+    "flat": {
+      "type": "function",
+      "defined": true,
+      "samples": [
+        [-8.0, 4.0],
+        [-4.0, 4.0],
+        [-2.0, 4.0],
+        [-1.0, 4.0],
+        [-0.5, 4.0],
+        [0.0, 4.0],
+        [0.5, 4.0],
+        [1.0, 4.0],
+        [2.0, 4.0],
+        [4.0, 4.0],
+        [8.0, 4.0]
+      ]
+    },
+    "tri": {
+      "type": "polygon",
+      "defined": true,
+      "vertices": [
+        [1.4142135623730951, 1.0],
+        [3.0, 4.0],
+        [2.0, 5.0]
+      ],
+      "area": 2.292893218813452,
+      "signed_area": 2.292893218813452
+    },
+    "c": { "type": "segment", "defined": true, "x1": 1.4142135623730951, "y1": 1.0, "x2": 3.0, "y2": 4.0 },
+    "a_1": { "type": "segment", "defined": true, "x1": 3.0, "y1": 4.0, "x2": 2.0, "y2": 5.0 },
+    "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 5.0, "x2": 1.4142135623730951, "y2": 1.0 },
+    "len": { "type": "number", "defined": true, "value": 5.0 },
+    "el": {
+      "type": "conic",
+      "defined": true,
+      "conic_type": "ellipse",
+      "matrix": [389.94112549695427, 364.0, -4884.0, -19.029437251522857, -813.0681092190353, -868.0],
+      "midpoint": [2.207106781186548, 2.5],
+      "half_axes": [5.000000000000005, 4.703330771225813],
+      "eigenvectors": [
+        [0.46732394504169483, 0.8840861555248262],
+        [-0.8840861555248262, 0.46732394504169483]
+      ]
+    },
+    "e": { "type": "number", "defined": false },
+    "lost": { "type": "number", "defined": false },
+    "Euler": { "type": "number", "defined": true, "value": 3.718281828459045 }
+  }
+}

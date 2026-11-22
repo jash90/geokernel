@@ -53,6 +53,8 @@ pub struct Element {
     pub coords: Option<[String; 3]>,
     /// `<value val=>` as written.
     pub value: Option<String>,
+    /// GeoGebra's angle interval code (`<angleStyle val=>`).
+    pub angle_style: Option<i32>,
     /// `<matrix A0= ... A5=>` of a conic as written.
     pub matrix: Option<[String; 6]>,
     /// `<fixed val="true">`: not used, counted for a note.
@@ -92,6 +94,8 @@ pub struct Document {
     pub constructions: usize,
     /// Items plus outputs, what [`MAX_ITEMS`] limits.
     pub weight: usize,
+    /// Horizontal range of the primary graphics view, used by function paths.
+    pub function_path_bounds: Option<[f64; 2]>,
 }
 
 fn bad(e: impl std::fmt::Display) -> ImportError {
@@ -172,6 +176,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
     let mut command: Option<(String, Vec<String>, Vec<String>)> = None;
     let mut element: Option<Element> = None;
     let mut in_kernel = false;
+    let mut view = None;
     loop {
         let event = reader.read_event().map_err(bad)?;
         let (start, empty) = match &event {
@@ -188,6 +193,22 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     doc.constructions += 1;
                 }
                 "kernel" if !in_construction => in_kernel = !empty,
+                "euclidianView"
+                    if !in_construction && !empty && doc.function_path_bounds.is_none() =>
+                {
+                    view = Some((None, None, None, None));
+                }
+                "viewNumber" if view.is_some() => {
+                    view.as_mut().expect("checked above").0 = attr(e, "viewNo")?;
+                }
+                "size" if view.is_some() => {
+                    view.as_mut().expect("checked above").1 = attr(e, "width")?;
+                }
+                "coordSystem" if view.is_some() => {
+                    let view = view.as_mut().expect("checked above");
+                    view.2 = attr(e, "xZero")?;
+                    view.3 = attr(e, "scale")?;
+                }
                 "continuous" | "decimals" | "significantfigures" | "angleUnit" if in_kernel => {
                     let val = attr(e, "val")?.unwrap_or_default();
                     match name.as_str() {
@@ -280,6 +301,10 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "value" if element.is_some() => {
                     element.as_mut().expect("checked above").value = attr(e, "val")?;
                 }
+                "angleStyle" if element.is_some() => {
+                    element.as_mut().expect("checked above").angle_style =
+                        attr(e, "val")?.and_then(|v| v.parse().ok());
+                }
                 _ => {}
             }
         }
@@ -287,6 +312,23 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
             Event::End(e) => match e.name().as_ref() {
                 "construction" => in_construction = false,
                 "kernel" => in_kernel = false,
+                "euclidianView" => {
+                    if let Some((number, width, xzero, scale)) = view.take() {
+                        doc.function_path_bounds = (|| {
+                            if number.as_deref().is_some_and(|n| n != "1") {
+                                return None;
+                            }
+                            let (width, xzero, scale): (f64, f64, f64) = (
+                                width?.parse().ok()?,
+                                xzero?.parse().ok()?,
+                                scale?.parse().ok()?,
+                            );
+                            let (min, max) = (-xzero / scale, (width - xzero) / scale);
+                            (scale > 0.0 && min.is_finite() && max.is_finite() && min < max)
+                                .then_some([min, max])
+                        })();
+                    }
+                }
                 "command" => {
                     if let Some((name, inputs, outputs)) = command.take() {
                         push(

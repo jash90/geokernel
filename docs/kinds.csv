@@ -11,10 +11,10 @@ Sector,CONICPART,Sector,yes,yes,yes,yes,yes,no,yes,no,
 Number,NUMERIC,Number,yes,no,no,no,yes,yes,yes,no,no sliders
 Angle,ANGLE,Angle,yes,partial,partial,partial,yes,yes,partial,no,angles with drawable geometry have a sector or right-angle marker; import supports angles made by commands
 Boolean,BOOLEAN,Boolean,yes,no,no,no,no,partial,partial,no,the algebra text is the debug form of the value; only booleans a command makes are imported
-Function,FUNCTION,Function,yes,yes,yes,partial,no,yes,no,no,
+Function,FUNCTION,Function,yes,yes,yes,partial,no,yes,partial,no,Single-variable saved functions with supported expressions
 Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,no,
 PolyLine,POLYLINE,PolyLine,yes,yes,yes,yes,yes,yes,yes,no,
-List,LIST,List,yes,no,no,no,no,no,no,no,
+List,LIST,List,yes,no,no,no,no,no,partial,no,Saved lists with supported expressions and commands
 Axis,AXIS,,no,no,no,no,no,no,no,no,the window draws the axes from the view settings
 Text,TEXT,Text,yes,no,no,no,no,yes,no,no,base conversion text is shown in the algebra view
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
