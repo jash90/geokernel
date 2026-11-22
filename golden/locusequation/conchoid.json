@@ -1,0 +1,358 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "locusequation-conchoid-001",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "A = (1, -2)",
+        "B = (1, 2)",
+        "g = Line(A, B)",
+        "P = Point(g)",
+        "h = Line(O, P)",
+        "a = 2",
+        "k = Circle(P, a)",
+        "M = Intersect(h, k, 1)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": -2.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 3.0 },
+        { "action": "move", "label": "O", "x": -1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.0, "r": 2.0 },
+          "M": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "g": { "type": "line", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "h": { "type": "line", "defined": false },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": false },
+          "M": { "type": "point", "defined": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "h": { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.5, "r": 2.0 },
+          "M": { "type": "point", "defined": true, "x": -0.7888543819998317, "y": -0.39442719099991586 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "h": { "type": "line", "defined": true, "a": -0.5, "b": 2.0, "c": -0.5 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.5, "r": 2.0 },
+          "M": { "type": "point", "defined": true, "x": -0.9402850002906638, "y": 0.014928749927334062 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-conchoid-002",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "A = (1, -2)",
+        "B = (1, 2)",
+        "R = (2, 0)",
+        "g = Line(A, B)",
+        "P = Point(g)",
+        "h = Line(O, P)",
+        "a = Distance(O, R)",
+        "k = Circle(P, a)",
+        "M = Intersect(h, k, 1)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "R", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 3.0 },
+        { "action": "move", "label": "O", "x": -1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.0, "r": 2.0 },
+          "M": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, -1.0],
+              [0.0, 0.0, 1.0],
+              [-1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x³ - x² + x y² - y² = 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.0, "r": 3.0 },
+          "M": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, -1.0],
+              [0.0, 0.0, 1.0],
+              [-1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x³ - x² + x y² - y² = 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "h": { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.5, "r": 3.0 },
+          "M": { "type": "point", "defined": true, "x": -1.6832815729997477, "y": -0.8416407864998738 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, -1.0],
+              [0.0, 0.0, 1.0],
+              [-1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x³ - x² + x y² - y² = 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "h": { "type": "line", "defined": true, "a": -0.5, "b": 2.0, "c": -0.5 },
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.5, "r": 4.0 },
+          "M": { "type": "point", "defined": true, "x": -2.8805700005813275, "y": -0.4701425001453319 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [-2.0, 0.0, -2.0],
+              [-3.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ + x² y² - 3x² - 2x y² - 2x + y² = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-conchoid-003",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "A = (1, -2)",
+        "B = (1, 2)",
+        "R = (2, 0)",
+        "g = Line(A, B)",
+        "P = Point(g)",
+        "h = Line(O, P)",
+        "s = Segment(O, R)",
+        "k = Circle(P, s)",
+        "M = Intersect(h, k, 1)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "R", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 3.0 },
+        { "action": "move", "label": "O", "x": -1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.0, "r": 2.0 },
+          "M": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [0.0, 0.0, -2.0],
+              [-3.0, 0.0, 1.0],
+              [-2.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ - 2x³ + x² y² - 3x² - 2x y² + y² = 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.0, "r": 3.0 },
+          "M": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [0.0, 0.0, -2.0],
+              [-8.0, 0.0, 1.0],
+              [-2.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ - 2x³ + x² y² - 8x² - 2x y² + y² = 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "h": { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.5, "r": 3.0 },
+          "M": { "type": "point", "defined": true, "x": -1.6832815729997477, "y": -0.8416407864998738 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 1.0],
+              [0.0, 0.0, -2.0],
+              [-8.0, 0.0, 1.0],
+              [-2.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ - 2x³ + x² y² - 8x² - 2x y² + y² = 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -5.0, "b": 0.0, "c": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "h": { "type": "line", "defined": true, "a": -0.5, "b": 2.0, "c": -0.5 },
+          "s": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.5, "r": 4.0 },
+          "M": { "type": "point", "defined": true, "x": -2.8805700005813275, "y": -0.4701425001453319 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-15.0, 0.0, 1.0],
+              [-32.0, 0.0, -2.0],
+              [-18.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ + x² y² - 18x² - 2x y² - 32x + y² = 15",
+            "input_form": false
+          }
+        }
+      ]
+    }
+  ]
+}

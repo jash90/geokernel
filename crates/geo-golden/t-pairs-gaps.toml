@@ -1425,12 +1425,6 @@ reason = "class `GeoCurveCartesian` has no schema object (unsupported-type); str
 mismatches = ["a"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1255"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Cubic`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:127"
 category = "text-formatting"
 reason = "values agree but `GeoList` of kind list has no GeoGebra-style text yet; GeoGebra prints `{x + 1, 0}`"
@@ -5706,12 +5700,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:4625"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `TriangleCenter` does not take 7 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4632"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `TriangleCurve`"
 mismatches = ["step"]
 
 [[gap]]
