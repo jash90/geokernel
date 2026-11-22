@@ -1,7 +1,7 @@
 // Licensed under the EUPL 1.2.
 
 use super::{build_normal, Builder, Entry, NotPolynomial};
-use crate::algo::implicit::barycentric;
+use crate::algo::implicit::{barycentric, locus_equation};
 use crate::algo::{conic_nd::ConicData, general_conic};
 use crate::expr::{eval, parse, shift_children, Bin, Elem, Element, Lit, Node, Raw, Ty};
 use crate::{Construction, Def, Error, Id, Kind, Value};
@@ -18,6 +18,7 @@ pub(crate) struct Record {
     pub(crate) coefficients: Coefficients,
     pub(crate) conic: Option<ConicData>,
     fingerprint: u64,
+    construction_parents: Option<Box<[Id]>>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -27,6 +28,7 @@ enum Source {
     Function(Id),
     Points(Id),
     Cubic([Id; 4]),
+    LocusEquation(locus_equation::Definition),
     Triangle { vertices: [Id; 3], sides: [u32; 2] },
 }
 
@@ -38,6 +40,7 @@ impl Record {
             coefficients: Vec::new(),
             conic: None,
             fingerprint: 0,
+            construction_parents: None,
         }
     }
 
@@ -148,7 +151,8 @@ fn add(c: &mut Construction, label: &str, record: Record) -> Result<Id, Error> {
 
 pub(crate) fn parents(c: &Construction, index: u32) -> Vec<Id> {
     let mut parents = Vec::new();
-    match c.implicit_curves[index as usize].1.source {
+    let record = &c.implicit_curves[index as usize].1;
+    match record.source {
         Source::Equation(sides) | Source::Triangle { sides, .. } => {
             if let Source::Triangle { vertices, .. } = c.implicit_curves[index as usize].1.source {
                 parents.extend(vertices);
@@ -159,6 +163,13 @@ pub(crate) fn parents(c: &Construction, index: u32) -> Vec<Id> {
         }
         Source::Function(id) | Source::Points(id) => parents.push(id),
         Source::Cubic(inputs) => parents.extend(inputs),
+        Source::LocusEquation(_) => {
+            return record
+                .construction_parents
+                .as_deref()
+                .unwrap_or_default()
+                .to_vec();
+        }
         Source::Matrix => {}
     }
     parents.sort_unstable();
@@ -353,6 +364,15 @@ pub(crate) fn update(c: &mut Construction, index: u32) -> Value {
             };
             (Kind::ImplicitCurve, coefficients)
         }
+        Source::LocusEquation(definition) => {
+            if record.construction_parents.is_none() {
+                return Value::Undefined;
+            }
+            let Some(coefficients) = definition.coefficients(c) else {
+                return Value::Undefined;
+            };
+            (Kind::ImplicitCurve, coefficients)
+        }
         Source::Triangle {
             vertices: [a, b, d],
             sides: [left, right],
@@ -505,14 +525,16 @@ pub(crate) fn command(
     label: &str,
     input: &str,
 ) -> Option<Result<Id, String>> {
-    let (command @ ("ImplicitCurve" | "Cubic" | "TriangleCurve"), args) =
+    let (command @ ("ImplicitCurve" | "Cubic" | "TriangleCurve" | "LocusEquation"), args) =
         crate::script::split_call(input)?
     else {
         return None;
     };
     let start = c.checkpoint();
     let result = (|| {
-        let source = if command == "Cubic" {
+        let source = if command == "LocusEquation" {
+            Source::LocusEquation(locus_equation::Definition::parse(c, &args)?)
+        } else if command == "Cubic" {
             let [a, b, d, n] = args.as_slice() else {
                 return Err("Cubic needs three points and a number".into());
             };
@@ -589,7 +611,11 @@ pub(crate) fn command(
             let hidden = format!("\0implicit{}", c.len());
             Source::Points(crate::expr::list_of_objects(c, &hidden, points)?)
         };
-        let id = add(c, label, Record::new(source)).map_err(|e| e.to_string())?;
+        let mut record = Record::new(source);
+        if let Source::LocusEquation(definition) = source {
+            record.construction_parents = definition.parents(c);
+        }
+        let id = add(c, label, record).map_err(|e| e.to_string())?;
         c.set_equation_form(id, crate::kernel::EquationForm::Implicit)
             .map_err(|e| e.to_string())?;
         Ok(id)

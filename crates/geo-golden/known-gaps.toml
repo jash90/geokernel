@@ -845,3 +845,18 @@ mismatches = [
   "0:P_{59}", "0:P_{5}", "0:P_{60}", "0:P_{61}", "0:P_{62}", "0:P_{63}", "0:P_{64}", "0:P_{65}",
   "0:P_{66}", "0:P_{6}", "0:P_{7}", "0:P_{8}", "0:P_{9}",
 ]
+
+[[gap]]
+id = "locusequation-conchoid-001"
+reason = "A free numeric radius in the moving circle produces a zero equation in the oracle. The kernel leaves that symbolic construction undefined."
+mismatches = ["0:c", "1:c", "2:c", "3:c"]
+
+[[gap]]
+id = "locusequation-conchoid-002"
+reason = "A distance-valued numeric radius in the moving circle produces a factor for the directrix instead of the offset curve. The kernel leaves that symbolic construction undefined."
+mismatches = ["0:c", "1:c", "2:c", "3:c"]
+
+[[gap]]
+id = "locusequation-boolean-001"
+reason = "The reference Boolean stays true after edits to the fixed distance make the equality false. The kernel updates the Boolean while the implicit equation follows the new distance."
+mismatches = ["2:b", "3:b"]

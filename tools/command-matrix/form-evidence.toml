@@ -3593,3 +3593,18 @@ cases = ["implicit-barycentric-001", "implicit-cubics-001", "implicit-cubics-002
 command = "TriangleCurve"
 form = "point,point,point,implicit"
 cases = ["implicit-barycentric-002", "implicit-trianglecurve-001", "implicit-trianglecurve-002"]
+
+[[form]]
+command = "LocusEquation"
+form = "locus"
+cases = ["locusequation-circle-002"]
+
+[[form]]
+command = "LocusEquation"
+form = "point,point"
+cases = ["locusequation-circle-001", "locusequation-parabola-001", "locusequation-midpoint-001", "locusequation-conchoid-003"]
+
+[[form]]
+command = "LocusEquation"
+form = "boolean,point"
+cases = ["locusequation-boolean-002"]

@@ -1,0 +1,79 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "locusequation-midpoint-001",
+      "group": "locusequation",
+      "script": [
+        "A = (-3, -1)",
+        "B = (3, -1)",
+        "F = (2, 3)",
+        "g = Line(A, B)",
+        "P = Point(g)",
+        "M = Midpoint(P, F)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": -3.0, "y": -1.0 },
+        { "action": "move", "label": "B", "x": 3.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": 6.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 1.0]
+            ],
+            "equation": "y = 1",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "g": { "type": "line", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "M": { "type": "point", "defined": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 6.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 1.5 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [7.0, -6.0],
+              [2.0, 0.0]
+            ],
+            "equation": "2x - 6y = -7",
+            "input_form": false
+          }
+        }
+      ]
+    }
+  ]
+}

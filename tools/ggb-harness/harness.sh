@@ -138,7 +138,7 @@ case "$cmd" in
               run_golden degree
               exit
               ;;
-            cas.json) enable_giac ;;
+            cas.json|locusequation.json|envelope.json) enable_giac ;;
           esac
         fi
         run_golden
