@@ -125,8 +125,11 @@ pub(crate) fn intersections(
         let p = slice(a, x);
         let q = slice(b, x);
         let accept = |coefficients: &[f64], y: f64| {
-            evaluate(coefficients, y).abs()
-                <= STANDARD_PRECISION * (1.0 + evaluate_magnitude(coefficients, y))
+            let residual = evaluate(coefficients, y);
+            let scale = evaluate_magnitude(coefficients, y);
+            residual.is_finite()
+                && scale.is_finite()
+                && residual.abs() <= STANDARD_PRECISION * (1.0 + scale)
         };
         // A linear slice gives a well-conditioned second parameter whenever
         // its leading coefficient survives at the first parameter.

@@ -132,6 +132,7 @@ pub(crate) fn define(c: &mut Construction, name: &str, text: &str) -> Result<Id,
         function_dependent: false,
         variable_powers: false,
         abort_at: u64::MAX,
+        expansion_work: None,
     };
 
     let poly = match build_normal(c, &mut builder, lhs.root, rhs_root) {
@@ -359,6 +360,7 @@ pub(crate) struct Builder {
     /// no-CAS rules set it so that one pass of `rule_derivative` cannot
     /// build a tree far past the budget before the next pass is checked.
     pub(crate) abort_at: u64,
+    expansion_work: Option<u64>,
 }
 
 impl Builder {
@@ -382,6 +384,7 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            expansion_work: None,
         }
     }
 
@@ -395,12 +398,27 @@ impl Builder {
             function_dependent: false,
             variable_powers: true,
             abort_at: u64::MAX,
+            expansion_work: None,
         }
+    }
+
+    pub(crate) fn limit_expansion(&mut self, work: u64) {
+        self.expansion_work = Some(work);
+    }
+
+    fn charge_expansion(&mut self, units: u64) -> Result<(), NotPolynomial> {
+        if let Some(left) = &mut self.expansion_work {
+            *left = left
+                .checked_sub(units)
+                .ok_or(NotPolynomial::ImplicitCurve)?;
+        }
+        Ok(())
     }
 
     /// `ExpressionNode.makePolynomialTree` of the subtree at `i`, with the
     /// operations of `Polynomial.apply` and `Term` on the coefficients.
     pub(crate) fn expand(&mut self, c: &Construction, i: u32) -> Result<Poly, NotPolynomial> {
+        self.charge_expansion(1)?;
         match self.node(i) {
             Node::Var => Ok(Poly(vec![Term {
                 x: 1,
@@ -937,10 +955,12 @@ impl Poly {
     /// `Polynomial.multiply`: every term of this polynomial times every
     /// term of `e`, the variables joined, then [`Poly::simplify`].
     fn mul(&mut self, e: &Poly, b: &mut Builder) -> Result<(), NotPolynomial> {
-        if self.0.len().saturating_mul(e.0.len()) > MAX_PRODUCT_TERMS {
+        let count = self.0.len().saturating_mul(e.0.len());
+        if count > MAX_PRODUCT_TERMS {
             return Err(NotPolynomial::ImplicitCurve);
         }
-        let mut out = Vec::with_capacity(self.0.len() * e.0.len());
+        b.charge_expansion(count as u64)?;
+        let mut out = Vec::with_capacity(count);
         for ti in &self.0 {
             for tj in &e.0 {
                 let x = ti.x.checked_add(tj.x).ok_or(NotPolynomial::ImplicitCurve)?;
@@ -1002,6 +1022,8 @@ impl Poly {
     /// constant 0 is dropped, and a polynomial of no terms keeps a single
     /// constant 0.
     fn simplify(&mut self, b: &mut Builder) -> Result<(), NotPolynomial> {
+        let count = self.0.len() as u64;
+        b.charge_expansion(count.saturating_mul(count + 1) / 2)?;
         let mut kept: Vec<Term> = Vec::with_capacity(self.0.len());
         let mut consumed = vec![false; self.0.len()];
         for i in 0..self.0.len() {

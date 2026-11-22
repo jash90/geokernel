@@ -35,7 +35,7 @@ Direction,,geometry,P1,done,2,2,"Direction(line, segment or ray)"
 Point,,geometry,P1,done,4,4,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
 Midpoint,,geometry,P0,done,4,4,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
-Intersect,,geometry,P0,partial,65,50,"Carrier, conic, function and polygonal boundary forms; line and Cartesian curve; seeded curve pairs; path and point incidence"
+Intersect,,geometry,P0,partial,65,50,"Carrier, conic, function and polygonal boundary forms. Cartesian curves with lines and polynomial or seeded curve pairs. Path and point incidence."
 IntersectPath,,geometry,P1,done,9,9,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
 IntersectRegion,,english,P2,done,9,9,
 Distance,,geometry,P0,done,4,4,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
@@ -60,7 +60,7 @@ Barycenter,,geometry,P1,done,1,1,
 Trilinear,,geometry,P1,done,1,1,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,todo,1,0,
 TriangleCurve,,geometry,P1,todo,1,0,
-Vertex,,geometry,P1,partial,12,9,"Conic, polygon, polyline or graphics view, including indexed polygon, polyline, segment and raster image forms"
+Vertex,,geometry,P1,partial,12,9,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment and raster image corners. Polynomial inequality borders."
 PolyLine,,geometry,P1,done,4,4,Live list with optional Boolean or separate points with an optional false flag
 PenStroke,,geometry,P1,todo,2,0,
 PenStrokeBezier,,english,,out_of_scope,,,"A pen stroke reads the pointing device and the tablet state, not the construction."
@@ -327,7 +327,7 @@ InverseLogNormal,,probability,,out_of_scope,,,
 RandomPolynomial,,probability,,out_of_scope,,,
 RandomDiscrete,,probability,,out_of_scope,,,
 RandomPointIn,,probability,,out_of_scope,,,
-ApplyMatrix,,vector,P2,done,10,10,"2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph or list"
+ApplyMatrix,,vector,P2,done,10,10,"2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph, raster image or list"
 UnitVector,,vector,P2,done,3,3,"UnitVector(vector, line, segment or ray)"
 Vector,,vector,P2,done,3,3,"Vector(point, point); Vector(point); a free (x, y) under a lower-case label"
 UnitOrthogonalVector,,vector,P2,done,3,3,"UnitOrthogonalVector(vector, line, segment or ray)"
@@ -340,7 +340,7 @@ Identity,,vector,P2,done,1,1,
 Dimension,,vector,P2,done,3,3,
 MatrixRank,,vector,P2,done,1,1,
 Mirror,,transformation,P1,done,3,3,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector in a point or a line; point, line, segment, circle, arc or sector in a circle (inversion)"
-Dilate,,transformation,P1,done,19,19,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function, Cartesian curve or list by a factor, from the origin or a point"
+Dilate,,transformation,P1,done,19,19,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function, Cartesian curve, raster image or list by a factor, from the origin or a point"
 Rotate,,transformation,P1,done,2,2,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by an angle, about the origin or a point"
 Translate,,transformation,P1,done,2,2,"point, line, segment, circle, conic, ray, vector, polygon, polyline, arc or sector by a vector"
 Shear,,transformation,P1,done,2,2,"point, line, segment, ray, vector, polygon, circle, conic, arc or sector with a line and a ratio"

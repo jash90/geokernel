@@ -1,7 +1,7 @@
 //! Boolean combinations of polynomial borders in two coordinates.
 
 use super::equation::Builder;
-use super::{entry, work_done, Bin, IntersectionWork, Node, Ty, Un};
+use super::{entry, Bin, IntersectionWork, Node, Ty, Un};
 use crate::algo::plane_polynomial::{self, PlanePolynomial, MAX_PLANE_DEGREE};
 use crate::tol::STANDARD_PRECISION;
 use crate::{Construction, Def, Id};
@@ -35,7 +35,7 @@ fn compute(c: &Construction, source: Id) -> Option<Vec<(f64, f64)>> {
     };
     let work = IntersectionWork::new();
     let mut builder = Builder::function(e);
-    builder.abort_at = work_done().saturating_add(MAX_EXPANSION_WORK);
+    builder.limit_expansion(MAX_EXPANSION_WORK);
     for node in &mut builder.nodes {
         *node = match *node {
             Node::Local(0, _) => Node::Var,
@@ -79,7 +79,7 @@ impl Tree {
         borders: &mut Vec<PlanePolynomial>,
         work: &IntersectionWork,
     ) -> Option<Self> {
-        if !work.charge(1) || work_done() > builder.abort_at {
+        if !work.charge(1) {
             return None;
         }
         let tree = match builder.node(root) {
