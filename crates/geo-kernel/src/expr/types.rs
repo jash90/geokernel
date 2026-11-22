@@ -91,6 +91,25 @@ pub(crate) fn check(
                 )
             }
             Node::Side(..) => (Ty::Num(0), 1, 1, 0),
+            Node::Financial(_, args) => {
+                let args = args
+                    .iter()
+                    .copied()
+                    .take_while(|&a| a != super::NONE)
+                    .map(|a| a as usize)
+                    .collect::<Vec<_>>();
+                if args.iter().any(|&a| !matches!(tys[a], Ty::Num(_))) {
+                    return Err("a financial command needs numbers".into());
+                }
+                let depth = args.iter().map(|&a| depth[a]).max().unwrap_or(0);
+                let cost = args
+                    .iter()
+                    .map(|&a| cost[a])
+                    .fold(2u64, |sum, c| sum.saturating_add(c))
+                    .saturating_mul(3);
+                let vars = args.iter().map(|&a| vars[a]).sum();
+                (Ty::Num(0), 1 + depth, cost, vars)
+            }
             Node::Apply2(_, a, b) => {
                 let (a, b) = (a as usize, b as usize);
                 if !matches!((tys[a], tys[b]), (Ty::Num(_), Ty::Num(_))) {

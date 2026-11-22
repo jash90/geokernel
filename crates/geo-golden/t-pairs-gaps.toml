@@ -2481,24 +2481,6 @@ reason = "the kernel refuses the input: unknown command `SetValue`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1882"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `FutureValue`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1883"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `FutureValue`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:1884"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `FutureValue`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:189"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `SetValue`"
@@ -4029,18 +4011,6 @@ reason = "the kernel refuses the input: unknown command `Name`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2863"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unexpected `[`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2864"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unexpected `[`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2881"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Net`"
@@ -4365,12 +4335,6 @@ reason = "the kernel refuses the input: unknown command `NSolveODE`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3054"
-category = "unsupported-form"
-reason = "the kernel refuses the input: unexpected `[`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3060"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Name`"
@@ -4605,24 +4569,6 @@ reason = "the kernel refuses the input: unknown object `Point(x^2+y^2=1)`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3206"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Payment`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3207"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Payment`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3208"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Payment`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3213"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Plane`"
@@ -4770,36 +4716,6 @@ mismatches = ["loc"]
 id = "commands/CommandsTest.java:3264"
 category = "incomplete-context"
 reason = "the kernel refuses the input: unexpected `[`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3269"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Periods`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3270"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Periods`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3275"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `PresentValue`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3276"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `PresentValue`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3277"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `PresentValue`"
 mismatches = ["step"]
 
 [[gap]]
@@ -5208,30 +5124,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:3554"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `RandomDiscrete`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3559"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Rate`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3560"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Rate`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3561"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Rate`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3562"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Rate`"
 mismatches = ["step"]
 
 [[gap]]

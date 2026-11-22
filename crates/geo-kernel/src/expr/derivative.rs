@@ -93,6 +93,9 @@ impl Walker<'_> {
             Node::Bool(_) => 0.0,
             Node::Var => 1.0,
             Node::FnName(_) => f64::NAN,
+            // No rule for the financial commands, as GeoGebra's derivative
+            // tree has none for the operations behind them.
+            Node::Financial(..) => f64::NAN,
             Node::Un(Un::Floor | Un::Ceil | Un::Round, _) => 0.0,
             // The rule is the tree `0 / x`, regardless of the argument.
             Node::Un(Un::Sgn, _) => 0.0 / self.x,

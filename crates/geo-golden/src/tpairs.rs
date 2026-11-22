@@ -297,7 +297,14 @@ fn normalize_syntax(input: &str) -> String {
         while start > 0 && is_name(chars[start - 1]) {
             start -= 1;
         }
-        if start == i || !chars[start].is_ascii_uppercase() {
+        // A command's name carries an upper-case letter (`Vertex`,
+        // `nCr`); a lower-case name before `[` is an old-style list index
+        // (`l[2]`), which the parentheses form reads the same way.
+        if start == i
+            || !chars[start..i]
+                .iter()
+                .any(|c| c.is_ascii_uppercase())
+        {
             continue;
         }
         // Find the matching `]`, counting brackets only: parentheses are

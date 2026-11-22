@@ -845,6 +845,9 @@ impl<const M: bool> Ctx<'_, M> {
                 radix,
             } => Ex::plain(N(self.read_base_number(value, radix))),
             Node::Extremum(minimum, f, a, b) => Ex::plain(self.extremum(minimum, f, a, b)),
+            Node::Financial(op, args) => {
+                Ex::plain(commands::financial::value(self, op, &args))
+            }
             Node::PolynomialPart(..) => Ex::plain(N(self.polynomial_value())),
             Node::ObjectDefined(id) => Ex::plain(Val::B(super::object_defined(self.c, id), true)),
             Node::Defined(a) => Ex::plain(Val::B(self.is_defined_argument(a), true)),

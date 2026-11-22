@@ -10,6 +10,7 @@
 mod algebra;
 
 pub(crate) use algebra::polynomial;
+pub(super) mod financial;
 mod geometry;
 mod list;
 mod logical;
@@ -32,6 +33,7 @@ pub(super) fn is_command(name: &str) -> bool {
         statistics::NAMES,
         geometry::NAMES,
         text::NAMES,
+        financial::NAMES,
     ]
     .iter()
     .any(|names| names.contains(&name))
@@ -51,6 +53,9 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         return Ok(Some(node));
     }
     if let Some(node) = statistics::parse(p, text)? {
+        return Ok(Some(node));
+    }
+    if let Some(node) = financial::parse(p, text)? {
         return Ok(Some(node));
     }
     if let Some(node) = geometry::parse(p, text)? {
