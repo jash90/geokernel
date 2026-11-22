@@ -265,17 +265,30 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
                 }
             }
         };
-        if let Some(repeat) = args.get(1) {
-            // the repeat flag is read as a double: a number or a boolean
-            let numeric = crate::expr::argument_number(c, repeat).is_some()
-                || matches!(*repeat, "true" | "false")
-                || c.id(repeat).is_some_and(
-                    |id| matches!(c.kind(id), k if k.is_number() || k == Kind::Boolean),
-                );
-            if !numeric {
-                return Err(format!("`{repeat}` is not a number"));
-            }
+        // The repeat flag is read as a double and cut to an `int`: `true`
+        // and 1 repeat, anything else plays once (`CmdSlowPlot`).
+        let mut repeat = 1.0;
+        if let Some(arg) = args.get(1) {
+            repeat = match *arg {
+                "true" => 1.0,
+                "false" => 0.0,
+                _ => match c.id(arg) {
+                    Some(id) if c.kind(id).is_number() => match c.value(id) {
+                        Value::Number(v) => v,
+                        _ => f64::NAN,
+                    },
+                    Some(id) if c.kind(id) == Kind::Boolean => match c.value(id) {
+                        Value::Bool(b) => f64::from(u8::from(b)),
+                        _ => f64::NAN,
+                    },
+                    Some(_) => return Err(format!("`{arg}` is not a number")),
+                    None => crate::expr::argument_number(c, arg)
+                        .ok_or_else(|| format!("`{arg}` is not a number"))?,
+                },
+            };
         }
+        // Java's `(int)` cast: NaN is 0, the rest truncates and saturates
+        let repeats = repeat as i32 == 1;
         let label = (0..=c.len() / 23 + 1)
             .flat_map(|index| (b'a'..=b'w').map(move |letter| (index, char::from(letter))))
             .map(|(index, letter)| {
@@ -297,6 +310,18 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
         };
         let corners = [corner("1")?, corner("2")?];
         crate::expr::define_slow_plot(c, name, function, slider, corners)?;
+        // the slider plays through its interval in steps of 0.01 and the
+        // source graph is hidden
+        let mode = if repeats {
+            crate::kernel::animation::AnimationMode::Increasing
+        } else {
+            crate::kernel::animation::AnimationMode::IncreasingOnce
+        };
+        c.start_animation(
+            slider,
+            crate::kernel::animation::Animation::playing(0.01, mode),
+        );
+        c.request_hidden(function);
         Ok(Some(slider))
     })();
     if result.is_err() {

@@ -10,7 +10,9 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -23,6 +25,7 @@ import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.RelationNumerical;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.AnimationManager;
 import org.geogebra.common.kernel.advanced.AlgoLeftRightSide;
 import org.geogebra.common.kernel.algos.AlgoConicPartCircle;
 import org.geogebra.common.kernel.algos.AlgoConicPartCircumcircle;
@@ -130,6 +133,8 @@ final class Session {
      * on to the objects themselves instead of looking labels up.
      */
     private final Map<String, GeoElement> objects = new LinkedHashMap<>();
+    /** Labels of objects a command made besides its output (a `SlowPlot` slider). */
+    private final Set<String> generated = new HashSet<>();
     private final Map<String, List<GeoElement>> relations = new LinkedHashMap<>();
     /**
      * The scripted objects recorded as general conics (type `conic`): those
@@ -388,6 +393,12 @@ final class Session {
         if (out != null && out.length == 0 && definition.startsWith("SlowPlot(")
                 && kernel.lookupLabel(label) instanceof GeoFunction plotted) {
             out = new GeoElementND[] {plotted};
+            // the labelled slider the command made can be read by later lines
+            for (GeoElement input : plotted.getParentAlgorithm().getInput()) {
+                if (input instanceof GeoNumeric n && n.isLabelSet() && n.isIndependent()) {
+                    generated.add(n.getLabelSimple());
+                }
+            }
         }
         // A transformed segment or ray with labelled end points also creates
         // the image points (see `transformedOutputs`); the segment or ray is
@@ -736,6 +747,34 @@ final class Session {
         n.updateCascade();
     }
 
+    /**
+     * Runs animation frames at the highest frame rate, as the animation
+     * manager's timer does on its first frame: every animating number makes
+     * one step, the newest first, then everything that depends on the changed
+     * ones is updated once.
+     */
+    void animate(int frames) {
+        for (int frame = 0; frame < frames; frame++) {
+            List<GeoNumeric> animated = new ArrayList<>();
+            for (GeoElement geo : kernel.getConstruction().getGeoSetConstructionOrder()) {
+                if (geo instanceof GeoNumeric n && n.isAnimating()) {
+                    animated.add(n);
+                }
+            }
+            ArrayList<GeoElementND> changed = new ArrayList<>();
+            for (int i = animated.size() - 1; i >= 0; i--) {
+                GeoElementND step = animated.get(i).doAnimationStep(
+                        AnimationManager.MAX_ANIMATION_FRAME_RATE, null);
+                if (step != null) {
+                    changed.add(step);
+                }
+            }
+            if (!changed.isEmpty()) {
+                GeoElement.updateCascade(changed, new TreeSet<>(), false);
+            }
+        }
+    }
+
     /** Edits the lower and upper endpoints of an independent number. */
     void setSliderBounds(String label, double min, double max) {
         if (!(lookup(label) instanceof GeoNumeric n) || !n.isIndependent()) {
@@ -916,7 +955,7 @@ final class Session {
     private boolean readsObjects(String definition) {
         Matcher m = LABEL.matcher(definition);
         while (m.find()) {
-            if (objects.containsKey(m.group())) {
+            if (objects.containsKey(m.group()) || generated.contains(m.group())) {
                 return true;
             }
         }

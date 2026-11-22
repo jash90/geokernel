@@ -211,7 +211,7 @@ fn saved_style_fixtures_import_every_object_with_a_style() {
             "{name}"
         );
     }
-    assert_eq!(fixtures, 12);
+    assert_eq!(fixtures, 13);
 }
 
 /// A file of pen strokes holds every number in five significant digits
@@ -621,6 +621,9 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     "saved-slider-bounds-001",
                     // Its numbers are rounded in the file; checked above.
                     "saved-strokes-001",
+                    // `tests/export.rs` compares the visibility and the
+                    // slider animations SlowPlot set with the export.
+                    "saved-slowplot-001",
                 ])
                 .chain(&TEXT_FIXTURES)
                 .chain(&TEXT_EQUATION_FIXTURES)

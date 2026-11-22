@@ -15,6 +15,10 @@ def reject(line):
     return {"action": "reject", "line": line}
 
 
+def anim(frames):
+    return {"action": "animate", "frames": frames}
+
+
 # ------------------------------------------------------------- Function()
 # The empty data function: defined, without a value anywhere, and usable
 # inside other expressions.
@@ -168,6 +172,22 @@ case("slowplot", "a = 1\nf(x) = sin(x)\ng = SlowPlot(f)\nv = g(0)\nw = g(8)",
 case("slowplot", "A = (0, 0)\nB = (2, 2)\nl = Line(A, B)\ng = SlowPlot(l)\n"
      "h = SlowPlot(Line(A, B), 0)\nu = g(-8)\nv = h(-8)",
      [mv("B", 0, 2), mv("B", 2, 4)])
+# The slider plays: one frame is a 300th of the interval, rounded to the
+# step 0.01. With the repeat flag it jumps back to 0 past the end, without it
+# it stops at 1; a value set by hand is where it goes on from.
+case("slowplot", "f(x) = sin(x)\ng = SlowPlot(f)\np = a + 0\nu = g(-4)\nv = g(4)",
+     [anim(1), anim(1), anim(150), anim(148), anim(2), anim(1), anim(5)])
+case("slowplot", "f(x) = sin(x)\ng = SlowPlot(f, false)\np = a + 0\nv = g(4)",
+     [anim(299), anim(1), anim(2), anim(5), setn("a", 0.5), anim(5)])
+case("slowplot", "f(x) = x\ng = SlowPlot(f, 1.7)\nh = SlowPlot(f, 0.9)\nk = SlowPlot(f, -1)\n"
+     "q = SlowPlot(f, 0 / 0)\np = a + 0\nr = b + 0\ns = c + 0\nt = d + 0",
+     [anim(310), anim(1)])
+case("slowplot", "f(x) = sin(x)\ng = SlowPlot(f)\np = a + 0",
+     [anim(20), setn("a", 0.5), anim(3), setn("a", 0.995), anim(3)])
+case("slowplot", "A = (0, 0)\nB = (2, 2)\nl = Line(A, B)\ng = SlowPlot(l, false)\np = a + 0\nu = g(0)",
+     [anim(100), mv("B", 0, 2), anim(1), mv("B", 2, 4), anim(250)])
+case("slowplot", "n = 1\nf(x) = x / n\ng = SlowPlot(f)\np = a + 0\nu = g(-4)",
+     [anim(30), setn("n", 0), anim(30), setn("n", 2), anim(30)])
 
 # ---------------------------------------------------------------- Derivative
 case("derivative", "n = 0\nk = n/n\nf(x) = x^3 + 1\ng = Derivative(f, k)\nh = NDerivative(f, k)\n"

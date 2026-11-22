@@ -31,6 +31,7 @@
 
 #[path = "algo/angle.rs"]
 pub mod angle;
+pub mod animation;
 #[path = "algo/axis.rs"]
 mod axis;
 #[path = "control.rs"]
@@ -885,6 +886,11 @@ pub struct Construction {
     by_label: HashMap<String, Id>,
     images: image::Images,
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
+    /// The animations of the sliders, see [`Construction::animate`].
+    animations: std::collections::BTreeMap<Id, animation::Animation>,
+    /// Objects commands asked to hide (see
+    /// [`Construction::take_hidden_requests`]).
+    hidden_requests: Vec<Id>,
     /// The frozen points of the pen strokes.
     pub(crate) strokes: std::collections::BTreeMap<Id, algo::stroke::StrokeData>,
     drawing_styles: std::collections::BTreeMap<Id, DrawingStyle>,
@@ -1484,6 +1490,8 @@ impl Construction {
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
         self.strokes.split_off(&Id(at.len));
+        self.animations.split_off(&Id(at.len));
+        self.hidden_requests.retain(|id| id.0 < at.len);
         self.drawing_styles.split_off(&Id(at.len));
         self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
@@ -2094,7 +2102,12 @@ impl Construction {
         self.update_number(id, v, false)
     }
 
-    fn update_number(&mut self, id: Id, v: f64, clamp_slider: bool) -> Result<usize, Error> {
+    pub(crate) fn update_number(
+        &mut self,
+        id: Id,
+        v: f64,
+        clamp_slider: bool,
+    ) -> Result<usize, Error> {
         self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
@@ -2142,6 +2155,8 @@ impl Construction {
         }
         self.defs[id.0] = new_def;
         self.values[id.0] = self.compute(new_def, id.0);
+        // a value set by hand is where an animation goes on from
+        self.reset_animation_position(id);
         Ok(self.propagate(id))
     }
 

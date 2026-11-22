@@ -223,6 +223,12 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
             .apply(c)?;
             Ok(None)
         }
+        Step::Animate { frames } => {
+            for _ in 0..*frames {
+                c.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);
+            }
+            Ok(None)
+        }
         Step::Reject { line } => {
             let len = c.len();
             if script::exec(c, line).is_err() && c.len() == len {

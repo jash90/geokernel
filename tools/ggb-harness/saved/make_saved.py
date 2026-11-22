@@ -656,6 +656,14 @@ case("strokes", [
     "q = PenStroke(" + ", ".join(f"({fmt(0.03 * i)}, {fmt(0.02 * i * i % 1.7)})" for i in range(14)) + ")",
 ], [])
 
+# SlowPlot hides the source graph and plays a new slider from 0 to 1, again
+# and again or once; the file keeps that state.
+topic("slowplot")
+case("slowplot", [
+    "f(x) = sin(x)", "g = SlowPlot(f)", "A = (0, 0)", "B = (2, 1)", "l = Line(A, B)",
+    "h = SlowPlot(l, false)", "k = SlowPlot(x^2, 0)",
+], [])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

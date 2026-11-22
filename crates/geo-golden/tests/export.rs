@@ -210,6 +210,11 @@ fn corpus() -> Vec<Case> {
                 }
                 Step::Reject { .. } => panic!("{name}: unexpected rejection step"),
                 Step::SetSliderBounds { .. } => panic!("{name}: unexpected slider bounds edit"),
+                Step::Animate { frames } => {
+                    for _ in 0..*frames {
+                        wb.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);
+                    }
+                }
             }
         }
         let c = wb.construction();
@@ -1625,6 +1630,62 @@ const HOSTILE_FILE: &[u8] = br#"<geogebra format="5.0"><construction>
       type="0" playing="false"/>
   </element>
 </construction></geogebra>"#;
+
+/// `SlowPlot` hides its source graph and plays its new slider from 0 to 1,
+/// again and again with the repeat flag 1 and once otherwise. The export of
+/// the same script says so as the file the reference application saved
+/// does: the visibility of every object, and the bounds and animation of
+/// every slider.
+#[test]
+fn slow_plot_hides_its_source_and_plays_its_slider_as_the_reference_saves_it() {
+    let dir = repo_root().join("golden/ggb/saved");
+    let saved = fs::read_to_string(dir.join("saved-slowplot-001.xml")).unwrap();
+    let snapshot: Value =
+        serde_json::from_slice(&fs::read(dir.join("saved-slowplot-001.snapshot")).unwrap())
+            .unwrap();
+    let script: Vec<&str> = snapshot["script"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|line| line.as_str().unwrap())
+        .collect();
+    let wb = Workbench::from_script(&script.join("\n")).unwrap();
+    let elements = |text: &str| {
+        geo_import::xml::parse(text)
+            .unwrap()
+            .items
+            .into_iter()
+            .filter_map(|item| match item {
+                geo_import::xml::Item::Element(el) => Some((el.label.clone(), el)),
+                _ => None,
+            })
+            .collect::<BTreeMap<_, _>>()
+    };
+    let (reference, ours) = (elements(&saved), elements(&exported_xml(&wb)));
+    let mut sliders = 0;
+    for (label, want) in &reference {
+        let got = ours
+            .get(label)
+            .unwrap_or_else(|| panic!("the export has no `{label}`"));
+        assert_eq!(
+            got.shown.unwrap_or(true),
+            want.shown.unwrap_or(true),
+            "{label}: shown"
+        );
+        assert_eq!(got.slider, want.slider, "{label}: slider bounds");
+        // every element of the reference has an animation tag; a slider's
+        // is the one SlowPlot sets
+        if want.slider.is_some() {
+            assert_eq!(
+                got.slider_animation, want.slider_animation,
+                "{label}: animation"
+            );
+            sliders += 1;
+        }
+    }
+    assert_eq!(sliders, 3);
+    assert!(wb.is_animating());
+}
 
 fn exported_xml(wb: &Workbench) -> String {
     let bytes = wb.export_ggb(None).unwrap();

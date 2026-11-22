@@ -373,6 +373,23 @@ impl Writer<'_> {
                 Some(animation) => self.animation(animation)?,
                 // The file of the slider had no such tag.
                 None if saved.is_some() => {}
+                // An animation the construction runs (`SlowPlot`).
+                None if c.animation(id).is_some() => {
+                    // As the reference writes it: an automatic increment has
+                    // no step, the default speed is left out.
+                    let a = c.animation(id).expect("checked above");
+                    let (step, speed, mode) =
+                        (number(a.step), number(a.speed), a.mode.code().to_string());
+                    let mut attrs = Vec::new();
+                    if !a.auto_step {
+                        attrs.push(("step", step.as_str()));
+                    }
+                    if a.speed != 1.0 {
+                        attrs.push(("speed", speed.as_str()));
+                    }
+                    attrs.extend([("type", mode.as_str()), ("playing", flag(a.playing))]);
+                    self.xml.tag("animation", &attrs)?;
+                }
                 None => self.xml.tag(
                     "animation",
                     &[

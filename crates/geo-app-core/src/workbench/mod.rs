@@ -472,6 +472,7 @@ impl Workbench {
             let step_before = self.construction.step();
             let assigns_slider =
                 geo_kernel::script::is_slider_assignment(&self.construction, &line);
+            self.construction.take_hidden_requests();
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
@@ -493,6 +494,7 @@ impl Workbench {
                             })
                             .unwrap_or(line);
                         self.log.record(&self.construction, before, &line);
+                        self.log.apply_hidden_requests(&mut self.construction);
                         if let Some(first) = first {
                             self.boundary_outputs.record(
                                 &self.construction,
@@ -1132,6 +1134,23 @@ impl Workbench {
         }
         self.version += 1;
         true
+    }
+
+    /// Whether a slider of the construction is playing.
+    pub fn is_animating(&self) -> bool {
+        self.construction.is_animating()
+    }
+
+    /// One animation frame of the playing sliders at `frame_rate` frames per
+    /// second (`AnimationManager.sliderStep`). The values are not journaled,
+    /// as the reference does not store animation frames as undo steps.
+    /// Returns whether a value changed.
+    pub fn animate(&mut self, frame_rate: f64) -> bool {
+        let changed = self.construction.animate(frame_rate);
+        if changed {
+            self.version += 1;
+        }
+        changed
     }
 
     pub fn set_boolean(&mut self, id: Id, value: bool) -> bool {

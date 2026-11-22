@@ -31,10 +31,27 @@ pub struct Case {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Step {
     Initial,
-    Move { label: String, x: f64, y: f64 },
-    SetNumber { label: String, value: f64 },
-    SetSliderBounds { label: String, min: f64, max: f64 },
-    Reject { line: String },
+    Move {
+        label: String,
+        x: f64,
+        y: f64,
+    },
+    SetNumber {
+        label: String,
+        value: f64,
+    },
+    SetSliderBounds {
+        label: String,
+        min: f64,
+        max: f64,
+    },
+    Reject {
+        line: String,
+    },
+    /// Animation frames of the playing sliders at the highest frame rate.
+    Animate {
+        frames: u32,
+    },
 }
 
 #[derive(Deserialize)]
@@ -49,6 +66,7 @@ struct RawStep {
     max: Option<f64>,
     line: Option<String>,
     reference_parse_error: Option<bool>,
+    frames: Option<f64>,
 }
 
 impl<'de> Deserialize<'de> for Step {
@@ -63,6 +81,9 @@ impl<'de> Deserialize<'de> for Step {
             return Err(D::Error::custom(
                 "only step `set_slider_bounds` takes `min` and `max`",
             ));
+        }
+        if raw.action != "animate" && raw.frames.is_some() {
+            return Err(D::Error::custom("only step `animate` takes `frames`"));
         }
         if raw.action != "move" && raw.reference_parse_error.is_some() {
             return Err(D::Error::custom(
@@ -115,6 +136,19 @@ impl<'de> Deserialize<'de> for Step {
                 }
                 Ok(Step::Reject {
                     line: raw.line.ok_or_else(|| need("line"))?,
+                })
+            }
+            "animate" => {
+                if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
+                {
+                    return Err(D::Error::custom("step `animate` takes only `frames`"));
+                }
+                let frames = raw.frames.ok_or_else(|| need("frames"))?;
+                if frames.fract() != 0.0 || !(1.0..=10_000.0).contains(&frames) {
+                    return Err(D::Error::custom("step `animate` needs 1 to 10000 frames"));
+                }
+                Ok(Step::Animate {
+                    frames: frames as u32,
                 })
             }
             other => Err(D::Error::custom(format!("unknown action `{other}`"))),
