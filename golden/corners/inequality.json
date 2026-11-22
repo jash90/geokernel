@@ -231,6 +231,589 @@
           "P_{1}": { "type": "point", "defined": false }
         }
       ]
+    },
+    {
+      "id": "corners-inequality-006",
+      "group": "corners",
+      "script": [
+        "k = 1",
+        "q(x,y) = x > ln(y) + k && y > 0.5 && y < 3",
+        "P = Corner(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "k", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-007",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x > 0 && y > 0 && x + y < 2 && sin(x y) > -2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "P = Vertex(q)" },
+        { "action": "reject", "line": "Q = Corner(q)" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-008",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x > 0 && y > 0 && x + y < 2 && x y + sin(x) > 5"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "P = Vertex(q)" },
+        { "action": "reject", "line": "Q = Corner(q)" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-009",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x > 0 && y > 0 && x + y < 2 && (sin(x y) > -2 || x > 5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "P = Vertex(q)" },
+        { "action": "reject", "line": "Q = Corner(q)" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-010",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x > 0 && y > 0 && y > sin(x) && sin(x y) > 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "P = Vertex(q)" },
+        { "action": "reject", "line": "Q = Corner(q)" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-011",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x > 0 && y > 0 && x^2 < 1 && y^2 < 4 && sin(x y) > 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "P = Vertex(q)" },
+        { "action": "reject", "line": "Q = Corner(q)" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        },
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-012",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x^2 > -1 && y > sin(x) && sin(x y) > 1",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-013",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x > 0 && x^2 < 4 && sin(x y) > 1",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-014",
+      "group": "corners",
+      "script": [
+        "h = 2",
+        "P = Corner(x > -1 && y > 0 && x + y < h)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "h", "value": -2.0 },
+        { "action": "set_number", "label": "h", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": -2.0 },
+          "P_{1}": { "type": "point", "defined": false },
+          "P_{2}": { "type": "point", "defined": false },
+          "P_{3}": { "type": "point", "defined": false }
+        },
+        {
+          "h": { "type": "number", "defined": true, "value": 3.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -1.0, "y": 4.0 },
+          "P_{3}": { "type": "point", "defined": true, "x": 3.0, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-015",
+      "group": "corners",
+      "script": [
+        "P = Corner(x^2 < 4 && y > sqrt(x + 3) && y < 5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 2.23606797749979 },
+          "P_{3}": { "type": "point", "defined": true, "x": -2.0, "y": 5.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-016",
+      "group": "corners",
+      "script": [
+        "P = Vertex(y > cos(x) && x^2 > 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-017",
+      "group": "corners",
+      "script": [
+        "P = Vertex(x < exp(y) && y^2 < 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P_{1}": { "type": "point", "defined": true, "x": 0.36787944117144233, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.718281828459045, "y": 1.0 }
+        }
+      ]
     }
   ]
 }

@@ -801,6 +801,638 @@
           "P_{6}": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 }
         }
       ]
+    },
+    {
+      "id": "corners-vertex-010",
+      "group": "corners",
+      "script": [
+        "k = 0",
+        "q(x,y) = y > sin(x) + k && x > -1 && x < 2 && y < 1.5",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "k", "value": 2.0 },
+        { "action": "set_number", "label": "k", "value": -3.0 },
+        { "action": "set_number", "label": "k", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": 0.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.5 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 1.5 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.5 },
+          "P_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": -3.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.5 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 1.5 }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 0.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.5 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 1.5 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-011",
+      "group": "corners",
+      "script": [
+        "q(x,y) = y < 1/x && x > 0.5 && x < 4 && y > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.5, "y": -0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-012",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x < exp(y) && y > -1 && y < 1 && x > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": -1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -0.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-013",
+      "group": "corners",
+      "script": [
+        "q(x,y) = y > cos(x) && x^2 > 0",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 1.0],
+              [-4.0, 9.0, 1.0],
+              [-2.0, 5.0, 1.0],
+              [-1.0, 3.0, 1.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-014",
+      "group": "corners",
+      "script": [
+        "q(x,y) = y > cos(x) && x^2 >= 0 && x < 1",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 1.0],
+              [-4.0, 9.0, 1.0],
+              [-2.0, 5.0, 1.0],
+              [-1.0, 3.0, 1.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-015",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x^2 < 4 && y > sqrt(x + 3) && y < 5",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 1.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 2.23606797749979 },
+          "P_{3}": { "type": "point", "defined": true, "x": -2.0, "y": 5.0 },
+          "P_{4}": { "type": "point", "defined": true, "x": 2.0, "y": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-016",
+      "group": "corners",
+      "script": [
+        "k = 1",
+        "q(x,y) = y > sqrt(x - k) && x > 0 && x < 3",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "k", "value": 5.0 },
+        { "action": "set_number", "label": "k", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 5.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-017",
+      "group": "corners",
+      "script": [
+        "q(x,y) = sin(x y) > -2 && x > 0 && y > 0 && x + y < 2",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-018",
+      "group": "corners",
+      "script": [
+        "q(x,y) = x y + sin(y) > 1 && x > 0 && y > 0 && x < 2 && y < 2",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-019",
+      "group": "corners",
+      "script": [
+        "q(x,y) = y > sin(x) || x < -1 || x > 1",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 1.0],
+              [-4.0, 9.0, 1.0],
+              [-2.0, 5.0, 1.0],
+              [-1.0, 3.0, 1.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 1.0],
+              [4.0, -7.0, 1.0],
+              [8.0, -15.0, 1.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-020",
+      "group": "corners",
+      "script": [
+        "q(x,y) = y >= 2^x && x > -2 && x < 2 && y < 3",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-021",
+      "group": "corners",
+      "script": [
+        "q(x,y) = y > sin(x) && y < 2 - x^2 && x > -1",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-022",
+      "group": "corners",
+      "script": [
+        "q(x,y) = !(y < 2^x) && x > -2 && x < 2 && y < 3",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "corners-vertex-023",
+      "group": "corners",
+      "script": [
+        "k = 2",
+        "q(x,y) = x > 0 && sin(x y) > k",
+        "P = Vertex(q)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "k", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "k": { "type": "number", "defined": true, "value": -2.0 },
+          "q": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 0.0],
+              [-1.0, 3.0, 0.0],
+              [-0.5, 2.0, 0.0],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 1.0],
+              [4.0, -7.0, 1.0],
+              [8.0, -15.0, 1.0]
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
     }
   ]
 }

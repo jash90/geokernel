@@ -860,7 +860,11 @@ final class Session {
                 }
                 GeoElement previous = objects.putIfAbsent(label, geo);
                 if (previous != null && previous != geo) {
-                    throw new IllegalStateException("label used twice: " + label);
+                    // A removed output frees its label, which a new output can take.
+                    if (previous.isLabelSet() && label.equals(previous.getLabelSimple())) {
+                        throw new IllegalStateException("label used twice: " + label);
+                    }
+                    objects.put(label, geo);
                 }
             }
         }

@@ -101,11 +101,20 @@ pub fn load_with_assets(
             .apply(&mut c)
             .map_err(|message| ScriptError { line: 1, message })?;
     }
+    let mut groups = BoundaryOutputs::for_script(src);
     for (i, raw) in src.lines().enumerate() {
-        exec(&mut c, raw).map_err(|message| ScriptError {
+        let slider = slider_assignment_target(&c, raw);
+        let before = c.len();
+        let first = exec(&mut c, raw).map_err(|message| ScriptError {
             line: i + 1,
             message,
         })?;
+        if let Some(first) = first.filter(|_| c.len() > before) {
+            groups.record(&c, raw, first, c.len() - before);
+        }
+        if let Some(id) = slider {
+            groups.grow(&mut c, id, |_, _, _| {});
+        }
     }
     c.prune_image_assets();
     Ok(c)
@@ -578,6 +587,16 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     result
 }
 
+/// The number that a slider assignment such as `b = 10` sets: a growing
+/// command that depends on it can reveal more outputs.
+pub fn slider_assignment_target(c: &Construction, line: &str) -> Option<Id> {
+    if !is_slider_assignment(c, line) {
+        return None;
+    }
+    let (name, _) = split_comment(line).0.split_once('=')?;
+    c.id(name.trim())
+}
+
 /// Whether the line assigns a literal value to an existing slider.
 pub fn is_slider_assignment(c: &Construction, line: &str) -> bool {
     assignment(split_comment(line).0)
@@ -817,6 +836,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if rhs.starts_with("Vertex") || rhs.starts_with("Corner") {
         if let Some((func @ ("Vertex" | "Corner"), args)) = split_call(rhs) {
             if let Some(source) = PointDef::inequality_source(c, func, &args) {
+                if crate::expr::inequality::fails(c, source) {
+                    return Err(INEQUALITY_FAILURE.into());
+                }
                 let count = crate::expr::inequality::vertices(c, source).len().max(1);
                 return add_outputs(c, name, PointDef::inequality_slots(source, count)).map(Some);
             }
@@ -1599,6 +1621,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         return Some(Ok(defs));
     }
     if let Some(source) = PointDef::inequality_source(c, func, &args) {
+        if crate::expr::inequality::fails(c, source) {
+            return Some(Err(INEQUALITY_FAILURE.into()));
+        }
         let count = crate::expr::inequality::vertices(c, source).len().max(1);
         return Some(Ok(PointDef::inequality_slots(source, count)));
     }
@@ -1775,6 +1800,10 @@ fn rotated_point_label(c: &Construction, from: Id, angle: &str) -> String {
     }
     unreachable!("the label sequence is infinite")
 }
+
+/// The error of a vertex command whose inequality cannot test its
+/// candidates (see [`crate::expr::inequality::fails`]).
+const INEQUALITY_FAILURE: &str = "an inequality border is neither polynomial nor a function";
 
 /// `Construction.buildIndexedLabel`: the first `p_{n}` that is free, where
 /// for `n < 10` the short form `p_n` must be free too.

@@ -64,17 +64,6 @@ fn snapshot_labels(comment: &str) -> Option<&str> {
     }
 }
 
-fn has_recorded_growth(src: &str) -> bool {
-    src.lines().any(|line| {
-        !line.trim_start().starts_with("$imageAsset(")
-            && split_comment(line)
-                .0
-                .split_once('=')
-                .and_then(|(_, rhs)| boundary_slot_owner(rhs.trim()))
-                .is_some()
-    })
-}
-
 /// One accepted line and the objects it created.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Entry {
@@ -1475,8 +1464,8 @@ impl Log {
     pub fn load_tolerant(src: &str, checked: bool) -> (Construction, Log, Vec<Rejected>) {
         let mut c = Construction::new();
         let mut log = Log::default();
-        let mut groups = BoundaryOutputs::default();
-        let grow = !checked && !has_recorded_growth(src);
+        let mut groups = BoundaryOutputs::for_script(src);
+        let grow = !checked;
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
         for (i, raw) in src.lines().enumerate() {
@@ -1531,9 +1520,13 @@ impl Log {
                     None => check_names(&line).and_then(|()| {
                         let expected = (checked || listed.is_some()).then_some(named.as_slice());
                         let before = c.len();
+                        let slider = geo_kernel::script::slider_assignment_target(&c, &line);
                         let first = log.define_checked(&mut c, &line, expected)?;
                         if let Some(id) = first.filter(|_| grow && c.len() > before) {
                             groups.record(&c, &line, id, c.len() - before);
+                        }
+                        if let Some(id) = slider.filter(|_| grow) {
+                            log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
                         }
                         Ok(())
                     }),
@@ -1627,8 +1620,10 @@ impl Log {
             asset.apply(&mut c)?;
             log.record_asset(Some(asset.clone()));
         }
-        let mut groups = BoundaryOutputs::default();
-        let grow = !has_recorded_growth(src);
+        let mut groups = BoundaryOutputs::for_script(src);
+        // Growth during replay stops before the slots that the script
+        // records itself (`BoundaryOutputs::for_script`).
+        let grow = true;
         for (i, raw) in src.lines().enumerate() {
             let at = |e: String| format!("line {}: {e}", i + 1);
             if let Some(asset) = saved::load_image_asset(&mut c, raw) {
@@ -1652,6 +1647,7 @@ impl Log {
             let labels = comment
                 .and_then(snapshot_labels)
                 .map(|labels| labels.split(',').map(str::trim).collect::<Vec<_>>());
+            let slider = geo_kernel::script::slider_assignment_target(&c, &line);
             let first = labels
                 .as_ref()
                 .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))
@@ -1660,6 +1656,9 @@ impl Log {
             log.record_definition(&c, before, first, &line);
             if let Some(id) = first.filter(|_| grow && c.len() > before) {
                 groups.record(&c, &line, id, c.len() - before);
+            }
+            if let Some(id) = slider.filter(|_| grow) {
+                log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
             }
         }
         log.prune_image_assets(&mut c);

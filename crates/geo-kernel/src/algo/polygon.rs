@@ -1092,6 +1092,12 @@ fn is_free(c: &Construction, taken: &Taken, label: &str) -> bool {
     c.id(label).is_none() && !taken.contains(label) && !RESERVED.contains(&label)
 }
 
+/// The label GeoGebra gives a new point without a name
+/// (`GeoElement.setLabel(null)` of a point).
+pub(crate) fn default_point_label(c: &Construction) -> String {
+    next_indexed_label(c, &Taken::new(), POINT_LABELS)
+}
+
 /// `LabelManager.getNextIndexedLabel`: the first free label of `c0, c1,
 /// ..., c0_1, c1_1, ...` (the short form `c_1` below index 10, which needs
 /// `c_{1}` to be free too, and `c_{10}` from 10 on).
