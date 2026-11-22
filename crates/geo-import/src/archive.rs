@@ -20,6 +20,8 @@ pub const MAX_ZIP_ENTRIES: usize = 4096;
 
 /// The name of the construction in a `.ggb` archive.
 pub const XML_FILE: &str = "geogebra.xml";
+pub(crate) const JAVASCRIPT_FILE: &str = "geogebra_javascript.js";
+pub(crate) const MAX_JAVASCRIPT_BYTES: u64 = 1 << 20;
 
 /// Whether `bytes` start like a zip archive.
 pub fn is_zip(bytes: &[u8]) -> bool {
@@ -168,6 +170,19 @@ impl<'a> AssetArchive<'a> {
             true
         })?;
         Ok(Self { bytes, offsets })
+    }
+
+    pub(crate) fn javascript(&self) -> Result<Vec<u8>, ImportError> {
+        let name = JAVASCRIPT_FILE.as_bytes();
+        let Some(offset) = self.offsets.get(name) else {
+            return Ok(Vec::new());
+        };
+        let entry = read_entry(self.bytes, *offset)?;
+        if entry.size > MAX_JAVASCRIPT_BYTES {
+            return Err(zip_error("the JavaScript library is too large"));
+        }
+        let data = entry_data(self.bytes, &entry, name)?;
+        extract_entry(entry, data)
     }
 
     pub(crate) fn image_entry(&self, name: &str) -> Result<(Entry, &[u8]), String> {

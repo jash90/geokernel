@@ -12,6 +12,8 @@ use crate::toolbar;
 use eframe::egui::{self, Rect, Stroke, Ui, UiBuilder};
 pub use geo_app_core::app::{parse_number, App, ViewRequest};
 use geo_app_core::text::{self, Label};
+use geo_app_core::workbench::FileView;
+use std::io::Write;
 use std::path::Path;
 
 /// Opens a script or construction file into the window.
@@ -19,6 +21,9 @@ pub fn open(app: &mut App, path: &Path) {
     match crate::cli::load_into(&mut app.wb, path) {
         Ok(()) => {
             app.load_error = None;
+            if app.wb.file_view().is_some() {
+                app.decor = geo_app_core::app::Decor::for_document(&app.wb);
+            }
             app.drag = None;
             // The tool's picks belonged to the other document.
             app.reset_tool();
@@ -163,6 +168,75 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         toolbar::show(app, ui)
     });
     number_dialog(app, &ctx);
+    save_dialog(app, &ctx);
+}
+
+fn save_dialog(app: &mut App, ctx: &egui::Context) {
+    let Some(path) = &mut app.save_path else {
+        return;
+    };
+    let response = egui::Modal::new(egui::Id::unique("save-ggb")).show(ctx, |ui| {
+        ui.heading(text::label(Label::SaveAsGgb));
+        ui.label(text::label(Label::SavePath));
+        ui.add(egui::TextEdit::singleline(path).desired_width(320.0));
+        ui.horizontal(|ui| {
+            (
+                ui.add_enabled(
+                    !path.trim().is_empty(),
+                    egui::Button::new(text::label(Label::SaveFile)),
+                )
+                .clicked(),
+                ui.button(text::label(Label::Cancel)).clicked(),
+            )
+        })
+        .inner
+    });
+    let (save, cancel) = response.inner;
+    if save {
+        let path = Path::new(path.trim()).with_extension("ggb");
+        if let Err(error) = save_to(app, &path) {
+            app.load_error = Some(format!(
+                "{} ({})\n{error}",
+                text::label(Label::SaveFailed),
+                path.display()
+            ));
+        }
+    }
+    if save || cancel || response.should_close() {
+        app.save_path = None;
+    }
+}
+
+fn save_to(app: &App, path: &Path) -> Result<(), String> {
+    let view = app.view.map(|(rect, transform)| {
+        let (x, y) = transform.world_to_screen(0.0, 0.0);
+        FileView {
+            size: [
+                (rect.width().round() as u32).max(1),
+                (rect.height().round() as u32).max(1),
+            ],
+            origin: [x - f64::from(rect.left()), y - f64::from(rect.top())],
+            scale: [transform.xscale(), transform.yscale()],
+            axes: app
+                .wb
+                .file_view()
+                .filter(|view| view.axes.into_iter().any(|axis| axis) == app.decor.axes)
+                .map_or([app.decor.axes; 2], |view| view.axes),
+            grid: app.decor.grid,
+        }
+    });
+    let bytes = app.wb.export_ggb(view).map_err(|e| e.to_string())?;
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(|e| e.to_string())?;
+    if let Err(error) = file.write_all(&bytes) {
+        drop(file);
+        let _ = std::fs::remove_file(path);
+        return Err(error.to_string());
+    }
+    Ok(())
 }
 
 /// The dialog of a tool that needs a number.

@@ -269,3 +269,13 @@ step times, accepted states and endpoints.
 Curvature of general function and parametric inputs uses a five-point
 finite difference of the kernel's first derivative where a second derivative
 is needed.
+
+## Construction export
+
+| Area | GeoGebra | geokernel | Reason |
+| --- | --- | --- | --- |
+| Object kinds | Formula, implicit curve, pen stroke and turtle objects can be saved. | Files contain objects represented by the kernel. Axes are saved as view settings. A LaTeX text is a text element. | The kind matrix records the classes available in the kernel. |
+| Command forms and history | A file can carry growing output groups, intersection branch history, and generated helpers for native commands. | The writer uses current values and the journal's labelled outputs. History-dependent forms, such as a regular polygon whose vertex count changed, may reopen with different output slots. Kernel-only definitions such as boundary replay slots are refused. | The two kernels use different representations of command state. The export gate covers representative cases by kind. |
+| Appearance | Documents can store custom default styles, per-object color and fill, dash styles, label modes, fixed flags, and dozens of additional style settings. | Colors come from the application palette. The writer stores visibility, layer, label visibility and offset, line thickness, angle and equation style, slider endpoints, control captions and text presentation available in the document. The remaining imported appearance flags remain informational. | The retained presentation model determines which styles survive editing and a second save. |
+| Graphics and worksheet settings | Multiple views, view-dependent bounds, per-axis options, grid spacing, dock layout and worksheet metadata can be saved. | The primary view stores origin, size, two scales, axis visibility and grid visibility. The app has one axes toggle. Kernel rounding and angle unit pass through the file. | The application uses one graphics view and automatic ticks. |
+| Archive extras | Optional thumbnails, construction defaults, macros and non-raster assets can be included. | The archive includes construction XML, referenced PNG, JPEG or GIF bytes, and any retained JavaScript library. Object scripts are written with scripting disabled. | The application stores raster assets and treats imported scripts as data. |

@@ -40,6 +40,7 @@
 
 pub mod archive;
 pub mod convert;
+pub mod export;
 pub mod xml;
 
 use std::fmt;
@@ -51,6 +52,8 @@ pub struct Imported {
     pub script: Vec<String>,
     /// Raster sources for replay without serializing or decoding them again.
     pub image_assets: Vec<geo_kernel::script::saved::Property>,
+    /// Global JavaScript carried as inert archive data.
+    pub javascript: Vec<u8>,
     /// Every object that could not be imported, including the objects that
     /// depend on one that was skipped.
     pub skipped: Vec<Skipped>,
@@ -60,6 +63,10 @@ pub struct Imported {
     pub conditions: Vec<(String, String)>,
     /// The kernel settings of the file.
     pub settings: Settings,
+    /// The primary graphics view, when the file supplies its size and transform.
+    pub view: Option<export::View>,
+    /// Offsets of object labels, in graphics-view pixels.
+    pub label_offsets: std::collections::BTreeMap<String, (f64, f64)>,
     /// Things worth telling the user that are not an object (for example that
     /// the file was saved with continuity on).
     pub notes: Vec<String>,
@@ -203,14 +210,17 @@ pub fn import_for_replay(bytes: &[u8]) -> Result<Imported, ImportError> {
         let text = archive::extract_xml(bytes)?;
         xml::parse(&text)?
     };
-    let archive = (archive::is_zip(bytes)
-        && doc
-            .items
-            .iter()
-            .any(|item| matches!(item, xml::Item::Element(element) if element.kind == "image")))
-    .then(|| archive::AssetArchive::new(bytes))
-    .transpose()?;
-    convert::convert_with_assets(doc, archive.as_ref())
+    let archive = archive::is_zip(bytes)
+        .then(|| archive::AssetArchive::new(bytes))
+        .transpose()?;
+    let mut imported = convert::convert_with_assets(doc, archive.as_ref())?;
+    if let Some(archive) = archive {
+        match archive.javascript() {
+            Ok(script) => imported.javascript = script,
+            Err(error) => imported.notes.push(format!("JavaScript library: {error}")),
+        }
+    }
+    Ok(imported)
 }
 
 /// Whether `bytes` look like a construction file (a zip archive, or XML whose

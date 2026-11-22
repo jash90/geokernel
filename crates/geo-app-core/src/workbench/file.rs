@@ -5,6 +5,8 @@
 
 use super::Workbench;
 use crate::scriptlog::{Log, Rejected};
+use geo_import::export::{self, Definition, Presentation, View};
+use geo_kernel::script::saved::Property;
 
 /// The format of `snapshot_text`. Its first line is a script comment, so a
 /// snapshot is also a plain script; `restore_text` reads exactly this
@@ -20,22 +22,97 @@ impl Workbench {
     /// script. `name` prefixes every error. On error the document is
     /// unchanged.
     pub fn load_bytes(&mut self, bytes: &[u8], name: &str) -> Result<(), String> {
+        self.load_document(bytes, name, false)
+    }
+
+    /// Loads a source for conversion, requiring every object to import and agree.
+    pub fn load_for_export(&mut self, bytes: &[u8], name: &str) -> Result<(), String> {
+        self.load_document(bytes, name, true)
+    }
+
+    fn load_document(&mut self, bytes: &[u8], name: &str, complete: bool) -> Result<(), String> {
         if geo_import::looks_like_construction(bytes) {
             let imported =
                 geo_import::import_for_replay(bytes).map_err(|e| format!("{name}: {e}"))?;
+            if complete && (!imported.skipped.is_empty() || !imported.mismatched.is_empty()) {
+                let detail = imported
+                    .skipped
+                    .first()
+                    .map(|s| format!("{}: {}", s.label, s.reason))
+                    .or_else(|| {
+                        imported.mismatched.first().map(|m| {
+                            format!("{}: saved {}, computed {}", m.label, m.saved, m.computed)
+                        })
+                    })
+                    .unwrap_or_default();
+                return Err(format!(
+                    "{name}: {} skipped objects and {} saved value mismatches ({detail})",
+                    imported.skipped.len(),
+                    imported.mismatched.len()
+                ));
+            }
             let notice = import_notice(&imported);
-            return self
-                .load_imported_with_conditions(
-                    &imported.script.join("\n"),
-                    &imported.image_assets,
-                    &imported.hidden,
-                    &imported.conditions,
-                    notice,
-                )
-                .map_err(|e| format!("{name}: {e}"));
+            self.load_imported_with_conditions(
+                &imported.script.join("\n"),
+                &imported.image_assets,
+                &imported.hidden,
+                &imported.conditions,
+                notice,
+            )
+            .map_err(|e| format!("{name}: {e}"))?;
+            self.file_settings = imported.settings;
+            self.file_javascript = imported.javascript;
+            self.file_view = imported.view;
+            self.label_offsets = imported.label_offsets;
+            return Ok(());
         }
         let src = std::str::from_utf8(bytes).map_err(|e| format!("{name}: {e}"))?;
         self.load_script(src).map_err(|e| format!("{name}: {e}"))
+    }
+
+    /// The primary view saved by the document, when present.
+    pub fn file_view(&self) -> Option<View> {
+        self.file_view
+    }
+
+    /// Exports the live document. The window can provide its current view.
+    pub fn export_ggb(&self, view: Option<View>) -> Result<Vec<u8>, export::ExportError> {
+        let c = self.construction();
+        let palette = self.palette();
+        let mut presentation = Presentation {
+            view: view.or(self.file_view).unwrap_or_default(),
+            settings: self.file_settings.clone(),
+            javascript: &self.file_javascript,
+            hidden: self.log.hidden.iter().map(String::as_str).collect(),
+            ..Presentation::default()
+        };
+        for id in self.object_ids() {
+            let label = c.label(id);
+            let color = palette.color(id);
+            presentation
+                .colors
+                .insert(label, [color.r, color.g, color.b]);
+            if let Some(condition) = self.log.condition_source(label) {
+                presentation.conditions.insert(label, condition);
+            }
+            if let Some((x, y)) = self.label_offset(id) {
+                presentation
+                    .label_offsets
+                    .insert(label, (x as i32, y as i32));
+            }
+        }
+        for property in self.log.saved_properties() {
+            if let Property::SliderBounds { label, bounds } = property {
+                presentation
+                    .slider_bounds
+                    .insert(label, bounds.each_ref().map(|b| b.as_deref()));
+            }
+        }
+        let definitions = self.log.entries().map(|entry| Definition {
+            line: &entry.line,
+            outputs: &entry.labels,
+        });
+        export::ggb(c, definitions, &presentation)
     }
 
     /// The whole document as a script that `restore_text` (or `load_bytes`)

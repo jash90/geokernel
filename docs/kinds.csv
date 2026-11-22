@@ -1,30 +1,30 @@
 kind,upstream,kernel_kind,kernel_golden,svg,app_draw,pointer_hit,tool,algebra_text,import,export,notes
-Point,POINT,Point,yes,yes,yes,yes,yes,yes,yes,no,
-Line,LINE,Line,yes,yes,yes,yes,yes,yes,yes,no,
-Segment,SEGMENT,Segment,yes,yes,yes,yes,yes,yes,yes,no,
-Ray,RAY,Ray,yes,yes,yes,yes,yes,yes,yes,no,
-Vector,VECTOR,Vector,yes,yes,yes,yes,yes,yes,yes,no,
-Circle,CONIC,Circle,yes,yes,yes,yes,yes,yes,yes,no,a circle is a conic upstream; the kernel keeps it as its own kind
-Conic,CONIC,Conic,yes,yes,yes,yes,yes,yes,yes,no,the SVG view fits bounded conics; the importer refuses free conics but the image of a conic under a transformation imports
-Arc,CONICPART,Arc,yes,yes,yes,partial,yes,no,yes,no,
-Sector,CONICPART,Sector,yes,yes,yes,yes,yes,no,yes,no,
-Number,NUMERIC,Number,yes,no,no,no,yes,yes,yes,no,no sliders
-Angle,ANGLE,Angle,yes,partial,partial,partial,yes,yes,partial,no,angles with drawable geometry have a sector or right-angle marker; import supports angles made by commands
-Boolean,BOOLEAN,Boolean,yes,no,no,no,no,partial,partial,no,the algebra text is the debug form of the value; only booleans a command makes are imported
-Function,FUNCTION,Function,yes,yes,yes,partial,no,yes,partial,no,Single-variable saved functions with supported expressions
-Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,no,
-PolyLine,POLYLINE,PolyLine,yes,yes,yes,yes,yes,yes,yes,no,
-List,LIST,List,yes,no,no,no,no,no,partial,no,Saved lists with supported expressions and commands
+Point,POINT,Point,yes,yes,yes,yes,yes,yes,yes,partial,
+Line,LINE,Line,yes,yes,yes,yes,yes,yes,yes,partial,
+Segment,SEGMENT,Segment,yes,yes,yes,yes,yes,yes,yes,partial,
+Ray,RAY,Ray,yes,yes,yes,yes,yes,yes,yes,partial,
+Vector,VECTOR,Vector,yes,yes,yes,yes,yes,yes,yes,partial,
+Circle,CONIC,Circle,yes,yes,yes,yes,yes,yes,yes,partial,a circle is a conic upstream; the kernel keeps it as its own kind
+Conic,CONIC,Conic,yes,yes,yes,yes,yes,yes,yes,partial,the SVG view fits bounded conics; the importer refuses free conics but the image of a conic under a transformation imports
+Arc,CONICPART,Arc,yes,yes,yes,partial,yes,no,yes,partial,
+Sector,CONICPART,Sector,yes,yes,yes,yes,yes,no,yes,partial,
+Number,NUMERIC,Number,yes,no,no,no,yes,yes,yes,partial,saved slider values and bounds
+Angle,ANGLE,Angle,yes,partial,partial,partial,yes,yes,partial,partial,angles with drawable geometry have a sector or right-angle marker
+Boolean,BOOLEAN,Boolean,yes,no,no,no,no,partial,partial,partial,dependent booleans and saved checkboxes
+Function,FUNCTION,Function,yes,yes,yes,partial,no,yes,partial,partial,Single-variable saved functions with supported expressions
+Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,partial,
+PolyLine,POLYLINE,PolyLine,yes,yes,yes,yes,yes,yes,yes,partial,
+List,LIST,List,yes,no,no,no,no,no,partial,partial,Saved lists with supported expressions and commands
 Axis,AXIS,,no,no,no,no,no,no,no,no,the window draws the axes from the view settings
-Text,TEXT,Text,yes,no,yes,no,no,yes,yes,no,Static and dependent texts with saved world or pixel placement. LaTeX markup is drawn as plain text.
+Text,TEXT,Text,yes,no,yes,no,no,yes,yes,partial,Static and dependent texts with saved world or pixel placement. LaTeX markup is drawn as plain text.
 Formula,FORMULA,,no,no,no,no,no,no,no,no,
-Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,no,Tracing loci and integral curves from slopes. Discrete geometry commands also produce loci.
-CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,no,Cartesian coordinates and parameter interval for Length
+Locus,LOCUS,Locus,yes,yes,yes,no,no,no,yes,partial,Tracing loci and integral curves from slopes. Discrete geometry commands also produce loci.
+CurveCartesian,CURVE_CARTESIAN,Curve,yes,no,no,no,no,no,yes,partial,Cartesian coordinates and parameter interval for Length
 ImplicitCurve,IMPLICIT_POLY,,no,no,no,no,no,no,no,no,
-FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,no,no,two-variable numeric functions from equation sides
-Image,IMAGE,Image,no,no,yes,no,no,yes,yes,no,PNG and JPEG and first-frame GIF; checked against the saved archive fixtures
-PieChart,PIECHART,PieChart,yes,no,yes,no,no,yes,no,no,Clockwise sectors with a world center and radius
-InputBox,TEXTFIELD,InputBox,no,no,no,no,no,no,yes,no,linked object retained on import
-Button,BUTTON,Button,no,no,no,no,no,no,yes,no,caption and inert scripts retained on import
+FunctionNVar,FUNCTION_NVAR,FunctionNVar,yes,no,no,no,no,yes,partial,partial,saved numeric functions with supported definitions
+Image,IMAGE,Image,no,no,yes,no,no,yes,yes,yes,PNG and JPEG and first-frame GIF; checked against the saved archive fixtures
+PieChart,PIECHART,PieChart,yes,no,yes,no,no,yes,partial,partial,Clockwise sectors with a world center and radius
+InputBox,TEXTFIELD,InputBox,no,no,no,no,no,no,yes,yes,linked object retained on import
+Button,BUTTON,Button,no,no,no,no,no,no,yes,yes,caption and inert scripts retained on import
 PenStroke,PENSTROKE,,no,no,no,no,no,no,no,no,
 Turtle,TURTLE,,no,no,no,no,no,no,no,no,out of 1.0 (scripting is out of scope)

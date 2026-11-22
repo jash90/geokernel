@@ -1123,7 +1123,7 @@ impl Construction {
 
     /// Includes homogeneous coordinates so algorithms that read the raw
     /// fields see scale changes even when the Cartesian value is unchanged.
-    pub(crate) fn stored_value(&self, id: Id) -> Value {
+    pub fn stored_value(&self, id: Id) -> Value {
         self.values
             .get(id.0)
             .copied()

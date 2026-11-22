@@ -212,6 +212,12 @@ fn flat_button(
 fn main_menu(app: &mut App, button: &Response) {
     egui::Popup::menu(button).show(|ui| {
         ui.set_min_width(200.0);
+        ui.menu_button(text::label(Label::File), |ui| {
+            if ui.button(text::label(Label::SaveAsGgb)).clicked() {
+                app.save_path = Some("construction.ggb".into());
+                ui.close();
+            }
+        });
         ui.checkbox(&mut app.decor.axes, text::label(Label::Axes));
         ui.checkbox(&mut app.decor.grid, text::label(Label::Grid));
         if ui.button("Widok standardowy").clicked() {

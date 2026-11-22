@@ -779,7 +779,7 @@ fn call_closes_at_end(rhs: &str, open: usize) -> bool {
 
 /// `Name(args)` split into the name and the trimmed arguments; `None` for
 /// anything else (a point literal, a number, a malformed line).
-pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
+pub fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     if rhs.starts_with('(') {
         return None;
     }

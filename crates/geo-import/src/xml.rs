@@ -57,6 +57,7 @@ pub struct Element {
     pub shown: bool,
     pub layer: u8,
     pub label_shown: Option<bool>,
+    pub label_offset: Option<[i32; 2]>,
     pub thickness: Option<u8>,
     /// `<coords>` as written: `x`, `y`, `z`.
     pub coords: Option<[String; 3]>,
@@ -132,6 +133,7 @@ pub enum Item {
 pub struct Document {
     pub items: Vec<Item>,
     pub settings: Settings,
+    pub view: Option<crate::export::View>,
     /// How many `<construction>` tags the file has. GeoGebra's reader appends
     /// the elements of a second one to the first, and so does the importer.
     pub constructions: usize,
@@ -141,6 +143,77 @@ pub struct Document {
     pub function_path_bounds: Option<[f64; 2]>,
     /// Base font size used by older text elements with an additive size.
     pub gui_font_size: Option<f64>,
+}
+
+#[derive(Default)]
+struct SavedView {
+    second: bool,
+    size: Option<[u32; 2]>,
+    width: Option<f64>,
+    x: Option<f64>,
+    y: Option<f64>,
+    sx: Option<f64>,
+    sy: Option<f64>,
+    axes: [Option<bool>; 2],
+    both_axes: Option<bool>,
+    grid: Option<bool>,
+}
+
+impl SavedView {
+    fn file_view(&self) -> Option<crate::export::View> {
+        let size = self.size?;
+        let origin = [self.x?, self.y?];
+        let scale = [self.sx?, self.sy.or(self.sx)?];
+        (size.iter().all(|&n| n > 0)
+            && origin.iter().all(|x| x.is_finite())
+            && scale.iter().all(|s| s.is_finite() && *s > 0.0))
+        .then_some(crate::export::View {
+            size,
+            origin,
+            scale,
+            axes: self
+                .axes
+                .map(|axis| axis.or(self.both_axes).unwrap_or(true)),
+            grid: self.grid.unwrap_or(false),
+        })
+    }
+
+    fn read(&mut self, name: &str, e: &BytesStart) -> Result<(), ImportError> {
+        let value = |key| attr(e, key);
+        let number = |key| value(key).map(|s| s.and_then(|n| n.parse::<f64>().ok()));
+        let flag = |key| value(key).map(|s| s.and_then(|n| n.parse::<bool>().ok()));
+        match name {
+            "viewNumber" => self.second = value("viewNo")?.is_some_and(|n| n != "1"),
+            "size" => {
+                let width = value("width")?;
+                self.width = width.as_deref().and_then(|n| n.parse().ok());
+                self.size = width
+                    .and_then(|n| n.parse().ok())
+                    .zip(value("height")?.and_then(|n| n.parse().ok()))
+                    .map(|(w, h)| [w, h]);
+            }
+            "coordSystem" => {
+                self.x = number("xZero")?;
+                self.y = number("yZero")?;
+                self.sx = number("scale")?;
+                self.sy = number("yscale")?;
+            }
+            "evSettings" => {
+                self.both_axes = flag("axes")?;
+                self.grid = flag("grid")?;
+            }
+            "axis" => {
+                if let Some(axis) = value("id")?
+                    .and_then(|n| n.parse::<usize>().ok())
+                    .and_then(|i| self.axes.get_mut(i))
+                {
+                    *axis = flag("show")?;
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
 }
 
 fn bad(e: impl std::fmt::Display) -> ImportError {
@@ -372,18 +445,10 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "euclidianView"
                     if !in_construction && !empty && doc.function_path_bounds.is_none() =>
                 {
-                    view = Some((None, None, None, None));
+                    view = Some(SavedView::default());
                 }
-                "viewNumber" if view.is_some() => {
-                    view.as_mut().expect("checked above").0 = attr(e, "viewNo")?;
-                }
-                "size" if view.is_some() => {
-                    view.as_mut().expect("checked above").1 = attr(e, "width")?;
-                }
-                "coordSystem" if view.is_some() => {
-                    let view = view.as_mut().expect("checked above");
-                    view.2 = attr(e, "xZero")?;
-                    view.3 = attr(e, "scale")?;
+                "viewNumber" | "size" | "coordSystem" | "evSettings" | "axis" if view.is_some() => {
+                    view.as_mut().expect("checked above").read(&name, e)?;
                 }
                 "continuous" | "decimals" | "significantfigures" | "angleUnit" if in_kernel => {
                     let val = attr(e, "val")?.unwrap_or_default();
@@ -520,6 +585,12 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 {
                     read_image(element.as_mut().expect("checked above"), &name, e)?;
                 }
+                "labelOffset" if element.as_ref().is_some_and(|el| el.kind != "text") => {
+                    let x = attr(e, "x")?.and_then(|n| n.parse().ok());
+                    let y = attr(e, "y")?.and_then(|n| n.parse().ok());
+                    element.as_mut().expect("checked above").label_offset =
+                        x.zip(y).map(|(x, y)| [x, y]);
+                }
                 "startPoint" | "absoluteScreenLocation" | "labelOffset" | "isLaTeX" | "font"
                     if element.as_ref().is_some_and(|el| el.kind == "text") =>
                 {
@@ -554,16 +625,10 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 "kernel" => in_kernel = false,
                 "gui" => in_gui = false,
                 "euclidianView" => {
-                    if let Some((number, width, xzero, scale)) = view.take() {
+                    if let Some(view) = view.take().filter(|v| !v.second) {
+                        doc.view = view.file_view();
                         doc.function_path_bounds = (|| {
-                            if number.as_deref().is_some_and(|n| n != "1") {
-                                return None;
-                            }
-                            let (width, xzero, scale): (f64, f64, f64) = (
-                                width?.parse().ok()?,
-                                xzero?.parse().ok()?,
-                                scale?.parse().ok()?,
-                            );
+                            let (width, xzero, scale) = (view.width?, view.x?, view.sx?);
                             let (min, max) = (-xzero / scale, (width - xzero) / scale);
                             (scale > 0.0 && min.is_finite() && max.is_finite() && min < max)
                                 .then_some([min, max])

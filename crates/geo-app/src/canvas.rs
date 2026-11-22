@@ -121,9 +121,15 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     .and_then(|t| Camera::fit_drawn(c, t, w, h, app.rules.scale_limits))
                     .unwrap_or_else(|| Camera::fit(bounds, w, h, app.rules.scale_limits))
             }
-            Some(ViewRequest::Initial) | None => {
-                Camera::initial(bounds, w, h, app.rules.scale_limits)
-            }
+            Some(ViewRequest::Initial) | None => app.wb.file_view().map_or_else(
+                || Camera::initial(bounds, w, h, app.rules.scale_limits),
+                |view| Camera {
+                    cx: (f64::from(view.size[0]) / 2.0 - view.origin[0]) / view.scale[0],
+                    cy: (view.origin[1] - f64::from(view.size[1]) / 2.0) / view.scale[1],
+                    xscale: view.scale[0],
+                    yscale: view.scale[1],
+                },
+            ),
         });
         // A fit or the standard view is one undo step
         // (`setViewShowAllObjects(storeUndo)` / `setStandardView(true)`),

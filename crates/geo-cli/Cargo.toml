@@ -13,3 +13,4 @@ path = "src/main.rs"
 [dependencies]
 geo-kernel = { path = "../geo-kernel" }
 geo-import = { path = "../geo-import" }
+geo-app-core = { path = "../geo-app-core" }

@@ -155,9 +155,12 @@ pub(crate) fn convert_with_assets(
             layer: el.layer,
             ..default_style
         };
-        if c.kernel.chart(id).is_some() {
-            style.show_label = el.label_shown.unwrap_or(style.show_label);
-            style.line_thickness = el.thickness.unwrap_or(style.line_thickness);
+        style.show_label = el.label_shown.unwrap_or(style.show_label);
+        style.line_thickness = el.thickness.unwrap_or(style.line_thickness);
+        if let Some([x, y]) = el.label_offset.filter(|[x, y]| [*x, *y] != [0, 0]) {
+            c.out
+                .label_offsets
+                .insert(el.label.clone(), (f64::from(x), f64::from(y)));
         }
         if style != default_style {
             c.kernel.set_drawing_style(id, style);
@@ -172,6 +175,7 @@ pub(crate) fn convert_with_assets(
     }
     let mut out = c.out;
     out.settings = doc.settings;
+    out.view = doc.view;
     if out.settings.continuous {
         out.notes.push(
             "the construction was saved with continuity on; the kernel does not use it, so \
@@ -523,6 +527,12 @@ impl Converter {
         for (index, arg) in inputs.iter().enumerate() {
             let raw = text_command
                 || matches!(name, "Curve" | "CurveCartesian" | "Slider")
+                || (name == "Angle"
+                    && inputs.len() == 1
+                    && arg
+                        .trim()
+                        .strip_suffix('°')
+                        .is_some_and(|degrees| degrees.trim().parse::<f64>().is_ok()))
                 || (index == 0 && matches!(name, "Locus" | "SlopeField"));
             let arg = expression_line(arg)?;
             if !self.skipped.is_empty() {
@@ -1175,7 +1185,13 @@ impl Converter {
                     Err("the value is not finite".into())
                 }
             }
-            "angle" => Err("the angle has no saved definition".into()),
+            "angle" => match el.value.as_deref().and_then(num) {
+                Some(radians) if radians.is_finite() => Ok(format!(
+                    "{label} = $saved({radians} rad, {}°)",
+                    radians.to_degrees()
+                )),
+                _ => Err("the angle has no finite value".into()),
+            },
             "boolean" => Ok(control_line(
                 label,
                 "$checkBox",
@@ -1241,7 +1257,7 @@ fn expression_kind(saved_type: &str) -> Result<Kind, String> {
         "piechart" => Kind::PieChart,
         "angle" => Kind::Angle,
         "function" => Kind::Function,
-        "functionnvar" => return Err("a function with multiple variables is unsupported".into()),
+        "functionnvar" => Kind::FunctionNVar,
         "boolean" => Kind::Boolean,
         "list" => Kind::List,
         "text" => Kind::Text,
@@ -1290,12 +1306,24 @@ fn object_expression(label: &str, kind: Kind, exp: &str) -> Result<String, Strin
             quote(label)
         ));
     }
-    if kind == Kind::Function {
+    if matches!(kind, Kind::Function | Kind::FunctionNVar) {
         // The XML writer includes the signature of a named function in `exp`.
         let signature = exp.split_once('=').and_then(|(lhs, rhs)| {
             let (name, parameter) = lhs.trim_end().strip_suffix(')')?.split_once('(')?;
             (!rhs.starts_with('=')).then_some((name.trim(), parameter.trim(), rhs.trim()))
         });
+        if kind == Kind::FunctionNVar {
+            let Some((name, parameters, body)) = signature else {
+                return Err("a function of multiple variables needs a signature".into());
+            };
+            if name != label {
+                return Err("the function signature names a different object".into());
+            }
+            return Ok(format!(
+                "{label}({parameters}) = {}",
+                expression_line(body)?
+            ));
+        }
         let (parameter, body) = if let Some((name, parameter, body)) = signature {
             if name != label {
                 return Err(format!(
