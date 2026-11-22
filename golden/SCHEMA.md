@@ -216,9 +216,9 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   component magnitude of the two triples, same sign) is also counted for the
   `ggb-harness` cases and reported per group and defining command; it does
   not fail the comparison.
-- Functions: every sample is compared like a number; a `null` sample must
-  meet a value that is not finite in `geo-kernel`, and a finite value a
-  finite one.
+- Functions and curves compare each sample by the numeric rule. A `null`
+  sample requires an absent sample or NaN. For a curve with NaN in one
+  coordinate, the other coordinate must be finite or NaN.
 - Segments are compared with their end points in order.
 - Vectors are compared by `x` and `y`.
 - Booleans are compared exactly.
@@ -236,8 +236,7 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   (`Construction::arc`), raw.
 - Loci: the number of points must be equal, and each point must agree with
   the kernel's (`Construction::locus`) like two numbers per coordinate, with
-  the same `lineTo`; a `null` point must meet coordinates that are not
-  finite.
+  the same `lineTo`. A `null` point requires NaN in both coordinates.
 - Lists: the number of elements must be equal, and each element is
   compared like an object of its type, nested lists recursively
   (`Construction::elements`).

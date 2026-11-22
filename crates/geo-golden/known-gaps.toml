@@ -588,20 +588,20 @@ mismatches = ["0:g"]
 
 [[gap]]
 id = "calculus-degree-010"
-reason = "The reference exhausts its heap expanding (a x + b)^300. Its native CAS fallback returns degree zero when a is zero, but leaves the other snapshots undefined. The kernel shares the coefficient subtrees and evaluates each once, so all snapshots get a degree."
-mismatches = ["0:d", "1:d", "3:d"]
+reason = "The reference exhausts its heap expanding (a x + b)^300. Its native CAS fallback returns degree zero when a is zero, but leaves the other snapshots undefined. The kernel shares the coefficient subtrees and evaluates each once, so all snapshots get a degree. The function sample also records null where the kernel evaluates to infinity. The recording collapses infinity and NaN to the same field."
+mismatches = ["0:d", "1:d", "1:f", "3:d"]
 
 # Numerical function analysis
 
 [[gap]]
 id = "funcanalysis-asymptote-001"
-reason = "The headless harness uses CASFactoryDummy and returns an empty list for 1/x. The numeric result has the horizontal line y=0 and the pole x=0."
-mismatches = ["0:r"]
+reason = "The headless harness uses CASFactoryDummy and returns an empty list for 1/x. The numeric result has the horizontal line y=0 and the pole x=0. The function sample also records null where the kernel evaluates to infinity. The recording collapses infinity and NaN to the same field."
+mismatches = ["0:f", "0:r"]
 
 [[gap]]
 id = "funcanalysis-asymptote-002"
-reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the oblique line y=x+1 and the pole x=1."
-mismatches = ["0:r"]
+reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the oblique line y=x+1 and the pole x=1. The function sample also records null where the kernel evaluates to infinity. The recording collapses infinity and NaN to the same field."
+mismatches = ["0:f", "0:r"]
 
 [[gap]]
 id = "funcanalysis-asymptote-004"
@@ -620,8 +620,8 @@ mismatches = ["0:r"]
 
 [[gap]]
 id = "funcanalysis-asymptote-007"
-reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the logarithmic pole x=0."
-mismatches = ["0:r"]
+reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the logarithmic pole x=0. The function sample also records null where the kernel evaluates to infinity. The recording collapses infinity and NaN to the same field."
+mismatches = ["0:f", "0:r"]
 
 [[gap]]
 id = "funcanalysis-curvatureupstream-004"
@@ -984,3 +984,440 @@ mismatches = ["1:b", "2:b"]
 id = "locusequation-boolean-008"
 reason = "Editing the fixed point changes the standalone distance comparison to false. The reference condition passed to the prover reads temporary segment lengths and stays true. Both kernel comparisons use the current distances."
 mismatches = ["2:b"]
+
+# Unverified nonfinite samples
+
+[[gap]]
+id = "algebraedge-maximum-002"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "algebraedge-minimum-002"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "calculus-derivative-008"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:g"]
+
+[[gap]]
+id = "calculus-derivative-009"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g"]
+
+[[gap]]
+id = "calculus-derivative-024"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:h"]
+
+[[gap]]
+id = "calculus-derivative-027"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g"]
+
+[[gap]]
+id = "calculus-derivative-028"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g"]
+
+[[gap]]
+id = "calculus-fraction-015"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "calculus-fraction-016"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "calculus-integral-005"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "calculus-integral-020"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "cas-delegated-001"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "cas-denominator-001"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g"]
+
+[[gap]]
+id = "cas-denominator-002"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g"]
+
+[[gap]]
+id = "expr-apply-005"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f", "4:f"]
+
+[[gap]]
+id = "expr-apply-007"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f", "3:g", "3:h", "4:f", "4:g", "4:h"]
+
+[[gap]]
+id = "expr-apply-013"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["4:g"]
+
+[[gap]]
+id = "expr-apply-015"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "5:f", "6:f", "7:f"]
+
+[[gap]]
+id = "expr-decimal-040"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "expr-decimal-041"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "expr-decimal-042"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "expr-decimal-043"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "expr-fn-006"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "4:f", "5:f", "6:f"]
+
+[[gap]]
+id = "expr-fn-008"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f"]
+
+[[gap]]
+id = "expr-fn-009"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f"]
+
+[[gap]]
+id = "expr-fn-012"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f"]
+
+[[gap]]
+id = "expr-fn-019"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f"]
+
+[[gap]]
+id = "expr-fn-020"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["4:f"]
+
+[[gap]]
+id = "expr-fn-021"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f"]
+
+[[gap]]
+id = "expr-fnprec-002"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f"]
+
+[[gap]]
+id = "expr-fnundef-001"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["1:h", "3:h"]
+
+[[gap]]
+id = "expr-fnundef-003"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:g", "0:h", "0:k", "1:g", "1:h", "1:k", "2:h", "3:g", "3:h", "3:k", "4:g", "4:h", "4:k"]
+
+[[gap]]
+id = "expr-fnundef-004"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:g", "0:k", "1:k", "2:g", "2:k", "3:g", "3:k"]
+
+[[gap]]
+id = "expr-fnundef-006"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:g", "2:g", "3:g"]
+
+[[gap]]
+id = "expr-fnundef-009"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:g", "3:g"]
+
+[[gap]]
+id = "expr-var-004"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["2:f"]
+
+[[gap]]
+id = "funcanalysis-curveupstream-003"
+reason = "The recorded Cartesian curve coordinates use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:d"]
+
+[[gap]]
+id = "funcanalysis-discontinuity-003"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "funcanalysis-discontinuity-007"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "funcanalysis-inverted-001"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["2:g"]
+
+[[gap]]
+id = "geomformsreview-odenamed-001"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "georestsmall-dilatecurve-001"
+reason = "The recorded Cartesian curve coordinates use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:d", "3:q"]
+
+[[gap]]
+id = "implicit-constructors-003"
+reason = "The recorded two-variable function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["1:f"]
+
+[[gap]]
+id = "infinity-inputs-026"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["1:f", "3:f"]
+
+[[gap]]
+id = "infinity-inputs-027"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["1:f", "3:f"]
+
+[[gap]]
+id = "infinity-legacy-020"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f", "3:g", "3:h", "4:f", "4:g", "4:h"]
+
+[[gap]]
+id = "infinity-legacy-021"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["4:g"]
+
+[[gap]]
+id = "infinity-legacy-036"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "infinity-legacy-037"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "infinity-legacy-042"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["1:h", "3:h"]
+
+[[gap]]
+id = "infinity-legacy-043"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:g", "0:h", "0:k", "1:g", "1:h", "1:k", "2:h", "3:g", "3:h", "3:k", "4:g", "4:h", "4:k"]
+
+[[gap]]
+id = "infinity-legacy-044"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:g", "2:g", "3:g"]
+
+[[gap]]
+id = "infinity-legacy-074"
+reason = "The recorded Cartesian curve coordinates use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:d", "3:q"]
+
+[[gap]]
+id = "infinity-outputs-001"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-002"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-003"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-004"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-005"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-006"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-007"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-008"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-009"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-010"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-011"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-012"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-013"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-014"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-015"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-016"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-017"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "infinity-outputs-018"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "intersectfunctions-fallback-004"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "intersectfunctions-interval-004"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "intersectfunctions-line-002"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "intersections-functionline-008"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f"]
+
+[[gap]]
+id = "logic-iffn-016"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f"]
+
+[[gap]]
+id = "logic-iffn-020"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "1:f", "2:f", "3:f", "4:f"]
+
+[[gap]]
+id = "matrixdilate-inverse-001"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["2:g", "2:h"]
+
+[[gap]]
+id = "matrixdilate-inverse-002"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["3:f", "3:g"]
+
+[[gap]]
+id = "matrixdilate-inverse-003"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:h", "2:f", "2:h"]
+
+[[gap]]
+id = "matrixdilate-inverse-006"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g"]
+
+[[gap]]
+id = "tpairfixes-fnundef-006"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g"]
+
+[[gap]]
+id = "tpairfixes-fnundef-017"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g"]
+
+[[gap]]
+id = "tpairfixes-fnundef-018"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g"]
+
+[[gap]]
+id = "tpairfixes-fnundef-033"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["0:f", "0:g", "2:f", "2:g", "3:f", "3:g"]
+
+[[gap]]
+id = "tpairfixes-fnundef-034"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["1:f", "1:g"]
+
+[[gap]]
+id = "tpairfixes-fnundef-035"
+reason = "The recorded function values use null at these positions, and the kernel evaluates to signed infinity there. The recording merges infinity with NaN, so it cannot verify the sign or distinguish infinity from an undefined sample."
+mismatches = ["1:f", "1:g"]

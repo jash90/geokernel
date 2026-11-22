@@ -1573,7 +1573,7 @@ cases = ["geomclosure-textlength-001", "textobjects-dynamic-001", "textobjects-u
 [[form]]
 command = "Locus"
 form = "function,point"
-cases = ["geomclosure-ode-001", "geomformsreview-odenamed-001"]
+cases = ["geomclosure-ode-001"]
 
 [[form]]
 command = "Locus"
@@ -1627,7 +1627,7 @@ cases = ["geomextras-polygonlist-001", "geomclosure-shapelist-001"]
 [[form]]
 command = "RigidPolygon"
 form = "point,point,..."
-cases = ["geomclosure-rigid-001", "geomextras-rigidpoints-001"]
+cases = ["geomclosure-rigid-001", "geomextras-rigidpoints-001", "geomforms-rigidpolygon-004"]
 
 [[form]]
 command = "Sector"
@@ -1652,7 +1652,7 @@ cases = ["matrixdilate-upstream-001", "matrixdilate-elimination-002", "vectorfor
 [[form]]
 command = "Invert"
 form = "function"
-cases = ["vectorforms-matrixlists-009", "matrixdilate-inverse-001", "matrixdilate-inverse-002", "matrixdilate-inverse-003"]
+cases = ["vectorforms-matrixlists-009"]
 
 [[form]]
 command = "Transpose"
@@ -1817,12 +1817,12 @@ cases = ["algebralogic-extrema-005", "algebralogic-extrema-009", "algebralogic-e
 [[form]]
 command = "Min"
 form = "function,number,number"
-cases = ["algebralogic-extrema-006", "algebralogic-extrema-013", "algebraedge-minimum-001", "algebraedge-minimum-002", "algebraedge-minimum-003", "algebraedge-minimum-004", "algebraedge-minimum-005", "algebraedge-minimum-006"]
+cases = ["algebralogic-extrema-006", "algebralogic-extrema-013", "algebraedge-minimum-001", "algebraedge-minimum-003", "algebraedge-minimum-004", "algebraedge-minimum-005", "algebraedge-minimum-006"]
 
 [[form]]
 command = "Max"
 form = "function,number,number"
-cases = ["algebralogic-extrema-006", "algebralogic-extrema-013", "algebraedge-maximum-001", "algebraedge-maximum-002", "algebraedge-maximum-003", "algebraedge-maximum-004", "algebraedge-maximum-005", "algebraedge-maximum-006"]
+cases = ["algebralogic-extrema-006", "algebralogic-extrema-013", "algebraedge-maximum-001", "algebraedge-maximum-003", "algebraedge-maximum-004", "algebraedge-maximum-005", "algebraedge-maximum-006"]
 
 [[form]]
 command = "CountIf"
@@ -3020,7 +3020,7 @@ cases = ["funcanalysis-curveedge-012"]
 [[form]]
 command = "ParametricDerivative"
 form = "curve"
-cases = ["funcanalysis-curveedge-005", "funcanalysis-curveupstream-003"]
+cases = ["funcanalysis-curveedge-005"]
 
 [[form]]
 command = "Spline"
@@ -3050,7 +3050,7 @@ cases = ["funcanalysis-curveedge-006", "funcanalysis-splineupstream-005"]
 [[form]]
 command = "NInvert"
 form = "function"
-cases = ["funcanalysis-inverted-001"]
+cases = ["funcanalysis-inverted-004"]
 
 [[form]]
 command = "SolveODE"
@@ -3220,7 +3220,7 @@ cases = ["cas-prime-002"]
 [[form]]
 command = "CommonDenominator"
 form = "function,function"
-cases = ["cas-denominator-001", "cas-denominator-002"]
+cases = ["cas-denominator-003"]
 
 [[form]]
 command = "Coefficients"
@@ -3240,7 +3240,7 @@ cases = ["cas-factors-002"]
 [[form]]
 command = "Asymptote"
 form = "function"
-cases = ["cas-delegated-001"]
+cases = ["cas-delegated-004"]
 
 [[form]]
 command = "RemovableDiscontinuity"
@@ -3381,12 +3381,12 @@ cases = ["georestclip-segment-004", "georestclip-conicpart-001", "georestclip-co
 [[form]]
 command = "Dilate"
 form = "curve,number"
-cases = ["georestsmall-dilatecurve-001", "georestsmall-dilatecurve-002"]
+cases = ["georestsmall-dilatecurve-002"]
 
 [[form]]
 command = "Dilate"
 form = "curve,number,point"
-cases = ["georestsmall-dilatecurve-001", "georestsmall-dilatecurve-002", "georestsmall-dilatecurve-003"]
+cases = ["georestsmall-dilatecurve-002", "georestsmall-dilatecurve-003"]
 
 [[form]]
 command = "ApplyMatrix"
@@ -3557,7 +3557,7 @@ cases = ["implicit-constructors-001", "implicit-constructors-005", "implicit-con
 [[form]]
 command = "ImplicitCurve"
 form = "function"
-cases = ["implicit-constructors-003", "implicit-constructors-004"]
+cases = ["implicit-constructors-004"]
 
 [[form]]
 command = "ImplicitCurve"
