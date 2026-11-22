@@ -1257,6 +1257,13 @@ impl Construction {
         }
     }
 
+    /// The current value of a numeric expression over the objects of the
+    /// construction, which stays unchanged. `None` when the text is not such
+    /// an expression.
+    pub fn numeric_value(&self, source: &str) -> Option<f64> {
+        expr::argument_number(self, source)
+    }
+
     /// The value of the function `id` at `x`, evaluated as GeoGebra's
     /// `GeoFunction.value` does; it may be infinite or `NaN` where the
     /// function is not defined. `None` when `id` is not a defined function.

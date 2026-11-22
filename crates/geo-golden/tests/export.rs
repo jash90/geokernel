@@ -61,6 +61,15 @@ const SAVED_CASES: &[&str] = &[
     "saved-slider-bounds-001.xml",
     "saved-texts-001.ggb",
     "saved-text-equations-001.xml",
+    // Presentation properties per kind, set by the reference application.
+    "saved-styles-001.xml",
+    "saved-styles-002.xml",
+    "saved-styles-003.xml",
+    "saved-styles-004.xml",
+    "saved-styles-005.xml",
+    "saved-styles-006.xml",
+    "saved-styles-007.xml",
+    "saved-styles-008.ggb",
 ];
 
 const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
@@ -104,7 +113,11 @@ fn labelled(c: &Construction) -> BTreeMap<&str, Id> {
         .collect()
 }
 
-fn corpus() -> Vec<(String, Workbench, Option<FileView>)> {
+/// A document to export: its name, the live workbench, the view of a golden
+/// case, and the bytes of the file it was opened from.
+type Case = (String, Workbench, Option<FileView>, Option<Vec<u8>>);
+
+fn corpus() -> Vec<Case> {
     let mut cases: BTreeMap<_, _> = load_all(&repo_root())
         .unwrap()
         .into_iter()
@@ -145,18 +158,18 @@ fn corpus() -> Vec<(String, Workbench, Option<FileView>)> {
             scale: [sx, sy],
             ..FileView::default()
         });
-        out.push((name.into(), wb, view));
+        out.push((name.into(), wb, view, None));
     }
     for &file in SAVED_CASES {
         let mut wb = Workbench::default();
         let bytes = fs::read(repo_root().join("golden/ggb/saved").join(file)).unwrap();
         wb.load_for_export(&bytes, file).unwrap();
         let name = file.split_once('.').unwrap().0;
-        out.push((name.into(), wb, None));
+        out.push((name.into(), wb, None, Some(bytes)));
     }
     let mut styled = Workbench::default();
     styled.load_for_export(STYLED_FILE, "styled").unwrap();
-    out.push(("styled".into(), styled, None));
+    out.push(("styled".into(), styled, None, Some(STYLED_FILE.to_vec())));
     out
 }
 
@@ -247,6 +260,28 @@ fn round_trip(name: &str, wb: &Workbench, view: Option<FileView>) -> (Vec<u8>, W
         }
     }
     assert_eq!(labelled(original).len(), labelled(restored).len(), "{name}");
+    // What the document holds from its file is read back from its export.
+    let (before, after) = (
+        wb.export_presentation(view),
+        again.export_presentation(view),
+    );
+    if !before.object_styles.is_empty() {
+        for (label, style) in &before.object_styles {
+            assert_eq!(
+                Some(style),
+                after.object_styles.get(label),
+                "{name}: {label}"
+            );
+        }
+        assert_eq!(
+            before.object_styles.len(),
+            after.object_styles.len(),
+            "{name}"
+        );
+        assert_eq!(before.slider_animation, after.slider_animation, "{name}");
+        assert_eq!(before.conditions, after.conditions, "{name}");
+        assert_eq!(before.label_offsets, after.label_offsets, "{name}");
+    }
     assert_eq!(
         again.file_view(),
         Some(view.or(wb.file_view()).unwrap_or_default()),
@@ -257,7 +292,7 @@ fn round_trip(name: &str, wb: &Workbench, view: Option<FileView>) -> (Vec<u8>, W
 
 #[test]
 fn exported_constructions_import_with_all_labelled_kinds_and_properties() {
-    for (name, wb, view) in corpus() {
+    for (name, wb, view, _) in corpus() {
         round_trip(&name, &wb, view);
     }
 }
@@ -294,29 +329,96 @@ fn archive_preserves_view_kernel_settings_and_application_edits() {
 #[ignore = "requires the GeoGebra Java harness"]
 fn geogebra_reloads_exports_and_matches_the_kernel() {
     let dir = Scratch::new("valid");
+    // The files the documents were opened from, read by the same reader.
+    let sources = Scratch::new("sources");
+    // The same documents without their saved presentation, as a construction
+    // made in the application exports. A property is proven where the source
+    // differs from this and agrees with the export.
+    let plain = Scratch::new("plain");
     let constructions: Vec<_> = corpus()
         .into_iter()
-        .map(|(name, wb, view)| {
+        .map(|(name, wb, view, source)| {
             let (bytes, again) = round_trip(&name, &wb, view);
             fs::write(dir.0.join(format!("{name}.ggb")), bytes).unwrap();
-            (name, wb, again, view)
+            if let Some(source) = &source {
+                let zipped = if geo_import::archive::is_zip(source) {
+                    source.clone()
+                } else {
+                    archive(source, None)
+                };
+                fs::write(sources.0.join(format!("{name}.ggb")), zipped).unwrap();
+                let mut stripped = Workbench::default();
+                let rejected = stripped.restore_text(&wb.snapshot_text()).unwrap();
+                assert!(rejected.is_empty(), "{name}: {rejected:?}");
+                let bytes = stripped
+                    .export_ggb(view.or(wb.file_view()))
+                    .unwrap_or_else(|e| panic!("{name}: {e}"));
+                fs::write(plain.0.join(format!("{name}.ggb")), bytes).unwrap();
+            }
+            (name, wb, again, view, source.is_some())
         })
         .collect();
-    let output = java_snapshots(&dir.0);
-    assert!(
-        output.status.success(),
-        "Java export oracle failed:\n{}\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
+    for scratch in [&dir, &sources, &plain] {
+        let output = java_snapshots(&scratch.0);
+        assert!(
+            output.status.success(),
+            "Java export oracle failed:\n{}\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
 
     let mut covered = BTreeSet::new();
     let mut count = 0;
-    for (name, live, imported, view) in &constructions {
-        let path = dir.0.join(format!("{name}.ggb.snapshot"));
-        let snap: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+    let mut properties: BTreeSet<(String, String)> = BTreeSet::new();
+    for (name, live, imported, view, from_file) in &constructions {
+        let read = |scratch: &Scratch| -> Value {
+            let path = scratch.0.join(format!("{name}.ggb.snapshot"));
+            serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
+        };
+        let snap = read(&dir);
         let snapshot = snap["objects"].as_object().unwrap();
         check_styles(name, live, *view, &snap);
+        if *from_file {
+            // The reference application reads the source file and the
+            // export of its import to the same presentation, property by
+            // property, for every object.
+            let source = read(&sources);
+            let stripped = read(&plain);
+            let (before, after) = (&source["styles"], &snap["styles"]);
+            assert!(
+                before
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .eq(after.as_object().unwrap().keys()),
+                "{name}: labels differ from the source"
+            );
+            for (label, style) in before.as_object().unwrap() {
+                let (mut style, mut exported) = (style.clone(), after[label].clone());
+                // `check_styles` compares the bounds with the kernel.
+                for style in [&mut style, &mut exported] {
+                    if let Some(slider) = style.get_mut("slider").and_then(Value::as_object_mut) {
+                        slider.remove("min");
+                        slider.remove("max");
+                    }
+                }
+                assert_json(&style, &exported, &format!("{name}: {label}"));
+                let c = live.construction();
+                let kind = format!("{:?}", c.kind(c.id(label).unwrap()));
+                let (mut saved, mut unsaved) = (BTreeMap::new(), BTreeMap::new());
+                flatten("", &style, &mut saved);
+                flatten("", &stripped["styles"][label], &mut unsaved);
+                for (property, value) in saved {
+                    if unsaved.get(&property) != Some(&value)
+                        || new_object(&kind, &property).is_some_and(|new| new != value)
+                    {
+                        properties.insert((kind.clone(), property));
+                    }
+                }
+            }
+            assert_json(&source["settings"], &snap["settings"], name);
+        }
         let c = live.construction();
         let labels = labelled(c);
         assert!(
@@ -357,11 +459,220 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
         covered, exported,
         "every claimed export kind needs a defined example"
     );
-    println!(
-        "{} exported files, {count} objects, {} kinds",
-        constructions.len(),
-        covered.len()
+    let mut proven: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
+    for (kind, property) in &properties {
+        proven.entry(kind).or_default().insert(property);
+    }
+    // `yes` in the kind matrix means: every property of the kind is proven.
+    let mut disagreements = Vec::new();
+    for row in matrix.records() {
+        let kind = row["kernel_kind"];
+        if row["export"] == "no" {
+            continue;
+        }
+        let have = proven.get(kind).cloned().unwrap_or_default();
+        let missing: Vec<_> = kind_properties(kind)
+            .into_iter()
+            .filter(|property| !have.contains(property))
+            .collect();
+        println!(
+            "{kind}: {} of {} properties{}",
+            kind_properties(kind).len() - missing.len(),
+            kind_properties(kind).len(),
+            if missing.is_empty() {
+                String::new()
+            } else {
+                format!(", not proven: {}", missing.join(", "))
+            }
+        );
+        if (row["export"] == "yes") != missing.is_empty() {
+            disagreements.push(format!(
+                "{kind} is `{}`, not proven: {missing:?}",
+                row["export"]
+            ));
+        }
+    }
+    assert!(
+        disagreements.is_empty(),
+        "docs/kinds.csv export column: {disagreements:#?}"
     );
+    println!(
+        "{} exported files, {count} objects, {} kinds, {} kind and property pairs",
+        constructions.len(),
+        covered.len(),
+        properties.len()
+    );
+}
+
+/// Properties the document keeps in its own state instead of the saved
+/// style, with the value an object made in the application exports. They
+/// survive the stripped export, so they are proven where the source differs
+/// from that value.
+fn new_object(kind: &str, property: &str) -> Option<Value> {
+    Some(match (kind, property) {
+        (_, "shown") => json!(true),
+        (_, "layer") => json!(0),
+        (_, "condition") => Value::Null,
+        (_, "label_offset") => json!([0, 0]),
+        // The kernel keeps the caption of a control and the opacity of an image.
+        ("Boolean" | "Button" | "InputBox", "caption") => json!(""),
+        ("Image", "alpha") => json!(1.0),
+        // A chart draws with its saved label visibility and thickness.
+        ("PieChart", "label_shown") => json!(true),
+        ("PieChart", "line.thickness") => json!(3),
+        ("Angle", "angle_style") => json!(0),
+        ("Text", "latex") => json!(false),
+        ("Text", "font.size") => json!(1.0),
+        ("Text", "font.serif") => json!(false),
+        ("Text", "font.style") => json!(0),
+        ("Text", "screen_location") => json!(false),
+        ("Text", "start_point") => Value::Null,
+        _ => return None,
+    })
+}
+
+/// The presentation properties an object of a kernel kind keeps in the
+/// reference application, by the names of the style snapshot. A property is
+/// left out where the reference application itself does not keep it: it
+/// refuses to fix a chart, reads no dash pattern for a number, saves no line
+/// opacity for a function of two variables, and does not save the auxiliary
+/// flag of a text, a locus, a button or an input box.
+///
+/// `chart.slices` stands for the colour and filling of single slices, which
+/// the importer does not read: no snapshot has it, so a pie chart stays
+/// `partial`.
+fn kind_properties(kind: &str) -> Vec<&'static str> {
+    const SHARED: &[&str] = &[
+        "shown",
+        "layer",
+        "color",
+        "condition",
+        "dynamic_color",
+        "color_space",
+        "selection_allowed",
+        "tooltip_mode",
+    ];
+    const FLAGS: &[&str] = &["fixed", "auxiliary"];
+    const LABEL: &[&str] = &["label_shown", "label_mode", "caption", "label_offset"];
+    const LINE: &[&str] = &["line.type", "line.thickness", "line.opacity"];
+    const FILL: &[&str] = &[
+        "alpha",
+        "fill.type",
+        "fill.angle",
+        "fill.distance",
+        "fill.symbol",
+        "fill.inverse",
+    ];
+    let groups: &[&[&str]] = match kind {
+        "Point" => &[
+            SHARED,
+            FLAGS,
+            LABEL,
+            &["point_size", "point_style", "trace"],
+        ],
+        "Line" | "Ray" | "Vector" | "PolyLine" | "Function" | "Curve" => {
+            &[SHARED, FLAGS, LABEL, LINE, &["trace"]]
+        }
+        "Locus" => &[SHARED, &["fixed"], LABEL, LINE, &["trace"]],
+        "Segment" => &[SHARED, FLAGS, LABEL, LINE, &["trace", "decoration"]],
+        "Circle" | "Conic" | "Arc" | "Sector" | "Polygon" => {
+            &[SHARED, FLAGS, LABEL, LINE, FILL, &["trace"]]
+        }
+        "List" => &[
+            SHARED,
+            FLAGS,
+            LABEL,
+            LINE,
+            FILL,
+            &["point_size", "point_style", "trace"],
+        ],
+        "FunctionNVar" => &[SHARED, FLAGS, LABEL, FILL, &["line.type", "line.thickness"]],
+        "PieChart" => &[SHARED, &["auxiliary"], LABEL, LINE, FILL, &["chart.slices"]],
+        "Number" => &[
+            SHARED,
+            FLAGS,
+            LABEL,
+            &[
+                "line.thickness",
+                "line.opacity",
+                "slider.position",
+                "slider.width",
+                "slider.horizontal",
+                "slider.fixed",
+                "slider.absolute",
+                "slider.show_algebra",
+                "animation.step",
+                "animation.speed",
+                "animation.mode",
+            ],
+        ],
+        "Angle" => &[
+            SHARED,
+            FLAGS,
+            LABEL,
+            LINE,
+            FILL,
+            &[
+                "angle_style",
+                "arc_size",
+                "emphasize_right_angle",
+                "decoration",
+            ],
+        ],
+        "Boolean" => &[SHARED, FLAGS, LABEL, &["checkbox_fixed"]],
+        "Text" => &[
+            SHARED,
+            &[
+                "fixed",
+                "background",
+                "font.size",
+                "font.serif",
+                "font.style",
+                "latex",
+                "decimals",
+                "figures",
+                "screen_location",
+                "start_point",
+                "label_offset",
+            ],
+        ],
+        "Button" | "InputBox" => &[SHARED, &["fixed", "caption", "background"]],
+        "Image" => &[
+            &[
+                "shown",
+                "layer",
+                "condition",
+                "selection_allowed",
+                "tooltip_mode",
+                "alpha",
+            ],
+            FLAGS,
+        ],
+        other => panic!("no property list for {other}"),
+    };
+    groups
+        .iter()
+        .flat_map(|group| group.iter().copied())
+        .collect()
+}
+
+/// The leaves of a style snapshot by their path (`line.type`). A list is one leaf.
+fn flatten(path: &str, value: &Value, out: &mut BTreeMap<String, Value>) {
+    match value {
+        Value::Object(fields) => {
+            for (key, value) in fields {
+                let path = if path.is_empty() {
+                    key.clone()
+                } else {
+                    format!("{path}.{key}")
+                };
+                flatten(&path, value, out);
+            }
+        }
+        leaf => {
+            out.insert(path.to_owned(), leaf.clone());
+        }
+    }
 }
 
 fn java_snapshots(dir: &std::path::Path) -> std::process::Output {
@@ -416,11 +727,57 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
         let actual = &snap["styles"][label];
         let where_ = format!("{name}: {label}");
         let drawing = c.drawing_style(id);
-        let style = presentation.object_styles.get(label);
-        let caption = c.control(id).map_or_else(
-            || style.map_or("", |s| s.caption.as_str()),
-            |control| control.caption.as_str(),
-        );
+        if matches!(c.def(id), Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if c.kind(path) == Kind::Curve)
+        {
+            assert_json(
+                &json!(c.path_state(id).unwrap().parameter()),
+                &actual["curve_parameter"],
+                &where_,
+            );
+        }
+        if matches!(c.def(id), Def::Number(_)) {
+            let [min, max] = c.slider_bounds(id);
+            if min.is_some() || max.is_some() {
+                // The bounds are the kernel's: the reference gives a visible
+                // slider a default for an endpoint its own file leaves out.
+                let slider = &actual["slider"];
+                assert_json(&json!(min), &slider["min"], &where_);
+                assert_json(&json!(max), &slider["max"], &where_);
+                let moving = &actual["animation"];
+                let animation = presentation.slider_animation.get(label);
+                let step = match (name, label) {
+                    ("export-sliders-001", "a") => json!(0.25),
+                    ("export-sliders-001", "b") => json!(0.5),
+                    _ => {
+                        animation.map_or(json!(0.1), |a| number_or_reference(c, a.step.as_deref()))
+                    }
+                };
+                let speed = animation.and_then(|a| a.speed.as_deref()).or(Some("1"));
+                assert_json(&step, &moving["step"], &format!("{where_}.step"));
+                assert_json(&number_or_reference(c, speed), &moving["speed"], &where_);
+                assert_json(
+                    &json!(animation.map_or(0, |a| a.mode)),
+                    &moving["mode"],
+                    &where_,
+                );
+                assert_json(
+                    &json!(animation.is_some_and(|a| a.playing)),
+                    &moving["playing"],
+                    &where_,
+                );
+                // A slider made in the application gets a place of its own.
+                assert!(
+                    presentation.object_styles.contains_key(label)
+                        || positions.insert(slider["position"].to_string()),
+                    "{where_}: overlapping sliders"
+                );
+            }
+        }
+        // An object from a file is compared with its source, tag by tag.
+        if presentation.object_styles.contains_key(label) {
+            continue;
+        }
+        let caption = c.control(id).map_or("", |control| control.caption.as_str());
         let offset = c.text_presentation(id).map_or_else(
             || {
                 presentation
@@ -433,15 +790,24 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
                 _ => text.offset,
             },
         );
-        let expected = json!({
+        let mut expected = json!({
             "shown": !presentation.hidden.contains(label),
-            "label_shown": style.and_then(|s| s.show_label).unwrap_or(drawing.show_label),
+            "label_shown": drawing.show_label,
             "layer": drawing.layer,
-            "label_mode": style.map_or(0, |s| s.label_mode),
+            "label_mode": 0,
             "label_offset": offset,
             "caption": caption,
             "color": presentation.colors[label],
+            "dynamic_color": null,
+            "background": null,
+            "selection_allowed": true,
+            "tooltip_mode": 0,
+            "decoration": 0,
         });
+        // The canvas tints polygons and angle sectors; an image has its own opacity.
+        if c.image(id).is_none() {
+            expected["alpha"] = json!(geo_app_core::style::fill_opacity(c, id));
+        }
         for (key, value) in expected.as_object().unwrap() {
             assert_json(value, &actual[key], &format!("{where_}.{key}"));
         }
@@ -450,60 +816,15 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
             kind,
             Kind::Point | Kind::Image | Kind::Text | Kind::Boolean | Kind::Button | Kind::InputBox
         ) {
+            assert_json(&json!(0), &actual["line"]["type"], &where_);
             assert_json(
-                &json!([
-                    style.map_or(0, |s| s.line_type),
-                    style
-                        .and_then(|s| s.thickness)
-                        .unwrap_or(drawing.line_thickness)
-                ]),
-                &actual["line_style"],
+                &json!(drawing.line_thickness),
+                &actual["line"]["thickness"],
                 &where_,
             );
         }
         if let Some(text) = c.text_presentation(id) {
             assert_json(&json!(text.latex), &actual["latex"], &where_);
-        }
-        if matches!(c.def(id), Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if c.kind(path) == Kind::Curve)
-        {
-            assert_json(
-                &json!(c.path_state(id).unwrap().parameter()),
-                &actual["curve_parameter"],
-                &where_,
-            );
-        }
-        if matches!(c.def(id), Def::Number(_)) {
-            let [min, max] = c.slider_bounds(id);
-            if min.is_some() || max.is_some() {
-                let slider = &actual["slider"];
-                assert_json(&json!(min), &slider["min"], &where_);
-                assert_json(&json!(max), &slider["max"], &where_);
-                let animation = presentation.slider_animation.get(label);
-                let step = match (name, label) {
-                    ("export-sliders-001", "a") => json!(0.25),
-                    ("export-sliders-001", "b") => json!(0.5),
-                    _ => {
-                        animation.map_or(json!(0.1), |a| number_or_reference(c, a.step.as_deref()))
-                    }
-                };
-                let speed = animation.and_then(|a| a.speed.as_deref()).or(Some("1"));
-                assert_json(&step, &slider["step"], &format!("{where_}.step"));
-                assert_json(&number_or_reference(c, speed), &slider["speed"], &where_);
-                assert_json(
-                    &json!(animation.map_or(0, |a| a.mode)),
-                    &slider["mode"],
-                    &where_,
-                );
-                assert_json(
-                    &json!(animation.is_some_and(|a| a.playing)),
-                    &slider["playing"],
-                    &where_,
-                );
-                assert!(
-                    positions.insert(slider["position"].to_string()),
-                    "{where_}: overlapping sliders"
-                );
-            }
         }
     }
 }

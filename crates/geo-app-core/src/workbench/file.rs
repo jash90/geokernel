@@ -107,13 +107,17 @@ impl Workbench {
         };
         for id in self.object_ids() {
             let label = c.label(id);
-            let color = palette.color(id);
-            let rgb = self
-                .file_object_styles
-                .get(label)
-                .and_then(|style| style.color)
-                .unwrap_or([color.r, color.g, color.b]);
-            presentation.colors.insert(label, rgb);
+            // An object from a file keeps the colour and opacity saved there.
+            if !self.file_object_styles.contains_key(label) {
+                let color = palette.color(id);
+                presentation
+                    .colors
+                    .insert(label, [color.r, color.g, color.b]);
+                let opacity = crate::style::fill_opacity(c, id);
+                if opacity != 0.0 {
+                    presentation.opacity.insert(label, f64::from(opacity));
+                }
+            }
             if let Some(condition) = self.log.condition_source(label) {
                 presentation.conditions.insert(label, condition);
             }

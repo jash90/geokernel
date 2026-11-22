@@ -46,7 +46,10 @@ impl Default for View {
 pub struct Presentation<'a> {
     pub view: View,
     pub settings: Settings,
+    /// Colours of the objects that have no saved style.
     pub colors: BTreeMap<&'a str, [u8; 3]>,
+    /// Fill opacity the application draws those objects with, from 0 to 1.
+    pub opacity: BTreeMap<&'a str, f64>,
     pub hidden: HashSet<&'a str>,
     pub conditions: BTreeMap<&'a str, &'a str>,
     pub label_offsets: BTreeMap<&'a str, (i32, i32)>,
@@ -55,15 +58,126 @@ pub struct Presentation<'a> {
     pub slider_bounds: BTreeMap<&'a str, [Option<&'a str>; 2]>,
 }
 
-/// Saved presentation that the editor does not change.
+/// Presentation of one object as its source file saved it. The editor does
+/// not change it and export writes it back. `None` means that the file had no
+/// such tag or attribute, so the reader keeps its own default.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ObjectStyle {
     pub caption: String,
+    /// `<show label=>`.
     pub show_label: Option<bool>,
-    pub thickness: Option<u8>,
-    pub label_mode: u8,
-    pub line_type: u8,
+    /// `<layer val=>`. The reader gives an object without the tag the layer
+    /// of the object before it, so its absence is kept.
+    pub layer: Option<u8>,
+    /// `<labelMode val=>`: name, name and value, value, caption, caption and value.
+    pub label_mode: Option<i32>,
+    /// `<tooltipMode val=>`.
+    pub tooltip_mode: Option<i32>,
+    /// `<objColor r= g= b=>`.
     pub color: Option<[u8; 3]>,
+    /// Fill opacity from 0 to 1 (`<objColor alpha=>`).
+    pub alpha: Option<f64>,
+    pub fill: Option<Box<Fill>>,
+    pub dynamic_color: Option<Box<DynamicColor>>,
+    /// `<bgColor r= g= b= alpha=>`.
+    pub background: Option<[u8; 4]>,
+    /// `<lineStyle>`.
+    pub line: Option<LineStyle>,
+    /// `<pointSize val=>` of a point or a list.
+    pub point_size: Option<i32>,
+    /// `<pointStyle val=>`; -1 selects the document default.
+    pub point_style: Option<i32>,
+    /// `<fixed val=>`.
+    pub fixed: Option<bool>,
+    /// `<auxiliary val=>`.
+    pub auxiliary: Option<bool>,
+    /// `<selectionAllowed val=>`.
+    pub selection_allowed: Option<bool>,
+    /// `<trace val=>`.
+    pub trace: Option<bool>,
+    /// `<decoration type=>`: ticks and arcs of segments and angles.
+    pub decoration: Option<i32>,
+    /// Rounding of one text (`<decimals>` or `<significantfigures>`).
+    pub rounding: Option<Rounding>,
+    /// `<arcSize val=>` of an angle, in pixels.
+    pub arc_size: Option<i32>,
+    /// `<emphasizeRightAngle val=>`.
+    pub emphasize_right_angle: Option<bool>,
+    /// `<checkbox fixed=>`.
+    pub checkbox_fixed: Option<bool>,
+    /// Placement of a slider (`<slider>` without its bounds).
+    pub slider: Option<SliderLayout>,
+    /// `<animation>` of an object that is not a slider.
+    pub animation: Option<Box<SliderAnimation>>,
+}
+
+/// `<lineStyle thickness= type= typeHidden= opacity=>`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct LineStyle {
+    pub thickness: u8,
+    /// Dash pattern code: 0 full, 10 and 15 dashed, 20 dotted, 30 dash-dotted.
+    pub kind: i32,
+    pub hidden_kind: Option<i32>,
+    /// Stroke opacity from 0 to 255.
+    pub opacity: Option<u8>,
+}
+
+/// The fill attributes of `<objColor>`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Fill {
+    /// Index of the pattern (`fillType`): 0 plain, 1 hatched, 2 cross-hatched,
+    /// 3 chessboard, 4 dotted, 5 honeycomb, 6 brick, 7 weaving, 8 symbols.
+    pub pattern: u8,
+    /// `hatchAngle` in degrees and `hatchDistance` in pixels.
+    pub hatch: Option<[i32; 2]>,
+    /// `fillSymbol`.
+    pub symbol: Option<String>,
+    /// `inverseFill`.
+    pub inverse: Option<bool>,
+}
+
+impl Fill {
+    /// The last pattern the writer supports; an image fill needs an asset.
+    pub const MAX_PATTERN: u8 = 8;
+}
+
+/// Colour channels computed from numeric expressions (`dynamicr`, ...).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DynamicColor {
+    pub red: String,
+    pub green: String,
+    pub blue: String,
+    pub alpha: Option<String>,
+    /// `colorSpace`: 0 RGB, 1 HSB, 2 HSL.
+    pub space: i32,
+}
+
+impl DynamicColor {
+    pub fn channels(&self) -> impl Iterator<Item = &str> {
+        [&self.red, &self.green, &self.blue]
+            .into_iter()
+            .chain(&self.alpha)
+            .map(String::as_str)
+    }
+}
+
+/// Rounding saved on one text.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Rounding {
+    Decimals(i32),
+    SignificantFigures(i32),
+}
+
+/// Where and how a slider is drawn.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SliderLayout {
+    /// Pixels when `absolute`, otherwise world coordinates.
+    pub position: Option<[f64; 2]>,
+    pub width: Option<f64>,
+    pub absolute: bool,
+    pub horizontal: bool,
+    pub fixed: bool,
+    pub show_algebra: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]

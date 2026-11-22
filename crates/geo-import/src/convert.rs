@@ -8,6 +8,7 @@
 //! the kernel cannot do is skipped with the kernel's message.
 
 use crate::archive::AssetArchive;
+use crate::export::DynamicColor;
 use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
@@ -174,21 +175,51 @@ pub(crate) fn convert_with_assets(
         if c.kernel.chart(id).is_some() {
             style.show_label = el.label_shown.unwrap_or(style.show_label);
             style.line_thickness = el.thickness.map_or(style.line_thickness, |t| t.min(13));
-        } else {
-            saved_style.show_label = el.label_shown.filter(|&v| v != default_style.show_label);
-            saved_style.thickness = el.thickness.filter(|&v| v != default_style.line_thickness);
         }
+        saved_style.show_label = el.label_shown;
         if c.kernel.control(id).is_none() {
             saved_style.caption.clone_from(&el.caption);
         }
-        if saved_style != crate::export::ObjectStyle::default() {
-            c.out.object_styles.insert(el.label.clone(), saved_style);
+        let label = quote(&el.label);
+        if let Some(dynamic) = saved_style.dynamic_color.take() {
+            match kernel_dynamic_color(&c.kernel, &dynamic) {
+                Ok(dynamic) => saved_style.dynamic_color = Some(Box::new(dynamic)),
+                Err(reason) => c
+                    .out
+                    .notes
+                    .push(format!("dynamic colour of `{label}`: {}", quote(&reason))),
+            }
         }
-        if let Some(animation) = el.slider_animation.as_ref().filter(|_| el.slider.is_some()) {
-            c.out
-                .slider_animation
-                .insert(el.label.clone(), animation.clone());
+        if let Some(fill) = saved_style.fill.as_deref_mut() {
+            if fill.pattern > crate::export::Fill::MAX_PATTERN {
+                c.out.notes.push(format!(
+                    "fill pattern {} of `{label}` is not supported",
+                    fill.pattern
+                ));
+                fill.pattern = 0;
+            }
         }
+        if let Some(mut animation) = el.slider_animation.clone() {
+            for (text, what) in [
+                (&mut animation.step, "step"),
+                (&mut animation.speed, "speed"),
+            ] {
+                let Some(source) = text.take() else { continue };
+                match kernel_number(&c.kernel, &source) {
+                    Ok(source) => *text = Some(source),
+                    Err(reason) => c
+                        .out
+                        .notes
+                        .push(format!("animation {what} of `{label}`: {}", quote(&reason))),
+                }
+            }
+            if el.slider.is_some() {
+                c.out.slider_animation.insert(el.label.clone(), animation);
+            } else {
+                saved_style.animation = Some(Box::new(animation));
+            }
+        }
+        c.out.object_styles.insert(el.label.clone(), saved_style);
         if let Some([x, y]) = el.label_offset.filter(|[x, y]| [*x, *y] != [0, 0]) {
             c.out
                 .label_offsets
@@ -224,6 +255,33 @@ pub(crate) fn convert_with_assets(
     }
     flags.notes(&mut out.notes);
     Ok(out)
+}
+
+/// A saved numeric expression in the kernel's syntax, when the kernel
+/// evaluates it over the construction as it stands.
+pub fn kernel_number(c: &Construction, source: &str) -> Result<String, String> {
+    let line = expression_line(source)?;
+    c.numeric_value(&line)
+        .map(|_| line)
+        .ok_or_else(|| format!("`{source}` is not a number of the construction"))
+}
+
+/// The channels of a dynamic colour as expressions the kernel evaluates.
+pub fn kernel_dynamic_color(
+    c: &Construction,
+    saved: &DynamicColor,
+) -> Result<DynamicColor, String> {
+    Ok(DynamicColor {
+        red: kernel_number(c, &saved.red)?,
+        green: kernel_number(c, &saved.green)?,
+        blue: kernel_number(c, &saved.blue)?,
+        alpha: saved
+            .alpha
+            .as_deref()
+            .map(|alpha| kernel_number(c, alpha))
+            .transpose()?,
+        space: saved.space,
+    })
 }
 
 /// Properties of elements that no value depends on and the kernel has no

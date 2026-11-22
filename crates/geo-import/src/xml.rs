@@ -21,6 +21,11 @@
 //! * `<fixed>`, `<auxiliary>`, and non-text `<startPoint>` are counted for a note.
 //! * Text placement and style: `<startPoint>`, `<absoluteScreenLocation>`,
 //!   `<labelOffset>`, `<font>`, and `<isLaTeX>`.
+//! * Presentation that only export uses ([`ObjectStyle`]): colour, opacity,
+//!   filling, dynamic colour and background, line and point style, label and
+//!   tooltip mode, the fixed, auxiliary, selection and trace flags, decoration,
+//!   the rounding of a text, the arc of an angle, slider placement and
+//!   animation.
 //!
 //! Other UI properties and styles are ignored.
 //!
@@ -29,7 +34,9 @@
 //! as many outputs, and an attribute value has at most
 //! [`MAX_ATTRIBUTE_BYTES`] bytes.
 
-use crate::export::{ObjectStyle, SliderAnimation};
+use crate::export::{
+    DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SliderAnimation, SliderLayout,
+};
 use crate::{ImportError, Settings};
 use geo_kernel::kernel::control::ControlScript;
 use geo_kernel::kernel::image::{ImageCorner, ImageStyle};
@@ -370,6 +377,49 @@ fn read_text_style(el: &mut Element, name: &str, e: &BytesStart) -> Result<(), I
     Ok(())
 }
 
+/// The opacity, dynamic channels and fill pattern of an `<objColor>` tag whose
+/// colour was accepted. The reference reader skips the whole tag otherwise.
+fn read_fill(style: &mut ObjectStyle, e: &BytesStart) -> Result<(), ImportError> {
+    let read = |key| attr(e, key);
+    let integer = |key| read(key).map(|v| v.and_then(|v| v.parse::<i32>().ok()));
+    style.alpha = read("alpha")?
+        .and_then(|v| v.parse::<f64>().ok())
+        .filter(|v| (0.0..=1.0).contains(v));
+    if let (Some(red), Some(green), Some(blue)) =
+        (read("dynamicr")?, read("dynamicg")?, read("dynamicb")?)
+    {
+        // Three empty channels mean no dynamic colour; a single empty one is 0.
+        if !(red.is_empty() && green.is_empty() && blue.is_empty()) {
+            let channel = |text: String| if text.is_empty() { "0".into() } else { text };
+            style.dynamic_color = Some(Box::new(DynamicColor {
+                red: channel(red),
+                green: channel(green),
+                blue: channel(blue),
+                alpha: read("dynamica")?.filter(|text| !text.is_empty()),
+                space: integer("colorSpace")?.unwrap_or(0),
+            }));
+        }
+    }
+    let angle = integer("hatchAngle")?;
+    let hatch = angle.zip(integer("hatchDistance")?).map(|(a, d)| [a, d]);
+    // A hatch angle without a pattern is the hatched fill of older files.
+    let pattern = match read("fillType")? {
+        Some(index) => index.parse::<u8>().ok(),
+        None => angle.map(|_| 1),
+    };
+    let symbol = read("fillSymbol")?;
+    let inverse = read("inverseFill")?.map(|v| v == "true");
+    if pattern.is_some() || hatch.is_some() || symbol.is_some() || inverse.is_some() {
+        style.fill = Some(Box::new(Fill {
+            pattern: pattern.unwrap_or(0),
+            hatch,
+            symbol,
+            inverse,
+        }));
+    }
+    Ok(())
+}
+
 /// The attributes `a0`, `a1`, ... of an `<input>` or `<output>` tag, which
 /// must be numbered without gaps.
 fn numbered(e: &BytesStart, command: &str) -> Result<Vec<String>, ImportError> {
@@ -516,26 +566,91 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                 }
                 "layer" if element.is_some() => {
                     if let Some(layer) = attr(e, "val")?.and_then(|v| v.parse::<i32>().ok()) {
-                        element.as_mut().expect("checked above").layer = layer.clamp(0, 9) as u8;
+                        let el = element.as_mut().expect("checked above");
+                        el.layer = layer.clamp(0, 9) as u8;
+                        el.object_style.layer = Some(el.layer);
                     }
                 }
                 "lineStyle" if element.is_some() => {
                     let el = element.as_mut().expect("checked above");
-                    el.thickness = attr(e, "thickness")?
-                        .and_then(|v| v.parse::<i32>().ok())
-                        .map(|v| v.clamp(0, 255) as u8);
-                    el.object_style.line_type = attr(e, "type")?
-                        .and_then(|v| v.parse().ok())
-                        .unwrap_or_default();
+                    let integer = |key| attr(e, key).map(|v| v.and_then(|v| v.parse::<i32>().ok()));
+                    el.thickness = integer("thickness")?.map(|v| v.clamp(0, 255) as u8);
+                    // The reader sets nothing unless both numbers parse.
+                    if let (Some(thickness), Some(kind)) = (el.thickness, integer("type")?) {
+                        el.object_style.line = Some(LineStyle {
+                            thickness,
+                            kind,
+                            hidden_kind: integer("typeHidden")?,
+                            opacity: integer("opacity")?.map(|v| v.clamp(0, 255) as u8),
+                        });
+                    }
                 }
-                "labelMode" if element.is_some() => {
+                "labelMode" | "tooltipMode" | "pointSize" | "pointStyle" | "arcSize"
+                    if element.is_some() =>
+                {
+                    let style = &mut element.as_mut().expect("checked above").object_style;
+                    let value = attr(e, "val")?.and_then(|v| v.parse::<i32>().ok());
+                    match name.as_str() {
+                        "labelMode" => style.label_mode = value,
+                        "tooltipMode" => style.tooltip_mode = value,
+                        "pointSize" => style.point_size = value,
+                        "pointStyle" => style.point_style = value,
+                        _ => style.arc_size = value,
+                    }
+                }
+                "decoration" if element.is_some() => {
                     element
                         .as_mut()
                         .expect("checked above")
                         .object_style
-                        .label_mode = attr(e, "val")?
-                        .and_then(|v| v.parse().ok())
-                        .unwrap_or_default();
+                        .decoration = attr(e, "type")?.and_then(|v| v.parse().ok());
+                }
+                "selectionAllowed" | "trace" | "emphasizeRightAngle" if element.is_some() => {
+                    let style = &mut element.as_mut().expect("checked above").object_style;
+                    let on = attr(e, "val")?.map(|v| v == "true");
+                    match name.as_str() {
+                        "selectionAllowed" => style.selection_allowed = on,
+                        "trace" => style.trace = on,
+                        _ => style.emphasize_right_angle = on,
+                    }
+                }
+                "checkbox" if element.is_some() => {
+                    element
+                        .as_mut()
+                        .expect("checked above")
+                        .object_style
+                        .checkbox_fixed = attr(e, "fixed")?.map(|v| v == "true");
+                }
+                "decimals" | "significantfigures" if element.is_some() => {
+                    if let Some(digits) = attr(e, "val")?.and_then(|v| v.parse().ok()) {
+                        element
+                            .as_mut()
+                            .expect("checked above")
+                            .object_style
+                            .rounding = Some(if name == "decimals" {
+                            Rounding::Decimals(digits)
+                        } else {
+                            Rounding::SignificantFigures(digits)
+                        });
+                    }
+                }
+                "bgColor" if element.is_some() => {
+                    let channel = |key| -> Result<Option<i32>, ImportError> {
+                        Ok(attr(e, key)?.and_then(|v| v.parse().ok()))
+                    };
+                    // All four channels are required, as in the reference reader.
+                    if let (Some(r), Some(g), Some(b), Some(a)) = (
+                        channel("r")?,
+                        channel("g")?,
+                        channel("b")?,
+                        channel("alpha")?,
+                    ) {
+                        element
+                            .as_mut()
+                            .expect("checked above")
+                            .object_style
+                            .background = Some([r, g, b, a].map(|v| v.clamp(0, 255) as u8));
+                    }
                 }
                 "curveParam" if element.is_some() => {
                     element.as_mut().expect("checked above").curve_parameter = attr(e, "t")?
@@ -563,8 +678,10 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                     let el = element.as_mut().expect("checked above");
                     if name == "fixed" {
                         el.fixed = on;
+                        el.object_style.fixed = Some(on);
                     } else {
                         el.auxiliary = on;
+                        el.object_style.auxiliary = Some(on);
                     }
                 }
                 "condition" if element.is_some() => {
@@ -591,7 +708,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         }
                     }
                 }
-                "animation" if element.as_ref().is_some_and(|el| el.kind == "numeric") => {
+                "animation" if element.is_some() => {
                     element.as_mut().expect("checked above").slider_animation =
                         Some(SliderAnimation {
                             step: attr(e, "step")?,
@@ -603,8 +720,23 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         });
                 }
                 "slider" if element.is_some() => {
-                    element.as_mut().expect("checked above").slider =
-                        Some([attr(e, "min")?, attr(e, "max")?]);
+                    let number = |key| {
+                        attr(e, key).map(|v| {
+                            v.and_then(|v| v.parse::<f64>().ok())
+                                .filter(|v| v.is_finite())
+                        })
+                    };
+                    let flag = |key| attr(e, key).map(|v| v.is_some_and(|v| v == "true"));
+                    let el = element.as_mut().expect("checked above");
+                    el.slider = Some([attr(e, "min")?, attr(e, "max")?]);
+                    el.object_style.slider = Some(SliderLayout {
+                        position: number("x")?.zip(number("y")?).map(|(x, y)| [x, y]),
+                        width: number("width")?,
+                        absolute: flag("absoluteScreenLocation")?,
+                        horizontal: flag("horizontal")?,
+                        fixed: flag("fixed")?,
+                        show_algebra: flag("showAlgebra")?,
+                    });
                 }
                 "file"
                 | "inBackground"
@@ -629,6 +761,7 @@ pub fn parse(text: &str) -> Result<Document, ImportError> {
                         (channel("r")?, channel("g")?, channel("b")?)
                     {
                         el.object_style.color = Some([r, g, b]);
+                        read_fill(&mut el.object_style, e)?;
                     }
                 }
                 "labelOffset" if element.as_ref().is_some_and(|el| el.kind != "text") => {
