@@ -48,6 +48,7 @@ struct RawStep {
     min: Option<f64>,
     max: Option<f64>,
     line: Option<String>,
+    reference_parse_error: Option<bool>,
 }
 
 impl<'de> Deserialize<'de> for Step {
@@ -61,6 +62,11 @@ impl<'de> Deserialize<'de> for Step {
         if raw.action != "set_slider_bounds" && (raw.min.is_some() || raw.max.is_some()) {
             return Err(D::Error::custom(
                 "only step `set_slider_bounds` takes `min` and `max`",
+            ));
+        }
+        if raw.action != "move" && raw.reference_parse_error.is_some() {
+            return Err(D::Error::custom(
+                "only step `move` records a reference parse error",
             ));
         }
         match raw.action.as_str() {

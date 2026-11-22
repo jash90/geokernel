@@ -1,0 +1,220 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-trianglecurve-001",
+      "group": "implicit",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 2)",
+        "h = 2",
+        "c = TriangleCurve(A, B, C, A^2 + h*B*C = C^2)",
+        "M = Midpoint(A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 4.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 0.0 },
+        { "action": "set_number", "label": "h", "value": 3.0 },
+        { "action": "move", "label": "C", "x": 1.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.0, -1.0, 0.0],
+              [-0.5, 0.5, 0.0],
+              [0.0625, 0.0, 0.0]
+            ],
+            "equation": "0.06x² + 0.5x y - 0.5x - y = -1",
+            "input_form": false
+          },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "implicit", "defined": false },
+          "M": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.0, -1.0, 0.0],
+              [-0.5, 0.5, 0.0],
+              [0.0625, 0.0, 0.0]
+            ],
+            "equation": "0.06x² + 0.5x y - 0.5x - y = -1",
+            "input_form": false
+          },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "h": { "type": "number", "defined": true, "value": 3.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.0, -1.0, 0.0],
+              [-0.5, 0.625, 0.0],
+              [0.0625, 0.0, 0.0]
+            ],
+            "equation": "0.06x² + 0.63x y - 0.5x - y = -1",
+            "input_form": false
+          },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "h": { "type": "number", "defined": true, "value": 3.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.0, -0.5, -0.13194444444444442],
+              [-0.5, 0.375, 0.0],
+              [0.0625, 0.0, 0.0]
+            ],
+            "equation": "0.06x² + 0.38x y - 0.5x - 0.13y² - 0.5y = -1",
+            "input_form": false
+          },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-trianglecurve-002",
+      "group": "implicit",
+      "script": [
+        "P = (-1, 1)",
+        "Q = (4, 0)",
+        "R = (1, 3)",
+        "h = 1",
+        "c = TriangleCurve(P, Q, R, (A+B)^3/h = C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "h", "value": 0.0 },
+        { "action": "set_number", "label": "h", "value": 2.0 },
+        { "action": "move", "label": "R", "x": 1.5, "y": 0.5 },
+        { "action": "move", "label": "R", "x": 1.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "h": { "type": "number", "defined": true, "value": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [2.7037037037037037, -2.6388888888888884, 0.6944444444444443, -0.07233796296296294],
+              [-0.5277777777777778, 0.2777777777777778, -0.043402777777777776, 0.0],
+              [0.027777777777777783, -0.008680555555555556, 0.0, 0.0],
+              [-5.787037037037039E-4, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.01x² y + 0.03x² - 0.04x y² + 0.28x y - 0.53x - 0.07y³ + 0.69y² - 2.64y = -2.7",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "h": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.5185185185185184, -1.5277777777777777, 0.34722222222222215, -0.03616898148148147],
+              [-0.3055555555555555, 0.1388888888888889, -0.021701388888888888, 0.0],
+              [0.013888888888888892, -0.004340277777777778, 0.0, 0.0],
+              [-2.8935185185185194E-4, 0.0, 0.0, 0.0]
+            ],
+            "equation": "0.01x² - 0.02x y² + 0.14x y - 0.31x - 0.04y³ + 0.35y² - 1.53y = -1.52",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.5, "y": 0.5 },
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "h": { "type": "number", "defined": true, "value": 2.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [1.5185185185185184, -1.5277777777777777, 0.34722222222222215, -0.03616898148148147],
+              [-0.3055555555555555, 0.1388888888888889, -0.021701388888888888, 0.0],
+              [0.013888888888888892, -0.004340277777777778, 0.0, 0.0],
+              [-2.8935185185185194E-4, 0.0, 0.0, 0.0]
+            ],
+            "equation": "0.01x² - 0.02x y² + 0.14x y - 0.31x - 0.04y³ + 0.35y² - 1.53y = -1.52",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-trianglecurve-003",
+      "group": "implicit",
+      "script": [
+        "c = TriangleCurve((1,1), (2,1/2), (3,1/3), A+B=C)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [10.0, -5.999999999999999],
+              [-3.0, 0.0]
+            ],
+            "equation": "-3x - 6y = -10",
+            "input_form": false
+          }
+        }
+      ]
+    }
+  ]
+}

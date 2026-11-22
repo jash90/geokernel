@@ -69,6 +69,10 @@ One JSON object per file, stored under `golden/<group>/`.
 | `set_slider_bounds` | `label`, `min`, `max` | Edit the endpoints of a free number's slider. |
 | `reject` | `line` | Check that the command reports an error and creates no output. |
 
+A `move` step may include `reference_parse_error`, which records whether the
+reference threw a parse error during the update. The snapshot still records
+the values left in the construction after the edit.
+
 ## Snapshot
 
 A JSON object that maps every label created by the script to an Object.
