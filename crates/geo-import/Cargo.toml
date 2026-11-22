@@ -1,6 +1,6 @@
 [package]
 name = "geo-import"
-description = "Reads construction files saved by GeoGebra (.ggb or geogebra.xml) into lines of the geo-kernel script language"
+description = "Reads and writes .ggb construction files"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -13,6 +13,7 @@ geo-kernel = { path = "../geo-kernel" }
 quick-xml = "0.42"
 # Inflate with an output limit; the zip directory is read by `archive.rs`.
 miniz_oxide = "0.9"
+zip = { version = "9.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [dev-dependencies]
 png = "0.18"
@@ -20,5 +21,3 @@ geo-golden = { path = "../geo-golden" }
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 serde_json = "1"
-# Tests build archives (stored and deflated entries) to attack the reader.
-zip = { version = "9.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }

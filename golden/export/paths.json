@@ -1,0 +1,195 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "export-paths-001",
+      "group": "export",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 2)",
+        "s = Segment(A, B)",
+        "P = Point(s)",
+        "u = 0.25",
+        "Q = Point(s, u)",
+        "k = Circle(A, B)",
+        "R = Point(k)",
+        "f(x) = x^2 - 2",
+        "r = Ray(A, B)",
+        "S = Point(r)",
+        "T = (x(S), f(x(S)))",
+        "ls = {A, B, T}",
+        "n = Length(ls)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 3.0, "y": 3.0 },
+        { "action": "move", "label": "R", "x": 3.0, "y": 2.0 },
+        { "action": "move", "label": "S", "x": 2.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "u": { "type": "number", "defined": true, "value": 0.25 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.47213595499958 },
+          "R": { "type": "point", "defined": true, "x": 4.47213595499958, "y": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 62.0],
+              [-4.0, 14.0],
+              [-2.0, 2.0],
+              [-1.0, -1.0],
+              [-0.5, -1.75],
+              [0.0, -2.0],
+              [0.5, -1.75],
+              [1.0, -1.0],
+              [2.0, 2.0],
+              [4.0, 14.0],
+              [8.0, 62.0]
+            ]
+          },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "T": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "ls": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": -2.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 3.6, "y": 1.8 },
+          "u": { "type": "number", "defined": true, "value": 0.25 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.47213595499958 },
+          "R": { "type": "point", "defined": true, "x": 4.47213595499958, "y": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 62.0],
+              [-4.0, 14.0],
+              [-2.0, 2.0],
+              [-1.0, -1.0],
+              [-0.5, -1.75],
+              [0.0, -2.0],
+              [0.5, -1.75],
+              [1.0, -1.0],
+              [2.0, 2.0],
+              [4.0, 14.0],
+              [8.0, 62.0]
+            ]
+          },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "T": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "ls": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": -2.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 3.6, "y": 1.8 },
+          "u": { "type": "number", "defined": true, "value": 0.25 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.47213595499958 },
+          "R": { "type": "point", "defined": true, "x": 3.721042037676254, "y": 2.480694691784169 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 62.0],
+              [-4.0, 14.0],
+              [-2.0, 2.0],
+              [-1.0, -1.0],
+              [-0.5, -1.75],
+              [0.0, -2.0],
+              [0.5, -1.75],
+              [1.0, -1.0],
+              [2.0, 2.0],
+              [4.0, 14.0],
+              [8.0, 62.0]
+            ]
+          },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "T": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "ls": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": -2.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 3.6, "y": 1.8 },
+          "u": { "type": "number", "defined": true, "value": 0.25 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.5 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.47213595499958 },
+          "R": { "type": "point", "defined": true, "x": 3.721042037676254, "y": 2.480694691784169 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 62.0],
+              [-4.0, 14.0],
+              [-2.0, 2.0],
+              [-1.0, -1.0],
+              [-0.5, -1.75],
+              [0.0, -2.0],
+              [0.5, -1.75],
+              [1.0, -1.0],
+              [2.0, 2.0],
+              [4.0, 14.0],
+              [8.0, 62.0]
+            ]
+          },
+          "r": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -2.0, "b": 4.0, "c": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "T": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "ls": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    }
+  ]
+}

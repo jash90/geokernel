@@ -15,7 +15,7 @@
 
 use crate::interact::ViewTransform;
 use geo_kernel::kernel::text::TextPosition;
-use geo_kernel::kernel::{Construction, Value};
+use geo_kernel::kernel::{Construction, Id, Value};
 use geo_kernel::svg::View;
 
 /// The smallest and largest scale the view allows, in pixels per world
@@ -78,6 +78,11 @@ impl Bounds {
 /// The bounding box of points, segment ends, circles, loci and world text anchors.
 /// Lines are unbounded and are ignored. `None` when nothing is bounded.
 pub fn content_bounds(c: &Construction) -> Option<Bounds> {
+    visible_content_bounds(c, |_| true)
+}
+
+/// Content bounds for objects enabled in the graphics view.
+pub fn visible_content_bounds(c: &Construction, visible: impl Fn(Id) -> bool) -> Option<Bounds> {
     let mut b = Bounds {
         xmin: f64::INFINITY,
         ymin: f64::INFINITY,
@@ -91,7 +96,7 @@ pub fn content_bounds(c: &Construction) -> Option<Bounds> {
             any = true;
         }
     };
-    for id in c.ids() {
+    for id in c.ids().filter(|&id| visible(id)) {
         match c.value(id) {
             Value::Point { x, y } => add(&mut b, x, y),
             Value::Segment { x1, y1, x2, y2 } => {
@@ -127,7 +132,7 @@ pub fn content_bounds(c: &Construction) -> Option<Bounds> {
             _ => {}
         }
     }
-    for (_, chart) in c.charts() {
+    for (_, chart) in c.charts().filter(|(id, _)| visible(*id)) {
         if let Some([xmin, ymin, xmax, ymax]) = chart.bounds() {
             add(&mut b, xmin, ymin);
             add(&mut b, xmax, ymax);
@@ -166,6 +171,18 @@ impl Camera {
             xscale: scale,
             yscale: scale,
         }
+    }
+
+    /// Recenter a file's saved pixel origin at the actual canvas size.
+    pub fn from_file(view: crate::workbench::FileView, limits: ScaleLimits) -> Option<Camera> {
+        let cx = (f64::from(view.size[0]) / 2.0 - view.origin[0]) / view.scale[0];
+        let cy = (view.origin[1] - f64::from(view.size[1]) / 2.0) / view.scale[1];
+        (cx.is_finite() && cy.is_finite()).then_some(Camera {
+            cx,
+            cy,
+            xscale: limits.clamp(view.scale[0]),
+            yscale: limits.clamp(view.scale[1]),
+        })
     }
 
     /// The view a document opens with: the standard view when all of the
@@ -648,6 +665,20 @@ mod tests {
         assert!(close(v.ymin, 0.662), "{}", v.ymin);
         assert!(close(v.ymax, 2.358), "{}", v.ymax);
         assert!(!cam.is_standard());
+    }
+
+    #[test]
+    fn file_camera_clamps_both_axes_to_the_configured_limits() {
+        let view = crate::workbench::FileView {
+            size: [800, 600],
+            origin: [400.0, 300.0],
+            scale: [1e-100, 1e100],
+            ..crate::workbench::FileView::default()
+        };
+        let limits = ScaleLimits::OURS;
+        let camera = Camera::from_file(view, limits).unwrap();
+        assert_eq!([camera.xscale, camera.yscale], [limits.min, limits.max]);
+        assert_eq!([camera.cx, camera.cy], [0.0, 0.0]);
     }
 
     #[test]

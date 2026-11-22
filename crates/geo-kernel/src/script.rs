@@ -496,6 +496,9 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
                 };
                 c.add(name, def).map_err(|e| e.to_string())
             }
+            ("$pointOnPath", [curve, parameter]) => c
+                .add_saved_curve_point(name, object(c, curve)?, parse_number(parameter)?)
+                .map_err(|e| e.to_string()),
             ("$pointOnPath", [path, x, y, bounds @ ..]) => {
                 let path = object(c, path)?;
                 let (x, y) = (parse_number(x)?, parse_number(y)?);
@@ -781,7 +784,7 @@ fn call_closes_at_end(rhs: &str, open: usize) -> bool {
 
 /// `Name(args)` split into the name and the trimmed arguments; `None` for
 /// anything else (a point literal, a number, a malformed line).
-pub(crate) fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
+pub fn split_call(rhs: &str) -> Option<(&str, Vec<&str>)> {
     if rhs.starts_with('(') {
         return None;
     }

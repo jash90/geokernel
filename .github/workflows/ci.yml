@@ -42,6 +42,22 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Test
         run: cargo test --workspace
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build the headless reference harness
+        run: |
+          export GEOGEBRA_REV=112919f2d450ec7430a5cd3b65dba226fdc43b74
+          GEOGEBRA_SRC="$(mktemp -d "$RUNNER_TEMP/geogebra.XXXXXX")"
+          export GEOGEBRA_SRC
+          printf 'GEOGEBRA_SRC=%s\n' "$GEOGEBRA_SRC" >> "$GITHUB_ENV"
+          git init "$GEOGEBRA_SRC"
+          git -C "$GEOGEBRA_SRC" fetch --depth=1 https://github.com/geogebra/geogebra.git "$GEOGEBRA_REV"
+          git -C "$GEOGEBRA_SRC" checkout --detach FETCH_HEAD
+          tools/ggb-harness/harness.sh build
+      - name: Reload exported archives in the reference app
+        run: cargo test -p geo-golden --test export -- --ignored --nocapture
       # The upstream t-pairs report (pass/gap per command) is the entry
       # point of the GeoGebra-test-driven workflow; print it so a red
       # command can be seen in the log without a local run.

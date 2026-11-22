@@ -1133,7 +1133,7 @@ impl Construction {
 
     /// Includes homogeneous coordinates so algorithms that read the raw
     /// fields see scale changes even when the Cartesian value is unchanged.
-    pub(crate) fn stored_value(&self, id: Id) -> Value {
+    pub fn stored_value(&self, id: Id) -> Value {
         self.values
             .get(id.0)
             .copied()
@@ -2251,6 +2251,19 @@ impl Construction {
             return Err(Error::NotFinite);
         }
         let state = PathState::saved(self, path, x, y, bounds);
+        self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
+    }
+
+    pub(crate) fn add_saved_curve_point(
+        &mut self,
+        label: &str,
+        path: Id,
+        t: f64,
+    ) -> Result<Id, Error> {
+        if self.kind(path) != Kind::Curve || !t.is_finite() {
+            return Err(Error::NotFinite);
+        }
+        let state = PathState::saved_curve(self, path, t);
         self.add_with_path_state(label, Def::Path(PathDef::On { path }), Some(state))
     }
 
