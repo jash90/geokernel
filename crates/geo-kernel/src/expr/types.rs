@@ -264,6 +264,69 @@ fn type_node(
                 0,
             )
         }
+        Node::SystemFunction(_, a) => {
+            let a = a as usize;
+            if !matches!(state.tys[a], Ty::Num(_)) {
+                return Err("a system function must give a number".into());
+            }
+            (
+                state.tys[a],
+                state.depth[a] + 1,
+                state.cost[a].saturating_add(1),
+                0,
+            )
+        }
+        Node::FunctionAsymptotes(a) => {
+            let a = a as usize;
+            if !matches!(state.tys[a], Ty::Num(_)) {
+                return Err("Asymptote needs a real function".into());
+            }
+            (
+                Ty::List(Elem::Object),
+                state.depth[a] + 1,
+                state.cost[a].saturating_add(1),
+                0,
+            )
+        }
+        Node::RootList(a) => {
+            let a = a as usize;
+            if !matches!(state.tys[a], Ty::List(_)) || state.vars[a] != 0 {
+                return Err("RootList needs a list of values".into());
+            }
+            (
+                Ty::List(Elem::Vec),
+                state.depth[a] + 1,
+                state.cost[a].saturating_add(1),
+                0,
+            )
+        }
+        Node::Iteration {
+            mode,
+            collect,
+            formula,
+            initial,
+            count,
+        } => {
+            let [f, a, n] = [formula, initial, count].map(|i| i as usize);
+            let ty = commands::function_analysis::iteration_type(
+                mode,
+                collect,
+                state.tys[f],
+                state.tys[a],
+                state.tys[n],
+            )?;
+            if state.vars[a] != 0 || state.vars[n] != 0 {
+                return Err("Iteration needs fixed initial values and count".into());
+            }
+            (
+                ty,
+                1 + state.depth[f].max(state.depth[a]).max(state.depth[n]),
+                1u64.saturating_add(state.cost[f])
+                    .saturating_add(state.cost[a])
+                    .saturating_add(state.cost[n]),
+                0,
+            )
+        }
         Node::PolynomialPart(_, a, b) => {
             let (a, b) = (a as usize, b as usize);
             if !matches!((state.tys[a], state.tys[b]), (Ty::Num(_), Ty::Num(_))) {
@@ -600,6 +663,7 @@ fn assign(state: &mut State, i: u32, ty: Ty, d: u32, k: u64, v: u64) -> (Ty, u32
 fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
     match (c.kind(id), c.def(id)) {
         (Kind::List, Def::Expr(d)) => Ok(super::entry(c, d).root_ty()),
+        (Kind::List, Def::Chart(_)) => Ok(Ty::List(Elem::Any)),
         // a locus is the argument of `First(locus, n)` (`AlgoFirstLocus`);
         // anywhere else it reads as a plain number, which no operation
         // makes sense of and evaluates to the undefined number

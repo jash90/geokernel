@@ -39,6 +39,13 @@ impl Slot {
 
     /// A number element; one that is not finite shows as undefined, like a
     /// number object.
+    pub(crate) fn with_value(kind: Kind, value: Value) -> Slot {
+        Self {
+            value,
+            ..Self::undefined(kind)
+        }
+    }
+
     pub(crate) fn number(v: f64) -> Slot {
         if v.is_finite() {
             Slot {
@@ -83,6 +90,14 @@ impl Slot {
             object: NO_OBJECT,
             equation_revision: 0,
             text: None,
+        }
+    }
+
+    pub(crate) fn line(value: Value) -> Slot {
+        debug_assert!(matches!(value, Value::Line { .. }));
+        Slot {
+            value,
+            ..Slot::undefined(Kind::Line)
         }
     }
 
@@ -204,6 +219,11 @@ impl Slot {
             // An undefined line retains coefficients used by equality. Functions,
             // curves, and conics can change data held outside their value.
             return false;
+        }
+        if matches!(self.value, Value::Segment { .. })
+            || matches!(other.value, Value::Segment { .. })
+        {
+            return self.value == other.value;
         }
         let bits = |v: &Value| -> [u64; 3] {
             match *v {

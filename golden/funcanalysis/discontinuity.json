@@ -1,0 +1,271 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-discontinuity-001",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = (x^2-1)/(x-1)",
+        "R = RemovableDiscontinuity(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, -0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, null],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-discontinuity-002",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = (x^2-1)/(x^2-1)",
+        "R = RemovableDiscontinuity(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, null],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, null],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-discontinuity-003",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = 1/(x-1)",
+        "R = RemovableDiscontinuity(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.1111111111111111],
+              [-4.0, -0.2],
+              [-2.0, -0.3333333333333333],
+              [-1.0, -0.5],
+              [-0.5, -0.6666666666666666],
+              [0.0, -1.0],
+              [0.5, -2.0],
+              [1.0, null],
+              [2.0, 1.0],
+              [4.0, 0.3333333333333333],
+              [8.0, 0.14285714285714285]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-discontinuity-004",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = sin(x)/x",
+        "R = RemovableDiscontinuity(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.12366978082792272],
+              [-4.0, -0.18920062382698205],
+              [-2.0, 0.45464871341284085],
+              [-1.0, 0.8414709848078965],
+              [-0.5, 0.958851077208406],
+              [0.0, null],
+              [0.5, 0.958851077208406],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.45464871341284085],
+              [4.0, -0.18920062382698205],
+              [8.0, 0.12366978082792272]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-discontinuity-005",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = (1-cos(x))/x^2",
+        "R = RemovableDiscontinuity(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.017898438028259585],
+              [-4.0, 0.10335272630397574],
+              [-2.0, 0.3540367091367856],
+              [-1.0, 0.45969769413186023],
+              [-0.5, 0.48966975243850897],
+              [0.0, null],
+              [0.5, 0.48966975243850897],
+              [1.0, 0.45969769413186023],
+              [2.0, 0.3540367091367856],
+              [4.0, 0.10335272630397574],
+              [8.0, 0.017898438028259585]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-discontinuity-006",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = (x-1)^2/(x-1)",
+        "R = RemovableDiscontinuity(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -9.0],
+              [-4.0, -5.0],
+              [-2.0, -3.0],
+              [-1.0, -2.0],
+              [-0.5, -1.5],
+              [0.0, -1.0],
+              [0.5, -0.5],
+              [1.0, null],
+              [2.0, 1.0],
+              [4.0, 3.0],
+              [8.0, 7.0]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-discontinuity-007",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = (x^2+1)/(x-1)",
+        "R = RemovableDiscontinuity(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.222222222222222],
+              [-4.0, -3.4],
+              [-2.0, -1.6666666666666667],
+              [-1.0, -1.0],
+              [-0.5, -0.8333333333333334],
+              [0.0, -1.0],
+              [0.5, -2.5],
+              [1.0, null],
+              [2.0, 5.0],
+              [4.0, 5.666666666666667],
+              [8.0, 9.285714285714286]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-discontinuity-008",
+      "group": "funcanalysis",
+      "script": [
+        "f(x) = x^2",
+        "R = RemovableDiscontinuity(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

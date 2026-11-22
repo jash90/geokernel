@@ -122,34 +122,92 @@ pub(crate) fn closest(c: &Construction, id: Id, (px, py): (f64, f64)) -> Option<
 
 /// A Cartesian curve evaluated with a shared work limit across coordinates.
 pub(super) struct Cartesian<'a> {
-    x: FunctionDerivative<'a>,
-    y: FunctionDerivative<'a>,
+    source: CurveSource<'a>,
     start: f64,
     end: f64,
     work_at_start: u64,
 }
 
+enum CurveSource<'a> {
+    Coordinates(Box<[FunctionDerivative<'a>; 2]>),
+    Spline(std::sync::Arc<super::analysis::Spline>),
+    ParametricDerivative(Box<Cartesian<'a>>),
+}
+
 impl<'a> Cartesian<'a> {
     pub(super) fn new(c: &'a Construction, id: Id) -> Option<Self> {
-        use super::measure::MeasureDef;
+        Self::with_depth(c, id, 12)
+    }
+
+    fn with_depth(c: &'a Construction, id: Id, depth: u8) -> Option<Self> {
+        use super::{analysis::AnalysisDef, measure::MeasureDef};
         use crate::{Def, Value};
-        let Def::Measure(MeasureDef::CartesianCurve {
-            coordinates: [x, y],
-            ..
-        }) = c.def(id)
-        else {
-            return None;
-        };
         let Value::Curve { start, end } = c.value(id) else {
             return None;
         };
+        let source = match c.def(id) {
+            Def::Measure(MeasureDef::CartesianCurve {
+                coordinates: [x, y],
+                ..
+            }) => CurveSource::Coordinates(Box::new([
+                FunctionDerivative::new(c, Id(x as usize))?,
+                FunctionDerivative::new(c, Id(y as usize))?,
+            ])),
+            Def::Analysis(AnalysisDef::Spline(input)) => {
+                CurveSource::Spline(c.analysis.spline(c, input)?)
+            }
+            Def::Analysis(AnalysisDef::ParametricDerivative(id)) => {
+                CurveSource::ParametricDerivative(Box::new(Self::with_depth(
+                    c,
+                    id,
+                    depth.checked_sub(1)?,
+                )?))
+            }
+            _ => return None,
+        };
         Some(Self {
-            x: FunctionDerivative::new(c, Id(x as usize))?,
-            y: FunctionDerivative::new(c, Id(y as usize))?,
+            source,
             start,
             end,
             work_at_start: crate::expr::work_done(),
         })
+    }
+
+    pub(super) fn value(&self, t: f64) -> (f64, f64) {
+        if !self.has_budget() {
+            return (f64::NAN, f64::NAN);
+        }
+        match &self.source {
+            CurveSource::Coordinates(f) => (f[0].value(t), f[1].value(t)),
+            CurveSource::Spline(spline) => spline.sample(t, 0),
+            CurveSource::ParametricDerivative(original) => {
+                let (x, _) = original.value(t);
+                let (dx, dy) = original.first(t);
+                (x, dy / dx)
+            }
+        }
+    }
+
+    pub(super) fn first(&self, t: f64) -> (f64, f64) {
+        if !self.has_budget() {
+            return (f64::NAN, f64::NAN);
+        }
+        match &self.source {
+            CurveSource::Coordinates(f) => (f[0].slope(t), f[1].slope(t)),
+            CurveSource::Spline(spline) => spline.sample(t, 1),
+            CurveSource::ParametricDerivative(original) => {
+                let (dx, dy) = original.first(t);
+                let (ddx, ddy) = original.second(t);
+                (dx, (ddy * dx - ddx * dy) / (dx * dx))
+            }
+        }
+    }
+
+    pub(super) fn second(&self, t: f64) -> (f64, f64) {
+        if let CurveSource::Spline(spline) = &self.source {
+            return spline.sample(t, 2);
+        }
+        (slope(|t| self.first(t).0, t), slope(|t| self.first(t).1, t))
     }
 
     fn has_budget(&self) -> bool {
@@ -161,11 +219,7 @@ impl<'a> Cartesian<'a> {
             if !self.has_budget() {
                 return f64::NAN;
             }
-            let x = self.x.slope(t);
-            if !self.has_budget() {
-                return f64::NAN;
-            }
-            let y = self.y.slope(t);
+            let (x, y) = self.first(t);
             (x * x + y * y).sqrt()
         };
         super::elliptic::numeric_integration(&integrand, start, end).abs()
@@ -176,11 +230,8 @@ impl<'a> Cartesian<'a> {
             if !self.has_budget() {
                 return f64::NAN;
             }
-            let dx = self.x.value(t) - px;
-            if !self.has_budget() {
-                return f64::NAN;
-            }
-            let dy = self.y.value(t) - py;
+            let (x, y) = self.value(t);
+            let (dx, dy) = (x - px, y - py);
             dx * dx + dy * dy
         };
         // GeoCurveCartesianND samples before refining one bracket.
@@ -215,6 +266,14 @@ impl<'a> Cartesian<'a> {
             }
         }
         result
+    }
+}
+
+impl Construction {
+    /// Evaluates a Cartesian curve at its parameter.
+    pub fn curve_point(&self, id: Id, parameter: f64) -> Option<(f64, f64)> {
+        let point = Cartesian::new(self, id)?.value(parameter);
+        (point.0.is_finite() && point.1.is_finite()).then_some(point)
     }
 }
 

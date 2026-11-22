@@ -56,6 +56,46 @@ pub fn line_scale_agrees(expected: &Expected, actual: &Value) -> Option<bool> {
     Some(close(*a, x) && close(*b, y) && close(*c, z))
 }
 
+pub(crate) fn compare_pie(
+    expected: &Expected,
+    pie: Option<&geo_kernel::algo::charts::Pie>,
+) -> Result<Sign, String> {
+    match (&expected.data, pie) {
+        (None, None) => Ok(Sign::NotApplicable),
+        (
+            Some(ExpectedData::Pie {
+                center,
+                radius,
+                fractions,
+            }),
+            Some(pie),
+        ) => {
+            if !all_agree(&[
+                (center.0, pie.center.0),
+                (center.1, pie.center.1),
+                (*radius, pie.radius),
+            ]) {
+                return Err(format!(
+                    "pie center or radius differs: {:?}",
+                    (pie.center, pie.radius)
+                ));
+            }
+            if fractions.len() != pie.fractions.len()
+                || !fractions.iter().zip(&pie.fractions).all(|(want, &got)| {
+                    want.map_or_else(
+                        || !got.is_finite(),
+                        |want| got.is_finite() && numbers_agree(want, got),
+                    )
+                })
+            {
+                return Err(format!("pie fractions differ: {:?}", pie.fractions));
+            }
+            Ok(Sign::NotApplicable)
+        }
+        _ => Err("pie definition differs".into()),
+    }
+}
+
 /// Compares one recorded object with what the kernel holds, for objects
 /// without vertices and other than functions (see [`compare_object`]).
 pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, String> {
@@ -149,6 +189,21 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
                 return Err(format!("expected {expected:?}, got {actual:?}"));
             }
         }
+        Some(ExpectedData::Curve { samples, .. }) => {
+            let result = compare(expected, kind, &c.value(id))?;
+            for &(t, want) in samples {
+                let got = c.curve_point(id, t);
+                let agrees = match (want, got) {
+                    (Some((x, y)), Some((a, b))) => all_agree(&[(x, a), (y, b)]),
+                    (None, None) => true,
+                    _ => false,
+                };
+                if !agrees {
+                    return Err(format!("curve at {t}: expected {want:?}, got {got:?}"));
+                }
+            }
+            return Ok(result);
+        }
         Some(ExpectedData::FunctionNVar(samples)) => {
             for &(x, y, want) in samples {
                 let got = c.function_value_xy(id, x, y).filter(|v| v.is_finite());
@@ -231,7 +286,7 @@ pub fn compare_sampled(
             ok(all_agree(&[(*x, ax), (*y, ay)]))
         }
         (ExpectedData::Number(v), Value::Number(av)) => ok(numbers_agree(*v, av)),
-        (ExpectedData::Curve { start, end }, Value::Curve { start: a, end: b }) => {
+        (ExpectedData::Curve { start, end, .. }, Value::Curve { start: a, end: b }) => {
             ok(numbers_agree(*start, a) && numbers_agree(*end, b))
         }
         (ExpectedData::Bool(b), Value::Bool(ab)) => ok(*b == ab),

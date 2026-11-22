@@ -2145,6 +2145,285 @@ form = "number,number,number,number,number"
 cases = ["importgaps-curve-001"]
 
 [[form]]
+command = "BarChart"
+form = "list,number"
+cases = ["charts-barchart-003"]
+
+[[form]]
+command = "BarChart"
+form = "list,list"
+cases = ["charts-barchart-001"]
+
+[[form]]
+command = "BarChart"
+form = "number,number,list"
+cases = ["charts-barchart-004"]
+
+[[form]]
+command = "BarChart"
+form = "list,list,number"
+cases = ["charts-barchart-002"]
+
+[[form]]
+command = "BarChart"
+form = "list,number,number"
+cases = ["charts-barchart-007"]
+
+[[form]]
+command = "BarChart"
+form = "number,number,any,number,number,number"
+cases = ["charts-barchart-005"]
+difference = "charts: `BarChart(number, number, any, number, number, number)`"
+
+[[form]]
+command = "BarChart"
+form = "number,number,any,number,number,number,number"
+cases = ["charts-barchart-006"]
+difference = "charts: `BarChart(number, number, any, number, number, number, number)`"
+
+[[form]]
+command = "BoxPlot"
+form = "number,number,list"
+cases = ["charts-boxplot-001"]
+
+[[form]]
+command = "BoxPlot"
+form = "number,number,list,boolean"
+cases = ["charts-boxplot-002"]
+
+[[form]]
+command = "BoxPlot"
+form = "number,number,list,list,boolean"
+cases = ["charts-boxplot-009"]
+
+[[form]]
+command = "BoxPlot"
+form = "number,number,number,number,number,number,number"
+cases = ["charts-boxplot-004"]
+
+[[form]]
+command = "Histogram"
+form = "list,list"
+cases = ["charts-histogram-004"]
+
+[[form]]
+command = "Histogram"
+form = "list,list,boolean"
+cases = ["charts-histogram-005"]
+
+[[form]]
+command = "Histogram"
+form = "list,list,boolean,number"
+cases = ["charts-histogram-007"]
+
+[[form]]
+command = "Histogram"
+form = "boolean,list,list,boolean"
+cases = ["charts-histogram-009"]
+
+[[form]]
+command = "Histogram"
+form = "boolean,list,list,boolean,number"
+cases = ["charts-histogram-001"]
+
+[[form]]
+command = "Histogram"
+form = "boolean,list,list,list,boolean"
+cases = ["charts-histogram-011"]
+
+[[form]]
+command = "Histogram"
+form = "boolean,list,list,boolean,number,any"
+cases = ["charts-histogram-014"]
+difference = "charts: `Histogram(boolean, list, list, boolean, number, any)`"
+
+[[form]]
+command = "Histogram"
+form = "boolean,list,list,list,boolean,number"
+cases = ["charts-histogram-012"]
+
+[[form]]
+command = "HistogramRight"
+form = "list,list"
+cases = ["charts-histogramright-004"]
+
+[[form]]
+command = "HistogramRight"
+form = "list,list,boolean"
+cases = ["charts-histogramright-005"]
+
+[[form]]
+command = "HistogramRight"
+form = "list,list,boolean,number"
+cases = ["charts-histogramright-007"]
+
+[[form]]
+command = "HistogramRight"
+form = "boolean,list,list,boolean"
+cases = ["charts-histogramright-009"]
+
+[[form]]
+command = "HistogramRight"
+form = "boolean,list,list,boolean,number"
+cases = ["charts-histogramright-001"]
+
+[[form]]
+command = "HistogramRight"
+form = "boolean,list,list,list,boolean"
+cases = ["charts-histogramright-011"]
+
+[[form]]
+command = "HistogramRight"
+form = "boolean,list,list,boolean,number,any"
+cases = ["charts-histogramright-014"]
+difference = "charts: `HistogramRight(boolean, list, list, boolean, number, any)`"
+
+[[form]]
+command = "HistogramRight"
+form = "boolean,list,list,list,boolean,number"
+cases = ["charts-histogramright-012"]
+
+[[form]]
+command = "DotPlot"
+form = "list"
+cases = ["charts-dotplot-001"]
+
+[[form]]
+command = "DotPlot"
+form = "list,boolean"
+cases = ["charts-dotplot-003"]
+
+[[form]]
+command = "DotPlot"
+form = "list,number"
+cases = ["charts-dotplot-002"]
+
+[[form]]
+command = "DotPlot"
+form = "list,boolean,number"
+cases = ["charts-dotplot-004"]
+
+[[form]]
+command = "ResidualPlot"
+form = "list,function"
+cases = ["charts-residualplot-001"]
+
+[[form]]
+command = "FrequencyPolygon"
+form = "list,list"
+cases = ["charts-frequencypolygon-007"]
+
+[[form]]
+command = "FrequencyPolygon"
+form = "list,list,boolean"
+cases = ["charts-frequencypolygon-004"]
+
+[[form]]
+command = "FrequencyPolygon"
+form = "boolean,list,list,boolean"
+cases = ["charts-frequencypolygon-005"]
+
+[[form]]
+command = "FrequencyPolygon"
+form = "list,list,boolean,number"
+cases = ["charts-frequencypolygon-003"]
+
+[[form]]
+command = "FrequencyPolygon"
+form = "boolean,list,list,boolean,number"
+cases = ["charts-frequencypolygon-001"]
+
+[[form]]
+command = "FrequencyPolygon"
+form = "boolean,list,list,list,boolean"
+cases = ["charts-frequencypolygon-006"]
+
+[[form]]
+command = "NormalQuantilePlot"
+form = "list"
+cases = ["charts-normalquantileplot-001"]
+
+[[form]]
+command = "NormalQuantilePlot"
+form = "number,number,..."
+cases = ["charts-normalquantileplot-005"]
+
+[[form]]
+command = "NormalQuantilePlot"
+form = "point,point,..."
+cases = ["charts-normalquantileplot-006"]
+
+[[form]]
+command = "StickGraph"
+form = "list"
+cases = ["charts-stickgraph-002"]
+
+[[form]]
+command = "StickGraph"
+form = "list,boolean"
+cases = ["charts-stickgraph-004"]
+
+[[form]]
+command = "StickGraph"
+form = "list,list"
+cases = ["charts-stickgraph-006"]
+
+[[form]]
+command = "StickGraph"
+form = "list,list,boolean"
+cases = ["charts-stickgraph-007"]
+
+[[form]]
+command = "StepGraph"
+form = "list"
+cases = ["charts-stepgraph-002"]
+
+[[form]]
+command = "StepGraph"
+form = "list,boolean"
+cases = ["charts-stepgraph-004"]
+
+[[form]]
+command = "StepGraph"
+form = "list,list"
+cases = ["charts-stepgraph-011"]
+
+[[form]]
+command = "StepGraph"
+form = "list,boolean,number"
+cases = ["charts-stepgraph-006"]
+
+[[form]]
+command = "StepGraph"
+form = "list,list,boolean"
+cases = ["charts-stepgraph-012"]
+
+[[form]]
+command = "StepGraph"
+form = "list,list,boolean,number"
+cases = ["charts-stepgraph-013"]
+
+[[form]]
+command = "LineGraph"
+form = "list,list"
+cases = ["charts-linegraph-009"]
+
+[[form]]
+command = "PieChart"
+form = "list"
+cases = ["charts-piechart-001"]
+
+[[form]]
+command = "PieChart"
+form = "list,point"
+cases = ["charts-piechart-004"]
+
+[[form]]
+command = "PieChart"
+form = "list,point,number"
+cases = ["charts-piechart-002"]
+
+[[form]]
 command = "ConvexHull"
 form = "list"
 cases = ["discrete-upstream-001", "discrete-hull-006", "discrete-hull-007"]
@@ -2218,3 +2497,239 @@ cases = ["discrete-voronoi-008"]
 command = "Voronoi"
 form = "point,point,..."
 cases = ["discrete-voronoi-001"]
+
+[[form]]
+command = "Root"
+form = "function"
+cases = ["funcanalysis-forms-001", "funcanalysis-rootedge-012"]
+
+[[form]]
+command = "Root"
+form = "function,number"
+cases = ["funcanalysis-forms-002"]
+
+[[form]]
+command = "Root"
+form = "function,function"
+cases = ["funcanalysis-rootedge-013"]
+
+[[form]]
+command = "Root"
+form = "function,number,number"
+cases = ["funcanalysis-forms-003"]
+
+[[form]]
+command = "Roots"
+form = "function"
+cases = ["funcanalysis-rootsedge-008"]
+
+[[form]]
+command = "Roots"
+form = "function,number,number"
+cases = ["funcanalysis-forms-004"]
+
+[[form]]
+command = "Extremum"
+form = "function"
+cases = ["funcanalysis-forms-005"]
+
+[[form]]
+command = "Extremum"
+form = "function,number,number"
+cases = ["funcanalysis-forms-006"]
+
+[[form]]
+command = "TurningPoint"
+form = "function"
+cases = ["funcanalysis-forms-007"]
+
+[[form]]
+command = "ComplexRoot"
+form = "function"
+cases = ["funcanalysis-forms-008"]
+
+[[form]]
+command = "RootList"
+form = "list"
+cases = ["funcanalysis-rootlistupstream-001", "funcanalysis-rootlistedge-001", "funcanalysis-rootlistedge-002"]
+
+[[form]]
+command = "RootList"
+form = "number,number,..."
+cases = ["funcanalysis-rootlistedge-003"]
+
+[[form]]
+command = "RootList"
+form = "point,point,..."
+cases = ["funcanalysis-rootlistedge-004"]
+
+[[form]]
+command = "Function"
+form = "function,number,number"
+cases = ["funcanalysis-forms-009"]
+
+[[form]]
+command = "Function"
+form = "function,any,number,number"
+cases = ["funcanalysis-forms-010"]
+difference = "numerical-function-analysis: `Function(function, any, number, number)`"
+
+[[form]]
+command = "CurveCartesian"
+form = "point,number,number,number"
+cases = ["funcanalysis-curveedge-011"]
+
+[[form]]
+command = "CurveCartesian"
+form = "vector,number,number,number"
+cases = ["funcanalysis-curveedge-012"]
+
+[[form]]
+command = "ParametricDerivative"
+form = "curve"
+cases = ["funcanalysis-curveedge-005", "funcanalysis-curveupstream-003"]
+
+[[form]]
+command = "Spline"
+form = "list"
+cases = ["funcanalysis-splineupstream-001", "funcanalysis-curveedge-007", "funcanalysis-curveedge-010"]
+
+[[form]]
+command = "Spline"
+form = "list,number"
+cases = ["funcanalysis-splineupstream-002", "funcanalysis-splineupstream-004", "funcanalysis-curveedge-009"]
+
+[[form]]
+command = "Spline"
+form = "list,number,function"
+cases = ["funcanalysis-forms-023"]
+
+[[form]]
+command = "Spline"
+form = "point,point,..."
+cases = ["funcanalysis-curveedge-008"]
+
+[[form]]
+command = "BezierCurve"
+form = "point,point,point,point"
+cases = ["funcanalysis-curveedge-006", "funcanalysis-splineupstream-005"]
+
+[[form]]
+command = "NInvert"
+form = "function"
+cases = ["funcanalysis-inverted-001"]
+
+[[form]]
+command = "SolveODE"
+form = "function,number,number,number,number"
+cases = ["funcanalysis-forms-020"]
+
+[[form]]
+command = "SolveODE"
+form = "function,function,number,number,number,number"
+cases = ["funcanalysis-forms-021"]
+
+[[form]]
+command = "SolveODE"
+form = "function,function,function,number,number,number,number,number"
+cases = ["funcanalysis-forms-022"]
+
+[[form]]
+command = "NSolveODE"
+form = "list,number,list,number"
+cases = ["funcanalysis-nsode-001", "funcanalysis-nsode-002", "funcanalysis-nsode-003"]
+
+[[form]]
+command = "Curvature"
+form = "point,function"
+cases = ["funcanalysis-forms-011"]
+
+[[form]]
+command = "Curvature"
+form = "point,curve"
+cases = ["funcanalysis-forms-012"]
+
+[[form]]
+command = "Curvature"
+form = "point,conic"
+cases = ["funcanalysis-forms-013"]
+
+[[form]]
+command = "CurvatureVector"
+form = "point,function"
+cases = ["funcanalysis-forms-011"]
+
+[[form]]
+command = "CurvatureVector"
+form = "point,curve"
+cases = ["funcanalysis-forms-012"]
+
+[[form]]
+command = "CurvatureVector"
+form = "point,conic"
+cases = ["funcanalysis-forms-013"]
+
+[[form]]
+command = "OsculatingCircle"
+form = "point,function"
+cases = ["funcanalysis-forms-011"]
+
+[[form]]
+command = "OsculatingCircle"
+form = "point,curve"
+cases = ["funcanalysis-forms-012"]
+
+[[form]]
+command = "OsculatingCircle"
+form = "point,conic"
+cases = ["funcanalysis-forms-013"]
+
+[[form]]
+command = "Iteration"
+form = "function,number,number"
+cases = ["funcanalysis-forms-014"]
+
+[[form]]
+command = "Iteration"
+form = "function,list,number"
+cases = ["funcanalysis-forms-015"]
+
+[[form]]
+command = "Iteration"
+form = "function,any,..."
+difference = "numerical-function-analysis: `Iteration(function, any, ...)`, `IterationList(function, any, ...)`"
+
+[[form]]
+command = "IterationList"
+form = "function,number,number"
+cases = ["funcanalysis-forms-014"]
+
+[[form]]
+command = "IterationList"
+form = "function,list,number"
+cases = ["funcanalysis-forms-015"]
+
+[[form]]
+command = "IterationList"
+form = "function,any,..."
+difference = "numerical-function-analysis: `Iteration(function, any, ...)`, `IterationList(function, any, ...)`"
+
+[[form]]
+command = "SlopeField"
+form = "function"
+cases = ["funcanalysis-forms-016"]
+
+[[form]]
+command = "SlopeField"
+form = "function,number"
+cases = ["funcanalysis-forms-017"]
+
+[[form]]
+command = "SlopeField"
+form = "function,number,number"
+cases = ["funcanalysis-forms-018"]
+
+[[form]]
+command = "SlopeField"
+form = "function,number,number,number,number,number,number"
+cases = ["funcanalysis-forms-019"]

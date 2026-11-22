@@ -1,0 +1,42 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-complexupstream-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = ComplexRoot(x^6+7x^3-8)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 2.220446049250313E-16 },
+          "R_{2}": { "type": "point", "defined": true, "x": -0.49999999999999994, "y": -0.8660254037844386 },
+          "R_{3}": { "type": "point", "defined": true, "x": -0.5, "y": 0.8660254037844387 },
+          "R_{4}": { "type": "point", "defined": true, "x": 1.0, "y": -1.7320508075688774 },
+          "R_{5}": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R_{6}": { "type": "point", "defined": true, "x": 1.0, "y": 1.7320508075688772 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-complexupstream-002",
+      "group": "funcanalysis",
+      "script": [
+        "R = ComplexRoot(x^2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

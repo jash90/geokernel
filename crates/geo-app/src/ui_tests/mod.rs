@@ -17,6 +17,7 @@ mod pointer;
 mod tangents;
 mod tools;
 mod upstream_tools;
+mod zoom;
 
 /// The harness puts this margin around the root ui.
 const MARGIN: f32 = 8.0;
@@ -189,14 +190,21 @@ fn dragging_empty_space_pans_instead_of_moving_points() {
     }
     button(&mut h, start + egui::vec2(60.0, 0.0), false);
     h.run();
+    // The pan is one undo step right after it (the owner's rule,
+    // `OwnerRules::view_changes_are_steps`; the reference app stores a view
+    // change only at the next press).
     let app = h.state();
-    assert!(!app.wb.can_undo());
+    assert_eq!(app.wb.undo_depth(), (1, 0));
     let cam = app.camera.unwrap();
     assert!(
         (cam.cx + 60.0 / 50.0).abs() < 0.05,
         "camera moved left: {}",
         cam.cx
     );
+    assert!(h.state_mut().undo());
+    h.run();
+    let cam = h.state().camera.unwrap();
+    assert!(cam.cx.abs() < 1e-9, "undo put the view back: {}", cam.cx);
 }
 
 /// The owner's rule `interact::REFUSED_DRAG_NOTICE`, under both settings
@@ -209,7 +217,7 @@ fn dragging_empty_space_pans_instead_of_moving_points() {
 fn a_refused_drag_of_a_dependent_point_says_why_and_does_not_pan() {
     for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
         let mut h = harness("A = (1, 1)\nB = (5, 1)\nM = Midpoint(A, B)\n");
-        h.state_mut().rules = rules;
+        h.state_mut().set_rules(rules);
         drag(
             &mut h,
             world(3.0, 1.0),
@@ -238,7 +246,7 @@ fn a_refused_drag_of_a_dependent_point_says_why_and_does_not_pan() {
 fn a_press_on_a_side_takes_the_polygon() {
     for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
         let mut h = harness("A = (1, 1)\nB = (5, 1)\nC = (1, 4)\np = Polygon(A, B, C)\n");
-        h.state_mut().rules = rules;
+        h.state_mut().set_rules(rules);
         let p = h.state().wb.construction().id("p");
         assert!(p.is_some());
         click(&mut h, world(3.0, 1.0));

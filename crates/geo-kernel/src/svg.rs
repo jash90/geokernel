@@ -2,7 +2,10 @@
 
 use crate::algo::conic_nd::ConicType;
 use crate::algo::vector::start;
-use crate::kernel::{Construction, Kind, Value};
+use crate::kernel::{Construction, Id, Kind, Value};
+use std::collections::HashMap;
+
+mod extras;
 use std::fmt::Write;
 
 /// The rectangle of the plane that is drawn.
@@ -30,6 +33,20 @@ impl View {
             v.ymax = v.ymax.max(y);
         };
         for id in c.ids().filter(|&id| !c.label(id).starts_with('\0')) {
+            if let Some([xmin, ymin, xmax, ymax]) = c.chart(id).and_then(|chart| chart.bounds()) {
+                grow(xmin, ymin);
+                grow(xmax, ymax);
+                continue;
+            }
+            if c.image(id)
+                .is_some_and(|image| !image.placement.is_screen())
+            {
+                if let Some(quad) = c.image_quad(id, 50.0) {
+                    for [x, y] in quad {
+                        grow(x, y);
+                    }
+                }
+            }
             match c.value(id) {
                 Value::Point { x, y } => grow(x, y),
                 Value::Segment { x1, y1, x2, y2 } => {
@@ -132,26 +149,100 @@ pub fn render_visible(
     let sx = |x: f64| ox + (x - view.xmin) * scale;
     let sy = |y: f64| h - oy - (y - view.ymin) * scale;
 
+    let screen = |(x, y)| (sx(x), sy(y));
+    let mut out = String::new();
+    let mut definitions = String::new();
+    let mut assets = HashMap::new();
+    let mut ids: Vec<_> = c
+        .ids()
+        .filter(|&id| !c.label(id).starts_with('\0') && visible(id))
+        .collect();
+    for &id in &ids {
+        if let Some(source) = c.construction_source(id) {
+            let _ = writeln!(definitions, "{} = {}", escape(c.label(id)), escape(source));
+        }
+    }
+    let _ = writeln!(
+        out,
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">"##,
+    );
+    if !definitions.is_empty() {
+        let _ = writeln!(out, "<desc>{}</desc>", definitions.trim_end());
+    }
+    let _ = writeln!(
+        out,
+        r##"<rect width="100%" height="100%" fill="#ffffff"/>"##
+    );
+    if c.images().len() != 0 {
+        out.push_str("<defs>\n");
+        for &id in &ids {
+            if let Some(image) = c.image(id) {
+                let index = assets.len();
+                assets.entry(image.asset.id()).or_insert_with(|| {
+                    extras::image_source(&mut out, index, &image.asset);
+                    index
+                });
+            }
+        }
+        out.push_str("</defs>\n");
+    }
+    ids.sort_by_key(|&id| c.drawing_order(id));
+    for &id in &ids {
+        if let Some(image) = c.image(id).filter(|image| image.style.background) {
+            extras::image(&mut out, c, id, assets[&image.asset.id()], scale, screen);
+        }
+    }
+    for layer in c.drawing_layers() {
+        let same_layer = |id| c.drawing_style(id).layer == layer;
+        for &id in ids.iter().filter(|&&id| same_layer(id)) {
+            if let Some(image) = c.image(id).filter(|image| !image.style.background) {
+                extras::image(&mut out, c, id, assets[&image.asset.id()], scale, screen);
+            } else if c.kind(id) != Kind::Function && c.chart(id).is_some() {
+                extras::chart(&mut out, c, id, scale, screen);
+            }
+        }
+        render_geometry(
+            &mut out,
+            c,
+            view,
+            (w, h),
+            ids.iter().copied().filter(|&id| same_layer(id)),
+        );
+    }
+    out.push_str("</svg>\n");
+    out
+}
+
+fn render_geometry(
+    out: &mut String,
+    c: &Construction,
+    view: View,
+    (w, h): (f64, f64),
+    ids: impl Iterator<Item = Id>,
+) {
+    let frame = crate::plot::Frame::fit(view, w, h);
+    let scale = frame.scale();
+    let ox = 0.5 * (w - (view.xmax - view.xmin) * scale);
+    let oy = 0.5 * (h - (view.ymax - view.ymin) * scale);
+    let sx = |x: f64| ox + (x - view.xmin) * scale;
+    let sy = |y: f64| h - oy - (y - view.ymin) * scale;
+    let (vw, vh) = (view.xmax - view.xmin, view.ymax - view.ymin);
     let mut lines = String::new();
     let mut polygons = String::new();
     let mut angles = String::new();
     let mut segments = String::new();
     let mut circles = String::new();
     let mut points = String::new();
-    let mut definitions = String::new();
 
     // Used to draw an "infinite" line as a segment longer than the view.
     let (mx, my) = (0.5 * (view.xmin + view.xmax), 0.5 * (view.ymin + view.ymax));
     let reach = vw.hypot(vh);
-    // Conics and function graphs, cut to the image.
-    let frame = crate::plot::Frame::fit(view, w, h);
-
-    for id in c
-        .ids()
-        .filter(|&id| !c.label(id).starts_with('\0') && visible(id))
-    {
-        if let Some(source) = c.construction_source(id) {
-            let _ = writeln!(definitions, "{} = {}", escape(c.label(id)), escape(source));
+    for id in ids {
+        if c.chart(id).is_some() {
+            if c.kind(id) == Kind::Function {
+                extras::chart(&mut segments, c, id, scale, |(x, y)| (sx(x), sy(y)));
+            }
+            continue;
         }
         match c.value(id) {
             v @ Value::Line { .. } => {
@@ -364,22 +455,12 @@ pub fn render_visible(
             | Value::Curve { .. }
             | Value::Button
             | Value::InputBox
+            | Value::Image
+            | Value::PieChart
             | Value::Undefined => {}
         }
     }
 
-    let mut out = String::new();
-    let _ = writeln!(
-        out,
-        r##"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">"##
-    );
-    if !definitions.is_empty() {
-        let _ = writeln!(out, "<desc>{}</desc>", definitions.trim_end());
-    }
-    let _ = writeln!(
-        out,
-        r##"<rect width="100%" height="100%" fill="#ffffff"/>"##
-    );
     let _ = writeln!(
         out,
         r##"<g fill="#8b5a2b" fill-opacity="0.1" stroke="none">"##
@@ -412,14 +493,13 @@ pub fn render_visible(
     );
     out.push_str(&points);
     let _ = writeln!(out, "</g>");
-    let _ = writeln!(out, "</svg>");
-    out
 }
 
 fn escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 /// The pieces of a locus into `out` (the segments group): every run of
@@ -591,5 +671,29 @@ mod angle_tests {
             out.contains(r#"<polyline points="10.00,20.00 30.00,20.00""#),
             "{out}"
         );
+    }
+}
+
+#[cfg(test)]
+mod chart_export_tests {
+    use super::*;
+
+    #[test]
+    fn exports_chart_marks() {
+        let c = crate::script::load(
+            "f(x) = x\ngraph = LineGraph({-3, 3}, {0, 0})\npie = PieChart({1, 2})\nbars = BarChart({1, 2}, {2, 3})\nzeroWidth = BarChart({1, 2}, 0)\nbox = BoxPlot(0, 1, {1, 2, 3})\ndots = DotPlot({1, 2, 3})",
+        ).unwrap();
+        let svg = render(&c, View::fit(&c), 640, 480);
+        for label in ["pie", "bars", "box", "dots"] {
+            assert!(svg.contains(&format!(r#"data-label="{label}""#)), "{svg}");
+        }
+        assert!(svg.contains("<path") && svg.contains("<rect") && svg.contains("<circle"));
+        let (_, zero_width) = svg.split_once(r#"data-label="zeroWidth""#).unwrap();
+        assert!(zero_width.split_once("</g>").unwrap().0.contains("<line"));
+
+        let pie = svg.find(r#"data-label="pie""#).unwrap();
+        let function = svg.find("<polyline").unwrap();
+        let graph = svg.find(r#"data-label="graph""#).unwrap();
+        assert!(pie < function && function < graph);
     }
 }

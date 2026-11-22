@@ -1,0 +1,108 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcanalysis-rootsupstream-001",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(sin(x),4,13)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": 6.28318530725133, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 9.424778007025832, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 12.56637061428844, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsupstream-002",
+      "group": "funcanalysis",
+      "script": [
+        "R = Roots(sin(x),-1,4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 3.141592653612576, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsupstream-003",
+      "group": "funcanalysis",
+      "script": [
+        "flat(x) = 2.00011sin(x/2)-x",
+        "R = Roots(flat,-0.05,0.05)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "flat": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 9.51368823889034],
+              [-4.0, 2.181305123631686],
+              [-2.0, 0.31696546857587826],
+              [-1.0, 0.041096185982347655],
+              [-0.5, 0.005164867055436173],
+              [0.0, 0.0],
+              [0.5, -0.005164867055436173],
+              [1.0, -0.041096185982347655],
+              [2.0, -0.31696546857587826],
+              [4.0, -2.181305123631686],
+              [8.0, -9.51368823889034]
+            ]
+          },
+          "R_{1}": { "type": "point", "defined": true, "x": -0.03633111085944898, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{3}": { "type": "point", "defined": true, "x": 0.03633111085944896, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcanalysis-rootsupstream-004",
+      "group": "funcanalysis",
+      "script": [
+        "flat(x) = 2.00011sin(x/2)-x",
+        "R = Roots(flat,-0.005,0.005)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "flat": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 9.51368823889034],
+              [-4.0, 2.181305123631686],
+              [-2.0, 0.31696546857587826],
+              [-1.0, 0.041096185982347655],
+              [-0.5, 0.005164867055436173],
+              [0.0, 0.0],
+              [0.5, -0.005164867055436173],
+              [1.0, -0.041096185982347655],
+              [2.0, -0.31696546857587826],
+              [4.0, -2.181305123631686],
+              [8.0, -9.51368823889034]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -14,7 +14,7 @@
 //! Numeric algebra commands and their expression forms.
 
 mod base;
-mod extrema;
+pub(super) mod extrema;
 mod integers;
 pub(crate) mod polynomial;
 

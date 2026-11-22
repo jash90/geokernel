@@ -313,7 +313,7 @@ fn with_the_touch_profile_a_wobbly_tap_still_places_a_point() {
         h.run();
         let what = format!("after the delay: {after_delay}");
         assert_eq!(labels(&h), ["A", "B"], "{what}");
-        let (b, scale) = (point(&h, "B"), cam.scale);
+        let (b, scale) = (point(&h, "B"), cam.xscale);
         let want = if after_delay {
             (1.3 + 9.0 / scale, 1.7 + 4.0 / scale)
         } else {
@@ -431,10 +431,10 @@ fn touch(h: &mut Harness<'_, App>, id: u64, phase: egui::TouchPhase, pos: Pos2) 
 }
 
 #[test]
-fn a_second_finger_puts_a_dragged_point_back_and_pinches_the_view() {
+fn a_second_finger_suspends_the_drag_and_pinches_the_view() {
     use egui::TouchPhase::{End, Move, Start};
     let mut h = harness("A = (0, 0)\nB = (3, 1)\n");
-    let scale = h.state().camera.unwrap().scale;
+    let scale = h.state().camera.unwrap().xscale;
     // The first finger takes A and drags it (the platform also sends the
     // pointer events of the first finger, as egui-winit does).
     let mut f0 = world(0.0, 0.0);
@@ -446,12 +446,18 @@ fn a_second_finger_puts_a_dragged_point_back_and_pinches_the_view() {
         touch(&mut h, 0, Move, f0);
         moved(&mut h, f0);
     }
-    assert!(point_x(&h, "A") > 0.5, "the drag moved A");
-    // A second finger: the drag is undone and the two fingers pinch.
+    let dragged_to = point_x(&h, "A");
+    assert!(dragged_to > 0.5, "the drag moved A");
+    // A second finger suspends the drag — the point stays where the drag
+    // left it (`twoTouchStart`, spec H6) — and the two fingers pinch.
     let mut f1 = f0 + egui::vec2(0.0, 120.0);
     touch(&mut h, 1, Start, f1);
     h.run();
-    assert_eq!(point_x(&h, "A"), 0.0, "A is back");
+    assert_eq!(
+        point_x(&h, "A"),
+        dragged_to,
+        "A stays where the drag left it"
+    );
     for _ in 0..4 {
         f0 += egui::vec2(0.0, -10.0);
         f1 += egui::vec2(0.0, 10.0);
@@ -463,12 +469,25 @@ fn a_second_finger_puts_a_dragged_point_back_and_pinches_the_view() {
     touch(&mut h, 0, End, f0);
     button(&mut h, f0, false);
     h.run();
-    assert_eq!(point_x(&h, "A"), 0.0, "the pinch never moves A");
-    assert!(!h.state().wb.can_undo(), "no undo step is left");
+    assert_eq!(point_x(&h, "A"), dragged_to, "the pinch never moves A");
     assert!(
-        h.state().camera.unwrap().scale > scale * 1.05,
+        h.state().camera.unwrap().xscale > scale * 1.05,
         "the view zoomed in"
     );
+    // The drag and the pinch are steps of their own (the owner's rule,
+    // `OwnerRules::view_changes_are_steps`): undo takes the pinch back first,
+    // then the drag.
+    assert_eq!(h.state().wb.undo_depth(), (2, 0));
+    undo(&mut h);
+    assert_eq!(
+        point_x(&h, "A"),
+        dragged_to,
+        "the view step keeps the point"
+    );
+    assert!((h.state().camera.unwrap().xscale - scale).abs() < 1e-9);
+    undo(&mut h);
+    assert_eq!(point_x(&h, "A"), 0.0, "the drag step puts A back");
+    assert!(!h.state().wb.can_undo());
 }
 
 /// Runs one frame with `events`.
@@ -490,7 +509,7 @@ fn drawn_at(h: &Harness<'_, App>, x: f64, y: f64) -> Pos2 {
 
 fn camera(h: &Harness<'_, App>) -> (f64, f64, f64) {
     let c = h.state().camera.unwrap();
-    (c.cx, c.cy, c.scale)
+    (c.cx, c.cy, c.xscale)
 }
 
 /// With the earlier code (one ownership flag a frame, from egui's
@@ -525,7 +544,11 @@ fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press() {
     h.run();
     assert_ne!(camera(&h).0, cam.0, "the second press panned the view");
     assert_eq!(point(&h, "A").0, 2.0);
-    // The drag of A is one undo step of its own.
+    // The drag of A is one undo step of its own, and the pan after it one
+    // of its own too (the owner's rule,
+    // `OwnerRules::view_changes_are_steps`).
+    undo(&mut h);
+    assert_eq!(point(&h, "A").0, 2.0, "the pan's step keeps the point");
     undo(&mut h);
     assert_eq!(point(&h, "A").0, 0.0);
     assert!(!h.state().wb.can_undo());
@@ -591,13 +614,11 @@ fn a_press_on_the_toolbar_right_after_a_click_in_the_drawing_is_not_the_drawings
     assert_eq!(camera(&h), cam, "the press on the toolbar panned nothing");
 }
 
-/// Pins behaviour the window already had (the earlier code reached it by
-/// another way: it ignored the touch events and the finger that stays sends
-/// no press), now with every pointer event egui-winit really sends,
-/// including the moves and the release without a press of a second finger
-/// that outlives the first.
+/// After a pinch the finger that stays goes on with what the press held
+/// (`twoTouchEnd`, spec H6): one that pressed on a point drags it again,
+/// and the press that ended with the other finger's lift drags nothing.
 #[test]
-fn after_a_pinch_the_finger_that_stays_neither_drags_nor_pans_as_before() {
+fn after_a_pinch_the_finger_that_stays_goes_on_dragging() {
     use egui::TouchPhase::{End, Move, Start};
     for first_lifts in [false, true] {
         let mut h = touch_harness("A = (0, 0)\nB = (3, 1)\n", SIZE);
@@ -624,6 +645,7 @@ fn after_a_pinch_the_finger_that_stays_neither_drags_nor_pans_as_before() {
         };
         h.run();
         let cam = camera(&h);
+        let a_at_lift = point(&h, "A");
         for _ in 0..6 {
             stays.1 += egui::vec2(25.0, 10.0);
             let events = w.touch(stays.0, Move, stays.1);
@@ -637,8 +659,14 @@ fn after_a_pinch_the_finger_that_stays_neither_drags_nor_pans_as_before() {
         h.run();
         let what = format!("first lifts: {first_lifts}");
         assert_eq!(camera(&h), cam, "{what}: the finger that stayed panned");
-        assert_eq!(point(&h, "A"), (0.0, 0.0), "{what}: A moved");
-        assert!(!h.state().wb.can_undo(), "{what}");
+        if first_lifts {
+            // Its press ended with the first finger's lift: the moves of
+            // the finger that never pressed drag nothing.
+            assert_eq!(point(&h, "A"), a_at_lift, "{what}: A moved");
+        } else {
+            // The pressing finger goes on dragging A.
+            assert_ne!(point(&h, "A"), a_at_lift, "{what}: A did not follow");
+        }
         assert_eq!(labels(&h), ["A", "B"], "{what}");
     }
 }
@@ -792,6 +820,12 @@ fn the_last_move_of_a_drag_counts_when_the_release_shares_its_frame() {
     let (cx, cy, _) = camera(&h);
     assert!((cx - cx0 - 1.0).abs() < 1e-12, "{}", cx - cx0);
     assert!(((cy - cy0).abs() - 0.4).abs() < 1e-12, "{}", cy - cy0);
+    // The pan is one undo step right after it (the owner's rule,
+    // `OwnerRules::view_changes_are_steps`), and undo puts the view back.
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    undo(&mut h);
+    let (cx, cy, _) = camera(&h);
+    assert!((cx - cx0).abs() < 1e-12 && (cy - cy0).abs() < 1e-12);
     assert!(!h.state().wb.can_undo());
 
     // A drag of a point with a finger.
@@ -1028,7 +1062,7 @@ fn a_row_deletion_mid_use_takes_the_use_back() {
 fn a_drag_within_the_click_threshold_is_a_step_only_under_the_owners_rule() {
     for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
         let mut h = harness("A = (0.3, 0.3)\n");
-        h.state_mut().rules = rules;
+        h.state_mut().set_rules(rules);
         let from = world(0.3, 0.3);
         frame_at(&mut h, 10.0, vec![Event::PointerMoved(from)]);
         frame_at(
@@ -1047,5 +1081,44 @@ fn a_drag_within_the_click_threshold_is_a_step_only_under_the_owners_rule() {
             rules.every_drag_is_a_step,
             "{what}"
         );
+    }
+}
+
+/// The reference app locks a pan to one axis (`SnapController`, spec
+/// D13, `OwnerRules::pan_axis_lock`): a drag that sets out within ±25° of
+/// an axis, inside its first 40 px and by more than 5 px, pans that axis
+/// alone. Ours pans both axes. Fails if the switch does nothing.
+#[test]
+fn a_pan_locks_to_an_axis_only_under_the_reference_rules() {
+    for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
+        let what = format!("{rules:?}");
+        let mut h = harness("");
+        h.state_mut().set_rules(rules);
+        let start = world(-4.0, -3.0);
+        moved(&mut h, start);
+        button(&mut h, start, true);
+        // Nearly horizontal, 2 px of y a 6 of x: the lock takes the x
+        // axis at the first move past 5 px.
+        for i in 1..=6 {
+            moved(&mut h, start + egui::vec2(6.0 * i as f32, 2.0 * i as f32));
+        }
+        button(&mut h, start + egui::vec2(36.0, 12.0), false);
+        h.run();
+        let cam = h.state().camera.unwrap();
+        if rules.pan_axis_lock {
+            assert!(
+                cam.cy.abs() < 1e-9,
+                "{what}: the locked axis moved: {cam:?}"
+            );
+            assert!(
+                cam.cx.abs() > 0.1,
+                "{what}: the free axis did not pan: {cam:?}"
+            );
+        } else {
+            assert!(
+                cam.cy.abs() > 0.1 && cam.cx.abs() > 0.1,
+                "{what}: a drag panned {cam:?}"
+            );
+        }
     }
 }
