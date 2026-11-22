@@ -11,7 +11,7 @@ use eframe::egui::{
     Sense, Stroke, Ui,
 };
 use geo_app_core::text::{self, Label};
-use geo_kernel::kernel::Id;
+use geo_kernel::kernel::{Def, Id, Kind, Value};
 
 /// Row heights: one line for a free object, two for a dependent one.
 const ROW_FREE: f32 = 50.0;
@@ -26,6 +26,7 @@ struct Actions {
     toggle: Option<Id>,
     delete: Option<Id>,
     set_number: Option<(Id, f64)>,
+    set_boolean: Option<(Id, bool)>,
     number_drag: Option<bool>,
 }
 
@@ -104,6 +105,9 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     }
     if let Some((id, v)) = actions.set_number {
         app.wb.set_number(id, v);
+    }
+    if let Some((id, value)) = actions.set_boolean {
+        app.wb.set_boolean(id, value);
     }
     if actions.number_drag == Some(false) {
         app.wb.end_gesture();
@@ -247,7 +251,65 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) -> bool {
             text::label(Label::Show)
         });
 
-    // Text.
+    if app.wb.construction().control(row.id).is_some() {
+        let contents = Rect::from_min_max(
+            Pos2::new(rect.left() + TEXT_X, rect.top() + 8.0),
+            Pos2::new(
+                kebab_rect.left().max(rect.left() + TEXT_X),
+                rect.bottom() - 8.0,
+            ),
+        );
+        keep |= paint_control(app, ui, row, id, contents, actions);
+    } else {
+        keep |= paint_value(ui, &painter, row, id, rect, actions);
+    }
+
+    // The menu button.
+    let kebab_center = kebab_rect.center();
+    let kebab = ui.interact(kebab_rect, id.with("kebab"), Sense::click());
+    if kebab.hovered() {
+        painter.circle_filled(kebab_center, 15.0, Color32::from_rgb(0xec, 0xec, 0xec));
+    }
+    icons::paint(
+        &painter,
+        Icon::Kebab,
+        kebab_center,
+        9.0,
+        Color32::from_rgb(0x55, 0x55, 0x55),
+    );
+    let menu = egui::Popup::menu(&kebab).show(|ui| {
+        ui.set_min_width(120.0);
+        let text = if row.siblings.is_empty() {
+            text::label(Label::Delete).to_owned()
+        } else {
+            format!("Usuń razem z {}", row.siblings.join(", "))
+        };
+        if ui.button(text).clicked() {
+            actions.delete = Some(row.id);
+            ui.close();
+        }
+        let toggle = if visible {
+            text::label(Label::HideObject)
+        } else {
+            text::label(Label::ShowObject)
+        };
+        if ui.button(toggle).clicked() {
+            actions.toggle = Some(row.id);
+            ui.close();
+        }
+    });
+    keep || menu.is_some()
+}
+
+fn paint_value(
+    ui: &mut Ui,
+    painter: &egui::Painter,
+    row: &Row,
+    id: egui::Id,
+    rect: Rect,
+    actions: &mut Actions,
+) -> bool {
+    let mut keep = false;
     let font = FontId::proportional(FONT);
     let head_y = head_y(row, rect);
     let head_pos = Pos2::new(rect.left() + TEXT_X, head_y);
@@ -319,41 +381,77 @@ fn paint_row(app: &App, ui: &mut Ui, row: &Row, actions: &mut Actions) -> bool {
         );
     }
 
-    // The menu button.
-    let kebab_center = kebab_rect.center();
-    let kebab = ui.interact(kebab_rect, id.with("kebab"), Sense::click());
-    if kebab.hovered() {
-        painter.circle_filled(kebab_center, 15.0, Color32::from_rgb(0xec, 0xec, 0xec));
-    }
-    icons::paint(
-        &painter,
-        Icon::Kebab,
-        kebab_center,
-        9.0,
-        Color32::from_rgb(0x55, 0x55, 0x55),
+    keep
+}
+
+fn paint_control(
+    app: &App,
+    ui: &mut Ui,
+    row: &Row,
+    id: egui::Id,
+    rect: Rect,
+    actions: &mut Actions,
+) -> bool {
+    let c = app.wb.construction();
+    let Some(control) = c.control(row.id) else {
+        return false;
+    };
+    let caption = if control.caption.is_empty() {
+        &row.label
+    } else {
+        &control.caption
+    };
+    let mut field = ui.new_child(
+        egui::UiBuilder::new()
+            .scope_id(id.with("control"))
+            .max_rect(rect)
+            .layout(egui::Layout::left_to_right(egui::Align::Center)),
     );
-    let menu = egui::Popup::menu(&kebab).show(|ui| {
-        ui.set_min_width(120.0);
-        let text = if row.siblings.is_empty() {
-            text::label(Label::Delete).to_owned()
-        } else {
-            format!("Usuń razem z {}", row.siblings.join(", "))
-        };
-        if ui.button(text).clicked() {
-            actions.delete = Some(row.id);
-            ui.close();
+    let def = c.def(row.id);
+    if !matches!(def, Def::Boolean(_)) && !app.wb.is_visible(row.id) {
+        field.disable();
+    }
+    let response = match def {
+        Def::Boolean(mut value) => {
+            let response = field.checkbox(&mut value, caption);
+            if response.changed() {
+                actions.set_boolean = Some((row.id, value));
+            }
+            response
         }
-        let toggle = if visible {
-            text::label(Label::HideObject)
-        } else {
-            text::label(Label::ShowObject)
-        };
-        if ui.button(toggle).clicked() {
-            actions.toggle = Some(row.id);
-            ui.close();
+        Def::Button => field.add_enabled(false, egui::Button::new(caption)),
+        Def::InputBox(target) => {
+            field.label(caption);
+            match target.map(|id| (id, c.value(id))) {
+                Some((id, Value::Number(value))) if c.def(id).is_free() => {
+                    let angle = c.kind(id) == Kind::Angle;
+                    let mut number = if angle { value.to_degrees() } else { value };
+                    let response = field.add(egui::DragValue::new(&mut number).suffix(if angle {
+                        "°"
+                    } else {
+                        ""
+                    }));
+                    if response.drag_started() {
+                        actions.number_drag = Some(true);
+                    } else if response.drag_stopped() {
+                        actions.number_drag = Some(false);
+                    }
+                    if response.changed() {
+                        actions.set_number =
+                            Some((id, if angle { number.to_radians() } else { number }));
+                    }
+                    response
+                }
+                Some((id, _)) => field.label(geo_app_core::describe::object_text(c, id)),
+                None => field.add_enabled(
+                    false,
+                    egui::TextEdit::singleline(&mut String::new()).desired_width(84.0),
+                ),
+            }
         }
-    });
-    keep || menu.is_some()
+        _ => return false,
+    };
+    response.has_focus()
 }
 
 fn input_row(app: &mut App, ui: &mut Ui) {

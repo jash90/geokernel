@@ -25,6 +25,7 @@ pub mod conic_nd;
 pub mod conic_parts;
 pub(crate) mod conic_path;
 pub(crate) mod curve;
+pub mod discrete;
 pub(crate) mod elliptic;
 pub mod general_conic;
 pub mod intersect;

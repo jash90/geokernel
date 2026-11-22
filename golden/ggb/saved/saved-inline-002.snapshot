@@ -1,0 +1,34 @@
+{
+  "schema": 2,
+  "id": "saved-inline-002",
+  "script": [
+    "A = (1, 2)",
+    "u = (2, -1)",
+    "a = 3",
+    "v = Vector(A, (4, 1))",
+    "s = Segment(A, A + (2, 0))",
+    "w = Vector(2u)",
+    "d = UnitVector(2u)",
+    "c = Circle(A, 2a)",
+    "t = Tangent(a, x^2 + a)",
+    "e1 = Segment(A, (x(u), y(u)))",
+    "e2 = Segment(A, A + u)",
+    "k = Circle((1, 1), 42)",
+    "j = Circle((1, 1), (2, 1/2))"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+    "u": { "type": "vector", "defined": true, "x": 2.0, "y": -1.0 },
+    "a": { "type": "number", "defined": true, "value": 2.0 },
+    "v": { "type": "vector", "defined": true, "x": 0.0, "y": 0.0 },
+    "s": { "type": "segment", "defined": true, "x1": 4.0, "y1": 1.0, "x2": 6.0, "y2": 1.0 },
+    "w": { "type": "vector", "defined": true, "x": 4.0, "y": -2.0 },
+    "d": { "type": "vector", "defined": true, "x": 0.8944271909999159, "y": -0.4472135954999579 },
+    "c": { "type": "circle", "defined": true, "cx": 4.0, "cy": 1.0, "r": 4.0 },
+    "t": { "type": "line", "defined": true, "a": -4.0, "b": 1.0, "c": 2.0 },
+    "e1": { "type": "segment", "defined": true, "x1": 4.0, "y1": 1.0, "x2": 2.0, "y2": -1.0 },
+    "e2": { "type": "segment", "defined": true, "x1": 4.0, "y1": 1.0, "x2": 6.0, "y2": 0.0 },
+    "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 42.0 },
+    "j": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 1.118033988749895 }
+  }
+}

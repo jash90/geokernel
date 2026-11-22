@@ -69,20 +69,12 @@ fn the_saved_value_is_checked_against_the_computed_one() {
         "<output a0=\"P\" a1=\"Q\"/>",
         &(second.replace('Q', "P") + &first.replace('P', "Q")),
     ));
-    // Exactly one of the two orders agrees with the kernel's index order,
-    // and the other is reported, not dropped.
-    assert_eq!(
-        r.mismatched.len() + swapped.mismatched.len(),
-        2,
-        "{:?} {:?}",
-        r.mismatched,
-        swapped.mismatched
-    );
-    let wrong = if r.mismatched.is_empty() {
-        &swapped
-    } else {
-        &r
-    };
+    assert!(r.mismatched.is_empty());
+    assert!(swapped.mismatched.is_empty());
+    let wrong = ok(&line_circle(
+        "<output a0=\"P\" a1=\"Q\"/>",
+        &(first.replace("y=\"0\"", "y=\"9\"") + &second.replace("y=\"0\"", "y=\"9\"")),
+    ));
     assert_eq!(wrong.mismatched.len(), 2);
     assert!(wrong.script.iter().any(|l| l == "P = Intersect(f, k, 1)"));
     assert_eq!(wrong.mismatched[0].label, "P");
@@ -260,7 +252,10 @@ fn ignored_properties_are_listed_in_the_notes() {
     let notes = r.notes.join("\n");
     assert!(notes.contains("1 fixed"), "{notes}");
     assert!(notes.contains("1 auxiliary"), "{notes}");
-    assert!(notes.contains("1 objects with a condition"), "{notes}");
+    assert!(
+        notes.contains("visibility condition for `A`: `A` is not a boolean"),
+        "{notes}"
+    );
     assert!(notes.contains("1 vectors with a start point"), "{notes}");
     assert_eq!(r.script.len(), 3);
 }

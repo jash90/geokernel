@@ -658,13 +658,15 @@ fn polynomial_work_stays_inside_the_budget() {
     assert_eq!(num(&c, "d"), 2.0);
     assert_eq!(c.function_value(c.id("g").unwrap(), 3.0), Some(24000.0));
     // (a x + b)^300: `Polynomial.apply` allows the exponent (the degree
-    // bound is 300), but the expansion of unmergeable coefficient trees
-    // stops at the term cap of the builder (`MAX_TERMS`, a bound GeoGebra
-    // does not have), in bounded time and memory
+    // bound is 300), and the univariate expansion has only 301 terms, so
+    // the term cap of the builder (`MAX_TERMS`, a bound GeoGebra does not
+    // have) is checked on the merged terms and the power answers, as in
+    // GeoGebra, with the coefficient values read once each (a memo over
+    // the builder's shared coefficient trees) in bounded time and memory
     let t = std::time::Instant::now();
     let c = load("a = 1\nb = 1\nf(x) = (a x + b)^300\nd = Degree(f)\ng = Derivative(f)");
-    assert!(!defined(&c, "d"));
-    assert!(!defined(&c, "g"));
+    assert_eq!(num(&c, "d"), 300.0);
+    assert!(defined(&c, "g"));
     assert!(t.elapsed().as_secs() < 20, "{}s", t.elapsed().as_secs());
     // the 25th rule derivative of a product triples its tree per pass;
     // the work budget stops it instead of the memory growing without end

@@ -54,6 +54,8 @@ pub struct Imported {
     pub skipped: Vec<Skipped>,
     /// Labels of imported objects that the file hides (`<show object="false">`).
     pub hidden: Vec<String>,
+    /// Object labels and the boolean labels that govern their visibility.
+    pub conditions: Vec<(String, String)>,
     /// The kernel settings of the file.
     pub settings: Settings,
     /// Things worth telling the user that are not an object (for example that

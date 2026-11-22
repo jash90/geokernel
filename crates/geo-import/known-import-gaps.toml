@@ -68,3 +68,66 @@ id = "transform-dilate-048"
 label = "n"
 saved = "matrix [0.25, 0.25, 9.9999999936, 0, 0.5, -1.5]"
 reason = "n = Dilate(m, 2) of the single point m (a circle of radius 8e-5 that GeoGebra classifies as a point) is a single point of radius 0 in GeoGebra and in the kernel; the saved matrix, classified afresh, is a circle of radius 1.6e-4"
+
+# Each saved tangent has two labels at the same point. The indexed solver
+# drops the duplicate, leaving exactly the second label undefined.
+
+[[saved_tangency]]
+id = "saved-doubletangent-001"
+label = "P_{2}"
+reason = "Line and circle reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-002"
+label = "P_{2}"
+reason = "Line and circle reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-003"
+label = "P_{2}"
+reason = "Line and circle reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-004"
+label = "P_{2}"
+reason = "Line and circle reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-005"
+label = "P_{2}"
+reason = "Line and circle reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-006"
+label = "P_{2}"
+reason = "Line and circle reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-007"
+label = "P_{2}"
+reason = "Two circles reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-008"
+label = "P_{2}"
+reason = "Two circles reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-009"
+label = "P_{2}"
+reason = "Two circles reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-010"
+label = "P_{2}"
+reason = "Two circles reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-011"
+label = "P_{2}"
+reason = "Two circles reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."
+
+[[saved_tangency]]
+id = "saved-doubletangent-012"
+label = "P_{2}"
+reason = "Two circles reach exact tangency after both outputs receive labels. The indexed solver suppresses the duplicate."

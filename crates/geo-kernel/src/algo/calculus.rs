@@ -1524,18 +1524,22 @@ fn includes_non_continuous_integral(c: &Construction, nodes: &[Node], root: u32)
 /// `PolyFunction(c, validCoeffs)` shortening: the last nonzero coefficient
 /// ends the list, which keeps at least one coefficient. `None` when a
 /// coefficient cannot be evaluated.
+///
+/// The coefficient trees are evaluated with one memo over the builder's
+/// arena (see [`Builder::number_values`]): the polynomial powers share
+/// subtrees, and a plain evaluation of a tree like `(a x + b)^300` would
+/// walk each shared subtree once per reference.
 fn coefficient_values(c: &Construction, b: &mut Builder, poly: &Poly) -> Option<Vec<f64>> {
     let roots = poly.coefficient_roots(b);
     let mut values = Vec::with_capacity(roots.len());
+    let mut evaluated = b
+        .number_values(c, roots.iter().copied().flatten())
+        .into_iter();
     for root in roots {
-        let value = match root {
-            Some(root) => b
-                .finish_reachable(c, root)
-                .ok()
-                .and_then(|parsed| expr::value_of_tree(c, &parsed)),
-            None => Some(0.0),
-        };
-        values.push(value?);
+        values.push(match root {
+            Some(_) => evaluated.next().flatten()?,
+            None => 0.0,
+        });
     }
     let mut valid = values.len().min(1);
     for (i, &v) in values.iter().enumerate() {
@@ -1595,19 +1599,26 @@ fn polynomial_derivative(c: &Construction, entry: &Entry, order: u32) -> Option<
 /// dropped (`coeffs[i] != 0` for the middle powers, `DoubleUtil.isZero`
 /// for the linear and constant ones). A coefficient root of `None` is the
 /// zero coefficient.
+///
+/// The terms keep the coefficients as their evaluated numbers, not their
+/// trees: the polynomial powers share coefficient subtrees, and a result
+/// tree that kept them would evaluate each shared subtree once per
+/// reference, unbounded work for a power like `(a x + b)^300` on every
+/// evaluation of the result. The values are recomputed whenever the source
+/// function's own objects change, which the definition's parents keep, so
+/// only the symbolic form of the definition differs from upstream's.
 fn poly_function_tree(c: &Construction, b: &mut Builder, roots: &[Option<u32>]) -> Option<Parsed> {
     // the values of the coefficients decide the drops, evaluated like
     // GeoGebra's `coeffs` array is
     let mut values = Vec::with_capacity(roots.len());
+    let mut evaluated = b
+        .number_values(c, roots.iter().copied().flatten())
+        .into_iter();
     for root in roots {
-        let value = match root {
-            Some(root) => b
-                .finish_reachable(c, *root)
-                .ok()
-                .and_then(|parsed| expr::value_of_tree(c, &parsed)),
-            None => Some(0.0),
-        };
-        values.push(value?);
+        values.push(match root {
+            Some(_) => evaluated.next().flatten()?,
+            None => 0.0,
+        });
     }
     let mut valid = values.len().min(1);
     for (i, &v) in values.iter().enumerate() {
@@ -1617,38 +1628,39 @@ fn poly_function_tree(c: &Construction, b: &mut Builder, roots: &[Option<u32>]) 
     }
     let degree = valid - 1;
     let var = |b: &mut Builder| b.push(Node::Var);
-    let term = |b: &mut Builder, k: usize, root: u32| -> u32 {
+    let term = |b: &mut Builder, k: usize, coeff: f64| -> u32 {
+        let c = b.push(Node::Num(coeff));
         match k {
-            0 => root,
+            0 => c,
             1 => {
                 let v = var(b);
-                b.multiply(v, root)
+                b.multiply(v, c)
             }
             _ => {
                 let v = var(b);
                 let power = b.push(Node::Num(k as f64));
                 let xk = b.push(Node::Bin(Bin::Pow, v, power));
-                b.multiply(xk, root)
+                b.multiply(xk, c)
             }
         }
     };
     let mut root = match roots[degree] {
         // the leading coefficient: the zero polynomial is the constant 0
-        Some(root) => term(b, degree, root),
+        Some(_) => term(b, degree, values[degree]),
         None => b.push(Node::Num(0.0)),
     };
     for k in (2..degree).rev() {
         if values[k] != 0.0 {
-            let t = term(b, k, roots[k]?);
+            let t = term(b, k, values[k]);
             root = b.push(Node::Bin(Bin::Add, root, t));
         }
     }
     if degree > 1 && !is_zero(values[1]) {
-        let t = term(b, 1, roots[1]?);
+        let t = term(b, 1, values[1]);
         root = b.push(Node::Bin(Bin::Add, root, t));
     }
     if degree > 0 && !is_zero(values[0]) {
-        let t = roots[0]?;
+        let t = term(b, 0, values[0]);
         root = b.push(Node::Bin(Bin::Add, root, t));
     }
     b.finish(c, root).ok()

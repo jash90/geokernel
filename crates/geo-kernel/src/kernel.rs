@@ -33,8 +33,11 @@
 pub mod angle;
 #[path = "algo/axis.rs"]
 mod axis;
+#[path = "control.rs"]
+pub mod control;
 #[path = "algo/locus.rs"]
 pub mod locus;
+mod slider;
 pub mod text;
 
 use self::angle::{AngleDef, AngleGeometry, AngleSource, AngleStyle};
@@ -147,6 +150,8 @@ pub enum Kind {
     /// [`Construction::locus`].
     Locus,
     Curve,
+    Button,
+    InputBox,
 }
 
 impl Kind {
@@ -179,6 +184,8 @@ impl fmt::Display for Kind {
             Kind::Sector => "sector",
             Kind::Locus => "locus",
             Kind::Curve => "curve",
+            Kind::Button => "button",
+            Kind::InputBox => "input box",
         })
     }
 }
@@ -240,6 +247,8 @@ pub enum Value {
     /// prover's "unknown" answer, so the kernel reports `Undefined` only when
     /// a predicate cannot decide.
     Bool(bool),
+    Button,
+    InputBox,
     /// A defined function; its values come from
     /// [`Construction::function_value`].
     Function,
@@ -358,7 +367,7 @@ impl Value {
             Value::Number(v) => v.is_finite(),
             Value::Vector { x, y } => x.is_finite() && y.is_finite(),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
-            Value::Bool(_) => true,
+            Value::Bool(_) | Value::Button | Value::InputBox => true,
             Value::Polygon { area } => area.is_finite(),
             Value::PolyLine { length } => length.is_finite(),
             Value::Arc { length } => length.is_finite(),
@@ -396,6 +405,9 @@ pub enum Def {
     },
     /// A number the user can change (a slider).
     Number(f64),
+    Boolean(bool),
+    Button,
+    InputBox(Option<Id>),
     /// A free angle in radians, such as `c = 30°`: a number the user can
     /// change that `floor`, `ceil` and `round` treat in whole degrees
     /// (GeoGebra's independent `GeoAngle`).
@@ -491,6 +503,8 @@ pub enum Def {
     /// `Locus(Q, P)` and `Locus(Q, slider)`; the construction keeps the
     /// points of each locus (see [`Construction::locus`]).
     Locus(LocusDef),
+    /// A locus built from points or a segment graph.
+    Discrete(algo::discrete::DiscreteDef),
     /// A line or conic defined by an equation in `x` and `y`
     /// (`a: 2x + 3y = 6`, `y = m x + b`); the construction keeps the trees
     /// of its coefficients (see [`crate::expr`]). Like [`Def::Expr`], the
@@ -590,6 +604,9 @@ impl Def {
             Def::Segment(..) => Kind::Segment,
             Def::CircleThrough { .. } | Def::CircleRadius { .. } => Kind::Circle,
             Def::Number(_) | Def::Distance(..) => Kind::Number,
+            Def::Boolean(_) => Kind::Boolean,
+            Def::Button => Kind::Button,
+            Def::InputBox(_) => Kind::InputBox,
             Def::Angle(_)
             | Def::Measure(MeasureDef::Angle(..))
             | Def::Polygon(PolygonDef::Angle { .. }) => Kind::Angle,
@@ -618,6 +635,7 @@ impl Def {
             }
             Def::Locus(d) => d.kind(),
             Def::Calculus(d) => d.kind(),
+            Def::Discrete(_) => Kind::Locus,
         }
     }
 
@@ -645,6 +663,9 @@ impl Def {
             self,
             Def::FreePoint { .. }
                 | Def::Number(_)
+                | Def::Boolean(_)
+                | Def::Button
+                | Def::InputBox(None)
                 | Def::Angle(_)
                 | Def::Vector(VectorDef::Free { .. })
         ) || matches!(*self, Def::AngleObject(d) if d.is_free())
@@ -659,9 +680,13 @@ impl Def {
             | Def::YAxis
             | Def::FreePoint { .. }
             | Def::Number(_)
+            | Def::Boolean(_)
+            | Def::Button
+            | Def::InputBox(None)
             | Def::Angle(_)
             | Def::Expr(_)
             | Def::Equation(_) => Parents::none(),
+            Def::InputBox(Some(id)) => Parents::of(&[id]),
             Def::Line(p, q)
             | Def::Segment(p, q)
             | Def::Midpoint(p, q)
@@ -691,6 +716,7 @@ impl Def {
             Def::Arc(d) => d.parents(),
             Def::Locus(d) => d.parents(),
             Def::Calculus(d) => d.parents(),
+            Def::Discrete(d) => d.parents(),
         }
     }
 }
@@ -836,6 +862,9 @@ pub struct Construction {
     /// The intervals of the free numbers made by `Slider`, with the index of
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
+    saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
+    controls: Vec<(Id, control::Control)>,
+    pub(crate) object_scripts: HashMap<String, Vec<control::ControlScript>>,
 }
 
 /// The objects waiting to be recomputed during an update; empty between
@@ -1235,6 +1264,15 @@ impl Construction {
     /// at or before it and stays valid, and the generation does not change.
     pub(crate) fn discard_since(&mut self, at: Checkpoint) {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
+        self.controls
+            .truncate(self.controls.partition_point(|(id, _)| id.0 < at.len));
+        self.saved_slider_bounds.retain(|id, bounds| {
+            id.0 < at.len
+                && bounds
+                    .iter()
+                    .flatten()
+                    .all(|bound| bound.exists_before(at.len))
+        });
         self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
@@ -1257,6 +1295,7 @@ impl Construction {
             self.hints.pop();
             if let Some(label) = self.labels.pop() {
                 self.by_label.remove(&label);
+                self.object_scripts.remove(&label);
             }
         }
         self.lists.truncate(at.lists.min(self.lists.len()));
@@ -1422,15 +1461,14 @@ impl Construction {
             }
             Def::Locus(d) => {
                 let data = locus::record(self, d, id);
-                let value = data.value();
-                self.loci.push((id.0, data));
-                value
+                self.store_locus(id, data)
             }
             Def::Calculus(d) if d.has_record() => {
                 let (value, record) = algo::calculus::initialize(self, &d);
                 self.calculus.push((id.0, record));
                 value
             }
+            Def::Discrete(d) => self.store_locus(id, d.record(self, None)),
             _ => self.compute(def, id.0),
         };
         if let Def::IntersectBoundary(intersection) = def {
@@ -1679,19 +1717,12 @@ impl Construction {
         if !v.is_finite() {
             return Err(Error::NotFinite);
         }
-        // A slider keeps its value in its interval (`GeoNumeric.setValue`).
-        let (new_def, v) = match (new_def, self.slider_interval(id)) {
-            (Def::Number(_), Some((min, max))) => {
-                let v = if v < min {
-                    min
-                } else if v > max {
-                    max
-                } else {
-                    v
-                };
-                (Def::Number(v), v)
-            }
-            (d, _) => (d, v),
+        // A slider keeps its value in its active interval.
+        let (new_def, v) = if matches!(new_def, Def::Number(_)) {
+            let v = self.clamp_slider(id, v);
+            (Def::Number(v), v)
+        } else {
+            (new_def, v)
         };
         // A changed number loses its exact decimal (`GeoNumeric.setValue`),
         // which changes what reads it even when the value stays.
@@ -1790,7 +1821,12 @@ impl Construction {
                     }
                 }
                 Def::Locus(d) => {
-                    if !self.update_locus(i, d) {
+                    if !self.update_locus(i, |c| locus::record(c, d, Id(i))) {
+                        continue;
+                    }
+                }
+                Def::Discrete(d) => {
+                    if !self.update_locus(i, |c| d.record(c, c.locus(Id(i)))) {
                         continue;
                     }
                 }
@@ -2155,7 +2191,8 @@ impl Construction {
             && expr::is_independent_text(self, id)
     }
 
-    pub(crate) fn construction_source(&self, id: Id) -> Option<&str> {
+    /// Original source retained for definitions that need it for display.
+    pub fn construction_source(&self, id: Id) -> Option<&str> {
         self.construction_sources.get(&id).map(String::as_str)
     }
 
@@ -2193,7 +2230,14 @@ impl Construction {
 
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
-            Def::XAxis | Def::YAxis => Ok(()),
+            Def::XAxis | Def::YAxis | Def::Boolean(_) | Def::Button | Def::InputBox(None) => Ok(()),
+            Def::InputBox(Some(linked)) => {
+                if self.defs.get(linked.0).is_some() || axis::get(linked).is_some() {
+                    Ok(())
+                } else {
+                    Err(Error::UnknownObject)
+                }
+            }
             Def::FreePoint { x, y } => {
                 if x.is_finite() && y.is_finite() {
                     Ok(())
@@ -2263,6 +2307,7 @@ impl Construction {
             Def::Equation(d) => crate::expr::equation::check(self, d),
             Def::Locus(d) => d.check(self),
             Def::Calculus(d) => d.check(self),
+            Def::Discrete(d) => d.check(self),
         }
     }
 
@@ -2319,6 +2364,9 @@ impl Construction {
             Def::XAxis | Def::YAxis => axis::definition(def).map(|axis| axis.value),
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
+            Def::Boolean(v) => Some(Value::Bool(v)),
+            Def::Button => Some(Value::Button),
+            Def::InputBox(_) => Some(Value::InputBox),
             Def::Line(p, q) => algo::basic::line(self, p, q),
             Def::Segment(p, q) => algo::basic::segment(self, p, q),
             Def::Midpoint(p, q) => algo::basic::midpoint(self, p, q),
@@ -2358,6 +2406,7 @@ impl Construction {
             Def::Equation(d) => Some(expr::equation::current(self, d)),
             Def::Locus(d) => d.compute(self),
             Def::Calculus(d) => d.compute(self),
+            Def::Discrete(_) => None,
         }
     }
 

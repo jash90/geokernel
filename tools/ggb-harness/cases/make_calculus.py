@@ -198,6 +198,12 @@ case("degree", nums(a=3) + ["f(x) = x^a", "d = Degree(f)"],
      [setn("a", 4), setn("a", 2.5), setn("a", 1),
       {"action": "set_number", "label": "a", "value": 2.9999999999},
       setn("a", 3)])
+# the largest exponent the polynomial path takes (`MAX_ALLOWED_DEGREE`):
+# a univariate power expands to 301 terms, however many raw terms its
+# intermediate products hold
+case("degree", ["f(x) = (x + 1)^300", "d = Degree(f)"], [])
+case("degree", nums(a=1, b=1) + ["f(x) = (a x + b)^300", "d = Degree(f)"],
+     [setn("a", 2), setn("a", 0), setn("a", 1)])
 topic("coefficients")
 case("coefficients", ["f(x) = x^2", "c = Coefficients(f)"], [])
 case("coefficients", ["f(x) = sin(x)", "c = Coefficients(f)"], [])
@@ -217,6 +223,9 @@ case("coefficients", ["f(x) = sin(x) + (-2)", "c = Coefficients(f)"], [])
 # literals of the tree
 case("coefficients", nums(a=3) + ["f(x) = x^a", "c = Coefficients(f)"],
      [setn("a", 2.5), setn("a", 3)])
+# the length of the largest univariate expansion: `(x + 1)^300` answers
+# its 301 coefficients
+case("coefficients", ["f(x) = (x + 1)^300", "c = Coefficients(f)", "d = Degree(f)"], [])
 topic("fraction")
 case("fraction", ["a = 3/6", "n = Numerator(a)", "d = Denominator(a)"], [])
 case("fraction", ["a = 5/(-8)", "n = Numerator(a)", "d = Denominator(a)"], [])

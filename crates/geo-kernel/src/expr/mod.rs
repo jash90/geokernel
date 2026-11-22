@@ -1587,11 +1587,55 @@ pub(crate) fn argument_object(c: &mut Construction, text: &str, label: &str, kin
     };
     let kind = match (kind, parsed.tys[parsed.root as usize]) {
         (Kind::Number, Ty::Num(1)) => Kind::Angle,
-        (Kind::Number, Ty::Num(_)) | (Kind::List, Ty::List(_)) | (Kind::Point, Ty::Vec) => kind,
-        (Kind::Boolean, Ty::Bool) => kind,
+        (Kind::Number, Ty::Num(_))
+        | (Kind::List, Ty::List(_))
+        | (Kind::Boolean, Ty::Bool)
+        | (Kind::Point, Ty::Vec) => kind,
         _ => return false,
     };
     !parsed.uses_var && add(c, label, parsed, kind).is_ok()
+}
+
+/// Builds a list from resolved arguments whose hidden labels cannot be written
+/// in an expression.
+pub(crate) fn list_of_objects(
+    c: &mut Construction,
+    label: &str,
+    ids: Vec<Id>,
+) -> Result<Id, String> {
+    let count = u32::try_from(ids.len()).map_err(|_| "too many arguments")?;
+    let root = count.checked_mul(2).ok_or("too many arguments")?;
+    if u64::from(root) + 1 > parse::MAX_COST {
+        return Err("too many arguments".into());
+    }
+    let mut nodes = Vec::with_capacity(root as usize + 1);
+    nodes.extend(ids.iter().copied().map(Node::Obj));
+    nodes.extend(ids.iter().enumerate().map(|(i, &id)| {
+        if list::object_kind(c.kind(id)) {
+            Node::ItemObject(id)
+        } else {
+            Node::Item(i as u32)
+        }
+    }));
+    nodes.push(Node::List(count, count));
+    let (tys, depth, cost, vars) = types::check(c, &nodes, root)?;
+    let mut parents = ids.clone();
+    parents.sort_unstable();
+    parents.dedup();
+    let parsed = parse::Parsed {
+        lits: vec![Lit::default(); nodes.len()],
+        nodes,
+        tys,
+        root,
+        parents,
+        inputs: ids,
+        uses_var: false,
+        uses_y: false,
+        depth: depth[root as usize],
+        cost: cost[root as usize],
+        vars: vars[root as usize],
+    };
+    add(c, label, parsed, Kind::List)
 }
 
 /// Evaluates a self-contained scalar argument without adding a construction
@@ -1618,6 +1662,23 @@ pub(crate) fn define(
     rhs: &str,
     vector_label: bool,
 ) -> Result<Id, String> {
+    define_with_coordinates(c, name, rhs, Some(vector_label))
+}
+
+pub(crate) fn define_saved_argument(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+) -> Result<Id, String> {
+    define_with_coordinates(c, name, rhs, None)
+}
+
+fn define_with_coordinates(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    vector_label: Option<bool>,
+) -> Result<Id, String> {
     let parsed = match parse::parse(c, rhs) {
         Ok(parsed) => parsed,
         Err(error) => match parse::parse_equation(c, rhs) {
@@ -1639,7 +1700,7 @@ pub(crate) fn define(
     let kind = match parsed.tys[parsed.root as usize] {
         Ty::Num(1) => Kind::Angle,
         Ty::Num(_) => Kind::Number,
-        Ty::Vec if vector_label => Kind::Vector,
+        Ty::Vec if vector_label.unwrap_or_else(|| argument_is_vector(c, &parsed)) => Kind::Vector,
         Ty::Vec => Kind::Point,
         Ty::Bool => Kind::Boolean,
         Ty::List(_) => Kind::List,
@@ -1648,6 +1709,28 @@ pub(crate) fn define(
         Ty::Function => return Err("a function needs an argument".into()),
     };
     add(c, name, parsed, kind)
+}
+
+/// ExpressionNode.evaluatesToVectorNotPoint, for an unlabelled 2D input.
+fn argument_is_vector(c: &Construction, parsed: &parse::Parsed) -> bool {
+    let mut vectors = Vec::with_capacity(parsed.nodes.len());
+    for (node, ty) in parsed.nodes.iter().zip(&parsed.tys) {
+        let read = |index: u32| vectors[index as usize];
+        let vector = matches!(ty, Ty::Vec)
+            && match *node {
+                Node::Obj(id) => c.kind(id) == Kind::Vector,
+                Node::Cmd(def, _) => def.kind() == Kind::Vector,
+                Node::Vector(_) => true,
+                Node::Bin(Bin::Add, a, b) if parsed.tys[a as usize] == Ty::Vec => {
+                    read(a) && read(b)
+                }
+                Node::Bin(Bin::Add | Bin::Sub | Bin::Mul | Bin::Div, a, b) => read(a) || read(b),
+                Node::If(_, _, value, _) => read(value),
+                _ => false,
+            };
+        vectors.push(vector);
+    }
+    vectors[parsed.root as usize]
 }
 
 /// Defines a coordinate expression with an explicit kind, regardless of

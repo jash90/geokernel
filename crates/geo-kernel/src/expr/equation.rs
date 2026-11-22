@@ -74,8 +74,28 @@ use crate::tol::STANDARD_PRECISION;
 const MAX_ALLOWED_DEGREE: f64 = 300.0;
 
 /// Upper bound on the terms one expansion may hold, so that a long product
-/// cannot grow without end.
+/// cannot grow without end. Checked on the merged terms: the product of two
+/// merged polynomials holds many more terms before `simplify` merges them
+/// (squaring a 129-term binomial power makes 16 641 raw terms that merge to
+/// 257), so the bound on the raw product is [`MAX_PRODUCT_TERMS`] instead.
 const MAX_TERMS: usize = 4096;
+
+/// Upper bound on the raw terms one multiplication may build before they
+/// are merged: a memory bound only, sized so every dense univariate
+/// expansion up to `MAX_ALLOWED_DEGREE` stays inside it.
+const MAX_PRODUCT_TERMS: usize = 1_000_000;
+
+/// The memo of one run of number evaluations over a builder's arena: the
+/// value of a subtree by its node index, shared by every tree that reads it.
+type NumberMemo = std::collections::HashMap<u32, Option<f64>>;
+
+/// How deep the memoized evaluation of the coefficient trees of one
+/// polynomial may recurse: unlike a parsed expression (bounded by
+/// [`parse::MAX_NESTING`]), the builder's arena is a DAG whose deepest path
+/// is the term chain of one power, bounded by [`MAX_TERMS`] coefficient
+/// additions, so a long expansion stays readable while the recursion keeps
+/// far under the stack.
+const MAX_COEFFICIENT_DEPTH: u32 = 2 * MAX_TERMS as u32;
 
 /// Upper bound on the nodes the bodies of the function calls of one
 /// equation may add to the arena, so that nested calls cannot grow without
@@ -592,15 +612,43 @@ impl Builder {
     /// `Derivative` and `ExpressionNode.integral` use). `None` when the
     /// tree reads something that is no number, or is nested too deeply.
     pub(crate) fn number_value(&self, c: &Construction, i: u32) -> Option<f64> {
-        self.number_at(c, i, 0)
+        let mut memo = NumberMemo::default();
+        self.number_at(c, i, 0, parse::MAX_NESTING, &mut memo)
     }
 
-    fn number_at(&self, c: &Construction, i: u32, depth: u32) -> Option<f64> {
-        if depth > parse::MAX_NESTING {
+    /// The values of many coefficient trees read with one shared memo
+    /// ([`number_value`](Self::number_value) of each): the builder's arena
+    /// is a DAG whose polynomial operations reuse coefficient trees, so one
+    /// memo makes every shared subtree evaluate once however many trees
+    /// reference it.
+    pub(crate) fn number_values(
+        &self,
+        c: &Construction,
+        roots: impl IntoIterator<Item = u32>,
+    ) -> Vec<Option<f64>> {
+        let mut memo = NumberMemo::default();
+        roots
+            .into_iter()
+            .map(|root| self.number_at(c, root, 0, MAX_COEFFICIENT_DEPTH, &mut memo))
+            .collect()
+    }
+
+    fn number_at(
+        &self,
+        c: &Construction,
+        i: u32,
+        depth: u32,
+        limit: u32,
+        memo: &mut NumberMemo,
+    ) -> Option<f64> {
+        if let Some(value) = memo.get(&i) {
+            return *value;
+        }
+        if depth > limit {
             return None;
         }
-        let value = |j: u32| self.number_at(c, j, depth + 1);
-        Some(match self.node(i) {
+        let value = |j: u32, memo: &mut NumberMemo| self.number_at(c, j, depth + 1, limit, memo);
+        let result = Some(match self.node(i) {
             Node::Num(v) => v,
             Node::MinusOne => -1.0,
             Node::Degree => math::PI_180,
@@ -608,9 +656,9 @@ impl Builder {
                 Value::Number(v) => v,
                 _ => return None,
             },
-            Node::Un(op, a) => eval::scalar(op, value(a)?, false),
+            Node::Un(op, a) => eval::scalar(op, value(a, memo)?, false),
             Node::Bin(op, a, b) => {
-                let (x, y) = (value(a)?, value(b)?);
+                let (x, y) = (value(a, memo)?, value(b, memo)?);
                 match op {
                     Bin::Add => x + y,
                     Bin::Sub => x - y,
@@ -621,7 +669,9 @@ impl Builder {
                 }
             }
             _ => return None,
-        })
+        });
+        memo.insert(i, result);
+        result
     }
 
     fn constant_at(&self, i: u32, depth: u32) -> Option<f64> {
@@ -685,6 +735,10 @@ impl Builder {
         parents: &mut Vec<Id>,
         inputs: &mut Vec<Id>,
     ) {
+        // The arena is a DAG (the polynomial powers reuse coefficient
+        // trees), so the walk keeps every node it has seen: a node shared
+        // by two parents is read once, as its reads are already collected.
+        let mut seen = vec![false; self.nodes.len()];
         let mut read = |id: Id, input: bool| {
             if !parents.contains(&id) {
                 parents.push(id);
@@ -693,30 +747,37 @@ impl Builder {
                 inputs.push(id);
             }
         };
-        match self.node(i) {
-            Node::Obj(id) => read(id, true),
-            Node::Apply(f, a) => {
-                read(f, true);
-                self.collect_reads(c, a, parents, inputs);
+        let mut stack = vec![i];
+        while let Some(i) = stack.pop() {
+            if seen[i as usize] {
+                continue;
             }
-            Node::Cmd(def, _) => {
-                for &p in def.parents().as_slice() {
-                    read(p, false);
+            seen[i as usize] = true;
+            match self.node(i) {
+                Node::Obj(id) => read(id, true),
+                Node::Apply(f, a) => {
+                    read(f, true);
+                    stack.push(a);
                 }
-                for p in crate::algo::intersect::hidden_parents(c, &def) {
-                    read(p, false);
+                Node::Cmd(def, _) => {
+                    for &p in def.parents().as_slice() {
+                        read(p, false);
+                    }
+                    for p in crate::algo::intersect::hidden_parents(c, &def) {
+                        read(p, false);
+                    }
+                    for p in crate::algo::vector::hidden_parents(c, &def) {
+                        read(p, false);
+                    }
+                    let node = self.node(i);
+                    let mut kids: Vec<u32> = children(&node).collect();
+                    kids.reverse();
+                    stack.extend(kids);
                 }
-                for p in crate::algo::vector::hidden_parents(c, &def) {
-                    read(p, false);
-                }
-                let node = self.node(i);
-                for child in children(&node) {
-                    self.collect_reads(c, child, parents, inputs);
-                }
-            }
-            node => {
-                for child in children(&node) {
-                    self.collect_reads(c, child, parents, inputs);
+                node => {
+                    let mut kids: Vec<u32> = children(&node).collect();
+                    kids.reverse();
+                    stack.extend(kids);
                 }
             }
         }
@@ -737,74 +798,6 @@ impl Builder {
             vars: vars_read[r],
             nodes: self.nodes.clone(),
             lits: self.lits.clone(),
-            tys,
-            parents,
-            inputs,
-            uses_var: false,
-            uses_y: false,
-        })
-    }
-
-    /// The tree at `root` as a self-contained [`parse::Parsed`] that copies
-    /// only the nodes reachable from `root`, remapped into a fresh arena:
-    /// the loops of the calculus commands finish one subtree per power
-    /// exponent and per polynomial coefficient, where
-    /// [`finish`](Self::finish) would clone and type-check the whole arena
-    /// of the builder on every call. Charges the work meter for the copy,
-    /// which [`finish`](Self::finish) does not need (it runs once per
-    /// object).
-    pub(crate) fn finish_reachable(
-        &self,
-        c: &Construction,
-        root: u32,
-    ) -> Result<parse::Parsed, String> {
-        // the reachable nodes in post-order, every child before its
-        // parent, as the arena of a parsed tree is ordered in and
-        // `types::check` computes its arrays in. The builder's arena is a
-        // DAG (the polynomial operations reuse coefficient trees), so a
-        // node shared by two parents keeps one copy, referenced twice
-        let mut map = vec![super::NONE; self.nodes.len()];
-        let mut order = Vec::new();
-        let mut seen = vec![false; self.nodes.len()];
-        let mut stack = vec![(root, false)];
-        while let Some((i, ready)) = stack.pop() {
-            if ready {
-                order.push(i);
-                continue;
-            }
-            if seen[i as usize] {
-                continue;
-            }
-            seen[i as usize] = true;
-            stack.push((i, true));
-            let node = self.node(i);
-            let mut kids: Vec<u32> = children(&node).filter(|&k| k != super::NONE).collect();
-            kids.reverse();
-            stack.extend(kids.into_iter().map(|k| (k, false)));
-        }
-        super::charge(3 * order.len() as u64);
-        let mut nodes = Vec::with_capacity(order.len());
-        let mut lits = Vec::with_capacity(order.len());
-        for &i in &order {
-            map[i as usize] = nodes.len() as u32;
-            nodes.push(self.node(i));
-            lits.push(self.lits[i as usize].clone());
-        }
-        for node in &mut nodes {
-            let _ = map_children(node, |child| Ok::<_, NotPolynomial>(map[child as usize]));
-        }
-        let (mut parents, mut inputs) = (Vec::new(), Vec::new());
-        self.collect_reads(c, root, &mut parents, &mut inputs);
-        let new_root = map[root as usize];
-        let (tys, depth, cost, vars_read) = types::check(c, &nodes, new_root)?;
-        let r = new_root as usize;
-        Ok(parse::Parsed {
-            root: new_root,
-            depth: depth[r],
-            cost: cost[r],
-            vars: vars_read[r],
-            nodes,
-            lits,
             tys,
             parents,
             inputs,
@@ -933,12 +926,12 @@ impl Poly {
     /// `Polynomial.multiply`: every term of this polynomial times every
     /// term of `e`, the variables joined, then [`Poly::simplify`].
     fn mul(&mut self, e: &Poly, b: &mut Builder) -> Result<(), NotPolynomial> {
+        if self.0.len().saturating_mul(e.0.len()) > MAX_PRODUCT_TERMS {
+            return Err(NotPolynomial::ImplicitCurve);
+        }
         let mut out = Vec::with_capacity(self.0.len() * e.0.len());
         for ti in &self.0 {
             for tj in &e.0 {
-                if out.len() >= MAX_TERMS {
-                    return Err(NotPolynomial::ImplicitCurve);
-                }
                 let x = ti.x.checked_add(tj.x).ok_or(NotPolynomial::ImplicitCurve)?;
                 let y = ti.y.checked_add(tj.y).ok_or(NotPolynomial::ImplicitCurve)?;
                 let coeff = b.multiply(ti.coeff, tj.coeff);
@@ -946,7 +939,11 @@ impl Poly {
             }
         }
         self.0 = out;
-        self.simplify(b)
+        self.simplify(b)?;
+        if self.0.len() > MAX_TERMS {
+            return Err(NotPolynomial::ImplicitCurve);
+        }
+        Ok(())
     }
 
     /// `Polynomial.power`: by repeated squaring, exactly upstream's
