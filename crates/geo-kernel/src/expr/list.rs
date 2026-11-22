@@ -132,6 +132,13 @@ impl Slot {
         self
     }
 
+    pub(super) fn detach_graph_object(mut self) -> Self {
+        if matches!(self.kind, Kind::Point | Kind::Segment) {
+            self.object = NO_OBJECT;
+        }
+        self
+    }
+
     pub(crate) fn shown(&self) -> Value {
         self.value.cartesian()
     }
@@ -220,6 +227,18 @@ impl Slot {
                 _ => [u64::MAX; 3],
             }
         };
+        if let (
+            Value::Segment { x1, y1, x2, y2 },
+            Value::Segment {
+                x1: a,
+                y1: b,
+                x2: c,
+                y2: d,
+            },
+        ) = (self.value, other.value)
+        {
+            return [x1, y1, x2, y2].map(f64::to_bits) == [a, b, c, d].map(f64::to_bits);
+        }
         self.kind == other.kind
             && self.start == other.start
             && std::mem::discriminant(&self.value) == std::mem::discriminant(&other.value)

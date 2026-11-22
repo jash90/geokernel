@@ -1558,9 +1558,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1314"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `DelaunayTriangulation`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoLocus` has no schema object (unsupported-type); string `DelauneyTriangulation[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
+mismatches = ["graph1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1321"
@@ -2518,9 +2518,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1953"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Hull`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoLocus` has no schema object (unsupported-type); string `ConvexHull[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
+mismatches = ["graph1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1960"
@@ -3796,9 +3796,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2770"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `MinimumSpanningTree`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoLocus` has no schema object (unsupported-type); string `MinimumSpanningTree[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
+mismatches = ["graph1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2777"
@@ -6147,30 +6147,6 @@ reason = "the kernel refuses the input: `Shear` does not take 7 argument(s)"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4128"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Perimeter` does not take 10 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4132"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Perimeter` does not take 11 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4136"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Perimeter` does not take 11 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:4140"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Perimeter` does not take 11 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4148"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `ShowLabel`"
@@ -6856,9 +6832,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4617"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `TravelingSalesman`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoLocus` has no schema object (unsupported-type); string `TravelingSalesman[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
+mismatches = ["graph1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4624"
@@ -7162,9 +7138,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4852"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Voronoi`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoLocus` has no schema object (unsupported-type); string `Voronoi[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
+mismatches = ["graph1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:4868"
@@ -8020,9 +7996,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:984"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ConvexHull`"
-mismatches = ["step"]
+category = "unsupported-type"
+reason = "class `GeoLocus` has no schema object (unsupported-type); string `ConvexHull[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
+mismatches = ["graph1"]
 
 [[gap]]
 id = "commands/CommandsTest.java:99"

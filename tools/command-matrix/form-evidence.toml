@@ -2324,3 +2324,78 @@ cases = ["charts-piechart-004"]
 command = "PieChart"
 form = "list,point,number"
 cases = ["charts-piechart-002"]
+
+[[form]]
+command = "ConvexHull"
+form = "list"
+cases = ["discrete-upstream-001", "discrete-hull-006", "discrete-hull-007"]
+
+[[form]]
+command = "ConvexHull"
+form = "point,point,..."
+cases = ["discrete-upstream-008", "discrete-hull-001"]
+
+[[form]]
+command = "Hull"
+form = "list,number"
+cases = ["discrete-upstream-006"]
+
+[[form]]
+command = "DelauneyTriangulation"
+form = "list"
+cases = ["discrete-upstream-002", "discrete-delaunay-009"]
+
+[[form]]
+command = "DelauneyTriangulation"
+form = "point,point,..."
+cases = ["discrete-delaunay-001"]
+
+[[form]]
+command = "MinimumSpanningTree"
+form = "list"
+cases = ["discrete-upstream-003", "discrete-tree-006", "discrete-tree-008"]
+
+[[form]]
+command = "MinimumSpanningTree"
+form = "number,number,..."
+difference = "discrete-geometry: `MinimumSpanningTree(number, number, ...)`"
+
+[[form]]
+command = "MinimumSpanningTree"
+form = "point,point,..."
+cases = ["discrete-tree-004"]
+
+[[form]]
+command = "ShortestDistance"
+form = "list,point,point,boolean"
+cases = ["discrete-path-001", "discrete-path-002", "discrete-path-003"]
+
+[[form]]
+command = "TravelingSalesman"
+form = "list"
+cases = ["discrete-upstream-004", "discrete-tour-008"]
+
+[[form]]
+command = "TravelingSalesman"
+form = "number,number,..."
+cases = ["discrete-tour-007"]
+
+[[form]]
+command = "TravelingSalesman"
+form = "point,point,..."
+cases = ["discrete-tour-001"]
+
+[[form]]
+command = "Voronoi"
+form = "list"
+cases = ["discrete-upstream-005", "discrete-voronoi-009"]
+
+[[form]]
+command = "Voronoi"
+form = "number,number,..."
+cases = ["discrete-voronoi-008"]
+
+[[form]]
+command = "Voronoi"
+form = "point,point,..."
+cases = ["discrete-voronoi-001"]

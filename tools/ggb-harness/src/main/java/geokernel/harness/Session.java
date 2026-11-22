@@ -1107,6 +1107,14 @@ final class Session {
                 return "line";
             case "Segment":
                 return "segment";
+            case "ConvexHull":
+            case "Hull":
+            case "DelauneyTriangulation":
+            case "DelaunayTriangulation":
+            case "MinimumSpanningTree":
+            case "ShortestDistance":
+            case "TravelingSalesman":
+            case "Voronoi":
             case "Locus":
             case "SlopeField":
                 return "locus";

@@ -540,3 +540,30 @@ mismatches = ["1:b"]
 id = "algebralogic-logic-025"
 reason = "GeoFunction.isInRegion also reads stale GeoPoint x2D at point construction. In the headless harness, IsInRegion((3,0), f) reads x2D = 0 for f(x) = x < 1 and reports true. The kernel evaluates f at x = 3."
 mismatches = ["0:b"]
+
+# Discrete loci
+
+[[gap]]
+id = "discrete-path-004"
+reason = "Identity-hash iteration in SparseMultigraph can select either equal-cost route through the diamond across recomputations. The kernel settles tied endpoints by first occurrence in the segment list."
+mismatches = ["0:g", "0:h", "1:h", "3:g", "3:h"]
+
+[[gap]]
+id = "discrete-tree-003"
+reason = "UndirectedSparseMultigraph iteration can change which equal-weight edges Prim selects, and the HashSet of TreeLink edges uses identity hashes for emission order. Both orders can vary across rebuilds. The kernel uses input-pair order."
+mismatches = ["0:g", "1:g", "2:g", "3:g", "4:g", "5:g"]
+
+[[gap]]
+id = "discrete-tree-005"
+reason = "The reference emits the two spanning edges of the copied point list in HashSet iteration order, which depends on the identity hashes of the TreeLink edges. The kernel uses input-pair order. The single-point state and zero-length edges agree."
+mismatches = ["0:g", "3:g"]
+
+[[gap]]
+id = "discrete-tree-007"
+reason = "The reference emits both spanning edges of the repeated-point list in HashSet iteration order, which depends on the identity hashes of the TreeLink edges. The kernel uses input-pair order."
+mismatches = ["0:g"]
+
+[[gap]]
+id = "discrete-upstream-019"
+reason = "The circumcircle test is sensitive to the last bit of cos(6) on approximately cocircular sites. The literal cocircular cases exercise the exact tie rule separately."
+mismatches = ["0:g"]

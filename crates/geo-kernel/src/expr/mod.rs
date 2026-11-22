@@ -1467,6 +1467,48 @@ pub(crate) fn argument_object(c: &mut Construction, text: &str, label: &str, kin
     !parsed.uses_var && add(c, label, parsed, kind).is_ok()
 }
 
+/// Builds a list from resolved arguments whose hidden labels cannot be written
+/// in an expression.
+pub(crate) fn list_of_objects(
+    c: &mut Construction,
+    label: &str,
+    ids: Vec<Id>,
+) -> Result<Id, String> {
+    let count = u32::try_from(ids.len()).map_err(|_| "too many arguments")?;
+    let root = count.checked_mul(2).ok_or("too many arguments")?;
+    if u64::from(root) + 1 > parse::MAX_COST {
+        return Err("too many arguments".into());
+    }
+    let mut nodes = Vec::with_capacity(root as usize + 1);
+    nodes.extend(ids.iter().copied().map(Node::Obj));
+    nodes.extend(ids.iter().enumerate().map(|(i, &id)| {
+        if list::object_kind(c.kind(id)) {
+            Node::ItemObject(id)
+        } else {
+            Node::Item(i as u32)
+        }
+    }));
+    nodes.push(Node::List(count, count));
+    let (tys, depth, cost, vars) = types::check(c, &nodes, root)?;
+    let mut parents = ids.clone();
+    parents.sort_unstable();
+    parents.dedup();
+    let parsed = parse::Parsed {
+        lits: vec![Lit::default(); nodes.len()],
+        nodes,
+        tys,
+        root,
+        parents,
+        inputs: ids,
+        uses_var: false,
+        uses_y: false,
+        depth: depth[root as usize],
+        cost: cost[root as usize],
+        vars: vars[root as usize],
+    };
+    add(c, label, parsed, Kind::List)
+}
+
 /// Evaluates a self-contained scalar argument without adding a construction
 /// object. The second result marks a value entered with an angle dimension.
 pub(crate) fn constant_number(c: &Construction, text: &str) -> Option<(f64, bool)> {
