@@ -779,13 +779,6 @@ mismatches = [
 ]
 
 [[gap]]
-id = "georestsmall-iflimited-001"
-reason = "Geometric If alternatives must be named objects."
-mismatches = [
-  "0:script line 6",
-]
-
-[[gap]]
 id = "georestsmall-surdcomplex-001"
 reason = "The kernel has no complex point mode, so the input point cannot be constructed."
 mismatches = [
@@ -925,6 +918,120 @@ mismatches = [
   "0:P_{59}", "0:P_{5}", "0:P_{60}", "0:P_{61}", "0:P_{62}", "0:P_{63}", "0:P_{64}", "0:P_{65}",
   "0:P_{66}", "0:P_{6}", "0:P_{7}", "0:P_{8}", "0:P_{9}",
 ]
+
+# odesymbolic
+
+[[gap]]
+id = "odesymbolic-cas-001"
+reason = "The kernel has no symbolic antiderivative for sin(x) in SolveODE and no adjustable integration constant for the form without an initial point."
+mismatches = ["0:g", "0:h"]
+
+[[gap]]
+id = "odesymbolic-cas-002"
+reason = "The kernel has no logarithmic antiderivative for 1/x in SolveODE and no adjustable integration constant for the form without an initial point."
+mismatches = ["0:g", "0:h"]
+
+[[gap]]
+id = "odesymbolic-cas-003"
+reason = "The kernel has no symbolic solver for differential equations whose slope expression reads y. The supplied initial points therefore do not select particular solutions."
+mismatches = ["0:g", "0:h", "0:i"]
+
+[[gap]]
+id = "odesymbolic-cas-004"
+reason = "The kernel has no symbolic solver for a two-variable slope function and cannot compute the general or initial-value solution."
+mismatches = ["0:g", "0:h"]
+
+[[gap]]
+id = "odesymbolic-cas-005"
+reason = "The kernel has no piecewise symbolic integration for a conditional slope in SolveODE."
+mismatches = ["0:g"]
+
+[[gap]]
+id = "odesymbolic-cas-006"
+reason = "The polynomial solver cannot integrate a slope with a noninteger power during slider edits. The reference returns a defined symbolic function for those powers."
+mismatches = ["1:g", "2:g"]
+
+# funcrest
+
+[[gap]]
+id = "funcrest-freehandreaders-010"
+reason = "Bounded intersection of two functions in the kernel requires two expression trees. It lacks an intersection search over freehand samples, so the recorded point stays undefined."
+mismatches = ["0:S"]
+
+[[gap]]
+id = "funcrest-svd-002"
+reason = "The kernel orients each left vector by its largest component. It lacks the reference sign convention for both diagonal matrices."
+mismatches = ["0:s", "0:t"]
+
+[[gap]]
+id = "funcrest-svd-003"
+reason = "The kernel orients each left vector by its largest component. It lacks the reference negative signs on both vectors of the one-row and one-column decompositions."
+mismatches = ["0:s", "0:t"]
+
+[[gap]]
+id = "funcrest-svd-005"
+reason = "The kernel uses its own singular vector signs and orthonormal completion. It lacks the reference null-space basis for the rank-one matrix and the reference signs for the identity."
+mismatches = ["0:s", "0:t"]
+
+[[gap]]
+id = "funcrest-svd-006"
+reason = "The kernel lacks the reference sign convention for the initial rank-one input and has no persistent undefined state for SVD after an empty input."
+mismatches = ["0:s", "2:s", "3:s"]
+
+[[gap]]
+id = "misc-maximizepoint-001"
+reason = "The independent bounded search lacks the reference parameter selection on the rounded circle maximum. The x coordinate is 3.000000000000307 instead of 2.9999999942592415."
+mismatches = ["0:M", "1:M", "2:M"]
+
+[[gap]]
+id = "misc-minimizepoint-001"
+reason = "The independent bounded search lacks the reference parameter selection on the rounded circle minimum. The x coordinate is 2.999999999999956 instead of 2.9999999942609166."
+mismatches = ["0:M", "1:M"]
+
+[[gap]]
+id = "funcrest-conditionalmixed-001"
+reason = "The kernel lacks a segment record with a separately assignable supporting line and retained endpoints. It therefore rejects a segment followed by a plain line."
+mismatches = ["0:script line 7"]
+
+[[gap]]
+id = "odesymbolic-nocas-001"
+reason = "The kernel always integrates supported polynomial slopes. It has no mode that reproduces the undefined result of the reference when symbolic evaluation is disabled."
+mismatches = ["0:g", "0:h", "3:g", "3:h"]
+
+[[gap]]
+id = "misc-optimize-013"
+reason = "The kernel reads the mover bounds at each solve and has no persistent disabled state for an optimizer created without them. It starts minimizing after the endpoints are attached and the number is edited."
+mismatches = ["2:m"]
+
+[[gap]]
+id = "funcrest-derivative-004"
+reason = "The 260-point spline exceeds the kernel work budget for dense elimination. It yields an undefined source and two undefined derivatives at that step. All three recover when the point count returns to five."
+mismatches = ["1:d", "1:e", "1:s"]
+
+[[gap]]
+id = "funcrest-svd-008"
+reason = "A ragged row makes both results undefined. The kernel has no persistent undefined state after an invalid matrix and decomposes the repaired matrix."
+mismatches = ["2:s"]
+
+[[gap]]
+id = "funcrest-svd-009"
+reason = "The kernel rejects every nonfinite matrix entry. For a one-cell matrix with an infinite entry the reference returns two unit factors and an undefined singular value. Both reject a NaN entry."
+mismatches = ["0:s"]
+
+[[gap]]
+id = "funcrest-svd-010"
+reason = "The kernel lacks the reference singular vector sign convention for the rank-deficient 3 by 3 matrix. The reference also makes its smallest singular value exactly zero."
+mismatches = ["0:s"]
+
+[[gap]]
+id = "funcrest-svd-011"
+reason = "The cyclic rotation sweep exceeds the kernel work budget on the dense 200 by 200 matrix. The enclosing IsDefined becomes undefined, while the reference finishes and returns true."
+mismatches = ["0:d"]
+
+[[gap]]
+id = "funcrest-freehandpoints-001"
+reason = "The kernel has no First overload that reads a freehand function as a list of its sample points. It rejects the command instead of returning a live prefix."
+mismatches = ["0:script line 3"]
 
 [[gap]]
 id = "locusequation-boolean-001"

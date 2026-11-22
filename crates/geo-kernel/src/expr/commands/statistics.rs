@@ -39,6 +39,14 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
         // same. Of two arguments the fold never runs: `CmdSum` wants a
         // list first (`argErr`).
         if op == ListOp::Sum && args.len() >= 3 && !lists[0] {
+            // The variadic coordinate form wraps only point arguments.
+            // Vectors are accepted when supplied as elements of a list.
+            if args
+                .iter()
+                .any(|&a| p.coordinate_kind(a) == Some(crate::Kind::Vector))
+            {
+                return Err("Sum needs vectors to be in a list".into());
+            }
             let functions: Option<Vec<_>> = args.iter().map(|&a| p.applied_function(a)).collect();
             if let Some(ids) = functions {
                 let var = p.push_var();

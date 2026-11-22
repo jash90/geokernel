@@ -221,6 +221,22 @@ fn moving_a_dependent_object_is_rejected() {
 }
 
 #[test]
+fn a_slow_plot_slider_assignment_survives_undo_and_redo() {
+    let mut w = Workbench::from_script("f(x) = x\ng = SlowPlot(f)\np = g(2)\n").unwrap();
+    let value = |w: &Workbench| {
+        let c = w.construction();
+        c.value(c.id("p").unwrap())
+    };
+    assert_eq!(value(&w), Value::Undefined);
+    w.run_line("a = 2").unwrap();
+    assert_eq!(value(&w), Value::Number(2.0));
+    assert!(w.undo());
+    assert_eq!(value(&w), Value::Undefined);
+    assert!(w.redo());
+    assert_eq!(value(&w), Value::Number(2.0));
+}
+
+#[test]
 fn set_number_recomputes_dependents_and_undoes() {
     let mut w = triangle();
     let r = w.construction().id("r").unwrap();

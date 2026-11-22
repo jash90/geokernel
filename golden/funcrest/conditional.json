@@ -1,0 +1,947 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcrest-conditional-001",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 3)",
+        "r = Segment(A, B)",
+        "b = n > 0",
+        "s = If(b, r, Segment(A, C))",
+        "d = Length(s)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 2.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "r": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "r": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "r": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "r": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-conditional-002",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 3)",
+        "s = If(n > 0, Line(A, B), n < 0, Line(A, C))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "move", "label": "C", "x": 3.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "s": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "s": { "type": "line", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "s": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 0.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "s": { "type": "line", "defined": true, "a": -3.0, "b": 3.0, "c": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-conditional-003",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "A = (3, 0)",
+        "B = (0, 3)",
+        "O = (0, 0)",
+        "a = CircularArc(O, A, B)",
+        "b = CircularArc(O, B, A)",
+        "c = If(n > 0, a, b)",
+        "d = Length(c)",
+        "P = Point(c, 0.5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.71238898038469,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 4.71238898038469,
+            "area": 2.5685834705770345,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": {
+            "type": "arc",
+            "defined": true,
+            "value": 14.137166941154069,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 1.5707963267948966,
+            "end": 0.0,
+            "arc_length": 14.137166941154069,
+            "area": 25.705750411731103,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "c": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.71238898038469,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 0.0,
+            "area": 2.5685834705770345,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.121320343559643, "y": 2.1213203435596424 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.71238898038469,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 4.71238898038469,
+            "area": 2.5685834705770345,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": {
+            "type": "arc",
+            "defined": true,
+            "value": 14.137166941154069,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 1.5707963267948966,
+            "end": 0.0,
+            "arc_length": 14.137166941154069,
+            "area": 25.705750411731103,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "c": {
+            "type": "arc",
+            "defined": true,
+            "value": 14.137166941154069,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 1.5707963267948966,
+            "end": 0.0,
+            "arc_length": 0.0,
+            "area": 25.705750411731103,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.121320343559643, "y": -2.1213203435596424 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": { "type": "arc", "defined": false },
+          "b": {
+            "type": "arc",
+            "defined": true,
+            "value": 14.137166941154069,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 1.5707963267948966,
+            "end": 0.0,
+            "arc_length": 14.137166941154069,
+            "area": 25.705750411731103,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "c": {
+            "type": "arc",
+            "defined": true,
+            "value": 14.137166941154069,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 1.5707963267948966,
+            "end": 0.0,
+            "arc_length": 0.0,
+            "area": 25.705750411731103,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.121320343559643, "y": -2.1213203435596424 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.71238898038469,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 4.71238898038469,
+            "area": 2.5685834705770345,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": {
+            "type": "arc",
+            "defined": true,
+            "value": 14.137166941154069,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 1.5707963267948966,
+            "end": 0.0,
+            "arc_length": 14.137166941154069,
+            "area": 25.705750411731103,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "c": {
+            "type": "arc",
+            "defined": true,
+            "value": 14.137166941154069,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 1.5707963267948966,
+            "end": 0.0,
+            "arc_length": 0.0,
+            "area": 25.705750411731103,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.121320343559643, "y": -2.1213203435596424 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "a": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.71238898038469,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 4.71238898038469,
+            "area": 2.5685834705770345,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "b": {
+            "type": "arc",
+            "defined": true,
+            "value": 14.137166941154069,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 1.5707963267948966,
+            "end": 0.0,
+            "arc_length": 14.137166941154069,
+            "area": 25.705750411731103,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "c": {
+            "type": "arc",
+            "defined": true,
+            "value": 4.71238898038469,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.0,
+            "end": 1.5707963267948966,
+            "arc_length": 0.0,
+            "area": 2.5685834705770345,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.121320343559643, "y": 2.1213203435596424 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-conditional-004",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "C = (0, 3)",
+        "D = (0, -3)",
+        "p = Polygon(A, B, C)",
+        "q = Polygon(A, B, D)",
+        "r = If(n > 0, p, n < 0, q)",
+        "aa = Area(r)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "move", "label": "D", "x": 0.0, "y": -5.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -3.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, 3.0]
+            ],
+            "area": 6.0,
+            "signed_area": 6.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, -3.0]
+            ],
+            "area": 6.0,
+            "signed_area": -6.0
+          },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": -3.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": -3.0, "x2": 0.0, "y2": 0.0 },
+          "r": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, 3.0]
+            ],
+            "area": 6.0,
+            "signed_area": 6.0
+          },
+          "aa": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -3.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, 3.0]
+            ],
+            "area": 6.0,
+            "signed_area": 6.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, -3.0]
+            ],
+            "area": 6.0,
+            "signed_area": -6.0
+          },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": -3.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": -3.0, "x2": 0.0, "y2": 0.0 },
+          "r": { "type": "polygon", "defined": false },
+          "aa": { "type": "number", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -3.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, 3.0]
+            ],
+            "area": 6.0,
+            "signed_area": 6.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, -3.0]
+            ],
+            "area": 6.0,
+            "signed_area": -6.0
+          },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": -3.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": -3.0, "x2": 0.0, "y2": 0.0 },
+          "r": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, -3.0]
+            ],
+            "area": 6.0,
+            "signed_area": -6.0
+          },
+          "aa": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, 3.0]
+            ],
+            "area": 6.0,
+            "signed_area": 6.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, -5.0]
+            ],
+            "area": 10.0,
+            "signed_area": -10.0
+          },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": -5.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": -5.0, "x2": 0.0, "y2": 0.0 },
+          "r": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, -5.0]
+            ],
+            "area": 10.0,
+            "signed_area": -10.0
+          },
+          "aa": { "type": "number", "defined": true, "value": 10.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": -5.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, 3.0]
+            ],
+            "area": 6.0,
+            "signed_area": 6.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 0.0, "y1": 3.0, "x2": 0.0, "y2": 0.0 },
+          "q": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, -5.0]
+            ],
+            "area": 10.0,
+            "signed_area": -10.0
+          },
+          "d": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "a_1": { "type": "segment", "defined": true, "x1": 4.0, "y1": 0.0, "x2": 0.0, "y2": -5.0 },
+          "b_1": { "type": "segment", "defined": true, "x1": 0.0, "y1": -5.0, "x2": 0.0, "y2": 0.0 },
+          "r": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [4.0, 0.0],
+              [0.0, 3.0]
+            ],
+            "area": 6.0,
+            "signed_area": 6.0
+          },
+          "aa": { "type": "number", "defined": true, "value": 6.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-conditional-005",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "p = Curve(t, t^2, t, 0, 3)",
+        "q = Curve(t, -t^2, t, 0, 3)",
+        "r = If(n > 0, p, q)",
+        "P = Point(r, 0.5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "r": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 1.5, "y": 2.25 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "p": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "r": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 1.5, "y": -2.25 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "p": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "q": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "r": { "type": "curve", "defined": true, "start": 0.0, "end": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 1.5, "y": 2.25 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-conditional-006",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "b = n > 0",
+        "a = If(b, true, 5)",
+        "P = If(b, 3, (2, 1))",
+        "q = If(b, {1, 2}, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "q": { "type": "list", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-conditional-008",
+      "group": "funcrest",
+      "script": [
+        "a = 2",
+        "t = true",
+        "l = {1, 2}",
+        "p = If(a < 3, t, 2)",
+        "q = If(a < 3, 3, a < 4)",
+        "r = If(a < 3, l, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 2.0 },
+          "q": { "type": "number", "defined": true, "value": 0.0 },
+          "r": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "p": { "type": "number", "defined": true, "value": 1.0 },
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-conditional-009",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "b = n > 0",
+        "a = If(b, 3, {1, 2})",
+        "P = If(b, (1, 2), 3)",
+        "c = If(b, 30°, 5)",
+        "d = If(b, 5, 30°)",
+        "e = If(b, \"a\", 3)",
+        "h = If(b, 3, \"a\")"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "d": { "type": "number", "defined": true, "value": 5.0 },
+          "e": { "type": "text", "defined": true, "text": "a" },
+          "h": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "a": { "type": "number", "defined": false },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 5.0 },
+          "d": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "e": { "type": "text", "defined": true, "text": "a" },
+          "h": { "type": "number", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "d": { "type": "number", "defined": true, "value": 5.0 },
+          "e": { "type": "text", "defined": true, "text": "a" },
+          "h": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-conditional-010",
+      "group": "funcrest",
+      "script": [
+        "n = 1",
+        "a = If(n > 0, 30°, n < 0, 5, 60°)",
+        "P = If(n > 0, 3, n < 0, {1, 2}, 5)",
+        "Q = If(n > 0, (1, 2), n < 0, 3, (3, 4))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "P": { "type": "number", "defined": true, "value": 3.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 5.0 },
+          "P": { "type": "number", "defined": false },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0471975511965979 },
+          "P": { "type": "number", "defined": true, "value": 5.0 },
+          "Q": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.5235987755982989 },
+          "P": { "type": "number", "defined": true, "value": 3.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
+    }
+  ]
+}

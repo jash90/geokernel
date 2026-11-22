@@ -201,6 +201,7 @@ fn corpus() -> Vec<Case> {
                     wb.set_number(id, *value);
                 }
                 Step::Reject { .. } => panic!("{name}: unexpected rejection step"),
+                Step::SetSliderBounds { .. } => panic!("{name}: unexpected slider bounds edit"),
             }
         }
         let c = wb.construction();

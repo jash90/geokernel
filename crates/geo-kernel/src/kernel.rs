@@ -1630,6 +1630,11 @@ impl Construction {
         if let Some(list) = def.list() {
             ids.extend_from_slice(self.list(list));
         }
+        if let Def::Optimize(d) = *def {
+            if let Some(watched) = d.watched() {
+                ids.extend_from_slice(self.list(watched));
+            }
+        }
         ids
     }
 
@@ -1663,6 +1668,9 @@ impl Construction {
         }
         self.check(&def)?;
         let mut def = algo::intersect::prepare(self, def);
+        if let Def::Optimize(d) = def {
+            def = Def::Optimize(d.attach(self)?);
+        }
 
         let id = Id(self.defs.len());
         // compute reads the hint of the new object from `hints`
@@ -1904,16 +1912,22 @@ impl Construction {
         make: impl FnOnce(IdList) -> Def,
     ) -> Result<Id, Error> {
         let start = self.lists.len();
-        let list = match (u32::try_from(start), u32::try_from(ids.len())) {
-            (Ok(start), Ok(len)) if start.checked_add(len).is_some() => IdList { start, len },
-            _ => return Err(Error::UnknownObject),
-        };
-        self.lists.extend_from_slice(ids);
+        let list = self.store_list(ids)?;
         let result = self.add(label, make(list));
         if result.is_err() {
             self.lists.truncate(start);
         }
         result
+    }
+
+    pub(crate) fn store_list(&mut self, ids: &[Id]) -> Result<IdList, Error> {
+        let start = self.lists.len();
+        let list = match (u32::try_from(start), u32::try_from(ids.len())) {
+            (Ok(start), Ok(len)) if start.checked_add(len).is_some() => IdList { start, len },
+            _ => return Err(Error::UnknownObject),
+        };
+        self.lists.extend_from_slice(ids);
+        Ok(list)
     }
 
     /// The objects of a stored list. A handle that this construction did not
@@ -2054,6 +2068,15 @@ impl Construction {
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        self.update_number(id, v, true)
+    }
+
+    /// A numeric assignment to a slider sets its value outside the drag interval too.
+    pub(crate) fn assign_slider_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
+        self.update_number(id, v, false)
+    }
+
+    fn update_number(&mut self, id: Id, v: f64, clamp_slider: bool) -> Result<usize, Error> {
         self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
@@ -2072,7 +2095,7 @@ impl Construction {
             return Err(Error::NotFinite);
         }
         // A slider keeps its value in its active interval.
-        let (new_def, v) = if matches!(new_def, Def::Number(_)) {
+        let (new_def, v) = if clamp_slider && matches!(new_def, Def::Number(_)) {
             let v = self.clamp_slider(id, v);
             (Def::Number(v), v)
         } else {
@@ -2229,7 +2252,13 @@ impl Construction {
                         && !matches!(
                             def,
                             Def::Conditional {
-                                kind: Kind::Circle | Kind::Conic,
+                                kind: Kind::Circle
+                                    | Kind::Conic
+                                    | Kind::Polygon
+                                    | Kind::PolyLine
+                                    | Kind::Arc
+                                    | Kind::Sector
+                                    | Kind::Locus,
                                 ..
                             }
                         )
@@ -2237,8 +2266,7 @@ impl Construction {
                         // Nothing downstream can change because of this object.
                         continue;
                     }
-                    // Curves, images and conditional conics can change shape
-                    // at constant summary values.
+                    // Shape records can change while their summary values stay equal.
                     self.values[i] = new;
                 }
             }
@@ -2458,10 +2486,19 @@ impl Construction {
     /// The record of the arc or sector `id`: its conic, the range of its
     /// parameter and its measures. `None` for any other object.
     pub fn arc(&self, id: Id) -> Option<ArcData> {
-        match self.defs.get(id.0)? {
-            Def::Arc(d) if d.has_record() => self.arc_slot(id.0).map(|slot| self.arcs[slot].1),
-            _ => None,
+        let source = self.conditional_source(id)?;
+        let Def::Arc(d) = self.defs.get(source.0)? else {
+            return None;
+        };
+        if !d.has_record() {
+            return None;
         }
+        let arc = self.arcs[self.arc_slot(source.0)?].1;
+        Some(if source == id {
+            arc
+        } else {
+            arc.conditional_copy()
+        })
     }
 
     /// Where the state of object `i` is kept in `paths`.
@@ -2574,13 +2611,8 @@ impl Construction {
     /// any other defined circle the record GeoGebra's circle commands make.
     /// `None` for other objects and for an undefined circle that keeps no
     /// record. A record may be undefined ([`ConicData::defined`]).
-    pub fn conic(&self, mut id: Id) -> Option<ConicData> {
-        while let Def::Conditional { args, .. } = self.defs.get(id.0)? {
-            if !self.values[id.0].is_defined() {
-                return None;
-            }
-            id = expr::conditional_branch(self, self.list(*args))?;
-        }
+    pub fn conic(&self, id: Id) -> Option<ConicData> {
+        let id = self.conditional_source(id)?;
         match self.defs.get(id.0)? {
             Def::ImplicitCurve(index)
                 if self.kind(id) == Kind::Conic && self.value(id).is_defined() =>
@@ -2595,6 +2627,21 @@ impl Construction {
                 _ => None,
             },
         }
+    }
+
+    /// The active source of a conditional object. Branches precede their
+    /// result in the construction.
+    pub(crate) fn conditional_source(&self, mut id: Id) -> Option<Id> {
+        for _ in 0..=id.0 {
+            let Some(Def::Conditional { args, .. }) = self.defs.get(id.0) else {
+                return Some(id);
+            };
+            if !self.values[id.0].is_defined() {
+                return None;
+            }
+            id = expr::conditional_branch(self, self.list(*args))?;
+        }
+        None
     }
 
     /// The current contents of a text object.

@@ -356,7 +356,7 @@ impl Workbench {
         }
         let kind = self.log.rebuild().ok().and_then(|(mut scratch, _)| {
             let id = exec_definition(&mut scratch, &format!("Probe_ = {line}")).ok()??;
-            Some(scratch.kind(id))
+            Some(scratch.kind(scratch.id("Probe_").unwrap_or(id)))
         });
         let label = next_label(kind.unwrap_or(Kind::Line), |l| {
             self.construction.id(l).is_some()
@@ -457,7 +457,7 @@ impl Workbench {
     fn exec_lines(&mut self, lines: &[String], in_tool: bool) -> Result<(), String> {
         let snapshot = self.copy(&self.log);
         let n0 = self.construction.len();
-        let mut step_changed = false;
+        let mut updated = false;
         let mut failure = None;
         for raw in lines {
             let line = normalize(raw);
@@ -470,13 +470,16 @@ impl Workbench {
             }
             let before = self.construction.len();
             let step_before = self.construction.step();
+            let assigns_slider =
+                geo_kernel::script::is_slider_assignment(&self.construction, &line);
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
                 Ok(first) => {
                     let added = self.construction.len() > before;
-                    let moved_step = !added && self.construction.step() != step_before;
-                    if added || moved_step {
+                    let mutated =
+                        !added && (assigns_slider || self.construction.step() != step_before);
+                    if added || mutated {
                         self.log.record(&self.construction, before, &line);
                         if let Some(first) = first {
                             self.boundary_outputs.record(
@@ -487,7 +490,7 @@ impl Workbench {
                             );
                         }
                     }
-                    step_changed |= moved_step;
+                    updated |= mutated;
                 }
                 Err(e) => {
                     failure = Some(e);
@@ -499,7 +502,7 @@ impl Workbench {
         if objects_added {
             self.objects_changed();
         }
-        let changed = objects_added || step_changed;
+        let changed = objects_added || updated;
         match failure {
             Some(e) => {
                 if changed {

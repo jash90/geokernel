@@ -36,7 +36,7 @@
 //! evaluator. `NDerivative` of a non-polynomial builds the derivative tree
 //! of `Derivative.get`, one `ExpressionNode.derivative` pass per order.
 
-use super::{Group, Parents};
+use super::{Group, Parents, POINT};
 use crate::expr::derivative::decimal_to_fraction;
 use crate::expr::equation::Builder;
 use crate::expr::{self, Bin, Element, Entry, IfMode, Node, Parsed, Raw, Un, NONE};
@@ -137,6 +137,11 @@ pub enum CalculusDef {
         order: Option<u32>,
         numeric: bool,
     },
+    /// `Derivative(curve[, order])` and `NDerivative` of a curve
+    /// (`GeoCurveCartesianND.setDerivative`): both coordinate functions
+    /// differentiated on the fast no-CAS path, with the parent's parameter
+    /// interval.
+    CurveDerivative { curve: u32, order: Option<u32> },
     /// `NIntegral(f, a, b, c)` (`AlgoIntegralNumericInterval`): the
     /// antiderivative the rules build, shifted through `(a, b)` and cut
     /// to `[a, c]`.
@@ -149,6 +154,19 @@ pub enum CalculusDef {
     /// `Polynomial(points)`: the interpolating polynomial
     /// (`AlgoPolynomialFromCoordinates`).
     PolynomialPoints { points: u32 },
+    /// `SolveODE(f[, P])` and `SolveODE(curve[, P])` (`AlgoSolveODECas`):
+    /// the solution of `y' = f(x)` as a function. The kernel solves a
+    /// polynomial right-hand side in `x` (its antiderivative, through `P`
+    /// when there is one); everything else needs the CAS and is undefined,
+    /// and a curve is undefined in the reference too.
+    SymbolicOde { source: u32, point: Option<u32> },
+    /// `Function(list)` (`AlgoFunctionFreehand`): the freehand function of
+    /// the list `{min, max, y1, y2, ...}`, the values `y` at equal steps
+    /// over `[min, max]`, linear between them and undefined outside.
+    Freehand { list: u32 },
+    /// `Function()` (`CmdDataFunction.emptyFunction`): the data function
+    /// of no points, a defined function with no value anywhere.
+    EmptyData,
 }
 
 /// The object index `x` as an `Id` again.
@@ -164,8 +182,12 @@ impl CalculusDef {
             self,
             CalculusDef::IndefiniteIntegral { .. }
                 | CalculusDef::Derivative { .. }
+                | CalculusDef::CurveDerivative { .. }
                 | CalculusDef::NumericInterval { .. }
                 | CalculusDef::PolynomialPoints { .. }
+                | CalculusDef::SymbolicOde { .. }
+                | CalculusDef::Freehand { .. }
+                | CalculusDef::EmptyData
         )
     }
 
@@ -179,15 +201,23 @@ impl CalculusDef {
         x: f64,
     ) -> Option<f64> {
         let _ = owner;
-        record
-            .tree
-            .as_ref()
-            .map(|entry| expr::sample_tree(c, entry, x))
+        match *self {
+            // these two keep no tree: their values come from the list
+            CalculusDef::Freehand { list } => Some(freehand_value(c, gid(list), x)),
+            CalculusDef::EmptyData => Some(f64::NAN),
+            _ => record
+                .tree
+                .as_ref()
+                .map(|entry| expr::sample_tree(c, entry, x)),
+        }
     }
 }
 
 pub(crate) struct CalcRecord {
     pub(crate) tree: Option<Entry>,
+    /// The second coordinate tree of a curve derivative (`None` for every
+    /// other record-backed object).
+    pub(crate) tree2: Option<Entry>,
 }
 
 /// Initializes the record of a record-backed calculus object and its
@@ -199,13 +229,27 @@ pub(crate) fn initialize(c: &Construction, d: &CalculusDef) -> (Value, CalcRecor
 /// Recomputes the record of a record-backed calculus object and its
 /// value.
 pub(crate) fn refresh(c: &Construction, d: &CalculusDef) -> (Value, CalcRecord) {
-    let tree = build_record(c, d);
-    let value = match &tree {
-        // an undefined tree: the rules failed, or the command needs the CAS
-        Some(entry) if expr::tree_defined(c, entry) => Value::Function,
+    let (tree, tree2) = build_record(c, d);
+    let defined = |entry: &Option<Entry>| {
+        entry
+            .as_ref()
+            .is_some_and(|entry| expr::tree_defined(c, entry))
+    };
+    let value = match *d {
+        // the curve keeps its parent's interval; it is defined when both
+        // coordinates differentiated
+        CalculusDef::CurveDerivative { curve, .. } => match c.value(gid(curve)) {
+            Value::Curve { start, end } if defined(&tree) && defined(&tree2) => {
+                Value::Curve { start, end }
+            }
+            _ => Value::Undefined,
+        },
+        CalculusDef::Freehand { list } if freehand_defined(c, gid(list)) => Value::Function,
+        CalculusDef::EmptyData => Value::Function,
+        _ if defined(&tree) => Value::Function,
         _ => Value::Undefined,
     };
-    (value, CalcRecord { tree })
+    (value, CalcRecord { tree, tree2 })
 }
 
 impl Group for CalculusDef {
@@ -217,7 +261,11 @@ impl Group for CalculusDef {
             CalculusDef::IndefiniteIntegral { .. }
             | CalculusDef::Derivative { .. }
             | CalculusDef::NumericInterval { .. }
-            | CalculusDef::PolynomialPoints { .. } => Kind::Function,
+            | CalculusDef::PolynomialPoints { .. }
+            | CalculusDef::SymbolicOde { .. }
+            | CalculusDef::Freehand { .. }
+            | CalculusDef::EmptyData => Kind::Function,
+            CalculusDef::CurveDerivative { .. } => Kind::Curve,
         }
     }
 
@@ -261,10 +309,20 @@ impl Group for CalculusDef {
                 Some(order) => Parents::of(&[gid(function), gid(order)]),
                 None => Parents::of(&[gid(function)]),
             },
+            CalculusDef::CurveDerivative { curve, order } => match order {
+                Some(order) => Parents::of(&[gid(curve), gid(order)]),
+                None => Parents::of(&[gid(curve)]),
+            },
             CalculusDef::NumericInterval {
                 function, a, b, c, ..
             } => Parents::of(&[gid(function), gid(a), gid(b), gid(c)]),
             CalculusDef::PolynomialPoints { points } => Parents::of(&[gid(points)]),
+            CalculusDef::SymbolicOde { source, point } => match point {
+                Some(point) => Parents::of(&[gid(source), gid(point)]),
+                None => Parents::of(&[gid(source)]),
+            },
+            CalculusDef::Freehand { list } => Parents::of(&[gid(list)]),
+            CalculusDef::EmptyData => Parents::none(),
         }
     }
 
@@ -324,6 +382,12 @@ impl Group for CalculusDef {
             | CalculusDef::Derivative { function, .. } => {
                 c.expect(gid(function), &[Kind::Function])?;
             }
+            CalculusDef::CurveDerivative { curve, order } => {
+                c.expect(gid(curve), &[Kind::Curve])?;
+                if let Some(order) = order {
+                    number(gid(order))?;
+                }
+            }
             CalculusDef::NumericInterval {
                 function,
                 a,
@@ -339,12 +403,28 @@ impl Group for CalculusDef {
             CalculusDef::PolynomialPoints { points } => {
                 c.expect(gid(points), &[Kind::List])?;
             }
+            CalculusDef::SymbolicOde { source, point } => {
+                c.expect(
+                    gid(source),
+                    &[Kind::Function, Kind::FunctionNVar, Kind::Curve],
+                )?;
+                if let Some(point) = point {
+                    c.expect(gid(point), POINT)?;
+                }
+            }
+            CalculusDef::Freehand { list } => {
+                c.expect(gid(list), &[Kind::List])?;
+            }
+            CalculusDef::EmptyData => {}
         }
         Ok(())
     }
 
     fn compute(&self, c: &Construction) -> Option<Value> {
         match *self {
+            CalculusDef::Freehand { .. } | CalculusDef::EmptyData => {
+                Some(refresh(c, self).0).filter(Value::is_defined)
+            }
             CalculusDef::Sum { .. } => sum_value(c, self),
             CalculusDef::DefiniteIntegral { .. } => definite_integral(c, self),
             CalculusDef::IntegralFunctions { .. } => integral_functions(c, self),
@@ -352,12 +432,18 @@ impl Group for CalculusDef {
             // this path only decides whether they are defined
             CalculusDef::IndefiniteIntegral { .. }
             | CalculusDef::Derivative { .. }
+            | CalculusDef::CurveDerivative { .. }
             | CalculusDef::NumericInterval { .. }
-            | CalculusDef::PolynomialPoints { .. } => {
-                let tree = build_record(c, self);
-                match &tree {
-                    Some(entry) if expr::tree_defined(c, entry) => Some(Value::Function),
-                    _ => None,
+            | CalculusDef::PolynomialPoints { .. }
+            | CalculusDef::SymbolicOde { .. } => {
+                // the record-backed objects answer through their record;
+                // this path only decides whether they are defined
+                let (value, record) = refresh(c, self);
+                match (&value, &record.tree) {
+                    // an undefined tree: the rules failed, or the command
+                    // needs the CAS
+                    (&Value::Undefined, _) | (_, None) => None,
+                    _ => Some(value),
                 }
             }
         }
@@ -664,6 +750,12 @@ fn definite_integral(c: &Construction, d: &CalculusDef) -> Option<Value> {
     if shade_only {
         return None;
     }
+    // a freehand function is summed over its own steps
+    // (`freehandIntegration`)
+    if let Def::Calculus(CalculusDef::Freehand { list }) = c.def(function) {
+        let value = freehand_integration(c, gid(list), lower, upper);
+        return value.is_finite().then_some(Value::Number(value));
+    }
     let entry = source_entry(c, function)?;
     let conditional = is_conditional(entry, entry.root);
     let div_by_var = includes_division_by_var(&entry.nodes, entry.root);
@@ -808,6 +900,117 @@ fn boolean(c: &Construction, id: Id) -> Option<bool> {
 /// `DoubleUtil.isEqual(x, y, eps)`.
 fn is_equal(x: f64, y: f64, eps: f64) -> bool {
     x == y || (x - eps) < y && y < (x + eps)
+}
+
+// --------------------------------------------------------- the freehand function
+
+/// `AlgoFunctionFreehand.compute`: the function is defined for a defined
+/// list of at least four numbers.
+fn freehand_defined(c: &Construction, list: Id) -> bool {
+    c.elements(list).is_some_and(|list| {
+        list.len() >= 4
+            && list
+                .iter()
+                .all(|item| matches!(item, Element::Value(Kind::Number, _)))
+    })
+}
+
+/// `Operation.FREEHAND`: the value at `x` of the freehand function of the
+/// list `{min, max, y1, ..., yn+1}`. The `n` steps divide `[min, max]`
+/// evenly; outside the interval and for a reversed interval the value is
+/// undefined.
+fn freehand_value(c: &Construction, list: Id, x: f64) -> f64 {
+    let Some(list) = c.elements(list) else {
+        return f64::NAN;
+    };
+    if list.len() < 4 {
+        return f64::NAN;
+    }
+    let at = |k: usize| list.numeric_cell(k).unwrap_or(f64::NAN);
+    let n = list.len() - 3;
+    let (min, max) = (at(0), at(1));
+    if min > max || x > max || x < min {
+        return f64::NAN;
+    }
+    let step = (max - min) / n as f64;
+    // Java's `(int) Math.floor(...)`: a NaN is 0, the rest saturates
+    let index = ((x - min) / step).floor() as i32;
+    if index < 0 {
+        return f64::NAN;
+    }
+    let index = index as usize;
+    if index > n - 1 {
+        return at(n + 2);
+    }
+    let (y1, y2) = (at(index + 2), at(index + 3));
+    let x1 = min + index as f64 * step;
+    y1 + (x - x1) * (y2 - y1) / step
+}
+
+/// `AlgoIntegralDefinite.freehandIntegration`: the trapezoidal rule over
+/// the steps of the freehand list that lie between the bounds, plus one
+/// trapezium at each end. Bounds outside the list's interval are
+/// undefined.
+fn freehand_integration(c: &Construction, list_id: Id, lower: f64, upper: f64) -> f64 {
+    let (lower, upper, sign) = if lower > upper {
+        (upper, lower, -1.0)
+    } else {
+        (lower, upper, 1.0)
+    };
+    let Some(list) = c.elements(list_id) else {
+        return f64::NAN;
+    };
+    let at = |k: i64| {
+        usize::try_from(k)
+            .ok()
+            .and_then(|k| list.numeric_cell(k))
+            .unwrap_or(f64::NAN)
+    };
+    let (a1, b1) = (at(0), at(1));
+    if lower < a1 || upper > b1 {
+        return f64::NAN;
+    }
+    let step = (b1 - a1) / (list.len() as f64 - 3.0);
+    // Java's `(int)` of a double: a NaN is 0, the rest saturates
+    let start_gap = ((lower - a1) / step).ceil() as i32 as i64;
+    let end_gap = ((b1 - upper) / step).ceil() as i32 as i64;
+    let start_x = a1 + step * start_gap as f64;
+    let end_x = b1 - step * end_gap as f64;
+    let steps = (((b1 - a1) / step - end_gap as f64 - start_gap as f64 + 0.5).floor() as i32
+        as i64)
+        .saturating_add(1);
+    let f = |x: f64| freehand_value(c, list_id, x);
+    let area = if steps > 0 {
+        if steps > list.len() as i64 {
+            // past the list: the reference fails on the missing element
+            return f64::NAN;
+        }
+        let mut sum = 0.0;
+        for i in 0..steps {
+            let y = at(2 + i + start_gap);
+            sum += if i == 0 || i == steps - 1 { y } else { 2.0 * y };
+        }
+        let mut area = sum * step / 2.0;
+        if !is_zero(start_x - lower) {
+            area += (start_x - lower) * (f(start_x) + f(lower)) / 2.0;
+        }
+        if !is_zero(end_x - upper) {
+            area += (upper - end_x) * (f(end_x) + f(upper)) / 2.0;
+        }
+        area
+    } else {
+        (upper - lower) * (f(lower) + f(upper)) / 2.0
+    };
+    // `DoubleUtil.checkDecimalFraction`: a value close to a multiple of
+    // `1e-5` snaps to it
+    let scaled = area * 1e5;
+    let rounded = (scaled + 0.5).floor();
+    let area = if is_equal(scaled, rounded, STANDARD_PRECISION) {
+        rounded / 1e5
+    } else {
+        area
+    };
+    area * sign
 }
 
 // ------------------------------------------------------------- the polynomials
@@ -1119,7 +1322,7 @@ fn collect_cases(
             complete
         }
         // an `AlgoIf` command: one case of its own, never split
-        IfMode::Algo => {
+        IfMode::Algo | IfMode::AlgoNext => {
             cases.push(i);
             bounds.push(parent.clone());
             false
@@ -1314,6 +1517,52 @@ fn polynomial_antiderivative(c: &Construction, entry: &Entry) -> Option<Parsed> 
             b.divide(root, divisor)
         });
         shifted.push(shifted_root);
+    }
+    poly_function_tree(c, &mut b, &shifted)
+}
+
+/// The solution of `y' = p(x)` for a polynomial source `p`: the
+/// antiderivative with the constant zero (the initial value of the
+/// arbitrary constant the CAS answer carries), or with the constant that
+/// puts the graph through the point `through`. `None` for a source that
+/// is no polynomial in `x` or has a coefficient that is not finite.
+fn polynomial_ode_solution(
+    c: &Construction,
+    entry: &Entry,
+    through: Option<(f64, f64)>,
+) -> Option<Parsed> {
+    let mut b = Builder::function(entry);
+    let poly = b.expand(c, entry.root).ok()?;
+    let roots = poly.coefficient_roots(&mut b);
+    let mut shifted: Vec<Option<u32>> = vec![None];
+    for (k, root) in roots.into_iter().enumerate() {
+        shifted.push(root.map(|root| {
+            let divisor = b.push(Node::Num((k + 1) as f64));
+            b.divide(root, divisor)
+        }));
+    }
+    // the coefficients of the antiderivative, the constant term left out
+    let mut values = Vec::with_capacity(shifted.len());
+    let mut evaluated = b
+        .number_values(c, shifted.iter().copied().flatten())
+        .into_iter();
+    for root in &shifted {
+        let value = match root {
+            Some(_) => evaluated.next().flatten()?,
+            None => 0.0,
+        };
+        if !value.is_finite() {
+            return None;
+        }
+        values.push(value);
+    }
+    if let Some((x, y)) = through {
+        let at_x = values.iter().rev().fold(0.0, |sum, &v| sum * x + v);
+        let constant = y - at_x;
+        if !constant.is_finite() {
+            return None;
+        }
+        shifted[0] = Some(b.push(Node::Num(constant)));
     }
     poly_function_tree(c, &mut b, &shifted)
 }
@@ -1842,7 +2091,7 @@ fn rule_derivative(c: &Construction, entry: &Entry, order: u32) -> Option<Parsed
         // pass would otherwise build millions of nodes first
         b.abort_at = budget.end;
         let root = differentiate_node(c, &mut b, source.root, 0);
-        if budget.over() {
+        if stop_derivative(&mut b, 0) {
             return None;
         }
         parsed = Some(b.finish(c, root).ok()?);
@@ -1853,11 +2102,8 @@ fn rule_derivative(c: &Construction, entry: &Entry, order: u32) -> Option<Parsed
 /// One step of `Derivative.get` for the subtree at `i`, a node of the
 /// derivative in the builder's arena.
 fn differentiate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> u32 {
-    if depth > crate::expr::MAX_DEPTH
-        || expr::work_done() > b.abort_at
-        || b.nodes.len() > MAX_RULE_NODES
-    {
-        return b.push(Node::Num(f64::NAN));
+    if stop_derivative(b, depth) {
+        return i;
     }
     expr::charge(1);
     match b.node(i) {
@@ -1886,8 +2132,18 @@ fn differentiate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> 
             let Some(entry) = source_entry(c, f) else {
                 return b.push(Node::Num(f64::NAN));
             };
+            expr::charge(entry.nodes.len() as u64);
+            if entry.nodes.len() > MAX_RULE_NODES || stop_derivative(b, depth) {
+                b.exhausted = true;
+                return i;
+            }
             let mut fb = Builder::function(entry);
+            fb.abort_at = b.abort_at;
             let df = differentiate_node(c, &mut fb, entry.root, depth + 1);
+            if fb.exhausted {
+                b.exhausted = true;
+                return i;
+            }
             let cloned = clone_with_subst(b, &fb, df, Some(arg), depth + 1);
             let d = differentiate_node(c, b, arg, depth + 1);
             b.push(Node::Bin(Bin::Mul, cloned, d))
@@ -1895,6 +2151,13 @@ fn differentiate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> 
         // MyDouble.derivative and every object leaf: the constant 0
         _ => b.push(Node::Num(0.0)),
     }
+}
+
+fn stop_derivative(b: &mut Builder, depth: u32) -> bool {
+    b.exhausted |= depth > expr::MAX_DEPTH
+        || expr::work_done() > b.abort_at
+        || b.nodes.len() >= MAX_RULE_NODES;
+    b.exhausted
 }
 
 /// `Derivative.get` of a unary operation; `u` is the argument's node and
@@ -2304,8 +2567,8 @@ fn clone_with_subst(
     subst: Option<u32>,
     depth: u32,
 ) -> u32 {
-    if depth > crate::expr::MAX_DEPTH {
-        return dst.push(Node::Num(f64::NAN));
+    if stop_derivative(dst, depth) {
+        return 0;
     }
     expr::charge(1);
     if let Some(s) = subst {
@@ -2513,6 +2776,13 @@ pub(crate) fn poly_from_coefficients(
     b: &mut Builder,
     cof: &[f64],
 ) -> Option<Parsed> {
+    let root = poly_terms(b, cof)?;
+    b.finish(c, root).ok()
+}
+
+/// The tree of `poly_from_coefficients` as a node of the builder's arena,
+/// for trees that embed the polynomial (a spline piece).
+fn poly_terms(b: &mut Builder, cof: &[f64]) -> Option<u32> {
     let n = cof.len();
     let mut poly: Option<u32> = None;
     for k in (0..n).rev() {
@@ -2560,55 +2830,67 @@ pub(crate) fn poly_from_coefficients(
             Some(p) => b.push(Node::Bin(Bin::Add, p, part)),
         });
     }
-    let root = poly.unwrap_or_else(|| b.push(Node::Num(0.0)));
-    b.finish(c, root).ok()
+    Some(poly.unwrap_or_else(|| b.push(Node::Num(0.0))))
 }
 
 // ------------------------------------------------------------- the records
 
 /// Builds the tree a record-backed calculus function samples; `None` when
 /// the command has no answer without the CAS.
-fn build_record(c: &Construction, d: &CalculusDef) -> Option<Entry> {
-    match *d {
+fn build_record(c: &Construction, d: &CalculusDef) -> (Option<Entry>, Option<Entry>) {
+    let tree = match *d {
         CalculusDef::Derivative {
             function,
             order,
             numeric,
         } => {
-            let entry = source_entry(c, gid(function))?;
+            let Some(entry) = source_entry(c, gid(function)) else {
+                return (None, None);
+            };
             // the order rounds like Math.round; a negative order is
             // undefined, order zero a copy of the function
-            let order = match order {
-                Some(id) => (number(c, gid(id)) + 0.5).floor(),
-                None => 1.0,
+            let Some(order) = derivative_order(c, order) else {
+                return (None, None);
             };
-            if !(order.is_finite() && order >= 0.0) {
-                return None;
-            }
-            let order = order as u32;
             if order == 0 {
-                return Some(expr::function_entry(c, expr::parsed_of(entry)));
+                return (Some(expr::function_entry(c, expr::parsed_of(entry))), None);
             }
             // `Function.getDerivative`: the factor check runs only inside
             // the polynomial branch, so a non-polynomial never routes
             // around it; without the CAS such a derivative is undefined
             // and only `NDerivative` (and the factor path, which returns
             // `getDerivativeNoCAS`) walks the rules
-            if let Some(p) = polynomial_derivative(c, entry, order) {
-                if has_high_power(c, entry) {
-                    rule_derivative(c, entry, order).map(|p| expr::function_entry(c, p))
-                } else {
-                    Some(expr::function_entry(c, p))
-                }
-            } else if numeric {
-                rule_derivative(c, entry, order).map(|p| expr::function_entry(c, p))
-            } else {
-                // the CAS answers; without it the derivative is undefined
-                None
+            derivative_tree(c, entry, order, !numeric).map(|p| expr::function_entry(c, p))
+        }
+        CalculusDef::CurveDerivative { curve, order } => {
+            let Some(order) = derivative_order(c, order) else {
+                return (None, None);
+            };
+            let Some((x, y)) =
+                curve_coordinates(c, gid(curve), MAX_CURVE_SOURCES, &mut Budget::new())
+            else {
+                return (None, None);
+            };
+            if order == 0 {
+                return (Some(x), Some(y));
             }
+            // a curve always differentiates through the fast no-CAS path
+            // (`setDerivative` calls `getDerivative(n, true)`)
+            let (Some(x), Some(y)) = (
+                derivative_tree(c, &x, order, false),
+                derivative_tree(c, &y, order, false),
+            ) else {
+                return (None, None);
+            };
+            return (
+                Some(expr::function_entry(c, x)),
+                Some(expr::function_entry(c, y)),
+            );
         }
         CalculusDef::IndefiniteIntegral { function, numeric } => {
-            let entry = source_entry(c, gid(function))?;
+            let Some(entry) = source_entry(c, gid(function)) else {
+                return (None, None);
+            };
             if numeric {
                 rule_integral(c, entry).map(|p| expr::function_entry(c, p))
             } else {
@@ -2621,8 +2903,209 @@ fn build_record(c: &Construction, d: &CalculusDef) -> Option<Entry> {
         CalculusDef::PolynomialPoints { .. } => {
             polynomial_points_tree(c, d).map(|p| expr::function_entry(c, p))
         }
+        CalculusDef::SymbolicOde { source, point } => {
+            // a curve, a function of two variables and a function made by
+            // a command have no entry here: they stay undefined
+            let Some(entry) = source_entry(c, gid(source)) else {
+                return (None, None);
+            };
+            let through = match point {
+                Some(point) => match c.value(gid(point)) {
+                    Value::Point { x, y } if x.is_finite() && y.is_finite() => Some((x, y)),
+                    _ => return (None, None),
+                },
+                None => None,
+            };
+            polynomial_ode_solution(c, entry, through).map(|p| expr::function_entry(c, p))
+        }
+        _ => None,
+    };
+    (tree, None)
+}
+
+/// Round to a signed long, then keep the low 32 bits as a signed order.
+fn derivative_order(c: &Construction, order: Option<u32>) -> Option<u32> {
+    let order = order.map_or(1, |id| {
+        expr::math::java_round(expr::relation_number(c, gid(id))) as i32
+    });
+    u32::try_from(order).ok()
+}
+
+/// `Function.getDerivative(n, fast)`: the polynomial path with its factor
+/// check, and the rule tree where the polynomial path does not answer.
+/// `cas_gated` marks the forms that need the CAS for a non-polynomial (the
+/// derivative of a function; a curve is always fast).
+fn derivative_tree(c: &Construction, entry: &Entry, order: u32, cas_gated: bool) -> Option<Parsed> {
+    if let Some(p) = polynomial_derivative(c, entry, order) {
+        if has_high_power(c, entry) {
+            rule_derivative(c, entry, order)
+        } else {
+            Some(p)
+        }
+    } else if cas_gated {
+        // the CAS answers; without it the derivative is undefined
+        None
+    } else {
+        rule_derivative(c, entry, order)
+    }
+}
+
+const MAX_CURVE_SOURCES: u8 = 12;
+
+/// The two coordinate functions of a defined Cartesian curve.
+fn curve_coordinates(
+    c: &Construction,
+    id: Id,
+    depth: u8,
+    budget: &mut Budget,
+) -> Option<(Entry, Entry)> {
+    use super::{analysis::AnalysisDef, transform::TransformDef, vector::VectorDef};
+    let depth = depth.checked_sub(1)?;
+    let id = c.conditional_source(id)?;
+    if !matches!(c.value(id), Value::Curve { .. }) {
+        return None;
+    }
+    let copy = |entry: &Entry, budget: &mut Budget| {
+        (entry.nodes.len() <= MAX_RULE_NODES && budget.step(c, entry.nodes.len() as u64))
+            .then(|| expr::function_entry(c, expr::parsed_of(entry)))
+    };
+    match c.def(id) {
+        Def::Measure(super::measure::MeasureDef::CartesianCurve {
+            coordinates: [x, y],
+            ..
+        }) => {
+            let entry = |id: u32| match c.def(gid(id)) {
+                Def::Expr(d) => Some(expr::source_entry(c, d)),
+                _ => None,
+            };
+            Some((copy(entry(x)?, budget)?, copy(entry(y)?, budget)?))
+        }
+        Def::Calculus(CalculusDef::CurveDerivative { .. }) => {
+            let record = c.calculus_record(id)?;
+            let (x, y) = (record.tree.as_ref()?, record.tree2.as_ref()?);
+            Some((copy(x, budget)?, copy(y, budget)?))
+        }
+        Def::Analysis(AnalysisDef::Spline(input)) => spline_coordinates(c, input),
+        Def::Analysis(AnalysisDef::ParametricDerivative(source)) => {
+            let (x, y) = curve_coordinates(c, source, depth, budget)?;
+            let dx = expr::function_entry(c, derivative_tree(c, &x, 1, false)?);
+            let dy = expr::function_entry(c, derivative_tree(c, &y, 1, false)?);
+            let nodes = dx.nodes.len() + dy.nodes.len();
+            if nodes >= MAX_RULE_NODES || !budget.step(c, nodes as u64) {
+                return None;
+            }
+            let mut builder = Builder::function(&dy);
+            let denominator = builder.append_tree(&dx);
+            let root = builder.push(Node::Bin(Bin::Div, dy.root, denominator));
+            let slope = expr::function_entry(c, builder.finish(c, root).ok()?);
+            Some((x, slope))
+        }
+        Def::Transform(TransformDef::Dilate {
+            src,
+            factor,
+            center,
+            ..
+        }) => {
+            let coordinates = curve_coordinates(c, src, depth, budget)?;
+            let ratio = c.number(factor)?;
+            let (cx, cy) = center.map_or(Some((0.0, 0.0)), |id| c.point(id))?;
+            let affine = [
+                [ratio, 0.0, cx - ratio * cx],
+                [0.0, ratio, cy - ratio * cy],
+                [0.0, 0.0, 1.0],
+            ];
+            transform_coordinate_trees(c, coordinates, affine, budget)
+        }
+        Def::Vector(VectorDef::ApplyMatrix { matrix, src, kind }) => {
+            let coordinates = match kind {
+                Kind::Curve => curve_coordinates(c, src, depth, budget)?,
+                Kind::Function => {
+                    let y =
+                        source_entry(c, src).or_else(|| c.calculus_record(src)?.tree.as_ref())?;
+                    let mut builder = Builder::empty();
+                    let root = builder.push(Node::Var);
+                    let x = expr::function_entry(c, builder.finish(c, root).ok()?);
+                    (x, copy(y, budget)?)
+                }
+                _ => return None,
+            };
+            let matrix = super::vector::matrix::Matrix::read(c.elements(matrix)?)?;
+            let (a, d, g) = matrix.curve_coordinates((1.0, 0.0), 0.0);
+            let (b, e, h) = matrix.curve_coordinates((0.0, 1.0), 0.0);
+            let (p, q, r) = matrix.curve_coordinates((0.0, 0.0), 1.0);
+            transform_coordinate_trees(c, coordinates, [[a, b, p], [d, e, q], [g, h, r]], budget)
+        }
         _ => None,
     }
+}
+
+fn transform_coordinate_trees(
+    c: &Construction,
+    (x, y): (Entry, Entry),
+    [first, second, last]: [[f64; 3]; 3],
+    budget: &mut Budget,
+) -> Option<(Entry, Entry)> {
+    let nodes = x.nodes.len() + y.nodes.len();
+    if nodes > MAX_RULE_NODES || !budget.step(c, 4 * nodes as u64) {
+        return None;
+    }
+    let mut builder = Builder::function(&x);
+    let roots = [x.root, builder.append_tree(&y)];
+    let mut linear = |[a, b, offset]: [f64; 3]| {
+        let constant = builder.push(Node::Num(offset));
+        [a, b]
+            .into_iter()
+            .zip(roots)
+            .fold(constant, |sum, (factor, src)| {
+                if factor == 0.0 {
+                    return sum;
+                }
+                let factor = builder.push(Node::Num(factor));
+                let term = builder.push(Node::Bin(Bin::Mul, factor, src));
+                builder.push(Node::Bin(Bin::Add, sum, term))
+            })
+    };
+    let mut roots = [linear(first), linear(second)];
+    if last != [0.0, 0.0, 1.0] {
+        let scale = linear(last);
+        roots = roots.map(|root| builder.push(Node::Bin(Bin::Div, root, scale)));
+    }
+    let make = |root| Some(expr::function_entry(c, builder.finish(c, root).ok()?));
+    Some((make(roots[0])?, make(roots[1])?))
+}
+
+/// The coordinate functions of a spline (`AlgoSpline.compute`): one
+/// `IF_LIST` chain over the piece polynomials, per coordinate, with the
+/// condition `t < limit` between the pieces and the last piece as the
+/// trailing else.
+fn spline_coordinates(
+    c: &Construction,
+    input: super::analysis::SplineInput,
+) -> Option<(Entry, Entry)> {
+    let spline = c.analysis.spline(c, input)?;
+    let pieces: Vec<_> = spline
+        .pieces()
+        .map(|(_, right, row)| (right, row))
+        .collect();
+    let coordinate = |axis: usize| -> Option<Entry> {
+        let mut b = Builder::empty();
+        let mut payloads = Vec::with_capacity(pieces.len());
+        for &(_, row) in &pieces {
+            let coefficients: Vec<f64> = row.iter().rev().map(|&pair| pair[axis]).collect();
+            payloads.push(poly_terms(&mut b, &coefficients)?);
+        }
+        // the last piece is the trailing else of the `IF_LIST` chain
+        let last = pieces.len() - 1;
+        let mut root = payloads.pop()?;
+        for (i, &(right, _)) in pieces[..last].iter().enumerate().rev() {
+            let limit = b.push(Node::Num(right));
+            let var = b.push(Node::Var);
+            let cond = b.push(Node::Bin(Bin::Less, var, limit));
+            root = b.push(Node::If(IfMode::List, cond, payloads[i], root));
+        }
+        b.finish(c, root).ok().map(|p| expr::function_entry(c, p))
+    };
+    Some((coordinate(0)?, coordinate(1)?))
 }
 
 /// `Function.getDerivative`'s factor check: any power whose base is not a
@@ -2679,9 +3162,6 @@ pub(crate) fn exec(
             .map(Some)
             .map_err(|e| e.to_string())
     };
-    // the variable of the variable forms: the function variable, which
-    // this kernel's functions always name `x`
-    let var = |arg: &str| -> Option<()> { (arg == "x").then_some(()) };
     let result = match (func, args.as_slice()) {
         ("LowerSum", [f, a, b, n]) => sum(c, name, Sum::Lower, [f, a, b, n], None),
         ("UpperSum", [f, a, b, n]) => sum(c, name, Sum::Upper, [f, a, b, n], None),
@@ -2706,7 +3186,9 @@ pub(crate) fn exec(
         ("Integral", [f, x]) | ("NIntegral", [f, x]) | ("IntegralBetween", [f, x]) => {
             // the variable form `Integral(f, x)`
             let function = function_argument(c, f)?;
-            var(x)?;
+            if let Err(e) = variable(c, x, None) {
+                return Some(Err(e));
+            }
             add(
                 c,
                 CalculusDef::IndefiniteIntegral {
@@ -2795,6 +3277,9 @@ pub(crate) fn exec(
             integral_between(c, name, f, g, a, b, Some(evaluate))
         }
         ("Derivative", [f]) | ("NDerivative", [f]) => {
+            if let Some(curve) = curve_argument(c, f) {
+                return Some(add(c, CalculusDef::CurveDerivative { curve, order: None }));
+            }
             let function = function_argument(c, f)?;
             add(
                 c,
@@ -2806,6 +3291,23 @@ pub(crate) fn exec(
             )
         }
         ("Derivative", [f, order]) | ("NDerivative", [f, order]) => {
+            if let Some(curve) = curve_argument(c, f) {
+                if let Some(order) = number_argument(c, order) {
+                    return Some(add(
+                        c,
+                        CalculusDef::CurveDerivative {
+                            curve,
+                            order: Some(order),
+                        },
+                    ));
+                }
+                // the parameter name is the only variable a curve reads
+                // (`resArgsLocalNumVar` checks it against the curve's own)
+                if let Err(e) = variable(c, order, curve_parameter(c, gid(curve))) {
+                    return Some(Err(e));
+                }
+                return Some(add(c, CalculusDef::CurveDerivative { curve, order: None }));
+            }
             let function = function_argument(c, f)?;
             if let Some(order) = number_argument(c, order) {
                 add(
@@ -2817,7 +3319,9 @@ pub(crate) fn exec(
                     },
                 )
             } else {
-                var(order)?;
+                if let Err(e) = variable(c, order, None) {
+                    return Some(Err(e));
+                }
                 add(
                     c,
                     CalculusDef::Derivative {
@@ -2828,10 +3332,27 @@ pub(crate) fn exec(
                 )
             }
         }
+        // the three-argument form reads any name or label as the variable
+        // (`getVariableName` accepts a variable, a labelled object or the
+        // function variable) and ignores it: a number literal or an
+        // expression in that place is an error
         ("Derivative", [f, x, order]) | ("NDerivative", [f, x, order]) => {
-            let function = function_argument(c, f)?;
-            var(x)?;
+            if !(c.id(x).is_some()
+                || crate::script::is_identifier(x) && !matches!(*x, "pi" | "Pi" | "\u{3c0}"))
+            {
+                return Some(Err(format!("`{x}` is not a variable name")));
+            }
             let order = number_argument(c, order)?;
+            if let Some(curve) = curve_argument(c, f) {
+                return Some(add(
+                    c,
+                    CalculusDef::CurveDerivative {
+                        curve,
+                        order: Some(order),
+                    },
+                ));
+            }
+            let function = function_argument(c, f)?;
             add(
                 c,
                 CalculusDef::Derivative {
@@ -2876,6 +3397,58 @@ pub(crate) fn exec(
         _ => return None,
     };
     Some(result)
+}
+
+/// The curve argument of a calculus command: the label of a curve object.
+fn curve_argument(c: &Construction, arg: &str) -> Option<u32> {
+    crate::script::object(c, arg)
+        .ok()
+        .filter(|&id| c.kind(id) == Kind::Curve)
+        .map(|id| id.0 as u32)
+}
+
+/// The parameter name of a Cartesian curve (`getFunctionVariables` of a
+/// curve reads its first coordinate function).
+fn curve_parameter(c: &Construction, mut id: Id) -> Option<&str> {
+    for _ in 0..MAX_CURVE_SOURCES {
+        id = c.conditional_source(id)?;
+        match c.def(id) {
+            Def::Measure(super::measure::MeasureDef::CartesianCurve {
+                coordinates: [x, _],
+                ..
+            }) => {
+                return match c.def(gid(x)) {
+                    Def::Expr(d) => expr::curve_parameter(expr::source_entry(c, d)),
+                    _ => None,
+                };
+            }
+            Def::Analysis(super::analysis::AnalysisDef::Spline(_)) => return Some("t"),
+            Def::Vector(super::vector::VectorDef::ApplyMatrix {
+                kind: Kind::Function,
+                ..
+            }) => return Some("t"),
+            Def::Analysis(super::analysis::AnalysisDef::ParametricDerivative(source))
+            | Def::Transform(super::transform::TransformDef::Dilate { src: source, .. })
+            | Def::Vector(super::vector::VectorDef::ApplyMatrix {
+                src: source,
+                kind: Kind::Curve,
+                ..
+            }) => {
+                id = source;
+            }
+            Def::Calculus(CalculusDef::CurveDerivative { curve, .. }) => id = gid(curve),
+            _ => return None,
+        }
+    }
+    None
+}
+
+/// Whether `arg` names the variable `expect` (`x` for a function); the
+/// message is the command processor's own.
+fn variable(_c: &Construction, arg: &str, expect: Option<&str>) -> Result<(), String> {
+    (arg == expect.unwrap_or("x"))
+        .then_some(())
+        .ok_or_else(|| format!("`{arg}` is not a variable name"))
 }
 
 /// The function argument of a calculus command: the label of a function
@@ -3004,4 +3577,18 @@ fn point_list(c: &mut Construction, ids: &[Id]) -> Option<Id> {
     let root = b.push(Node::List(first, ids.len() as u32));
     let parsed = b.finish(c, root).ok()?;
     expr::add_built(c, &format!("\0pts{}", c.len()), parsed, Kind::List).ok()
+}
+
+#[test]
+fn derivative_discards_a_tree_that_exceeds_the_depth_limit() {
+    let c = Construction::new();
+    let mut b = Builder::empty();
+    let x = b.push(Node::Var);
+    let condition = b.push(Node::Bool(false));
+    let mut root = x;
+    for _ in 0..=expr::MAX_DEPTH {
+        root = b.push(Node::If(IfMode::List, condition, x, root));
+    }
+    let entry = expr::function_entry(&c, b.finish(&c, root).unwrap());
+    assert!(rule_derivative(&c, &entry, 1).is_none());
 }
