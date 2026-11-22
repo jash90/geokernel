@@ -546,6 +546,14 @@ pub(crate) fn line_point_changed(
     };
 }
 
+/// Project a finite point onto the carrier and read the limited path's parameter.
+pub(super) fn line_parameter_at(g: (f64, f64, f64), start: (f64, f64), point: (f64, f64)) -> f64 {
+    let mut state = PathState::new();
+    state.set_coords_2d(point.0, point.1, 1.0);
+    line_point_changed(g, Some((start.0, start.1, 1.0)), &mut state);
+    state.parameter()
+}
+
 /// `GeoLine.pathChanged(Coords, PathParameter)`.
 pub(crate) fn line_path_changed(
     (x, y, z): (f64, f64, f64),
@@ -791,10 +799,10 @@ fn defined_line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
         Def::ConicPart(d @ ConicPartDef::TangentLine { conic, .. }) => {
             hom(super::conic_parts::tangent_point_on(c, d, conic).flatten())
         }
-        // `AlgoAxes`: the midpoint of the conic
-        Def::ConicPart(ConicPartDef::Axis { conic, .. }) => {
-            hom(c.conic(conic).map(|d| (d.midpoint[0], d.midpoint[1])))
-        }
+        // `AlgoAxes` and `AlgoAsymptote`: the midpoint of the conic
+        Def::ConicPart(
+            ConicPartDef::Axis { conic, .. } | ConicPartDef::Asymptote { conic, .. },
+        ) => hom(c.conic(conic).map(|d| (d.midpoint[0], d.midpoint[1]))),
         _ => return None,
     })
 }

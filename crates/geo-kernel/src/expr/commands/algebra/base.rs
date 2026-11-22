@@ -11,7 +11,8 @@ use crate::expr::{Lit, Node, NONE};
 use std::borrow::Cow;
 
 const DIGITS: &[u8; 36] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-/// The Classic view formats 1/9 to two decimal places by default.
+/// GeoGebra derives this from the length of the formatted value of 1/9.
+/// The kernel has no rounding setting, so use Classic's default "0.11".
 const FRACTION_DIGITS: usize = 2;
 
 impl<const M: bool> Ctx<'_, M> {

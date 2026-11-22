@@ -23,7 +23,8 @@ impl<const M: bool> Ctx<'_, M> {
 }
 
 /// Brent minimization with a golden-section step whenever interpolation
-/// falls outside the bracket or would make insufficient progress.
+/// falls outside the bracket or would make insufficient progress. The
+/// bracket updates and trial limit follow `ExtremumFinder.findMinimum`.
 fn brent(
     mut a: f64,
     mut b: f64,
@@ -34,9 +35,12 @@ fn brent(
     let mut x = a + ratio * (b - a);
     let (mut w, mut v) = (x, x);
     let mut fx = f(x);
+    if fx.is_nan() {
+        return None;
+    }
     let (mut fw, mut fv) = (fx, fx);
     let (mut d, mut e): (f64, f64) = (0.0, 0.0);
-    for _ in 0..1024 {
+    for _ in 0..101 {
         if stop(1) {
             return None;
         }
@@ -60,7 +64,7 @@ fn brent(
                 d = p / q;
                 let u = x + d;
                 if u - a < twice || b - u < twice {
-                    d = tol.copysign(midpoint - x);
+                    d = if x >= midpoint { -tol } else { tol };
                 }
                 interpolate = true;
             }
@@ -69,8 +73,26 @@ fn brent(
             e = if x >= midpoint { a - x } else { b - x };
             d = ratio * e;
         }
-        let u = x + if d.abs() >= tol { d } else { tol.copysign(d) };
+        let u = x + if d.abs() >= tol {
+            d
+        } else if d > 0.0 {
+            tol
+        } else {
+            -tol
+        };
         let fu = f(u);
+        if fu.is_nan() {
+            return None;
+        }
+        // Equal values shrink the bracket at both the trial point and the
+        // previous best point. Only a worse trial updates the other samples.
+        if fx <= fu {
+            if u < x {
+                a = u;
+            } else {
+                b = u;
+            }
+        }
         if fu <= fx {
             if u >= x {
                 a = x;
@@ -79,18 +101,11 @@ fn brent(
             }
             (v, w, x) = (w, x, u);
             (fv, fw, fx) = (fw, fx, fu);
-        } else {
-            if u < x {
-                a = u;
-            } else {
-                b = u;
-            }
-            if fu <= fw || w == x {
-                (v, w) = (w, u);
-                (fv, fw) = (fw, fu);
-            } else if fu <= fv || v == x || v == w {
-                (v, fv) = (u, fu);
-            }
+        } else if fu <= fw || w == x {
+            (v, w) = (w, u);
+            (fv, fw) = (fw, fu);
+        } else if fu <= fv || v == x || v == w {
+            (v, fv) = (u, fu);
         }
     }
     None

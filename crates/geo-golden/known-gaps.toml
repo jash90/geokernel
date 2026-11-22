@@ -533,5 +533,10 @@ mismatches = ["1:step"]
 
 [[gap]]
 id = "algebralogic-logic-022"
-reason = "GeoFunction.isInRegion reads the separately stored GeoPoint x2D coordinate. The headless move updates the homogeneous coordinates and does not refresh x2D. The kernel evaluates the inequality at the point's current Cartesian coordinates."
+reason = "GeoFunction.isInRegion reads the separately stored GeoPoint x2D coordinate, which can be stale at construction and after a direct headless move. The kernel evaluates the inequality at the point's current Cartesian coordinates. The construction mismatch is recorded separately in algebralogic-logic-025."
 mismatches = ["1:b"]
+
+[[gap]]
+id = "algebralogic-logic-025"
+reason = "GeoFunction.isInRegion also reads stale GeoPoint x2D at point construction. In the headless harness, IsInRegion((3,0), f) reads x2D = 0 for f(x) = x < 1 and reports true. The kernel evaluates f at x = 3."
+mismatches = ["0:b"]

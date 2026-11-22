@@ -17,7 +17,7 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 //! Circles and their parts: circle through three points, circle with a
-//! segment as radius, incircle, centre, midpoint of a segment, diameter.
+//! literal or segment as radius, incircle, centre, midpoint of a segment, diameter.
 
 use super::{length, line_value, Group, Parents, CIRCLE, LINE_LIKE, POINT};
 use crate::kernel::{Construction, Error, Id, Kind, Value};
@@ -31,6 +31,8 @@ pub enum ConicDef {
     ThroughThree(Id, Id, Id),
     /// `Circle(P, s)`: centre `P`, radius the length of the segment `s`.
     SegmentRadius { center: Id, segment: Id },
+    /// `Circle(P, 2)`: centre `P`, radius stored with the circle definition.
+    LiteralRadius { center: Id, radius: f64 },
     /// `Incircle(A, B, C)`.
     Incircle(Id, Id, Id),
     /// `Center(k)` and `Midpoint(k)` of a circle.
@@ -235,6 +237,7 @@ impl Group for ConicDef {
         match *self {
             ConicDef::ThroughThree(..)
             | ConicDef::SegmentRadius { .. }
+            | ConicDef::LiteralRadius { .. }
             | ConicDef::Incircle(..) => Kind::Circle,
             ConicDef::Center(_) | ConicDef::MidpointSegment(_) => Kind::Point,
             ConicDef::Diameter { .. } => Kind::Line,
@@ -247,6 +250,7 @@ impl Group for ConicDef {
                 Parents::of(&[a, b, c])
             }
             ConicDef::SegmentRadius { center, segment } => Parents::of(&[center, segment]),
+            ConicDef::LiteralRadius { center, .. } => Parents::of(&[center]),
             ConicDef::Center(k) | ConicDef::MidpointSegment(k) => Parents::of(&[k]),
             ConicDef::Diameter { line, circle } => Parents::of(&[line, circle]),
         }
@@ -263,6 +267,7 @@ impl Group for ConicDef {
                 c.expect(center, POINT)?;
                 c.expect(segment, &[Kind::Segment])
             }
+            ConicDef::LiteralRadius { center, .. } => c.expect(center, POINT),
             ConicDef::Center(k) => c.expect(k, CIRCLE),
             ConicDef::MidpointSegment(s) => c.expect(s, &[Kind::Segment]),
             ConicDef::Diameter { line, circle } => {
@@ -285,6 +290,9 @@ impl Group for ConicDef {
                     }),
                     _ => None,
                 }
+            }
+            ConicDef::LiteralRadius { center, radius } => {
+                super::circle::with_radius_value(c, center, radius)
             }
             ConicDef::Incircle(a, b, cc) => incircle(c, a, b, cc),
             ConicDef::Center(k) => {
@@ -317,16 +325,19 @@ impl Group for ConicDef {
             "Circle" => match n {
                 3 => Some(three_ids(c, args).map(|(a, b, d)| ConicDef::ThroughThree(a, b, d))),
                 2 => {
-                    // Only a segment as the second argument is ours; a number
-                    // or a point is handled by the built-in command.
-                    let second = c.id(args[1])?;
-                    if c.kind(second) != Kind::Segment {
-                        return None;
+                    if let Some(second) = c.id(args[1]) {
+                        // Named numbers and points are handled by the built-in command.
+                        return (c.kind(second) == Kind::Segment).then(|| {
+                            object(c, args[0]).map(|center| ConicDef::SegmentRadius {
+                                center,
+                                segment: second,
+                            })
+                        });
                     }
-                    Some(object(c, args[0]).map(|center| ConicDef::SegmentRadius {
-                        center,
-                        segment: second,
-                    }))
+                    let radius = crate::expr::plain_number(args[1])?;
+                    Some(
+                        object(c, args[0]).map(|center| ConicDef::LiteralRadius { center, radius }),
+                    )
                 }
                 _ => None,
             },

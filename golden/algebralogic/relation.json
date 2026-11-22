@@ -378,7 +378,7 @@
             "type": "relation",
             "defined": true,
             "reports": [
-              "null=true"
+              "null=true/intersect"
             ]
           },
           "s": {
@@ -409,7 +409,7 @@
             "type": "relation",
             "defined": true,
             "reports": [
-              "null=true"
+              "null=true/disjoint"
             ]
           },
           "s": {
@@ -440,7 +440,7 @@
             "type": "relation",
             "defined": true,
             "reports": [
-              "null=true"
+              "null=true/intersect"
             ]
           },
           "s": {

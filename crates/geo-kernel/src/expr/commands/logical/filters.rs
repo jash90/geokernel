@@ -119,6 +119,13 @@ impl<const M: bool> Ctx<'_, M> {
             let raw = slot_val(slot);
             let value = match (elem, slot.kind, raw) {
                 (Elem::Num, Kind::Number | Kind::Angle, _) => raw,
+                // The two-argument form substitutes each value directly.
+                // The explicit variable keeps the type of the list's template.
+                (Elem::Num, Kind::Boolean, _) | (Elem::Bool, Kind::Number | Kind::Angle, _)
+                    if !explicit =>
+                {
+                    raw
+                }
                 (Elem::Num, Kind::Boolean, Val::B(b, _)) => Val::N(f64::from(u8::from(b))),
                 (Elem::Num, _, _) if explicit => Val::N(f64::NAN),
                 (Elem::Vec, Kind::Point | Kind::Vector, _) => raw,

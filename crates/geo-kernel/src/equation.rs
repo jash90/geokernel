@@ -20,7 +20,6 @@ use crate::algo::conic_nd::ConicData;
 /// `GeoConicND.vars`.
 const VARS: [&str; 5] = ["x²", "x y", "y²", "x", "y"];
 
-/// `Kernel.STANDARD_PRECISION`, the tolerance of `DoubleUtil.isZero` and
 /// Factor cancelled in the display form of an equation.
 pub(crate) fn equation_scale(numbers: &[f64]) -> f64 {
     if numbers.iter().all(|&v| is_integer(v)) {
@@ -32,6 +31,7 @@ pub(crate) fn equation_scale(numbers: &[f64]) -> f64 {
     1.0
 }
 
+/// `Kernel.STANDARD_PRECISION`, the tolerance of `DoubleUtil.isZero` and
 /// `DoubleUtil.isInteger`.
 const EPS: f64 = 1e-8;
 

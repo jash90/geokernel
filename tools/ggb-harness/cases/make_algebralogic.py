@@ -174,4 +174,5 @@ c.case("relation", [
     "f(x) = x^2-1", "g(x) = (x-1)*(x+1)", "h(x) = x^2+1",
     "m = Relation(f,g)", "n = Relation(f,h)",
 ], [])
+c.case("logic", ["P = (3,0)", "f(x) = x<1", "b = IsInRegion(P,f)"], [])
 c.write()

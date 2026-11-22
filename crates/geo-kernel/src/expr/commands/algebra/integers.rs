@@ -13,7 +13,7 @@
 use super::{gcd, LARGEST_INTEGER};
 use crate::expr::eval::{Ctx, Val};
 use crate::expr::list::Slot;
-use crate::expr::math::{check_integer, is_integer, java_round};
+use crate::expr::math::{check_integer, is_integer, java_pow, java_round};
 use crate::expr::AlgebraOp;
 use crate::kernel::Value;
 
@@ -102,7 +102,7 @@ impl<const M: bool> Ctx<'_, M> {
                     i64::from(exp + 1)
                 } else {
                     let p = p as f64;
-                    java_round((p.powi(exp as i32 + 1) - 1.0) / (p - 1.0))
+                    java_round((java_pow(p, f64::from(exp + 1)) - 1.0) / (p - 1.0))
                 };
                 result = result.wrapping_mul(term);
             }

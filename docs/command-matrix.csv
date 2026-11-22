@@ -139,7 +139,7 @@ SolveODE,,function,P2,todo,7,0,
 SlopeField,,function,P2,todo,4,0,
 Iteration,,function,P2,todo,3,0,
 PathParameter,,function,P2,done,1,1,PathParameter(point on a path)
-Asymptote,,function,P2,todo,3,0,
+Asymptote,,function,P2,partial,3,1,
 CurvatureVector,,function,P2,todo,3,0,
 Curvature,,function,P2,todo,3,0,
 OsculatingCircle,,function,P2,todo,3,0,

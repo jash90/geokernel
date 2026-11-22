@@ -101,6 +101,7 @@
     {"id": "algebralogic-logic-023", "group": "algebralogic", "script": ["P = (0,0)", "a = 1", "f(x) = x<a", "inside = IsInRegion(P,f)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": -1.0}, {"action": "set_number", "label": "a", "value": 2.0}]},
     {"id": "algebralogic-logic-024", "group": "algebralogic", "script": ["O = (0,0)", "A = (2,0)", "B = (0,2)", "P = (1,1)", "arc = CircleArc(O,A,B)", "sector = CircleSector(O,A,B)", "r = IsInRegion(P,arc)", "s = IsInRegion(P,sector)"], "steps": [{"action": "initial"}, {"action": "move", "label": "P", "x": 0.5, "y": 0.5}, {"action": "move", "label": "P", "x": 1.2, "y": 1.2}, {"action": "move", "label": "P", "x": -0.5, "y": -0.5}]},
     {"id": "algebralogic-relation-005", "group": "algebralogic", "script": ["O = (0,0)", "A = (0,0)", "n = 2", "c = Circle(O,n)", "d = Circle(A,n)", "P = (-1,2)", "Q = (1,2)", "g = Line(P,Q)", "m = Relation(c,d)", "s = Relation(g,c)", "t = Relation(P,c)"], "steps": [{"action": "initial"}, {"action": "move", "label": "A", "x": 4.0, "y": 0.0}, {"action": "move", "label": "A", "x": 5.0, "y": 0.0}, {"action": "set_number", "label": "n", "value": 3.0}]},
-    {"id": "algebralogic-relation-006", "group": "algebralogic", "script": ["f(x) = x^2-1", "g(x) = (x-1)*(x+1)", "h(x) = x^2+1", "m = Relation(f,g)", "n = Relation(f,h)"], "steps": [{"action": "initial"}]}
+    {"id": "algebralogic-relation-006", "group": "algebralogic", "script": ["f(x) = x^2-1", "g(x) = (x-1)*(x+1)", "h(x) = x^2+1", "m = Relation(f,g)", "n = Relation(f,h)"], "steps": [{"action": "initial"}]},
+    {"id": "algebralogic-logic-025", "group": "algebralogic", "script": ["P = (3,0)", "f(x) = x<1", "b = IsInRegion(P,f)"], "steps": [{"action": "initial"}]}
   ]
 }

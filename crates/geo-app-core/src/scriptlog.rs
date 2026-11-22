@@ -26,7 +26,9 @@
 
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::{Construction, Def, Id};
-use geo_kernel::script::{boundary_slot_owner, restore_boundary_labels, BoundaryOutputs};
+use geo_kernel::script::{
+    boundary_slot_owner, restore_boundary_labels, split_comment, BoundaryOutputs,
+};
 use shared::Chain;
 pub use shared::Labels;
 use std::collections::{BTreeMap, BTreeSet};
@@ -42,9 +44,9 @@ const MOVE_POINTS: &str = "$movePoints";
 
 fn has_recorded_growth(src: &str) -> bool {
     src.lines().any(|line| {
-        line.split('#')
-            .next()
-            .and_then(|line| line.split_once('='))
+        split_comment(line)
+            .0
+            .split_once('=')
             .and_then(|(_, rhs)| boundary_slot_owner(rhs.trim()))
             .is_some()
     })
@@ -110,7 +112,11 @@ enum Op {
 /// before any `=`; an equation (`f: 2x + 3y = 6`, whose `=` is part of the
 /// definition) keeps its `:`, which the script of the kernel reads.
 pub fn normalize(input: &str) -> String {
-    let line = input.split('#').next().unwrap_or("").trim();
+    normalize_definition(split_comment(input).0)
+}
+
+fn normalize_definition(input: &str) -> String {
+    let line = input.trim();
     let colon = line.find(':');
     let eq = line.find('=');
     match (colon, eq) {
@@ -828,11 +834,9 @@ impl Log {
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
         for (i, raw) in src.lines().enumerate() {
-            let (body, listed) = match raw.split_once(LABELS) {
-                Some((body, list)) => (body, Some(list)),
-                None => (raw, None),
-            };
-            let line = normalize(body);
+            let (body, comment) = split_comment(raw);
+            let listed = comment.and_then(|comment| comment.strip_prefix(LABELS));
+            let line = normalize_definition(body);
             if line.is_empty() {
                 continue;
             }
@@ -930,7 +934,8 @@ impl Log {
         let mut groups = BoundaryOutputs::default();
         let grow = !has_recorded_growth(src);
         for (i, raw) in src.lines().enumerate() {
-            let line = normalize(raw);
+            let (body, comment) = split_comment(raw);
+            let line = normalize_definition(body);
             if line.is_empty() {
                 continue;
             }
@@ -944,9 +949,9 @@ impl Log {
             }
             check_names(&line).map_err(at)?;
             let before = c.len();
-            let labels = raw
-                .split_once(LABELS)
-                .map(|(_, labels)| labels.split(',').map(str::trim).collect::<Vec<_>>());
+            let labels = comment
+                .and_then(|comment| comment.strip_prefix(LABELS))
+                .map(|labels| labels.split(',').map(str::trim).collect::<Vec<_>>());
             let first = labels
                 .as_ref()
                 .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))

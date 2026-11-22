@@ -4,12 +4,13 @@
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
-use super::{
-    concurrent, concyclic, equal, is_equal, is_zero, parallel, perpendicular, point, raw_line,
-};
+use super::{concurrent, concyclic, equal, is_equal, parallel, perpendicular, point, raw_line};
 use crate::algo;
+use crate::algo::conic_parts::ConicPartDef;
+use crate::algo::path::PathDef;
 use crate::expr::{Element, List};
-use crate::kernel::{Construction, Id, Kind, Value};
+use crate::kernel::{Construction, Def, Id, Kind, Value};
+use crate::tol::STANDARD_PRECISION;
 
 /// One numerical finding, with the reference's name for the check when it
 /// defines one and an English description for the algebra view.
@@ -230,11 +231,20 @@ fn pair(c: &Construction, a: Id, b: Id, stop: &impl Fn(u64) -> bool) -> Vec<Repo
         }
         (Kind::Point, _) | (_, Kind::Point) => {
             let (p, path) = if first == Kind::Point { (a, b) } else { (b, a) };
-            let Some(on) = on_path(c, path, point(c, p), stop) else {
+            let kind = c.kind(path);
+            let attached = matches!(c.def(p), Def::Path(PathDef::On { path: source } | PathDef::OnParam { path: source, .. }) if path == source);
+            let on = if attached
+                && (carrier(kind) || conic(kind) || matches!(kind, Kind::Polygon | Kind::PolyLine))
+            {
+                Some(true)
+            } else {
+                on_path(c, path, point(c, p), stop)
+            };
+            let Some(on) = on else {
                 return vec![unavailable()];
             };
             finding(
-                (c.kind(path) != Kind::Polygon).then_some("IsOnPath"),
+                (kind != Kind::Polygon).then_some("IsOnPath"),
                 on,
                 if on {
                     "The point lies on the path."
@@ -248,10 +258,20 @@ fn pair(c: &Construction, a: Id, b: Id, stop: &impl Fn(u64) -> bool) -> Vec<Repo
             let Some(shape) = algo::conic_object(c, conic) else {
                 return vec![unavailable()];
             };
+            let limited = c.kind(line) != Kind::Line || c.arc(conic).is_some();
+            if !limited
+                && matches!(c.def(line), Def::ConicPart(ConicPartDef::Asymptote { conic: source, .. }) if source == conic)
+            {
+                return vec![Report {
+                    check: None,
+                    outcome: None,
+                    message: "The line is an asymptote of the conic.",
+                }];
+            }
             let (a, b, d) = raw_line(c, line);
             let intersections = algo::intersect::helper_line_conic_points([a, b, d], &shape);
             let count = intersections.iter().filter(|point| point.is_some()).count();
-            if c.kind(line) != Kind::Line || c.arc(conic).is_some() {
+            if limited {
                 intersection(intersections.into_iter().flatten().any(|p| {
                     on_path(c, line, p, stop).unwrap_or(false)
                         && on_path(c, conic, p, stop).unwrap_or(false)
@@ -367,10 +387,12 @@ fn conic_pair(c: &Construction, a: Id, b: Id) -> Vec<Report> {
         part_a.as_ref().is_none_or(|p| on_part(p, point))
             && part_b.as_ref().is_none_or(|p| on_part(p, point))
     });
-    let message = match points.into_iter().flatten().count() {
-        0 => "The conics are disjoint.",
-        1 => "The conics touch.",
-        _ => "The conics intersect.",
+    let message = if algo::intersect::points_equal(points[0], points[1]) {
+        "The conics touch."
+    } else if points.iter().any(Option::is_some) {
+        "The conics intersect."
+    } else {
+        "The conics are disjoint."
     };
     // The numerical report is affirmative for this classification,
     // including the disjoint case.
@@ -396,20 +418,15 @@ fn equal_lists(a: List<'_>, b: List<'_>, stop: &impl Fn(u64) -> bool) -> bool {
 }
 
 fn on_path(c: &Construction, id: Id, p: (f64, f64), stop: &impl Fn(u64) -> bool) -> Option<bool> {
-    let (x, y) = p;
-    let on_line = |a, b, d| is_zero(a * x + b * y + d);
-    let on_segment = |(ax, ay): (f64, f64), (bx, by): (f64, f64)| {
-        let (u, v) = (bx - ax, by - ay);
-        let (dx, dy) = (x - ax, y - ay);
-        let projected = u * dx + v * dy;
-        let eps = crate::tol::STANDARD_PRECISION;
-        if u == 0.0 && v == 0.0 {
-            return is_equal(dx, 0.0) && is_equal(dy, 0.0);
-        }
-        is_zero(dx * v - dy * u) && projected >= -eps && projected <= u * u + v * v + eps
+    let on_line = |(a, b, d)| algo::intersect::on_full_line([a, b, d], p, STANDARD_PRECISION);
+    let on_segment = |start, end| {
+        let g = algo::join(start, end);
+        on_line(g)
+            && (-STANDARD_PRECISION..=1.0 + STANDARD_PRECISION)
+                .contains(&algo::path::line_parameter_at(g, start, p))
     };
     Some(match c.value(id) {
-        Value::Line { a, b, c } => on_line(a, b, c),
+        Value::Line { a, b, c } => on_line((a, b, c)),
         Value::Segment { x1, y1, x2, y2 } => on_segment((x1, y1), (x2, y2)),
         Value::Ray {
             x: s,
@@ -417,22 +434,21 @@ fn on_path(c: &Construction, id: Id, p: (f64, f64), stop: &impl Fn(u64) -> bool)
             a,
             b,
             c,
-        } => on_line(a, b, c) && (x - s) * b - (y - t) * a >= -crate::tol::STANDARD_PRECISION,
-        Value::Circle { cx, cy, r } => is_equal((x - cx).hypot(y - cy), r),
-        Value::Conic { .. } => c
-            .conic(id)?
-            .on_full_conic(p, crate::tol::STANDARD_PRECISION),
+        } => {
+            let g = (a, b, c);
+            on_line(g) && algo::path::line_parameter_at(g, (s, t), p) >= -STANDARD_PRECISION
+        }
+        Value::Circle { .. } | Value::Conic { .. } => {
+            c.conic(id)?.on_full_conic(p, STANDARD_PRECISION)
+        }
         Value::Arc { .. } | Value::Sector { .. } => {
-            algo::intersect::conics::on_part(&c.arc(id)?, p)
+            algo::intersect::conics::on_part_with_precision(&c.arc(id)?, p, STANDARD_PRECISION)
         }
         Value::Vector { x: vx, y: vy } => {
-            let start = match c.def(id) {
-                crate::Def::Vector(algo::vector::VectorDef::Between(a, _)) => c.point(a)?,
-                _ => (0.0, 0.0),
-            };
+            let start = algo::vector::start(c, id)?;
             on_segment(start, (start.0 + vx, start.1 + vy))
         }
-        Value::Function => is_equal(c.function_value(id, x)?, y),
+        Value::Function => is_equal(c.function_value(id, p.0)?, p.1),
         Value::Polygon { .. } | Value::PolyLine { .. } => {
             let mut vertices = c.vertices(id);
             let first = vertices.next()??;

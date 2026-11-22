@@ -1673,7 +1673,7 @@ cases = ["algebralogic-integer-006", "algebralogic-integer-028"]
 [[form]]
 command = "DivisorsSum"
 form = "number"
-cases = ["algebralogic-integer-007", "algebralogic-integer-028"]
+cases = ["algebralogic-integer-007", "algebralogic-integer-028", "algebraedge-integer-001", "algebraedge-integer-002"]
 
 [[form]]
 command = "IsPrime"
@@ -1713,12 +1713,20 @@ cases = ["algebralogic-extrema-005", "algebralogic-extrema-009", "algebralogic-e
 [[form]]
 command = "Min"
 form = "function,number,number"
-cases = ["algebralogic-extrema-006", "algebralogic-extrema-013"]
+cases = [
+    "algebralogic-extrema-006", "algebralogic-extrema-013",
+    "algebraedge-minimum-001", "algebraedge-minimum-002", "algebraedge-minimum-003",
+    "algebraedge-minimum-004", "algebraedge-minimum-005", "algebraedge-minimum-006",
+]
 
 [[form]]
 command = "Max"
 form = "function,number,number"
-cases = ["algebralogic-extrema-006", "algebralogic-extrema-013"]
+cases = [
+    "algebralogic-extrema-006", "algebralogic-extrema-013",
+    "algebraedge-maximum-001", "algebraedge-maximum-002", "algebraedge-maximum-003",
+    "algebraedge-maximum-004", "algebraedge-maximum-005", "algebraedge-maximum-006",
+]
 
 [[form]]
 command = "CountIf"
@@ -1753,7 +1761,7 @@ cases = ["algebralogic-logic-015"]
 [[form]]
 command = "ToBase"
 form = "number,number"
-cases = ["algebralogic-base-001", "algebralogic-base-003"]
+cases = ["algebralogic-base-001", "algebralogic-base-003", "algebraedge-base-001"]
 
 [[form]]
 command = "FromBase"
@@ -1763,12 +1771,12 @@ cases = ["algebralogic-base-002", "algebralogic-base-003", "algebralogic-base-00
 [[form]]
 command = "LeftSide"
 form = "line"
-cases = ["algebralogic-sides-002", "algebralogic-sides-003", "algebralogic-sides-005"]
+cases = ["algebralogic-sides-002", "algebralogic-sides-003", "algebralogic-sides-005", "algebrareviewshared-sides-001"]
 
 [[form]]
 command = "RightSide"
 form = "line"
-cases = ["algebralogic-sides-002", "algebralogic-sides-003", "algebralogic-sides-005"]
+cases = ["algebralogic-sides-002", "algebralogic-sides-003", "algebralogic-sides-005", "algebrareviewshared-sides-001"]
 
 [[form]]
 command = "LeftSide"
@@ -1798,9 +1806,18 @@ cases = ["algebralogic-logic-013", "algebralogic-logic-019", "algebralogic-logic
 [[form]]
 command = "Relation"
 form = "any,any"
-cases = ["algebralogic-relation-001", "algebralogic-relation-002", "algebralogic-relation-004", "algebralogic-relation-005", "algebralogic-relation-006"]
+cases = [
+    "algebralogic-relation-001", "algebralogic-relation-002", "algebralogic-relation-004", "algebralogic-relation-005", "algebralogic-relation-006",
+    "relationreview-paths-001", "relationreview-paths-002", "relationreview-segments-001", "relationreview-vectors-001", "relationreview-polygons-001", "relationreview-arcs-001",
+    "relationreview-conics-001", "relationreview-conics-002", "relationreview-asymptotes-001",
+]
 
 [[form]]
 command = "Relation"
 form = "list"
 cases = ["algebralogic-relation-001", "algebralogic-relation-002", "algebralogic-relation-003"]
+
+[[form]]
+command = "Asymptote"
+form = "conic"
+cases = ["relationreview-asymptotes-001"]

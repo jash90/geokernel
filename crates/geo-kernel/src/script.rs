@@ -97,10 +97,7 @@ pub fn load(src: &str) -> Result<Construction, ScriptError> {
 /// Runs one line. Returns the first output, or `Ok(None)` if the line
 /// creates nothing. Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
-    let comment = unquoted(raw)
-        .find_map(|(i, c)| (c == '#').then_some(i))
-        .unwrap_or(raw.len());
-    let line = raw[..comment].trim();
+    let line = split_comment(raw).0.trim();
     if line.is_empty() {
         return Ok(None);
     }
@@ -450,6 +447,39 @@ fn is_single_call(c: &Construction, rhs: &str) -> bool {
     call_closes_at_end(rhs, open)
 }
 
+/// Split off a script comment, including its leading `#`. A matched string
+/// can contain a hash. An unterminated string leaves its first hash available
+/// as the comment marker, as in scripts that predate string literals.
+pub fn split_comment(line: &str) -> (&str, Option<&str>) {
+    let Some(first_hash) = line.find('#') else {
+        return (line, None);
+    };
+    if !line[..first_hash].contains('"') {
+        return (&line[..first_hash], Some(&line[first_hash..]));
+    }
+    let mut quote = None;
+    let mut escaped = false;
+    for (index, ch) in line.char_indices() {
+        if escaped {
+            escaped = false;
+        } else {
+            match ch {
+                '\\' if quote.is_some() => escaped = true,
+                '"' => quote = if quote.is_some() { None } else { Some(index) },
+                '#' if quote.is_none() => return (&line[..index], Some(&line[index..])),
+                _ => {}
+            }
+        }
+    }
+    if let Some(start) = quote {
+        if let Some(hash) = line[start..].find('#') {
+            let index = start + hash;
+            return (&line[..index], Some(&line[index..]));
+        }
+    }
+    (line, None)
+}
+
 fn unquoted(text: &str) -> impl Iterator<Item = (usize, char)> + '_ {
     let mut quoted = false;
     let mut escaped = false;
@@ -544,8 +574,13 @@ pub(crate) fn relation_or_region_argument(c: &mut Construction, arg: &str) -> Re
     let call = match split_call(arg) {
         Some(("Circle", args)) if args.len() == 2 => {
             let a = relation_or_region_argument(c, args[0])?;
-            let b = relation_or_region_argument(c, args[1])?;
-            format!("Circle({}, {})", c.label(a), c.label(b))
+            let radius = if crate::expr::plain_number(args[1]).is_some() {
+                args[1]
+            } else {
+                let b = relation_or_region_argument(c, args[1])?;
+                c.label(b)
+            };
+            format!("Circle({}, {radius})", c.label(a))
         }
         _ => arg.to_owned(),
     };
@@ -618,7 +653,11 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
         }
         ("Point" | "Polygon" | "PolyLine", [_]) | ("PolyLine", [_, _]) => &[(0, Kind::List)],
         ("Barycenter", [_, _]) => &[(0, Kind::List), (1, Kind::List)],
-        ("Circle", [center, _]) if is_kind(center, Kind::Point) => &[(1, Kind::Number)],
+        ("Circle", [center, radius])
+            if is_kind(center, Kind::Point) && crate::expr::plain_number(radius).is_none() =>
+        {
+            &[(1, Kind::Number)]
+        }
         _ => return None,
     };
     let replacements: Vec<_> = inputs
@@ -1306,6 +1345,18 @@ pub(crate) fn add_named_outputs(
 mod tests {
     use super::*;
     use crate::kernel::Value;
+
+    #[test]
+    fn comments_after_an_unmatched_quote_end_at_the_first_hash() {
+        let mut c = Construction::new();
+        let without_comment = exec(&mut c, "a\"").unwrap_err();
+        let with_comment = exec(&mut c, "a\" # this is not a definition = 2").unwrap_err();
+        assert_eq!(without_comment, with_comment);
+        let id = exec(&mut c, r#"n = Length("a#b") # unmatched " in the comment"#)
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.number(id), Some(3.0));
+    }
 
     #[test]
     fn inline_conic_coefficients_stay_within_the_evaluation_budget() {

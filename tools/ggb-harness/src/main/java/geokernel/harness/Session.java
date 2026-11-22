@@ -564,9 +564,14 @@ final class Session {
             GeoElement third = args.size() >= 3 ? args.get(2) : null;
             GeoElement fourth = args.size() == 4 ? args.get(3) : null;
             List<String> facts = new ArrayList<>();
+            GeoElement first = args.get(0);
+            GeoElement second = args.get(1);
+            RelationNumerical relation = new RelationNumerical(kernel);
             for (RelationNumerical.Report report
-                    : new RelationNumerical(kernel).relation(args.get(0), args.get(1), third, fourth)) {
-                facts.add(report.symbolicCheck + "=" + report.boolResult);
+                    : relation.relation(first, second, third, fourth)) {
+                String kind = third == null && first instanceof GeoConic && second instanceof GeoConic
+                        ? conicRelationKind(relation, first, second, report) : "";
+                facts.add(report.symbolicCheck + "=" + report.boolResult + kind);
             }
             facts.sort(String::compareTo);
             Map<String, Object> result = new LinkedHashMap<>();
@@ -576,6 +581,21 @@ final class Session {
             snap.put(e.getKey(), result);
         }
         return snap;
+    }
+
+    /** Conic intersection reports share the same outcome, including disjointness. */
+    private String conicRelationKind(RelationNumerical relation, GeoElement first, GeoElement second,
+            RelationNumerical.Report report) {
+        if (report.stringResult.equals(relation.touchString(first, second, true, app.getLocalization()))) {
+            return "/touch";
+        }
+        if (report.stringResult.equals(relation.intersectString(first, second, true, app.getLocalization()))) {
+            return "/intersect";
+        }
+        if (report.stringResult.equals(relation.intersectString(first, second, false, app.getLocalization()))) {
+            return "/disjoint";
+        }
+        return "";
     }
 
     private void recordGrowingPoints() {
@@ -980,7 +1000,7 @@ final class Session {
     /**
      * Whether the definition is a command that creates two objects by design:
      * `Tangent` and `AngularBisector` (`AngleBisector`) of two lines, and
-     * `Focus`, `Axes` and `Directrix` of a conic. Any other command must
+     * `Focus`, `Axes`, `Directrix` and `Asymptote` of a conic. Any other command must
      * create exactly one object (see `run`).
      */
     private static boolean isMultiOutput(String definition) {
@@ -995,6 +1015,7 @@ final class Session {
             case "Focus":
             case "Axes":
             case "Directrix":
+            case "Asymptote":
                 return true;
             default:
                 return false;
@@ -1078,6 +1099,7 @@ final class Session {
             case "MinorAxis":
             case "SecondAxis":
             case "Directrix":
+            case "Asymptote":
                 return "line";
             case "Segment":
                 return "segment";

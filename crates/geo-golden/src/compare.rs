@@ -116,6 +116,7 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
             return Err(format!("expected text {text:?}, got {:?}", c.text(id)));
         }
         Some(ExpectedData::Relation(expected)) => {
+            let classify = expected.iter().any(|report| report.contains('/'));
             let mut actual = c
                 .relation_reports(id)
                 .ok_or("missing relation reports")?
@@ -126,7 +127,17 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
                         Some(false) => "false",
                         None => "null",
                     };
-                    format!("{}={outcome}", r.check.unwrap_or("null"))
+                    let kind = if classify {
+                        match r.message {
+                            "The conics touch." => "/touch",
+                            "The conics intersect." => "/intersect",
+                            "The conics are disjoint." => "/disjoint",
+                            _ => "",
+                        }
+                    } else {
+                        ""
+                    };
+                    format!("{}={outcome}{kind}", r.check.unwrap_or("null"))
                 })
                 .collect::<Vec<_>>();
             actual.sort_unstable();

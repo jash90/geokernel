@@ -1430,6 +1430,41 @@
           "s": { "type": "boolean", "defined": true, "value": false }
         }
       ]
+    },
+    {
+      "id": "algebralogic-logic-025",
+      "group": "algebralogic",
+      "script": [
+        "P = (3,0)",
+        "f(x) = x<1",
+        "b = IsInRegion(P,f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
     }
   ]
 }
