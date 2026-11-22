@@ -48,6 +48,8 @@ pub enum AnalysisDef {
 
 type Point = (f64, f64);
 
+type SplineStates = HashMap<usize, (SplineInput, usize)>;
+
 /// Separate output slots share a solve in the current propagation pass.
 /// The construction clears these entries before updates or rollback.
 #[derive(Default)]
@@ -58,7 +60,10 @@ pub(crate) struct AnalysisCache {
     /// points of its last solve that passed the degree check. Unlike the
     /// solves it outlives the propagation pass; rollback drops the entries
     /// of removed objects.
-    spline_points: Mutex<Vec<(usize, SplineInput, usize)>>,
+    spline_points: Mutex<HashMap<usize, (SplineInput, usize)>>,
+    /// The spline states of the construction copy each locus samples, by
+    /// the locus's index; a copy starts with fresh objects.
+    copy_spline_points: Mutex<HashMap<usize, SplineStates>>,
     ode_systems: Mutex<HashMap<[u32; 4], Vec<LocusData>>>,
 }
 
@@ -98,12 +103,50 @@ impl AnalysisCache {
         result
     }
 
+    /// Puts the spline states of the construction copy of the locus
+    /// `owner` in place of the live ones (`AlgoLocusSliderND` samples its
+    /// own copy, whose objects keep their states between updates) and
+    /// returns the live ones.
+    pub(crate) fn enter_copy(&self, owner: usize) -> SplineStates {
+        let copy = self
+            .copy_spline_points
+            .lock()
+            .expect("copy spline states")
+            .remove(&owner)
+            .unwrap_or_default();
+        std::mem::replace(
+            &mut *self.spline_points.lock().expect("spline states"),
+            copy,
+        )
+    }
+
+    /// Restores the live spline states and keeps the copy's for the next
+    /// sampling of the locus `owner`.
+    pub(crate) fn leave_copy(&self, owner: usize, live: SplineStates) {
+        let copy = std::mem::replace(
+            &mut *self.spline_points.lock().expect("spline states"),
+            live,
+        );
+        self.copy_spline_points
+            .lock()
+            .expect("copy spline states")
+            .insert(owner, copy);
+    }
+
     /// Drops the spline states of the objects from `len` on.
     pub(crate) fn truncate(&mut self, len: usize) {
         self.spline_points
             .get_mut()
             .expect("spline states")
-            .retain(|&(owner, ..)| owner < len);
+            .retain(|&owner, _| owner < len);
+        let copies = self
+            .copy_spline_points
+            .get_mut()
+            .expect("copy spline states");
+        copies.retain(|&owner, _| owner < len);
+        for states in copies.values_mut() {
+            states.retain(|&owner, _| owner < len);
+        }
     }
 
     /// The value of the spline object `owner`. `AlgoSpline.compute` checks
@@ -119,22 +162,16 @@ impl AnalysisCache {
     ) -> Option<Value> {
         let points = c.elements(input.points)?.len();
         let mut states = self.spline_points.lock().expect("spline states");
-        // The first solve of an object (its creation) sizes the array.
-        let k = match states
-            .iter()
-            .position(|&(o, i, _)| o == owner && i == input)
-        {
-            Some(k) => k,
-            None => {
-                states.retain(|&(o, ..)| o != owner);
-                states.push((owner, input, points));
-                states.len() - 1
-            }
-        };
-        if !spline_degree(c, input).is_some_and(|d| (3..=states[k].2).contains(&d)) {
+        // The first solve of an object (its creation, or a new definition)
+        // sizes the array.
+        let state = states.entry(owner).or_insert((input, points));
+        if state.0 != input {
+            *state = (input, points);
+        }
+        if !spline_degree(c, input).is_some_and(|d| (3..=state.1).contains(&d)) {
             return None;
         }
-        states[k].2 = points;
+        state.1 = points;
         drop(states);
         self.spline(c, input).map(|_| Value::Curve {
             start: 0.0,

@@ -217,6 +217,16 @@ cases.cases[-1]["sample_curves"] = True
 case("splinelong", "n = 4\ns = Spline(Sequence((k, Mod(k, 3)), k, 1, n))\nd = Derivative(s)\ne = NDerivative(s)",
      [setn("n", 3), setn("n", 2), setn("n", 1), setn("n", 4), setn("n", 0)])
 cases.cases[-1]["sample_curves"] = True
+# A locus over the slider samples a copy: the live spline keeps its own
+# remembered point count.
+case("splinelong", "a = Slider(2, 4)\ns = Spline(Sequence((k, k^2), k, 1, 6 - a))\nP = Point(s, 0.5)\nO = (0, 0)\nQ = Midpoint(P, O)\nl = Locus(Q, a)",
+     [setn("a", 3), setn("a", 4), setn("a", 2.5), setn("a", 2)])
+cases.cases[-1]["sample_curves"] = True
+# High degrees: the end conditions use factorials computed in 32-bit
+# integers, which wrap from 13! on.
+case("splinelong", "n = 13\nl0 = Sequence((k, Mod(k, 2)), k, 1, n)\ns = Spline(l0, 13)\nt = Spline(l0, 12)\nu = Spline(l0, 9)",
+     [setn("n", 14), setn("n", 13)])
+cases.cases[-1]["sample_curves"] = True
 
 # ------------------------------------------------------ First(function, n)
 # The freehand function as a locus: one point per value of its list, at
@@ -232,6 +242,8 @@ case("freehandpoints", "n = 4\nl0 = Sequence(k, k, 1, n)\nf = Function(l0)\nl = 
      [setn("n", 3), setn("n", 5), setn("n", 4)])
 case("freehandpoints", "f = Function({-1, 1, 0, 1/0, 2})\nl = First(f, 3)\ng(x) = f(x) + 1",
      [reject("m = First(g, 1)"), reject("m = First(x^2, 1)")])
+case("freehandpoints", "n = 2\nl = First(Function({-2, 4, 1, 5, 2}), n)\nm = First(Function({0, 1, n, 2, 3}), 3)",
+     [setn("n", 3), setn("n", 4), setn("n", 2)])
 
 cases.write()
 

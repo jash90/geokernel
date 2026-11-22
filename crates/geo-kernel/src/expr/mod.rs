@@ -383,6 +383,9 @@ pub(crate) enum ListOp {
     /// `First(list)`, `First(list, n)` and `Last` (`AlgoFirst`, `AlgoLast`).
     First,
     Last,
+    /// `First(Function(list), n)`: the points of the freehand function of
+    /// the list written inline (`AlgoFirstLocus`).
+    FirstFreehand,
     /// `Sort(list)` of numbers or points (`AlgoSort`).
     Sort,
     /// `Append(list, object)` and `Append(object, list)`: the second

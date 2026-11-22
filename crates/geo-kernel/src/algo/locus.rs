@@ -545,6 +545,16 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
 /// object being computed: a line whose start it freezes remembers it, so a
 /// rebuild that drops this entry knows what it has to place itself.
 pub(crate) fn record(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData {
+    // The reference samples a copy of the construction: the remembered
+    // states of the live objects stay as they were, and the copy keeps its
+    // own between updates.
+    let live = c.analysis.enter_copy(owner.0);
+    let data = record_samples(c, d, owner);
+    c.analysis.leave_copy(owner.0, live);
+    data
+}
+
+fn record_samples(c: &mut Construction, d: LocusDef, owner: Id) -> LocusData {
     match d {
         LocusDef::Path { point, mover } => record_path(c, point, mover, owner),
         LocusDef::Slider { point, slider } => record_slider(c, point, slider),

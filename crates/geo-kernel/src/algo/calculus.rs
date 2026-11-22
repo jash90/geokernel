@@ -931,19 +931,26 @@ pub(crate) fn freehand_points(c: &Construction, list_id: Id) -> Vec<(f64, f64)> 
     let Some(list) = c.elements(list_id) else {
         return Vec::new();
     };
-    if list.len() < 4 {
+    let values: Vec<f64> = (0..list.len())
+        .map(|k| list.numeric_cell(k).unwrap_or(f64::NAN))
+        .collect();
+    freehand_points_of(&values)
+}
+
+/// [`freehand_points`] of the values of the list.
+pub(crate) fn freehand_points_of(values: &[f64]) -> Vec<(f64, f64)> {
+    if values.len() < 4 {
         return Vec::new();
     }
-    let at = |k: usize| list.numeric_cell(k).unwrap_or(f64::NAN);
-    let (min, max) = (at(0), at(1));
+    let (min, max) = (values[0], values[1]);
     if min > max {
         return Vec::new();
     }
-    let step = (max - min) / (list.len() - 3) as f64;
-    (2..list.len())
+    let step = (max - min) / (values.len() - 3) as f64;
+    (2..values.len())
         .map(|i| {
             let x = min + step * (i - 2) as f64;
-            (x, freehand_value(c, list_id, x))
+            (x, freehand_value_of(values, x))
         })
         .collect()
 }
@@ -956,11 +963,18 @@ fn freehand_value(c: &Construction, list: Id, x: f64) -> f64 {
     let Some(list) = c.elements(list) else {
         return f64::NAN;
     };
-    if list.len() < 4 {
+    let values: Vec<f64> = (0..list.len())
+        .map(|k| list.numeric_cell(k).unwrap_or(f64::NAN))
+        .collect();
+    freehand_value_of(&values, x)
+}
+
+fn freehand_value_of(values: &[f64], x: f64) -> f64 {
+    if values.len() < 4 {
         return f64::NAN;
     }
-    let at = |k: usize| list.numeric_cell(k).unwrap_or(f64::NAN);
-    let n = list.len() - 3;
+    let at = |k: usize| values[k];
+    let n = values.len() - 3;
     let (min, max) = (at(0), at(1));
     if min > max || x > max || x < min {
         return f64::NAN;

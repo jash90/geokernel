@@ -831,6 +831,97 @@
           }
         }
       ]
+    },
+    {
+      "id": "funcrest-freehandpoints-006",
+      "group": "funcrest",
+      "script": [
+        "n = 2",
+        "l = First(Function({-2, 4, 1, 5, 2}), n)",
+        "m = First(Function({0, 1, n, 2, 3}), 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 5.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 0.5, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 3.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 2.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 0.5, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 3.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "l": { "type": "list", "defined": false },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 0.5, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 3.0 }
+            ]
+          }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 5.0 }
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 0.5, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 3.0 }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

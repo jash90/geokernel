@@ -350,6 +350,25 @@ fn first_last(
     }
     let saved = p.saved();
     if !last {
+        // `First(Function(list), n)`: an inline freehand function
+        let inline = matches!(
+            p.toks.get(p.pos + 1).map(|t| &t.tok),
+            Some(Tok::Name { text, call: true }) if text == "Function"
+        );
+        if inline {
+            p.expect(&Tok::LParen, "(")?;
+            p.pos += 1;
+            p.expect(&Tok::LParen, "(")?;
+            let list = p.argument(false)?;
+            if p.eat(&Tok::RParen) && p.is_list(list) && p.eat(&Tok::Comma) {
+                let n = p.argument(false)?;
+                if p.eat(&Tok::RParen) && p.is_number(n) {
+                    return Ok(Some(p.push(Node::ListOp(ListOp::FirstFreehand, list, n))));
+                }
+            }
+            p.reset(saved);
+            return Ok(None);
+        }
         // `First(f, n)` of a freehand function, named bare like a locus
         // (`GeoFunction.isGeoLocusable`)
         let freehand = p
@@ -551,6 +570,7 @@ pub(super) fn makes_list(op: ListOp) -> bool {
         op,
         ListOp::Reverse
             | ListOp::First
+            | ListOp::FirstFreehand
             | ListOp::Last
             | ListOp::Sort
             | ListOp::Append
@@ -610,6 +630,7 @@ pub(super) fn list_type(
         ListOp::Element if matches!(elem, Elem::Any) => Ty::Num(0),
         ListOp::Index | ListOp::Element => ty_of(elem)?,
         ListOp::Reverse | ListOp::First | ListOp::Last => Ty::List(elem),
+        ListOp::FirstFreehand => Ty::List(Elem::Vec),
         // `AlgoSort` outputs the elements of its value list
         ListOp::Sort if n != NONE => match tys[l as usize] {
             Ty::List(e) => Ty::List(e),
@@ -698,6 +719,7 @@ pub(super) fn list_value<const M: bool>(
         // a list: built by `list`
         ListOp::Reverse
         | ListOp::First
+        | ListOp::FirstFreehand
         | ListOp::Last
         | ListOp::Sort
         | ListOp::Append
@@ -1782,10 +1804,49 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
+    /// `First(Function(list), n)`: the freehand function of an inline list
+    /// is defined for at least four numbers (`AlgoFunctionFreehand`), and
+    /// `AlgoFirstLocus` reads its points.
+    fn inline_freehand_run(&self, l: u32, n: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let (s, len) = self.list(l)?;
+        if !lists.charge(u64::from(len)) {
+            return None;
+        }
+        let values: Vec<f64> = (0..len)
+            .map(|k| {
+                let slot = lists.read(self.c, s + k);
+                match (slot.kind, slot.value) {
+                    (Kind::Number, Value::Number(v)) => Some(v),
+                    _ => None,
+                }
+            })
+            .collect::<Option<_>>()?;
+        if values.len() < 4 {
+            return None;
+        }
+        let points = crate::algo::calculus::freehand_points_of(&values);
+        let outsize = self.full_number(n) as i32;
+        if points.is_empty() || outsize < 0 || outsize > points.len() as i32 {
+            return None;
+        }
+        if outsize == 0 {
+            return Some((lists.len(), 0));
+        }
+        let start = lists.reserve(outsize as u32)?;
+        for (k, &(x, y)) in points.iter().take(outsize as usize).enumerate() {
+            lists.set(start + k as u32, Slot::coords(Kind::Point, x, y));
+        }
+        Some((start, outsize as u32))
+    }
+
     /// `First(locus, n)` (`AlgoFirstLocus`): the first points of the
     /// locus; the outer `None` is any other command or source, the inner
     /// one an undefined result.
     fn locus_run(&self, op: ListOp, l: u32, n: u32) -> Option<Option<(u32, u32)>> {
+        if op == ListOp::FirstFreehand {
+            return Some(self.inline_freehand_run(l, n));
+        }
         if op != ListOp::First {
             return None;
         }

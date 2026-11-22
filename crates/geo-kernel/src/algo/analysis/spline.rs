@@ -106,17 +106,17 @@ impl Spline {
             row += 1;
         } else {
             *matrix[row].slot(0) = 0.0;
-            *matrix[row].slot(1) = factor(degree - 1, degree - 1);
+            *matrix[row].slot(1) = fact(degree - 1);
             row += 1;
-            *matrix[row].slot(last) = factor(degree, degree);
-            *matrix[row].slot(last + 1) = factor(degree - 1, degree - 1);
+            *matrix[row].slot(last) = fact(degree);
+            *matrix[row].slot(last + 1) = fact(degree - 1);
             row += 1;
         }
         for (i, row) in matrix[row.min(cols)..].iter_mut().enumerate() {
             let num = i + 2;
             let piece = n.checked_sub(num + 1)?;
-            *row.slot(piece * stride) = factor(degree, degree) * lengths[num - 1] / total;
-            *row.slot(piece * stride + 1) = factor(degree - 1, degree - 1);
+            *row.slot(piece * stride) = fact(degree) * lengths[num - 1] / total;
+            *row.slot(piece * stride + 1) = fact(degree - 1);
         }
         let coefficients = eliminate(matrix, cols, &work)?;
         Some(Self {
@@ -178,6 +178,13 @@ impl Spline {
             });
         (x, y)
     }
+}
+
+/// `AlgoSpline.fact`: the factorial in a 32-bit integer, which wraps from
+/// 13! on, returned as a `float`.
+fn fact(n: usize) -> f64 {
+    let product = (2..=n).fold(1_i32, |f, j| f.wrapping_mul(j as i32));
+    f64::from(product as f32)
 }
 
 fn factor(power: usize, derivative: usize) -> f64 {
@@ -474,5 +481,33 @@ mod tests {
         // a new object starts from its own list
         script::exec(&mut c, "t = Spline(Sequence((k, Mod(k, 3)), k, 1, n))").unwrap();
         assert!(defined(&c, "t"));
+    }
+}
+
+#[cfg(test)]
+mod locus_tests {
+    use crate::{script, Construction, Value};
+
+    /// Locus sampling works on a copy: the live spline keeps its
+    /// remembered point count (case `funcrest-splinelong-009`).
+    #[test]
+    fn locus_sampling_leaves_the_live_state() {
+        let mut c = Construction::new();
+        for line in ["a = 4", "l0 = Sequence((k, k), k, 1, a)", "s = Spline(l0)"] {
+            script::exec(&mut c, line).unwrap();
+        }
+        let a = c.id("a").unwrap();
+        c.restore_slider_bounds(a, [Some("2"), Some("4")]).unwrap();
+        for line in [
+            "P = Point(s, 0.5)",
+            "O = (0, 0)",
+            "Q = Midpoint(P, O)",
+            "l = Locus(Q, a)",
+        ] {
+            script::exec(&mut c, line).unwrap();
+        }
+        // the samples at two points do not shrink the live count of four
+        c.set_number(a, 3.0).unwrap();
+        assert!(!matches!(c.value(c.id("s").unwrap()), Value::Undefined));
     }
 }

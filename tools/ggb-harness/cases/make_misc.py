@@ -373,3 +373,14 @@ cases.case("alias", [
 ], [mv("C", 2, 3), mv("C", 2, 1)])
 
 cases.write()
+
+# Slider bounds given by expressions, which the kernel restores only from
+# saved files: the endpoint objects are bounds whatever their values, so
+# an undefined upper bound leaves the search undefined without disabling
+# the optimizer.
+cases = Cases("misc")
+cases.case("optimizebounds", [
+    "b = 36", "a = Slider(0, sqrt(b))", "w = 2", "g = w + 1", "f = (a - g)^2",
+    "m = Minimize(f, a)",
+], [setn("b", -1), setn("w", 3), setn("b", 36), setn("w", 2)])
+cases.write("reference")

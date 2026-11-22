@@ -1972,11 +1972,6 @@ cases = ["calculus-curvederivative-013"]
 difference = "calculus-commands: The variable forms `Derivative(function, any)`, `Derivative(curve, any)`, `Derivative(function, any, number)`, `Derivative(curve, any, number)`, `Integral(function, number)`, `IntegralBetween(function, number)` and `NIntegral(function, number)`"
 
 [[form]]
-command = "Derivative"
-form = "curve"
-cases = ["funcrest-splinelong-001", "funcrest-splinelong-005", "funcrest-splinelong-008"]
-
-[[form]]
 command = "NDerivative"
 form = "curve,number"
 cases = ["calculus-curvederivative-002", "calculus-curvederivative-004"]
@@ -2095,11 +2090,6 @@ cases = ["calculus-derivative-001"]
 command = "NDerivative"
 form = "function,number"
 cases = ["calculus-derivative-003", "funcrest-derivative-001"]
-
-[[form]]
-command = "NDerivative"
-form = "curve"
-cases = ["funcrest-splinelong-001", "funcrest-splinelong-004", "funcrest-splinelong-008"]
 
 [[form]]
 command = "NIntegral"
@@ -2477,11 +2467,6 @@ cases = ["financial-npr-001", "financial-npr-002", "financial-npr-003"]
 command = "Maximize"
 form = "number,number"
 cases = ["misc-optimize-001", "misc-optimize-004", "misc-optimize-006", "misc-optimize-011", "misc-optimize-012", "misc-optimize-014"]
-
-[[form]]
-command = "Minimize"
-form = "number,number"
-cases = ["misc-optimize-001", "misc-optimize-003", "misc-optimize-005", "misc-optimize-013", "misc-optimize-015"]
 
 # statistics
 

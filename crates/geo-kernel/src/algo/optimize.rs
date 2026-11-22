@@ -31,6 +31,11 @@ pub struct OptimizeDef {
     pub independent: Id,
     pub maximize: bool,
     point: bool,
+    /// `AlgoOptimize.compute` met the number without slider bounds: it
+    /// returns with its recursion guard still set, so the result stays
+    /// undefined from then on. The watched objects are kept, so the
+    /// dependency edges stay those of the definition.
+    disabled: bool,
     watch: Watch,
 }
 
@@ -39,10 +44,6 @@ enum Watch {
     Unattached,
     Attached(IdList),
     OverBudget,
-    /// `AlgoOptimize.compute` found the number without slider bounds: it
-    /// returns with its recursion guard still set, so the result stays
-    /// undefined from then on.
-    Disabled,
 }
 
 impl OptimizeDef {
@@ -52,6 +53,7 @@ impl OptimizeDef {
             independent,
             maximize,
             point: c.kind(independent) == Kind::Point,
+            disabled: false,
             watch: Watch::Unattached,
         }
     }
@@ -59,7 +61,7 @@ impl OptimizeDef {
     pub(crate) fn watched(self) -> Option<IdList> {
         match self.watch {
             Watch::Attached(list) => Some(list),
-            Watch::Unattached | Watch::OverBudget | Watch::Disabled => None,
+            Watch::Unattached | Watch::OverBudget => None,
         }
     }
 
@@ -151,13 +153,13 @@ impl Group for OptimizeDef {
 /// (`OptimizerNumeric.hasBounds`): `AlgoOptimize.compute` sets its guard
 /// against recursive calls and returns before clearing it, so every later
 /// update returns at once and the result stays undefined, also after
-/// bounds are added. A point on a path always has bounds.
+/// bounds are added. The endpoints count as bounds whatever their values.
+/// A point on a path always has bounds.
 pub(crate) fn disabled(c: &Construction, d: OptimizeDef) -> Option<OptimizeDef> {
-    (!d.point && d.watch != Watch::Disabled && c.slider_interval(d.independent).is_none())
-        .then_some(OptimizeDef {
-            watch: Watch::Disabled,
-            ..d
-        })
+    (!d.point && !d.disabled && !c.has_slider_bounds(d.independent)).then_some(OptimizeDef {
+        disabled: true,
+        ..d
+    })
 }
 
 /// Runs the search and returns the value of the result: the independent
@@ -169,9 +171,10 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         independent,
         maximize,
         point,
+        disabled,
         watch,
     } = d;
-    if matches!(watch, Watch::OverBudget | Watch::Disabled) {
+    if disabled || watch == Watch::OverBudget {
         return Value::Undefined;
     }
     let on_path = if point {
@@ -404,5 +407,48 @@ mod tests {
         assert_eq!((best, count), (None, 102));
         // a constant objective narrows onto the golden sections
         assert!(local_min(-6.0, 4.0, 5.0e-8, |_| 1.0).is_some());
+    }
+}
+
+#[cfg(test)]
+mod bound_tests {
+    use crate::{script, Construction, Value};
+
+    fn m(c: &Construction) -> Option<f64> {
+        match c.value(c.id("m").unwrap()) {
+            Value::Number(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    /// Case `misc-optimizebounds-001`: endpoint objects are bounds whatever
+    /// their values, and rollback leaves no stale edge.
+    #[test]
+    fn expression_bounds_do_not_disable_and_rollback_is_clean() {
+        let mut c = Construction::new();
+        for line in ["b = 36", "a = 0", "w = 2", "g = w + 1", "f = (a - g)^2"] {
+            script::exec(&mut c, line).unwrap();
+        }
+        let (a, b, w) = (c.id("a").unwrap(), c.id("b").unwrap(), c.id("w").unwrap());
+        c.restore_slider_bounds(a, [Some("0"), Some("sqrt(b)")])
+            .unwrap();
+        let checkpoint = c.checkpoint();
+        script::exec(&mut c, "m = Minimize(f, a)").unwrap();
+        let near = |v: Option<f64>| v.is_some_and(|v| (v - 3.0).abs() < 1e-6);
+        // defined at creation (its value there is not compared: the search
+        // after restoring bounds is a separate matter)
+        assert!(m(&c).is_some());
+        c.set_number(b, -1.0).unwrap();
+        c.set_number(w, 3.0).unwrap();
+        assert_eq!(m(&c), None);
+        c.set_number(b, 36.0).unwrap();
+        c.set_number(w, 2.0).unwrap();
+        assert!(near(m(&c)), "{:?}", m(&c));
+        // the same after the optimizer is rolled back
+        c.set_number(b, -1.0).unwrap();
+        c.set_number(w, 3.0).unwrap();
+        c.rollback(checkpoint).unwrap();
+        c.set_number(w, 4.0).unwrap();
+        assert!(c.id("m").is_none());
     }
 }

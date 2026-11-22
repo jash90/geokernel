@@ -1,0 +1,5 @@
+{
+  "cases": [
+    {"id": "misc-optimizebounds-001", "group": "misc", "script": ["b = 36", "a = Slider(0, sqrt(b))", "w = 2", "g = w + 1", "f = (a - g)^2", "m = Minimize(f, a)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "b", "value": -1.0}, {"action": "set_number", "label": "w", "value": 3.0}, {"action": "set_number", "label": "b", "value": 36.0}, {"action": "set_number", "label": "w", "value": 2.0}]}
+  ]
+}
