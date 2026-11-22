@@ -16,25 +16,36 @@ import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.Kernel;
+import org.geogebra.common.kernel.geos.GeoAngle;
+import org.geogebra.common.kernel.geos.GeoBoolean;
+import org.geogebra.common.kernel.geos.GeoButton;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoElement;
+import org.geogebra.common.kernel.geos.GeoFunction;
+import org.geogebra.common.kernel.geos.GeoFunctionNVar;
+import org.geogebra.common.kernel.geos.GeoInputBox;
 import org.geogebra.common.kernel.geos.GeoLine;
+import org.geogebra.common.kernel.geos.GeoList;
 import org.geogebra.common.kernel.geos.GeoNumeric;
 import org.geogebra.common.kernel.geos.GeoPoint;
+import org.geogebra.common.kernel.geos.GeoPolygon;
 import org.geogebra.common.kernel.geos.GeoSegment;
+import org.geogebra.common.kernel.geos.GeoVector;
 import org.geogebra.common.kernel.kernelND.GeoElementND;
 import org.geogebra.common.main.error.ErrorHandler;
 import org.geogebra.common.main.settings.config.AppConfigDefault;
 import org.geogebra.common.util.AsyncOperation;
 
 /**
- * Saves constructions after their free points were moved, together with what
+ * Saves constructions after edits, together with what
  * GeoGebra computes at that moment, to prove how a saved file relates to the
  * state it was saved from.
  *
  * <p>Usage: {@code SavedExporter <saved.json> <out dir>}. Every case has an
  * id, optionally an {@code angle_unit} ({@code degree} or {@code radiant}), raw
- * GeoGebra input lines, and {@code move} steps. The lines are given to the
+ * GeoGebra input lines, optional {@code hidden} labels, and {@code move} or
+ * {@code set_number} steps. Steps can also enable point animation, set an
+ * angle style, or rename an object. The lines are given to the
  * algebra processor as typed (so a command that makes several objects, such as
  * {@code P = Intersect(f, k)}, gives all of them), the moves are applied, and
  * then, with nothing else done in between, the case is written as
@@ -112,18 +123,41 @@ public final class SavedExporter {
                 created.add(nd.toGeoElement());
             }
         }
+        if (input.get("hidden") instanceof List<?> hidden) {
+            for (Object label : hidden) {
+                kernel.lookupLabel((String) label).setEuclidianVisible(false);
+            }
+        }
         for (Object s : (List<?>) input.get("steps")) {
             Map<?, ?> step = (Map<?, ?>) s;
-            if (!"move".equals(step.get("action"))) {
-                throw new IllegalArgumentException("only move steps are supported: " + step);
-            }
             GeoElement geo = kernel.lookupLabel((String) step.get("label"));
-            if (!(geo instanceof GeoPoint) || !geo.isIndependent()) {
-                throw new IllegalArgumentException(step.get("label") + " is not a free point");
+            if (geo == null) {
+                throw new IllegalArgumentException(step.get("label") + " does not exist");
             }
-            GeoPoint p = (GeoPoint) geo;
-            p.setCoords(number(step.get("x")), number(step.get("y")), 1.0);
-            p.updateCascade();
+            Object action = step.get("action");
+            if ("move".equals(action) && geo instanceof GeoPoint p
+                    && (p.isIndependent() || p.isPointOnPath())) {
+                p.setCoords(number(step.get("x")), number(step.get("y")), 1.0);
+            } else if ("set_number".equals(action) && geo instanceof GeoNumeric n
+                    && n.isIndependent()) {
+                double value = number(step.get("value"));
+                n.setValue(value);
+                if (n.getDouble() != value) {
+                    throw new IllegalArgumentException(step.get("label") + " clamped " + value);
+                }
+            } else if ("animate".equals(action) && geo instanceof GeoPoint p && p.isPointOnPath()) {
+                p.setAnimating(true);
+                if (!p.isAnimating()) {
+                    throw new IllegalArgumentException(step.get("label") + " is not animating");
+                }
+            } else if ("angle_style".equals(action) && geo instanceof GeoAngle angle) {
+                angle.setAngleStyle(((Number) step.get("value")).intValue());
+            } else if ("rename".equals(action)) {
+                geo.rename((String) step.get("name"));
+            } else {
+                throw new IllegalArgumentException("invalid saved step " + step);
+            }
+            geo.updateCascade();
         }
         // The state to save, and what GeoGebra computes in it.
         Map<String, Object> objects = new LinkedHashMap<>();
@@ -154,7 +188,14 @@ public final class SavedExporter {
         Map<String, Object> obj = new LinkedHashMap<>();
         Map<String, Object> f = new LinkedHashMap<>();
         boolean ok = geo.isDefined();
-        if (geo instanceof GeoPoint) {
+        if (geo instanceof GeoBoolean || geo instanceof GeoFunction || geo instanceof GeoVector
+                || geo instanceof GeoList || geo instanceof GeoPolygon) {
+            return Session.describe(geo, Session.typeOf(geo));
+        } else if (geo instanceof GeoFunctionNVar) {
+            return Session.describe(geo, "function");
+        } else if (geo instanceof GeoButton || geo instanceof GeoInputBox) {
+            obj.put("type", geo.getTypeString());
+        } else if (geo instanceof GeoPoint) {
             GeoPoint p = (GeoPoint) geo;
             obj.put("type", "point");
             ok &= !p.isInfinite();
@@ -183,7 +224,7 @@ public final class SavedExporter {
         } else if (geo instanceof GeoConic) {
             GeoConic c = (GeoConic) geo;
             if (c.getType() != GeoConic.CONIC_CIRCLE) {
-                throw new IllegalStateException(geo.getLabelSimple() + " is not a circle");
+                return Session.describe(c, "conic");
             }
             obj.put("type", "circle");
             if (ok) {

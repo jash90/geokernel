@@ -1,0 +1,41 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "algebraedge-integer-001",
+      "group": "algebraedge",
+      "script": [
+        "n = DivisorsSum(8516626983938329)",
+        "r = Mod(n,16)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 8.516627076223902E15 },
+          "r": { "type": "number", "defined": true, "value": 14.0 }
+        }
+      ]
+    },
+    {
+      "id": "algebraedge-integer-002",
+      "group": "algebraedge",
+      "script": [
+        "n = DivisorsSum(3978655322955889)",
+        "r = Mod(n,16)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.978655386032473E15 },
+          "r": { "type": "number", "defined": true, "value": 9.0 }
+        }
+      ]
+    }
+  ]
+}

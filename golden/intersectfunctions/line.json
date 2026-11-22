@@ -1,0 +1,1457 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "intersectfunctions-line-001",
+      "group": "intersectfunctions",
+      "script": [
+        "A = (0, 0)",
+        "B = (1, 1)",
+        "g = Line(A, B)",
+        "f(x) = sin(x)",
+        "R = Intersect(f, g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-002",
+      "group": "intersectfunctions",
+      "script": [
+        "f(x) = (x * ln(x + 1)) / (exp(2x) - 1)",
+        "R = Intersect(xAxis, f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, -0.5482713470389903],
+              [0.0, null],
+              [0.5, 0.11798562418360245],
+              [1.0, 0.1084897627798195],
+              [2.0, 0.04099441073950296],
+              [4.0, 0.002160349802826349],
+              [8.0, 1.9781206362720052E-6]
+            ]
+          },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-003",
+      "group": "intersectfunctions",
+      "script": [
+        "a = 4",
+        "f(x) = x^2 - a",
+        "G = (0, 0)",
+        "H = (1, 0)",
+        "g = Line(G, H)",
+        "n = 0",
+        "S = (-2, 8)",
+        "R = Intersect(f, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 9.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R_{1}": { "type": "point", "defined": false },
+          "R_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 55.0],
+              [-4.0, 7.0],
+              [-2.0, -5.0],
+              [-1.0, -8.0],
+              [-0.5, -8.75],
+              [0.0, -9.0],
+              [0.5, -8.75],
+              [1.0, -8.0],
+              [2.0, -5.0],
+              [4.0, 7.0],
+              [8.0, 55.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-004",
+      "group": "intersectfunctions",
+      "script": [
+        "a = 4",
+        "f(x) = x^2 - a",
+        "G = (0, 0)",
+        "H = (1, 0)",
+        "g = Line(G, H)",
+        "n = 0",
+        "S = (-2, 8)",
+        "R = Intersect(f, g, n + 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 8.0 },
+        { "action": "set_number", "label": "n", "value": -3.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 9.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 8.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 55.0],
+              [-4.0, 7.0],
+              [-2.0, -5.0],
+              [-1.0, -8.0],
+              [-0.5, -8.75],
+              [0.0, -9.0],
+              [0.5, -8.75],
+              [1.0, -8.0],
+              [2.0, -5.0],
+              [4.0, 7.0],
+              [8.0, 55.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-005",
+      "group": "intersectfunctions",
+      "script": [
+        "a = 4",
+        "f(x) = x^2 - a",
+        "G = (0, 0)",
+        "H = (1, 0)",
+        "g = Line(G, H)",
+        "n = 0",
+        "S = (-2, 8)",
+        "R = Intersect(f, g, S)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "S", "x": 2.0, "y": -4.0 },
+        { "action": "move", "label": "S", "x": -2.0, "y": 8.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 9.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 2.0, "y": -4.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 55.0],
+              [-4.0, 7.0],
+              [-2.0, -5.0],
+              [-1.0, -8.0],
+              [-0.5, -8.75],
+              [0.0, -9.0],
+              [0.5, -8.75],
+              [1.0, -8.0],
+              [2.0, -5.0],
+              [4.0, 7.0],
+              [8.0, 55.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-006",
+      "group": "intersectfunctions",
+      "script": [
+        "a = 4",
+        "f(x) = x^2 - a",
+        "G = (0, 0)",
+        "H = (1, 0)",
+        "g = Line(G, H)",
+        "n = 0",
+        "S = (-2, 8)",
+        "R = Intersect(g, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 9.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R_{1}": { "type": "point", "defined": false },
+          "R_{2}": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 55.0],
+              [-4.0, 7.0],
+              [-2.0, -5.0],
+              [-1.0, -8.0],
+              [-0.5, -8.75],
+              [0.0, -9.0],
+              [0.5, -8.75],
+              [1.0, -8.0],
+              [2.0, -5.0],
+              [4.0, 7.0],
+              [8.0, 55.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R_{1}": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-007",
+      "group": "intersectfunctions",
+      "script": [
+        "a = 4",
+        "f(x) = x^2 - a",
+        "G = (0, 0)",
+        "H = (1, 0)",
+        "g = Line(G, H)",
+        "n = 0",
+        "S = (-2, 8)",
+        "R = Intersect(g, f, n + 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 8.0 },
+        { "action": "set_number", "label": "n", "value": -3.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 9.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 8.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 55.0],
+              [-4.0, 7.0],
+              [-2.0, -5.0],
+              [-1.0, -8.0],
+              [-0.5, -8.75],
+              [0.0, -9.0],
+              [0.5, -8.75],
+              [1.0, -8.0],
+              [2.0, -5.0],
+              [4.0, 7.0],
+              [8.0, 55.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-008",
+      "group": "intersectfunctions",
+      "script": [
+        "a = 4",
+        "f(x) = x^2 - a",
+        "G = (0, 0)",
+        "H = (1, 0)",
+        "g = Line(G, H)",
+        "n = 0",
+        "S = (-2, 8)",
+        "R = Intersect(g, f, S)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "S", "x": 2.0, "y": -4.0 },
+        { "action": "move", "label": "S", "x": -2.0, "y": 8.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 9.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 2.0, "y": -4.0 },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -9.5367431640625E-7, "y": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 55.0],
+              [-4.0, 7.0],
+              [-2.0, -5.0],
+              [-1.0, -8.0],
+              [-0.5, -8.75],
+              [0.0, -9.0],
+              [0.5, -8.75],
+              [1.0, -8.0],
+              [2.0, -5.0],
+              [4.0, 7.0],
+              [8.0, 55.0]
+            ]
+          },
+          "G": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "H": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "S": { "type": "point", "defined": true, "x": -2.0, "y": 8.0 },
+          "R": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-009",
+      "group": "intersectfunctions",
+      "script": [
+        "S = (1, 10)",
+        "a = 1",
+        "g: x = a",
+        "f(x) = sqrt(x)",
+        "R = Intersect(f, g, S)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        },
+        {
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 10.0 },
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 10.0 },
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, null],
+              [-0.5, null],
+              [0.0, 0.0],
+              [0.5, 0.7071067811865476],
+              [1.0, 1.0],
+              [2.0, 1.4142135623730951],
+              [4.0, 2.0],
+              [8.0, 2.8284271247461903]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-010",
+      "group": "intersectfunctions",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 0)",
+        "g = Segment(A, B)",
+        "f(x) = x^2 - 4",
+        "R = Intersect(f, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -3.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": -3.0, "y1": 0.0, "x2": 3.0, "y2": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": -3.0, "y1": 0.0, "x2": 1.0, "y2": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "segment", "defined": true, "x1": -1.0, "y1": 0.0, "x2": 1.0, "y2": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-011",
+      "group": "intersectfunctions",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 0)",
+        "g = Ray(A, B)",
+        "f(x) = x^2 - 4",
+        "R = Intersect(f, g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -3.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": 0.0, "b": 3.0, "c": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "ray", "defined": false },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "R": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "g": { "type": "ray", "defined": true, "x": 3.0, "y": 0.0, "a": 0.0, "b": -3.0, "c": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "g": { "type": "ray", "defined": true, "x": -3.0, "y": 0.0, "a": 0.0, "b": 3.0, "c": -0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "R": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "intersectfunctions-line-012",
+      "group": "intersectfunctions",
+      "script": [
+        "f(x) = (x^2 - 1) / (x - 1)",
+        "R = Intersect(f, xAxis)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, -0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, null],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "xAxis": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "R": { "type": "point", "defined": true, "x": -1.0, "y": -0.0 }
+        }
+      ]
+    }
+  ]
+}

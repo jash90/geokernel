@@ -32,6 +32,30 @@ OUT_OF_SCOPE_GROUPS = {"3d", "spreadsheet", "probability", "cas", "scripting", "
 # TableToChart).
 OUT_OF_SCOPE_COMMANDS = {"var", "cov", "Polyhedron", "CornerThreeD", "Evaluate", "Stadium",
                          "TableToChart"}
+EXCLUDED_ALGEBRA = {
+    "Expand": "Symbolic expansion is outside numeric algebra.",
+    "Factor": "Symbolic factorization uses the CAS.",
+    "Simplify": "Function, list, curve and implicit forms use the CAS. Text formatting is outside numeric algebra.",
+    "CompleteSquare": "Symbolic completion of the square is outside numeric algebra.",
+    "IsFactored": "Inspects symbolic polynomial structure and is outside numeric algebra.",
+    "IFactor": "Symbolic integer-coefficient factorization uses the CAS.",
+    "Solve": "All algebra-input forms delegate to the CAS.",
+    "CSolve": "All algebra-input forms delegate to the CAS.",
+    "Solutions": "All algebra-input forms delegate to the CAS.",
+    "CSolutions": "All algebra-input forms delegate to the CAS.",
+    "NSolve": "AlgoSolve delegates to the CAS even for numeric equations and initial guesses.",
+    "NSolutions": "AlgoSolve delegates to the CAS even for numeric equations and initial guesses.",
+    "NextPrime": "AlgoNextPreviousPrime obtains the value from the CAS.",
+    "PreviousPrime": "AlgoNextPreviousPrime obtains the value from the CAS.",
+}
+
+FORM_NOTES = {
+    "CommonDenominator": "Number pairs. The function pair delegates to the CAS (AlgoPolynomialCD).",
+    "LeftSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
+    "RightSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
+    "If": "Scalar, coordinate, boolean, text, list and numeric-function branches. Other geometry branches are pending.",
+    "Relation": "Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.",
+}
 P1_GROUPS = {"geometry", "conic", "transformation"}
 # Groups the rule knows how to place. Anything else becomes todo/P2 and is reported.
 KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
@@ -43,6 +67,7 @@ KNOWN_GROUPS = OUT_OF_SCOPE_GROUPS | P1_GROUPS | {
 # (derived from crates/geo-kernel/src/script.rs and the group files in
 # crates/geo-kernel/src/algo/). The note lists the supported forms.
 PARTIAL = {
+    "Locus": "Tracing point with a movable path point or slider, slope function with initial point, or slope field with initial point",
     "Line": "Line(point, point); Line(point, line, segment or ray); Line(point, vector)",
     "Segment": "Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output",
     "Midpoint": "Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)",
@@ -58,20 +83,20 @@ PARTIAL = {
     "Incircle": "Incircle(point, point, point)",
     "Center": "Center(circle or conic); Center(segment)",
     "Diameter": "Diameter(line or segment, circle or conic)",
-    "Length": "Length(segment); Length(vector); Length(list); Length(arc or sector)",
+    "Length": "Point, vector, segment, list, quoted text, locus sample count, conic part, function or Cartesian curve between bounds",
     "Radius": "Radius(conic or conic part); defined for circle and single-point types",
-    "Circumference": "Circumference(circle); Circumference(arc or sector)",
-    "Perimeter": "Perimeter(circle); Perimeter(polygon); Perimeter(arc or sector)",
+    "Circumference": "Conic, conic part, polygon or locus",
+    "Perimeter": "Polygon, conic, conic part or locus",
     "Area": "Area(conic, arc, sector or polygon); Area of three or more points",
-    "Point": "Point(path); Point(path, parameter) on a line, segment, ray, circle, polygon, polyline, circular arc or sector",
+    "Point": "Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc or sector with an optional path parameter",
     "PathParameter": "PathParameter(point on a path)",
     "CircleArc": "CircularArc(centre, point, point)",
     "CircleSector": "CircularSector(centre, point, point)",
     "CircumcircleArc": "CircumcircularArc(point, point, point)",
     "CircumcircleSector": "CircumcircularSector(point, point, point)",
     "Semicircle": "Semicircle(point, point)",
-    "Arc": "Arc(circle, point, point); Arc(circle or conic, parameter, parameter)",
-    "Sector": "Sector(circle, point, point); Sector(circle or conic, parameter, parameter)",
+    "Arc": "Conic with point endpoints or numeric parameters",
+    "Sector": "Conic with point endpoints or numeric parameters",
     "Slope": "Slope(line, segment, ray or function)",
     "AffineRatio": "AffineRatio(point, point, point)",
     "CrossRatio": "CrossRatio(point, point, point, point)",
@@ -86,7 +111,8 @@ PARTIAL = {
     ),
     "Mirror": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector in a point or a line; point, line, segment, circle, arc or sector in a circle (inversion)",
     "Rotate": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by an angle, about the origin or a point",
-    "Dilate": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by a factor, from the origin or a point",
+    "Dilate": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function or list by a factor, from the origin or a point",
+    "ApplyMatrix": "2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline or list",
     "Shear": "point, line, segment, ray, vector, polygon, circle, conic, arc or sector with a line and a ratio",
     "Stretch": "point, line, segment, ray, vector, polygon, circle, conic, arc or sector with a line and a ratio, or by a vector",
     "Vector": "Vector(point, point); Vector(point); a free (x, y) under a lower-case label",
@@ -101,15 +127,15 @@ PARTIAL = {
     "ArePerpendicular": "ArePerpendicular of two lines, segments or rays",
     "AreConcurrent": "AreConcurrent of three lines, segments or rays",
     "AreConcyclic": "AreConcyclic(point, point, point, point)",
-    "AreEqual": "AreEqual of two objects of any kind the kernel has",
-    "AreCongruent": "AreCongruent of two objects of any kind the kernel has",
+    "AreEqual": "Numeric equality by object kind, including cyclic vertex equality and polynomial equality through degree four",
+    "AreCongruent": "Numeric congruence by object kind, including cyclic or reversed polygon congruence",
     "IsTangent": "IsTangent(line, segment or ray, conic or conic part)",
     "ClosestPoint": "Path and point in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers except line with segment",
     "Trilinear": "Trilinear(point, point, point, number, number, number)",
-    "Polygon": "Polygon of three or more points; Polygon(point, point, number of vertices)",
-    "PolyLine": "PolyLine of two or more points",
+    "Polygon": "Live list of points, separate points, or two points and a regular polygon vertex count",
+    "PolyLine": "Live list with optional Boolean or separate points with an optional false flag",
     "Centroid": "Centroid(polygon)",
-    "Vertex": "Vertex(polygon); Vertex(polygon, index); Vertex(conic)",
+    "Vertex": "Conic, polygon, polyline or a kernel graphics corner, including indexed polygon, polyline and segment forms",
     "InteriorAngles": "InteriorAngles(polygon)",
     "If": "If(condition, then); If(condition, then, else); If(condition, value, condition, value, ..., else)",
     "Element": "Element(list, index)",
@@ -144,7 +170,7 @@ PARTIAL = {
     "Eccentricity": "Eccentricity(conic)",
     "Excentricity": "Excentricity(conic)",
     "Parameter": "Parameter(parabola)",
-    "RigidPolygon": "RigidPolygon(polygon); RigidPolygon(polygon, x offset, y offset); RigidPolygon of three or more points (separate constrained vertices)",
+    "RigidPolygon": "Copy of a polygon with optional offsets or rigid polygon from three or more points",
     "TriangleCenter": "TriangleCenter(point, point, point, index)",
     "PointIn": "PointIn(polygon, conic or conic part as a single region argument)",
     "IntersectPath": "Polygon and line, segment, ray or conic in either order; two polygons",
@@ -255,6 +281,8 @@ def resolve_aliases(aliases, names):
 
 def classify(group, command, alias_of):
     """Return (priority, status, notes) for a real command; aliases copy their target."""
+    if command in EXCLUDED_ALGEBRA:
+        return "", "out_of_scope", EXCLUDED_ALGEBRA[command]
     if command in OUT_OF_SCOPE_COMMANDS:
         return "", "out_of_scope", ""
     if command in PARTIAL and not alias_of:
@@ -305,7 +333,7 @@ def build_rows(commands_java, constants_java, forms=None, done=None):
             else:
                 status = "todo"
             total, got = str(n_forms), str(n_done)
-        rows[name] = (group, priority, status, total, got, notes)
+        rows[name] = (group, priority, status, total, got, FORM_NOTES.get(name, notes))
     out = []
     for name, _ in entries:
         target = aliases.get(name, "")
@@ -349,7 +377,7 @@ def read_evidence(text, forms):
             raise ValueError("form-evidence.toml: unknown form %s(%s)" % (command, form))
         if (command, form) in seen:
             raise ValueError("form-evidence.toml: %s(%s) is listed twice" % (command, form))
-        if bool(row.get("cases")) == bool(row.get("difference")):
+        if not row.get("cases") and not row.get("difference"):
             raise ValueError("form-evidence.toml: %s(%s) needs cases or a difference"
                              % (command, form))
         seen.add((command, form))

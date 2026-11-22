@@ -214,12 +214,14 @@ pub fn paint(painter: &Painter, rect: Rect, c: &Construction, t: &ViewTransform,
         || [scene.hovered, scene.selected]
             .into_iter()
             .flatten()
+            // the id may be gone: the object was deleted after the last frame
+            .filter(|&i| c.exists(i))
             .any(is_curve))
     .then(|| crate::curves::Curves::new(painter, rect, t, scene.generation));
 
     // Highlights go under the objects, in the object's own colour.
     for (id, strong) in [(scene.hovered, false), (scene.selected, true)] {
-        let Some(id) = id.filter(|i| (scene.visible)(*i)) else {
+        let Some(id) = id.filter(|i| c.exists(*i) && (scene.visible)(*i)) else {
             continue;
         };
         if matches!(c.value(id), Value::Polygon { .. }) {
@@ -878,5 +880,44 @@ mod tests {
         let base = shapes("A = (0, 0)\nB = (2, 0)\nC = (1, 2)\n");
         let with = shapes("A = (0, 0)\nB = (2, 0)\nC = (1, 2)\ne = Ellipse(A, B, C)\n");
         assert_eq!(with, base + 2);
+    }
+
+    /// A frame painted after the hovered or selected object was deleted
+    /// skips it instead of reading the value of an id the construction no
+    /// longer has (`Construction::value` panics for one).
+    #[test]
+    fn a_stale_hovered_or_selected_id_is_not_painted() {
+        let mut wb = crate::workbench::Workbench::from_script(
+            "A = (0, 0)\nB = (2, 1)\nf = Line(A, B)\ng: x^2 + y^2 = 4\n",
+        )
+        .unwrap();
+        let c = wb.construction();
+        let f = c.id("f").unwrap();
+        let g = c.id("g").unwrap();
+        let t = Camera::STANDARD.transform(800.0, 600.0);
+        // deleting the clicked line leaves its id with the objects that
+        // follow it renumbered, or out of range
+        assert!(wb.delete(f));
+        let stale = [f, g];
+        let ctx = Context::default();
+        let mut out = ctx.run_ui(Default::default(), |ui| {
+            let rect = Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0));
+            for (hovered, selected) in [(stale[0], stale[1]), (stale[1], stale[0])] {
+                let scene = Scene {
+                    visible: &|_| true,
+                    ghost: &|_| false,
+                    selected: Some(selected),
+                    hovered: Some(hovered),
+                    palette: wb.palette(),
+                    cull: true,
+                    generation: wb.rebuilds(),
+                    label_offset: &|_| None,
+                    label_rects: None,
+                };
+                paint(ui.painter(), rect, wb.construction(), &t, &scene);
+            }
+        });
+        out.textures_delta.clear();
+        assert!(!out.shapes.is_empty());
     }
 }

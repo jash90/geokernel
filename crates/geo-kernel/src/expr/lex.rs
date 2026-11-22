@@ -11,6 +11,7 @@
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Tok {
     Num(f64),
+    Text(String),
     /// A name; `call` when `(` follows without a space (GeoGebra's
     /// `FUNCTION_LABEL`).
     Name {
@@ -79,7 +80,32 @@ pub(crate) fn tokens(src: &str) -> Result<Vec<Token>, String> {
             chars.next();
             continue;
         }
-        let tok = if ch.is_ascii_digit() || ch == '.' {
+        let tok = if ch == '"' {
+            chars.next();
+            let mut value = String::new();
+            let mut end = None;
+            while let Some((i, next)) = chars.next() {
+                match next {
+                    '"' => {
+                        end = Some(i + 1);
+                        break;
+                    }
+                    '\\' if chars
+                        .peek()
+                        .is_some_and(|&(_, next)| matches!(next, '"' | '\\')) =>
+                    {
+                        value.push(chars.next().unwrap().1);
+                    }
+                    _ => value.push(next),
+                }
+            }
+            out.push(Token {
+                tok: Tok::Text(value),
+                start,
+                end: end.ok_or("unterminated text")?,
+            });
+            continue;
+        } else if ch.is_ascii_digit() || ch == '.' {
             let end = number_end(src, start)?;
             while chars.peek().is_some_and(|&(i, _)| i < end) {
                 chars.next();
@@ -230,9 +256,13 @@ fn scan_bars(chars: impl Iterator<Item = char>, splitters: &[char]) -> String {
     let n = chars.len();
     let mut out = String::with_capacity(n + 4);
     let (mut bars, mut last) = (0usize, ' ');
+    let mut quoted = false;
     for (i, &ch) in chars.iter().enumerate() {
         out.push(ch);
-        if ch.is_whitespace() {
+        if ch == '"' {
+            quoted = !quoted;
+        }
+        if quoted || ch.is_whitespace() {
             continue;
         }
         if ch == '|' {

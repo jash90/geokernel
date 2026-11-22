@@ -1,0 +1,449 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "geomclosure-shapelist-001",
+      "group": "geomclosure",
+      "script": [
+        "A = (1, 1)",
+        "B = (2, 2)",
+        "C = (3, 3)",
+        "D = (4, 1/4)",
+        "E = (5, 1/5)",
+        "t = 1",
+        "b = t > 0",
+        "l = If(t > 0, {A, B, C, D, E}, {A, B, C})",
+        "p = Polygon(l)",
+        "q = PolyLine(l)",
+        "v = PolyLine(l, b)",
+        "P = Vertex(v, 3)",
+        "Q = Vertex(v, 5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "E", "x": 4.0, "y": 0.25 },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "move", "label": "C", "x": 2.0, "y": 2.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 5.0, "y": 0.2 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+              { "type": "point", "defined": true, "x": 5.0, "y": 0.2 }
+            ]
+          },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0],
+              [4.0, 0.25],
+              [5.0, 0.2]
+            ],
+            "area": 3.4499999999999997,
+            "signed_area": -3.4499999999999997
+          },
+          "q": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0],
+              [4.0, 0.25],
+              [5.0, 0.2]
+            ],
+            "length": 6.755851322151136
+          },
+          "v": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0],
+              [4.0, 0.25],
+              [5.0, 0.2]
+            ],
+            "length": 6.755851322151136
+          },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "Q": { "type": "point", "defined": true, "x": 5.0, "y": 0.2 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 }
+            ]
+          },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0],
+              [4.0, 0.25],
+              [4.0, 0.25]
+            ],
+            "area": 3.75,
+            "signed_area": -3.75
+          },
+          "q": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0],
+              [4.0, 0.25],
+              [4.0, 0.25]
+            ],
+            "length": 5.754602102426096
+          },
+          "v": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0],
+              [4.0, 0.25],
+              [4.0, 0.25]
+            ],
+            "length": 5.754602102426096
+          },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 3.0 }
+            ]
+          },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0]
+            ],
+            "area": 0.0,
+            "signed_area": 0.0
+          },
+          "q": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0]
+            ],
+            "length": 2.8284271247461903
+          },
+          "v": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [3.0, 3.0]
+            ],
+            "length": 2.8284271247461903
+          },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 }
+            ]
+          },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [2.0, 2.0]
+            ],
+            "area": 0.0,
+            "signed_area": 0.0
+          },
+          "q": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [2.0, 2.0]
+            ],
+            "length": 1.4142135623730951
+          },
+          "v": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [2.0, 2.0]
+            ],
+            "length": 1.4142135623730951
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "E": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 },
+              { "type": "point", "defined": true, "x": 4.0, "y": 0.25 }
+            ]
+          },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [2.0, 2.0],
+              [4.0, 0.25],
+              [4.0, 0.25]
+            ],
+            "area": 1.875,
+            "signed_area": -1.875
+          },
+          "q": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [2.0, 2.0],
+              [4.0, 0.25],
+              [4.0, 0.25]
+            ],
+            "length": 4.071750015556757
+          },
+          "v": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [2.0, 2.0],
+              [4.0, 0.25],
+              [4.0, 0.25]
+            ],
+            "length": 4.071750015556757
+          },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.25 }
+        }
+      ]
+    },
+    {
+      "id": "geomclosure-shapelist-002",
+      "group": "geomclosure",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "C = (2, 2)",
+        "D = (0, 2)",
+        "t = 1",
+        "p = Polygon(If(t > 0, {A, B, C}, {A, B, C, D}))",
+        "q = PolyLine({A, B, C}, true)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "t", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "set_number", "label": "t", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "q": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "length": 4.0
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.0, 2.0],
+              [0.0, 2.0]
+            ],
+            "area": 4.0,
+            "signed_area": 4.0
+          },
+          "q": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "length": 4.0
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [2.0, 2.0],
+              [0.0, 2.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "q": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "length": 2.8284271247461903
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "t": { "type": "number", "defined": true, "value": 1.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "area": 0.0,
+            "signed_area": 0.0
+          },
+          "q": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [0.0, 0.0],
+              [2.0, 2.0]
+            ],
+            "length": 2.8284271247461903
+          }
+        }
+      ]
+    }
+  ]
+}

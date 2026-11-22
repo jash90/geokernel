@@ -20,6 +20,17 @@ use crate::algo::conic_nd::ConicData;
 /// `GeoConicND.vars`.
 const VARS: [&str; 5] = ["x²", "x y", "y²", "x", "y"];
 
+/// Factor cancelled in the display form of an equation.
+pub(crate) fn equation_scale(numbers: &[f64]) -> f64 {
+    if numbers.iter().all(|&v| is_integer(v)) {
+        let g = gcd(numbers);
+        if g != 0.0 {
+            return g;
+        }
+    }
+    1.0
+}
+
 /// `Kernel.STANDARD_PRECISION`, the tolerance of `DoubleUtil.isZero` and
 /// `DoubleUtil.isInteger`.
 const EPS: f64 = 1e-8;
@@ -42,13 +53,9 @@ fn implicit(numbers: &mut [f64; 6], fmt: &dyn Fn(f64) -> String) -> String {
     let is_zero_figure = |v: f64| fmt(v.abs()) == zero;
     let leading = (0..VARS.len()).find(|&i| numbers[i].abs() >= EPS);
     // Integer coefficients are divided by their greatest common divisor.
-    if numbers.iter().all(|&v| is_integer(v)) {
-        let g = gcd(numbers);
-        if g != 0.0 {
-            for v in numbers.iter_mut() {
-                *v /= g;
-            }
-        }
+    let scale = equation_scale(numbers);
+    for v in numbers.iter_mut() {
+        *v /= scale;
     }
     let mut s = String::new();
     match leading {

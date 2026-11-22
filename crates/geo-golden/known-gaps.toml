@@ -218,22 +218,10 @@ reason = "intended difference, recorded in DIFFERENCES.md: a part whose circumci
 mismatches = ["1:len", "1:ar", "1:sar", "1:slen", "2:len", "2:ar", "2:sar", "2:slen"]
 
 [[gap]]
-id = "geomforms-rigidpolygon-001"
-reason = "GeoGebra replaces B and C in place. The kernel creates dependent polygon vertices and preserves the original point objects and their other dependants."
-mismatches = ["1:B", "1:C"]
-
-[[gap]]
 id = "geomforms-closest-012"
 reason = "GeoGebra accepts an approximate Brent root for a non-polynomial function. The kernel refines the stationary point further, so the point coordinates differ while the distances agree."
 mismatches = [
   "0:X", "1:X",
-]
-
-[[gap]]
-id = "geomforms-pointin-007"
-reason = "The construction move dispatcher routes moves only to the original point-on-path definition."
-mismatches = [
-  "1:step",
 ]
 
 [[gap]]
@@ -289,14 +277,9 @@ mismatches = [
 ]
 
 [[gap]]
-id = "axes-functions-001"
-reason = "The axis resolves as a line. Intersect of a function and a line has no kernel dispatch or polynomial root algorithm."
-mismatches = ["0:script line 3"]
-
-[[gap]]
 id = "conicforms-namedinterval-001"
-reason = "A named inequality is a boolean-valued function in GeoGebra. Kernel functions are numeric, so the named input fails before Center can read its bounds."
-mismatches = ["0:script line 3"]
+reason = "Center accepts the bounds of an inline inequality. Reading interval bounds from a named boolean function is unsupported."
+mismatches = ["0:script line 4"]
 
 # intersections
 
@@ -421,116 +404,6 @@ reason = "The selector dispatch excludes conic/ray pairs. The fallback parser tr
 mismatches = ["0:script line 10"]
 
 [[gap]]
-id = "intersections-functionconic-001"
-reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionconic-002"
-reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionconic-003"
-reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionconic-004"
-reason = "The kernel does not substitute a function into a conic and solve the resulting polynomial. Intersect rejects this pair before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionline-001"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-002"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-003"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-004"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-005"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-006"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 8"]
-
-[[gap]]
-id = "intersections-functionline-007"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionline-008"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 2"]
-
-[[gap]]
-id = "intersections-functionline-009"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 5"]
-
-[[gap]]
-id = "intersections-functionline-010"
-reason = "The kernel has no function/line root solver or point output slots for this pair. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 7"]
-
-[[gap]]
-id = "intersections-functions-001"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 6"]
-
-[[gap]]
-id = "intersections-functions-002"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 6"]
-
-[[gap]]
-id = "intersections-functions-003"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 6"]
-
-[[gap]]
-id = "intersections-functions-004"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "intersections-functions-005"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "intersections-functions-006"
-reason = "The kernel has no polynomial difference or seeded numerical solver for two functions. Intersect rejects the call before creating its point output."
-mismatches = ["0:script line 4"]
-
-[[gap]]
-id = "intersections-interval-001"
-reason = "The kernel has no interval root search for the difference of two functions. Intersect rejects the four-argument call before creating its point outputs."
-mismatches = ["0:script line 6"]
-
-[[gap]]
-id = "intersections-interval-002"
-reason = "The kernel has no interval root search for the difference of two functions. Intersect rejects the four-argument call before creating its point outputs."
-mismatches = ["0:script line 3"]
-
-[[gap]]
 id = "intersections-limitedconic-001"
 reason = "The live-selector dispatch excludes segment/circle pairs. The fallback parser rejects the named index before it creates a point."
 mismatches = ["0:script line 8"]
@@ -590,32 +463,12 @@ id = "intersections-slotreview-009"
 reason = "The indexed point recomputes with the single-output solver, which drops the duplicate root at tangency. GeoGebra's indexed point reads the shared intersection whose second slot already has a label."
 mismatches = ["1:S"]
 
-# intersectreview
+# intersectgrowth
 
 [[gap]]
-id = "intersectreview-growth-001"
-reason = "The intersection of line and polygon gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "4:R_{2}", "4:R_{3}", "4:R_{4}"]
-
-[[gap]]
-id = "intersectreview-growth-002"
-reason = "The intersection of segment and polyline gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["2:R_{2}", "2:R_{3}", "3:R_{2}", "3:R_{3}", "4:R_{2}", "4:R_{3}"]
-
-[[gap]]
-id = "intersectreview-growth-003"
-reason = "The intersection of ray and polygon gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "4:R_{2}", "4:R_{3}", "4:R_{4}"]
-
-[[gap]]
-id = "intersectreview-growth-004"
-reason = "The intersection of two polylines gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["2:R_{2}", "2:R_{3}", "3:R_{2}", "3:R_{3}", "4:R_{2}", "4:R_{3}"]
-
-[[gap]]
-id = "intersectreview-growth-005"
-reason = "The intersection of two polygons gains crossings after a move. The reference adds indexed output labels then. The kernel keeps the first slot created by the command because the workbench journal does not record output births on moves."
-mismatches = ["1:R_{2}", "2:R_{2}", "2:R_{3}", "2:R_{4}", "3:R_{2}", "3:R_{3}", "3:R_{4}", "3:R_{5}", "3:R_{6}", "4:R_{2}", "4:R_{3}", "4:R_{4}", "4:R_{5}", "4:R_{6}", "4:R_{7}", "4:R_{8}"]
+id = "intersectgrowth-interval-001"
+reason = "Intersect(f, h, a, b) keeps its creation-time output count. When b increases from 0.5 to 2, AlgoRoots allocates and labels one more point A, then keeps that label while the root is outside the interval and reuses it when b increases again."
+mismatches = ["1:A", "2:A", "3:A"]
 
 [[gap]]
 id = "vectorforms-identity-002"
@@ -623,74 +476,9 @@ reason = "AlgoIdentity marks its list undefined at size zero and never marks it 
 mismatches = ["2:m"]
 
 [[gap]]
-id = "vectorforms-matrixlists-001"
-reason = "Transpose of a matrix needs a list-producing expression operation that preserves element kinds and handles changing dimensions."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-002"
-reason = "ReducedRowEchelonForm needs a list-producing expression operation for the result of elimination."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-003"
-reason = "Invert of a matrix needs a list-producing expression operation for the inverse and singular result."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-004"
-reason = "Dimension of a rectangular list returns a two-element list. The implemented Dimension dispatch accepts points and vectors only."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-005"
-reason = "Transpose with separate numbers wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
-mismatches = ["0:script line 2"]
-
-[[gap]]
-id = "vectorforms-matrixlists-006"
-reason = "Transpose with separate points wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-007"
-reason = "ReducedRowEchelonForm with separate numbers wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
-mismatches = ["0:script line 2"]
-
-[[gap]]
-id = "vectorforms-matrixlists-008"
-reason = "ReducedRowEchelonForm with separate points wraps them in a flat list and yields an undefined list. The variadic list dispatch is absent."
-mismatches = ["0:script line 3"]
-
-[[gap]]
-id = "vectorforms-matrixlists-009"
-reason = "Invert of a function uses symbolic inversion. The kernel stores and evaluates functions but has no symbolic inverse operation."
-mismatches = ["0:script line 2"]
-
-[[gap]]
-id = "vectorforms-point-001"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 5"]
-
-[[gap]]
 id = "vectorforms-point-002"
 reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
 mismatches = ["0:script line 4"]
-
-[[gap]]
-id = "vectorforms-point-003"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 14"]
-
-[[gap]]
-id = "vectorforms-point-004"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 11"]
-
-[[gap]]
-id = "vectorforms-point-005"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 9"]
 
 [[gap]]
 id = "vectorforms-images-004"
@@ -703,41 +491,52 @@ reason = "GeoGebra multiplies and subtracts row lists inside the cross product, 
 mismatches = ["0:a"]
 
 [[gap]]
-id = "geomextras-conicparts-001"
-reason = "Arc with two points is restricted to circle objects. The conic arc implementation needs to project each point to the ellipse parameter."
-mismatches = ["0:script line 4"]
-
-[[gap]]
-id = "geomextras-conicparts-002"
-reason = "Sector with two points checks for the circle kind. A general conic that classifies as a circle still fails that check."
-mismatches = ["0:script line 4"]
-
-[[gap]]
 id = "geomextras-pointlist-007"
 reason = "GeoGebra appends point A as the list gains a row and retains it undefined when the list shrinks. The kernel only creates output slots for the initial rows."
 mismatches = ["1:A", "2:A"]
 
-[[gap]]
-id = "geomextras-rigidpoints-001"
-reason = "GeoGebra replaces B and C in place. The kernel creates dependent polygon vertices and preserves the original point objects and their other dependants."
-mismatches = ["1:B", "1:C", "2:B", "2:C"]
+# Matrix and dilation forms that need new object representations.
+# ApplyMatrix(list,curve) and ApplyMatrix(list,function) produce a parametric
+# curve. For a function, GeoGebra first builds the curve (t, f(t)) over the
+# view-dependent parameter interval. The matrix then transforms coordinate
+# functions, including homogeneous division for 3 x 3 matrices. The kernel
+# does not yet transform parametric curves with matrices.
+# Dilate(curve,number) and Dilate(curve,number,point) transform both coordinate
+# functions about the origin or the center and retain the parameter interval.
+# Zero factor can leave a constant parametric curve. Dilation of parametric
+# curves is also unsupported.
+# ApplyMatrix(list,image), Dilate(image,number) and Dilate(image,number,point)
+# transform the image's placement corners (GeoImage.initTransformPoints);
+# matrix images also support projective division. The kernel has no image
+# object with placement corners.
+# Invert(function) handles the symbolic inversion rules. The fallback through
+# AlgoFunctionInvert.computeOutputUsingCAS requires a CAS.
+# List transforms handle points, vectors, and the scalar entries interleaved
+# with them. Lists of other geometry need corresponding element
+# representations, including curve and conic records.
 
 [[gap]]
-id = "geomextras-lengthpoint-001"
-reason = "GeoGebra returns the length of the position vector. The current vector tests require Length(point) to be rejected."
-mismatches = ["0:script line 2"]
+id = "matrixdilate-elimination-009"
+reason = "AlgoTranspose clears its output on empty input but preserves the defined flag from the previous update. After a ragged matrix, the reference keeps the empty transpose undefined until it sees a valid nonempty matrix. The kernel computes the empty list from the current input."
+mismatches = ["2:a"]
 
 [[gap]]
-id = "geomextras-polygonlist-001"
-reason = "Polygon dispatch expects point objects as separate arguments. A list-backed polygon needs to read the current list contents and update its vertices and sides as the list changes."
-mismatches = ["0:script line 7"]
+id = "matrixdilate-applylist-006"
+reason = "ApplyMatrix reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
+mismatches = ["1:step"]
 
 [[gap]]
-id = "geomextras-polylinelist-001"
-reason = "PolyLine dispatch expects point objects as separate arguments. A list-backed polyline needs to read the current list contents and update its vertices as the list changes."
-mismatches = ["0:script line 7"]
+id = "matrixdilate-dilatelist-006"
+reason = "Dilate reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
+mismatches = ["1:step"]
+
 
 [[gap]]
-id = "geomextras-polylinelist-002"
-reason = "The boolean argument is ignored by the reference list form. The kernel lacks the list-backed polyline that this form also needs."
-mismatches = ["0:script line 8"]
+id = "algebralogic-logic-022"
+reason = "GeoFunction.isInRegion reads the separately stored GeoPoint x2D coordinate, which can be stale at construction and after a direct headless move. The kernel evaluates the inequality at the point's current Cartesian coordinates. The construction mismatch is recorded separately in algebralogic-logic-025."
+mismatches = ["1:b"]
+
+[[gap]]
+id = "algebralogic-logic-025"
+reason = "GeoFunction.isInRegion also reads stale GeoPoint x2D at point construction. In the headless harness, IsInRegion((3,0), f) reads x2D = 0 for f(x) = x < 1 and reports true. The kernel evaluates f at x = 3."
+mismatches = ["0:b"]

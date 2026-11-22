@@ -21,6 +21,7 @@ import java.util.TreeMap;
  * topic go to {@code <golden dir>/<group>/<topic>.json}.
  * A case may set {@code track_boundary_growth} to record indexed outputs
  * from line or boundary crossings when the reference first labels them.
+ * {@code track_root_growth} records newly labelled roots of an interval command.
  */
 public final class GoldenGenerator {
 
@@ -82,9 +83,10 @@ public final class GoldenGenerator {
     }
 
     private static Map<String, Object> runCase(Map<?, ?> input, Stats stats) {
-        boolean growth = Boolean.TRUE.equals(input.get("track_boundary_growth"));
+        boolean boundaryGrowth = Boolean.TRUE.equals(input.get("track_boundary_growth"));
         boolean pointListGrowth = Boolean.TRUE.equals(input.get("track_point_list_growth"));
-        Session session = new Session(growth, pointListGrowth);
+        boolean rootGrowth = Boolean.TRUE.equals(input.get("track_root_growth"));
+        Session session = new Session(boundaryGrowth, pointListGrowth, rootGrowth);
         List<?> script = (List<?>) input.get("script");
         List<?> steps = (List<?>) input.get("steps");
         for (Object line : script) {
@@ -153,7 +155,8 @@ public final class GoldenGenerator {
         golden.put("script", new ArrayList<>(script));
         golden.put("steps", outSteps);
         golden.put("snapshots", snapshots);
-        if (input.size() != (4 + (growth ? 1 : 0) + (pointListGrowth ? 1 : 0))) {
+        if (input.size() != (4 + (boundaryGrowth ? 1 : 0) + (pointListGrowth ? 1 : 0)
+                + (rootGrowth ? 1 : 0))) {
             throw new IllegalArgumentException(
                     "unexpected fields in the case input");
         }

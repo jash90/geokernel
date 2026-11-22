@@ -1,8 +1,8 @@
 //! Replays a golden case on `geo-kernel` and compares every snapshot.
 
 use crate::compare::{
-    compare_arc, compare_conic, compare_list, compare_locus, compare_sampled, line_scale_agrees,
-    Sign,
+    compare_arc, compare_conic, compare_extra, compare_list, compare_locus, compare_sampled,
+    line_scale_agrees, Sign,
 };
 use crate::model::{Case, Step};
 use geo_kernel::{script, Construction, Kind};
@@ -47,22 +47,34 @@ fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch
 pub fn replay(case: &Case) -> CaseOutcome {
     let mut out = CaseOutcome::default();
     let mut c = Construction::new();
+    let mut boundary_outputs = script::BoundaryOutputs::default();
     for (i, line) in case.script.iter().enumerate() {
-        if let Err(e) = script::exec(&mut c, line) {
-            out.mismatches.push(failure(
-                0,
-                &format!("script line {}", i + 1),
-                "the kernel runs the line",
-                format!("`{line}`: {e}"),
-            ));
-            return out;
+        let before = c.len();
+        match script::exec(&mut c, line) {
+            Ok(Some(id)) if c.len() > before => {
+                boundary_outputs.record(&c, line, id, c.len() - before)
+            }
+            Ok(_) => {}
+            Err(e) => {
+                out.mismatches.push(failure(
+                    0,
+                    &format!("script line {}", i + 1),
+                    "the kernel runs the line",
+                    format!("`{line}`: {e}"),
+                ));
+                return out;
+            }
         }
     }
     for (i, (step, snapshot)) in case.steps.iter().zip(&case.snapshots).enumerate() {
-        if let Err(e) = apply(&mut c, step) {
-            out.mismatches
-                .push(failure(i, "step", "the kernel applies the step", e));
-            return out;
+        match apply(&mut c, step) {
+            Ok(Some(id)) => boundary_outputs.grow(&mut c, id, |_, _, _| {}),
+            Ok(None) => {}
+            Err(e) => {
+                out.mismatches
+                    .push(failure(i, "step", "the kernel applies the step", e));
+                return out;
+            }
         }
         for (label, expected) in snapshot {
             let Some(id) = c.id(label) else {
@@ -125,7 +137,9 @@ pub fn replay(case: &Case) -> CaseOutcome {
             let vertices: Vec<_> = c.vertices(id).collect();
             let sample = |x| c.function_value(id, x);
             let outcome = if c.kind(id) == Kind::List {
-                compare_list(expected, Kind::List, c.elements(id))
+                compare_list(&c, expected, Kind::List, c.elements(id))
+            } else if matches!(c.kind(id), Kind::Text | Kind::FunctionNVar) {
+                compare_extra(&c, id, expected)
             } else {
                 compare_sampled(expected, c.kind(id), &actual, &vertices, Some(&sample))
             };
@@ -145,25 +159,25 @@ pub fn replay(case: &Case) -> CaseOutcome {
     out
 }
 
-fn apply(c: &mut Construction, step: &Step) -> Result<(), String> {
+fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, String> {
     match step {
-        Step::Initial => Ok(()),
+        Step::Initial => Ok(None),
         Step::Move { label, x, y } => {
             let id = c.id(label).ok_or(format!("unknown object `{label}`"))?;
             c.move_point(id, *x, *y)
-                .map(drop)
+                .map(|recomputed| (recomputed > 0).then_some(id))
                 .map_err(|e| format!("move `{label}`: {e}"))
         }
         Step::SetNumber { label, value } => {
             let id = c.id(label).ok_or(format!("unknown object `{label}`"))?;
             c.set_number(id, *value)
-                .map(drop)
+                .map(|recomputed| (recomputed > 0).then_some(id))
                 .map_err(|e| format!("set `{label}`: {e}"))
         }
         Step::Reject { line } => {
             let len = c.len();
             if script::exec(c, line).is_err() && c.len() == len {
-                Ok(())
+                Ok(None)
             } else {
                 Err(format!("expected rejection without new objects: {line}"))
             }

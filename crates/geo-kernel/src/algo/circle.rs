@@ -36,8 +36,12 @@ pub(crate) fn through(c: &Construction, center: Id, through: Id) -> Option<Value
 }
 
 pub(crate) fn with_radius(c: &Construction, center: Id, radius_id: Id) -> Option<Value> {
+    with_radius_value(c, center, c.number(radius_id)?)
+}
+
+pub(crate) fn with_radius_value(c: &Construction, center: Id, r: f64) -> Option<Value> {
     let (cx, cy) = c.point(center)?;
-    let r = radius(c.number(radius_id)?)?;
+    let r = radius(r).filter(|r| r.is_finite())?;
     Some(Value::Circle { cx, cy, r })
 }
 

@@ -8,9 +8,12 @@
 //! here that its commands need.
 
 mod algebra;
+
+pub(crate) use algebra::polynomial;
 mod geometry;
 mod list;
 mod logical;
+pub(crate) use logical::relation;
 mod statistics;
 
 use super::eval::{Ctx, Val};
@@ -22,6 +25,7 @@ use super::{Bin, Elem, ListOp, Node, Ty};
 /// [`binary_command`]).
 pub(super) fn is_command(name: &str) -> bool {
     [
+        algebra::NAMES,
         logical::NAMES,
         list::NAMES,
         statistics::NAMES,
@@ -67,13 +71,16 @@ pub(super) fn binary(op: Bin, a: f64, b: f64) -> f64 {
 
 /// Whether the result of the list command `op` is a list.
 pub(super) fn makes_list(op: ListOp) -> bool {
-    op == ListOp::Cross || list::makes_list(op)
+    geometry::makes_list(op) || list::makes_list(op)
 }
 
 /// Whether the second operand of the list command `op` is an object rather
 /// than a number.
 pub(super) fn takes_object(op: ListOp) -> bool {
-    matches!(op, ListOp::Dot | ListOp::Cross) || list::takes_object(op)
+    matches!(
+        op,
+        ListOp::Dot | ListOp::Cross | ListOp::ApplyMatrix | ListOp::Min | ListOp::Max
+    ) || list::takes_object(op)
 }
 
 /// The type of the list command `op` of the list `l`, whose elements are
@@ -119,14 +126,16 @@ pub(super) fn list_value<const M: bool>(
 
 /// The list that the list command `op` whose result is a list builds (see
 /// [`makes_list`]).
+pub(super) use geometry::map_list;
+
 pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,
     op: ListOp,
     l: u32,
     n: u32,
 ) -> Option<(u32, u32)> {
-    if op == ListOp::Cross {
-        geometry::cross_lists(ctx, l, n)
+    if geometry::makes_list(op) {
+        geometry::list_fn(ctx, op, l, n)
     } else {
         ctx.list_fn(op, l, n)
     }

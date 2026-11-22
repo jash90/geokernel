@@ -1,0 +1,62 @@
+{
+  "schema": 2,
+  "id": "saved-paths-001",
+  "script": [
+    "A = (1, 2)",
+    "B = (9, 6)",
+    "s = Segment(A, B)",
+    "l = Line(A, B)",
+    "f(x) = x² + y(A) - 3",
+    "c = Circle(A, 3)",
+    "S = Point(s)",
+    "L = Point(l)",
+    "F = Point(f)",
+    "C = Point(c)",
+    "D = Point(s, 0.25)",
+    "u = Vector(S, L)",
+    "d = Segment(F, C)",
+    "p = PerpendicularLine(S, l)",
+    "q = PerpendicularLine(L, l)",
+    "ts = PathParameter(S)",
+    "tl = PathParameter(L)",
+    "tf = PathParameter(F)",
+    "tc = PathParameter(C)"
+  ],
+  "objects": {
+    "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+    "B": { "type": "point", "defined": true, "x": 9.0, "y": 6.0 },
+    "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 9.0, "y2": 6.0 },
+    "l": { "type": "line", "defined": true, "a": -4.0, "b": 8.0, "c": -12.0 },
+    "f": {
+      "type": "function",
+      "defined": true,
+      "samples": [
+        [-8.0, 63.0],
+        [-4.0, 15.0],
+        [-2.0, 3.0],
+        [-1.0, 0.0],
+        [-0.5, -0.75],
+        [0.0, -1.0],
+        [0.5, -0.75],
+        [1.0, 0.0],
+        [2.0, 3.0],
+        [4.0, 15.0],
+        [8.0, 63.0]
+      ]
+    },
+    "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+    "S": { "type": "point", "defined": true, "x": 5.4, "y": 4.2 },
+    "L": { "type": "point", "defined": true, "x": -2.6, "y": 0.19999999999999996 },
+    "F": { "type": "point", "defined": true, "x": 2.014555960012992, "y": 3.058435716023867 },
+    "C": { "type": "point", "defined": true, "x": 1.4931969619160717, "y": -0.9591817714964312 },
+    "D": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+    "u": { "type": "vector", "defined": true, "x": -8.0, "y": -4.0 },
+    "d": { "type": "segment", "defined": true, "x1": 2.014555960012992, "y1": 3.058435716023867, "x2": 1.4931969619160717, "y2": -0.9591817714964312 },
+    "p": { "type": "line", "defined": true, "a": -8.0, "b": -4.0, "c": 60.0 },
+    "q": { "type": "line", "defined": true, "a": -8.0, "b": -4.0, "c": -20.0 },
+    "ts": { "type": "number", "defined": true, "value": 0.55 },
+    "tl": { "type": "number", "defined": true, "value": 0.3448275862068966 },
+    "tf": { "type": "number", "defined": true, "value": 0.394659747500812 },
+    "tc": { "type": "number", "defined": true, "value": 0.2762842283556267 }
+  }
+}

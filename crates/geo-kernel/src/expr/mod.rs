@@ -75,8 +75,28 @@ pub(crate) mod derivative;
 /// Equations in `x` and `y` as lines and conics (see the module docs).
 pub(crate) mod equation;
 mod eval;
+pub(crate) mod fraction;
+mod inverse;
 #[doc(hidden)]
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
+
+/// Shared expression-work allowance for one intersection solve.
+pub(crate) struct IntersectionWork(eval::Lists);
+
+impl IntersectionWork {
+    pub(crate) fn new() -> Self {
+        Self(eval::Lists::new(Vec::new()))
+    }
+
+    pub(crate) fn charge(&self, units: u64) -> bool {
+        self.0.charge(units)
+    }
+
+    pub(crate) fn exhausted(&self) -> bool {
+        self.0.over()
+    }
+}
+
 mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
@@ -136,10 +156,36 @@ pub(crate) enum Node {
     Tuple(u32, u32),
     /// `(r; φ)`.
     Polar(u32, u32),
+    /// Inline vector command with a coordinate expression.
+    Vector(u32),
     Un(Un, u32),
     Bin(Bin, u32, u32),
+    Algebra(AlgebraOp, u32, u32),
+    Text,
+    Relation {
+        objects: [Id; 4],
+        count: u8,
+        list: Option<Id>,
+    },
+    Base {
+        to: bool,
+        value: u32,
+        radix: u32,
+    },
+    /// A numerical extremum on a bounded interval. The function's x is local.
+    Extremum(bool, u32, u32, u32),
+    /// Quotient or remainder of two polynomial functions of the same x.
+    PolynomialPart(bool, u32, u32),
+    /// Reference to a function as a list element.
+    FunctionObject(Id),
     /// A function object applied to an argument.
     Apply(Id, u32),
+    Apply2(Id, u32, u32),
+    Side(Id, bool),
+    /// The symbolic inverse of a function expression in `x`.
+    Inverse(u32),
+    /// Dilation of a function or list by a factor about an optional point.
+    Dilate(u32, u32, u32),
     /// A one-argument function name without brackets, waiting for its
     /// argument (`sin a`). Never left in a finished tree.
     FnName(Un),
@@ -154,6 +200,8 @@ pub(crate) enum Node {
     List(u32, u32),
     /// One element of a list literal.
     Item(u32),
+    /// A named geometric object in a list literal.
+    ItemObject(Id),
     /// A command on a list and an optional number ([`NONE`] when absent).
     ListOp(ListOp, u32, u32),
     /// `Sequence(n)`, `Sequence(a, b)` and `Sequence(a, b, step)`
@@ -166,7 +214,38 @@ pub(crate) enum Node {
     Seq(u32, u32, u32, u32, u32),
     /// The variable of the enclosing `Sequence` of this depth (0 for the
     /// outermost).
-    Local(u32),
+    Local(u32, Elem),
+    Filter {
+        keep: bool,
+        list: u32,
+        condition: u32,
+        local: u32,
+        elem: Elem,
+        explicit: bool,
+    },
+    Defined(u32),
+    ObjectDefined(Id),
+}
+
+/// Numeric commands with a scalar or list result.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum AlgebraOp {
+    Division,
+    PrimeFactors,
+    Divisors,
+    DivisorsList,
+    DivisorsSum,
+    IsPrime,
+    IsInteger,
+}
+
+impl AlgebraOp {
+    fn makes_list(self) -> bool {
+        matches!(
+            self,
+            Self::Division | Self::PrimeFactors | Self::DivisorsList
+        )
+    }
 }
 
 /// The commands that read a list.
@@ -205,6 +284,8 @@ pub(crate) enum ListOp {
     /// `Min(list)` and `Max(list)` (`AlgoListMinMax`).
     Min,
     Max,
+    Gcd,
+    Lcm,
 
     // geometry (`commands/geometry.rs`)
     /// `Length(list)`.
@@ -215,6 +296,12 @@ pub(crate) enum ListOp {
     /// `Determinant(matrix)` and `MatrixRank(matrix)` inside expressions.
     Determinant,
     MatrixRank,
+    Transpose,
+    Rref,
+    Invert,
+    Dimension,
+    MatrixDimension,
+    ApplyMatrix,
 }
 
 impl ListOp {
@@ -308,6 +395,7 @@ pub(crate) enum Bin {
     IntDiv,
     Gcd,
     Lcm,
+    CommonDenominator,
     Max,
     Min,
     /// `<`, `>`, `<=`, `>=`: numbers compared with the tolerance 1e-8.
@@ -361,7 +449,10 @@ pub(crate) enum Ty {
     Num(i8),
     Vec,
     Bool,
+    Function,
+    Text,
     List(Elem),
+    Object,
 }
 
 /// The type of the elements of a list.
@@ -371,7 +462,11 @@ pub(crate) enum Elem {
     /// Points and vectors.
     Vec,
     Bool,
+    Function,
+    Text,
     List,
+    /// Named geometric objects.
+    Object,
     /// No element: `{}`.
     Empty,
     /// Elements of different types, such as `{1, (1, 2)}`.
@@ -408,30 +503,80 @@ impl Raw {
 /// (a literal or a named constant, with the decimal it was written as, see
 /// [`decimal`]) or, by default, a plain `MyDouble` that the parser made.
 #[derive(Clone, Debug, Default)]
-pub(crate) struct Lit {
-    pub(crate) special: bool,
-    pub(crate) dec: Option<Dec>,
+pub(crate) enum Lit {
+    #[default]
+    Plain,
+    Special(Option<Dec>),
+    Text(std::sync::Arc<str>),
 }
 
+impl Lit {
+    fn special(&self) -> bool {
+        matches!(self, Self::Special(_))
+    }
+
+    fn decimal(&self) -> Option<&Dec> {
+        match self {
+            Self::Special(decimal) => decimal.as_ref(),
+            _ => None,
+        }
+    }
+}
+
+/// A number, text or polynomial result can store one additional value.
+/// Keeping the variants together avoids enlarging ordinary expression entries.
+#[derive(Clone, Default, PartialEq)]
+enum StoredExtra {
+    #[default]
+    None,
+    Double,
+    Decimal(Dec),
+    Text(String),
+    Polynomial(Vec<f64>),
+}
+
+impl StoredExtra {
+    fn exact(&self) -> Option<eval::Exact> {
+        match self {
+            Self::Double => Some(eval::Exact::Double),
+            Self::Decimal(d) => Some(eval::Exact::Dec(d.clone())),
+            _ => None,
+        }
+    }
+}
+
+impl From<Option<eval::Exact>> for StoredExtra {
+    fn from(exact: Option<eval::Exact>) -> Self {
+        match exact {
+            None => Self::None,
+            Some(eval::Exact::Double) => Self::Double,
+            Some(eval::Exact::Dec(d)) => Self::Decimal(d),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub(crate) struct Entry {
     nodes: Vec<Node>,
     lits: Vec<Lit>,
     tys: Vec<Ty>,
     root: u32,
     parents: Vec<Id>,
-    /// Whether this is a function of `x`.
+    /// Whether this is a function.
     function: bool,
-    /// Whether a function's tree has an `If`, which changes what decides
-    /// whether it is defined (see [`inputs_defined`]).
-    has_if: bool,
+    /// Whether a one-variable function uses the vertical coordinate.
+    function_of_y: bool,
+    /// Whether a function's tree requires checking its branches or transforms
+    /// to decide whether it is defined (see [`inputs_defined`]).
+    checks_branches: bool,
+    /// Whether this tree or an applied function performs symbolic inversion.
+    inverts: bool,
     /// The objects named in the tree (a function's inputs).
     inputs: Vec<Id>,
     /// The last result; for a function, 0 when it is defined and `NaN`
     /// when not.
     raw: Raw,
-    /// The exact decimal of the last result of a number
-    /// (`GeoNumeric.exactValue`, set by `AlgoDependentNumber`).
-    dec: Option<eval::Exact>,
+    extra: StoredExtra,
     /// Whether the tree has a list in it, which its evaluation builds in a
     /// scratch buffer.
     lists: bool,
@@ -444,11 +589,23 @@ pub(crate) struct Entry {
 }
 
 impl Entry {
-    fn new(p: parse::Parsed, function: bool) -> Self {
-        let has_if = function && p.nodes.iter().any(|n| matches!(n, Node::If(..)));
+    fn new(c: &Construction, p: parse::Parsed, function: bool) -> Self {
+        let checks_branches = function
+            && p.nodes.iter().any(|n| {
+                matches!(
+                    n,
+                    Node::If(..) | Node::Inverse(_) | Node::Dilate(..) | Node::PolynomialPart(..)
+                )
+            });
+        let inverts = p.nodes.iter().any(|node| match *node {
+            Node::Inverse(_) => true,
+            Node::Apply(f, _) => matches!(c.def(f), Def::Expr(d) if entry(c, d).inverts),
+            _ => false,
+        });
         let lists = reads_list(&p.nodes, &p.tys);
         Entry {
-            has_if,
+            checks_branches,
+            inverts,
             lists,
             items: Vec::new(),
             coordinate_layout: None,
@@ -458,12 +615,27 @@ impl Entry {
             root: p.root,
             parents: p.parents,
             function,
+            function_of_y: false,
             inputs: p.inputs,
             raw: Raw::Num(f64::NAN),
-            dec: None,
+            extra: StoredExtra::None,
             depth: p.depth,
             cost: p.cost,
             vars: p.vars,
+        }
+    }
+
+    fn text(&self) -> Option<&str> {
+        match &self.extra {
+            StoredExtra::Text(text) => Some(text),
+            _ => None,
+        }
+    }
+
+    fn polynomial(&self) -> Option<&[f64]> {
+        match &self.extra {
+            StoredExtra::Polynomial(coefficients) => Some(coefficients),
+            _ => None,
         }
     }
 
@@ -507,6 +679,7 @@ enum Form {
         lits: Vec<Lit>,
         root: u32,
         angle_style: AngleStyle,
+        function_of_y: bool,
     },
     /// A free number with its exact decimal (see [`Table`]).
     Exact { def: Def, dec: Dec },
@@ -542,11 +715,27 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
     let mut fixed = [NONE; 4];
     let mut run = 0..0;
     match *node {
-        Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) | Node::ListOp(_, a, b) => {
+        Node::Tuple(a, b)
+        | Node::Polar(a, b)
+        | Node::Bin(_, a, b)
+        | Node::ListOp(_, a, b)
+        | Node::Algebra(_, a, b)
+        | Node::PolynomialPart(_, a, b)
+        | Node::Apply2(_, a, b) => {
             fixed[..2].copy_from_slice(&[a, b]);
         }
-        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) => fixed[0] = a,
-        Node::If(_, a, b, c) | Node::Range(a, b, c) => fixed[..3].copy_from_slice(&[a, b, c]),
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) | Node::Inverse(a) | Node::Vector(a) => {
+            fixed[0] = a;
+        }
+        Node::If(_, a, b, c)
+        | Node::Range(a, b, c)
+        | Node::Dilate(a, b, c)
+        | Node::Extremum(_, a, b, c) => fixed[..3].copy_from_slice(&[a, b, c]),
+        Node::Base { value, radix, .. } => fixed[..2].copy_from_slice(&[value, radix]),
+        Node::Filter {
+            list, condition, ..
+        } => fixed[..2].copy_from_slice(&[list, condition]),
+        Node::Defined(a) => fixed[0] = a,
         Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
         Node::List(first, len) => run = first..first.saturating_add(len),
         _ => {}
@@ -565,16 +754,38 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
         }
     };
     match node {
-        Node::Tuple(a, b) | Node::Polar(a, b) | Node::Bin(_, a, b) | Node::ListOp(_, a, b) => {
+        Node::Tuple(a, b)
+        | Node::Polar(a, b)
+        | Node::Bin(_, a, b)
+        | Node::ListOp(_, a, b)
+        | Node::Algebra(_, a, b)
+        | Node::PolynomialPart(_, a, b)
+        | Node::Apply2(_, a, b) => {
             shift(a);
             shift(b);
         }
-        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) => shift(a),
-        Node::If(_, a, b, c) | Node::Range(a, b, c) => {
+        Node::Un(_, a) | Node::Apply(_, a) | Node::Item(a) | Node::Inverse(a) | Node::Vector(a) => {
+            shift(a);
+        }
+        Node::If(_, a, b, c)
+        | Node::Range(a, b, c)
+        | Node::Dilate(a, b, c)
+        | Node::Extremum(_, a, b, c) => {
             shift(a);
             shift(b);
             shift(c);
         }
+        Node::Base { value, radix, .. } => {
+            shift(value);
+            shift(radix);
+        }
+        Node::Filter {
+            list, condition, ..
+        } => {
+            shift(list);
+            shift(condition);
+        }
+        Node::Defined(a) => shift(a),
         Node::Seq(a, b, c, d, _) => {
             shift(a);
             shift(b);
@@ -592,10 +803,16 @@ fn is_list_node(node: &Node) -> bool {
         node,
         Node::List(..)
             | Node::Item(_)
+            | Node::ItemObject(_)
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..)
-            | Node::Local(_)
+            | Node::Local(..)
+            | Node::Filter { .. }
+            | Node::Algebra(..)
+            | Node::Extremum(..)
+            | Node::Base { .. }
+            | Node::Apply2(..)
     )
 }
 
@@ -607,6 +824,8 @@ fn reads_list(nodes: &[Node], tys: &[Ty]) -> bool {
 
 /// The commands that expressions compute themselves; `Length` and `Sum`
 /// also of a list.
+pub(crate) use commands::polynomial::division_list;
+
 pub(crate) fn is_expression_command(name: &str) -> bool {
     commands::is_command(name)
 }
@@ -669,6 +888,7 @@ pub(crate) fn expression(c: &Construction, id: Id) -> Option<Expression> {
                     lits: e.lits.clone(),
                     root: e.root,
                     angle_style: d.angle_style,
+                    function_of_y: e.function_of_y,
                 },
             })
         }
@@ -692,13 +912,14 @@ pub(crate) fn add_expression(
     name: &str,
     e: &Expression,
 ) -> Result<Id, Error> {
-    let (nodes, lits, root, angle_style) = match &e.form {
+    let (nodes, lits, root, angle_style, function_of_y) = match &e.form {
         Form::Tree {
             nodes,
             lits,
             root,
             angle_style,
-        } => (nodes, lits, *root, *angle_style),
+            function_of_y,
+        } => (nodes, lits, *root, *angle_style, *function_of_y),
         Form::Exact { def, dec } => {
             let id = c.add(name, *def)?;
             set_free_decimal(c, id, dec.clone());
@@ -708,15 +929,18 @@ pub(crate) fn add_expression(
     let parsed = reparse(c, e.kind, nodes, lits, root).ok_or(Error::UnknownObject)?;
     let fits = matches!(
         (e.kind, parsed.tys[parsed.root as usize]),
-        (Kind::Function | Kind::Number | Kind::Angle, Ty::Num(_))
-            | (Kind::Boolean, Ty::Bool)
+        (
+            Kind::Function | Kind::FunctionNVar | Kind::Number | Kind::Angle,
+            Ty::Num(_)
+        ) | (Kind::Boolean | Kind::Function, Ty::Bool)
             | (Kind::Point | Kind::Vector, Ty::Vec)
             | (Kind::List, Ty::List(_))
+            | (Kind::Text, Ty::Text)
     );
     if !fits {
         return Err(Error::UnknownObject);
     }
-    add_parsed(c, name, parsed, e.kind, angle_style)
+    add_parsed(c, name, parsed, e.kind, angle_style, function_of_y)
 }
 
 /// What [`parse::parse`] would have given for a tree, or `None` when the
@@ -751,9 +975,42 @@ fn reparse(
             return None;
         }
         match *node {
-            Node::Obj(id) => {
+            Node::Obj(id) | Node::ObjectDefined(id) | Node::FunctionObject(id) => {
                 (id.0 < c.len()).then_some(())?;
                 read(id, true);
+            }
+            Node::ItemObject(id) => {
+                (id.0 < c.len() && list::object_kind(c.kind(id))).then_some(())?;
+                read(id, true);
+                for p in list::object_parents(c, id) {
+                    read(p, false);
+                }
+            }
+            Node::Relation {
+                objects,
+                count,
+                list,
+            } => {
+                if let Some(list) = list {
+                    (list.0 < c.len() && c.kind(list) == Kind::List).then_some(())?;
+                    read(list, true);
+                }
+                for &id in objects.get(..usize::from(count))? {
+                    (id.0 < c.len()).then_some(())?;
+                    read(id, true);
+                }
+            }
+            Node::Side(eq, left) => {
+                (eq.0 < c.len() && matches!(c.kind(eq), Kind::Line | Kind::Circle | Kind::Conic))
+                    .then_some(())?;
+                read(eq, true);
+                for &id in equation::side_parents(c, eq, left) {
+                    read(id, true);
+                }
+            }
+            Node::Apply2(f, ..) => {
+                (f.0 < c.len() && c.kind(f) == Kind::FunctionNVar).then_some(())?;
+                read(f, true);
             }
             Node::Apply(f, _) => {
                 (f.0 < c.len() && c.kind(f) == Kind::Function).then_some(())?;
@@ -781,7 +1038,9 @@ fn reparse(
     if depth[r] > parse::MAX_DEPTH || cost[r] > parse::MAX_COST {
         return None;
     }
-    if uses_var && kind != Kind::Function || kind == Kind::Function && reads_list(&nodes, &tys) {
+    if uses_var && kind != Kind::Function && vars[r] != 0
+        || kind == Kind::Function && reads_list(&nodes, &tys)
+    {
         return None;
     }
     Some(parse::Parsed {
@@ -862,16 +1121,40 @@ fn evaluate_lists(
     Outcome { raw, dec: None }
 }
 
-/// Whether the tree of `d` has lists, which [`update_lists`] recomputes.
-pub(crate) fn has_lists(c: &Construction, d: ExprDef) -> bool {
-    entry(c, d).lists
-}
-
 /// Recomputes the expression object `d` and keeps its result; its value,
 /// and whether it changed (see [`store`]).
 pub(crate) fn update(c: &mut Construction, d: ExprDef) -> (Value, bool) {
+    if d.kind == Kind::FunctionNVar {
+        return (current(c, d), true);
+    }
+    if d.kind == Kind::Text {
+        let result = eval::text_root(c, entry(c, d));
+        let e = &mut c.exprs.entries[d.index as usize];
+        let changed = result.as_deref() != e.text();
+        e.extra = result.map_or(StoredExtra::None, StoredExtra::Text);
+        return (
+            if e.text().is_some() {
+                Value::Text
+            } else {
+                Value::Undefined
+            },
+            changed,
+        );
+    }
     if entry(c, d).lists {
         return update_lists(c, d);
+    }
+    let e = entry(c, d);
+    if let Node::PolynomialPart(remainder, a, b) = e.nodes[e.root as usize] {
+        let coefficients = commands::polynomial::divide(c, e, remainder, a, b);
+        let e = &mut c.exprs.entries[d.index as usize];
+        e.raw = Raw::Num(if coefficients.is_some() {
+            0.0
+        } else {
+            f64::NAN
+        });
+        e.extra = coefficients.map_or(StoredExtra::None, StoredExtra::Polynomial);
+        return (value(d, e.raw), true);
     }
     let out = evaluate(c, d);
     (value(d, out.raw), store(c, d, out))
@@ -909,8 +1192,13 @@ pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
 /// object it names is, and every command in it has a result. A number with
 /// an infinite raw value counts as defined, as in GeoGebra.
 fn inputs_defined(c: &Construction, e: &Entry) -> bool {
-    if e.has_if {
-        return defined_below(c, e, e.root);
+    if e.checks_branches {
+        let meter = eval::Lists::new(Vec::new());
+        let ctx = eval::Ctx::<true> {
+            meter: Some(&meter),
+            ..eval::Ctx::new(c, e, &eval::Env::None)
+        };
+        return defined_below(&ctx, e.root) && !meter.over();
     }
     e.inputs.iter().all(|&id| object_defined(c, id))
         && e.nodes.iter().all(|n| match *n {
@@ -919,7 +1207,7 @@ fn inputs_defined(c: &Construction, e: &Entry) -> bool {
         })
 }
 
-fn object_defined(c: &Construction, id: Id) -> bool {
+pub(crate) fn object_defined(c: &Construction, id: Id) -> bool {
     match (c.kind(id), c.def(id)) {
         (Kind::Number | Kind::Angle, Def::Expr(d)) => {
             !matches!(raw(c, d), Raw::Num(v) if v.is_nan())
@@ -939,20 +1227,31 @@ fn command_defined(c: &Construction, def: Def, hint: crate::algo::intersect::Hin
 /// operation do not count (`ExpressionNode.getUnconditionalVars`); an
 /// `AlgoIf` (an `If` whose conditions do not read `x`) is a helper
 /// function, defined when a condition is true and the branch it picks is.
-fn defined_below(c: &Construction, e: &Entry, i: u32) -> bool {
-    match e.nodes[i as usize] {
-        Node::Obj(id) => object_defined(c, id),
-        Node::Apply(f, a) => object_defined(c, f) && defined_below(c, e, a),
-        Node::Cmd(def, hint) => command_defined(c, def, hint),
+fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
+    if ctx.stop(1) {
+        return false;
+    }
+    match ctx.node(i) {
+        Node::Obj(id) => object_defined(ctx.c, id),
+        Node::Apply(f, a) => object_defined(ctx.c, f) && defined_below(ctx, a),
+        Node::Cmd(def, hint) => command_defined(ctx.c, def, hint),
+        Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),
+        Node::PolynomialPart(remainder, a, b) => {
+            commands::polynomial::divide(ctx.c, ctx.e, remainder, a, b).is_some()
+        }
+        Node::Dilate(source, factor, _) => {
+            defined_below(ctx, source)
+                && !crate::algo::transform::zero_dilation(ctx.full_number(factor))
+        }
         Node::If(IfMode::Algo, cond, then, rest) => {
-            if eval::condition(c, e, cond) {
-                defined_below(c, e, then)
+            if matches!(ctx.full(cond).val, eval::Val::B(true, _)) {
+                defined_below(ctx, then)
             } else {
-                rest != NONE && defined_below(c, e, rest)
+                rest != NONE && defined_below(ctx, rest)
             }
         }
         Node::If(..) => true,
-        node => children(&node).all(|child| defined_below(c, e, child)),
+        node => children(&node).all(|child| defined_below(ctx, child)),
     }
 }
 
@@ -960,6 +1259,25 @@ fn defined_below(c: &Construction, e: &Entry, i: u32) -> bool {
 /// parents, without storing it.
 #[inline(never)]
 pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
+    if d.kind == Kind::FunctionNVar {
+        let e = entry(c, d);
+        return if let Node::Side(eq, _) = e.nodes[e.root as usize] {
+            if c.value(eq).is_defined() {
+                Value::FunctionNVar
+            } else {
+                Value::Undefined
+            }
+        } else {
+            Value::Undefined
+        };
+    }
+    if d.kind == Kind::Text {
+        return if eval::text_root(c, entry(c, d)).is_some() {
+            Value::Text
+        } else {
+            Value::Undefined
+        };
+    }
     let raw = if entry(c, d).lists {
         evaluate_lists(c, d, &eval::Lists::new(Vec::new()), &mut Vec::new()).raw
     } else {
@@ -994,9 +1312,10 @@ pub(crate) fn coordinate_rows(c: &Construction, id: Id) -> Option<list::Coordina
 /// it changes what reads the number).
 pub(crate) fn store(c: &mut Construction, d: ExprDef, out: Outcome) -> bool {
     let e = &mut c.exprs.entries[d.index as usize];
-    let changed = e.function || !e.raw.same(out.raw) || e.dec != out.dec;
+    let extra = StoredExtra::from(out.dec);
+    let changed = e.function || !e.raw.same(out.raw) || e.extra != extra;
     e.raw = out.raw;
-    e.dec = out.dec;
+    e.extra = extra;
     changed
 }
 
@@ -1006,6 +1325,46 @@ pub(crate) fn function_value(c: &Construction, f: Id, x: f64) -> Option<f64> {
     match (c.def(f), c.value(f)) {
         (Def::Expr(d), Value::Function) => Some(eval::sample(c, entry(c, d), x)),
         _ => None,
+    }
+}
+
+/// The attributes that must agree before comparing two univariate functions.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) struct FunctionSignature {
+    pub(crate) boolean: bool,
+    pub(crate) of_y: bool,
+}
+
+pub(crate) fn function_signature(c: &Construction, id: Id) -> Option<FunctionSignature> {
+    let Def::Expr(d) = c.def(id) else {
+        return None;
+    };
+    let e = entry(c, d);
+    e.function.then(|| FunctionSignature {
+        boolean: e.root_ty() == Ty::Bool,
+        of_y: e.function_of_y,
+    })
+}
+
+pub(crate) use commands::relation::{define_relation, relation_reports};
+
+pub(crate) fn text_value(c: &Construction, id: Id) -> Option<&str> {
+    let Def::Expr(d) = c.def(id) else {
+        return None;
+    };
+    entry(c, d).text()
+}
+
+pub(crate) fn relation_number(c: &Construction, id: Id) -> f64 {
+    match c.value(id) {
+        Value::Number(v) => v,
+        _ => match c.def(id) {
+            Def::Expr(d) if c.kind(id).is_number() => match raw(c, d) {
+                Raw::Num(v) => v,
+                _ => f64::NAN,
+            },
+            _ => f64::NAN,
+        },
     }
 }
 
@@ -1026,7 +1385,7 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
         (Kind::Function, Raw::Num(v)) if !v.is_nan() => Value::Function,
         // `AlgoDependentBoolean`: a boolean is never undefined, a
         // comparison of an undefined number is false
-        (Kind::Boolean, Raw::Num(v)) => Value::Bool(v == 1.0),
+        (Kind::Boolean, Raw::Num(v)) if !v.is_nan() => Value::Bool(v == 1.0),
         (Kind::List, Raw::List(len)) => Value::List { len },
         _ => Value::Undefined,
     }
@@ -1052,7 +1411,7 @@ pub(crate) fn constant_number(c: &Construction, text: &str) -> Option<(f64, bool
     if parsed.uses_var || !parsed.parents.is_empty() {
         return None;
     }
-    let entry = Entry::new(parsed, false);
+    let entry = Entry::new(c, parsed, false);
     let (raw, _) = eval::root(c, &entry, None);
     match raw {
         Raw::Num(v) if v.is_finite() => Some((v, entry.root_ty() == Ty::Num(1))),
@@ -1069,9 +1428,23 @@ pub(crate) fn define(
     rhs: &str,
     vector_label: bool,
 ) -> Result<Id, String> {
-    let parsed = parse::parse(c, rhs)?;
+    let parsed = match parse::parse(c, rhs) {
+        Ok(parsed) => parsed,
+        Err(error) => match parse::parse_equation(c, rhs) {
+            // A labelled slope can use both coordinate variables, as an
+            // inline argument to Locus or SlopeField already can.
+            Ok(parsed)
+                if parsed.uses_var
+                    && parsed.uses_y
+                    && matches!(parsed.tys[parsed.root as usize], Ty::Num(_)) =>
+            {
+                parsed
+            }
+            _ => return Err(error),
+        },
+    };
     if parsed.uses_var {
-        return function(c, name, parsed);
+        return function(c, name, parsed, false);
     }
     let kind = match parsed.tys[parsed.root as usize] {
         Ty::Num(1) => Kind::Angle,
@@ -1080,31 +1453,153 @@ pub(crate) fn define(
         Ty::Vec => Kind::Point,
         Ty::Bool => Kind::Boolean,
         Ty::List(_) => Kind::List,
+        Ty::Object => return Err("an object can only be used here as a list element".into()),
+        Ty::Text => Kind::Text,
+        Ty::Function => return Err("a function needs an argument".into()),
     };
     add(c, name, parsed, kind)
 }
 
-/// Defines the function `name(x) = rhs`. A function that reads no object
-/// (`f(x) = 3`) stays a function.
-pub(crate) fn define_function(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
-    function(c, name, parse::parse(c, rhs)?)
+/// Defines a coordinate expression with an explicit kind, regardless of
+/// the label's case.
+pub(crate) fn define_coordinates(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    vector: bool,
+) -> Result<Id, String> {
+    let parsed = parse::parse(c, rhs)?;
+    if parsed.uses_var || parsed.tys[parsed.root as usize] != Ty::Vec {
+        return Err("expected a point or vector expression".into());
+    }
+    add(
+        c,
+        name,
+        parsed,
+        if vector { Kind::Vector } else { Kind::Point },
+    )
 }
 
-fn function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<Id, String> {
+/// The names in an expression, using the same token boundaries as the parser.
+pub fn expression_names(source: &str) -> Vec<&str> {
+    lex::tokens(source).map_or_else(
+        |_| Vec::new(),
+        |tokens| {
+            tokens
+                .into_iter()
+                .filter(|token| matches!(token.tok, lex::Tok::Name { .. }))
+                .map(|token| &source[token.start..token.end])
+                .collect()
+        },
+    )
+}
+
+/// The source expressions in a brace-delimited list literal.
+pub fn list_literal_elements(source: &str) -> Option<Vec<&str>> {
+    use lex::Tok;
+    if !source.trim_start().starts_with('{') {
+        return None;
+    }
+    let tokens = lex::tokens(source).ok()?;
+    let (first, rest) = tokens.split_first()?;
+    let (last, inner) = rest.split_last()?;
+    if !matches!(first.tok, Tok::LBrace) || !matches!(last.tok, Tok::RBrace) {
+        return None;
+    }
+    if inner.is_empty() {
+        return Some(Vec::new());
+    }
+    let (mut start, mut depth) = (first.end, 0usize);
+    let mut elements = Vec::new();
+    for token in inner {
+        match token.tok {
+            Tok::LParen | Tok::LBrace => depth += 1,
+            Tok::RParen | Tok::RBrace => depth = depth.checked_sub(1)?,
+            Tok::Comma if depth == 0 => {
+                elements.push(source[start..token.start].trim());
+                start = token.end;
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return None;
+    }
+    elements.push(source[start..last.start].trim());
+    Some(elements)
+}
+
+/// Defines a named function. A constant right side (`f(x) = 3`) is still
+/// a function.
+pub(crate) fn define_function(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    of_y: bool,
+) -> Result<Id, String> {
+    let parsed = if of_y {
+        parse::parse_parameter(c, rhs, "y")?
+    } else {
+        parse::parse(c, rhs)?
+    };
+    function(c, name, parsed, of_y)
+}
+
+pub(crate) fn define_parametric_coordinate(
+    c: &mut Construction,
+    label: &str,
+    rhs: &str,
+    parameter: &str,
+) -> Result<Id, String> {
+    numeric_function(c, label, parse::parse_parameter(c, rhs, parameter)?)
+}
+
+/// Hidden two-variable function for a slope field or integral curve.
+pub(crate) fn define_slope(c: &mut Construction, label: &str, rhs: &str) -> Result<Id, String> {
+    numeric_function(c, label, parse::parse_equation(c, rhs)?)
+}
+
+fn numeric_function(c: &mut Construction, name: &str, parsed: parse::Parsed) -> Result<Id, String> {
+    if parsed.tys[parsed.root as usize] == Ty::Bool {
+        return Err("a function that gives a boolean is not supported here".into());
+    }
+    function(c, name, parsed, false)
+}
+
+fn function(
+    c: &mut Construction,
+    name: &str,
+    parsed: parse::Parsed,
+    of_y: bool,
+) -> Result<Id, String> {
     match parsed.tys[parsed.root as usize] {
-        Ty::Vec => return Err("a function must give a number".into()),
-        Ty::Bool => return Err("a function that gives a boolean is not supported".into()),
+        Ty::Vec | Ty::Object | Ty::Function | Ty::Text => {
+            return Err("a function must give a number or a boolean".into());
+        }
         Ty::List(_) => return Err("a function cannot give a list".into()),
-        Ty::Num(_) => {}
+        Ty::Num(_) if of_y => return Err("a function of y must give a boolean".into()),
+        Ty::Num(_) | Ty::Bool => {}
+    }
+    let root = parsed.root as usize;
+    if parsed
+        .nodes
+        .iter()
+        .enumerate()
+        .any(|(i, node)| i != root && matches!(node, Node::PolynomialPart(..)))
+    {
+        return Err(
+            "name the polynomial division result before using it in another function".into(),
+        );
     }
     if reads_list(&parsed.nodes, &parsed.tys) {
         return Err("a list in a function is not supported".into());
     }
-    add(c, name, parsed, Kind::Function)
+    add_parsed(c, name, parsed, Kind::Function, AngleStyle::Unbounded, of_y)
+        .map_err(|e| e.to_string())
 }
 
 fn add(c: &mut Construction, name: &str, parsed: parse::Parsed, kind: Kind) -> Result<Id, String> {
-    add_parsed(c, name, parsed, kind, AngleStyle::Unbounded).map_err(|e| e.to_string())
+    add_parsed(c, name, parsed, kind, AngleStyle::Unbounded, false).map_err(|e| e.to_string())
 }
 
 fn add_parsed(
@@ -1113,6 +1608,7 @@ fn add_parsed(
     parsed: parse::Parsed,
     kind: Kind,
     angle_style: AngleStyle,
+    function_of_y: bool,
 ) -> Result<Id, Error> {
     let function = kind == Kind::Function;
     // `AlgebraProcessor.processNumber`: independent unless it reads an
@@ -1120,7 +1616,10 @@ fn add_parsed(
     // expression with one is dependent even on constants.
     let has_command = parsed.nodes.iter().any(|n| {
         matches!(n, Node::Bin(op, ..) if op.is_command())
-            || matches!(n, Node::Cmd(..) | Node::If(IfMode::Algo, ..))
+            || matches!(
+                n,
+                Node::Cmd(..) | Node::If(IfMode::Algo, ..) | Node::Vector(_)
+            )
             || is_list_node(n)
     });
     // a constant boolean (`b = 1 < 2`) or list stays an expression: there
@@ -1128,9 +1627,13 @@ fn add_parsed(
     let constant = parsed.parents.is_empty()
         && !function
         && !has_command
-        && !matches!(kind, Kind::Boolean | Kind::List);
+        && !matches!(
+            kind,
+            Kind::Boolean | Kind::List | Kind::Text | Kind::FunctionNVar
+        );
     let vector_label = kind == Kind::Vector;
-    let entry = Entry::new(parsed, function);
+    let mut entry = Entry::new(c, parsed, function);
+    entry.function_of_y = function_of_y;
     if constant {
         // `AlgebraProcessor`: an expression without objects is free.
         let angle = entry.root_ty() == Ty::Num(1);

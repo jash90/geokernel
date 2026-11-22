@@ -15,7 +15,7 @@
 //! so rejecting the same trees here gives the same lines errors.
 
 use super::commands;
-use super::{Bin, Elem, IfMode, Node, Ty, Un, NONE};
+use super::{AlgebraOp, Bin, Elem, IfMode, Node, Ty, Un, NONE};
 use crate::kernel::{Construction, Def, Id, Kind};
 
 /// Types, depths, costs and variable counts of the nodes reachable from
@@ -52,6 +52,41 @@ pub(crate) fn check(
         let (ty, d, k, v) = match *node {
             Node::Num(_) | Node::MinusOne => (Ty::Num(0), 1, 1, 0),
             Node::Bool(_) => (Ty::Bool, 1, 1, 0),
+            Node::Text | Node::Relation { .. } => (Ty::Text, 1, 1, 0),
+            Node::Base { to, value, radix } => {
+                let (v, r) = (value as usize, radix as usize);
+                if !matches!(tys[r], Ty::Num(_))
+                    || if to {
+                        !matches!(tys[v], Ty::Num(_))
+                    } else {
+                        tys[v] != Ty::Text
+                    }
+                    || vars[v].saturating_add(vars[r]) != 0
+                {
+                    return Err("invalid base conversion arguments".into());
+                }
+                let ty = if to { Ty::Text } else { Ty::Num(0) };
+                (
+                    ty,
+                    1 + depth[v].max(depth[r]),
+                    cost[v].saturating_add(cost[r]).saturating_add(1),
+                    0,
+                )
+            }
+            Node::Side(..) => (Ty::Num(0), 1, 1, 0),
+            Node::Apply2(_, a, b) => {
+                let (a, b) = (a as usize, b as usize);
+                if !matches!((tys[a], tys[b]), (Ty::Num(_), Ty::Num(_))) {
+                    return Err("function coordinates must be numbers".into());
+                }
+                (
+                    Ty::Num(0),
+                    1 + depth[a].max(depth[b]),
+                    1u64.saturating_add(cost[a]).saturating_add(cost[b]),
+                    vars[a].saturating_add(vars[b]),
+                )
+            }
+            Node::FunctionObject(_) => (Ty::Function, 1, 1, 0),
             Node::Degree => (Ty::Num(1), 1, 1, 0),
             Node::Var | Node::VarY => (Ty::Num(0), 1, 1, 1),
             Node::Obj(id) => (object_type(c, id)?, 1, 1, 0),
@@ -93,6 +128,64 @@ pub(crate) fn check(
                     vars[a].saturating_add(vars[b]),
                 )
             }
+            Node::Algebra(op, a, b) => {
+                let (a, b) = (a as usize, b as usize);
+                if !matches!(tys[a], Ty::Num(_))
+                    || b != NONE as usize && !matches!(tys[b], Ty::Num(_))
+                {
+                    return Err("the command needs numeric arguments".into());
+                }
+                let (bd, bc, bv) = if b == NONE as usize {
+                    (0, 0, 0)
+                } else {
+                    (depth[b], cost[b], vars[b])
+                };
+                if vars[a].saturating_add(bv) != 0 {
+                    return Err("a command cannot take `x`".into());
+                }
+                let ty = if op.makes_list() {
+                    Ty::List(Elem::Num)
+                } else if matches!(op, AlgebraOp::IsPrime | AlgebraOp::IsInteger) {
+                    Ty::Bool
+                } else {
+                    Ty::Num(0)
+                };
+                (
+                    ty,
+                    1 + depth[a].max(bd),
+                    cost[a].saturating_add(bc).saturating_add(1),
+                    0,
+                )
+            }
+            Node::Extremum(_, f, a, b) => {
+                let [f, a, b] = [f, a, b].map(|i| i as usize);
+                if [f, a, b].iter().any(|&i| !matches!(tys[i], Ty::Num(_))) {
+                    return Err("an extremum needs a numeric function and two numbers".into());
+                }
+                if vars[a] != 0 || vars[b] != 0 {
+                    return Err("an extremum needs fixed bounds".into());
+                }
+                (
+                    Ty::Vec,
+                    1 + depth[f].max(depth[a]).max(depth[b]),
+                    1u64.saturating_add(cost[f])
+                        .saturating_add(cost[a])
+                        .saturating_add(cost[b]),
+                    0,
+                )
+            }
+            Node::PolynomialPart(_, a, b) => {
+                let (a, b) = (a as usize, b as usize);
+                if !matches!((tys[a], tys[b]), (Ty::Num(_), Ty::Num(_))) {
+                    return Err("polynomial division needs numeric functions".into());
+                }
+                (
+                    Ty::Num(0),
+                    1 + depth[a].max(depth[b]),
+                    1u64.saturating_add(cost[a]).saturating_add(cost[b]),
+                    1,
+                )
+            }
             Node::If(mode, cond, then, rest) => {
                 let (cond, then) = (cond as usize, then as usize);
                 if tys[cond] != Ty::Bool {
@@ -124,23 +217,110 @@ pub(crate) fn check(
                     return Err("a function takes a number".into());
                 }
                 let (fd, fc, fv) = super::function_metrics(c, f);
+                let ty = if super::function_signature(c, f).is_some_and(|f| f.boolean) {
+                    Ty::Bool
+                } else {
+                    Ty::Num(0)
+                };
                 (
-                    Ty::Num(0),
+                    ty,
                     fd.saturating_add(depth[a]),
-                    fc.saturating_add(fv.saturating_mul(cost[a])),
+                    1u64.saturating_add(fc)
+                        .saturating_add(fv.max(1).saturating_mul(cost[a])),
                     fv.saturating_mul(vars[a]),
                 )
             }
-            Node::Local(_) => (Ty::Num(0), 1, 1, 0),
+            Node::Inverse(a) => {
+                let a = a as usize;
+                if !matches!(tys[a], Ty::Num(_)) {
+                    return Err("`Invert` needs a function or matrix".into());
+                }
+                // Inverting an inverse visits its source to check for an
+                // inverse and again to evaluate the original function.
+                (
+                    Ty::Num(0),
+                    1 + depth[a],
+                    cost[a].saturating_mul(2).saturating_add(1),
+                    1,
+                )
+            }
+            Node::Dilate(src, factor, center) => {
+                let (s, f, p) = (src as usize, factor as usize, center as usize);
+                if !matches!(tys[f], Ty::Num(_))
+                    || center != NONE
+                        && (tys[p] != Ty::Vec || vec_kind(c, nodes, &tys, center) != Kind::Point)
+                {
+                    return Err("`Dilate` needs a numeric factor and an optional point".into());
+                }
+                let ty = match tys[s] {
+                    ty @ (Ty::List(_) | Ty::Bool) => ty,
+                    Ty::Num(_) => Ty::Num(0),
+                    _ => return Err("expected a list or a function".into()),
+                };
+                let (pd, pc, pv) = if center == NONE {
+                    (0, 0, 0)
+                } else {
+                    (depth[p], cost[p], vars[p])
+                };
+                (
+                    ty,
+                    1 + depth[s].max(depth[f]).max(pd),
+                    cost[s]
+                        .saturating_add(cost[f])
+                        .saturating_add(pc)
+                        .saturating_add(1),
+                    vars[s].saturating_add(vars[f]).saturating_add(pv),
+                )
+            }
+            Node::Local(_, elem) => (ty_of(elem)?, 1, 1, 0),
+            Node::ObjectDefined(_) => (Ty::Bool, 1, 1, 0),
+            Node::Defined(a) => {
+                let a = a as usize;
+                (
+                    Ty::Bool,
+                    1 + depth[a],
+                    1u64.saturating_add(cost[a]),
+                    vars[a],
+                )
+            }
+            Node::Filter {
+                keep,
+                list,
+                condition,
+                ..
+            } => {
+                let (l, c) = (list as usize, condition as usize);
+                let Ty::List(elem) = tys[l] else {
+                    return Err("the filter needs a list".into());
+                };
+                if tys[c] != Ty::Bool {
+                    return Err("the filter needs a boolean condition".into());
+                }
+                let ty = if keep { Ty::List(elem) } else { Ty::Num(0) };
+                (
+                    ty,
+                    1 + depth[l].max(depth[c]),
+                    cost[l].saturating_add(cost[c]).saturating_add(1),
+                    vars[l].saturating_add(vars[c]),
+                )
+            }
+            Node::Vector(a) => {
+                let a = a as usize;
+                (Ty::Vec, 1 + depth[a], cost[a].saturating_add(1), vars[a])
+            }
             Node::Item(a) => {
                 let a = a as usize;
                 (tys[a], depth[a], cost[a], vars[a])
             }
+            Node::ItemObject(_) => (Ty::Object, 1, 1, 0),
             Node::List(first, len) => {
                 let mut elem = Elem::Empty;
                 let (mut d, mut k, mut v) = (0u32, 1u64, 0u64);
                 for item in first..first.saturating_add(len) {
                     let item = item as usize;
+                    if tys[item] == Ty::Text {
+                        return Err("text in a list is unsupported".into());
+                    }
                     elem = join_elem(elem, elem_of(tys[item]));
                     d = d.max(depth[item]);
                     k = k.saturating_add(cost[item]);
@@ -209,13 +389,38 @@ fn object_type(c: &Construction, id: Id) -> Result<Ty, String> {
     }
 }
 
+/// A coordinate expression keeps the kind of an object or command. Bare
+/// coordinates are points, as are operations that have a point operand.
+pub(super) fn vec_kind(c: &Construction, nodes: &[Node], tys: &[Ty], i: u32) -> Kind {
+    let kind = |k| if k == Kind::Vector { k } else { Kind::Point };
+    match nodes[i as usize] {
+        Node::Obj(id) => kind(c.kind(id)),
+        Node::Cmd(def, _) => kind(def.kind()),
+        Node::Vector(_) => Kind::Vector,
+        Node::Item(a) | Node::Un(_, a) | Node::If(_, _, a, _) => vec_kind(c, nodes, tys, a),
+        Node::Bin(_, a, b) => {
+            let kinds =
+                [a, b].map(|j| (tys[j as usize] == Ty::Vec).then(|| vec_kind(c, nodes, tys, j)));
+            if kinds.contains(&Some(Kind::Point)) || !kinds.contains(&Some(Kind::Vector)) {
+                Kind::Point
+            } else {
+                Kind::Vector
+            }
+        }
+        _ => Kind::Point,
+    }
+}
+
 /// The element type of a list of elements of type `t`.
 pub(super) fn elem_of(t: Ty) -> Elem {
     match t {
         Ty::Num(_) => Elem::Num,
         Ty::Vec => Elem::Vec,
         Ty::Bool => Elem::Bool,
+        Ty::Function => Elem::Function,
+        Ty::Text => Elem::Text,
         Ty::List(_) => Elem::List,
+        Ty::Object => Elem::Object,
     }
 }
 
@@ -234,7 +439,10 @@ pub(super) fn ty_of(e: Elem) -> Result<Ty, String> {
         Elem::Num | Elem::Empty => Ok(Ty::Num(0)),
         Elem::Vec => Ok(Ty::Vec),
         Elem::Bool => Ok(Ty::Bool),
+        Elem::Function => Ok(Ty::Function),
+        Elem::Text => Ok(Ty::Text),
         Elem::List => Ok(Ty::List(Elem::Any)),
+        Elem::Object => Err("geometric list elements cannot be used as operands".into()),
         Elem::Any => Err("the elements of the list have different types".into()),
     }
 }
@@ -254,6 +462,7 @@ fn result_type(kind: Kind) -> Result<Ty, String> {
         Kind::Angle => Ok(Ty::Num(1)),
         Kind::Point | Kind::Vector => Ok(Ty::Vec),
         Kind::Boolean => Ok(Ty::Bool),
+        Kind::Text => Ok(Ty::Text),
         other => Err(format!("a {other} cannot be used in an expression")),
     }
 }
@@ -286,6 +495,8 @@ fn scalar_unary_type(op: Un, a: Ty) -> Result<Ty, String> {
         (Un::AsinD | Un::AcosD | Un::AtanD, Ty::Num(_)) => Ok(Ty::Num(1)),
         (_, Ty::Num(_) | Ty::Bool) => Ok(Ty::Num(0)),
         (_, Ty::List(_)) => Err("a list of lists cannot be used here".into()),
+        (_, Ty::Object) => Err("geometric list elements cannot be used as operands".into()),
+        (_, Ty::Function | Ty::Text) => Err("this operand needs a number".into()),
     }
 }
 
@@ -318,7 +529,7 @@ fn binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     }
 }
 
-fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
+pub(super) fn scalar_binary_type(op: Bin, a: Ty, b: Ty) -> Result<Ty, String> {
     use Ty::{Num, Vec};
     if matches!(a, Ty::List(_)) || matches!(b, Ty::List(_)) {
         return Err("arithmetic on lists of lists is not supported".into());

@@ -2,7 +2,7 @@
 
 use crate::model::{ConicParts, Expected, ExpectedData, SAMPLE_XS};
 use geo_kernel::expr::{Element, List};
-use geo_kernel::{ArcData, ConicData, Kind, LocusData, Value};
+use geo_kernel::{ArcData, ConicData, Construction, Id, Kind, LocusData, Value};
 
 /// Result of a successful comparison.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -65,7 +65,12 @@ pub fn compare(expected: &Expected, kind: Kind, actual: &Value) -> Result<Sign, 
 /// Compares a recorded list with the kernel's elements (`None` when the
 /// kernel's list is undefined): the same length, and each element compared
 /// like an object, a nested list in the same way.
-pub fn compare_list(expected: &Expected, kind: Kind, list: Option<List>) -> Result<Sign, String> {
+pub fn compare_list(
+    c: &Construction,
+    expected: &Expected,
+    kind: Kind,
+    list: Option<List>,
+) -> Result<Sign, String> {
     if expected.kind != kind {
         return Err(format!(
             "type mismatch: expected {}, got {kind}",
@@ -87,10 +92,73 @@ pub fn compare_list(expected: &Expected, kind: Kind, list: Option<List>) -> Resu
     }
     for (k, (w, g)) in want.iter().zip(got.iter()).enumerate() {
         match g {
-            Element::List(inner) => compare_list(w, Kind::List, Some(inner)),
+            Element::List(inner) => compare_list(c, w, Kind::List, Some(inner)),
+            Element::Value(Kind::Function, value) => {
+                let sample = |x| c.function_value(got.function_at(k)?, x);
+                compare_sampled(w, Kind::Function, &value, &[], Some(&sample))
+            }
             Element::Value(kind, value) => compare(w, kind, &value),
         }
         .map_err(|why| format!("element {}: {why}", k + 1))?;
+    }
+    Ok(Sign::NotApplicable)
+}
+
+/// Compares results whose data are held outside the fixed-size value.
+pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Result<Sign, String> {
+    let kind = c.kind(id);
+    if expected.kind != kind || expected.data.is_none() || !c.value(id).is_defined() {
+        return compare(expected, kind, &c.value(id));
+    }
+    match &expected.data {
+        Some(ExpectedData::Text(text)) if c.text(id) == Some(text.as_str()) => (),
+        Some(ExpectedData::Text(text)) => {
+            return Err(format!("expected text {text:?}, got {:?}", c.text(id)));
+        }
+        Some(ExpectedData::Relation(expected)) => {
+            let classify = expected.iter().any(|report| report.contains('/'));
+            let mut actual = c
+                .relation_reports(id)
+                .ok_or("missing relation reports")?
+                .into_iter()
+                .map(|r| {
+                    let outcome = match r.outcome {
+                        Some(true) => "true",
+                        Some(false) => "false",
+                        None => "null",
+                    };
+                    let kind = if classify {
+                        match r.message {
+                            "The conics touch." => "/touch",
+                            "The conics intersect." => "/intersect",
+                            "The conics are disjoint." => "/disjoint",
+                            _ => "",
+                        }
+                    } else {
+                        ""
+                    };
+                    format!("{}={outcome}{kind}", r.check.unwrap_or("null"))
+                })
+                .collect::<Vec<_>>();
+            actual.sort_unstable();
+            if *expected != actual {
+                return Err(format!("expected {expected:?}, got {actual:?}"));
+            }
+        }
+        Some(ExpectedData::FunctionNVar(samples)) => {
+            for &(x, y, want) in samples {
+                let got = c.function_value_xy(id, x, y).filter(|v| v.is_finite());
+                let agrees = match (want, got) {
+                    (Some(a), Some(b)) => numbers_agree(a, b),
+                    (None, None) => true,
+                    _ => false,
+                };
+                if !agrees {
+                    return Err(format!("at ({x}, {y}): expected {want:?}, got {got:?}"));
+                }
+            }
+        }
+        _ => return Err(format!("unexpected fixture for {kind}")),
     }
     Ok(Sign::NotApplicable)
 }
@@ -159,6 +227,9 @@ pub fn compare_sampled(
             ok(all_agree(&[(*x, ax), (*y, ay)]))
         }
         (ExpectedData::Number(v), Value::Number(av)) => ok(numbers_agree(*v, av)),
+        (ExpectedData::Curve { start, end }, Value::Curve { start: a, end: b }) => {
+            ok(numbers_agree(*start, a) && numbers_agree(*end, b))
+        }
         (ExpectedData::Bool(b), Value::Bool(ab)) => ok(*b == ab),
         (
             ExpectedData::Circle { cx, cy, r },

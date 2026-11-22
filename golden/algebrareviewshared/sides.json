@@ -1,0 +1,105 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "algebrareviewshared-sides-001",
+      "group": "algebrareviewshared",
+      "script": [
+        "a = 2",
+        "j: a*x+y = a*x+5*x+1",
+        "f = LeftSide(j)",
+        "g = RightSide(j)",
+        "n = f(3,4)",
+        "m = g(3,4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "j": { "type": "line", "defined": true, "a": -5.0, "b": 1.0, "c": -1.0 },
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 1.0],
+              [-4.0, 9.0, 1.0],
+              [-2.0, 5.0, 1.0],
+              [-1.0, 3.0, 1.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 1.0],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 1.0],
+              [4.0, -7.0, 1.0],
+              [8.0, -15.0, 1.0]
+            ]
+          },
+          "g": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, -55.0],
+              [-4.0, 9.0, -27.0],
+              [-2.0, 5.0, -13.0],
+              [-1.0, 3.0, -6.0],
+              [-0.5, 2.0, -2.5],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 4.5],
+              [1.0, -1.0, 8.0],
+              [2.0, -3.0, 15.0],
+              [4.0, -7.0, 29.0],
+              [8.0, -15.0, 57.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 10.0 },
+          "m": { "type": "number", "defined": true, "value": 22.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "j": { "type": "line", "defined": true, "a": -5.0, "b": 1.0, "c": -1.0 },
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 25.0],
+              [-4.0, 9.0, 13.0],
+              [-2.0, 5.0, 7.0],
+              [-1.0, 3.0, 4.0],
+              [-0.5, 2.0, 2.5],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, -0.5],
+              [1.0, -1.0, -2.0],
+              [2.0, -3.0, -5.0],
+              [4.0, -7.0, -11.0],
+              [8.0, -15.0, -23.0]
+            ]
+          },
+          "g": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, -31.0],
+              [-4.0, 9.0, -15.0],
+              [-2.0, 5.0, -7.0],
+              [-1.0, 3.0, -3.0],
+              [-0.5, 2.0, -1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 3.0],
+              [1.0, -1.0, 5.0],
+              [2.0, -3.0, 9.0],
+              [4.0, -7.0, 17.0],
+              [8.0, -15.0, 33.0]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": true, "value": 13.0 }
+        }
+      ]
+    }
+  ]
+}
