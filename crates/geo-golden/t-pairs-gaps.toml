@@ -3333,18 +3333,6 @@ reason = "values agree but `GeoFunction` of kind function has no GeoGebra-style 
 mismatches = ["ni"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2968"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Normalize`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2969"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Normalize`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2988"
 category = "text-formatting"
 reason = "string `1.6666666666666667`, GeoGebra prints `1.66666666666667`"

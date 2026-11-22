@@ -69,4 +69,18 @@ case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\nA = (1, f(1))\nB = (0.5
 # the numeric intersection with a freehand function (a known gap)
 case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\ng(x) = x\nS = Intersect(f, g, 0, 3)")
 
+# --------------------------------------------------------------- Normalize
+cases.topic("normalize")
+case("normalize", "l = {1, 3, 2}\nr = Normalize(l)\ns = Normalize({(1, 1), (3, 1), (2, 1)})")
+case("normalize", "A = (1, -2)\nB = (-3, 4)\nC = (2, 0)\nr = Normalize(A)\ns = Normalize(A, B, C)",
+     [mv("A", 2, 4), mv("B", 2, 4)])
+case("normalize", "n = 1\nA = (1/n, n)\nB = (0, 0)\nr = Normalize(A, B)\ns = Normalize({n, 1/n, 0})",
+     [setn("n", 0), setn("n", -2)])
+case("normalize", "r = Normalize({})\ns = Normalize({0, 0})\nt = Normalize({-3})\nu = Normalize({true, false})")
+case("normalize", "n = 2\nl = Sequence(k, k, 1, n)\nr = Normalize(l)",
+     [setn("n", 0), setn("n", 4)])
+case("normalize", "r = Normalize({1, (2, 2), 4})\ns = Normalize({1, true})\nt = Normalize({1, false, 2})")
+case("normalize", "A = (1, 2)", [reject("r = Normalize()"), reject("r = Normalize(1)"),
+                                 reject("r = Normalize(A, 2)")])
+
 cases.write()

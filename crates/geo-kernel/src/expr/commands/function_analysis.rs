@@ -7,11 +7,11 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use crate::expr::{
-    eval::{slot_val, Ctx, Env, Local, Val, MAX_ELEMENTS},
+    eval::{number_of, slot_val, Ctx, Env, Local, Val, MAX_ELEMENTS},
     lex::Tok,
-    parse::Parser,
+    parse::{list_form, Parser},
     types::{elem_of, ty_of},
-    Elem, IterationMode, Node, Slot, Ty,
+    Elem, IterationMode, ListOp, Node, Slot, Ty, NONE,
 };
 use crate::{Kind, Value};
 
@@ -22,10 +22,20 @@ pub(super) const NAMES: &[&str] = &[
     "NInvert",
     "nroot",
     "Asymptote",
+    "Normalize",
 ];
 
 pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, String> {
     let node = match name {
+        "Normalize" => {
+            return p.list_command(|p, args, lists| {
+                if !args.is_empty() && args.iter().all(|&a| point_argument(p, a)) {
+                    let list = p.wrap_list(args);
+                    return Ok(Some(Node::ListOp(ListOp::Normalize, list, NONE)));
+                }
+                list_form(name, ListOp::Normalize, false, args, lists)
+            });
+        }
         "nroot" => {
             let args = p.arguments()?;
             let [number, degree] = args[..] else {
@@ -74,6 +84,83 @@ pub(super) fn parse(p: &mut Parser<'_>, name: &str) -> Result<Option<u32>, Strin
         _ => return Ok(None),
     };
     Ok(Some(p.push(node)))
+}
+
+fn point_argument(p: &Parser<'_>, node: u32) -> bool {
+    match p.node(node) {
+        Node::Obj(id) => p.c.kind(id) == Kind::Point,
+        Node::Vector(_) => false,
+        _ => p.is_point_or_vector(node),
+    }
+}
+
+pub(super) fn normalize<const M: bool>(ctx: &Ctx<'_, M>, l: u32) -> Option<(u32, u32)> {
+    let lists = ctx.lists?;
+    let (start, len) = ctx.list(l)?;
+    if len == 0 || !lists.charge(2 * u64::from(len)) {
+        return None;
+    }
+    let read = |i| lists.read(ctx.c, start + i);
+    let kind = read(0).kind;
+    let points = kind == Kind::Point;
+    if !points && !kind.is_number() {
+        return None;
+    }
+    let coordinate = |slot: Slot| {
+        if points {
+            match slot_val(&slot) {
+                Val::V(x, y) => [x, y],
+                _ => [f64::NAN; 2],
+            }
+        } else {
+            [
+                slot.numeric_cell()
+                    .or_else(|| number_of(slot))
+                    .unwrap_or(f64::NAN),
+                0.0,
+            ]
+        }
+    };
+    let mut min = [f64::INFINITY; 2];
+    let mut max = [f64::NEG_INFINITY; 2];
+    for i in 0..len {
+        let slot = read(i);
+        if points && slot.kind != Kind::Point {
+            return None;
+        }
+        for (axis, value) in coordinate(slot).into_iter().enumerate() {
+            min[axis] = min[axis].min(value);
+            max[axis] = max[axis].max(value);
+        }
+    }
+    if !points && !read(len - 1).kind.is_number() {
+        return Some((lists.len(), 0));
+    }
+    let scale = std::array::from_fn::<_, 2, _>(|i| {
+        if max[i] == min[i] {
+            max[i]
+        } else {
+            max[i] - min[i]
+        }
+    });
+    let out = lists.reserve(len)?;
+    for i in 0..len {
+        let xy = coordinate(read(i));
+        let scaled = |axis: usize| {
+            if scale[axis] == 0.0 {
+                0.0
+            } else {
+                (xy[axis] - min[axis]) / scale[axis]
+            }
+        };
+        let slot = if points {
+            Slot::coords(Kind::Point, scaled(0), scaled(1))
+        } else {
+            Slot::number(scaled(0))
+        };
+        lists.set(out + i, slot);
+    }
+    Some((out, len))
 }
 
 fn parse_iteration(p: &mut Parser<'_>, collect: bool) -> Result<Node, String> {

@@ -3672,3 +3672,18 @@ cases = ["implicit-conic-010"]
 command = "Intersect"
 form = "implicit,sector,number"
 cases = ["implicit-conic-010"]
+
+[[form]]
+command = "Normalize"
+form = "list"
+cases = ["funcrest-normalize-001", "funcrest-normalize-003", "funcrest-normalize-005"]
+
+[[form]]
+command = "Normalize"
+form = "point"
+cases = ["funcrest-normalize-002"]
+
+[[form]]
+command = "Normalize"
+form = "point,point,..."
+cases = ["funcrest-normalize-002", "funcrest-normalize-003"]

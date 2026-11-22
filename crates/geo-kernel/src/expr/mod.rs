@@ -427,6 +427,7 @@ pub(crate) enum ListOp {
     Cross,
     /// `Determinant(matrix)` and `MatrixRank(matrix)` inside expressions.
     Determinant,
+    Normalize,
     MatrixRank,
     Transpose,
     Rref,
