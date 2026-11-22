@@ -115,7 +115,7 @@ impl Workbench {
                     .insert(label, [color.r, color.g, color.b]);
                 let opacity = crate::style::fill_opacity(c, id);
                 if opacity != 0.0 {
-                    presentation.opacity.insert(label, f64::from(opacity));
+                    presentation.opacity.insert(label, opacity);
                 }
             }
             if let Some(condition) = self.log.condition_source(label) {

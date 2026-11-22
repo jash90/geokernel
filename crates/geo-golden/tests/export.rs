@@ -1422,7 +1422,9 @@ fn special(c: &Construction, id: Id) -> Value {
     if let Some(image) = c.image(id) {
         let mut result = json!({
             "type": "image", "defined": defined, "size": image.asset.size(),
-            "background": image.style.background, "alpha": image.style.alpha,
+            // The decimal the file holds, not the widened 32-bit value.
+            "background": image.style.background,
+            "alpha": image.style.alpha.to_string().parse::<f64>().unwrap(),
             "interpolate": image.style.interpolate, "centered": false,
         });
         if let Some(crop) = image.style.crop {
@@ -1506,6 +1508,69 @@ fn archive(xml: &[u8], library: Option<&[u8]>) -> Vec<u8> {
         zip.write_all(library).unwrap();
     }
     zip.finish().unwrap().into_inner()
+}
+
+/// The `alpha` attribute of every `<objColor>` in `xml`, by element label.
+fn alphas(xml: &str) -> BTreeMap<String, String> {
+    let mut out = BTreeMap::new();
+    for element in xml.split("<element ").skip(1) {
+        let attribute = |text: &str, name: &str| {
+            let start = text
+                .find(&format!(" {name}=\""))
+                .map(|at| at + name.len() + 3)?;
+            Some(text[start..start + text[start..].find('"')?].to_owned())
+        };
+        let element = &element[..element.find("</element>").unwrap_or(element.len())];
+        let label = attribute(&format!(" {element}"), "label").unwrap();
+        if let Some(color) = element.find("<objColor") {
+            if let Some(alpha) = attribute(&element[color..], "alpha") {
+                out.insert(label, alpha);
+            }
+        }
+    }
+    out
+}
+
+#[test]
+fn opacities_are_written_as_the_shortest_decimal_of_the_stored_value() {
+    use std::io::{Cursor, Read, Write};
+
+    // An image saved with an opacity of 0.3, which the kernel stores as a
+    // 32-bit float.
+    let source = fs::read(repo_root().join("golden/ggb/saved/saved-images-001.ggb")).unwrap();
+    let mut fixture = zip::ZipArchive::new(Cursor::new(source.as_slice())).unwrap();
+    let mut out = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    for i in 0..fixture.len() {
+        let mut file = fixture.by_index(i).unwrap();
+        let name = file.name().unwrap().into_owned();
+        let mut data = Vec::new();
+        file.read_to_end(&mut data).unwrap();
+        if name == "geogebra.xml" {
+            let xml = String::from_utf8(data).unwrap();
+            assert_eq!(xml.matches(r#"alpha="0.5""#).count(), 1);
+            data = xml.replace(r#"alpha="0.5""#, r#"alpha="0.3""#).into_bytes();
+        }
+        out.start_file(name, zip::write::SimpleFileOptions::default())
+            .unwrap();
+        out.write_all(&data).unwrap();
+    }
+    let source = out.finish().unwrap().into_inner();
+    let mut wb = Workbench::default();
+    wb.load_for_export(&source, "opacity.ggb").unwrap();
+    let written = alphas(&exported_xml(&wb));
+    assert_eq!(written["anchoredImage"], "0.3", "{written:?}");
+    assert_eq!(written["fixedImage"], "1", "{written:?}");
+
+    // Objects made in the application: the canvas tints a polygon.
+    let mut wb = Workbench::default();
+    wb.load_script("A = (0, 0)\nB = (4, 0)\nC = (1, 3)\ntri = Polygon(A, B, C)")
+        .unwrap();
+    let written = alphas(&exported_xml(&wb));
+    assert_eq!(written["tri"], "0.1", "{written:?}");
+    assert_eq!(written["A"], "0", "{written:?}");
+    for alpha in written.values() {
+        assert!(alpha.len() <= 3, "{written:?}");
+    }
 }
 
 #[test]

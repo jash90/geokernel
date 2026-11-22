@@ -417,13 +417,23 @@ impl Writer<'_> {
             ("g", g.to_string()),
             ("b", b.to_string()),
         ];
+        // The shortest decimal of the stored value: the opacity of an image
+        // is a 32-bit float, which widened would read 0.30000001192092896
+        // for a saved 0.3.
         let alpha = match (c.image(id), saved) {
-            (Some(image), _) => Some(f64::from(image.style.alpha)),
-            (None, Some(saved)) => saved.alpha,
-            (None, None) => Some(self.presentation.opacity.get(label).copied().unwrap_or(0.0)),
+            (Some(image), _) => Some(image.style.alpha.to_string()),
+            (None, Some(saved)) => saved.alpha.map(|alpha| alpha.to_string()),
+            (None, None) => Some(
+                self.presentation
+                    .opacity
+                    .get(label)
+                    .copied()
+                    .unwrap_or(0.0)
+                    .to_string(),
+            ),
         };
         if let Some(alpha) = alpha {
-            attrs.push(("alpha", alpha.to_string()));
+            attrs.push(("alpha", alpha));
         }
         // Channels reach the reader's command processor, so only arithmetic
         // the kernel itself evaluates is written, in the kernel's syntax.
