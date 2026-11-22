@@ -1227,7 +1227,7 @@ fn intersection_on_circle(c: &Construction, s: Id, circle: Id) -> bool {
 /// The points a circle was drawn through, in the order in which GeoGebra
 /// adds them to the circle's points on the conic (`AlgoCircleTwoPoints`,
 /// `AlgoCircleThreePoints`). The other circles add none.
-pub(crate) fn circle_points(c: &Construction, circle: Id) -> [Option<Id>; 3] {
+fn circle_points(c: &Construction, circle: Id) -> [Option<Id>; 3] {
     match c.def(circle) {
         Def::CircleThrough { through, .. } => [Some(through), None, None],
         Def::Conic(ConicDef::ThroughThree(a, b, d)) => [
@@ -1250,12 +1250,7 @@ fn on_circle_by_construction(c: &Construction, s: Id, circle: Id) -> bool {
 /// that also lies on the line by construction. The intersection points of
 /// this line and this circle themselves belong to this intersection and are
 /// never chosen.
-pub(crate) fn existing_line_circle_point(
-    c: &Construction,
-    line: Id,
-    line_def: Def,
-    circle: Id,
-) -> Option<Id> {
+fn existing_line_circle_point(c: &Construction, line: Id, line_def: Def, circle: Id) -> Option<Id> {
     let (p, q) = line_points(line_def);
     for t in circle_points(c, circle).into_iter().flatten() {
         if Some(t) == p || Some(t) == q || intersection_on_line(c, t, line) {

@@ -240,5 +240,13 @@ cases.case("review", ["Prove = {2, 3}", "n = Prove(1)"], [])
 proof("review", ["O = (0, 0)", "A = (3, 1)", "B = (1, 4)", "c = Circle(O, A)",
                  "g = Line(A, B)", "P = Intersect(g, c)", "M = Midpoint(P_{1}, P_{2})",
                  "f = Line(O, M)"], "ArePerpendicular(f, g)")
+proof("review", ["A = (0, 0)", "B = (4, 0)", "g = Line(A, B)", "P = Point(g, 0.25)",
+                 "c = Circle(A, P)", "Q = Intersect(g, c, 2)"], "AreEqual(P, Q)")
+proof("review", ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)", "P = Point(c, 0.25)",
+                 "d = Circle(A, P)", "Q = Intersect(c, d, 2)"], "AreEqual(P, Q)")
+proof("review", ["A = (0, 0)", "B = (4, 1)", "CZ = (1, 3)", "Ca = (3, -2)",
+                 "f = PerpendicularBisector(A, B)", "g = PerpendicularBisector(B, CZ)",
+                 "h = PerpendicularBisector(B, Ca)", "O = Intersect(f, g)", "R = Intersect(f, h)",
+                 "M = Midpoint(A, B)"], "AreCollinear(O, R, M)")
 
 cases.write()

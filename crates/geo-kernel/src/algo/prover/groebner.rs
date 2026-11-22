@@ -79,25 +79,25 @@ pub(crate) fn basis(polys: &[Poly], order: &Order, budget: &Budget) -> Option<Ve
         .collect();
     minimal.sort_by(|a, b| order.cmp(&a.terms[0].0, &b.terms[0].0));
     let mut reduced = Vec::with_capacity(minimal.len());
+    let mut flags = vec![true; minimal.len()];
     for k in 0..minimal.len() {
-        let others: Vec<Poly> = minimal
-            .iter()
-            .enumerate()
-            .filter(|&(i, _)| i != k)
-            .map(|(_, p)| p.clone())
-            .collect();
-        let flags = vec![true; others.len()];
+        // Reduce the tail by the other elements: no copies of them.
+        flags[k] = false;
+        budget.charge(minimal[k].terms.len() * (1 + max_size(&minimal[k])))?;
         let lead = minimal[k].terms[0].clone();
         let tail = Poly {
             terms: minimal[k].terms[1..].to_vec(),
         };
-        let tail = reduce_scaled(tail, &others, &flags, order, budget)?;
+        let tail = reduce_scaled(tail, &minimal, &flags, order, budget)?;
+        flags[k] = true;
+        // Refuse an oversized leading coefficient before building it.
+        if lead.1.size() + tail.1.size() > MAX_LIMBS + 1 {
+            return None;
+        }
         budget.charge(1 + lead.1.size() * tail.1.size())?;
         let mut terms = vec![(lead.0, lead.1.mul(&tail.1))];
         terms.extend(tail.0.terms);
-        let p = Poly { terms };
-        budget.charge(p.terms.len() * (1 + max_size(&p)))?;
-        let p = p.primitive();
+        let p = primitive(Poly { terms }, budget)?;
         if too_big(&p) {
             return None;
         }
@@ -164,7 +164,7 @@ fn s_polynomial(f: &Poly, g: &Poly, lcm: &Mono, order: &Order, budget: &Budget) 
     let (lf, cf) = &f.terms[0];
     let (lg, cg) = &g.terms[0];
     budget.charge((1 + cf.size()) * (1 + cg.size()))?;
-    let d = cf.gcd(cg);
+    let d = gcd(cf, cg, budget)?;
     let a = cg.div_exact(&d)?;
     let b = cf.div_exact(&d)?;
     combine(
@@ -192,6 +192,10 @@ fn combine(
     budget: &Budget,
 ) -> Option<Poly> {
     // Coefficient arithmetic grows with the size of the multipliers.
+    // Refuse oversized products before computing them.
+    if a.size() + max_size(f) > MAX_LIMBS + 1 || b.size() + max_size(g) > MAX_LIMBS + 1 {
+        return None;
+    }
     let width = (1 + a.size() + b.size()) * (1 + max_size(f).max(max_size(g)));
     budget.charge((f.terms.len() + g.terms.len()).saturating_mul(width))?;
     let mut terms = Vec::with_capacity(f.terms.len() + g.terms.len());
@@ -237,6 +241,36 @@ fn max_size(p: &Poly) -> usize {
     max_size_terms(&p.terms)
 }
 
+/// The greatest common divisor, charged for every division step.
+fn gcd(a: &Int, b: &Int, budget: &Budget) -> Option<Int> {
+    let mut a = a.abs();
+    let mut b = b.abs();
+    while !b.is_zero() {
+        let width = 1 + a.size();
+        budget.charge(width * width)?;
+        let (_, r) = a.div_rem(&b)?;
+        a = b;
+        b = r;
+    }
+    Some(a)
+}
+
+/// The polynomial divided by its content, with a positive leading
+/// coefficient; every step charged.
+fn primitive(p: Poly, budget: &Budget) -> Option<Poly> {
+    let width = 1 + max_size(&p);
+    budget.charge((p.terms.len() + 1) * width * width)?;
+    let mut g = Int::zero();
+    for (_, c) in &p.terms {
+        g = gcd(&g, c, budget)?;
+        if g.is_unit() {
+            break;
+        }
+    }
+    let p = p.primitive_by(&g);
+    (!too_big(&p)).then_some(p)
+}
+
 fn too_big(p: &Poly) -> bool {
     p.terms.len() > MAX_TERMS || max_size(p) > MAX_LIMBS
 }
@@ -244,9 +278,7 @@ fn too_big(p: &Poly) -> bool {
 /// The normal form of `f` by the active polynomials, made primitive.
 fn reduce(f: Poly, all: &[Poly], active: &[bool], order: &Order, budget: &Budget) -> Option<Poly> {
     let (r, _) = reduce_scaled(f, all, active, order, budget)?;
-    let width = 1 + max_size(&r);
-    budget.charge((r.terms.len() + 1) * width * width)?;
-    Some(r.primitive())
+    primitive(r, budget)
 }
 
 /// The normal form `r` of `f` with the factor `s` such that `s*f - r` lies
@@ -276,8 +308,7 @@ fn reduce_scaled(
             continue;
         };
         let (lg, cg) = &all[k].terms[0];
-        budget.charge((1 + c.size()) * (1 + cg.size()))?;
-        let d = c.gcd(cg);
+        let d = gcd(&c, cg, budget)?;
         let a = cg.div_exact(&d)?;
         let b = c.div_exact(&d)?;
         if a.is_negative() {
@@ -299,6 +330,9 @@ fn reduce_scaled(
         )?;
         rest = next.terms.into_iter().rev().collect();
         if !a.is_unit() {
+            if done_size + a.size() > MAX_LIMBS + 1 || scale.size() + a.size() > MAX_LIMBS + 1 {
+                return None;
+            }
             budget.charge((done.len() + 1) * (1 + a.size()) * (1 + done_size))?;
             for (_, dc) in &mut done {
                 *dc = dc.mul(&a);
@@ -314,7 +348,7 @@ fn reduce_scaled(
             budget.charge((rest.len() + done.len() + 1) * width * width)?;
             let mut g = scale.clone();
             for (_, c) in rest.iter().chain(&done) {
-                g = g.gcd(c);
+                g = gcd(&g, c, budget)?;
                 if g.is_unit() {
                     break;
                 }
@@ -401,6 +435,32 @@ mod tests {
                 assert!(basis.iter().all(|p| !too_big(p)), "{bits} bits");
             }
         }
+    }
+
+    #[test]
+    fn consecutive_fibonacci_coefficients_are_charged_per_step() {
+        // The gcd of consecutive Fibonacci numbers takes the most division
+        // steps for their size.
+        let (mut a, mut b) = (Int::from_i64(1), Int::from_i64(1));
+        for _ in 2..2949 {
+            let next = a.add(&b);
+            a = b;
+            b = next;
+        }
+        let order = Order { split: 0, vars: 1 };
+        let one = Int::from_i64(1);
+        let f = Poly {
+            terms: vec![(Mono::var(0), a), (Mono::ONE, one.clone())],
+        };
+        let g = Poly {
+            terms: vec![(Mono::var(0), b), (Mono::ONE, one)],
+        };
+        let small = Budget::new(10_000);
+        assert!(basis(&[f.clone(), g.clone()], &order, &small).is_none());
+        // With the full allowance the unit ideal is found, or the size cap
+        // stops the computation first.
+        let unit = basis(&[f, g], &order, &Budget::new(30_000_000));
+        assert!(unit.is_none() || unit == Some(vec![Poly::constant(1)]));
     }
 
     #[test]

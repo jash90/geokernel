@@ -188,16 +188,16 @@ impl System {
                 let y = self.new_var(false)?;
                 self.add(collinear([g[0], g[1]], [g[2], g[3]], [x, y], budget)?);
                 self.add(equidistant([k[2], k[3]], [k[0], k[1]], [x, y], budget)?);
-                let existing = existing_point(c, line, circle)?;
-                self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
-                if existing.is_some() {
-                    // The reference excludes an existing intersection only
-                    // for `Intersect(line, circle, n)`; the unindexed command
-                    // (also behind `{P, Q} = Intersect(...)` and saved files)
-                    // makes the same definition here, and its algorithm keeps
-                    // the point. Which one made this object is not recorded.
+                // The reference excludes an existing intersection only for
+                // `Intersect(line, circle, n)`; the unindexed command (also
+                // behind `{P, Q} = Intersect(...)` and saved files) makes the
+                // same definition here, and its algorithm keeps the point.
+                // Which one made this object is not recorded, so a point that
+                // may lie on both by construction leaves it undecided.
+                if shared_point(c, id, line, circle, budget)? {
                     return None;
                 }
+                self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
                 self.point_vars.insert(id, [x, y]);
             }
             Def::IntersectCircles { c1, c2, .. } => {
@@ -206,25 +206,9 @@ impl System {
                 }
                 let a = self.circle(c1)?;
                 let b = self.circle(c2)?;
-                // Points already on both circles: the reference takes them
-                // from the points each circle was drawn through and from
-                // earlier intersections; only the first source is
-                // reproduced.
-                if earlier_intersection_on(c, id, c1, c2) {
-                    return None;
-                }
-                let on = |k| crate::algo::intersect::circle_points(c, k);
-                let shared: Vec<Id> = on(c1)
-                    .into_iter()
-                    .flatten()
-                    .filter(|t| on(c2).contains(&Some(*t)))
-                    .collect();
-                if on(c1)
-                    .into_iter()
-                    .chain(on(c2))
-                    .flatten()
-                    .any(|t| !matches!(c.def(t), Def::FreePoint { .. } | Def::Midpoint(..)))
-                {
+                // As for a line and a circle: a point on both circles by
+                // construction is excluded only by the indexed command.
+                if shared_point(c, id, c1, c2, budget)? {
                     return None;
                 }
                 let x = self.new_var(false)?;
@@ -232,12 +216,6 @@ impl System {
                 self.add(equidistant([a[2], a[3]], [a[0], a[1]], [x, y], budget)?);
                 self.add(equidistant([b[2], b[3]], [b[0], b[1]], [x, y], budget)?);
                 self.distinct_from_earlier(c, id, c1, c2, [x, y], budget)?;
-                // A single shared point is excluded only by the indexed
-                // command, as for a line and a circle; which command made
-                // this object is not recorded.
-                if !shared.is_empty() {
-                    return None;
-                }
                 self.point_vars.insert(id, [x, y]);
             }
             Def::Perpendicular { through, to } => {
@@ -333,10 +311,17 @@ impl System {
             }
             _ => false,
         };
-        let others: Vec<Id> = c
-            .ids()
+        // The other outputs read both objects, so the children of the first
+        // one hold them.
+        let children = c.children(first);
+        budget.charge(children.len() + 1)?;
+        let mut others: Vec<Id> = children
+            .iter()
+            .copied()
             .filter(|&other| other != id && same_pair(other))
             .collect();
+        others.sort_unstable();
+        others.dedup();
         let translated: Vec<Id> = others
             .iter()
             .copied()
@@ -567,43 +552,6 @@ fn proper_circle(c: &Construction, id: Id) -> bool {
     matches!(c.value(id), Value::Circle { r, .. } if r > 0.0 && r.is_finite())
 }
 
-/// The point on both the line and the circle by construction that the
-/// reference's `AlgoIntersectLineConic.handleSpecialCase` finds, if any. A
-/// point on the circle as its path that the line was drawn through counts
-/// too; when such a point competes with another candidate, the reference's
-/// order is not reproduced. `None` when undecidable.
-fn existing_point(c: &Construction, line: Id, circle: Id) -> Option<Option<Id>> {
-    let kernel = crate::algo::intersect::existing_line_circle_point(c, line, c.def(line), circle);
-    let through: Vec<Id> = match c.def(line) {
-        Def::Line(p, q) | Def::Segment(p, q) => vec![p, q],
-        Def::Perpendicular { through, .. } | Def::Parallel { through, .. } => vec![through],
-        _ => Vec::new(),
-    };
-    let on_path: Vec<Id> = through
-        .into_iter()
-        .filter(|&p| {
-            matches!(
-                c.def(p),
-                Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) if path == circle
-            )
-        })
-        .collect();
-    if matches!(c.def(line), Def::Segment(..)) && kernel.is_none() {
-        // The segment's end points are not among the kernel's candidates.
-        let ends = crate::algo::intersect::circle_points(c, circle);
-        if let Def::Segment(p, q) = c.def(line) {
-            if ends.contains(&Some(p)) || ends.contains(&Some(q)) {
-                return None;
-            }
-        }
-    }
-    match (kernel, on_path.as_slice()) {
-        (found, []) => Some(found),
-        (None, [p]) => Some(Some(*p)),
-        _ => None,
-    }
-}
-
 /// `|PQ|^2 * t - 1`: P and Q differ.
 fn distinct(p: [usize; 2], q: [usize; 2], t: usize, budget: &Budget) -> Option<Poly> {
     square_distance(p, q, budget)?
@@ -611,20 +559,56 @@ fn distinct(p: [usize; 2], q: [usize; 2], t: usize, budget: &Budget) -> Option<P
         .sub(&Poly::constant(1), budget)
 }
 
-/// Whether an intersection with `c1` or `c2` other than theirs was made
-/// before `id`.
-fn earlier_intersection_on(c: &Construction, id: Id, c1: Id, c2: Id) -> bool {
-    c.ids()
-        .take_while(|&other| other < id)
-        .any(|other| match c.def(other) {
-            Def::IntersectLineCircle { circle, .. } => circle == c1 || circle == c2,
-            Def::IntersectCircles { c1: a, c2: b, .. } => {
-                (a == c1 || a == c2 || b == c1 || b == c2)
-                    && !((a, b) == (c1, c2) || (a, b) == (c2, c1))
-            }
-            Def::IntersectConics(_) => true,
-            _ => false,
-        })
+/// The points an object was drawn through, which lie on it by construction.
+fn drawn_through(c: &Construction, object: Id) -> Vec<Id> {
+    match c.def(object) {
+        Def::Line(p, q) | Def::Segment(p, q) => vec![p, q],
+        Def::Perpendicular { through, .. } | Def::Parallel { through, .. } => vec![through],
+        Def::CircleThrough { through, .. } => vec![through],
+        Def::Conic(ConicDef::ThroughThree(p, q, r)) => vec![p, q, r],
+        _ => Vec::new(),
+    }
+}
+
+/// Whether `point` may lie on `object` by construction: a point it was
+/// drawn through, a point on it as a path, or an intersection with it.
+fn on_by_construction(c: &Construction, point: Id, object: Id) -> bool {
+    if drawn_through(c, object).contains(&point) {
+        return true;
+    }
+    match c.def(point) {
+        Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => path == object,
+        Def::IntersectLines(..)
+        | Def::IntersectLineCircle { .. }
+        | Def::IntersectCircles { .. }
+        | Def::IntersectConics(_)
+        | Def::IntersectBoundary(_)
+        | Def::ConicPart(_) => c.reads(point).contains(&object),
+        _ => false,
+    }
+}
+
+/// Whether a point other than the outputs of the intersection `id` of `a`
+/// and `b` may lie on both by construction. Only the points `a` and `b` were
+/// drawn through and the objects that read them can.
+fn shared_point(c: &Construction, id: Id, a: Id, b: Id, budget: &Budget) -> Option<bool> {
+    let same_pair = |other: Id| match c.def(other) {
+        Def::IntersectLineCircle { line, circle, .. } => (line, circle) == (a, b),
+        Def::IntersectCircles { c1, c2, .. } => (c1, c2) == (a, b) || (c1, c2) == (b, a),
+        _ => false,
+    };
+    let mut candidates = drawn_through(c, a);
+    candidates.extend(drawn_through(c, b));
+    candidates.extend_from_slice(c.children(a));
+    candidates.extend_from_slice(c.children(b));
+    budget.charge(candidates.len() * 4 + 1)?;
+    Some(candidates.into_iter().any(|p| {
+        p != id
+            && c.kind(p) == Kind::Point
+            && !same_pair(p)
+            && on_by_construction(c, p, a)
+            && on_by_construction(c, p, b)
+    }))
 }
 
 /// `|AO|^2 - |OB|^2`.

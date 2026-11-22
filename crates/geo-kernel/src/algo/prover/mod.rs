@@ -143,7 +143,7 @@ impl translate::System {
             None => return Some(Outcome::TrueUnreadable),
             Some(found) => texts.extend(found),
         }
-        texts.sort_by(|a, b| a.encode_utf16().cmp(b.encode_utf16()));
+        texts.sort_by(|a, b| condition_order(a, b));
         texts.dedup();
         Some(Outcome::True(texts))
     }
@@ -408,6 +408,14 @@ impl translate::System {
     }
 }
 
+/// The order of `GeoText.getComparator` for plain ASCII texts: lower case
+/// first, then the texts themselves.
+fn condition_order(a: &str, b: &str) -> std::cmp::Ordering {
+    a.to_ascii_lowercase()
+        .cmp(&b.to_ascii_lowercase())
+        .then_with(|| a.cmp(b))
+}
+
 fn remove_all(polys: &[Poly], removed: &[Poly]) -> Vec<Poly> {
     let removed: Vec<Poly> = removed.iter().map(|p| p.clone().canonical()).collect();
     polys
@@ -645,6 +653,24 @@ mod tests {
             .ok()
             .unwrap();
         assert_eq!(system.decide(&c, Question::Prove, &tiny), None);
+    }
+
+    #[test]
+    fn conditions_sort_without_regard_to_case_first() {
+        let mut texts = vec![
+            "AreCollinear[A,B,CZ]".to_string(),
+            "AreEqual[A,B]".to_string(),
+            "AreCollinear[A,B,Ca]".to_string(),
+        ];
+        texts.sort_by(|a, b| condition_order(a, b));
+        assert_eq!(
+            texts,
+            [
+                "AreCollinear[A,B,Ca]",
+                "AreCollinear[A,B,CZ]",
+                "AreEqual[A,B]"
+            ]
+        );
     }
 
     #[test]

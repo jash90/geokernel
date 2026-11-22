@@ -1119,3 +1119,13 @@ mismatches = ["0:p", "0:q"]
 id = "prove-review-006"
 reason = "The unindexed `Intersect(g, c)` with a point on both objects by construction: the reference's algorithm keeps that point and adds no exclusion. The kernel makes the same definition as for the indexed command and does not record which command made it, so the prover answers undefined."
 mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-review-007"
+reason = "A point on the line as its path is a point the circle was drawn through, so it lies on both objects by construction. The reference excludes it only for the indexed `Intersect(a, b, n)`; the kernel does not record which command made the intersection and answers undefined."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-review-008"
+reason = "A point on the first circle as its path is a point the second circle was drawn through, so it lies on both by construction. The reference excludes it only for the indexed `Intersect(a, b, n)`; the kernel does not record which command made the intersection, and the prover answers undefined. The kernel's numeric intersection does not count the path point as incident either, so Q and the Boolean differ."
+mismatches = ["0:Q", "0:b", "0:p", "0:q"]

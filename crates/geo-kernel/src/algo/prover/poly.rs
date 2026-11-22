@@ -257,8 +257,15 @@ impl Poly {
 
     /// The polynomial divided by its content, with a positive leading
     /// coefficient (in the current term order).
-    pub(crate) fn primitive(mut self) -> Poly {
+    pub(crate) fn primitive(self) -> Poly {
         let g = self.content();
+        self.primitive_by(&g)
+    }
+
+    /// The polynomial divided by `g`, its content, with a positive leading
+    /// coefficient.
+    pub(crate) fn primitive_by(mut self, g: &Int) -> Poly {
+        let g = g.clone();
         if g.is_zero() {
             return self;
         }
