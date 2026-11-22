@@ -346,6 +346,18 @@ pub fn script_uses_form(
                 }
                 let mut kinds: Vec<Option<Kind>> =
                     args.iter().map(|a| arg_kind(a, labels)).collect();
+                if matches!(
+                    command,
+                    "IntersectPath" | "IntersectRegion" | "IntersectionPaths"
+                ) {
+                    // The region clipping overload uses circles and conic parts
+                    // as conic regions.
+                    for kind in &mut kinds {
+                        if matches!(kind, Some(Kind::Circle | Kind::Arc | Kind::Sector)) {
+                            *kind = Some(Kind::Conic);
+                        }
+                    }
+                }
                 if matches!(command, "If" | "CountIf" | "KeepIf") {
                     match (args.as_slice(), kinds.as_mut_slice()) {
                         ([test, ..], [first, ..]) if inline_inequality(test) => {
