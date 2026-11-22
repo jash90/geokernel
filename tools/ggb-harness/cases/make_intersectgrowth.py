@@ -17,4 +17,9 @@ cases.case("interval", ["f(x) = x^3 - x", "h(x) = 0", "a = -2", "b = 0.5",
                          "R = Intersect(f, h, a, b)"],
            [setn("b", value) for value in (2, 0.5, 2)])
 cases.cases[-1]["track_root_growth"] = True
+cases.case("redefinition", [
+    "A = (0, 0)", "B = (2, 0)", "C = (2, 2)", "D = (0, 2)",
+    "p = Polygon(A, B, C, D)", "n = 3", "g: y = n", "R = Intersect(g, p)", "m = 3",
+], [{"action": "redefine", "line": "n = m"}, setn("m", 1), setn("m", 3), setn("m", 1)])
+cases.cases[-1]["track_boundary_growth"] = True
 cases.write()

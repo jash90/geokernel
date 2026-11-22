@@ -213,6 +213,24 @@ final class Session {
             throw new IllegalStateException("expected one replacement from: " + line);
         }
         objects.replaceAll((name, old) -> kernel.lookupLabel(name));
+        Map<AlgoElement, String> liveGroups = new LinkedHashMap<>();
+        growingPoints.forEach((algo, prefix) -> {
+            AlgoElement live = algo;
+            for (GeoElement old : algo.getOutput()) {
+                String name = old.getLabelSimple();
+                if (name == null || !name.startsWith(prefix)) {
+                    continue;
+                }
+                GeoElement current = kernel.lookupLabel(name);
+                if (current != null && current.getParentAlgorithm() != null) {
+                    live = current.getParentAlgorithm();
+                    break;
+                }
+            }
+            liveGroups.put(live, prefix);
+        });
+        growingPoints.clear();
+        growingPoints.putAll(liveGroups);
     }
 
     void delete(String label) {
