@@ -248,6 +248,20 @@ impl PointDef {
             .filter(|&id| crate::expr::inequality::is_inequality(c, id))
     }
 
+    pub(crate) fn inline_inequality_source(
+        c: &mut Construction,
+        func: &str,
+        args: &[&str],
+    ) -> Option<Id> {
+        let ("Vertex" | "Corner", [source]) = (func, args) else {
+            return None;
+        };
+        let label = format!("\0arg{}", c.len());
+        let id = crate::expr::define_plane_inequality(c, &label, source)?.ok()?;
+        c.remember_construction_source(id, source);
+        Some(id)
+    }
+
     pub(crate) fn inequality_slots(source: Id, count: usize) -> Vec<Def> {
         (0..count)
             .map(|slot| {

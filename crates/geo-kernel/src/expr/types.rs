@@ -177,13 +177,17 @@ fn type_node(
             let vars = args.iter().map(|&a| state.vars[a]).sum();
             (Ty::Num(0), 1 + depth, cost, vars)
         }
-        Node::Apply2(_, a, b) => {
+        Node::Apply2(f, a, b) => {
             let (a, b) = (a as usize, b as usize);
             if !matches!((state.tys[a], state.tys[b]), (Ty::Num(_), Ty::Num(_))) {
                 return Err("function coordinates must be numbers".into());
             }
             (
-                Ty::Num(0),
+                if super::inequality::is_inequality(c, f) {
+                    Ty::Bool
+                } else {
+                    Ty::Num(0)
+                },
                 1 + state.depth[a].max(state.depth[b]),
                 1u64.saturating_add(state.cost[a])
                     .saturating_add(state.cost[b]),

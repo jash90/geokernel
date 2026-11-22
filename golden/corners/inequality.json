@@ -122,6 +122,115 @@
           "P_{3}": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 }
         }
       ]
+    },
+    {
+      "id": "corners-inequality-003",
+      "group": "corners",
+      "script": [
+        "a = y > x^2",
+        "b = a(0, 1)",
+        "c = a(2, 1)",
+        "P = Vertex(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 1.0],
+              [-1.0, 3.0, 1.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": false },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-004",
+      "group": "corners",
+      "script": [
+        "a: y > x^2",
+        "b = a(0, 1)",
+        "c = a(2, 1)",
+        "P = Vertex(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 1.0],
+              [-1.0, 3.0, 1.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": { "type": "boolean", "defined": true, "value": false },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-inequality-005",
+      "group": "corners",
+      "script": [
+        "a: y >= x^2",
+        "b = a(0, 0)",
+        "P = Vertex(a)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 0.0],
+              [-4.0, 9.0, 0.0],
+              [-2.0, 5.0, 1.0],
+              [-1.0, 3.0, 1.0],
+              [-0.5, 2.0, 1.0],
+              [0.0, 1.0, 1.0],
+              [0.5, 0.0, 0.0],
+              [1.0, -1.0, 0.0],
+              [2.0, -3.0, 0.0],
+              [4.0, -7.0, 0.0],
+              [8.0, -15.0, 0.0]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
     }
   ]
 }

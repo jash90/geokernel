@@ -99,7 +99,7 @@ impl IntersectionWork {
         if !self.charge(1) {
             return f64::NAN;
         }
-        sample_system(c, id, t, state, &self.0)
+        system_value(c, id, t, state, &self.0).num()
     }
 
     pub(crate) fn exhausted(&self) -> bool {
@@ -107,9 +107,10 @@ impl IntersectionWork {
     }
 }
 
-fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::Lists) -> f64 {
+fn system_value(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::Lists) -> eval::Val {
+    use eval::Val::N;
     let Def::Expr(d) = c.def(id) else {
-        return f64::NAN;
+        return N(f64::NAN);
     };
     let function = entry(c, d);
     let env = eval::Env::Pair(t, state.first().copied().unwrap_or(0.0));
@@ -122,13 +123,13 @@ fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::
             let mut args = [0.0; 16];
             let n = usize::from(arity.saturating_sub(1));
             if n == 0 || n > args.len() {
-                return f64::NAN;
+                return N(f64::NAN);
             }
             let supplied = state.len().min(n);
             args[..supplied].copy_from_slice(&state[..supplied]);
             let time = eval::Local {
                 depth: 0,
-                value: eval::Val::N(t),
+                value: N(t),
                 run: None,
                 vector: false,
                 up: None,
@@ -146,17 +147,19 @@ fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::
         (Value::Function, _) => {
             if function.function_of_y {
                 let env = eval::Env::Value(state.first().copied().unwrap_or(f64::NAN));
-                eval::Ctx { env: &env, ..ctx }.fast(function.root)
+                N(eval::Ctx { env: &env, ..ctx }.fast(function.root))
             } else {
-                ctx.fast(function.root)
+                N(ctx.fast(function.root))
             }
         }
-        (Value::FunctionNVar, Node::Cas(..)) => ctx.fast(function.root),
+        (Value::FunctionNVar, Node::Cas(..)) => N(ctx.fast(function.root)),
         (Value::FunctionNVar, _) => {
-            equation::sample_side(c, id, t, state.first().copied().unwrap_or(0.0), meter)
-                .unwrap_or(f64::NAN)
+            N(
+                equation::sample_side(c, id, t, state.first().copied().unwrap_or(0.0), meter)
+                    .unwrap_or(f64::NAN),
+            )
         }
-        _ => f64::NAN,
+        _ => N(f64::NAN),
     }
 }
 

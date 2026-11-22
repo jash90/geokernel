@@ -78,9 +78,9 @@ creation, the plain label `p` when only one is. Here `p` is the script label
 up to its first `_`, and each output takes the next free index `n`; for
 `n < 10` the short form `p_n` must be free too, so an existing `b_1` makes
 the outputs `b_{2}` and `b_{3}`. Snapshots can gain indexed boundary
-intersection points or default-labelled points from `Point(list)` and
-`Intersect(f, h, a, b)` as those commands gain outputs. Existing keys are retained. Polygon commands
-also give labels to their extra outputs:
+intersection points and indexed vertices of inequalities as their output counts grow.
+`Point(list)` and `Intersect(f, h, a, b)` can add points with default labels.
+Existing keys are retained. Polygon commands also give labels to their extra outputs:
 
 A line `p = Polygon(...)` also creates the sides of the polygon and, for
 `Polygon(A, B, n)`, its new vertices. They are recorded under the labels

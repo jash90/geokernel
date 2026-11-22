@@ -178,12 +178,8 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
         }
         check_label(name)?;
         let rhs = rhs.trim();
-        if rhs.contains('=') {
+        if crate::expr::equation::split_equation(rhs).is_ok() {
             return crate::expr::equation::define(c, name, rhs).map(Some);
-        }
-        if rhs.contains('<') || rhs.contains('>') {
-            // what the input bar would make an inequality of
-            return Err("inequalities are not supported".into());
         }
         return define_after_label(c, name, rhs);
     }
@@ -1201,12 +1197,8 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     let (name, _) = rhs.split_once('(')?;
     if matches!(name.trim(), "Corner" | "Vertex") {
         if let Some((func, args)) = split_call(rhs) {
-            if let [source] = args.as_slice() {
-                let label = format!("\0arg{}", c.len());
-                if let Some(Ok(id)) = crate::expr::define_plane_inequality(c, &label, source) {
-                    c.remember_construction_source(id, source);
-                    return Some(format!("{func}({label})"));
-                }
+            if let Some(id) = PointDef::inline_inequality_source(c, func, &args) {
+                return Some(format!("{func}({})", c.label(id)));
             }
         }
     }

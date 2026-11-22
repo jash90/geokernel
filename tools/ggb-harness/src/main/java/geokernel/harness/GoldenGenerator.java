@@ -20,7 +20,7 @@ import java.util.TreeMap;
  * A case id has the form {@code <group>-<topic>-<number>}; all cases of one
  * topic go to {@code <golden dir>/<group>/<topic>.json}.
  * A case may set {@code track_boundary_growth} to record indexed outputs
- * from line or boundary crossings when the reference first labels them.
+ * from line or boundary crossings and inequality vertices when they first acquire labels.
  * {@code track_root_growth} records newly labelled roots of an interval command.
  * {@code file_loading} exercises the legacy {@code Function} interval command
  * and emits the same script form as the saved-construction importer.

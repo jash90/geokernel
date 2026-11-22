@@ -151,4 +151,23 @@ cases.case("matrix", [
     "P = Corner(u, 1)", "Q = Corner(u, 2)", "R = Corner(u, 3)", "S = Corner(u, 4)",
 ], [setn("n", 0), mv("A", 1, 2), setn("n", 1)])
 
+cases.case("vertex", [
+    "q(x,y) = 0.3x + 0.1y < 0.7 && 0.9x + 0.3y < 2.1 && y > 0 && x > -3",
+    "P = Vertex(q)",
+], [])
+
+for command in ("Vertex", "Corner"):
+    cases.case("growth", [
+        num("h", -1), "q(x,y) = x > 0 && y > 0 && x + y < h", f"P = {command}(q)",
+    ], [setn("h", 2), setn("h", -1), setn("h", 3)])
+    cases.cases[-1]["track_boundary_growth"] = True
+
+for assignment in (" =", ":"):
+    cases.case("inequality", [
+        f"a{assignment} y > x^2", "b = a(0, 1)", "c = a(2, 1)", "P = Vertex(a)",
+    ], [])
+cases.case("inequality", [
+    "a: y >= x^2", "b = a(0, 0)", "P = Vertex(a)",
+], [])
+
 cases.write()

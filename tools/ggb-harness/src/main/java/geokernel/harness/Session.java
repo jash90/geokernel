@@ -40,6 +40,7 @@ import org.geogebra.common.kernel.algos.AlgoPointInRegion;
 import org.geogebra.common.kernel.algos.AlgoRayPointVector;
 import org.geogebra.common.kernel.algos.AlgoRoots;
 import org.geogebra.common.kernel.algos.AlgoSemicircle;
+import org.geogebra.common.kernel.algos.AlgoVertexIneq;
 import org.geogebra.common.kernel.commands.AlgebraProcessor;
 import org.geogebra.common.kernel.geos.GeoConic;
 import org.geogebra.common.kernel.geos.GeoConicPart;
@@ -86,7 +87,7 @@ final class Session {
     private static final Pattern LINE =
             Pattern.compile("^([A-Za-z][A-Za-z0-9']*(?:_\\{[A-Za-z0-9]+\\})?)"
                     + "(\\([A-Za-z][A-Za-z0-9]*(?:, *[A-Za-z][A-Za-z0-9]*)*\\))? = (.+)$");
-    /** `label: lhs = rhs`, an equation line (its `=` belongs to the definition). */
+    /** `label: definition`, where a comparison or equation belongs to the definition. */
     private static final Pattern EQUATION =
             Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
     /** A scripting command line, which assigns nothing. */
@@ -221,7 +222,8 @@ final class Session {
         boolean equationLine = false;
         if (!m.matches()) {
             m = EQUATION.matcher(line);
-            if (m.matches() && m.group(2).contains("=")) {
+            if (m.matches() && (m.group(2).contains("=") || m.group(2).contains("<")
+                    || m.group(2).contains(">"))) {
                 equationLine = true;
             } else if (SCRIPTING.matcher(line).matches()) {
                 return runScriptingCommand(line);
@@ -284,7 +286,7 @@ final class Session {
             if (trackBoundaryGrowth && (parent instanceof AlgoIntersectLineCurve
                     || parent instanceof AlgoIntersectCurveCurve
                     || parent instanceof AlgoIntersectLinePolyLine
-                    || parent instanceof AlgoIntersectPolyLines)) {
+                    || parent instanceof AlgoIntersectPolyLines || parent instanceof AlgoVertexIneq)) {
                 growingPoints.put(parent, label.split("_", 2)[0] + "_{");
                 recordGrowingPoints();
                 return first;
@@ -376,12 +378,15 @@ final class Session {
                     + geo.getLabelSimple());
         }
         boolean expression = expected == null;
+        boolean planeInequality = geo instanceof GeoFunctionNVar f && f.isBooleanFunction()
+                && f.getFunctionVariables().length == 2;
         if (equationLine) {
             // an equation makes a line, a conic or (of `y = ...` alone) a
             // function, and every conic of one is recorded as a general conic
             String type = geo instanceof GeoConic && !(geo instanceof GeoConicPart)
                     ? "conic" : typeOf(geo);
-            if (!type.equals("line") && !type.equals("conic") && !type.equals("function")) {
+            if (!type.equals("line") && !type.equals("conic") && !type.equals("function")
+                    && !planeInequality) {
                 throw new IllegalStateException("expected a line, a conic or a function from '"
                         + line + "', got " + geo.getClass().getSimpleName());
             }
@@ -391,13 +396,16 @@ final class Session {
         if (nativeCas && geo instanceof GeoList && definition.matches("(N?Solve|N?Solutions)\\(.*")) {
             solutionSets.add(geo);
         }
-        if (functionLine && "function_nvar".equals(expected)
+        if (planeInequality && !functionLine) {
+            expected = "function_nvar";
+        }
+        if ("function_nvar".equals(expected)
                 || nativeCas && geo instanceof GeoFunctionNVar f && f.getFunctionVariables().length > 1
                         && definition.matches("(Expand|Factor|IFactor|Simplify|Numerator|Denominator)\\(.*")) {
             namedMultivariate.add(geo);
         }
         String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : schemaType(geo);
-        if (expression && !equationLine) {
+        if (expression && !equationLine && !planeInequality) {
             expected = expressionType(label, actual, line);
         }
         if (!expected.equals(actual)) {

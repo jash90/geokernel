@@ -926,6 +926,13 @@ fn validate_case(case: &Case) -> Result<(), String> {
                             _ => {}
                         }
                     }
+                    if let Some((label, "Vertex" | "Corner", args)) = command_args(line) {
+                        if matches!(args.as_slice(), [arg] if arg.contains(['<', '>'])
+                            || snap.get(*arg).is_some_and(|o| o.kind == Kind::FunctionNVar))
+                        {
+                            boundary_prefixes.insert(label_prefix(label));
+                        }
+                    }
                     if let Some((_, "Point", args)) = command_args(line) {
                         has_point_list |= matches!(args.as_slice(), [arg]
                             if arg.starts_with('{')
