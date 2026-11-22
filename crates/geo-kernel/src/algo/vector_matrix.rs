@@ -4,8 +4,10 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDimension.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoInvert.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoCurveCartesian.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoDeterminant.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoMatrixRank.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/ExpressionNode.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoPoint.java
@@ -408,15 +410,20 @@ impl Matrix {
 
     /// Homogeneous image of a Cartesian point (`z = 1`) or derivative
     /// (`z = 0`). In two dimensions the last coordinate stays equal to `z`.
+    /// A zero entry drops its term, so a coordinate that is NaN or infinite
+    /// reaches only the image coordinates whose entries read it: the image
+    /// of a curve is an expression in which `0 * v` simplifies to `0`
+    /// (`ExpressionNode.multiply`).
     pub(crate) fn curve_coordinates(self, (x, y): (f64, f64), z: f64) -> (f64, f64, f64) {
+        let term = |k: f64, v: f64| if k == 0.0 { 0.0 } else { k * v };
         let [a, b, c, d, e, f, g, h, i] = self.data;
         if self.size == 2 {
-            (a * x + b * y, c * x + d * y, z)
+            (term(a, x) + term(b, y), term(c, x) + term(d, y), z)
         } else {
             (
-                a * x + b * y + c * z,
-                d * x + e * y + f * z,
-                g * x + h * y + i * z,
+                term(a, x) + term(b, y) + term(c, z),
+                term(d, x) + term(e, y) + term(f, z),
+                term(g, x) + term(h, y) + term(i, z),
             )
         }
     }
