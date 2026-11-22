@@ -103,4 +103,24 @@ cases.case("dilate", [
     "u = Dilate(im, 2, (1, 1))", "P = Corner(u, 2)", "Q = Corner(u, 4)",
 ], [mv("A", 1, 2)])
 
+# CommandsTest.cmdApplyMatrix exercises both sizes of matrix.
+cases.case("matrix", [
+    image_asset, pt("A", 1, 2), pt("B", 3, 2), pt("D", 1, 4), num("n", 2),
+    image("im", f"world(false, false, point({encoded('A')}), point({encoded('B')}), point({encoded('D')}))"),
+    "m = {{n, 1}, {0, 3}}", "u = ApplyMatrix(m, im)",
+    "P = Corner(u, 1)", "Q = Corner(u, 2)", "R = Corner(u, 3)", "S = Corner(u, 4)",
+], [mv("A", 1, 1), setn("n", 0), mv("D", 1, 2), setn("n", -2)])
+cases.case("matrix", [
+    image_asset, pt("A", 1, 2), pt("B", 3, 2), pt("D", 1, 4), num("n", 0.25),
+    image("im", f"world(false, false, point({encoded('A')}), point({encoded('B')}), point({encoded('D')}))"),
+    "m = {{1, 0, 0}, {0, 1, 0}, {n, 0, 1}}", "u = ApplyMatrix(m, im)",
+    "P = Corner(u, 1)", "Q = Corner(u, 2)", "R = Corner(u, 3)", "S = Corner(u, 4)",
+], [setn("n", -1), mv("A", 1, 0), mv("A", 1, 2), setn("n", 0), mv("B", 4, 1),
+    setn("n", 0.25)])
+cases.case("matrix", [
+    image_asset, image("fixed", "screen(12, 18)"), num("n", 2),
+    "u = ApplyMatrix({{n, 0}, {0, 3}}, fixed)", "P = Corner(u, 1)",
+    "v = ApplyMatrix({{1, 2, 3}, {0, 1, 0}}, fixed)", "Q = Corner(v, 4)",
+], [setn("n", 0), setn("n", -1)])
+
 cases.write()

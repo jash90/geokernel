@@ -87,6 +87,7 @@ const MATRIX_TARGET: &[Kind] = &[
     Kind::PolyLine,
     Kind::Curve,
     Kind::Function,
+    Kind::Image,
 ];
 const LIST: &[Kind] = &[Kind::List];
 /// Kinds of object `Translate` moves here. A circle is translated by
@@ -123,7 +124,8 @@ fn only(kind: Kind) -> &'static [Kind] {
         Kind::Sector => &[Kind::Sector],
         Kind::Locus => &[Kind::Locus],
         Kind::Curve => &[Kind::Curve],
-        Kind::Button | Kind::InputBox | Kind::Image | Kind::PieChart => &[],
+        Kind::Image => &[Kind::Image],
+        Kind::Button | Kind::InputBox | Kind::PieChart => &[],
     }
 }
 
@@ -708,6 +710,9 @@ impl Group for VectorDef {
             }
             VectorDef::Dimension(v) => c.stored_value(v).is_defined().then_some(Value::Number(2.0)),
             VectorDef::ApplyMatrix { matrix, src, kind } => {
+                if kind == Kind::Image {
+                    return c.transformed_image_value(Def::Vector(*self));
+                }
                 let transform = c.elements(matrix).and_then(matrix::Matrix::read);
                 match kind {
                     Kind::Polygon | Kind::PolyLine => {

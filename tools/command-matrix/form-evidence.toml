@@ -3543,3 +3543,8 @@ cases = ["corners-dilate-001", "corners-dilate-002"]
 command = "Dilate"
 form = "image,number,point"
 cases = ["corners-dilate-001", "corners-dilate-002", "corners-dilate-003"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,image"
+cases = ["corners-matrix-001", "corners-matrix-002", "corners-matrix-003"]

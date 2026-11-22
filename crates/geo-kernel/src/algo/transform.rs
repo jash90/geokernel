@@ -795,7 +795,7 @@ impl Group for TransformDef {
 
     fn compute(&self, c: &Construction) -> Option<Value> {
         if self.kind() == Kind::Image {
-            return c.dilated_image_value(*self);
+            return c.transformed_image_value(Def::Transform(*self));
         }
         if let TransformDef::Invert { src, circle } = *self {
             let p = c.point(src)?;
