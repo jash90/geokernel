@@ -233,6 +233,14 @@ cases.case("cubics", ["c = Cubic((1,1), (2,1/2), (3,1/3), 42)"], [])
 cases.case("cubics", ["P = (0, 0)", "Q = (1, 0)", "R = (0.2, 0.8)", "n = 12",
                       "c = Cubic(P, Q, R, n)"],
            [setn("n", 15), setn("n", 587), setn("n", 12)])
+cases.case("cubics", scalene + ["a = 150°", "c = Cubic(P, Q, R, a)", "d = Cubic(P, Q, R, 150°)"],
+           [mv("R", 1.5, 0.5), mv("R", 1, 3)])
+for index in range(584, 588):
+    cases.case("cubics", ["P = (0, 0)", "Q = (1, 0)", "R = (0.2, 0.8)", f"n = {index}",
+                         "c = Cubic(P, Q, R, n)"],
+               [dict(mv("Q", 100000000, 0), reference_parse_error=True),
+                dict(mv("R", 0.2, 0.00001), reference_parse_error=True),
+                mv("Q", 1, 0), mv("R", 0.2, 0.8), setn("n", 0), setn("n", index)])
 
 cases.case(
     "trianglecurve", ["A = (0, 0)", "B = (4, 0)", "C = (0, 2)", "h = 2",

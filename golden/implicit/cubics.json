@@ -744,6 +744,641 @@
           }
         }
       ]
+    },
+    {
+      "id": "implicit-cubics-006",
+      "group": "implicit",
+      "script": [
+        "P = (-1, 1)",
+        "Q = (4, 0)",
+        "R = (1, 3)",
+        "a = 150°",
+        "c = Cubic(P, Q, R, a)",
+        "d = Cubic(P, Q, R, 150°)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "R", "x": 1.5, "y": 0.5 },
+        { "action": "move", "label": "R", "x": 1.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "a": { "type": "angle", "defined": true, "value": 2.6179938779914944 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0, 8.666666666666668, -2.1666666666666674, -0.08333333333333334],
+              [5.333333333333334, -7.333333333333335, 2.083333333333334, 0.0],
+              [0.8333333333333335, 0.41666666666666674, 0.0, 0.0],
+              [-0.41666666666666674, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.42x³ + 0.42x² y + 0.83x² + 2.08x y² - 7.33x y + 5.33x - 0.08y³ - 2.17y² + 8.67y = 8",
+            "input_form": false
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0, 8.666666666666668, -2.1666666666666674, -0.08333333333333334],
+              [5.333333333333334, -7.333333333333335, 2.083333333333334, 0.0],
+              [0.8333333333333335, 0.41666666666666674, 0.0, 0.0],
+              [-0.41666666666666674, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.42x³ + 0.42x² y + 0.83x² + 2.08x y² - 7.33x y + 5.33x - 0.08y³ - 2.17y² + 8.67y = 8",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.5, "y": 0.5 },
+          "a": { "type": "angle", "defined": true, "value": 2.6179938779914944 },
+          "c": { "type": "implicit", "defined": false },
+          "d": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": -1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "a": { "type": "angle", "defined": true, "value": 2.6179938779914944 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0, 8.666666666666668, -2.1666666666666674, -0.08333333333333334],
+              [5.333333333333334, -7.333333333333335, 2.083333333333334, 0.0],
+              [0.8333333333333335, 0.41666666666666674, 0.0, 0.0],
+              [-0.41666666666666674, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.42x³ + 0.42x² y + 0.83x² + 2.08x y² - 7.33x y + 5.33x - 0.08y³ - 2.17y² + 8.67y = 8",
+            "input_form": false
+          },
+          "d": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-8.0, 8.666666666666668, -2.1666666666666674, -0.08333333333333334],
+              [5.333333333333334, -7.333333333333335, 2.083333333333334, 0.0],
+              [0.8333333333333335, 0.41666666666666674, 0.0, 0.0],
+              [-0.41666666666666674, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.42x³ + 0.42x² y + 0.83x² + 2.08x y² - 7.33x y + 5.33x - 0.08y³ - 2.17y² + 8.67y = 8",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-cubics-007",
+      "group": "implicit",
+      "script": [
+        "P = (0, 0)",
+        "Q = (1, 0)",
+        "R = (0.2, 0.8)",
+        "n = 584",
+        "c = Cubic(P, Q, R, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "reference_parse_error": false, "label": "Q", "x": 1.0E8, "y": 0.0 },
+        { "action": "move", "reference_parse_error": true, "label": "R", "x": 0.2, "y": 1.0E-5 },
+        { "action": "move", "label": "Q", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "R", "x": 0.2, "y": 0.8 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 584.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 584.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.5321542862043083, 1.7263928385810354, -2.4816809570878657],
+              [0.6071979651939376, -9.30024535120614, 6.473020703054855, 0.0],
+              [-0.1790797315006354, 9.020217270825732, 0.0, 0.0],
+              [-0.42811823369330193, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.43x³ + 9.02x² y - 0.18x² + 6.47x y² - 9.3x y + 0.61x - 2.48y³ + 1.73y² + 0.53y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0E8, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 584.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 7.373345383465195E7, 2.6480227430565357E7, -1.5628688392720896E8],
+              [4.013373719981405E7, -6.472752666956294E8, 7.475007797906086E8, 0.0],
+              [7.407863024032979E7, 3.058831755939644E7, 0.0, 0.0],
+              [-0.7407863064166715, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.74x³ + 30588317.56x² y + 74078630.24x² + 747500779.79x y² - 647275266.7x y + 40133737.2x - 156286883.93y³ + 26480227.43y² + 73733453.83y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0E8, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 1.0E-5 },
+          "n": { "type": "number", "defined": true, "value": 584.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 7.373345383465195E7, 2.6480227430565357E7, -1.5628688392720896E8],
+              [4.013373719981405E7, -6.472752666956294E8, 7.475007797906086E8, 0.0],
+              [7.407863024032979E7, 3.058831755939644E7, 0.0, 0.0],
+              [-0.7407863064166715, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.74x³ + 30588317.56x² y + 74078630.24x² + 747500779.79x y² - 647275266.7x y + 40133737.2x - 156286883.93y³ + 26480227.43y² + 73733453.83y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 1.0E-5 },
+          "n": { "type": "number", "defined": true, "value": 584.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 5999.78350931594, 103921.28665649891, -8.31379293159375E9],
+              [7.216808099508308E-6, -60004.1858467867, 311772.85975289345, 0.0],
+              [1.4433824502058095E-5, 150000.93824486426, 0.0, 0.0],
+              [-2.1650632601566397E-5, 0.0, 0.0, 0.0]
+            ],
+            "equation": "150000.94x² y + 311772.86x y² - 60004.19x y - 8313792931.59y³ + 103921.29y² + 5999.78y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 584.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.5321542862043083, 1.7263928385810354, -2.4816809570878657],
+              [0.6071979651939376, -9.30024535120614, 6.473020703054855, 0.0],
+              [-0.1790797315006354, 9.020217270825732, 0.0, 0.0],
+              [-0.42811823369330193, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.43x³ + 9.02x² y - 0.18x² + 6.47x y² - 9.3x y + 0.61x - 2.48y³ + 1.73y² + 0.53y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 584.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.5321542862043083, 1.7263928385810354, -2.4816809570878657],
+              [0.6071979651939376, -9.30024535120614, 6.473020703054855, 0.0],
+              [-0.1790797315006354, 9.020217270825732, 0.0, 0.0],
+              [-0.42811823369330193, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.43x³ + 9.02x² y - 0.18x² + 6.47x y² - 9.3x y + 0.61x - 2.48y³ + 1.73y² + 0.53y = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-cubics-008",
+      "group": "implicit",
+      "script": [
+        "P = (0, 0)",
+        "Q = (1, 0)",
+        "R = (0.2, 0.8)",
+        "n = 585",
+        "c = Cubic(P, Q, R, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "reference_parse_error": false, "label": "Q", "x": 1.0E8, "y": 0.0 },
+        { "action": "move", "reference_parse_error": true, "label": "R", "x": 0.2, "y": 1.0E-5 },
+        { "action": "move", "label": "Q", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "R", "x": 0.2, "y": 0.8 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 585.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 585.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.8357532688012772, -2.706822736489794, 1.4870053347971015],
+              [-0.6071979651939376, -0.9747687066582987, 4.475400003482921, 0.0],
+              [2.2497121292751148, -2.1837431657413577, 0.0, 0.0],
+              [-1.642514164081177, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-1.64x³ - 2.18x² y + 2.25x² + 4.48x y² - 0.97x y - 0.61x + 1.49y³ - 2.71y² + 0.84y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0E8, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 585.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 9.380032243455899E7, -3.085794366604004E8, 2.157848883237619E8],
+              [-4.013373719981405E7, 6.329502540135772E7, 1.0789244724767533E8, 0.0],
+              [7.407863184567927E7, -2.157848889567122E8, 0.0, 0.0],
+              [-0.740786314443419, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.74x³ - 215784888.96x² y + 74078631.85x² + 107892447.25x y² + 63295025.4x y - 40133737.2x + 215784888.32y³ - 308579436.66y² + 93800322.43y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0E8, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 1.0E-5 },
+          "n": { "type": "number", "defined": true, "value": 585.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 9.380032243455899E7, -3.085794366604004E8, 2.157848883237619E8],
+              [-4.013373719981405E7, 6.329502540135772E7, 1.0789244724767533E8, 0.0],
+              [7.407863184567927E7, -2.157848889567122E8, 0.0, 0.0],
+              [-0.740786314443419, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-0.74x³ - 215784888.96x² y + 74078631.85x² + 107892447.25x y² + 63295025.4x y - 40133737.2x + 215784888.32y³ - 308579436.66y² + 93800322.43y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 1.0E-5 },
+          "n": { "type": "number", "defined": true, "value": 585.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 6000.072181639921, -9.600115490624161E8, 90001.09375],
+              [-7.216808099508308E-6, -12000.14437161196, 4.800057736978649E9, 0.0],
+              [4.330105690009132E-5, -90001.08250793362, 0.0, 0.0],
+              [-3.6084248800583E-5, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-90001.08x² y + 4800057736.98x y² - 12000.14x y + 90001.09y³ - 960011549.06y² + 6000.07y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 585.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.8357532688012772, -2.706822736489794, 1.4870053347971015],
+              [-0.6071979651939376, -0.9747687066582987, 4.475400003482921, 0.0],
+              [2.2497121292751148, -2.1837431657413577, 0.0, 0.0],
+              [-1.642514164081177, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-1.64x³ - 2.18x² y + 2.25x² + 4.48x y² - 0.97x y - 0.61x + 1.49y³ - 2.71y² + 0.84y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 585.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.8357532688012772, -2.706822736489794, 1.4870053347971015],
+              [-0.6071979651939376, -0.9747687066582987, 4.475400003482921, 0.0],
+              [2.2497121292751148, -2.1837431657413577, 0.0, 0.0],
+              [-1.642514164081177, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-1.64x³ - 2.18x² y + 2.25x² + 4.48x y² - 0.97x y - 0.61x + 1.49y³ - 2.71y² + 0.84y = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-cubics-009",
+      "group": "implicit",
+      "script": [
+        "P = (0, 0)",
+        "Q = (1, 0)",
+        "R = (0.2, 0.8)",
+        "n = 586",
+        "c = Cubic(P, Q, R, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "reference_parse_error": false, "label": "Q", "x": 1.0E8, "y": 0.0 },
+        { "action": "move", "reference_parse_error": true, "label": "R", "x": 0.2, "y": 1.0E-5 },
+        { "action": "move", "label": "Q", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "R", "x": 0.2, "y": 0.8 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 586.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 586.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -2.2671503113429834, 7.126578676281422, -3.5880434348482595],
+              [1.8067640615334561, 2.3177701144350453, -12.831346665417215, 0.0],
+              [-6.407523352698895, 6.859354288510085, 0.0, 0.0],
+              [4.6007592911654385, 0.0, 0.0, 0.0]
+            ],
+            "equation": "4.6x³ + 6.86x² y - 6.41x² - 12.83x y² + 2.32x y + 1.81x - 3.59y³ + 7.13y² - 2.27y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0E8, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 586.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -2.053180808382526E8, 6.601050103495595E8, -4.3012444094405526E8],
+              [1.870499796526566E8, -3.320363486072669E8, -2.5110523407729915E8, 0.0],
+              [-2.7117719470652574E8, 6.473546682916493E8, 0.0, 0.0],
+              [2.7117719283602595, 0.0, 0.0, 0.0]
+            ],
+            "equation": "2.71x³ + 647354668.29x² y - 271177194.71x² - 251105234.08x y² - 332036348.61x y + 187049979.65x - 430124440.94y³ + 660105010.35y² - 205318080.84y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0E8, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 1.0E-5 },
+          "n": { "type": "number", "defined": true, "value": 586.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -2.053180808382526E8, 6.601050103495595E8, -4.3012444094405526E8],
+              [1.870499796526566E8, -3.320363486072669E8, -2.5110523407729915E8, 0.0],
+              [-2.7117719470652574E8, 6.473546682916493E8, 0.0, 0.0],
+              [2.7117719283602595, 0.0, 0.0, 0.0]
+            ],
+            "equation": "2.71x³ + 647354668.29x² y - 271177194.71x² - 251105234.08x y² - 332036348.61x y + 187049979.65x - 430124440.94y³ + 660105010.35y² - 205318080.84y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 1.0E-5 },
+          "n": { "type": "number", "defined": true, "value": 586.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -18000.216528253623, 1.9200577388870783E9, -150004.6953125],
+              [0.6000000005225695, 36000.43296484056, -9.60028867576835E9, 0.0],
+              [-3.6000000008437496, 270003.247640464, 0.0, 0.0],
+              [3.0000000003211795, 0.0, 0.0, 0.0]
+            ],
+            "equation": "3x³ + 270003.25x² y - 3.6x² - 9600288675.77x y² + 36000.43x y + 0.6x - 150004.7y³ + 1920057738.89y² - 18000.22y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 586.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -2.2671503113429834, 7.126578676281422, -3.5880434348482595],
+              [1.8067640615334561, 2.3177701144350453, -12.831346665417215, 0.0],
+              [-6.407523352698895, 6.859354288510085, 0.0, 0.0],
+              [4.6007592911654385, 0.0, 0.0, 0.0]
+            ],
+            "equation": "4.6x³ + 6.86x² y - 6.41x² - 12.83x y² + 2.32x y + 1.81x - 3.59y³ + 7.13y² - 2.27y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 586.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -2.2671503113429834, 7.126578676281422, -3.5880434348482595],
+              [1.8067640615334561, 2.3177701144350453, -12.831346665417215, 0.0],
+              [-6.407523352698895, 6.859354288510085, 0.0, 0.0],
+              [4.6007592911654385, 0.0, 0.0, 0.0]
+            ],
+            "equation": "4.6x³ + 6.86x² y - 6.41x² - 12.83x y² + 2.32x y + 1.81x - 3.59y³ + 7.13y² - 2.27y = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-cubics-010",
+      "group": "implicit",
+      "script": [
+        "P = (0, 0)",
+        "Q = (1, 0)",
+        "R = (0.2, 0.8)",
+        "n = 587",
+        "c = Cubic(P, Q, R, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "reference_parse_error": false, "label": "Q", "x": 1.0E8, "y": 0.0 },
+        { "action": "move", "reference_parse_error": true, "label": "R", "x": 0.2, "y": 1.0E-5 },
+        { "action": "move", "label": "Q", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "R", "x": 0.2, "y": 0.8 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 587.0 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 587.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 3.3056112894009493, -17.596962373514373, 16.533869163038943],
+              [-4.113622147695346, 21.694822088730987, -16.534365584704144, 0.0],
+              [2.7187562294955105, -15.616612821521134, 0.0, 0.0],
+              [1.3948659181998337, 0.0, 0.0, 0.0]
+            ],
+            "equation": "1.39x³ - 15.62x² y + 2.72x² - 16.53x y² + 21.69x y - 4.11x + 16.53y³ - 17.6y² + 3.31y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0E8, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 587.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -1.7989447932116296E48, -5.40991827906752E46, 1.0380851512765412E49],
+              [-2.1980830141978934E49, 1.052504799051574E50, -1.2599126487466156E50, 0.0],
+              [4.3485444652877157E48, -1.0380852928653054E49, 0.0, 0.0],
+              [-4.3485442454794145E40, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-4.34854424547941 ⋅ 10⁴⁰x³ - 1.03808529286531 ⋅ 10⁴⁹x² y + 4.34854446528772 ⋅ 10⁴⁸x² - 1.25991264874662 ⋅ 10⁵⁰x y² + 1.05250479905157 ⋅ 10⁵⁰x y - 2.19808301419789 ⋅ 10⁴⁹x + 1.03808515127654 ⋅ 10⁴⁹y³ - 5.40991827906752 ⋅ 10⁴⁶y² - 1.79894479321163 ⋅ 10⁴⁸y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0E8, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 1.0E-5 },
+          "n": { "type": "number", "defined": true, "value": 587.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -1.7989447932116296E48, -5.40991827906752E46, 1.0380851512765412E49],
+              [-2.1980830141978934E49, 1.052504799051574E50, -1.2599126487466156E50, 0.0],
+              [4.3485444652877157E48, -1.0380852928653054E49, 0.0, 0.0],
+              [-4.3485442454794145E40, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-4.34854424547941 ⋅ 10⁴⁰x³ - 1.03808529286531 ⋅ 10⁴⁹x² y + 4.34854446528772 ⋅ 10⁴⁸x² - 1.25991264874662 ⋅ 10⁵⁰x y² + 1.05250479905157 ⋅ 10⁵⁰x y - 2.19808301419789 ⋅ 10⁴⁹x + 1.03808515127654 ⋅ 10⁴⁹y³ - 5.40991827906752 ⋅ 10⁴⁶y² - 1.79894479321163 ⋅ 10⁴⁸y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 1.0E-5 },
+          "n": { "type": "number", "defined": true, "value": 587.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -5184.648476434451, 53871.88789653778, 233280.703125],
+              [-0.5184087306345838, 114055.23333042568, -377136.6519970894, 0.0],
+              [3.110407485275647, -440650.97458129475, 0.0, 0.0],
+              [-2.5919987546410628, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-2.59x³ - 440650.97x² y + 3.11x² - 377136.65x y² + 114055.23x y - 0.52x + 233280.7y³ + 53871.89y² - 5184.65y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 587.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 3.3056112894009493, -17.596962373514373, 16.533869163038943],
+              [-4.113622147695346, 21.694822088730987, -16.534365584704144, 0.0],
+              [2.7187562294955105, -15.616612821521134, 0.0, 0.0],
+              [1.3948659181998337, 0.0, 0.0, 0.0]
+            ],
+            "equation": "1.39x³ - 15.62x² y + 2.72x² - 16.53x y² + 21.69x y - 4.11x + 16.53y³ - 17.6y² + 3.31y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 0.2, "y": 0.8 },
+          "n": { "type": "number", "defined": true, "value": 587.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 3.3056112894009493, -17.596962373514373, 16.533869163038943],
+              [-4.113622147695346, 21.694822088730987, -16.534365584704144, 0.0],
+              [2.7187562294955105, -15.616612821521134, 0.0, 0.0],
+              [1.3948659181998337, 0.0, 0.0, 0.0]
+            ],
+            "equation": "1.39x³ - 15.62x² y + 2.72x² - 16.53x y² + 21.69x y - 4.11x + 16.53y³ - 17.6y² + 3.31y = 0",
+            "input_form": false
+          }
+        }
+      ]
     }
   ]
 }

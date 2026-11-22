@@ -1,6 +1,6 @@
 """Record implicit envelopes from moving lines and circles."""
 
-from caselib import Cases, mv
+from caselib import Cases, mv, setn
 
 cases = Cases("envelope")
 cases.case("parabola", ["A = (-3, -1)", "B = (3, -1)", "F = (0, 1)", "g = Line(A, B)",
@@ -15,4 +15,10 @@ cases.case("circle", ["A = (-3, 0)", "B = (3, 0)", "g = Line(A, B)", "P = Point(
 cases.case("circle", ["A = (-3, 0)", "B = (3, 0)", "R = (-3, 2)", "s = Segment(A, R)",
                       "g = Line(A, B)", "P = Point(g)", "k = Circle(P, s)", "c = Envelope(k, P)"],
            [mv("R", -3, 1), mv("R", -3, 0), mv("R", -3, 2), mv("B", 3, 2)])
+cases.case("circle", ["A = (-3, 0)", "B = (3, 0)", "F = (1, 2)", "g = Line(A, B)", "P = Point(g)",
+                      "k = Circle(P, F)", "c = Envelope(k, P)"],
+           [mv("F", 1, 0), mv("F", 1, -2), mv("B", -3, 0), mv("B", 3, 0)])
+cases.case("circle", ["A = (-3, 0)", "B = (3, 0)", "g = Line(A, B)", "P = Point(g)",
+                      "r = Slider(0, 5, 1)", "k = Circle(P, r)", "c = Envelope(k, P)"],
+           [setn("r", 2), setn("r", 0), setn("r", 3)])
 cases.write()
