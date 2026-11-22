@@ -101,14 +101,15 @@ fn a_press_on_a_dependent_point_neither_moves_it_nor_pans() {
     assert!(close(point(&h, "A"), (0.0, 0.0)));
     // The press picked A and the release made the line's second point.
     assert_eq!(labels(&h), ["A", "B", "M", "C", "f"]);
-    // The move-view tool pans even from a point — from one off the axes:
-    // a press on an axis rescales that axis instead (`scaleXAxis`, spec
-    // D10), and a drag from the origin, where no tick can follow, pans
-    // nothing.
+    // The move-view tool pans even from a point: the drag starts on C
+    // (2, 3), a point off both axes — a press on an axis rescales that
+    // axis instead (`scaleXAxis`, spec D10) — and neither moves C nor
+    // makes anything.
     h.state_mut().select_tool(Tool::MoveView);
-    let (from, to) = (on_screen(&h, 1.0, 1.0), on_screen(&h, 2.0, 1.5));
+    let (from, to) = (on_screen(&h, 2.0, 3.0), on_screen(&h, 3.0, 3.5));
     drag(&mut h, from, to);
-    assert!(close(point(&h, "A"), (0.0, 0.0)));
+    assert!(close(point(&h, "C"), (2.0, 3.0)), "the point moved");
+    assert_eq!(labels(&h), ["A", "B", "M", "C", "f"]);
     assert!(!close(centre(&h), corner), "the move-view tool did not pan");
     let corner = centre(&h);
     // Away from objects the line tool's drag does not pan either: the press

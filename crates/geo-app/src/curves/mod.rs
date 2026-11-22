@@ -784,48 +784,49 @@ impl Curves {
     }
 
     fn fit(&self, p: &Plotted) -> Fit {
-        // The frame has one scale, so two views of the same frame scale can
-        // letterbox another axis; a kept mesh made under another
-        // frame-to-canvas affine than this frame's is placed by the scaled
-        // rule below, not moved.
-        let same_canvas = p
-            .affine
-            .iter()
-            .zip(self.affine)
-            .all(|(a, b)| (a - b).abs() <= 1e-9 * b.abs().max(1.0));
-        let _ = same_canvas;
-        match p.frame.shift_to(&self.frame) {
-            Some((dx, dy)) => {
-                // The current area in the kept plot's pixels, against the
-                // kept area grown by `m`.
-                let (pw, ph) = (p.frame.width(), p.frame.height());
-                let (w, h) = (self.frame.width(), self.frame.height());
-                let within =
-                    |m: f64| -dx >= -m && w - dx <= pw + m && -dy >= -m && h - dy <= ph + m;
-                // The move of the mesh, which sits in the canvas's pixels:
-                // a frame pixel is `affine[0]` / `affine[2]` of them.
-                Fit::Moved(
-                    vec2((dx * self.affine[0]) as f32, (dy * self.affine[2]) as f32),
-                    within(p.margin),
-                    !within(0.5 * p.margin),
-                )
-            }
-            None => {
-                // The kept canvas point `q` goes to `anchor + k * q` per
-                // axis: `anchor` is where the world point of the kept
-                // canvas's corner `(0, 0)` is now, and `k` the ratio of
-                // the affines, which is exact for any pair of views.
-                let k = vec2(
-                    (self.affine[0] / p.affine[0]) as f32,
-                    (self.affine[2] / p.affine[2]) as f32,
-                );
-                let corner = (-p.affine[1] / p.affine[0], -p.affine[3] / p.affine[2]);
-                let world = p.frame.screen_to_world(corner.0, corner.1);
-                let (nx, ny) = self.frame.world_to_screen(world.0, world.1);
-                let (ox, oy) = self.to_canvas((nx, ny));
-                Fit::Scaled(Pos2::new(ox as f32, oy as f32), k)
-            }
+        // A kept mesh sits in the canvas's pixels, placed under the affine
+        // of the frame it was made in. While that affine's stretch stands
+        // — the frame's scale the same, so the view's scales are, and the
+        // canvas's the same over it (`k` below) — the mesh moves as a
+        // whole: by the frame-pixel move of the view (`Frame::shift_to`)
+        // through the stretch, plus whatever the letterbox made (a resize
+        // that keeps the scales still shifts every point; its offset is
+        // the difference of the affines' constant parts). A view whose
+        // scales changed is placed by the scaled rule below, which is
+        // exact for any pair of views, or plotted again.
+        let same_k = (self.affine[0] - p.affine[0]).abs() <= 1e-9 * p.affine[0].abs().max(1.0)
+            && (self.affine[2] - p.affine[2]).abs() <= 1e-9 * p.affine[2].abs().max(1.0);
+        if let (true, Some((dx, dy))) = (same_k, p.frame.shift_to(&self.frame)) {
+            // The current area in the kept plot's pixels, against the
+            // kept area grown by `m`.
+            let (pw, ph) = (p.frame.width(), p.frame.height());
+            let (w, h) = (self.frame.width(), self.frame.height());
+            let within = |m: f64| -dx >= -m && w - dx <= pw + m && -dy >= -m && h - dy <= ph + m;
+            // The move of the mesh, which sits in the canvas's pixels: a
+            // frame pixel is `affine[0]` / `affine[2]` of them, and the
+            // letterbox moved the canvas's origin corner by the rest.
+            return Fit::Moved(
+                vec2(
+                    (self.affine[1] - p.affine[1] + dx * self.affine[0]) as f32,
+                    (self.affine[3] - p.affine[3] + dy * self.affine[2]) as f32,
+                ),
+                within(p.margin),
+                !within(0.5 * p.margin),
+            );
         }
+        // The kept canvas point `q` goes to `anchor + k * q` per
+        // axis: `anchor` is where the world point of the kept
+        // canvas's corner `(0, 0)` is now, and `k` the ratio of
+        // the affines, which is exact for any pair of views.
+        let k = vec2(
+            (self.affine[0] / p.affine[0]) as f32,
+            (self.affine[2] / p.affine[2]) as f32,
+        );
+        let corner = (-p.affine[1] / p.affine[0], -p.affine[3] / p.affine[2]);
+        let world = p.frame.screen_to_world(corner.0, corner.1);
+        let (nx, ny) = self.frame.world_to_screen(world.0, world.1);
+        let (ox, oy) = self.to_canvas((nx, ny));
+        Fit::Scaled(Pos2::new(ox as f32, oy as f32), k)
     }
 
     fn plot(&self, c: &Construction, id: Id, color: Color32) -> Plotted {

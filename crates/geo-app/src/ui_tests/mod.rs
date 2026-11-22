@@ -191,7 +191,7 @@ fn dragging_empty_space_pans_instead_of_moving_points() {
     button(&mut h, start + egui::vec2(60.0, 0.0), false);
     h.run();
     // The pan is one undo step right after it (the owner's rule,
-    // `camera::VIEW_CHANGES_ARE_STEPS`; the reference app stores a view
+    // `OwnerRules::view_changes_are_steps`; the reference app stores a view
     // change only at the next press).
     let app = h.state();
     assert_eq!(app.wb.undo_depth(), (1, 0));
@@ -217,7 +217,7 @@ fn dragging_empty_space_pans_instead_of_moving_points() {
 fn a_refused_drag_of_a_dependent_point_says_why_and_does_not_pan() {
     for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
         let mut h = harness("A = (1, 1)\nB = (5, 1)\nM = Midpoint(A, B)\n");
-        h.state_mut().rules = rules;
+        h.state_mut().set_rules(rules);
         drag(
             &mut h,
             world(3.0, 1.0),
@@ -246,7 +246,7 @@ fn a_refused_drag_of_a_dependent_point_says_why_and_does_not_pan() {
 fn a_press_on_a_side_takes_the_polygon() {
     for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
         let mut h = harness("A = (1, 1)\nB = (5, 1)\nC = (1, 4)\np = Polygon(A, B, C)\n");
-        h.state_mut().rules = rules;
+        h.state_mut().set_rules(rules);
         let p = h.state().wb.construction().id("p");
         assert!(p.is_some());
         click(&mut h, world(3.0, 1.0));

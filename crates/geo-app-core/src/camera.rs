@@ -7,12 +7,11 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 //! The view rules the camera alone decides: the wheel and keyboard zoom
-//! factors, the pinch, the axis rescale, the zoom rectangle and the undo
-//! rule for view changes, each following the reference app except where
-//! the owner keeps another behaviour (one named switch each).
+//! factors, the pinch, the axis rescale and the zoom rectangle, each
+//! following the reference app except where the owner keeps another
+//! behaviour (one named switch each, `OwnerRules`).
 
-use crate::geom::Point;
-use crate::view::{Camera, MAX_SCALE, MIN_SCALE};
+use crate::view::{Camera, ScaleLimits};
 
 /// The reference app's wheel zoom factor (`EuclidianView
 /// .MOUSE_WHEEL_ZOOM_FACTOR`).
@@ -20,23 +19,13 @@ pub const WHEEL_ZOOM_FACTOR: f64 = 1.1;
 /// With Alt held the wheel zooms this many times as far
 /// (`wrapMouseWheelMoved`: the factor multiplied by 1.5).
 pub const WHEEL_ALT_FACTOR: f64 = 1.5;
-/// The reference app zooms one wheel event by `WHEEL_ZOOM_FACTOR` whatever
-/// its delta. The owner keeps the zoom proportional to the scroll amount
-/// (spec D2), with this many scroll points per notch, as a browser's wheel
-/// reports one.
+/// The owner's wheel rule (spec D2) makes the zoom proportional to the
+/// scroll amount, with this many scroll points per notch, as a browser's
+/// wheel reports one.
 pub const WHEEL_POINTS_PER_NOTCH: f64 = 100.0;
 /// The keyboard zoom (`GlobalKeyDispatcher`: Ctrl + plus and Ctrl + minus)
 /// steps by the wheel factor about the last pointer position.
 pub const KEY_ZOOM_FACTOR: f64 = WHEEL_ZOOM_FACTOR;
-
-/// The owner's switch (spec F3): every view change — a pan, a pinch, a
-/// wheel or keyboard zoom, an axis rescale, a zoom rectangle, a zoom-tool
-/// click, a zoom to fit, the standard view — is one undo step right after
-/// the gesture that made it. The reference app stores a view change at the
-/// next canvas press or when the pointer leaves the canvas (the wheel), at
-/// the end of the tool (a zoom-tool click), at the release of a drag, and
-/// never for the zoom buttons. `false` would follow that.
-pub const VIEW_CHANGES_ARE_STEPS: bool = true;
 
 /// The scroll of one frame as a number of wheel notches: line units count
 /// one notch a line, point (pixel) units `WHEEL_POINTS_PER_NOTCH` points
@@ -53,75 +42,147 @@ pub fn wheel_notches(unit_lines: bool, delta_y: f64, delta_x: f64) -> f64 {
     }
 }
 
-/// The zoom factor of `notches` wheel notches of one frame: the owner's
-/// proportional rule, `WHEEL_ZOOM_FACTOR` to the notches (x1.1 for one
-/// notch, as one event of the reference app zooms), and `alt` multiplies
-/// the base by `WHEEL_ALT_FACTOR` (`wrapMouseWheelMoved`).
-pub fn wheel_factor(notches: f64, alt: bool) -> f64 {
+/// The zoom factor of one frame's wheel events (`wrapMouseWheelMoved`).
+/// The reference app zooms one fixed `WHEEL_ZOOM_FACTOR` per event,
+/// whatever its delta — only its sign decides in or out
+/// (`fixed_per_event`, `events` the signed count of the frame's events,
+/// zoom in positive); `alt` multiplies the base by `WHEEL_ALT_FACTOR`.
+/// The owner keeps the zoom proportional to the scroll amount (spec D2),
+/// `WHEEL_ZOOM_FACTOR` to the `notches` of the frame.
+pub fn wheel_zoom_factor(fixed_per_event: bool, notches: f64, events: f64, alt: bool) -> f64 {
     let base = if alt {
         WHEEL_ZOOM_FACTOR * WHEEL_ALT_FACTOR
     } else {
         WHEEL_ZOOM_FACTOR
     };
-    base.powf(notches)
+    base.powf(if fixed_per_event { events } else { notches })
 }
 
-/// The owner's choice (spec H4): a pinch tracks the fingers exactly —
-/// every frame's ratio about the frame's midpoint, however little the
-/// distance changed. The reference app applies a zoom step only once the
-/// finger distance changed by more than this many pixels
-/// (`twoTouchMoveCommon`), and keeps its last applied distance as the next
-/// step's base, which is why a spread of 1.5 was measured as 1.485;
-/// `10.0` follows that.
-pub const PINCH_DEAD_BAND: f64 = 0.0;
-/// The same rule for the midpoint's movement (`MIN_MOVE`, 5 px): the
-/// reference app pans only once it moved more than this. `0.0`, as the
-/// owner keeps it, pans with every frame.
-pub const PINCH_PAN_DEAD_BAND: f64 = 0.0;
+/// The dead bands of a pinch: the zoom waits for `zoom` pixels of changed
+/// finger distance and the pan for `pan` pixels of a moved midpoint. Which
+/// pair applies is an owner's rule (`OwnerRules::pinch_bands`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PinchBands {
+    /// Pixels of changed finger distance before a zoom step applies.
+    pub zoom: f64,
+    /// Pixels of a moved midpoint before a pan step applies.
+    pub pan: f64,
+}
 
-/// The owner's choice (spec D13): a pan follows both axes as the pointer
-/// moves them. The reference app locks a pan to one axis — within the
-/// first 40 px (`DISTANCE_THRESHOLD`) a move of more than 5 px
-/// (`INITIAL_DISTANCE_THRESHOLD`) within ±25° of an axis
-/// (`ANGLE_OPENING`) locks that axis until the other component exceeds
-/// 50 px (`MOVE_VIEW_THRESHOLD`); `SnapController`. `true` would follow
-/// it; the pan path implements no lock while this is `false`.
-pub const PAN_AXIS_LOCK: bool = false;
+impl PinchBands {
+    /// The owner's rule (spec H4): no band, the view follows the fingers
+    /// exactly.
+    pub const OURS: PinchBands = PinchBands {
+        zoom: 0.0,
+        pan: 0.0,
+    };
+    /// The reference app's bands (`MINIMAL_PIXEL_DIFFERENCE_FOR_ZOOM` 10
+    /// and `MIN_MOVE` 5 in `twoTouchMoveCommon`).
+    pub const REFERENCE: PinchBands = PinchBands {
+        zoom: 10.0,
+        pan: 5.0,
+    };
+}
 
-/// A pinch of two fingers: the world points under the fingers when the
-/// pinch began stay under them — the view scales by the ratio of the
-/// finger distances about the midpoint, which follows its own movement
-/// (spec H4). `from` is the midpoint and the distance of the fingers as
-/// they were, `to` as they are. A change inside the dead bands moves
-/// nothing (a band of 0, the owner's, skips only the changes that are no
-/// change).
-pub fn pinch_to(
-    cam: &Camera,
-    from: (Point, f64),
-    to: (Point, f64),
-    width: f64,
-    height: f64,
-) -> Camera {
-    let (a, d0) = from;
-    let (b, d1) = to;
-    let mut out = *cam;
-    if d0 > 0.0 && d1.is_finite() && d1 > 0.0 {
-        let world = cam
-            .transform(width, height)
-            .screen_to_world(a.x as f64, a.y as f64);
-        // Scale about the new midpoint, then put the world point of the old
-        // one under it: it ends up where the fingers are.
-        if (d1 - d0).abs() > PINCH_DEAD_BAND {
-            out.zoom_at(d1 / d0, b.x as f64, b.y as f64, width, height);
-        }
-        if ((b.x - a.x) as f64).hypot((b.y - a.y) as f64) > PINCH_PAN_DEAD_BAND {
-            let at = out
-                .transform(width, height)
-                .world_to_screen(world.0, world.1);
-            out.pan_pixels(b.x as f64 - at.0, b.y as f64 - at.1);
+/// A pinch of two fingers in progress: what the reference app keeps of
+/// one (`MouseTouchGestureController`: `oldDistance`, `oldCenterX/Y`),
+/// for the dead bands of its steps.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Pinch {
+    /// The bands this pinch steps in (the owner's rule when it began).
+    bands: PinchBands,
+    /// The finger distance the last zoom step applied (`oldDistance`).
+    distance: f64,
+    /// The midpoint the last pan step applied (`oldCenter`).
+    center: (f64, f64),
+}
+
+/// A whole-pixel place, as the reference app counts its pointer places
+/// (`GPoint`; the web rounds the event offset: `(int) Math.round(...)`).
+fn pixel(v: f64) -> f64 {
+    v.round()
+}
+
+/// The distance and midpoint of fingers at whole-pixel places
+/// (`twoTouchMove`: the int truncation of the pointers' own).
+fn measured(a: (f64, f64), b: (f64, f64)) -> (f64, (f64, f64)) {
+    let (x1, y1) = (pixel(a.0), pixel(a.1));
+    let (x2, y2) = (pixel(b.0), pixel(b.1));
+    (
+        (x1 - x2).hypot(y1 - y2),
+        // `(int) (x1 + x2) / 2`: whole pixels.
+        (((x1 + x2) as i64 / 2) as f64, ((y1 + y2) as i64 / 2) as f64),
+    )
+}
+
+impl Pinch {
+    /// The pinch begins with the fingers at `a` and `b`
+    /// (`twoTouchStart`): the first step's bases. It steps in `bands`,
+    /// the rule of the window it began in.
+    pub fn start(a: (f64, f64), b: (f64, f64), bands: PinchBands) -> Pinch {
+        let (distance, center) = measured(a, b);
+        Pinch {
+            bands,
+            distance,
+            center,
         }
     }
-    out
+
+    /// One finger moved; `a` and `b` are where the fingers are now. Returns
+    /// the zoom factor, the whole-pixel midpoint it applies about and the
+    /// pan in pixels, the factor `1` and the pan zero when that step does
+    /// not apply, for the caller to put on the camera.
+    ///
+    /// The reference app (`twoTouchMoveCommon`): a zoom step applies only
+    /// once the finger distance changed by more than the band's `zoom`
+    /// pixels, a pan only once the midpoint moved more than its `pan`, and
+    /// each step keeps its own base — the distance or the midpoint it
+    /// applied — as the next step's, so the fingers run ahead of the view
+    /// (`onPinch` zooms about the new midpoint,
+    /// `translateCoordSystemInPixels` pans by the raw pixel delta).
+    ///
+    /// The owner's rule (spec H4, bands of 0) tracks the fingers exactly:
+    /// every move zooms by its ratio about the new midpoint and the pan
+    /// carries the world point of the old midpoint under the new one
+    /// (the zoom already moved it, so the pan goes by the zoomed delta).
+    pub fn step(&mut self, a: (f64, f64), b: (f64, f64)) -> (f64, (f64, f64), (f64, f64)) {
+        let (distance, center) = measured(a, b);
+        let mut factor = 1.0;
+        if distance > 0.0 && (distance - self.distance).abs() > self.bands.zoom {
+            factor = distance / self.distance;
+            self.distance = distance;
+        }
+        let (dx, dy) = (center.0 - self.center.0, center.1 - self.center.1);
+        let mut pan = (0.0, 0.0);
+        if dx.hypot(dy) > self.bands.pan {
+            pan = if self.bands == PinchBands::OURS {
+                // Exactly under the fingers: the world point of the old
+                // midpoint ends where the new one is.
+                (factor * dx, factor * dy)
+            } else {
+                (dx, dy)
+            };
+            self.center = center;
+        }
+        (factor, center, pan)
+    }
+}
+
+/// One move of a pinch applied to `cam` (see [`Pinch::step`]): the zoom
+/// about the new midpoint, then the pan. The area is `width` x `height`,
+/// the scale bounds `limits`.
+pub fn pinch_move(
+    cam: &mut Camera,
+    pinch: &mut Pinch,
+    a: (f64, f64),
+    b: (f64, f64),
+    width: f64,
+    height: f64,
+    limits: ScaleLimits,
+) {
+    let (factor, center, pan) = pinch.step(a, b);
+    cam.zoom_at(factor, center.0, center.1, width, height, limits);
+    cam.pan_pixels(pan.0, pan.1);
 }
 
 /// One axis of the view as the screen lays it out: the numbers
@@ -149,6 +210,7 @@ pub fn axis_scale(
     axis: ScreenAxis,
     grabbed: f64,
     mouse: f64,
+    limits: ScaleLimits,
 ) -> Camera {
     // The y axis swaps min and max and negates the scale, as the screen's
     // y points down (`scaleYAxis`).
@@ -180,7 +242,7 @@ pub fn axis_scale(
     if !scale.is_finite() || scale <= 0.0 {
         return *cam;
     }
-    let scale = scale.clamp(MIN_SCALE, MAX_SCALE);
+    let scale = limits.clamp(scale);
     // Move zero if off screen.
     let mut new_zero = axis.zero;
     if new_zero < 0.0 {
@@ -254,18 +316,19 @@ pub fn zoom_rectangle(
     (x0, y0, x1, y1)
 }
 
-/// One view change followed for the undo rule (`VIEW_CHANGES_ARE_STEPS`):
-/// the camera before the gesture — a drag, a pinch, or a run of wheel or
-/// keyboard zoom frames. The window asks for the step when the gesture
-/// ends; one that changed nothing is none. Only one is open at a time: a
-/// gesture that a second one replaces is handed out first, as its own
-/// step.
+/// One view change followed for the undo rule
+/// (`OwnerRules::view_changes_are_steps`): the camera before the gesture —
+/// a drag, a pinch, or a run of wheel or keyboard zoom frames. The window
+/// asks for the step when the gesture ends; one that changed nothing is
+/// none. Only one is open at a time: a gesture that a second one replaces
+/// is handed out first, as its own step.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ViewGesture {
     before: Option<Camera>,
     /// The open gesture is a run of wheel frames, ended by the first
     /// frame without a zoom — not a drag or a pinch, which end when they
-    /// end.
+    /// end. Under the reference's lazy rule the run's step waits for the
+    /// next canvas press (spec F3), so the run then stays open.
     run: bool,
 }
 
@@ -297,17 +360,30 @@ impl ViewGesture {
     }
 
     /// A frame of a wheel or keyboard zoom: a run is the consecutive
-    /// frames that zoomed, and its step is recorded when the run ends —
-    /// the first frame after it that zoomed none (the owner's rule: right
-    /// after the gesture).
-    pub fn zoom_run(&mut self, cam_before: Camera, zoomed: bool) -> Option<Camera> {
+    /// frames that zoomed. `store_at_the_end` is the owner's rule (the
+    /// step is recorded when the run ends — the first frame after it that
+    /// zoomed none, right after the gesture); without it the reference's
+    /// lazy rule holds (spec F3): the run only ends at the next canvas
+    /// press, and the step — one for every view change since — is stored
+    /// there (`storeUndoInfoIfSetCoordSystemOccurred`), so the wheel alone
+    /// adds no undo step.
+    pub fn zoom_run(
+        &mut self,
+        cam_before: Camera,
+        zoomed: bool,
+        store_at_the_end: bool,
+    ) -> Option<Camera> {
         if zoomed {
             self.before.get_or_insert(cam_before);
             self.run = true;
             None
         } else if self.run {
             self.run = false;
-            self.end(cam_before)
+            if store_at_the_end {
+                self.end(cam_before)
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -322,70 +398,122 @@ mod tests {
         (a - b).abs() < 1e-9 * a.abs().max(b.abs()).max(1.0)
     }
 
-    /// The owner's wheel rule: x1.1 for one notch, proportional to the
-    /// scroll amount, stronger with Alt, nothing for horizontal scrolling.
+    /// The wheel: x1.1 for one notch under the owner's proportional rule
+    /// (spec D2), x1.1 a event whatever the delta under the reference's
+    /// (`wrapMouseWheelMoved`: only the sign decides); Alt strengthens
+    /// the zoom, horizontal scrolling zooms nothing.
     #[test]
-    fn the_wheel_zoom_is_proportional_with_a_notch_of_x11() {
+    fn the_wheel_zooms_a_notch_or_an_event_of_x11() {
+        // The owner's rule: proportional to the scroll amount.
         assert!(close(
-            wheel_factor(wheel_notches(false, 100.0, 0.0), false),
+            wheel_zoom_factor(false, wheel_notches(false, 100.0, 0.0), 1.0, false),
             1.1
         ));
         assert!(close(
-            wheel_factor(wheel_notches(false, -100.0, 0.0), false),
+            wheel_zoom_factor(false, wheel_notches(false, -100.0, 0.0), -1.0, false),
             1.0 / 1.1
         ));
         assert!(close(
-            wheel_factor(wheel_notches(false, 30.0, 0.0), false),
+            wheel_zoom_factor(false, wheel_notches(false, 30.0, 0.0), 1.0, false),
             1.1f64.powf(0.3)
         ));
         assert!(close(
-            wheel_factor(wheel_notches(true, 1.0, 0.0), false),
+            wheel_zoom_factor(false, wheel_notches(true, 1.0, 0.0), 1.0, false),
             1.1
         ));
         assert!(close(
-            wheel_factor(wheel_notches(false, 100.0, 0.0), true),
+            wheel_zoom_factor(false, wheel_notches(false, 100.0, 0.0), 1.0, true),
             1.65
         ));
         for dx in [-2.0, 0.0, 5.0] {
             assert_eq!(wheel_notches(false, 0.0, dx), 0.0);
         }
         assert_eq!(wheel_notches(false, f64::NAN, 0.0), 0.0);
+        // The reference's: one x1.1 an event, only the sign of the delta
+        // decides; two events of a frame zoom twice as far, however small
+        // their deltas are.
+        assert!(close(wheel_zoom_factor(true, 0.0, 1.0, false), 1.1));
+        assert!(close(wheel_zoom_factor(true, 0.0, -1.0, false), 1.0 / 1.1));
+        assert!(close(wheel_zoom_factor(true, 0.0, 2.0, false), 1.1 * 1.1));
+        assert!(close(wheel_zoom_factor(true, 0.0, 0.0, false), 1.0));
+        assert!(close(wheel_zoom_factor(true, 0.0, 1.0, true), 1.65));
     }
 
     /// A pinch keeps the world points under the fingers (the owner's rule,
-    /// spec H4): spreading 200 to 300 px about a midpoint at (312, 247)
-    /// scales by 1.5 about it and leaves the point under the midpoint
-    /// there.
+    /// spec H4, no dead band): spreading 200 to 300 px about a midpoint at
+    /// (312, 247) scales by 1.5 about it and leaves the point under the
+    /// midpoint there; a midpoint that moves carries that point along.
     #[test]
     fn a_pinch_is_exactly_under_the_fingers() {
-        let cam = Camera::uniform(0.0, 0.0, 50.0);
-        let out = pinch_to(
-            &cam,
-            (Point::new(312.0, 247.0), 200.0),
-            (Point::new(312.0, 247.0), 300.0),
-            892.0,
-            747.0,
-        );
-        assert!(close(out.xscale, 75.0) && close(out.yscale, 75.0));
-        let (sx, sy) = out.transform(892.0, 747.0).world_to_screen(-2.68, 2.53);
+        let mut cam = Camera::uniform(0.0, 0.0, 50.0);
+        let mut pinch = Pinch::start((212.0, 247.0), (412.0, 247.0), PinchBands::OURS);
+        for k in 0..15 {
+            // The fingers spread in steps of 3 1/3 px each, as the recorded
+            // observation moved them.
+            let d = 200.0 + (20.0 / 3.0) * (k + 1) as f64;
+            pinch_move(
+                &mut cam,
+                &mut pinch,
+                (312.0 - 0.5 * d, 247.0),
+                (312.0 + 0.5 * d, 247.0),
+                892.0,
+                747.0,
+                ScaleLimits::OURS,
+            );
+        }
+        assert!(close(cam.xscale, 75.0) && close(cam.yscale, 75.0));
+        let (sx, sy) = cam.transform(892.0, 747.0).world_to_screen(-2.68, 2.53);
         assert!(
             (sx - 312.0).abs() < 1e-9 && (sy - 247.0).abs() < 1e-9,
             "{sx} {sy}"
         );
         // The midpoint follows: the same world point under the fingers that
         // moved.
-        let out = pinch_to(
-            &cam,
-            (Point::new(312.0, 247.0), 200.0),
-            (Point::new(360.0, 280.0), 300.0),
+        let mut cam = Camera::uniform(0.0, 0.0, 50.0);
+        let mut pinch = Pinch::start((212.0, 247.0), (412.0, 247.0), PinchBands::OURS);
+        pinch_move(
+            &mut cam,
+            &mut pinch,
+            (210.0, 280.0),
+            (510.0, 280.0),
             892.0,
             747.0,
+            ScaleLimits::OURS,
         );
-        let (sx, sy) = out.transform(892.0, 747.0).world_to_screen(-2.68, 2.53);
+        let (sx, sy) = cam.transform(892.0, 747.0).world_to_screen(-2.68, 2.53);
         assert!(
             (sx - 360.0).abs() < 1e-9 && (sy - 280.0).abs() < 1e-9,
             "{sx} {sy}"
         );
+    }
+
+    /// The reference app's own pinch (`twoTouchMoveCommon` with its dead
+    /// bands, `MINIMAL_PIXEL_DIFFERENCE_FOR_ZOOM` 10 and `MIN_MOVE` 5):
+    /// a zoom step applies only once the finger distance changed by more
+    /// than 10 px, and the base moves to what applied, so the recorded
+    /// spread of 200 to 300 px — each finger moving in steps of 3 1/3 px,
+    /// one event a finger with the other one standing — zooms by 1.485
+    /// and not 1.5: the observation F5 measured the scale as 74.25
+    /// from 50.
+    #[test]
+    fn the_reference_pinch_lags_behind_its_fingers() {
+        let mut cam = Camera::uniform(0.0, 0.0, 50.0);
+        // Whole pixels, as the reference counts the fingers (`GPoint`).
+        let px = |v: f64| (446.0 + v * 50.0).round();
+        let (mut left, mut right) = (px(-4.68), px(-0.68));
+        let mut pinch = Pinch::start((left, 247.0), (right, 247.0), PinchBands::REFERENCE);
+        for k in 0..15 {
+            // One finger moves at a time, the other standing where it was:
+            // the left one first, as the recorded events came.
+            let step = |cam: &mut Camera, pinch: &mut Pinch, a, b| {
+                pinch_move(cam, pinch, a, b, 892.0, 747.0, ScaleLimits::REFERENCE);
+            };
+            left = px(-4.68 - (k + 1) as f64 / 15.0);
+            step(&mut cam, &mut pinch, (left, 247.0), (right, 247.0));
+            right = px(-0.68 + (k + 1) as f64 / 15.0);
+            step(&mut cam, &mut pinch, (left, 247.0), (right, 247.0));
+        }
+        assert!(close(cam.xscale, 74.25), "{}", cam.xscale);
     }
 
     /// `setScaleAxis`: the grabbed tick follows the pointer; observations
@@ -405,6 +533,7 @@ mod tests {
             },
             3.0,
             646.0,
+            ScaleLimits::OURS,
         );
         assert!(close(out.xscale, 200.0 / 3.0), "{}", out.xscale);
         assert!(close(out.yscale, 50.0));
@@ -420,6 +549,7 @@ mod tests {
             },
             -3.0,
             346.0,
+            ScaleLimits::OURS,
         );
         assert!(close(out.xscale, 100.0 / 3.0), "{}", out.xscale);
         assert!(close(out.cx, 0.0));
@@ -436,6 +566,7 @@ mod tests {
             },
             3.0,
             273.5,
+            ScaleLimits::OURS,
         );
         assert!(close(out.yscale, 100.0 / 3.0), "{}", out.yscale);
         assert!(close(out.xscale, 50.0));
@@ -453,6 +584,7 @@ mod tests {
             },
             0.01,
             446.0,
+            ScaleLimits::OURS,
         );
         assert_eq!(out, cam);
         let out = axis_scale(
@@ -466,6 +598,7 @@ mod tests {
             },
             2.0,
             447.0,
+            ScaleLimits::OURS,
         );
         assert!(close(out.xscale, 2.0 / 2.0), "{}", out.xscale);
     }
@@ -514,37 +647,92 @@ mod tests {
         assert_eq!(g.end(zoomed), None);
     }
 
-    /// A run of wheel frames: the step waits for the first frame after it
-    /// that zoomed none.
+    /// A run of wheel frames under the owner's rule: the step comes with
+    /// the first frame after it that zoomed none. Under the reference's
+    /// (spec F3) the run adds no step at all: it waits, still open, for
+    /// the next canvas press, and the one step it stores there covers
+    /// every view change since.
     #[test]
-    fn a_wheel_run_ends_at_the_first_frame_without_a_zoom() {
+    fn a_wheel_run_steps_at_its_end_or_waits_for_the_press() {
         let mut g = ViewGesture::default();
         let cam = Camera::STANDARD;
-        assert_eq!(g.zoom_run(cam, true), None);
-        assert_eq!(g.zoom_run(Camera::uniform(0.0, 0.0, 55.0), true), None);
+        assert_eq!(g.zoom_run(cam, true, true), None);
+        assert_eq!(
+            g.zoom_run(Camera::uniform(0.0, 0.0, 55.0), true, true),
+            None
+        );
         let after = Camera::uniform(0.0, 0.0, 60.5);
-        assert_eq!(g.zoom_run(after, false), Some(cam));
-        assert_eq!(g.zoom_run(after, false), None);
+        assert_eq!(g.zoom_run(after, false, true), Some(cam));
+        assert_eq!(g.zoom_run(after, false, true), None);
         // A run that changed nothing is no step.
-        assert_eq!(g.zoom_run(cam, true), None);
-        assert_eq!(g.zoom_run(cam, false), None);
+        assert_eq!(g.zoom_run(cam, true, true), None);
+        assert_eq!(g.zoom_run(cam, false, true), None);
+        // The reference's rule: the wheel alone adds no step. The run stays
+        // open — a second run goes on counting from the same camera — and
+        // the press (any `end`) stores the one step.
+        let mut g = ViewGesture::default();
+        assert_eq!(g.zoom_run(cam, true, false), None);
+        assert_eq!(
+            g.zoom_run(Camera::uniform(0.0, 0.0, 55.0), true, false),
+            None
+        );
+        assert_eq!(
+            g.zoom_run(Camera::uniform(0.0, 0.0, 60.5), false, false),
+            None
+        );
+        assert!(g.is_open(), "the run waits for the press");
+        assert_eq!(
+            g.zoom_run(Camera::uniform(0.0, 0.0, 66.55), true, false),
+            None
+        );
+        assert_eq!(
+            g.zoom_run(Camera::uniform(0.0, 0.0, 73.2), false, false),
+            None
+        );
+        // The press ends it: one step, from the camera the wheel began at.
+        assert_eq!(g.end(Camera::uniform(0.0, 0.0, 73.2)), Some(cam));
     }
 
-    /// The owner's switches, as this window runs them: the wheel
-    /// proportional with a notch of x1.1, the view changes undo steps right
-    /// after their gesture, the pinch exact under the fingers, the pan
-    /// never locked to an axis, the zoom limits our own. The switches are
-    /// constants, so the assertions are; they pin the settings, and the
-    /// lint that flags constant assertions is allowed here for that.
+    /// The owner's switches, as this window runs them against the
+    /// reference app's (`OwnerRules`): the wheel proportional with a notch
+    /// of x1.1 against one fixed x1.1 an event, the view changes undo
+    /// steps right after their gesture against the reference's lazy
+    /// storing, the pinch exact under the fingers against its dead bands,
+    /// the pan never locked to an axis, the zoom limits our own. The
+    /// settings are constants, so the assertions are; they pin them, and
+    /// the lint that flags constant assertions is allowed here for that.
     #[test]
     #[allow(clippy::assertions_on_constants)]
     fn the_owner_switches_are_set_to_our_behaviour() {
+        use crate::app::OwnerRules;
         assert_eq!(WHEEL_ZOOM_FACTOR, 1.1);
         assert_eq!(WHEEL_POINTS_PER_NOTCH, 100.0);
-        assert!(VIEW_CHANGES_ARE_STEPS);
-        assert_eq!(PINCH_DEAD_BAND, 0.0);
-        assert_eq!(PINCH_PAN_DEAD_BAND, 0.0);
-        assert!(!PAN_AXIS_LOCK);
-        assert_eq!((MIN_SCALE, MAX_SCALE), (1e-6, 1e9));
+        let ours = OwnerRules::OURS;
+        let reference = OwnerRules::REFERENCE;
+        assert!(ours.view_changes_are_steps);
+        assert!(!reference.view_changes_are_steps);
+        assert!(!ours.wheel_zoom_fixed_per_event);
+        assert!(reference.wheel_zoom_fixed_per_event);
+        assert_eq!(
+            ours.pinch_bands,
+            PinchBands {
+                zoom: 0.0,
+                pan: 0.0
+            }
+        );
+        assert_eq!(
+            reference.pinch_bands,
+            PinchBands {
+                zoom: 10.0,
+                pan: 5.0
+            }
+        );
+        assert!(!ours.pan_axis_lock);
+        assert!(reference.pan_axis_lock);
+        assert_eq!((ours.scale_limits.min, ours.scale_limits.max), (1e-6, 1e9));
+        assert_eq!(
+            (reference.scale_limits.min, reference.scale_limits.max),
+            (1e-15, 1e15)
+        );
     }
 }

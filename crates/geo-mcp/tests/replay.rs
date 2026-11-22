@@ -17,9 +17,7 @@
 //! reference app's too where a switch of `OwnerRules` gives it), or it is
 //! skipped until a later group, named with its group. A fixture scenario
 //! that is in no list fails the test, and the numbers replayed and skipped
-//! are asserted. `undo_steps_added` is compared wherever our kept rules and
-//! the reference app agree; `UNDO_DIFFERS` names the scenarios where they
-//! do not.
+//! are asserted.
 
 use geo_mcp::protocol::Server;
 use serde_json::{json, Value};
@@ -71,7 +69,6 @@ const LANDED: &[(u8, &[&str])] = &[
     (
         4,
         &[
-            "wheel_zoom_in_about_pointer",
             "wheel_zoom_out_about_pointer",
             "zoom_in_button_about_canvas_centre",
             "zoom_to_fit_changes_aspect",
@@ -177,10 +174,17 @@ const OURS: &[(&str, bool)] = &[
     // A press on a polygon's side drags the polygon
     // (`hit::SIDE_TAKES_THE_POLYGON`).
     ("press_on_polygon_edge_does_nothing", true),
+    // A wheel zoom is an undo step right after the gesture
+    // (`OwnerRules::view_changes_are_steps`); the reference stores the view
+    // only at the next canvas press or when the pointer leaves the canvas,
+    // so the observation (the undo pressed through the button, no canvas
+    // press) counts none (spec F3).
+    ("wheel_zoom_in_about_pointer", true),
     // A pinch zooms exactly under the fingers, with no dead band
-    // (`camera::PINCH_DEAD_BAND`, 0); the reference's own lagging pinch is
-    // not a rules setting of this window, so only ours is asserted.
-    ("pinch_spread_symmetric", false),
+    // (`OwnerRules::pinch_bands`, none); the
+    // reference's lagging pinch (10 px zoom, 5 px pan) is the same gesture
+    // under the reference rules, so both outcomes are asserted.
+    ("pinch_spread_symmetric", true),
 ];
 
 /// The scenarios skipped until a later group, with the group and why.
@@ -198,17 +202,6 @@ const SKIPPED: &[(u8, &str, &[&str])] = &[
     ),
     (8, "the input row", &["enter_on_empty_input_row"]),
 ];
-
-/// The scenarios whose `undo_steps_added` differs from ours because of a
-/// rule the owner keeps, and that rule. Every other replayed scenario with
-/// the field must match it.
-const UNDO_DIFFERS: &[(&str, &str)] = &[(
-    "wheel_zoom_in_about_pointer",
-    "the owner keeps the wheel zoom as an undo step right after the gesture; the \
-     reference stores it only at the next canvas press or when the pointer leaves \
-     the canvas, so the observation (undo pressed through the button, no canvas \
-     press) counted none (spec F3; `view::VIEW_CHANGES_ARE_STEPS`)",
-)];
 
 /// How a fixture scenario is treated.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -854,10 +847,13 @@ fn compare(expected: &Value, out: &Outcome, undo: bool) -> Vec<String> {
     // A world point the scenario says stayed under the pointer: it began at
     // the standard view's place of it (the window is opened standard) and
     // must still be there. The `approx` form is the reference's pinch,
-    // which lags behind its fingers; ours holds the exact check.
-    for (key, tol) in [
-        ("fixed_world_point", 0.0f64),
-        ("fixed_world_point_approx", 0.02f64),
+    // which lags behind its fingers — its zoom fires only once the fingers
+    // pass the dead band, so the point wanders a pixel or so, measured in
+    // world units at the end view's scale (0.02 of them, about 1.5 px
+    // there); ours holds the exact check.
+    for (key, world) in [
+        ("fixed_world_point", false),
+        ("fixed_world_point_approx", true),
     ] {
         if let Some(p) = expected.get(key) {
             let before = (
@@ -869,8 +865,14 @@ fn compare(expected: &Value, out: &Outcome, undo: bool) -> Vec<String> {
                 origin.0 + num(&p[0]) * num(&st["view"]["scale"]),
                 origin.1 - num(&p[1]) * num(&st["view"]["yscale"]),
             );
-            let ok = (before.0 - after.0).abs() <= tol.max(1e-9)
-                && (before.1 - after.1).abs() <= tol.max(1e-9);
+            let (dx, dy) = ((before.0 - after.0).abs(), (before.1 - after.1).abs());
+            // The pixel drift of the exact form, the world drift (0.02 of
+            // a unit) of the approx one.
+            let ok = if world {
+                dx / num(&st["view"]["scale"]) <= 0.02 && dy / num(&st["view"]["yscale"]) <= 0.02
+            } else {
+                dx <= 1e-9 && dy <= 1e-9
+            };
             if !ok {
                 diffs.push(format!("{key} {p:?} moved from {before:?} to {after:?}"));
             }
@@ -1026,13 +1028,22 @@ fn ours_expected(name: &str) -> Value {
             "view": {"xZero": 446, "yZero": 373.5, "scale": 50},
             "undo_steps_added": 1
         }),
+        // The wheel zoom is one undo step the moment the run of wheel
+        // events ends (the owner's rule, `OwnerRules::view_changes_are_steps`);
+        // the view is the observed one — the zoom is about the pointer and
+        // the same in both apps.
+        "wheel_zoom_in_about_pointer" => json!({
+            "view": {"xZero": 459.4, "yZero": 386.15, "scale": 55},
+            "fixed_world_point": [-2.68, 2.53],
+            "undo_steps_added": 1
+        }),
         // The fingers spread from 200 to 300 px about the fixed midpoint
         // (-2.68, 2.53), drawn at (312, 247): the scale goes from 50 to 75
         // and that point stays under the fingers (the reference app lags
         // by its 10 px dead band: 74.25). egui measures the fingers in
         // `f32`, which stays within the recorded integer's half unit. The
         // pinch changed the view, so it is one undo step right after the
-        // gesture (the owner's rule, `camera::VIEW_CHANGES_ARE_STEPS`).
+        // gesture (the owner's rule, `OwnerRules::view_changes_are_steps`).
         "pinch_spread_symmetric" => json!({
             "objects": {"A": [1, 1.01]},
             "view": {"xZero": 513, "yZero": 436.75, "scale": 75},
@@ -1049,7 +1060,6 @@ fn the_observed_pointer_scenarios_replay() {
     let mut failed = Vec::new();
     let (mut replayed, mut ours) = (0, 0);
     let mut skipped = std::collections::BTreeMap::<u8, usize>::new();
-    let undo_differs = std::cell::RefCell::new(Vec::new());
     // Both frame pacings; the differences of the second are marked.
     let both = |s: &Value, rules: &str, run: &dyn Fn(&Outcome) -> Vec<String>| {
         let mut diffs = Vec::new();
@@ -1088,19 +1098,7 @@ fn the_observed_pointer_scenarios_replay() {
             }
             Some(Part::Landed(g)) => {
                 replayed += 1;
-                let differs = UNDO_DIFFERS.iter().any(|(n, _)| *n == name);
-                let diffs = both(s, "ours", &|out| {
-                    let mut d = compare(expected, out, !differs);
-                    if differs {
-                        let want = expected["undo_steps_added"].as_i64();
-                        if want == Some(out.undo_added) {
-                            d.push("undo steps now agree: drop it from UNDO_DIFFERS".into());
-                        } else {
-                            undo_differs.borrow_mut().push(name.to_owned());
-                        }
-                    }
-                    d
-                });
+                let diffs = both(s, "ours", &|out| compare(expected, out, true));
                 if diffs.is_empty() {
                     format!("pass (group {g})")
                 } else {
@@ -1158,16 +1156,10 @@ fn the_observed_pointer_scenarios_replay() {
         count += 1;
     }
     assert_eq!(count, names.len());
-    assert_eq!((replayed, ours), (94, 2), "scenarios replayed");
+    assert_eq!((replayed, ours), (93, 3), "scenarios replayed");
     assert_eq!(
         skipped.into_iter().collect::<Vec<_>>(),
         [(5, 1), (6, 1), (8, 1)],
         "scenarios skipped, by group"
     );
-    // Each pacing records the difference once.
-    let want: Vec<String> = UNDO_DIFFERS
-        .iter()
-        .flat_map(|(n, _)| [n.to_string(), n.to_string()])
-        .collect();
-    assert_eq!(undo_differs.into_inner(), want, "undo steps that differ");
 }

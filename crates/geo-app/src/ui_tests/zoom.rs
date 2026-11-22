@@ -2,7 +2,7 @@
 //! (GeoGebra, EUPL 1.2):
 //! `shared/common-jre/src/test/java/org/geogebra/common/euclidian/tools/ZoomToolTest.java`
 //! at commit 112919f. Where the owner keeps our own rule (view changes are
-//! undo steps right after the gesture, `view::VIEW_CHANGES_ARE_STEPS`) the
+//! undo steps right after the gesture, `OwnerRules::view_changes_are_steps`) the
 //! expectation says so; everything else follows the reference.
 
 use super::*;
@@ -246,7 +246,7 @@ fn a_zoom_out_drag_changes_nothing() {
 /// stores the zoom clicks of a tool use at the moment the tool is left
 /// (`endOfMode`), so any number of them is one undo step. The owner keeps
 /// view changes as undo steps right after the gesture
-/// (`view::VIEW_CHANGES_ARE_STEPS`): each click is a step of its own.
+/// (`OwnerRules::view_changes_are_steps`): each click is a step of its own.
 #[test]
 fn each_zoom_in_click_is_its_own_undo_step() {
     let mut h = harness("");
@@ -306,4 +306,86 @@ fn the_transform_carries_both_scales() {
     let v = t.view();
     assert!(close(v.xmax - v.xmin, w / 100.0));
     assert!(close(v.ymax - v.ymin, hgt / 50.0));
+}
+
+/// A run of wheel zooms is one undo step right after it under the owner's
+/// rule; under the reference's the wheel alone adds no step — the next
+/// canvas press stores it, one step for every view change since
+/// (`OwnerRules::view_changes_are_steps`, spec F3, the recorded
+/// observation B1 counted none). Fails if the switch does nothing.
+#[test]
+fn a_wheel_zoom_steps_at_once_or_at_the_next_press() {
+    for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
+        let what = format!("{rules:?}");
+        let mut h = harness("");
+        h.state_mut().set_rules(rules);
+        let (sx, _) = scales(&h);
+        let at = drawn(&h, 2.0, -2.0);
+        let wheel = |h: &mut Harness<'_, App>, dy: f32| {
+            h.input_mut().events.push(Event::PointerMoved(at));
+            h.input_mut().events.push(Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Line,
+                delta: egui::vec2(0.0, dy),
+                modifiers: Modifiers::NONE,
+                phase: egui::TouchPhase::Move,
+                source: egui::MouseWheelSource::Wheel,
+            });
+            h.step();
+        };
+        // The frame of the run: nothing stored yet, either way.
+        wheel(&mut h, 1.0);
+        assert!(close(scales(&h).0, sx * 1.1), "{what}");
+        assert_eq!(h.state().wb.undo_depth().0, 0, "{what}: the run is open");
+        h.run();
+        let want = if rules.view_changes_are_steps { 1 } else { 0 };
+        assert_eq!(
+            h.state().wb.undo_depth().0,
+            want,
+            "{what}: the run ended, its step is {}",
+            if want == 1 { "stored" } else { "still waiting" }
+        );
+        // Another notch starts from what the first left: one step more for
+        // the owner, still the one pending step for the reference.
+        wheel(&mut h, 1.0);
+        h.run();
+        assert_eq!(
+            h.state().wb.undo_depth().0,
+            if rules.view_changes_are_steps { 2 } else { 0 },
+            "{what}"
+        );
+        if !rules.view_changes_are_steps {
+            // The next canvas press stores the one pending step and undo
+            // takes the view back to where the wheel began.
+            let at = drawn(&h, 2.0, -2.0);
+            click(&mut h, at);
+            assert_eq!(h.state().wb.undo_depth().0, 1, "{what}");
+            assert!(h.state_mut().undo());
+            h.run();
+            assert!(close(scales(&h).0, sx), "{what}");
+        }
+    }
+}
+
+/// The wheel belongs to a text field that has the keyboard: it scrolls the
+/// field and zooms nothing (`wrapMouseWheelMoved` begins with
+/// `isTextfieldHasFocus`).
+#[test]
+fn the_wheel_zooms_nothing_while_a_text_field_has_the_focus() {
+    let mut h = harness("A = (1, 1)\n");
+    let was = scales(&h);
+    // The input row takes the focus, as clicking it does.
+    h.state_mut().focus_input = true;
+    h.run();
+    let at = drawn(&h, 2.0, -2.0);
+    h.input_mut().events.push(Event::PointerMoved(at));
+    h.input_mut().events.push(Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, 3.0),
+        modifiers: Modifiers::NONE,
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+    });
+    h.step();
+    h.run();
+    assert_eq!(scales(&h), was, "the wheel zoomed over the field");
 }

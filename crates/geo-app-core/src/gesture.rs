@@ -264,6 +264,12 @@ pub struct Gesture {
     /// the last frame.
     moved_to: Option<Point>,
     panned: (f32, f32),
+    /// The pan axis lock of the reference app is on (`SnapController`,
+    /// `OwnerRules::pan_axis_lock`).
+    pan_lock: bool,
+    /// The lock of the current press: its state, the pointer's whole way
+    /// from the press and the way the lock has let through so far.
+    lock: PanLock,
     /// The touch id of the finger that the platform reports as the mouse.
     primary_finger: Option<u64>,
     /// The touch ids of the other fingers that are down and landed in the
@@ -271,6 +277,40 @@ pub struct Gesture {
     fingers: [Option<u64>; FINGERS],
     /// Intents decided by events, handed out by `end_frame`.
     pending: Intents,
+}
+
+/// The reference app's pan axis lock (`SnapController`): within the first
+/// 40 px of the drag (`DISTANCE_THRESHOLD`) a move of more than 5 px
+/// (`INITIAL_DISTANCE_THRESHOLD`) within ±25° of an axis
+/// (`ANGLE_OPENING`, 50°) locks that axis; the lock holds until the other
+/// component of the way exceeds 50 px (`MOVE_VIEW_THRESHOLD`). Ours keeps
+/// both axes free (`OwnerRules::pan_axis_lock`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LockState {
+    MaySnap,
+    Horizontal,
+    Vertical,
+    Free,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct PanLock {
+    state: LockState,
+    /// The pointer's whole way from the press, as the pans of the frames
+    /// added it up.
+    way: (f32, f32),
+    /// The way the lock has let through so far.
+    let_through: (f32, f32),
+}
+
+impl Default for PanLock {
+    fn default() -> Self {
+        PanLock {
+            state: LockState::MaySnap,
+            way: (0.0, 0.0),
+            let_through: (0.0, 0.0),
+        }
+    }
 }
 
 /// The distance on the farther axis (`isDraggingBeyondThreshold` compares
@@ -293,10 +333,28 @@ impl Gesture {
             ended: None,
             moved_to: None,
             panned: (0.0, 0.0),
+            pan_lock: false,
+            lock: PanLock::default(),
             primary_finger: None,
             fingers: [None; FINGERS],
             pending: Intents::default(),
         }
+    }
+
+    /// Whether the pan axis lock of the reference app is on
+    /// (`OwnerRules::pan_axis_lock`); set with the rules.
+    pub fn set_pan_lock(&mut self, on: bool) {
+        self.pan_lock = on;
+    }
+
+    /// The pointers of the pinch in progress: the one that pressed and
+    /// the finger that landed in the area to make the pinch, as ids the
+    /// caller can track (a touch by its id, the mouse as `MOUSE`). The
+    /// pinch's own rule measures the fingers (`camera::Pinch`).
+    pub fn pinch_ids(&self) -> Option<(PointerId, PointerId)> {
+        let other = self.fingers.iter().flatten().next().copied()?;
+        let pressing = self.primary_finger.unwrap_or(MOUSE);
+        (self.mode == Some(Mode::Pinch)).then_some((pressing, other))
     }
 
     /// A drag is in progress that pans the view.
@@ -519,6 +577,7 @@ impl Gesture {
         });
         self.mode = None;
         self.before_pinch = None;
+        self.lock = PanLock::default();
         // Another finger is already down in the area: two fingers pinch.
         if self.fingers.iter().any(Option::is_some) {
             self.mode = Some(Mode::Pinch);
@@ -663,10 +722,56 @@ impl Gesture {
         if moved_to.is_some() {
             match mode {
                 Some(Mode::Point | Mode::Rect | Mode::Axis) => out.drag_to = moved_to,
-                Some(Mode::Pan) => out.pan = Some(panned),
+                Some(Mode::Pan) => out.pan = Some(self.locked_pan(panned)),
                 _ => {}
             }
         }
+        out
+    }
+
+    /// The frame's pan under the pan axis lock (`SnapController`): the
+    /// state machine runs on the pointer's whole way from the press, and
+    /// the view goes to the press's view plus the locked way
+    /// (`setCoordSystemFromMouseMove` adds the snapped total to the view
+    /// remembered at the press), so the frame's pan is what the lock
+    /// newly lets through — including the jump back of an axis that had
+    /// moved before the lock took it.
+    fn locked_pan(&mut self, panned: (f32, f32)) -> (f32, f32) {
+        if !self.pan_lock {
+            return panned;
+        }
+        self.lock.way = (self.lock.way.0 + panned.0, self.lock.way.1 + panned.1);
+        let (dx, dy) = self.lock.way;
+        // tan of half the `ANGLE_OPENING` (50°): a way within ±25° of an
+        // axis.
+        const CONE: f32 = 0.4663;
+        let way = dx.hypot(dy);
+        self.lock.state = match self.lock.state {
+            LockState::MaySnap => {
+                if way > 40.0 {
+                    LockState::Free
+                } else if way > 5.0 && dy.abs() <= CONE * dx.abs() && dy.abs() <= 50.0 {
+                    LockState::Horizontal
+                } else if way > 5.0 && dx.abs() <= CONE * dy.abs() && dx.abs() <= 50.0 {
+                    LockState::Vertical
+                } else {
+                    LockState::MaySnap
+                }
+            }
+            LockState::Horizontal if dy.abs() > 50.0 => LockState::Free,
+            LockState::Vertical if dx.abs() > 50.0 => LockState::Free,
+            other => other,
+        };
+        let allowed = match self.lock.state {
+            LockState::Horizontal => (dx, 0.0),
+            LockState::Vertical => (0.0, dy),
+            _ => (dx, dy),
+        };
+        let out = (
+            allowed.0 - self.lock.let_through.0,
+            allowed.1 - self.lock.let_through.1,
+        );
+        self.lock.let_through = allowed;
         out
     }
 }
@@ -1425,5 +1530,46 @@ mod tests {
         let g = mouse();
         assert_eq!(g.zoom(1.0, p(0.0, 0.0)), None);
         assert_eq!(g.zoom(1.25, p(3.0, 4.0)).map(|z| z.factor), Some(1.25));
+    }
+    /// The reference app's pan axis lock (`SnapController`, spec D13):
+    /// a drag that sets out within ±25° of an axis, inside its first
+    /// 40 px and by more than 5 px, pans that axis alone — the other
+    /// component snaps back to the press — and the lock holds until the
+    /// other component of the way exceeds 50 px. A drag further than 40 px
+    /// out, or diagonal, never locks. Ours never locks (the switch off).
+    #[test]
+    fn a_pan_locks_to_an_axis_under_the_reference_rules() {
+        let run = |lock: bool, moves: &[(f32, f32)]| {
+            let mut g = mouse();
+            g.set_pan_lock(lock);
+            frame(&mut g, 0.0, &[down(0.0, 0.0)], Grab::Pan);
+            let mut panned = (0.0, 0.0);
+            for (i, &(x, y)) in moves.iter().enumerate() {
+                let out = frame(&mut g, 0.15 + 0.025 * i as f64, &[mv(x, y)], Grab::Pan);
+                let d = out.pan.unwrap_or((0.0, 0.0));
+                panned = (panned.0 + d.0, panned.1 + d.1);
+            }
+            panned
+        };
+        // Nearly horizontal: locks at the first move past 5 px, the y
+        // snaps back and stays off; past 50 px of y the lock gives way.
+        let moves: Vec<(f32, f32)> = (1..=20).map(|k| (6.0 * k as f32, 2.0 * k as f32)).collect();
+        let panned = run(true, &moves);
+        assert_eq!(panned.1, 0.0, "the locked axis stayed at the press");
+        assert!(panned.0 > 0.0);
+        // The same moves without the lock: both axes pan.
+        let panned = run(false, &moves);
+        assert!((panned.1 - 40.0).abs() < 1e-4, "{}", panned.1);
+        // A diagonal way (45°, outside the ±25° cone) never locks.
+        let moves: Vec<(f32, f32)> = (1..=10).map(|k| (6.0 * k as f32, 6.0 * k as f32)).collect();
+        let panned = run(true, &moves);
+        assert_eq!(panned, (60.0, 60.0));
+        // A way that only turns horizontal past 40 px never locks either
+        // (`DISTANCE_THRESHOLD`).
+        let moves: Vec<(f32, f32)> = (1..=10)
+            .map(|k| (6.0 * k as f32, 3.0 * k as f32 + 30.0))
+            .collect();
+        let panned = run(true, &moves);
+        assert_eq!(panned, (60.0, 60.0));
     }
 }

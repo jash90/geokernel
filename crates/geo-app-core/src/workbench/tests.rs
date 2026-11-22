@@ -1193,3 +1193,98 @@ fn equation_sides_keep_their_inputs_through_rebuild_and_undo() {
     assert!(w.undo());
     check(&w, 1.0, 13.0);
 }
+
+/// A failed undo keeps its step: the stacks go back to exactly what they
+/// were, so the undo can be taken again and still reaches the state the
+/// step holds (the recovery used to push a fresh state of the current
+/// journal, which replaced the step with a no-op).
+#[test]
+fn a_failed_undo_keeps_its_step() {
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    w.run_line("C = (5, 5)").unwrap();
+    w.run_line("D = (6, 6)").unwrap();
+    assert_eq!(w.undo_depth(), (2, 0));
+    // Every rebuild fails, as a replay of an undo step would.
+    w.fail_rebuilds = Some("test".into());
+    assert!(!w.undo());
+    w.fail_rebuilds = None;
+    assert_eq!(w.undo_depth(), (2, 0), "the stacks are as they were");
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["A", "C"], "the step still holds its state");
+    assert!(w.undo());
+    assert_eq!(labels(&w), ["A"]);
+    assert!(w.redo());
+    assert_eq!(labels(&w), ["A", "C"]);
+}
+
+/// The same for a failed redo: the redo step stays, so trying again still
+/// goes to the state it holds.
+#[test]
+fn a_failed_redo_keeps_its_step() {
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    w.run_line("C = (5, 5)").unwrap();
+    w.run_line("D = (6, 6)").unwrap();
+    assert!(w.undo() && w.undo());
+    assert_eq!(labels(&w), ["A"]);
+    assert_eq!(w.undo_depth(), (0, 2));
+    w.fail_rebuilds = Some("test".into());
+    assert!(!w.redo());
+    w.fail_rebuilds = None;
+    assert_eq!(w.undo_depth(), (0, 2), "the stacks are as they were");
+    assert!(w.redo());
+    assert_eq!(labels(&w), ["A", "C"], "the step still holds its state");
+    assert!(w.redo());
+    assert_eq!(labels(&w), ["A", "C", "D"]);
+}
+
+/// A view-only step changed no object, so neither its undo nor its redo
+/// replays the journal: the construction is never rebuilt on the way
+/// (`step_back`), in either direction — the state the stacks keep for the
+/// way back is view-only too.
+#[test]
+fn the_undo_and_redo_of_a_view_only_step_do_not_replay() {
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    w.run_line("C = (5, 5)").unwrap();
+    w.set_camera(crate::view::Camera::uniform(0.0, 0.0, 50.0));
+    w.record_view_step(crate::view::Camera::uniform(3.0, 1.0, 50.0));
+    assert_eq!(w.undo_depth(), (2, 0));
+    let (rebuilds, version) = (w.rebuilds(), w.version());
+    assert!(w.undo());
+    assert_eq!(
+        (w.rebuilds(), w.version()),
+        (rebuilds, version),
+        "the undo replayed the journal"
+    );
+    assert!(w.redo());
+    assert_eq!(
+        (w.rebuilds(), w.version()),
+        (rebuilds, version),
+        "the redo replayed the journal"
+    );
+    assert_eq!(labels(&w), ["A", "C"]);
+}
+
+/// A long run of view changes cannot evict construction steps from the
+/// undo history: the oldest view-only step goes first, and none being left
+/// to take, the history just grows past its bound until a construction
+/// step comes (`Undo::record_view`). The reference app, which has no
+/// bound, keeps them all; this keeps as many as the bound allows.
+#[test]
+fn sustained_view_changes_do_not_evict_construction_history() {
+    let mut w = Workbench::from_script("A = (0, 0)\n").unwrap();
+    w.run_line("C = (5, 5)").unwrap();
+    w.run_line("D = (6, 6)").unwrap();
+    for k in 0..600 {
+        let before = crate::view::Camera::uniform(k as f64, 0.0, 50.0);
+        w.set_camera(crate::view::Camera::uniform(k as f64 + 1.0, 0.0, 50.0));
+        w.record_view_step(before);
+    }
+    // Undo to the beginning: the two construction steps survived all 600
+    // view steps (a view-only undo replays nothing, so this is quick).
+    let mut undos = 0;
+    while w.undo() {
+        undos += 1;
+    }
+    assert_eq!(labels(&w), ["A"], "a construction step was evicted");
+    assert!(undos >= 2, "only {undos} steps left");
+}

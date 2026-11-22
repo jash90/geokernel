@@ -609,14 +609,17 @@ impl Workbench {
         if self.tool_use.is_some() {
             return self.cancel_tool_use();
         }
-        let current = self.state(self.copy(&self.log));
+        let mut current = self.state(self.copy(&self.log));
+        // A view-only step holds the very journal the document has, so the
+        // state kept for redo is view-only too: it never replays either.
+        current.view_only = self.undo.undo_is_view_only(|s| s.view_only);
         let Some(prev) = self.undo.undo(current) else {
             return false;
         };
-        if self.step_back(prev).is_err() {
-            // Put the stacks back as they were: the step undone above is
-            // pushed back as the redo state it was taken for.
-            self.undo.redo(self.state(self.copy(&self.log)));
+        if self.step_back(prev.clone()).is_err() {
+            // Put the stacks back exactly as they were: the step taken
+            // above goes back as the redo state it was taken for.
+            self.undo.redo(prev);
             return false;
         }
         true
@@ -643,12 +646,16 @@ impl Workbench {
             return false;
         }
         self.cancel_tool_use();
-        let current = self.state(self.copy(&self.log));
+        let mut current = self.state(self.copy(&self.log));
+        // As in `undo`: the way back over a view-only step is view-only.
+        current.view_only = self.undo.redo_is_view_only(|s| s.view_only);
         let Some(next) = self.undo.redo(current) else {
             return false;
         };
         if self.step_back(next.clone()).is_err() {
-            self.undo.undo(self.state(self.copy(&self.log)));
+            // Put the stacks back exactly as they were: the redo step
+            // taken above goes back where it came from.
+            self.undo.undo(next);
             return false;
         }
         true
@@ -702,15 +709,16 @@ impl Workbench {
 
     /// Records one undo step for a view change that changed no object: the
     /// journal stays as it is and the step brings the camera `before` back
-    /// (`camera::VIEW_CHANGES_ARE_STEPS`; the reference app stores view
+    /// (`OwnerRules::view_changes_are_steps`; the reference app stores view
     /// changes lazily, spec F3). A view that ended where it began is no
-    /// step.
+    /// step. A run of them never evicts a construction step
+    /// (`Undo::record_view`).
     pub fn record_view_step(&mut self, before: Camera) {
         if self.camera.is_some_and(|now| now != before) {
             let mut state = self.state(self.copy(&self.log));
             state.camera = Some(before);
             state.view_only = true;
-            self.undo.record(state);
+            self.undo.record_view(state, |s| s.view_only);
         }
     }
 

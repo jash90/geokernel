@@ -173,8 +173,13 @@ impl Window {
     fn fit(&mut self, zoom: f64) {
         let r = self.app.view.unwrap().0;
         let (w, h) = (r.width() as f64, r.height() as f64);
-        let mut cam = Camera::fit(view::content_bounds(self.app.wb.construction()), w, h);
-        cam.zoom_at(zoom, w / 2.0, h / 2.0, w, h);
+        let mut cam = Camera::fit(
+            view::content_bounds(self.app.wb.construction()),
+            w,
+            h,
+            view::ScaleLimits::OURS,
+        );
+        cam.zoom_at(zoom, w / 2.0, h / 2.0, w, h, view::ScaleLimits::OURS);
         self.app.camera = Some(cam);
     }
 
@@ -700,7 +705,7 @@ fn curve_frames_stay_within_the_budget() {
     let r = w.app.view.unwrap().0;
     let (aw, ah) = (r.width() as f64, r.height() as f64);
     let mut cam = w.app.camera.unwrap();
-    cam.zoom_at(1.25, aw / 2.0, ah / 2.0, aw, ah);
+    cam.zoom_at(1.25, aw / 2.0, ah / 2.0, aw, ah, view::ScaleLimits::OURS);
     w.app.camera = Some(cam);
     let zoom = curve_step(&mut w, Vec::new());
     let mut after_zoom = Vec::new();
@@ -738,11 +743,41 @@ fn curve_frames_stay_within_the_budget() {
     w.app.wb.selected = None;
     w.settled(1);
     // The window grows by 10 points: the kept drawings move at once; the
-    // functions are plotted for the new area over the next frames.
+    // functions are plotted for the new area over the next frames. The
+    // view this starts from is the fit the document opened with, one
+    // scale on both axes.
     w.screen = (SCREEN.0 + 10.0, SCREEN.1 + 10.0);
     let mut resize = vec![curve_step(&mut w, Vec::new())];
     while resize.last().unwrap().counts.immediate && resize.len() < 60 {
         resize.push(curve_step(&mut w, Vec::new()));
+    }
+    w.screen = SCREEN;
+    w.settled(1);
+
+    // The same two gestures from an anisotropic view — the scales an axis
+    // drag or a zoom rectangle leaves apart (spec D1), here x at 40 px a
+    // unit against y at 60. The plot frame letterboxes on y then (its
+    // scale is the smaller 40), so the zoom frame places every kept mesh
+    // through the frame-to-canvas affine, and the resize — the scales
+    // standing apart but still — moves them as a whole through the
+    // stretch, its letterbox offset included.
+    let r = w.app.view.unwrap().0;
+    let (aw, ah) = (r.width() as f64, r.height() as f64);
+    let mut cam = w.app.camera.unwrap();
+    cam.xscale = 40.0;
+    cam.yscale = 60.0;
+    w.app.camera = Some(cam);
+    while curve_step(&mut w, Vec::new()).counts.immediate {}
+    let mut cam = w.app.camera.unwrap();
+    cam.zoom_at(1.25, aw / 2.0, ah / 2.0, aw, ah, view::ScaleLimits::OURS);
+    w.app.camera = Some(cam);
+    let aniso_zoom = curve_step(&mut w, Vec::new());
+    while curve_step(&mut w, Vec::new()).counts.immediate {}
+    w.settled(1);
+    w.screen = (SCREEN.0 + 10.0, SCREEN.1 + 10.0);
+    let mut aniso_resize = vec![curve_step(&mut w, Vec::new())];
+    while aniso_resize.last().unwrap().counts.immediate && aniso_resize.len() < 60 {
+        aniso_resize.push(curve_step(&mut w, Vec::new()));
     }
     w.screen = SCREEN;
     w.settled(1);
@@ -774,6 +809,10 @@ fn curve_frames_stay_within_the_budget() {
     }
     for (i, f) in resize.iter().enumerate() {
         show(&format!("resize_{i}"), f);
+    }
+    show("aniso_zoom", &aniso_zoom);
+    for (i, f) in aniso_resize.iter().enumerate() {
+        show(&format!("aniso_resize_{i}"), f);
     }
 
     // Idle: nothing plotted, no rows, no repaint asked for.
@@ -834,7 +873,11 @@ fn curve_frames_stay_within_the_budget() {
         assert_eq!(f.plotted, f.tessellated);
     }
     println!("curves after_zoom_frames: {}", after_zoom.len());
-    assert_eq!(after_zoom.len(), 24, "frames until the zoom is done");
+    // The load's fit keeps 3% free around the content (the reference's
+    // `calculateRectangleOfAllObjects`), where the port's first fit kept
+    // 8%: the closer view meets one curve fewer, and the zoom settles a
+    // frame earlier than it did there.
+    assert_eq!(after_zoom.len(), 23, "frames until the zoom is done");
     for (name, f) in &edits {
         assert_eq!((f.plotted, f.tessellated), (0, 0), "{name}");
     }
@@ -854,23 +897,49 @@ fn curve_frames_stay_within_the_budget() {
     for f in &resize {
         assert!(f.cost <= REPLOTS_PER_FRAME as u64, "cost {}", f.cost);
     }
+    assert!(
+        !aniso_resize.last().unwrap().counts.immediate,
+        "the anisotropic resize never settles"
+    );
+    println!("curves aniso_resize_frames: {}", aniso_resize.len());
+    // The same placement, no new tessellation, at the replot cap.
+    assert!(
+        aniso_zoom.counts.immediate,
+        "the zoom asks for the next frame"
+    );
+    assert_eq!(aniso_zoom.plotted, aniso_zoom.tessellated);
+    assert_eq!(aniso_resize[0].plotted, aniso_resize[0].tessellated);
+    for f in &aniso_resize {
+        assert!(f.cost <= REPLOTS_PER_FRAME as u64, "cost {}", f.cost);
+    }
     let heaviest = *after_zoom.iter().max_by_key(|f| f.counts.bytes).unwrap();
     let heaviest_resize = *resize.iter().max_by_key(|f| f.counts.bytes).unwrap();
+    let heaviest_aniso = *aniso_resize.iter().max_by_key(|f| f.counts.bytes).unwrap();
     // Ceilings: the counts when they were set plus about 8%. A pan frame
     // copies the parts of the kept meshes that reach the area to their new
     // place (about 187k vertices, 7.6 MB here; the whole meshes with
-    // their margin strips were 241k vertices, 9.7 MB); the zoom frame
-    // places 234 kept meshes scaled the same way. The frame after a
-    // rebuild (undo, redo, delete) finds what each function depends on
-    // again (about 0.25 ms, most of it formatting the definitions for
-    // their fingerprints: about 850 allocations of 300 kB). When it also
-    // made the 990 rows again it made 17 400 to 18 200 allocations of 1.1
-    // to 1.4 MB. With the camera's two scales the view this starts from
-    // (a fit) is anisotropic, and the zoom and the resize frame place
-    // every kept mesh the area meets, scaled per axis (the curves module
-    // maps the plot frame's pixels to the canvas): the two frames cost
-    // what the scaled placement always cost per mesh, and the frames
-    // after them replot at the cap as before.
+    // their margin strips were 241k vertices, 9.7 MB). The zoom and the
+    // resize start from the view the document opened with, one scale on
+    // both axes: the zoom frame places the kept meshes again, scaled the
+    // same way, at the port's old ceiling (3 700 allocations of 7.2 MB;
+    // 3 218 of 7.1 MB here — the per-axis fit this branch first tried,
+    // which stretched every mesh, measured 6 000 of 7.6 MB). The frame
+    // after a rebuild (undo, redo, delete) finds what each function
+    // depends on again (about 0.25 ms, most of it formatting the
+    // definitions for their fingerprints: about 850 allocations of
+    // 300 kB). When it also made the 990 rows again it made 17 400 to
+    // 18 200 allocations of 1.1 to 1.4 MB.
+    //
+    // A resize keeps the centre of the view (spec D11, the reference's
+    // `ComponentEvent` handling), which moves every kept mesh (5, 5)
+    // points: each is placed again (2 989 allocations of 6.6 MB measured),
+    // the price a pan frame already pays. The port's first resize kept
+    // the corner instead, leaving the meshes where they stood and reusing
+    // them as they were (2 550 allocations of 1.75 MB) — the old number
+    // cannot come back without giving the centre up. The anisotropic rows
+    // repeat the two gestures from a view whose scales stand apart (an
+    // axis rescale leaves them 40 and 60 pixels a unit): the closer of
+    // the two axes meets fewer curves, and the frames cost less.
     let most_moved = pans.iter().map(|f| f.moved).max().unwrap();
     println!("curves pan_most_moved: {most_moved}");
     assert!(
@@ -888,9 +957,11 @@ fn curve_frames_stay_within_the_budget() {
         ("drag_related", related[0], 3_000, 750_000),
         ("pan", pans[0], 4_050, 8_250_000),
         ("pan_worst", *worst_pan, 4_200, 8_400_000),
-        ("zoom", zoom, 6_000, 7_600_000),
+        ("zoom", zoom, 3_700, 7_200_000),
         ("after_zoom", heaviest, 2_800, 4_150_000),
-        ("resize", heaviest_resize, 5_650, 7_050_000),
+        ("resize", heaviest_resize, 3_250, 7_100_000),
+        ("aniso_zoom", aniso_zoom, 2_450, 4_600_000),
+        ("aniso_resize", heaviest_aniso, 1_550, 3_400_000),
         ("add_point", edits[0].1, 2_200, 505_000),
         ("undo", edits[1].1, 3_250, 870_000),
         ("redo", edits[2].1, 3_300, 875_000),

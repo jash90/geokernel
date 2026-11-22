@@ -475,7 +475,7 @@ fn a_second_finger_suspends_the_drag_and_pinches_the_view() {
         "the view zoomed in"
     );
     // The drag and the pinch are steps of their own (the owner's rule,
-    // `camera::VIEW_CHANGES_ARE_STEPS`): undo takes the pinch back first,
+    // `OwnerRules::view_changes_are_steps`): undo takes the pinch back first,
     // then the drag.
     assert_eq!(h.state().wb.undo_depth(), (2, 0));
     undo(&mut h);
@@ -546,7 +546,7 @@ fn a_release_and_a_press_in_one_frame_end_the_drag_and_start_a_new_press() {
     assert_eq!(point(&h, "A").0, 2.0);
     // The drag of A is one undo step of its own, and the pan after it one
     // of its own too (the owner's rule,
-    // `camera::VIEW_CHANGES_ARE_STEPS`).
+    // `OwnerRules::view_changes_are_steps`).
     undo(&mut h);
     assert_eq!(point(&h, "A").0, 2.0, "the pan's step keeps the point");
     undo(&mut h);
@@ -821,7 +821,7 @@ fn the_last_move_of_a_drag_counts_when_the_release_shares_its_frame() {
     assert!((cx - cx0 - 1.0).abs() < 1e-12, "{}", cx - cx0);
     assert!(((cy - cy0).abs() - 0.4).abs() < 1e-12, "{}", cy - cy0);
     // The pan is one undo step right after it (the owner's rule,
-    // `camera::VIEW_CHANGES_ARE_STEPS`), and undo puts the view back.
+    // `OwnerRules::view_changes_are_steps`), and undo puts the view back.
     assert_eq!(h.state().wb.undo_depth(), (1, 0));
     undo(&mut h);
     let (cx, cy, _) = camera(&h);
@@ -1062,7 +1062,7 @@ fn a_row_deletion_mid_use_takes_the_use_back() {
 fn a_drag_within_the_click_threshold_is_a_step_only_under_the_owners_rule() {
     for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
         let mut h = harness("A = (0.3, 0.3)\n");
-        h.state_mut().rules = rules;
+        h.state_mut().set_rules(rules);
         let from = world(0.3, 0.3);
         frame_at(&mut h, 10.0, vec![Event::PointerMoved(from)]);
         frame_at(
@@ -1081,5 +1081,44 @@ fn a_drag_within_the_click_threshold_is_a_step_only_under_the_owners_rule() {
             rules.every_drag_is_a_step,
             "{what}"
         );
+    }
+}
+
+/// The reference app locks a pan to one axis (`SnapController`, spec
+/// D13, `OwnerRules::pan_axis_lock`): a drag that sets out within ±25° of
+/// an axis, inside its first 40 px and by more than 5 px, pans that axis
+/// alone. Ours pans both axes. Fails if the switch does nothing.
+#[test]
+fn a_pan_locks_to_an_axis_only_under_the_reference_rules() {
+    for rules in [OwnerRules::OURS, OwnerRules::REFERENCE] {
+        let what = format!("{rules:?}");
+        let mut h = harness("");
+        h.state_mut().set_rules(rules);
+        let start = world(-4.0, -3.0);
+        moved(&mut h, start);
+        button(&mut h, start, true);
+        // Nearly horizontal, 2 px of y a 6 of x: the lock takes the x
+        // axis at the first move past 5 px.
+        for i in 1..=6 {
+            moved(&mut h, start + egui::vec2(6.0 * i as f32, 2.0 * i as f32));
+        }
+        button(&mut h, start + egui::vec2(36.0, 12.0), false);
+        h.run();
+        let cam = h.state().camera.unwrap();
+        if rules.pan_axis_lock {
+            assert!(
+                cam.cy.abs() < 1e-9,
+                "{what}: the locked axis moved: {cam:?}"
+            );
+            assert!(
+                cam.cx.abs() > 0.1,
+                "{what}: the free axis did not pan: {cam:?}"
+            );
+        } else {
+            assert!(
+                cam.cy.abs() > 0.1 && cam.cx.abs() > 0.1,
+                "{what}: a drag panned {cam:?}"
+            );
+        }
     }
 }

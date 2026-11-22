@@ -378,7 +378,7 @@ impl Session {
             None => Workbench::default(),
         };
         self.h = Headless::new(wb, None, profile, size, scale as f32);
-        self.h.app.rules = rules;
+        self.h.app.set_rules(rules);
         // The renderer's textures belong to the old context.
         self.renderer = None;
         self.settle();

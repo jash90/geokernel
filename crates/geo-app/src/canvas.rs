@@ -14,7 +14,6 @@ use crate::tools::{Pick, Tool};
 use crate::view::{self, Camera};
 use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, Ui};
 use geo_app_core::camera;
-use geo_app_core::geom::Point;
 use geo_app_core::text::{self, Label};
 use geo_kernel::kernel::{Id, Kind};
 
@@ -119,10 +118,12 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Some(ViewRequest::Fit) => {
                 let c = app.wb.construction();
                 t.as_ref()
-                    .and_then(|t| Camera::fit_drawn(c, t, w, h))
-                    .unwrap_or_else(|| Camera::fit(bounds, w, h))
+                    .and_then(|t| Camera::fit_drawn(c, t, w, h, app.rules.scale_limits))
+                    .unwrap_or_else(|| Camera::fit(bounds, w, h, app.rules.scale_limits))
             }
-            Some(ViewRequest::Initial) | None => Camera::initial(bounds, w, h),
+            Some(ViewRequest::Initial) | None => {
+                Camera::initial(bounds, w, h, app.rules.scale_limits)
+            }
         });
         // A fit or the standard view is one undo step
         // (`setViewShowAllObjects(storeUndo)` / `setStandardView(true)`),
@@ -170,19 +171,23 @@ pub fn show(app: &mut App, ui: &mut Ui) {
 
     // The wheel of this frame, from its raw events: the zoom is
     // proportional to the scroll amount (the owner's rule, spec D2), so
-    // egui's smoothed delta is no measure of it. It zooms about the
+    // egui's smoothed delta is no measure of it; the reference app zooms
+    // one fixed x1.1 per event whatever its delta. The wheel belongs to a
+    // text field that has the keyboard (`isTextfieldHasFocus` returns
+    // false and the event is not the drawing's). It zooms about the
     // pointer while that is over the drawing; horizontal scrolling zooms
     // nothing; Alt strengthens the zoom (`wrapMouseWheelMoved`).
-    let (notches, alt) = if response.hovered() {
+    let typing = ui.ctx().egui_wants_keyboard_input();
+    let (notches, events, alt) = if response.hovered() && !typing {
         ui.input(|i| {
-            let (mut n, mut alt) = (0.0, false);
-            for e in &i.events {
+            let (mut n, mut e, mut alt) = (0.0, 0.0, false);
+            for ev in &i.events {
                 if let egui::Event::MouseWheel {
                     unit,
                     delta,
                     modifiers,
                     ..
-                } = *e
+                } = *ev
                 {
                     let d = camera::wheel_notches(
                         unit == egui::MouseWheelUnit::Line,
@@ -190,16 +195,19 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                         delta.x as f64,
                     );
                     n += d;
+                    // The signed count of the events that zoom: only their
+                    // sign decides in or out for the reference app.
+                    e += d.signum();
                     alt |= modifiers.alt;
                 }
             }
-            (n, alt)
+            (n, e, alt)
         })
     } else {
-        (0.0, false)
+        (0.0, 0.0, false)
     };
-    let wheel = if notches != 0.0 {
-        camera::wheel_factor(notches, alt)
+    let wheel = if notches != 0.0 || events != 0.0 {
+        camera::wheel_zoom_factor(app.rules.wheel_zoom_fixed_per_event, notches, events, alt)
     } else {
         1.0
     };
@@ -231,38 +239,73 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             .unwrap_or(rect.center());
         if rect.contains(at) {
             let (sx, sy) = to_local(at);
-            cam.zoom_at(f, sx, sy, w, h);
+            cam.zoom_at(f, sx, sy, w, h, app.rules.scale_limits);
         } else {
-            cam.zoom_at(f, 0.5 * w, 0.5 * h, w, h);
+            cam.zoom_at(f, 0.5 * w, 0.5 * h, w, h, app.rules.scale_limits);
         }
     }
 
-    // Two fingers pinch: the world points under them stay under them (the
-    // owner's rule, spec H4 — no 10 px dead band), so the frame's zoom
-    // ratio scales the view about the midpoint the fingers moved from.
-    let pinch = ui.input(|i| {
-        i.multi_touch().map(|t| {
-            (
-                t.zoom_delta as f64,
-                t.center_pos.core(),
-                (t.translation_delta.x as f64, t.translation_delta.y as f64),
-            )
-        })
-    });
+    // Two fingers pinch (`twoTouchStart` .. `twoTouchEnd`): each move of a
+    // finger, as its event came and wherever the other one stands, is one
+    // step of the pinch's own rule — the owner's tracks the fingers
+    // exactly (spec H4), the reference's lags behind its dead bands
+    // (`camera::Pinch`). The places of the pointers a pinch may measure
+    // are kept every frame, whole pixels as the reference counts them, so
+    // the pinch begins wherever its fingers stand. A trackpad's pinch
+    // (the platform's zoom events) is a zoom like the wheel's, about the
+    // pointer; the frame's wheel or keyboard zoom stands down while two
+    // fingers pinch.
     let pinching = gesture.pinching();
-    if let (true, Some((ratio, center, (dx, dy)))) = (pinching, pinch) {
-        // The multi-touch measures are in the window's pixels; the camera
-        // works in the drawing area's own (like every other zoom point).
-        let to_area = |p: Point| {
-            let (x, y) = to_local(egui::pos2(p.x, p.y));
-            Point::new(x as f32, y as f32)
-        };
-        let from = Point::new((center.x as f64 - dx) as f32, (center.y as f64 - dy) as f32);
-        cam = camera::pinch_to(&cam, (to_area(from), 1.0), (to_area(center), ratio), w, h);
-    } else if zoomed {
+    {
+        let ids = pinching.then(|| gesture.pinch_ids()).flatten();
+        let bands = app.rules.pinch_bands;
+        let limits = app.rules.scale_limits;
+        let mut fingers = std::mem::take(&mut app.fingers);
+        let mut pinch = app.pinch;
+        ui.input(|i| {
+            for ev in &i.events {
+                let (id, at, down) = match *ev {
+                    egui::Event::Touch {
+                        id,
+                        pos,
+                        phase: egui::TouchPhase::Cancel | egui::TouchPhase::End,
+                        ..
+                    } => (id.0, to_local(pos), false),
+                    egui::Event::Touch { id, pos, .. } => (id.0, to_local(pos), true),
+                    egui::Event::PointerMoved(pos) => (MOUSE, to_local(pos), true),
+                    _ => continue,
+                };
+                if !down {
+                    fingers.remove(&id);
+                    continue;
+                }
+                fingers.insert(id, (at.0.round(), at.1.round()));
+                let Some((first, second)) = ids else {
+                    continue;
+                };
+                if id != first && id != second {
+                    continue;
+                }
+                if let (Some(a), Some(b)) = (fingers.get(&first), fingers.get(&second)) {
+                    let (a, b) = (*a, *b);
+                    match pinch.as_mut() {
+                        // The pinch is on: one move of a finger is one
+                        // step (`twoTouchMove`).
+                        Some(p) => camera::pinch_move(&mut cam, p, a, b, w, h, limits),
+                        // Both fingers are down: the pinch begins here
+                        // (`twoTouchStart`).
+                        None => pinch = Some(camera::Pinch::start(a, b, bands)),
+                    }
+                }
+            }
+        });
+        app.fingers = fingers;
+        app.pinch = pinching.then_some(pinch).flatten();
+    }
+    if !pinching && zoomed {
         let center = response.hover_pos().unwrap_or(rect.center());
         let (sx, sy) = to_local(center);
-        cam.zoom_at(wheel, sx, sy, w, h);
+        cam.zoom_at(wheel, sx, sy, w, h, app.rules.scale_limits);
     }
     if pinching {
         zoomed = false;
@@ -552,6 +595,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             },
             axis.grabbed,
             if axis.x { sx } else { sy },
+            app.rules.scale_limits,
         );
     }
     // The rectangle the zoom in tool drags out, for its preview.
@@ -596,6 +640,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                     },
                     w,
                     h,
+                    app.rules.scale_limits,
                 );
             }
         }
@@ -651,11 +696,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         release_tool(app, &press_t, to_local(pos), &press_reach);
     }
 
-    // The undo steps of the view (the owner's rule,
-    // `camera::VIEW_CHANGES_ARE_STEPS`): every view gesture — a pan, an
-    // axis rescale, a zoom rectangle, a pinch, a run of wheel or keyboard
-    // zoom — is one step right after it, where the reference app stores
-    // view changes lazily (spec F3).
+    // The undo steps of the view (`OwnerRules::view_changes_are_steps`):
+    // under the owner's rule every view gesture — a pan, an axis rescale,
+    // a zoom rectangle, a pinch, a run of wheel or keyboard zoom — is one
+    // step right after it; under the reference's a run of wheel or
+    // keyboard zooms waits for the next canvas press, which stores it —
+    // one step for every view change since — exactly as the reference app
+    // keeps it (`storeUndoInfoIfSetCoordSystemOccurred`, spec F3).
+    if fed.owned.is_some() && !app.rules.view_changes_are_steps {
+        if let Some(before) = app.view_gesture.end(cam0) {
+            app.wb.record_view_step(before);
+        }
+    }
     app.wb.set_camera(cam);
     if intents
         .started
@@ -679,7 +731,10 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
     app.pinching = pinching;
-    if let Some(before) = app.view_gesture.zoom_run(cam0, zoomed) {
+    if let Some(before) = app
+        .view_gesture
+        .zoom_run(cam0, zoomed, app.rules.view_changes_are_steps)
+    {
         app.wb.record_view_step(before);
     }
     if intents.cancel_view {
@@ -762,11 +817,11 @@ pub fn show(app: &mut App, ui: &mut Ui) {
 }
 
 /// The zoom of a zoom tool's click, as one undo step at once (the owner's
-/// rule, `camera::VIEW_CHANGES_ARE_STEPS`; the reference app stores it when
+/// rule, `OwnerRules::view_changes_are_steps`; the reference app stores it when
 /// the tool is left, `endOfMode`).
 fn zoom_click(app: &mut App, cam: &mut Camera, factor: f64, at: (f64, f64), w: f64, h: f64) {
     let before = *cam;
-    cam.zoom_at(factor, at.0, at.1, w, h);
+    cam.zoom_at(factor, at.0, at.1, w, h, app.rules.scale_limits);
     app.wb.set_camera(*cam);
     app.wb.record_view_step(before);
 }
@@ -1089,7 +1144,9 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
             // (`setViewShowAllObjects(true, ...)`).
             Icon::Fit => {
                 let t = cam.transform(w, h);
-                if let Some(fit) = Camera::fit_drawn(app.wb.construction(), &t, w, h) {
+                if let Some(fit) =
+                    Camera::fit_drawn(app.wb.construction(), &t, w, h, app.rules.scale_limits)
+                {
                     let before = *cam;
                     *cam = fit;
                     app.wb.set_camera(*cam);
@@ -1098,8 +1155,17 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
             }
             // The zoom buttons (`zoomInOut`): x1.5 about the centre, never
             // an undo step.
-            Icon::ZoomIn => cam.zoom_at(ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h),
-            Icon::ZoomOut => cam.zoom_at(1.0 / ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h),
+            Icon::ZoomIn => {
+                cam.zoom_at(ZOOM_BUTTON, 0.5 * w, 0.5 * h, w, h, app.rules.scale_limits)
+            }
+            Icon::ZoomOut => cam.zoom_at(
+                1.0 / ZOOM_BUTTON,
+                0.5 * w,
+                0.5 * h,
+                w,
+                h,
+                app.rules.scale_limits,
+            ),
             // The standard view (`onHomePressed`), stored as a step.
             Icon::Home => {
                 let before = *cam;
