@@ -866,6 +866,21 @@ reason = "A list of variables after one equation runs GeoGebra's system solver, 
 mismatches = ["0:r1", "0:r2"]
 
 [[gap]]
+id = "cas-hintobject-001"
+reason = "AlgoSolve.printHint prints a point into the CAS call, which then fails with an error, and Solve answers an undefined list. What the CAS makes of an object that is no number follows no rule (cas-hintobject-002 answers an empty list for Solutions with the same point), so the kernel refuses an object other than a number as the solving argument."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "cas-hintobject-002"
+reason = "AlgoSolve.printHint prints a point into the CAS call, and Solutions answers an empty list where Solve answers an undefined one (cas-hintobject-001). What the CAS makes of an object that is no number follows no rule, so the kernel refuses an object other than a number as the solving argument."
+mismatches = ["0:script line 3"]
+
+[[gap]]
+id = "cas-hintobject-003"
+reason = "After a list of equations a number is printed as its value into the system solver of the CAS, which answers one row with an undefined number for Solutions({x^2 = 4}, b) (and makes the reference throw while it reads the answer of NSolve(f, b) back). The kernel refuses a number as the solving argument after a list."
+mismatches = ["0:script line 2"]
+
+[[gap]]
 id = "cas-implicit-001"
 reason = "An implicit curve is solved like its equation typed in place. The kernel solves an equation in two variables for a variable of degree one, or of degree two with a number as leading coefficient and the shape of a conic; it answers an undefined list for anything else and for a list that would hold an implicit curve or a parametric curve. GeoGebra's CAS answers the real cube root of 1 - y^3 for x (and of 1 - x^3 for y) as a function, Solve the implicit curves x = ... inside a list and PlotSolve a parametric curve."
 mismatches = ["0:r1", "0:r2", "0:r5", "0:r6", "0:r7", "0:r8", "0:r9", "0:r10", "0:r18", "0:r19"]

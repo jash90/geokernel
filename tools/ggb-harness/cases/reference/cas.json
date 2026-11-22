@@ -9,6 +9,9 @@
     {"id": "cas-implicitrewrite-007", "group": "cas", "script": ["k: (x+y)^3=1", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
     {"id": "cas-implicitrewrite-008", "group": "cas", "script": ["k: x^4+y^4=1", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
     {"id": "cas-implicitrewrite-009", "group": "cas", "script": ["k: x^3+x*y=2", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
-    {"id": "cas-implicitrewrite-010", "group": "cas", "script": ["k: y^2=x^3-x", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]}
+    {"id": "cas-implicitrewrite-010", "group": "cas", "script": ["k: y^2=x^3-x", "r1 = Expand(k)", "r2 = Factor(k)", "r3 = IFactor(k)", "r4 = Simplify(k)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-hintobject-001", "group": "cas", "script": ["P = (1, 2)", "f(x) = x^2-9", "result = Solve(f, P)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-hintobject-002", "group": "cas", "script": ["P = (1, 2)", "f(x) = x^2-9", "result = Solutions(f, P)"], "steps": [{"action": "initial"}]},
+    {"id": "cas-hintobject-003", "group": "cas", "script": ["b = 2", "result = Solutions({x^2=4}, b)"], "steps": [{"action": "initial"}]}
   ]
 }

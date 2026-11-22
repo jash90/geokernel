@@ -697,4 +697,12 @@ reference = Cases("cas")
 for equation in IMPLICIT:
     reference.case("implicitrewrite", [f"k: {equation}"] + results(
         f"{command}(k)" for command in REWRITES + ("Simplify",)), [])
+
+# A point as the solving argument and a number after a list: the
+# reference prints them into its CAS and answers whatever comes back.
+# (NSolve(f, b) makes the reference throw while it reads that answer,
+# which the harness cannot record.)
+reference.case("hintobject", ["P = (1, 2)", "f(x) = x^2-9", "result = Solve(f, P)"], [])
+reference.case("hintobject", ["P = (1, 2)", "f(x) = x^2-9", "result = Solutions(f, P)"], [])
+reference.case("hintobject", ["b = 2", "result = Solutions({x^2=4}, b)"], [])
 reference.write("reference")
