@@ -3305,29 +3305,9 @@ form = "function"
 cases = ["cas-solve-017"]
 
 [[form]]
-command = "Solve"
-form = "line"
-cases = ["cas-solve-018"]
-
-[[form]]
-command = "Solve"
-form = "list"
-cases = ["cas-solve-019"]
-
-[[form]]
 command = "Solutions"
 form = "function"
 cases = ["cas-solve-021"]
-
-[[form]]
-command = "Solutions"
-form = "line"
-cases = ["cas-solve-022"]
-
-[[form]]
-command = "Solutions"
-form = "list"
-cases = ["cas-solve-023"]
 
 [[form]]
 command = "NSolve"

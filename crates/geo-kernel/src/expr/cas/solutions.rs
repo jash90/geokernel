@@ -1,7 +1,7 @@
 use super::input::{read, variables};
 use super::single::{self, dense_at, solution, Mode, Nesting};
 use super::{Poly, Rat, Slot, Work};
-use crate::cas::{affine_system, systems, Root, SystemRoots};
+use crate::cas::{systems, Root, SystemRoots};
 use crate::expr::{eval::Ctx, Node};
 use crate::{Kind, Value};
 
@@ -35,8 +35,8 @@ pub(super) fn list<const M: bool>(
         let Node::Item(i) = ctx.node(item) else {
             return None;
         };
-        if single && guess != crate::expr::NONE {
-            constants = typed_constants(ctx, i, work);
+        if single && (guess != crate::expr::NONE || (rows && approximate)) {
+            constants = typed_bound(ctx, i, work);
         }
         match ctx.node(i) {
             Node::Obj(id) if ctx.c.kind(id) == Kind::List => {
@@ -52,9 +52,24 @@ pub(super) fn list<const M: bool>(
             Node::Obj(id)
                 if single && ctx.c.kind(id) == Kind::Line && !ctx.c.value(id).is_defined() =>
             {
-                // An undefined line prints no equation: the exact commands
-                // answer no solution, the numeric ones nothing.
-                return if approximate || points {
+                // A typed line whose definition reduces to a false constant
+                // (`a x = 3` with `a = 0`) is sent as `0 = 3`. `Solve.1` and
+                // `Solutions.2` solve it to no solution; `Solutions.1` asks
+                // for `lname(%0)[0]` of an equation without variables and
+                // fails, as does the numeric solver (`Ggb2giac`). Anything
+                // else about an undefined line is undefined.
+                let equation = typed_equation(ctx.c, id, work)?;
+                if !equation
+                    .numerator
+                    .0
+                    .keys()
+                    .all(|p| p.iter().all(|&e| e == 0))
+                    || equation.numerator.0.is_empty()
+                {
+                    return None;
+                }
+                let failing = approximate || points || (!assignments && width == 0);
+                return if failing {
                     None
                 } else {
                     ctx.cas_slots(std::iter::empty())
@@ -101,12 +116,10 @@ pub(super) fn list<const M: bool>(
             }
             let coefficients = dense_at(&equation.numerator, axis);
             // The reference answers the recorded `a x - 1` with |a| up to
-            // 10^10 and none with |a| from 10^15 on, while every recorded
-            // constant term is answered (golden/cas/magnitude.json).
-            let [_, slope] = coefficients[..] else {
-                return None;
-            };
-            if slope.to_f64().abs() > 1e10 {
+            // 10^10 and none with |a| from 10^15 on (golden/cas/magnitude.json):
+            // every intermediate coefficient of the typed polynomial must be
+            // within that bound.
+            if coefficients.len() != 2 || constants.is_nan() || constants > 1e10 {
                 return None;
             }
             let root = crate::cas::unique_real_root(&coefficients, work)?;
@@ -234,57 +247,25 @@ pub(super) fn list<const M: bool>(
             Some((start, count))
         }
         SystemRoots::Infinite => {
-            if approximate {
-                // The numeric system solver answers one point of a family,
-                // the one its search ends on (`NSolutions(x + y = 1, {x, y})`
-                // gives `{0.5, 0.5}`), which the family does not determine.
-                return None;
-            }
-            let families = affine_families(&equations, width, work)?;
-            let lists = ctx.lists?;
-            let count = families.len().try_into().ok()?;
-            let start = lists.reserve(count)?;
-            for (i, coordinates) in families.into_iter().enumerate() {
-                let free = coordinates
-                    .iter()
-                    .rposition(|p| p == &[Rat::ZERO, Rat::ONE])?;
-                let row = ctx.cas_slots(coordinates.into_iter().enumerate().map(|(j, p)| {
-                    if assignments {
-                        affine_assignment(j, free, axes, &p)
-                    } else if p.len() == 1 {
-                        Slot::number(p[0].to_f64())
-                    } else {
-                        Slot::polynomial(Poly::dense(&p))
-                    }
-                }))?;
-                lists.set(start + i as u32, Slot::list(row.0, row.1));
-            }
-            Some((start, count))
+            // Which variables stay free, and how the others are written in
+            // them, is the CAS's choice (golden/cas/freevariable.json:
+            // `{x + y = 1, z = 0}` keeps `z` itself), so a system with a
+            // free variable is not answered.
+            None
         }
     }
-}
-
-/// The solutions of a linear system with a one-parameter family of
-/// solutions. A family that comes from factoring a nonlinear equation is
-/// not answered: several families come in an order the CAS chooses, and
-/// even a single one is parametrised by a variable the CAS chooses
-/// (`Solve((x - y)^2 = 0, {x, y})` keeps `x` free, `Solve(x + y = 1,
-/// {x, y})` keeps `y` free).
-fn affine_families(
-    equations: &[std::collections::BTreeMap<[u8; 3], Rat>],
-    width: usize,
-    work: &mut Work<'_>,
-) -> Option<Vec<Vec<Vec<Rat>>>> {
-    affine_system(equations, width, work).map(|family| vec![family])
 }
 
 /// The equation of a line, a conic or an implicit curve as the reference
 /// sends it to its CAS (`AlgoSolve.printCAS`): the definition as it was
 /// typed. An object without one is printed from its coefficients
-/// (`GeoLine.toValueString`, `Kernel.buildImplicitEquation`), which drops
-/// coefficients below the kernel's precision and rounds the rest; that
-/// printing is not reproduced here, so such an object gives no equation
-/// (`Line((0, 1), (1, 1 + 10^-9))` prints as `y = 1`).
+/// (`GeoLine.toValueString`, `Kernel.buildImplicitEquation`,
+/// `Kernel.buildExplicitEquation`), which drops coefficients below the
+/// kernel's precision and rounds the rest. That printing is reproduced only
+/// for a line whose other coefficient is exactly zero: it prints as
+/// `x = v` or `y = v`, with `v` in 15 significant digits. Any other object
+/// without a typed definition gives no equation (`Line((0, 1), (1, 1 +
+/// 10^-9))` prints as `y = 1`).
 fn object_equation(
     c: &crate::Construction,
     id: crate::Id,
@@ -293,6 +274,37 @@ fn object_equation(
     if !c.value(id).is_defined() {
         return None;
     }
+    if let Some(equation) = typed_equation(c, id, work) {
+        return Some(equation);
+    }
+    let Value::Line { a, b, c: constant } = c.value(id) else {
+        return None;
+    };
+    // `DoubleUtil.isZero` of the remaining coefficient decides the form, so
+    // it must be clearly nonzero.
+    let (axis, coefficient) = match (a == 0.0, b == 0.0) {
+        (true, false) if b.abs() >= 1e-8 => (1, b),
+        (false, true) if a.abs() >= 1e-8 => (0, a),
+        _ => return None,
+    };
+    work.spend(2)?;
+    let value = Rat::printed(-constant / coefficient)?;
+    let mut power = [0u8; 3];
+    power[axis] = 1;
+    let mut terms = std::collections::BTreeMap::new();
+    terms.insert(power, Rat::ONE);
+    if value != Rat::ZERO {
+        terms.insert([0, 0, 0], value.neg()?);
+    }
+    Some(crate::cas::Quotient::polynomial(Poly(terms)))
+}
+
+/// `lhs - rhs` of the equation as typed, where the object has one.
+fn typed_equation(
+    c: &crate::Construction,
+    id: crate::Id,
+    work: &mut Work<'_>,
+) -> Option<crate::cas::Quotient> {
     let left = crate::expr::equation::side_entry(c, id, true)?;
     let right = crate::expr::equation::side_entry(c, id, false)?;
     let vars = &variables();
@@ -301,10 +313,10 @@ fn object_equation(
     lhs.sub(rhs, work)
 }
 
-/// The largest magnitude of a constant in what an equation item reads, as
-/// typed: a typed object's sides, or the expression itself. Infinite where
-/// it is not known.
-fn typed_constants<const M: bool>(ctx: &Ctx<'_, M>, i: u32, work: &mut Work<'_>) -> f64 {
+/// The largest intermediate coefficient of what an equation item reads, as
+/// typed (`input::typed_bound`): a typed object's sides, or the expression
+/// itself. Infinite where it is not known or not a polynomial.
+fn typed_bound<const M: bool>(ctx: &Ctx<'_, M>, i: u32, work: &mut Work<'_>) -> f64 {
     let largest = match ctx.node(i) {
         Node::Obj(id)
             if matches!(
@@ -314,13 +326,11 @@ fn typed_constants<const M: bool>(ctx: &Ctx<'_, M>, i: u32, work: &mut Work<'_>)
         {
             let side = |left| crate::expr::equation::side_entry(ctx.c, id, left);
             match (side(true), side(false)) {
-                (Some(l), Some(r)) => super::input::typed_constants(ctx.c, l, l.root, work)
-                    .zip(super::input::typed_constants(ctx.c, r, r.root, work))
-                    .map(|(a, b)| a.max(b)),
+                (Some(l), Some(r)) => super::input::typed_bound_sides(ctx.c, [l, r], work),
                 _ => None,
             }
         }
-        _ => super::input::typed_constants(ctx.c, ctx.e, i, work),
+        _ => super::input::typed_bound(ctx.c, ctx.e, i, work),
     };
     largest.unwrap_or(f64::INFINITY)
 }
@@ -328,23 +338,6 @@ fn typed_constants<const M: bool>(ctx: &Ctx<'_, M>, i: u32, work: &mut Work<'_>)
 pub(super) fn identity(axis: u8) -> Slot {
     let variable = ["x", "y", "z"][usize::from(axis)];
     Slot::undefined(Kind::Line).with_symbolic(format!("{variable} = {variable}"))
-}
-
-fn affine_assignment(j: usize, free: usize, axes: [u8; 3], coefficients: &[Rat]) -> Slot {
-    if j == free {
-        return identity(axes[j]);
-    }
-    if axes[j] > 1 || axes[free] > 1 {
-        return Slot::undefined(Kind::Line);
-    }
-    let value = coefficients[0].to_f64();
-    let scale = coefficients.get(1).map_or(0.0, |r| r.to_f64());
-    let (a, b) = if axes[j] == 0 {
-        (1.0, -scale)
-    } else {
-        (-scale, 1.0)
-    };
-    Slot::line(Value::Line { a, b, c: -value })
 }
 
 pub(super) fn exact(root: Root) -> Option<String> {

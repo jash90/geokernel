@@ -13,7 +13,7 @@ pub(crate) use polynomial::{Poly, Quotient};
 pub(crate) use rational::gcd as integer_gcd;
 pub(crate) use rational::Rat;
 pub(crate) use solve::{
-    affine_system, guided_root, real_roots, systems, unique_real_root, Root, Roots, SystemRoots,
+    guided_root, real_roots, systems, unique_real_root, Root, Roots, SystemRoots,
 };
 mod projection;
 pub(crate) use projection::{project_plane, rounded_numerator, PlanePolynomial, PLANE_X, PLANE_Y};

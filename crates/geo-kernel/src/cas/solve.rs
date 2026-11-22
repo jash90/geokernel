@@ -10,7 +10,7 @@ mod system;
 mod tests;
 
 pub(super) use system::{add_shifted, basis, Equation};
-pub(crate) use system::{affine_system, systems, SystemRoots};
+pub(crate) use system::{systems, SystemRoots};
 
 const MAX_DEGREE: usize = 32;
 

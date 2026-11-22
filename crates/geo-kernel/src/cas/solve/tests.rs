@@ -186,23 +186,6 @@ fn shifted_pure_powers_keep_exact_radicals() {
 }
 
 #[test]
-fn dependent_affine_equations_keep_their_free_parameter() {
-    let first = poly(&[([1, 0, 0], 1, 1), ([0, 1, 0], 1, 1), ([0, 0, 0], -1, 1)]);
-    let second = poly(&[([1, 0, 0], 2, 1), ([0, 1, 0], 2, 1), ([0, 0, 0], -2, 1)]);
-    let mut work = Work::new(&|_| true);
-    assert_eq!(
-        affine_system(&[first, second], 2, &mut work),
-        Some(vec![ints(&[1, -1]), ints(&[0, 1])])
-    );
-    let fixed_y = poly(&[([0, 1, 0], 1, 1), ([0, 0, 0], -2, 1)]);
-    assert_eq!(
-        affine_system(std::slice::from_ref(&fixed_y), 2, &mut work),
-        Some(vec![ints(&[0, 1]), ints(&[2])])
-    );
-    assert_eq!(affine_system(&[fixed_y], 3, &mut work), None);
-}
-
-#[test]
 fn quadratic_compositions_keep_nested_radicals() {
     // The native reference gives radicals for both powers of x and powers of x - 1.
     for (polynomial, expected, outer_degree) in [

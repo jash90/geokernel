@@ -177,11 +177,14 @@ pub(in crate::expr) fn evaluate<const M: bool>(
     // `Simplify.1` answers the shorter of the normal form and the factored
     // form (`Ggb2giac`), which evaluate differently far from 0 (`(t - 10^8)^2`
     // against its expansion). A curve coordinate is answered only where both
-    // forms are the same expression: numerator and denominator are each a
-    // number times one irreducible factor at most, of multiplicity one.
+    // forms are the same expression: a polynomial that is a number times one
+    // irreducible factor at most, of multiplicity one.
     let exact = match exact {
         Some(f) if op == Op::Simplify && ctx.e.curve_parameter.is_some() => {
-            single_factors(&f.expanded, work)?.then_some(f)
+            // A rational coordinate is kept as a quotient by the reference
+            // and evaluated in that form, which the kernel does not keep.
+            let polynomial = f.expanded.denominator.scalar().is_some();
+            (polynomial && single_factors(&f.expanded, work)?).then_some(f)
         }
         other => other,
     };

@@ -1,14 +1,10 @@
 use super::{Poly, Quotient, Rat, Work};
 use crate::cas::factor;
-use crate::expr::{entry, free_decimal, Bin, Entry, Node, StoredExtra};
+use crate::expr::{entry, Bin, Entry, Node, StoredExtra};
 use crate::{Construction, Def, Id, Value};
 
 pub(super) fn variables() -> [Quotient; 3] {
     std::array::from_fn(|i| Quotient::polynomial(Poly::variable(i)))
-}
-
-pub(super) fn number(value: Rat) -> Quotient {
-    Quotient::polynomial(Poly::constant(value))
 }
 
 fn from_decimal(d: &crate::expr::Dec) -> Option<Rat> {
@@ -16,18 +12,17 @@ fn from_decimal(d: &crate::expr::Dec) -> Option<Rat> {
     Rat::decimal(coefficient, exp)
 }
 
+pub(super) fn number(value: Rat) -> Quotient {
+    Quotient::polynomial(Poly::constant(value))
+}
+
+/// A number object as the reference prints it into a CAS call: the decimal
+/// of its 15 significant digits (`Rat::printed`), whatever decimal it was
+/// typed or stored with.
 fn object(c: &Construction, id: Id) -> Option<Rat> {
     let Value::Number(value) = c.value(id) else {
         return None;
     };
-    if let Some(decimal) = free_decimal(c, id) {
-        return from_decimal(decimal);
-    }
-    if let Def::Expr(def) = c.def(id) {
-        if let StoredExtra::Decimal(d) = &entry(c, def).extra {
-            return from_decimal(d);
-        }
-    }
     Rat::printed(value)
 }
 
@@ -85,6 +80,7 @@ fn read_at(
 
     match e.nodes[i as usize] {
         Node::Num(value) => {
+            // A typed literal keeps its decimal digits.
             let rational = match e.lits[i as usize].decimal() {
                 Some(d) if value != std::f64::consts::PI && value != std::f64::consts::E => {
                     from_decimal(d)?
@@ -275,76 +271,151 @@ fn expanded_terms(
     Some(true)
 }
 
-/// The largest magnitude of a constant in the expression as typed, where
-/// constant subexpressions count by their folded value (`10^12 - 10` is
-/// about `10^12`): the size of the numbers the reference's numeric solver
-/// evaluates. `None` for a node this walk does not know.
-pub(super) fn typed_constants(
-    c: &Construction,
-    e: &Entry,
-    i: u32,
-    work: &mut Work<'_>,
-) -> Option<f64> {
-    constants_at(c, e, i, work, 0).map(|(_, largest)| largest)
+/// The largest coefficient magnitude of any intermediate result of the
+/// expression as typed, read as a polynomial in one variable with every
+/// coefficient taken by its absolute value, so that nothing cancels: each
+/// literal, each value read from a number object, each product, power and
+/// sum before cancellation. `None` where the expression is no polynomial
+/// (a division by a non-constant, a fractional power) or holds a node this
+/// walk does not know.
+pub(super) fn typed_bound(c: &Construction, e: &Entry, i: u32, work: &mut Work<'_>) -> Option<f64> {
+    let mut largest = 0.0_f64;
+    let poly = bound_at(c, e, i, &[0.0, 1.0], &mut largest, work, 0)?;
+    Some(poly.iter().fold(largest, |m, v| m.max(*v)))
 }
 
-/// The value of the node where it is constant, and the largest constant
-/// magnitude below it.
-fn constants_at(
+/// The sum of two typed bounds' polynomials is not tracked here; the
+/// polynomial of `lhs - rhs` is bounded by the larger side plus the other.
+pub(super) fn typed_bound_sides(
+    c: &Construction,
+    sides: [&Entry; 2],
+    work: &mut Work<'_>,
+) -> Option<f64> {
+    let mut largest = 0.0_f64;
+    let left = bound_at(
+        c,
+        sides[0],
+        sides[0].root,
+        &[0.0, 1.0],
+        &mut largest,
+        work,
+        0,
+    )?;
+    let right = bound_at(
+        c,
+        sides[1],
+        sides[1].root,
+        &[0.0, 1.0],
+        &mut largest,
+        work,
+        0,
+    )?;
+    let sum = add_abs(&left, &right);
+    Some(sum.iter().fold(largest, |m, v| m.max(*v)))
+}
+
+const BOUND_DEGREE: usize = 32;
+
+fn add_abs(a: &[f64], b: &[f64]) -> Vec<f64> {
+    (0..a.len().max(b.len()))
+        .map(|k| a.get(k).copied().unwrap_or(0.0) + b.get(k).copied().unwrap_or(0.0))
+        .collect()
+}
+
+fn mul_abs(a: &[f64], b: &[f64]) -> Option<Vec<f64>> {
+    if a.is_empty() || b.is_empty() {
+        return Some(Vec::new());
+    }
+    let len = a.len() + b.len() - 1;
+    if len > BOUND_DEGREE + 1 {
+        return None;
+    }
+    let mut out = vec![0.0; len];
+    for (i, x) in a.iter().enumerate() {
+        for (j, y) in b.iter().enumerate() {
+            out[i + j] += x * y;
+        }
+    }
+    Some(out)
+}
+
+fn bound_at(
     c: &Construction,
     e: &Entry,
     i: u32,
+    variable: &[f64],
+    largest: &mut f64,
     work: &mut Work<'_>,
     depth: u8,
-) -> Option<(Option<f64>, f64)> {
+) -> Option<Vec<f64>> {
     if depth > 128 {
         return None;
     }
-    work.spend(1)?;
-    let body = |id: Id, work: &mut Work<'_>| {
+    work.spend(BOUND_DEGREE)?;
+    let body = |id: Id, variable: &[f64], largest: &mut f64, work: &mut Work<'_>| {
         let Def::Expr(def) = c.def(id) else {
             return None;
         };
         let input = entry(c, def);
-        constants_at(c, input, input.root, work, depth + 1)
+        bound_at(c, input, input.root, variable, largest, work, depth + 1)
     };
-    Some(match e.nodes[i as usize] {
-        Node::Num(v) => (Some(v), v.abs()),
-        Node::MinusOne => (Some(-1.0), 1.0),
-        Node::Var | Node::VarY | Node::CasVariable(_) | Node::Local(..) => (None, 0.0),
+    let constant = |v: f64| Rat::printed(v).map(|r| vec![r.to_f64().abs()]);
+    let result = match e.nodes[i as usize] {
+        Node::Num(v) => constant(v)?,
+        Node::MinusOne => vec![1.0],
+        Node::Var | Node::VarY | Node::CasVariable(_) | Node::Local(..) => variable.to_vec(),
         Node::Obj(id) => match c.value(id) {
-            Value::Number(v) => (Some(v), v.abs()),
+            Value::Number(v) => constant(v)?,
             _ => return None,
         },
-        Node::SystemFunction(_, root) => constants_at(c, e, root, work, depth + 1)?,
-        Node::FunctionObject(id) => (None, body(id, work)?.1),
+        Node::FunctionObject(id) => body(id, variable, largest, work)?,
         Node::Apply(id, arg) => {
-            let (_, inner) = constants_at(c, e, arg, work, depth + 1)?;
-            (None, inner.max(body(id, work)?.1))
-        }
-        Node::Apply2(id, a, b) => {
-            let (_, first) = constants_at(c, e, a, work, depth + 1)?;
-            let (_, second) = constants_at(c, e, b, work, depth + 1)?;
-            (None, first.max(second).max(body(id, work)?.1))
+            let inner = bound_at(c, e, arg, variable, largest, work, depth + 1)?;
+            body(id, &inner, largest, work)?
         }
         Node::Bin(op @ (Bin::Add | Bin::Sub | Bin::Mul | Bin::Div | Bin::Pow), a, b) => {
-            let (va, ma) = constants_at(c, e, a, work, depth + 1)?;
-            let (vb, mb) = constants_at(c, e, b, work, depth + 1)?;
-            let largest = ma.max(mb);
-            match (va, vb) {
-                (Some(x), Some(y)) => {
-                    let v = match op {
-                        Bin::Add => x + y,
-                        Bin::Sub => x - y,
-                        Bin::Mul => x * y,
-                        Bin::Div => x / y,
-                        _ => x.powf(y),
+            let left = bound_at(c, e, a, variable, largest, work, depth + 1)?;
+            let right = bound_at(c, e, b, variable, largest, work, depth + 1)?;
+            match op {
+                Bin::Add | Bin::Sub => add_abs(&left, &right),
+                Bin::Mul => mul_abs(&left, &right)?,
+                Bin::Div => {
+                    // Only a division by a number keeps a polynomial.
+                    let [d] = right[..] else {
+                        return None;
                     };
-                    (Some(v), largest.max(v.abs()))
+                    if d == 0.0 {
+                        return None;
+                    }
+                    left.iter().map(|v| v / d).collect()
                 }
-                _ => (None, largest),
+                _ => {
+                    if right.len() != 1 {
+                        return None;
+                    }
+                    // The exponent with its sign.
+                    let exponent = read(c, e, b, &variables(), work)?.scalar()?.to_f64();
+                    if exponent.fract() != 0.0 || !(0.0..=BOUND_DEGREE as f64).contains(&exponent) {
+                        if left.len() == 1 {
+                            // A constant to any power is a constant.
+                            vec![left[0].powf(exponent)]
+                        } else {
+                            return None;
+                        }
+                    } else {
+                        let mut out = vec![1.0];
+                        for _ in 0..exponent as usize {
+                            out = mul_abs(&out, &left)?;
+                        }
+                        out
+                    }
+                }
             }
         }
         _ => return None,
-    })
+    };
+    for v in &result {
+        *largest = largest.max(*v);
+    }
+    Some(result)
 }

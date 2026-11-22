@@ -683,7 +683,7 @@ fn the_edges_of_the_supported_domains_are_undefined() {
     ]);
     assert_eq!(curve_point(&c, "s", 1e8 + 1.0), None);
     assert_eq!(curve_point(&c, "f", 1e8 + 1.0), Some((1.0, 1e8 + 1.0)));
-    // Families from factoring are undefined; a linear family is answered.
+    // Systems with a free variable are undefined, linear ones included.
     let c = build(&[
         "a = -1",
         "k: (13*x-10*y-10)*(a*x-5*y+2)=0",
@@ -695,5 +695,61 @@ fn the_edges_of_the_supported_domains_are_undefined() {
     ]);
     assert!(c.elements(id(&c, "r1")).is_none());
     assert!(c.elements(id(&c, "r2")).is_none());
-    assert_eq!(c.elements(id(&c, "r3")).unwrap().len(), 1);
+    assert!(c.elements(id(&c, "r3")).is_none());
+}
+
+#[test]
+fn the_fifth_round_edges_are_undefined_or_follow_the_reference() {
+    // Values that cancel are bounded before the cancellation.
+    let mut c = build(&[
+        "a = 1",
+        "f(x) = a*(a*x+1)-a*(a*x-x)-1",
+        "r1 = NSolutions(f, x=0)",
+        "r2 = NSolutions(f, {x})",
+        "h(x) = (x^3+x-10^9)/(x-1000)",
+        "r3 = NSolutions(h, x=0)",
+    ]);
+    assert_eq!(numbers(&c, "r1").unwrap(), [0.0]);
+    assert!(c.elements(id(&c, "r3")).is_none());
+    c.set_number(id(&c, "a"), 1e10).unwrap();
+    assert!(c.elements(id(&c, "r1")).is_none());
+    assert!(c.elements(id(&c, "r2")).is_none());
+    // A typed line that becomes 0 = 3.
+    let mut c = build(&[
+        "a = 1",
+        "g: a*x=3",
+        "r1 = Solutions(g)",
+        "r2 = Solve(g)",
+        "r3 = Solutions(g, x)",
+    ]);
+    c.set_number(id(&c, "a"), 0.0).unwrap();
+    assert!(c.elements(id(&c, "r1")).is_none());
+    assert_eq!(c.elements(id(&c, "r2")).unwrap().len(), 0);
+    assert_eq!(c.elements(id(&c, "r3")).unwrap().len(), 0);
+    c.set_number(id(&c, "a"), 2.0).unwrap();
+    assert_eq!(numbers(&c, "r1").unwrap(), [1.5]);
+    // A number object enters with its 15 printed digits.
+    let c = build(&[
+        "a = 0.1234567890123456",
+        "f(x) = x+10^10*(a-0.123456789012345)",
+        "r = Solutions(f, x)",
+    ]);
+    let [root] = numbers(&c, "r").unwrap()[..] else {
+        panic!("one root");
+    };
+    assert!((root + 1e-5).abs() < 1e-15);
+    // A constructed line with an exactly zero coefficient.
+    let c = build(&[
+        "A = (0, 1)",
+        "B = (0, 2)",
+        "g = Line(A, B)",
+        "r = Solutions(g)",
+    ]);
+    assert_eq!(numbers(&c, "r").unwrap(), [0.0]);
+    // A rational curve coordinate is not simplified.
+    let c = build(&[
+        "k = Curve((t^2-10^8*t-99999999)/(t-10^8), t, t, 10^8, 10^8+2)",
+        "r = Simplify(k)",
+    ]);
+    assert_eq!(curve_point(&c, "r", 1e8 + 1.0), None);
 }

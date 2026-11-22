@@ -1,0 +1,727 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-rows-001",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x^2=4})",
+        "r2 = Solve({x^2=4})",
+        "r3 = Solutions({x^2=4}, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 }
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-rows-002",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x^2=9})",
+        "r2 = Solve({x^2=9})",
+        "r3 = Solutions({x^2=9}, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -3.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 3.0 }
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -3.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-rows-003",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x^3-x=0})",
+        "r2 = Solve({x^3-x=0})",
+        "r3 = Solutions({x^3-x=0}, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 }
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-rows-004",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({(x-1)*(x-2)*(x+3)=0})",
+        "r2 = Solve({(x-1)*(x-2)*(x+3)=0})",
+        "r3 = Solutions({(x-1)*(x-2)*(x+3)=0}, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -3.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 3.0 }
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -3.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-rows-005",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x^4-5x^2+4=0})",
+        "r2 = Solve({x^4-5x^2+4=0})",
+        "r3 = Solutions({x^4-5x^2+4=0}, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 }
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-rows-006",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x^2-3x+2=0})",
+        "r2 = Solve({x^2-3x+2=0})",
+        "r3 = Solutions({x^2-3x+2=0}, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-rows-007",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({(x+1)*(x+2)=0})",
+        "r2 = Solve({(x+1)*(x+2)=0})",
+        "r3 = Solutions({(x+1)*(x+2)=0}, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 }
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-rows-008",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x^4=16})",
+        "r2 = Solve({x^4=16})",
+        "r3 = Solutions({x^4=16}, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-rows-009",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({(x-5)*(x+7)*(x-1)*(x+2)=0})",
+        "r2 = Solve({(x-5)*(x+7)*(x-1)*(x+2)=0})",
+        "r3 = Solutions({(x-5)*(x+7)*(x-1)*(x+2)=0}, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 5.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -7.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -5.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 7.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 },
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 }
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 5.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -7.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -2.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

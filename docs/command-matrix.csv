@@ -529,8 +529,8 @@ Numeric,,cas,,out_of_scope,,,
 Evaluate,,english,,out_of_scope,,,
 MixedNumber,,cas,,out_of_scope,,,
 Rationalize,,cas,,out_of_scope,,,
-Solutions,,algebra,P2,partial,10,3,"Real polynomial equations, small systems, and one equation solved for a variable. The implicit-curve forms need an implicit curve object."
-Solve,,algebra,P2,partial,10,3,"Real polynomial equations, small systems, and one equation solved for a variable. A conic solved into implicit curves and the implicit-curve forms need an implicit curve object."
+Solutions,,algebra,P2,partial,10,1,"Real polynomial equations, small systems, and one equation solved for a variable. The implicit-curve forms need an implicit curve object."
+Solve,,algebra,P2,partial,10,1,"Real polynomial equations, small systems, and one equation solved for a variable. A conic solved into implicit curves and the implicit-curve forms need an implicit curve object."
 PlotSolve,,function,P2,partial,5,1,"Polynomial and rational equations, lines and degenerate conics. A proper conic needs curves inside a list, the implicit-curve form an implicit curve object."
 SolveCubic,,cas,,out_of_scope,,,
 SolveQuartic,,cas,,out_of_scope,,,

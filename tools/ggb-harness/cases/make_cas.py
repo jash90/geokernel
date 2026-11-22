@@ -808,6 +808,33 @@ c.case("family", ["a = -1", "k: (13*x-10*y-10)*(a*x-5*y+2)=0", "r1 = Solutions(k
 c.case("family", ["k: (x-y)^2=0", "r1 = Solve(k, {x, y})", "r2 = Solutions(k, {x, y})"], [])
 c.case("family", ["g: x+y=1", "k: x-2y=3", "r1 = Solve(g, {x, y})", "r2 = Solutions(k, {x, y})",
                   "r3 = Solve({x+y+z=1}, {x, y, z})"], [])
+# Fifth round: values that cancel, rational equations and typed decimals.
+c.case("edge", ["a = 1", "f(x) = a*(a*x+1)-a*(a*x-x)-1", "r1 = NSolutions(f, x=0)", "r2 = NSolutions(f, {x})"],
+       [setn("a", 10000000000), setn("a", 2)])
+c.case("edge", ["f(x) = (x^3+x-10^9)/(x-1000)", "r1 = NSolutions(f, x=0)"], [])
+c.case("edge", ["a = 1", "g: a*x=3", "r1 = Solutions(g)", "r2 = Solve(g)", "r3 = NSolutions(g)",
+                "r4 = Solutions(g, x)"], [setn("a", 0), setn("a", 2)])
+c.case("edge", ["a = 0.1234567890123456", "f(x) = x+10^10*(a-0.123456789012345)", "r1 = Solutions(f, x)",
+                "r2 = NSolutions(f, x)"], [])
+c.case("edge", ["f(x) = 10^15*(x-1)", "r1 = NSolutions(f, {x})"], [])
+c.case("edge", ["A = (0, 1)", "B = (0, 2)", "g = Line(A, B)", "C = (1, 3)", "D = (2.5, 3)", "h = Line(C, D)",
+                "r1 = Solutions(g)", "r2 = Solutions(h, y)", "r3 = Solve(g)", "r4 = Solutions(h)"],
+       [mv("A", 0.1, 1), mv("A", 0, 1)])
+curve_case(["k = Curve((t^2-10^8*t-99999999)/(t-10^8), t, t, 10^8, 10^8+2)", "r1 = Simplify(k)"])
+
+# Linear systems with a free variable: which variable the reference keeps.
+for system, variables in [("{x+y=1}", "{x, y}"), ("{x+y=1}", "{y, x}"), ("{x-2y=3}", "{x, y}"),
+                          ("{2x+y=3}", "{x, y}"), ("{x+z=1}", "{x, y, z}"), ("{y+z=1}", "{x, y, z}"),
+                          ("{x+y=1}", "{x, y, z}"), ("{x+y=1, z=0}", "{x, y, z}"),
+                          ("{x+y+z=1, x-y=0}", "{x, y, z}"), ("{x+y+z=1, y-z=0}", "{x, y, z}"),
+                          ("{x+y+z=1, x-z=2}", "{x, y, z}"), ("{x=2y}", "{x, y}")]:
+    c.case("freevariable", [f"r1 = Solutions({system}, {variables})", f"r2 = Solve({system}, {variables})"], [])
+
+# One variable, several roots: the order of the rows.
+for equation in ["x^2=4", "x^2=9", "x^3-x=0", "(x-1)*(x-2)*(x+3)=0", "x^4-5x^2+4=0", "x^2-3x+2=0",
+                 "(x+1)*(x+2)=0", "x^4=16", "(x-5)*(x+7)*(x-1)*(x+2)=0"]:
+    c.case("rows", [f"r1 = Solutions({{{equation}}})", f"r2 = Solve({{{equation}}})",
+                    f"r3 = Solutions({{{equation}}}, {{x}})"], [])
 c.write()
 
 # Expand, Factor, IFactor and Simplify of an implicit curve answer an
