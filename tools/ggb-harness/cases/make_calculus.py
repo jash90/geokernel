@@ -339,4 +339,22 @@ case("curvederivative",
       {"action": "reject", "line": "i = Derivative(c, x)"},
       {"action": "reject", "line": "j = Derivative(c, g)"}])
 
+case("curvederivative",
+     ["c = Curve(u^3, u^4, u, 0, 2)", "d = Derivative(c)", "e = Derivative(d, u)",
+      "g = NDerivative(d, u, 2)"], [])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     nums(r=2) + ["O = (1, -1)", "c = Curve(t^2, sin(t), t, 0, 3)",
+                  "a = Dilate(c, r, O)", "d = Derivative(a, t)", "e = NDerivative(a, 2)"],
+     [setn("r", 0), setn("r", -2)])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     nums(b=1) + ["c = Curve(t^2, t^3, t, -2, 2)", "m = {{2, b}, {0, 1}}",
+                  "a = ApplyMatrix(m, c)", "d = NDerivative(a)", "e = Derivative(a, 0)"],
+     [setn("b", -3)])
+cases.cases[-1]["sample_curves"] = True
+case("curvederivative",
+     ["c = Curve(t^2, t^3, t, -2, 2)", "a = ParametricDerivative(c)", "d = Derivative(a)"], [])
+cases.cases[-1]["sample_curves"] = True
+
 cases.write()

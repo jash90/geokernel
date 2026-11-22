@@ -2849,17 +2849,15 @@ fn build_record(c: &Construction, d: &CalculusDef) -> (Option<Entry>, Option<Ent
             derivative_tree(c, entry, order, !numeric).map(|p| expr::function_entry(c, p))
         }
         CalculusDef::CurveDerivative { curve, order } => {
-            let Some((x, y)) = curve_coordinates(c, gid(curve)) else {
-                return (None, None);
-            };
             let Some(order) = derivative_order(c, order) else {
                 return (None, None);
             };
+            let Some((x, y)) = curve_coordinates(c, gid(curve), MAX_CURVE_SOURCES, &mut Budget::new())
+            else {
+                return (None, None);
+            };
             if order == 0 {
-                return (
-                    Some(expr::function_entry(c, expr::parsed_of(&x))),
-                    Some(expr::function_entry(c, expr::parsed_of(&y))),
-                );
+                return (Some(x), Some(y));
             }
             // a curve always differentiates through the fast no-CAS path
             // (`setDerivative` calls `getDerivative(n, true)`)
@@ -2942,37 +2940,127 @@ fn derivative_tree(c: &Construction, entry: &Entry, order: u32, cas_gated: bool)
     }
 }
 
-/// The two coordinate functions of the curve `id` as owned trees:
-/// the coordinate objects of a Cartesian curve, the record of a curve
-/// derivative, or the piece polynomials of a spline. `None` for a curve
-/// the kernel keeps in another form (a transformed curve), whose
-/// derivative stays undefined.
-fn curve_coordinates(c: &Construction, id: Id) -> Option<(Entry, Entry)> {
+const MAX_CURVE_SOURCES: u8 = 12;
+
+/// The two coordinate functions of a defined Cartesian curve.
+fn curve_coordinates(
+    c: &Construction,
+    id: Id,
+    depth: u8,
+    budget: &mut Budget,
+) -> Option<(Entry, Entry)> {
+    use super::{analysis::AnalysisDef, transform::TransformDef, vector::VectorDef};
+    let depth = depth.checked_sub(1)?;
+    let id = c.conditional_source(id)?;
+    if !matches!(c.value(id), Value::Curve { .. }) {
+        return None;
+    }
+    let copy = |entry: &Entry, budget: &mut Budget| {
+        budget
+            .step(c, entry.nodes.len() as u64)
+            .then(|| expr::function_entry(c, expr::parsed_of(entry)))
+    };
     match c.def(id) {
         Def::Measure(super::measure::MeasureDef::CartesianCurve {
             coordinates: [x, y],
             ..
         }) => {
-            let entry = |id: u32| match c.def(Id(id as usize)) {
-                Def::Expr(d) => Some(expr::parsed_of(expr::source_entry(c, d))),
+            let entry = |id: u32| match c.def(gid(id)) {
+                Def::Expr(d) => Some(expr::source_entry(c, d)),
                 _ => None,
             };
-            Some((
-                expr::function_entry(c, entry(x)?),
-                expr::function_entry(c, entry(y)?),
-            ))
+            Some((copy(entry(x)?, budget)?, copy(entry(y)?, budget)?))
         }
         Def::Calculus(CalculusDef::CurveDerivative { .. }) => {
             let record = c.calculus_record(id)?;
             let (x, y) = (record.tree.as_ref()?, record.tree2.as_ref()?);
-            Some((
-                expr::function_entry(c, expr::parsed_of(x)),
-                expr::function_entry(c, expr::parsed_of(y)),
-            ))
+            Some((copy(x, budget)?, copy(y, budget)?))
         }
-        Def::Analysis(super::analysis::AnalysisDef::Spline(input)) => spline_coordinates(c, input),
+        Def::Analysis(AnalysisDef::Spline(input)) => spline_coordinates(c, input),
+        Def::Analysis(AnalysisDef::ParametricDerivative(source)) => {
+            let (x, y) = curve_coordinates(c, source, depth, budget)?;
+            let dx = expr::function_entry(c, derivative_tree(c, &x, 1, false)?);
+            let dy = expr::function_entry(c, derivative_tree(c, &y, 1, false)?);
+            if !budget.step(c, (dx.nodes.len() + dy.nodes.len()) as u64) {
+                return None;
+            }
+            let mut builder = Builder::function(&dy);
+            let denominator = builder.append_tree(&dx);
+            let root = builder.push(Node::Bin(Bin::Div, dy.root, denominator));
+            let slope = expr::function_entry(c, builder.finish(c, root).ok()?);
+            Some((x, slope))
+        }
+        Def::Transform(TransformDef::Dilate {
+            src,
+            factor,
+            center,
+            ..
+        }) => {
+            let coordinates = curve_coordinates(c, src, depth, budget)?;
+            let ratio = c.number(factor)?;
+            let (cx, cy) = center.map_or(Some((0.0, 0.0)), |id| c.point(id))?;
+            let affine = [
+                [ratio, 0.0, cx - ratio * cx],
+                [0.0, ratio, cy - ratio * cy],
+                [0.0, 0.0, 1.0],
+            ];
+            transform_coordinate_trees(c, coordinates, affine, budget)
+        }
+        Def::Vector(VectorDef::ApplyMatrix { matrix, src, kind }) => {
+            let coordinates = match kind {
+                Kind::Curve => curve_coordinates(c, src, depth, budget)?,
+                Kind::Function => {
+                    let y =
+                        source_entry(c, src).or_else(|| c.calculus_record(src)?.tree.as_ref())?;
+                    let mut builder = Builder::empty();
+                    let root = builder.push(Node::Var);
+                    let x = expr::function_entry(c, builder.finish(c, root).ok()?);
+                    (x, copy(y, budget)?)
+                }
+                _ => return None,
+            };
+            let matrix = super::vector::matrix::Matrix::read(c.elements(matrix)?)?;
+            let (a, d, g) = matrix.curve_coordinates((1.0, 0.0), 0.0);
+            let (b, e, h) = matrix.curve_coordinates((0.0, 1.0), 0.0);
+            let (p, q, r) = matrix.curve_coordinates((0.0, 0.0), 1.0);
+            transform_coordinate_trees(c, coordinates, [[a, b, p], [d, e, q], [g, h, r]], budget)
+        }
         _ => None,
     }
+}
+
+fn transform_coordinate_trees(
+    c: &Construction,
+    (x, y): (Entry, Entry),
+    [first, second, last]: [[f64; 3]; 3],
+    budget: &mut Budget,
+) -> Option<(Entry, Entry)> {
+    if !budget.step(c, 4 * (x.nodes.len() + y.nodes.len()) as u64) {
+        return None;
+    }
+    let mut builder = Builder::function(&x);
+    let roots = [x.root, builder.append_tree(&y)];
+    let mut linear = |[a, b, offset]: [f64; 3]| {
+        let constant = builder.push(Node::Num(offset));
+        [a, b]
+            .into_iter()
+            .zip(roots)
+            .fold(constant, |sum, (factor, src)| {
+                if factor == 0.0 {
+                    return sum;
+                }
+                let factor = builder.push(Node::Num(factor));
+                let term = builder.push(Node::Bin(Bin::Mul, factor, src));
+                builder.push(Node::Bin(Bin::Add, sum, term))
+            })
+    };
+    let mut roots = [linear(first), linear(second)];
+    if last != [0.0, 0.0, 1.0] {
+        let scale = linear(last);
+        roots = roots.map(|root| builder.push(Node::Bin(Bin::Div, root, scale)));
+    }
+    let make = |root| Some(expr::function_entry(c, builder.finish(c, root).ok()?));
+    Some((make(roots[0])?, make(roots[1])?))
 }
 
 /// The coordinate functions of a spline (`AlgoSpline.compute`): one
@@ -3204,7 +3292,7 @@ pub(crate) fn exec(
                 }
                 // the parameter name is the only variable a curve reads
                 // (`resArgsLocalNumVar` checks it against the curve's own)
-                if let Err(e) = variable(c, order, curve_parameter(c, f).as_deref()) {
+                if let Err(e) = variable(c, order, curve_parameter(c, gid(curve))) {
                     return Some(Err(e));
                 }
                 return Some(add(c, CalculusDef::CurveDerivative { curve, order: None }));
@@ -3308,18 +3396,34 @@ fn curve_argument(c: &Construction, arg: &str) -> Option<u32> {
 
 /// The parameter name of a Cartesian curve (`getFunctionVariables` of a
 /// curve reads its first coordinate function).
-fn curve_parameter(c: &Construction, arg: &str) -> Option<String> {
-    let id = crate::script::object(c, arg).ok()?;
-    match c.def(id) {
-        Def::Measure(super::measure::MeasureDef::CartesianCurve {
-            coordinates: [x, _],
-            ..
-        }) => match c.def(Id(x as usize)) {
-            Def::Expr(d) => expr::curve_parameter(expr::source_entry(c, d)).map(String::from),
-            _ => None,
-        },
-        _ => None,
+fn curve_parameter(c: &Construction, mut id: Id) -> Option<&str> {
+    for _ in 0..MAX_CURVE_SOURCES {
+        id = c.conditional_source(id)?;
+        match c.def(id) {
+            Def::Measure(super::measure::MeasureDef::CartesianCurve {
+                coordinates: [x, _],
+                ..
+            }) => {
+                return match c.def(gid(x)) {
+                    Def::Expr(d) => expr::curve_parameter(expr::source_entry(c, d)),
+                    _ => None,
+                };
+            }
+            Def::Analysis(super::analysis::AnalysisDef::Spline(_)) => return Some("t"),
+            Def::Analysis(super::analysis::AnalysisDef::ParametricDerivative(source))
+            | Def::Transform(super::transform::TransformDef::Dilate { src: source, .. })
+            | Def::Vector(super::vector::VectorDef::ApplyMatrix {
+                src: source,
+                kind: Kind::Curve,
+                ..
+            }) => {
+                id = source;
+            }
+            Def::Calculus(CalculusDef::CurveDerivative { curve, .. }) => id = gid(curve),
+            _ => return None,
+        }
     }
+    None
 }
 
 /// Whether `arg` names the variable `expect` (`x` for a function); the

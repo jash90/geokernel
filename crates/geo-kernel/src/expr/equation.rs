@@ -366,6 +366,17 @@ impl Builder {
         self.nodes[i as usize]
     }
 
+    /// Append a coordinate tree after charging its nodes in the caller.
+    pub(crate) fn append_tree(&mut self, entry: &Entry) -> u32 {
+        let offset = self.nodes.len() as u32;
+        self.nodes.extend(entry.nodes.iter().copied().map(|mut node| {
+            shift_children(&mut node, offset);
+            node
+        }));
+        self.lits.extend_from_slice(&entry.lits);
+        offset + entry.root
+    }
+
     /// A builder over the whole tree of the function `e`, which the
     /// calculus commands expand (see `algo::calculus`).
     pub(crate) fn function(e: &super::Entry) -> Self {
