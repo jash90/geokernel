@@ -24,6 +24,7 @@ mod state;
 use self::distance::distance;
 use self::roots::cubic;
 pub(crate) use self::roots::polynomial_roots;
+pub(super) use self::roots::{bracketed_root, graph_roots};
 pub(crate) use self::state::Intersection;
 pub(crate) use self::state::SavedSlots;
 

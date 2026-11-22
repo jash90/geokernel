@@ -133,5 +133,62 @@ class ExtractTest(unittest.TestCase):
         self.assertEqual(pairs[0]["expected"], [])
 
 
+def scripts(java):
+    lines = {p["line"] for p in run(java)[0]}
+    return ext.extract_scripts(java, "X.java", CONSTANTS, lines)
+
+
+class ScriptTest(unittest.TestCase):
+    def test_steps_in_source_order(self):
+        java = ("class A {\n  @Test\n  void foo() {\n"
+                '    add("a=1");\n    GeoElement g = add("b=2");\n'
+                '    tRound("c", "3.14");\n    t("a+b", "3");\n'
+                '    assertEquals(1, 1);\n  }\n}\n')
+        [rec] = scripts(java)
+        self.assertEqual(rec["test"], "foo")
+        self.assertTrue(rec["complete"])
+        self.assertEqual([(s["call"], s["input"]) for s in rec["steps"]],
+                         [("add", "a=1"), ("add", "b=2"),
+                          ("tRound", "c"), ("t", "a+b")])
+        self.assertEqual(rec["steps"][2]["expected"], ["3.14"])
+        self.assertEqual(rec["steps"][3]["line"], 7)
+
+    def test_other_statement_makes_method_incomplete(self):
+        java = ("class A {\n  @Test\n  void foo() {\n"
+                '    app.setRounding("5");\n    t("a", "b");\n'
+                '    for (int i = 0; i < 2; i++) { t("x", "y"); }\n  }\n}\n')
+        [rec] = scripts(java)
+        self.assertFalse(rec["complete"])
+        self.assertEqual([s["call"] for s in rec["steps"]],
+                         ["other", "t", "other"])
+        self.assertEqual(rec["steps"][0]["source"], 'app.setRounding("5");')
+
+    def test_settings_and_failing_inputs(self):
+        java = ("class A {\n  @Test\n  void foo() {\n"
+                "    app.setRandomSeed(7);\n"
+                "    AlgebraTestHelper.enableCAS(getApp(), false);\n"
+                '    shouldFail("x+", "error", app);\n    t("a", "b");\n'
+                "  }\n}\n")
+        [rec] = scripts(java)
+        self.assertTrue(rec["complete"])
+        self.assertEqual([(s["call"], s.get("value")) for s in rec["steps"]],
+                         [("seed", 7), ("cas", False), ("t", None)])
+
+    def test_helper_method_is_not_complete(self):
+        java = ('class A {\n  private void check() {\n    t("a", "b");\n'
+                "  }\n}\n")
+        [rec] = scripts(java)
+        self.assertEqual(rec["test"], "check")
+        self.assertFalse(rec["complete"])
+
+    def test_lambda_and_block_statements(self):
+        java = ("class A {\n  @Test\n  void foo() {\n"
+                "    assertThrows(X.class, () -> { t(\"q\", \"r\"); });\n"
+                '    if (true) { x(); } else { y(); }\n    t("a", "b");\n'
+                "  }\n}\n")
+        [rec] = scripts(java)
+        self.assertEqual([s["call"] for s in rec["steps"]], ["other", "t"])
+
+
 if __name__ == "__main__":
     unittest.main()

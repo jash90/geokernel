@@ -686,6 +686,14 @@ fn legacy_angle_numbers(schema: u32) -> Result<bool, String> {
     }
 }
 
+/// Parses one snapshot object from JSON, in the format of `golden/SCHEMA.md`
+/// (the `object` field of a verified t-pair output). Angles keep the current
+/// encoding: they are recorded as the angle type there.
+pub fn expected_from_json(v: &serde_json::Value) -> Result<Expected, String> {
+    let raw: RawObject = serde_json::from_value(v.clone()).map_err(|e| format!("object: {e}"))?;
+    Expected::try_from(raw)
+}
+
 /// Apply the file's angle encoding to a snapshot read outside a replay case,
 /// such as a snapshot paired with an exported construction.
 pub fn set_snapshot_schema(
@@ -738,6 +746,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
     let mut previous_keys: Option<BTreeSet<String>> = None;
     let mut boundary_prefixes = BTreeSet::new();
     let mut has_point_list = false;
+    let mut has_root_interval = false;
     for (i, snap) in case.snapshots.iter().enumerate() {
         let keys: BTreeSet<String> = snap.keys().cloned().collect();
         match &previous_keys {
@@ -763,17 +772,25 @@ fn validate_case(case: &Case) -> Result<(), String> {
                         clip_prefixes.insert(label_prefix(label));
                     }
                     if let Some((label, "Intersect", args)) = command_args(line) {
-                        if let [a, b] = args.as_slice() {
-                            let kind = |name: &str| snap.get(name).map(|o| o.kind);
-                            let boundary = |k| matches!(k, Some(Kind::Polygon | Kind::PolyLine));
-                            let carrier =
-                                |k| matches!(k, Some(Kind::Line | Kind::Segment | Kind::Ray));
-                            let (a, b) = (kind(a), kind(b));
-                            if boundary(a) && (boundary(b) || carrier(b))
-                                || boundary(b) && carrier(a)
-                            {
-                                boundary_prefixes.insert(label_prefix(label));
+                        let kind = |name: &str| snap.get(name).map(|o| o.kind);
+                        match args.as_slice() {
+                            [a, b] => {
+                                let boundary =
+                                    |k| matches!(k, Some(Kind::Polygon | Kind::PolyLine));
+                                let carrier =
+                                    |k| matches!(k, Some(Kind::Line | Kind::Segment | Kind::Ray));
+                                let (a, b) = (kind(a), kind(b));
+                                if boundary(a) && (boundary(b) || carrier(b))
+                                    || boundary(b) && carrier(a)
+                                {
+                                    boundary_prefixes.insert(label_prefix(label));
+                                }
                             }
+                            [a, b, _, _] => {
+                                has_root_interval |= (kind(a), kind(b))
+                                    == (Some(Kind::Function), Some(Kind::Function));
+                            }
+                            _ => {}
                         }
                     }
                     if let Some((_, "Point", args)) = command_args(line) {
@@ -835,7 +852,8 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     || keys.difference(previous).any(|key| {
                         snap[key].kind != Kind::Point
                             || !(indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
-                                || has_point_list && POINT_LABELS.contains(&label_prefix(key)))
+                                || (has_point_list || has_root_interval)
+                                    && POINT_LABELS.contains(&label_prefix(key)))
                     })
                 {
                     return Err(format!("snapshot {i} labels differ from snapshot 0"));
