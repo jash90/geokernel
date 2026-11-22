@@ -76,6 +76,61 @@ pub(crate) fn real_roots(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Ro
     Some(Roots::Finite(roots))
 }
 
+/// Most Newton steps of one guided solve.
+const GUIDED_STEPS: usize = 128;
+/// Most halvings of one Newton step.
+const GUIDED_HALVINGS: usize = 40;
+
+/// One real root reached from `start` by Newton's method with step halving:
+/// a step is shortened until the residual shrinks
+/// ([Dennis and Schnabel, Numerical Methods for Unconstrained Optimization
+/// and Nonlinear Equations, section 6.3](https://doi.org/10.1137/1.9781611971200)).
+/// `None` when the derivative vanishes on the way, when no shortened step
+/// lowers the residual, or when the budget runs out.
+pub(crate) fn guided_root(coefficients: &[Rat], start: f64, work: &mut Work<'_>) -> Option<f64> {
+    let coefficients: Vec<f64> = trim(coefficients).iter().map(|c| c.to_f64()).collect();
+    if coefficients.len() < 2 || !start.is_finite() {
+        return None;
+    }
+    let evaluate = |x: f64| {
+        coefficients
+            .iter()
+            .rev()
+            .fold((0.0, 0.0), |(value, slope): (f64, f64), &c| {
+                (value * x + c, slope * x + value)
+            })
+    };
+    let mut x = start;
+    let (mut value, mut slope) = evaluate(x);
+    for _ in 0..GUIDED_STEPS {
+        work.spend(coefficients.len())?;
+        if value == 0.0 {
+            return Some(x);
+        }
+        if slope == 0.0 || !slope.is_finite() || !value.is_finite() {
+            return None;
+        }
+        let step = value / slope;
+        if step.abs() <= 1e-13 * x.abs().max(1.0) {
+            return Some(x - step);
+        }
+        let mut scale = 1.0;
+        let mut accepted = None;
+        for _ in 0..=GUIDED_HALVINGS {
+            work.spend(coefficients.len())?;
+            let candidate = x - scale * step;
+            let (v, s) = evaluate(candidate);
+            if v.abs() < value.abs() {
+                accepted = Some((candidate, v, s));
+                break;
+            }
+            scale *= 0.5;
+        }
+        (x, value, slope) = accepted?;
+    }
+    None
+}
+
 fn solve_square_free(coefficients: &[Rat], work: &mut Work<'_>) -> Option<Vec<Root>> {
     if let Some(roots) = elementary(coefficients, work) {
         return Some(roots);

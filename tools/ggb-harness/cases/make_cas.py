@@ -1,6 +1,6 @@
 """Polynomial CAS cases, including algebra-input cases from the upstream tests."""
 
-from caselib import Cases, setn
+from caselib import Cases, mv, setn
 
 c = Cases("cas")
 for topic, expression in [
@@ -193,4 +193,103 @@ for expression in [
     "NextPrime(-2.5)", "PreviousPrime(-2.5)", "NextPrime(1)", "PreviousPrime(1)",
 ]:
     c.case("prime", [f"result = {expression}"], [])
+
+SOLVERS = ("Solve", "Solutions", "NSolve", "NSolutions")
+
+
+def results(calls):
+    """One labelled result per call: r1, r2, ..."""
+    return [f"r{k} = {call}" for k, call in enumerate(calls, 1)]
+
+
+# A solving variable or a numeric guess after a function or a line.
+for command in SOLVERS:
+    c.case("hint", ["f(x) = x^2-3", f"result = {command}(f, x)"], [])
+for command in SOLVERS:
+    c.case("hint", ["g: x+y=1", f"result = {command}(g, x)"], [])
+for command in SOLVERS:
+    c.case("hint", ["g: 2x+3y=6", f"result = {command}(g, y)"], [])
+# A variable the equation does not contain.
+c.case("hint", ["f(x) = x^2-3"] + results(f"{command}(f, y)" for command in SOLVERS), [])
+c.case("hint", ["g: x=3"] + results(
+    [f"{command}(g, x)" for command in SOLVERS] + [f"{command}(g, y)" for command in SOLVERS]), [])
+c.case("hint", ["g: y=2"] + results(
+    [f"{command}(g, x)" for command in SOLVERS] + [f"{command}(g, y)" for command in SOLVERS]), [])
+c.case("hint", ["g: x+y=1", "result = Solve(g, z)"], [])
+# A numeric guess picks one root, except for Solve.
+c.case("hint", ["f(x) = x^2-3", "r1 = Solve(f, x=1)", "r2 = Solutions(f, x=1)",
+                "r3 = NSolve(f, x=-1)", "r4 = NSolutions(f, x=10)"], [])
+c.case("hint", ["f(x) = x^3-x"] + results(
+    f"NSolutions(f, x={guess})" for guess in
+    ["0.4", "0.5", "0.6", "0.57", "0.58", "2", "-0.45", "100", "0", "1"]), [])
+c.case("hint", ["f(x) = x^5-3x+1"] + results(
+    f"NSolutions(f, x={guess})" for guess in ["0", "1", "-1", "0.9", "5", "-2.658", "1.068"]), [])
+c.case("hint", ["f(x) = x^4-5x^2+4"] + results(
+    f"NSolve(f, x={guess})" for guess in ["3.2", "-0.4", "1.6", "-1.7", "0.9"]), [])
+c.case("hint", ["f(x) = x^2+1", "r1 = NSolutions(f, x=1)", "r2 = NSolve(f, x=1)",
+                "r3 = Solutions(f, x=1)", "r4 = Solve(f, x=1)"], [])
+c.case("hint", ["f(x) = x^2", "r1 = NSolutions(f, x=1)", "r2 = Solve(f, x=1)"], [])
+c.case("hint", ["a = 1", "f(x) = x^2-a", "r1 = NSolutions(f, x=2)", "r2 = Solve(f, x)",
+                "r3 = Solutions(f, y)"], [setn("a", 4), setn("a", -1), setn("a", 0), setn("a", 2)])
+c.case("hint", ["b = 2", "f(x) = x^2-3", "result = NSolutions(f, x=b)"], [setn("b", -2), setn("b", 5)])
+c.case("hint", ["g: x=3", "r1 = NSolve(g, x=1)", "r2 = Solve(g, x=1)", "r3 = Solutions(g, x=1)"], [])
+c.case("hint", ["g: x+y=1", "r1 = NSolve(g, x=1)", "r2 = Solve(g, x=1)",
+                "r3 = Solutions(g, y=1)"], [])
+# A line through two points follows them, also when it turns vertical or
+# collapses and comes back.
+c.case("hint", ["A = (0, 1)", "B = (1, 0)", "g = Line(A, B)", "r1 = Solve(g, x)",
+                "r2 = Solutions(g, y)", "r3 = Solve(g, y)", "r4 = NSolutions(g, x)"],
+       [mv("B", 3, 0), mv("B", 0, 5), mv("B", 0, 1), mv("B", 2, 2)])
+# A list of variables after a single equation follows the system solver.
+c.case("hint", ["f(x) = x^2-3", "result = Solve(f, {x})"], [])
+c.case("hint", ["f(x) = x^2-3", "result = Solutions(f, {x})"], [])
+
+# Conics. A conic in one variable is a polynomial equation.
+for command in SOLVERS:
+    c.case("conic", ["k: x^2=4", f"result = {command}(k)"], [])
+for command in SOLVERS:
+    c.case("conic", ["k: x^2=4", f"result = {command}(k, x)"], [])
+c.case("conic", ["k: x^2=4"] + results(f"{command}(k, y)" for command in SOLVERS), [])
+c.case("conic", ["k: y^2=4"] + results(
+    [f"{command}(k)" for command in SOLVERS] + ["Solve(k, x)", "Solve(k, y)", "NSolve(k, x)"]), [])
+c.case("conic", ["k: x^2-5x+6=0"] + results(f"{command}(k)" for command in SOLVERS), [])
+# A conic in both variables gives one function per branch.
+c.case("conic", ["k: x^2+y^2=4", "r1 = Solutions(k)", "r2 = Solutions(k, x)",
+                 "r3 = Solutions(k, y)", "r4 = Solve(k, y)"], [])
+c.case("conic", ["k: x^2+y^2=4", "r1 = NSolve(k)", "r2 = NSolutions(k)", "r3 = NSolve(k, x)",
+                 "r4 = NSolutions(k, x)", "r5 = NSolve(k, y)", "r6 = NSolutions(k, y)"], [])
+for equation in [
+    "x^2+4y^2=4", "x^2+x*y+y^2=3", "x^2+x*y+y^2=1", "x^2-y^2=1", "2x^2+3y^2+x-y=5",
+    "(x-1)^2+(y-2)^2=9", "3x^2-y^2+x=2", "x^2+x*y=1", "x^2+2x*y+3y^2=6", "x^2+2x-y^2=-3",
+    "x^2+2x-y^2=3", "x^2-4x*y+y^2+2x=1", "x^2+x*y+y^2+x=3", "x^2+x*y-y^2=-5", "x^2+3y^2-x=5",
+    "x*y=1", "x*y+x+y=1", "y^2=x",
+]:
+    c.case("conic", [f"k: {equation}", "r1 = Solutions(k)", "r2 = Solutions(k, y)",
+                     "r3 = Solve(k, y)"], [])
+# Solving a parabola for its squared variable needs both roots.
+for equation in ["y=x^2", "y=x^2+x", "x^2+2x-y=3", "x^2+y=3"]:
+    c.case("conic", [f"k: {equation}", "r1 = Solutions(k)", "r2 = Solutions(k, y)"], [])
+# Degenerate conics split into lines.
+for equation in [
+    "x^2-y^2=0", "x^2+2x*y+y^2=1", "x^2-2x*y+y^2=0", "x*y=0", "x^2-2y^2=0", "(x-2y)*(x-3y)=0",
+    "(x-y/2)*(x-2y)=0", "(x-y)*(x-2)=0", "(x-2y-1)*(x+2y-3)=0", "x^2+3x*y+2y^2=0",
+    "2x^2-x*y-y^2+x+2y=1", "(x-2y+5)*(x-2y-4)=0", "(x+y/3)*(x-y/2)=0", "x^2-2x*y-y^2=0",
+    "(x-2)*(y-1)=0",
+]:
+    c.case("conic", [f"k: {equation}", "r1 = Solve(k)", "r2 = Solutions(k)", "r3 = Solve(k, y)",
+                     "r4 = Solutions(k, y)"], [])
+# Conics without real points.
+for equation in ["x^2+y^2=-4", "x^2+y^2=0", "x^2+1=0", "x^2=0"]:
+    c.case("conic", [f"k: {equation}"] + results(
+        [f"{command}(k)" for command in SOLVERS] + ["Solve(k, y)", "Solutions(k, y)"]), [])
+# The conic changes its type while a number moves.
+c.case("conic", ["a = 4", "k: x^2=a", "r1 = Solve(k)", "r2 = NSolutions(k)", "r3 = Solutions(k, x)"],
+       [setn("a", 9), setn("a", -1), setn("a", 0), setn("a", 2)])
+c.case("conic", ["a = 4", "k: x^2+y^2=a", "r1 = Solutions(k)", "r2 = Solve(k, y)", "r3 = NSolve(k)"],
+       [setn("a", 9), setn("a", -1), setn("a", 0), setn("a", 1)])
+c.case("conic", ["A = (1, 2)", "k = Circle(A, 3)", "r1 = Solutions(k)", "r2 = Solve(k, y)"],
+       [mv("A", 0, 0), mv("A", -2, 1.5)])
+c.case("conic", ["k: x^2=4", "r1 = NSolutions(k, x=1)", "r2 = NSolve(k, x=-1)", "r3 = Solve(k, x=1)",
+                 "r4 = Solutions(k, x=1)"], [])
+c.case("conic", ["k: x^2+y^2=4", "r1 = Solutions(k, x=1)", "r2 = NSolve(k, y=1)"], [])
 c.write()

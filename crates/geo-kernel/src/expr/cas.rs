@@ -2,6 +2,7 @@
 
 mod functional;
 mod input;
+mod single;
 mod solutions;
 
 use super::equation::Builder;
@@ -58,6 +59,10 @@ pub(crate) enum Op {
         width: u8,
         axes: [u8; 3],
         system: bool,
+        /// The solving variables came as a list.
+        rows: bool,
+        /// `PlotSolve`: the solutions as points on the x-axis.
+        points: bool,
     },
 }
 
@@ -85,6 +90,8 @@ impl Op {
                 width: 0,
                 axes: [0; 3],
                 system: false,
+                rows: false,
+                points: false,
             },
             _ => return None,
         })
@@ -120,8 +127,9 @@ impl Op {
             Self::Solve {
                 system,
                 assignments,
+                rows,
                 ..
-            } => Ty::List(if system {
+            } => Ty::List(if system || (rows && !assignments) {
                 Elem::List
             } else if assignments {
                 Elem::Any
@@ -182,7 +190,7 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
-    pub(super) fn cas_list(&self, op: Op, a: u32) -> Option<(u32, u32)> {
+    pub(super) fn cas_list(&self, op: Op, a: u32, b: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
         let charge = |n| lists.charge(n as u64);
         let work = &mut Work::new(&charge);
@@ -206,7 +214,7 @@ impl<const M: bool> Ctx<'_, M> {
                 self.cas_slots(coefficients.into_iter().map(Slot::number))
             }
             Op::Factors => functional::factor_list(self, a, work),
-            Op::Solve { .. } => solutions::list(self, a, op, work),
+            Op::Solve { .. } => solutions::list(self, a, b, op, work),
             _ => None,
         }
     }

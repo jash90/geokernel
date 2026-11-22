@@ -346,3 +346,60 @@ fn wilkinson_products_stay_correct_to_the_last_double_bit() {
         }
     }
 }
+
+#[test]
+fn a_guided_root_follows_the_damped_newton_iteration() {
+    let rats = |values: &[i128]| -> Vec<Rat> { values.iter().map(|&v| rational(v, 1)).collect() };
+    let guided = |coefficients: &[i128], start: f64| {
+        super::guided_root(&rats(coefficients), start, &mut Work::new(&|_| true))
+    };
+    let near = |got: Option<f64>, want: f64| {
+        let got = got.expect("a root");
+        assert!((got - want).abs() < 1e-9, "{got} is not {want}");
+    };
+    // x^3 - x, the start values recorded in golden/cas/hint.json: a full
+    // step from 0.57 overshoots to the far side, a halved one stays near 0.
+    let cubic = [0, -1, 0, 1];
+    for (start, root) in [
+        (0.4, 0.0),
+        (0.5, -1.0),
+        (0.6, 1.0),
+        (0.57, 0.0),
+        (0.58, 1.0),
+        (2.0, 1.0),
+        (-0.45, 0.0),
+        (100.0, 1.0),
+        (0.0, 0.0),
+        (1.0, 1.0),
+    ] {
+        near(guided(&cubic, start), root);
+    }
+    // x^5 - 3x + 1
+    let quintic = [1, -3, 0, 0, 0, 1];
+    near(guided(&quintic, 0.0), 0.334_734_141_943_4);
+    near(guided(&quintic, 0.9), 1.214_648_042_698);
+    near(guided(&quintic, -2.658), -1.388_791_984_407);
+    // A double root is approached at a linear rate and still reached.
+    near(guided(&[0, 0, 1], 1.0), 0.0);
+    // No real root, a vanishing derivative, a constant, a start that is no
+    // number: undefined.
+    assert_eq!(guided(&[1, 0, 1], 1.0), None);
+    assert_eq!(guided(&[-3, 0, 1], 0.0), None);
+    assert_eq!(guided(&[5], 1.0), None);
+    assert_eq!(guided(&[-3, 0, 1], f64::NAN), None);
+    assert_eq!(guided(&[-3, 0, 1], f64::INFINITY), None);
+}
+
+#[test]
+fn a_guided_root_stops_when_the_budget_is_spent() {
+    let coefficients = [rational(-3, 1), Rat::ZERO, Rat::ONE];
+    let spent = std::cell::Cell::new(0usize);
+    let charge = |n: usize| {
+        spent.set(spent.get() + n);
+        spent.get() <= 4
+    };
+    assert_eq!(
+        super::guided_root(&coefficients, 1e300, &mut Work::new(&charge)),
+        None
+    );
+}

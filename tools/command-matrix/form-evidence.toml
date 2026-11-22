@@ -3403,3 +3403,84 @@ difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyM
 command = "SurdText"
 form = "point"
 cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
+
+[[form]]
+command = "Solve"
+form = "function,any"
+cases = ["cas-hint-001"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`"
+
+[[form]]
+command = "Solve"
+form = "line,any"
+cases = ["cas-hint-005", "cas-hint-009", "cas-hint-014"]
+difference = "polynomial-cas: `Solve(line, any)`, `Solutions(line, any)`, `NSolve(line, any)`, `NSolutions(line, any)`"
+
+[[form]]
+command = "Solutions"
+form = "function,any"
+cases = ["cas-hint-002"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`"
+
+[[form]]
+command = "Solutions"
+form = "line,any"
+cases = ["cas-hint-006", "cas-hint-010", "cas-hint-014"]
+difference = "polynomial-cas: `Solve(line, any)`, `Solutions(line, any)`, `NSolve(line, any)`, `NSolutions(line, any)`"
+
+[[form]]
+command = "Solutions"
+form = "conic"
+cases = ["cas-conic-002"]
+
+[[form]]
+command = "Solutions"
+form = "conic,any"
+cases = ["cas-conic-006"]
+difference = "polynomial-cas: `Solutions(conic, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`"
+
+[[form]]
+command = "NSolve"
+form = "function,any"
+cases = ["cas-hint-003"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`"
+
+[[form]]
+command = "NSolve"
+form = "line,any"
+cases = ["cas-hint-007", "cas-hint-011", "cas-hint-014"]
+difference = "polynomial-cas: `Solve(line, any)`, `Solutions(line, any)`, `NSolve(line, any)`, `NSolutions(line, any)`"
+
+[[form]]
+command = "NSolve"
+form = "conic"
+cases = ["cas-conic-003"]
+
+[[form]]
+command = "NSolve"
+form = "conic,any"
+cases = ["cas-conic-007"]
+difference = "polynomial-cas: `Solutions(conic, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`"
+
+[[form]]
+command = "NSolutions"
+form = "function,any"
+cases = ["cas-hint-004"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`"
+
+[[form]]
+command = "NSolutions"
+form = "line,any"
+cases = ["cas-hint-008", "cas-hint-012", "cas-hint-014"]
+difference = "polynomial-cas: `Solve(line, any)`, `Solutions(line, any)`, `NSolve(line, any)`, `NSolutions(line, any)`"
+
+[[form]]
+command = "NSolutions"
+form = "conic"
+cases = ["cas-conic-004"]
+
+[[form]]
+command = "NSolutions"
+form = "conic,any"
+cases = ["cas-conic-008"]
+difference = "polynomial-cas: `Solutions(conic, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)`"

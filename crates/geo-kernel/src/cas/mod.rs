@@ -1,16 +1,18 @@
 //! Bounded exact polynomial and rational-expression operations.
 
+mod algebraic;
 mod factor;
 mod multivariate;
 mod polynomial;
 mod rational;
 mod solve;
 
+pub(crate) use algebraic::{Algebraic, Radical};
 pub(crate) use factor::{divide_exact as polynomial_quotient, gcd as polynomial_gcd};
 pub(crate) use polynomial::{Poly, Quotient};
 pub(crate) use rational::gcd as integer_gcd;
 pub(crate) use rational::Rat;
-pub(crate) use solve::{affine_system, real_roots, systems, Root, Roots, SystemRoots};
+pub(crate) use solve::{affine_system, guided_root, real_roots, systems, Root, Roots, SystemRoots};
 
 pub(crate) type Factorization = (Rat, Vec<(Vec<Rat>, u32)>);
 

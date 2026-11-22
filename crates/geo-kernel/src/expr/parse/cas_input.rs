@@ -59,16 +59,22 @@ impl Parser<'_> {
     }
 
     fn parse_solve(&mut self, name: &str) -> Result<u32, String> {
+        let points = name == "PlotSolve";
         let commas = self.argument_commas();
-        let (names, width, axes) = if let [comma] = commas[..] {
-            self.solution_variables(comma + 1)?
-        } else if commas.is_empty() {
-            (vec!["x".into(), "y".into(), "z".into()], 0, [0, 1, 2])
-        } else {
-            return Err(format!("invalid arguments to `{name}`"));
+        let hint = match commas[..] {
+            [] => Hint {
+                names: vec!["x".into(), "y".into(), "z".into()],
+                width: 0,
+                axes: [0, 1, 2],
+                list: false,
+                guess: false,
+            },
+            // `CmdSolve.process`: the plotted solve takes one argument.
+            [comma] if !points => self.solution_hint(comma + 1)?,
+            _ => return Err(format!("invalid arguments to `{name}`")),
         };
         let (outer_x, outer_y) = (self.uses_var, self.uses_y);
-        let old = std::mem::replace(&mut self.cas_variables, names);
+        let old = std::mem::replace(&mut self.cas_variables, hint.names);
         let old_split = std::mem::replace(&mut self.split_names, true);
         self.expect(&Tok::LParen, "(")?;
         let is_list = self.eat(&Tok::LBrace);
@@ -79,19 +85,29 @@ impl Parser<'_> {
             }
             self.expect(&Tok::RBrace, "}")?;
         }
+        self.cas_variables = old;
+        self.split_names = old_split;
+        let mut guess = NONE;
         if let [comma] = commas[..] {
             if self.pos != comma {
                 return Err("expected a list of solving variables".into());
             }
-            // The suffix was parsed and validated when choosing the variable scope.
-            self.pos = self.toks[comma + 1..]
-                .iter()
-                .position(|t| t.tok == Tok::RParen)
-                .map_or(self.toks.len(), |offset| comma + 1 + offset);
+            if hint.guess {
+                // `variable = value`: the value is an ordinary number.
+                self.pos = comma + 3;
+                guess = self.argument(false)?;
+                if !self.is_number(guess) {
+                    return Err("expected a number as the initial value".into());
+                }
+            } else {
+                // The suffix was parsed and validated when choosing the variable scope.
+                self.pos = self.toks[comma + 1..]
+                    .iter()
+                    .position(|t| t.tok == Tok::RParen)
+                    .map_or(self.toks.len(), |offset| comma + 1 + offset);
+            }
         }
         self.expect(&Tok::RParen, ")")?;
-        self.cas_variables = old;
-        self.split_names = old_split;
         (self.uses_var, self.uses_y) = (outer_x, outer_y);
         if equations.len() > 8 {
             return Err("at most eight polynomial equations can be solved together".into());
@@ -99,13 +115,15 @@ impl Parser<'_> {
         let is_list = is_list || matches!(equations.as_slice(), [arg] if self.is_list(*arg));
         let equations = self.wrap_list(&equations);
         let op = Op::Solve {
-            assignments: matches!(name, "Solve" | "NSolve"),
+            assignments: matches!(name, "Solve" | "NSolve" | "PlotSolve"),
             approximate: matches!(name, "NSolve" | "NSolutions"),
-            width,
-            axes,
+            width: hint.width,
+            axes: hint.axes,
             system: is_list,
+            rows: hint.list,
+            points,
         };
-        Ok(self.push(Node::Cas(op, equations, NONE)))
+        Ok(self.push(Node::Cas(op, equations, guess)))
     }
 
     fn cas_equation(&mut self) -> Result<u32, String> {
@@ -118,7 +136,9 @@ impl Parser<'_> {
         }
     }
 
-    fn solution_variables(&self, mut i: usize) -> Result<(Vec<String>, u8, [u8; 3]), String> {
+    /// The second argument of a solve: one variable, `variable = value` as
+    /// the initial value of a numeric solve, or a list of variables.
+    fn solution_hint(&self, mut i: usize) -> Result<Hint, String> {
         let bad = || "expected up to three distinct solving variables".to_owned();
         let list = self.toks.get(i).is_some_and(|t| t.tok == Tok::LBrace);
         i += usize::from(list);
@@ -147,10 +167,30 @@ impl Parser<'_> {
             }
             i += 1;
         }
-        if self.toks.get(i).is_none_or(|t| t.tok != Tok::RParen) {
+        let guess = !list && self.toks.get(i).is_some_and(|t| t.tok == Tok::Assign);
+        if !guess && self.toks.get(i).is_none_or(|t| t.tok != Tok::RParen) {
             return Err(bad());
         }
         let width = names.len() as u8;
-        Ok((names, width, axes))
+        if !list && matches!(names[0].as_str(), "x" | "y" | "z") {
+            // One of the coordinate names keeps its own axis, so that the
+            // other names of the equation stay the other variables.
+            names = vec!["x".into(), "y".into(), "z".into()];
+        }
+        Ok(Hint {
+            names,
+            width,
+            axes,
+            list,
+            guess,
+        })
     }
+}
+
+struct Hint {
+    names: Vec<String>,
+    width: u8,
+    axes: [u8; 3],
+    list: bool,
+    guess: bool,
 }

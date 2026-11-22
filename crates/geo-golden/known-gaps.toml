@@ -716,6 +716,16 @@ reason = "GeoGebra lists the solution families of a product equation in the orde
 mismatches = ["0:result"]
 
 [[gap]]
+id = "cas-hint-028"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists the solutions in the order its CAS returns them (Solve(f, {x}) of x^2 - 3 answers x = sqrt(3) before x = -sqrt(3), while Solve(f, x) answers them ascending). The kernel always answers the roots in ascending order, so the solution sets agree while the order differs."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-hint-029"
+reason = "A list of variables after one equation runs GeoGebra's system solver, which lists the rows in the order its CAS returns them ({sqrt(3)} before {-sqrt(3)} for Solutions(f, {x}) of x^2 - 3). The kernel always answers the rows in ascending order, so the solution sets agree while the order differs."
+mismatches = ["0:result"]
+
+[[gap]]
 id = "georestintersect-spline-001"
 reason = "IntersectLineSpline leaves the previous point defined when adjacent spline inputs coincide, while the kernel propagates the undefined spline to the intersection"
 mismatches = ["2:P_{1}"]

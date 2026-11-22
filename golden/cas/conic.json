@@ -1,0 +1,6338 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-conic-001",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "result = Solve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-002",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "result = Solutions(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-003",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "result = NSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-004",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "result = NSolutions(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-005",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "result = Solve(k, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-006",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "result = Solutions(k, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-007",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "result = NSolve(k, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-008",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "result = NSolutions(k, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-009",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "r1 = Solve(k, y)",
+        "r2 = Solutions(k, y)",
+        "r3 = NSolve(k, y)",
+        "r4 = NSolutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-010",
+      "group": "cas",
+      "script": [
+        "k: y^2=4",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = Solve(k, x)",
+        "r6 = Solve(k, y)",
+        "r7 = NSolve(k, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [0.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.0, 1.0, -2.0],
+              [-0.0, 1.0, 2.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 }
+            ]
+          },
+          "r7": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-011",
+      "group": "cas",
+      "script": [
+        "k: x^2-5x+6=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, 6.0, 0.0, -2.5, 0.0],
+            "lines": [
+              [-1.0, 0.0, 2.0],
+              [-1.0, 0.0, 3.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-012",
+      "group": "cas",
+      "script": [
+        "k: x^2+y^2=4",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, x)",
+        "r3 = Solutions(k, y)",
+        "r4 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.0],
+                  [-1.0, -1.7320508075688772],
+                  [-0.5, -1.9364916731037085],
+                  [0.0, -2.0],
+                  [0.5, -1.9364916731037085],
+                  [1.0, -1.7320508075688772],
+                  [2.0, -0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 0.0],
+                  [-1.0, 1.7320508075688772],
+                  [-0.5, 1.9364916731037085],
+                  [0.0, 2.0],
+                  [0.5, 1.9364916731037085],
+                  [1.0, 1.7320508075688772],
+                  [2.0, 0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.0],
+                  [-1.0, -1.7320508075688772],
+                  [-0.5, -1.9364916731037085],
+                  [0.0, -2.0],
+                  [0.5, -1.9364916731037085],
+                  [1.0, -1.7320508075688772],
+                  [2.0, -0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 0.0],
+                  [-1.0, 1.7320508075688772],
+                  [-0.5, 1.9364916731037085],
+                  [0.0, 2.0],
+                  [0.5, 1.9364916731037085],
+                  [1.0, 1.7320508075688772],
+                  [2.0, 0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.0],
+                  [-1.0, -1.7320508075688772],
+                  [-0.5, -1.9364916731037085],
+                  [0.0, -2.0],
+                  [0.5, -1.9364916731037085],
+                  [1.0, -1.7320508075688772],
+                  [2.0, -0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 0.0],
+                  [-1.0, 1.7320508075688772],
+                  [-0.5, 1.9364916731037085],
+                  [0.0, 2.0],
+                  [0.5, 1.9364916731037085],
+                  [1.0, 1.7320508075688772],
+                  [2.0, 0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.0],
+                  [-1.0, -1.7320508075688772],
+                  [-0.5, -1.9364916731037085],
+                  [0.0, -2.0],
+                  [0.5, -1.9364916731037085],
+                  [1.0, -1.7320508075688772],
+                  [2.0, -0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 0.0],
+                  [-1.0, 1.7320508075688772],
+                  [-0.5, 1.9364916731037085],
+                  [0.0, 2.0],
+                  [0.5, 1.9364916731037085],
+                  [1.0, 1.7320508075688772],
+                  [2.0, 0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-013",
+      "group": "cas",
+      "script": [
+        "k: x^2+y^2=4",
+        "r1 = NSolve(k)",
+        "r2 = NSolutions(k)",
+        "r3 = NSolve(k, x)",
+        "r4 = NSolutions(k, x)",
+        "r5 = NSolve(k, y)",
+        "r6 = NSolutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": { "type": "list", "defined": false },
+          "r6": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-014",
+      "group": "cas",
+      "script": [
+        "k: x^2+4y^2=4",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 4.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.0],
+                  [-0.5, -1.7320508075688772],
+                  [0.0, -2.0],
+                  [0.5, -1.7320508075688772],
+                  [1.0, -0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, 1.7320508075688772],
+                  [0.0, 2.0],
+                  [0.5, 1.7320508075688772],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.0],
+                  [-1.0, -0.8660254037844386],
+                  [-0.5, -0.9682458365518543],
+                  [0.0, -1.0],
+                  [0.5, -0.9682458365518543],
+                  [1.0, -0.8660254037844386],
+                  [2.0, -0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 0.0],
+                  [-1.0, 0.8660254037844386],
+                  [-0.5, 0.9682458365518543],
+                  [0.0, 1.0],
+                  [0.5, 0.9682458365518543],
+                  [1.0, 0.8660254037844386],
+                  [2.0, 0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.0],
+                  [-1.0, -0.8660254037844386],
+                  [-0.5, -0.9682458365518543],
+                  [0.0, -1.0],
+                  [0.5, -0.9682458365518543],
+                  [1.0, -0.8660254037844386],
+                  [2.0, -0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 0.0],
+                  [-1.0, 0.8660254037844386],
+                  [-0.5, 0.9682458365518543],
+                  [0.0, 1.0],
+                  [0.5, 0.9682458365518543],
+                  [1.0, 0.8660254037844386],
+                  [2.0, 0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-015",
+      "group": "cas",
+      "script": [
+        "k: x^2+x*y+y^2=3",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 1.0, -3.0, 0.5, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.449489742783178, 1.4142135623730951],
+            "eigenvectors": [
+              [0.7071067811865475, -0.7071067811865475],
+              [0.7071067811865475, 0.7071067811865475]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 1.0],
+                  [-1.0, -0.9999999999999998],
+                  [-0.5, -1.4270509831248421],
+                  [0.0, -1.7320508075688772],
+                  [0.5, -1.9270509831248421],
+                  [1.0, -1.9999999999999998],
+                  [2.0, -1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 1.0],
+                  [-1.0, 1.9999999999999998],
+                  [-0.5, 1.9270509831248421],
+                  [0.0, 1.7320508075688772],
+                  [0.5, 1.4270509831248421],
+                  [1.0, 0.9999999999999998],
+                  [2.0, -1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 1.0],
+                  [-1.0, -0.9999999999999998],
+                  [-0.5, -1.4270509831248421],
+                  [0.0, -1.7320508075688772],
+                  [0.5, -1.9270509831248421],
+                  [1.0, -1.9999999999999998],
+                  [2.0, -1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 1.0],
+                  [-1.0, 1.9999999999999998],
+                  [-0.5, 1.9270509831248421],
+                  [0.0, 1.7320508075688772],
+                  [0.5, 1.4270509831248421],
+                  [1.0, 0.9999999999999998],
+                  [2.0, -1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 1.0],
+                  [-1.0, -0.9999999999999998],
+                  [-0.5, -1.4270509831248421],
+                  [0.0, -1.7320508075688772],
+                  [0.5, -1.9270509831248421],
+                  [1.0, -1.9999999999999998],
+                  [2.0, -1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 1.0],
+                  [-1.0, 1.9999999999999998],
+                  [-0.5, 1.9270509831248421],
+                  [0.0, 1.7320508075688772],
+                  [0.5, 1.4270509831248421],
+                  [1.0, 0.9999999999999998],
+                  [2.0, -1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-016",
+      "group": "cas",
+      "script": [
+        "k: x^2+x*y+y^2=1",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 1.0, -1.0, 0.5, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.4142135623730951, 0.816496580927726],
+            "eigenvectors": [
+              [0.7071067811865475, -0.7071067811865475],
+              [0.7071067811865475, 0.7071067811865475]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.0],
+                  [-0.5, 1.1513878188659974],
+                  [0.0, 1.0],
+                  [0.5, 0.6513878188659973],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, -0.6513878188659973],
+                  [0.0, -1.0],
+                  [0.5, -1.1513878188659974],
+                  [1.0, -1.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.0],
+                  [-0.5, 1.1513878188659974],
+                  [0.0, 1.0],
+                  [0.5, 0.6513878188659973],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, -0.6513878188659973],
+                  [0.0, -1.0],
+                  [0.5, -1.1513878188659974],
+                  [1.0, -1.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.0],
+                  [-0.5, 1.1513878188659974],
+                  [0.0, 1.0],
+                  [0.5, 0.6513878188659973],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, -0.6513878188659973],
+                  [0.0, -1.0],
+                  [0.5, -1.1513878188659974],
+                  [1.0, -1.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-017",
+      "group": "cas",
+      "script": [
+        "k: x^2-y^2=1",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.06225774829855],
+                  [-4.0, -4.123105625617661],
+                  [-2.0, -2.23606797749979],
+                  [-1.0, -1.4142135623730951],
+                  [-0.5, -1.118033988749895],
+                  [0.0, -1.0],
+                  [0.5, -1.118033988749895],
+                  [1.0, -1.4142135623730951],
+                  [2.0, -2.23606797749979],
+                  [4.0, -4.123105625617661],
+                  [8.0, -8.06225774829855]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.06225774829855],
+                  [-4.0, 4.123105625617661],
+                  [-2.0, 2.23606797749979],
+                  [-1.0, 1.4142135623730951],
+                  [-0.5, 1.118033988749895],
+                  [0.0, 1.0],
+                  [0.5, 1.118033988749895],
+                  [1.0, 1.4142135623730951],
+                  [2.0, 2.23606797749979],
+                  [4.0, 4.123105625617661],
+                  [8.0, 8.06225774829855]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -7.937253933193772],
+                  [-4.0, -3.872983346207417],
+                  [-2.0, -1.7320508075688772],
+                  [-1.0, -0.0],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, -0.0],
+                  [2.0, -1.7320508075688772],
+                  [4.0, -3.872983346207417],
+                  [8.0, -7.937253933193772]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 7.937253933193772],
+                  [-4.0, 3.872983346207417],
+                  [-2.0, 1.7320508075688772],
+                  [-1.0, 0.0],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, 0.0],
+                  [2.0, 1.7320508075688772],
+                  [4.0, 3.872983346207417],
+                  [8.0, 7.937253933193772]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -7.937253933193772],
+                  [-4.0, -3.872983346207417],
+                  [-2.0, -1.7320508075688772],
+                  [-1.0, -0.0],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, -0.0],
+                  [2.0, -1.7320508075688772],
+                  [4.0, -3.872983346207417],
+                  [8.0, -7.937253933193772]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 7.937253933193772],
+                  [-4.0, 3.872983346207417],
+                  [-2.0, 1.7320508075688772],
+                  [-1.0, 0.0],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, 0.0],
+                  [2.0, 1.7320508075688772],
+                  [4.0, 3.872983346207417],
+                  [8.0, 7.937253933193772]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-018",
+      "group": "cas",
+      "script": [
+        "k: 2x^2+3y^2+x-y=5",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [2.0, 3.0, -5.0, 0.0, 0.5, -0.5],
+            "midpoint": [-0.25, 0.16666666666666666],
+            "half_axes": [1.613743060919757, 1.3176156917368247],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.5],
+                  [-0.5, 1.1419410907075054],
+                  [0.0, 1.3507810593582121],
+                  [0.5, 1.3112494995995996],
+                  [1.0, 1.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -1.0],
+                  [-0.5, -1.6419410907075054],
+                  [0.0, -1.8507810593582121],
+                  [0.5, -1.8112494995995996],
+                  [1.0, -1.5],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.3333333333333333],
+                  [-0.5, 1.4683749459844424],
+                  [0.0, 1.4683749459844424],
+                  [0.5, 1.3333333333333333],
+                  [1.0, 1.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -1.0],
+                  [-0.5, -1.135041612651109],
+                  [0.0, -1.135041612651109],
+                  [0.5, -1.0],
+                  [1.0, -0.6666666666666666],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.3333333333333333],
+                  [-0.5, 1.4683749459844424],
+                  [0.0, 1.4683749459844424],
+                  [0.5, 1.3333333333333333],
+                  [1.0, 1.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -1.0],
+                  [-0.5, -1.135041612651109],
+                  [0.0, -1.135041612651109],
+                  [0.5, -1.0],
+                  [1.0, -0.6666666666666666],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-019",
+      "group": "cas",
+      "script": [
+        "k: (x-1)^2+(y-2)^2=9",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, -1.0, -2.0],
+            "midpoint": [1.0, 2.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.0],
+                  [-0.5, 2.6583123951777],
+                  [0.0, 3.23606797749979],
+                  [0.5, 3.598076211353316],
+                  [1.0, 3.8284271247461903],
+                  [2.0, 4.0],
+                  [4.0, 3.23606797749979],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.0],
+                  [-0.5, -0.6583123951776999],
+                  [0.0, -1.2360679774997898],
+                  [0.5, -1.598076211353316],
+                  [1.0, -1.8284271247461903],
+                  [2.0, -2.0],
+                  [4.0, -1.2360679774997898],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.0],
+                  [-1.0, 4.23606797749979],
+                  [-0.5, 4.598076211353316],
+                  [0.0, 4.82842712474619],
+                  [0.5, 4.958039891549808],
+                  [1.0, 5.0],
+                  [2.0, 4.82842712474619],
+                  [4.0, 2.0],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.0],
+                  [-1.0, -0.2360679774997898],
+                  [-0.5, -0.598076211353316],
+                  [0.0, -0.8284271247461903],
+                  [0.5, -0.9580398915498081],
+                  [1.0, -1.0],
+                  [2.0, -0.8284271247461903],
+                  [4.0, 2.0],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.0],
+                  [-1.0, 4.23606797749979],
+                  [-0.5, 4.598076211353316],
+                  [0.0, 4.82842712474619],
+                  [0.5, 4.958039891549808],
+                  [1.0, 5.0],
+                  [2.0, 4.82842712474619],
+                  [4.0, 2.0],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.0],
+                  [-1.0, -0.2360679774997898],
+                  [-0.5, -0.598076211353316],
+                  [0.0, -0.8284271247461903],
+                  [0.5, -0.9580398915498081],
+                  [1.0, -1.0],
+                  [2.0, -0.8284271247461903],
+                  [4.0, 2.0],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-020",
+      "group": "cas",
+      "script": [
+        "k: 3x^2-y^2+x=2",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [3.0, -1.0, -2.0, 0.0, 0.5, 0.0],
+            "midpoint": [-0.16666666666666666, -0.0],
+            "half_axes": [0.8333333333333334, 1.4433756729740645],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -4.860042613442908],
+                  [-4.0, -2.6218199771093724],
+                  [-2.0, -1.5906672908862551],
+                  [-1.0, -1.18046042171637],
+                  [-0.5, -1.0485837703548635],
+                  [0.0, -1.0],
+                  [0.5, -1.0485837703548635],
+                  [1.0, -1.18046042171637],
+                  [2.0, -1.5906672908862551],
+                  [4.0, -2.6218199771093724],
+                  [8.0, -4.860042613442908]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 4.526709280109574],
+                  [-4.0, 2.288486643776039],
+                  [-2.0, 1.2573339575529217],
+                  [-1.0, 0.8471270883830365],
+                  [-0.5, 0.7152504370215302],
+                  [0.0, 0.6666666666666666],
+                  [0.5, 0.7152504370215302],
+                  [1.0, 0.8471270883830365],
+                  [2.0, 1.2573339575529217],
+                  [4.0, 2.288486643776039],
+                  [8.0, 4.526709280109574]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -13.490737563232042],
+                  [-4.0, -6.48074069840786],
+                  [-2.0, -2.8284271247461903],
+                  [-1.0, -0.0],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, -1.4142135623730951],
+                  [2.0, -3.4641016151377544],
+                  [4.0, -7.0710678118654755],
+                  [8.0, -14.071247279470288]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 13.490737563232042],
+                  [-4.0, 6.48074069840786],
+                  [-2.0, 2.8284271247461903],
+                  [-1.0, 0.0],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, 1.4142135623730951],
+                  [2.0, 3.4641016151377544],
+                  [4.0, 7.0710678118654755],
+                  [8.0, 14.071247279470288]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -13.490737563232042],
+                  [-4.0, -6.48074069840786],
+                  [-2.0, -2.8284271247461903],
+                  [-1.0, -0.0],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, -1.4142135623730951],
+                  [2.0, -3.4641016151377544],
+                  [4.0, -7.0710678118654755],
+                  [8.0, -14.071247279470288]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 13.490737563232042],
+                  [-4.0, 6.48074069840786],
+                  [-2.0, 2.8284271247461903],
+                  [-1.0, 0.0],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, 1.4142135623730951],
+                  [2.0, 3.4641016151377544],
+                  [4.0, 7.0710678118654755],
+                  [8.0, 14.071247279470288]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-021",
+      "group": "cas",
+      "script": [
+        "k: x^2+x*y=1",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, 0.0, -1.0, 0.5, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [0.9101797211244548, 2.19736822693562],
+            "eigenvectors": [
+              [-0.9238795325112868, -0.3826834323650897],
+              [0.3826834323650897, -0.9238795325112868]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -0.12310562561766059],
+                  [-4.0, -0.2360679774997898],
+                  [-2.0, -0.41421356237309515],
+                  [-1.0, -0.6180339887498949],
+                  [-0.5, -0.7807764064044151],
+                  [0.0, -1.0],
+                  [0.5, -1.2807764064044151],
+                  [1.0, -1.618033988749895],
+                  [2.0, -2.414213562373095],
+                  [4.0, -4.23606797749979],
+                  [8.0, -8.123105625617661]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.123105625617661],
+                  [-4.0, 4.23606797749979],
+                  [-2.0, 2.414213562373095],
+                  [-1.0, 1.618033988749895],
+                  [-0.5, 1.2807764064044151],
+                  [0.0, 1.0],
+                  [0.5, 0.7807764064044151],
+                  [1.0, 0.6180339887498949],
+                  [2.0, 0.41421356237309515],
+                  [4.0, 0.2360679774997898],
+                  [8.0, 0.12310562561766059]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 7.875],
+                  [-4.0, 3.75],
+                  [-2.0, 1.5],
+                  [-1.0, -0.0],
+                  [-0.5, -1.5],
+                  [0.0, null],
+                  [0.5, 1.5],
+                  [1.0, 0.0],
+                  [2.0, -1.5],
+                  [4.0, -3.75],
+                  [8.0, -7.875]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 7.875],
+                  [-4.0, 3.75],
+                  [-2.0, 1.5],
+                  [-1.0, -0.0],
+                  [-0.5, -1.5],
+                  [0.0, null],
+                  [0.5, 1.5],
+                  [1.0, 0.0],
+                  [2.0, -1.5],
+                  [4.0, -3.75],
+                  [8.0, -7.875]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-022",
+      "group": "cas",
+      "script": [
+        "k: x^2+2x*y+3y^2=6",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 3.0, -6.0, 1.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.2004125807650623, 1.3256542961423672],
+            "eigenvectors": [
+              [0.9238795325112866, -0.3826834323650898],
+              [0.3826834323650898, 0.9238795325112866]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -1.0000000000000004],
+                  [-0.5, -1.8452078799117149],
+                  [0.0, -2.4494897427831783],
+                  [0.5, -2.845207879911715],
+                  [1.0, -3.0000000000000004],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 3.0000000000000004],
+                  [-0.5, 2.845207879911715],
+                  [0.0, 2.4494897427831783],
+                  [0.5, 1.8452078799117149],
+                  [1.0, 1.0000000000000004],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 1.7207592200561266],
+                  [-1.0, 1.666666666666667],
+                  [-0.5, 1.5611000442234593],
+                  [0.0, 1.4142135623730951],
+                  [0.5, 1.227766710890126],
+                  [1.0, 1.0000000000000002],
+                  [2.0, 0.38742588672279316],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.38742588672279316],
+                  [-1.0, -1.0000000000000002],
+                  [-0.5, -1.227766710890126],
+                  [0.0, -1.4142135623730951],
+                  [0.5, -1.5611000442234593],
+                  [1.0, -1.666666666666667],
+                  [2.0, -1.7207592200561266],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 1.7207592200561266],
+                  [-1.0, 1.666666666666667],
+                  [-0.5, 1.5611000442234593],
+                  [0.0, 1.4142135623730951],
+                  [0.5, 1.227766710890126],
+                  [1.0, 1.0000000000000002],
+                  [2.0, 0.38742588672279316],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.38742588672279316],
+                  [-1.0, -1.0000000000000002],
+                  [-0.5, -1.227766710890126],
+                  [0.0, -1.4142135623730951],
+                  [0.5, -1.5611000442234593],
+                  [1.0, -1.666666666666667],
+                  [2.0, -1.7207592200561266],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-023",
+      "group": "cas",
+      "script": [
+        "k: x^2+2x-y^2=-3",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, 3.0, 0.0, 1.0, 0.0],
+            "midpoint": [-1.0, -0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [-0.0, 1.0],
+              [-1.0, -0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 6.874007874011811],
+                  [-4.0, 2.7416573867739413],
+                  [-2.0, 0.41421356237309515],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, null],
+                  [2.0, 0.41421356237309515],
+                  [4.0, 2.7416573867739413],
+                  [8.0, 6.874007874011811]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.874007874011811],
+                  [-4.0, -4.741657386773941],
+                  [-2.0, -2.414213562373095],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, null],
+                  [2.0, -2.414213562373095],
+                  [4.0, -4.741657386773941],
+                  [8.0, -8.874007874011811]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -7.14142842854285],
+                  [-4.0, -3.3166247903554],
+                  [-2.0, -1.7320508075688772],
+                  [-1.0, -1.4142135623730951],
+                  [-0.5, -1.5],
+                  [0.0, -1.7320508075688772],
+                  [0.5, -2.0615528128088303],
+                  [1.0, -2.449489742783178],
+                  [2.0, -3.3166247903554],
+                  [4.0, -5.196152422706632],
+                  [8.0, -9.1104335791443]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 7.14142842854285],
+                  [-4.0, 3.3166247903554],
+                  [-2.0, 1.7320508075688772],
+                  [-1.0, 1.4142135623730951],
+                  [-0.5, 1.5],
+                  [0.0, 1.7320508075688772],
+                  [0.5, 2.0615528128088303],
+                  [1.0, 2.449489742783178],
+                  [2.0, 3.3166247903554],
+                  [4.0, 5.196152422706632],
+                  [8.0, 9.1104335791443]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -7.14142842854285],
+                  [-4.0, -3.3166247903554],
+                  [-2.0, -1.7320508075688772],
+                  [-1.0, -1.4142135623730951],
+                  [-0.5, -1.5],
+                  [0.0, -1.7320508075688772],
+                  [0.5, -2.0615528128088303],
+                  [1.0, -2.449489742783178],
+                  [2.0, -3.3166247903554],
+                  [4.0, -5.196152422706632],
+                  [8.0, -9.1104335791443]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 7.14142842854285],
+                  [-4.0, 3.3166247903554],
+                  [-2.0, 1.7320508075688772],
+                  [-1.0, 1.4142135623730951],
+                  [-0.5, 1.5],
+                  [0.0, 1.7320508075688772],
+                  [0.5, 2.0615528128088303],
+                  [1.0, 2.449489742783178],
+                  [2.0, 3.3166247903554],
+                  [4.0, 5.196152422706632],
+                  [8.0, 9.1104335791443]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-024",
+      "group": "cas",
+      "script": [
+        "k: x^2+2x-y^2=3",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, -3.0, 0.0, 1.0, 0.0],
+            "midpoint": [-1.0, -0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -9.246211251235321],
+                  [-4.0, -5.47213595499958],
+                  [-2.0, -3.8284271247461903],
+                  [-1.0, -3.23606797749979],
+                  [-0.5, -3.0615528128088303],
+                  [0.0, -3.0],
+                  [0.5, -3.0615528128088303],
+                  [1.0, -3.23606797749979],
+                  [2.0, -3.8284271247461903],
+                  [4.0, -5.47213595499958],
+                  [8.0, -9.246211251235321]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 7.246211251235321],
+                  [-4.0, 3.4721359549995796],
+                  [-2.0, 1.8284271247461903],
+                  [-1.0, 1.2360679774997898],
+                  [-0.5, 1.0615528128088303],
+                  [0.0, 1.0],
+                  [0.5, 1.0615528128088303],
+                  [1.0, 1.2360679774997898],
+                  [2.0, 1.8284271247461903],
+                  [4.0, 3.4721359549995796],
+                  [8.0, 7.246211251235321]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -6.708203932499369],
+                  [-4.0, -2.23606797749979],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, -0.0],
+                  [2.0, -2.23606797749979],
+                  [4.0, -4.58257569495584],
+                  [8.0, -8.774964387392123]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 6.708203932499369],
+                  [-4.0, 2.23606797749979],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, 0.0],
+                  [2.0, 2.23606797749979],
+                  [4.0, 4.58257569495584],
+                  [8.0, 8.774964387392123]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -6.708203932499369],
+                  [-4.0, -2.23606797749979],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, -0.0],
+                  [2.0, -2.23606797749979],
+                  [4.0, -4.58257569495584],
+                  [8.0, -8.774964387392123]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 6.708203932499369],
+                  [-4.0, 2.23606797749979],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, 0.0],
+                  [2.0, 2.23606797749979],
+                  [4.0, 4.58257569495584],
+                  [8.0, 8.774964387392123]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-025",
+      "group": "cas",
+      "script": [
+        "k: x^2-4x*y+y^2+2x=1",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, 1.0, -1.0, -2.0, 1.0, 0.0],
+            "midpoint": [0.3333333333333333, 0.6666666666666666],
+            "half_axes": [0.47140452079103173, 0.816496580927726],
+            "eigenvectors": [
+              [0.7071067811865475, -0.7071067811865475],
+              [0.7071067811865475, 0.7071067811865475]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -32.03329637837291],
+                  [-4.0, -17.12403840463596],
+                  [-2.0, -9.69041575982343],
+                  [-1.0, -6.0],
+                  [-0.5, -4.1794494717703365],
+                  [0.0, -2.414213562373095],
+                  [0.5, -0.8660254037844386],
+                  [1.0, 0.0],
+                  [2.0, 0.5505102572168221],
+                  [4.0, 1.1690481051546993],
+                  [8.0, 2.272077938642145]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -1.966703621627092],
+                  [-4.0, -0.8759615953640392],
+                  [-2.0, -0.30958424017657027],
+                  [-1.0, 0.0],
+                  [-0.5, 0.179449471770337],
+                  [0.0, 0.41421356237309515],
+                  [0.5, 0.8660254037844386],
+                  [1.0, 2.0],
+                  [2.0, 5.449489742783178],
+                  [4.0, 12.8309518948453],
+                  [8.0, 27.727922061357855]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -30.45683229480096],
+                  [-4.0, -15.54983443527075],
+                  [-2.0, -8.123105625617661],
+                  [-1.0, -4.449489742783178],
+                  [-0.5, -2.6583123951777],
+                  [0.0, -1.0],
+                  [0.5, 0.1339745962155614],
+                  [1.0, 0.5857864376269049],
+                  [2.0, 1.0],
+                  [4.0, 1.5968757625671515],
+                  [8.0, 2.6958653043499297]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -1.5431677051990391],
+                  [-4.0, -0.4501655647292502],
+                  [-2.0, 0.12310562561766059],
+                  [-1.0, 0.4494897427831779],
+                  [-0.5, 0.6583123951776999],
+                  [0.0, 1.0],
+                  [0.5, 1.8660254037844386],
+                  [1.0, 3.414213562373095],
+                  [2.0, 7.0],
+                  [4.0, 14.403124237432849],
+                  [8.0, 29.30413469565007]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -30.45683229480096],
+                  [-4.0, -15.54983443527075],
+                  [-2.0, -8.123105625617661],
+                  [-1.0, -4.449489742783178],
+                  [-0.5, -2.6583123951777],
+                  [0.0, -1.0],
+                  [0.5, 0.1339745962155614],
+                  [1.0, 0.5857864376269049],
+                  [2.0, 1.0],
+                  [4.0, 1.5968757625671515],
+                  [8.0, 2.6958653043499297]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -1.5431677051990391],
+                  [-4.0, -0.4501655647292502],
+                  [-2.0, 0.12310562561766059],
+                  [-1.0, 0.4494897427831779],
+                  [-0.5, 0.6583123951776999],
+                  [0.0, 1.0],
+                  [0.5, 1.8660254037844386],
+                  [1.0, 3.414213562373095],
+                  [2.0, 7.0],
+                  [4.0, 14.403124237432849],
+                  [8.0, 29.30413469565007]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-026",
+      "group": "cas",
+      "script": [
+        "k: x^2+x*y+y^2+x=3",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 1.0, -3.0, 0.5, 0.5, 0.0],
+            "midpoint": [-0.6666666666666666, 0.3333333333333333],
+            "half_axes": [2.581988897471611, 1.4907119849998598],
+            "eigenvectors": [
+              [0.7071067811865475, -0.7071067811865475],
+              [0.7071067811865475, 0.7071067811865475]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.4142135623730951],
+                  [-0.5, 1.4270509831248424],
+                  [0.0, 1.3027756377319946],
+                  [0.5, 1.0700274723201295],
+                  [1.0, 0.7320508075688772],
+                  [2.0, -0.3819660112501051],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -1.4142135623730951],
+                  [-0.5, -1.9270509831248424],
+                  [0.0, -2.302775637731995],
+                  [0.5, -2.5700274723201293],
+                  [1.0, -2.732050807568877],
+                  [2.0, -2.618033988749895],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.414213562373095],
+                  [-1.0, 2.302775637731995],
+                  [-0.5, 2.0700274723201293],
+                  [0.0, 1.7320508075688772],
+                  [0.5, 1.2706906325745548],
+                  [1.0, 0.6180339887498949],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.41421356237309515],
+                  [-1.0, -1.3027756377319946],
+                  [-0.5, -1.5700274723201295],
+                  [0.0, -1.7320508075688772],
+                  [0.5, -1.7706906325745548],
+                  [1.0, -1.618033988749895],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.414213562373095],
+                  [-1.0, 2.302775637731995],
+                  [-0.5, 2.0700274723201293],
+                  [0.0, 1.7320508075688772],
+                  [0.5, 1.2706906325745548],
+                  [1.0, 0.6180339887498949],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.41421356237309515],
+                  [-1.0, -1.3027756377319946],
+                  [-0.5, -1.5700274723201295],
+                  [0.0, -1.7320508075688772],
+                  [0.5, -1.7706906325745548],
+                  [1.0, -1.618033988749895],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-027",
+      "group": "cas",
+      "script": [
+        "k: x^2+x*y-y^2=-5",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [1.0, -1.0, 5.0, 0.5, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [2.114742526881128, 2.114742526881128],
+            "eigenvectors": [
+              [0.22975292054736127, -0.9732489894677301],
+              [0.9732489894677301, 0.22975292054736127]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -4.660254037844387],
+                  [-4.0, -1.872983346207417],
+                  [-2.0, 1.0],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, null],
+                  [2.0, -1.0],
+                  [4.0, -5.872983346207417],
+                  [8.0, -12.660254037844387]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 12.660254037844387],
+                  [-4.0, 5.872983346207417],
+                  [-2.0, 1.0],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, null],
+                  [1.0, null],
+                  [2.0, -1.0],
+                  [4.0, 1.872983346207417],
+                  [8.0, 4.660254037844387]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -13.219544457292887],
+                  [-4.0, -7.000000000000001],
+                  [-2.0, -4.16227766016838],
+                  [-1.0, -3.0000000000000004],
+                  [-0.5, -2.5548861143232218],
+                  [0.0, -2.23606797749979],
+                  [0.5, -2.0548861143232218],
+                  [1.0, -2.0000000000000004],
+                  [2.0, -2.1622776601683795],
+                  [4.0, -3.000000000000001],
+                  [8.0, -5.219544457292887]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 5.219544457292887],
+                  [-4.0, 3.000000000000001],
+                  [-2.0, 2.1622776601683795],
+                  [-1.0, 2.0000000000000004],
+                  [-0.5, 2.0548861143232218],
+                  [0.0, 2.23606797749979],
+                  [0.5, 2.5548861143232218],
+                  [1.0, 3.0000000000000004],
+                  [2.0, 4.16227766016838],
+                  [4.0, 7.000000000000001],
+                  [8.0, 13.219544457292887]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -13.219544457292887],
+                  [-4.0, -7.000000000000001],
+                  [-2.0, -4.16227766016838],
+                  [-1.0, -3.0000000000000004],
+                  [-0.5, -2.5548861143232218],
+                  [0.0, -2.23606797749979],
+                  [0.5, -2.0548861143232218],
+                  [1.0, -2.0000000000000004],
+                  [2.0, -2.1622776601683795],
+                  [4.0, -3.000000000000001],
+                  [8.0, -5.219544457292887]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 5.219544457292887],
+                  [-4.0, 3.000000000000001],
+                  [-2.0, 2.1622776601683795],
+                  [-1.0, 2.0000000000000004],
+                  [-0.5, 2.0548861143232218],
+                  [0.0, 2.23606797749979],
+                  [0.5, 2.5548861143232218],
+                  [1.0, 3.0000000000000004],
+                  [2.0, 4.16227766016838],
+                  [4.0, 7.000000000000001],
+                  [8.0, 13.219544457292887]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-028",
+      "group": "cas",
+      "script": [
+        "k: x^2+3y^2-x=5",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [1.0, 3.0, -5.0, 0.0, -0.5, 0.0],
+            "midpoint": [0.5, -0.0],
+            "half_axes": [2.29128784747792, 1.3228756555322954],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.9999999999999998],
+                  [-0.5, -1.6213203435596424],
+                  [0.0, -1.79128784747792],
+                  [0.5, -1.6213203435596424],
+                  [1.0, -0.9999999999999998],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.9999999999999998],
+                  [-0.5, 2.6213203435596424],
+                  [0.0, 2.79128784747792],
+                  [0.5, 2.6213203435596424],
+                  [1.0, 1.9999999999999998],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.9999999999999999],
+                  [-0.5, -1.1902380714238083],
+                  [0.0, -1.2909944487358056],
+                  [0.5, -1.3228756555322951],
+                  [1.0, -1.2909944487358056],
+                  [2.0, -0.9999999999999999],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.9999999999999999],
+                  [-0.5, 1.1902380714238083],
+                  [0.0, 1.2909944487358056],
+                  [0.5, 1.3228756555322951],
+                  [1.0, 1.2909944487358056],
+                  [2.0, 0.9999999999999999],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -1.0],
+                  [-0.5, -1.1902380714238083],
+                  [0.0, -1.2909944487358058],
+                  [0.5, -1.3228756555322954],
+                  [1.0, -1.2909944487358058],
+                  [2.0, -1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.0],
+                  [-0.5, 1.1902380714238083],
+                  [0.0, 1.2909944487358058],
+                  [0.5, 1.3228756555322954],
+                  [1.0, 1.2909944487358058],
+                  [2.0, 1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-029",
+      "group": "cas",
+      "script": [
+        "k: x*y=1",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [0.0, 0.0, -2.0, 1.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [-0.7071067811865475, -0.7071067811865475],
+              [0.7071067811865475, -0.7071067811865475]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -0.125],
+                  [-4.0, -0.25],
+                  [-2.0, -0.5],
+                  [-1.0, -1.0],
+                  [-0.5, -2.0],
+                  [0.0, null],
+                  [0.5, 2.0],
+                  [1.0, 1.0],
+                  [2.0, 0.5],
+                  [4.0, 0.25],
+                  [8.0, 0.125]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -0.125],
+                  [-4.0, -0.25],
+                  [-2.0, -0.5],
+                  [-1.0, -1.0],
+                  [-0.5, -2.0],
+                  [0.0, null],
+                  [0.5, 2.0],
+                  [1.0, 1.0],
+                  [2.0, 0.5],
+                  [4.0, 0.25],
+                  [8.0, 0.125]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -0.125],
+                  [-4.0, -0.25],
+                  [-2.0, -0.5],
+                  [-1.0, -1.0],
+                  [-0.5, -2.0],
+                  [0.0, null],
+                  [0.5, 2.0],
+                  [1.0, 1.0],
+                  [2.0, 0.5],
+                  [4.0, 0.25],
+                  [8.0, 0.125]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-030",
+      "group": "cas",
+      "script": [
+        "k: x*y+x+y=1",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [0.0, 0.0, -2.0, 1.0, 1.0, 1.0],
+            "midpoint": [-1.0, -1.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [-0.7071067811865475, -0.7071067811865475],
+              [0.7071067811865475, -0.7071067811865475]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -1.2857142857142858],
+                  [-4.0, -1.6666666666666667],
+                  [-2.0, -3.0],
+                  [-1.0, null],
+                  [-0.5, 3.0],
+                  [0.0, 1.0],
+                  [0.5, 0.3333333333333333],
+                  [1.0, 0.0],
+                  [2.0, -0.3333333333333333],
+                  [4.0, -0.6],
+                  [8.0, -0.7777777777777778]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -1.2857142857142858],
+                  [-4.0, -1.6666666666666667],
+                  [-2.0, -3.0],
+                  [-1.0, null],
+                  [-0.5, 3.0],
+                  [0.0, 1.0],
+                  [0.5, 0.3333333333333333],
+                  [1.0, 0.0],
+                  [2.0, -0.3333333333333333],
+                  [4.0, -0.6],
+                  [8.0, -0.7777777777777778]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -1.2857142857142858],
+                  [-4.0, -1.6666666666666667],
+                  [-2.0, -3.0],
+                  [-1.0, null],
+                  [-0.5, 3.0],
+                  [0.0, 1.0],
+                  [0.5, 0.3333333333333333],
+                  [1.0, 0.0],
+                  [2.0, -0.3333333333333333],
+                  [4.0, -0.6],
+                  [8.0, -0.7777777777777778]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-031",
+      "group": "cas",
+      "script": [
+        "k: y^2=x",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)",
+        "r3 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [0.0, 1.0, 0.0, 0.0, -0.5, 0.0],
+            "vertex": [0.0, -0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 64.0],
+                  [-4.0, 16.0],
+                  [-2.0, 4.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.25],
+                  [0.0, 0.0],
+                  [0.5, 0.25],
+                  [1.0, 1.0],
+                  [2.0, 4.0],
+                  [4.0, 16.0],
+                  [8.0, 64.0]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, -0.0],
+                  [0.5, -0.7071067811865476],
+                  [1.0, -1.0],
+                  [2.0, -1.4142135623730951],
+                  [4.0, -2.0],
+                  [8.0, -2.8284271247461903]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, 0.0],
+                  [0.5, 0.7071067811865476],
+                  [1.0, 1.0],
+                  [2.0, 1.4142135623730951],
+                  [4.0, 2.0],
+                  [8.0, 2.8284271247461903]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, -0.0],
+                  [0.5, -0.7071067811865476],
+                  [1.0, -1.0],
+                  [2.0, -1.4142135623730951],
+                  [4.0, -2.0],
+                  [8.0, -2.8284271247461903]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, 0.0],
+                  [0.5, 0.7071067811865476],
+                  [1.0, 1.0],
+                  [2.0, 1.4142135623730951],
+                  [4.0, 2.0],
+                  [8.0, 2.8284271247461903]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-032",
+      "group": "cas",
+      "script": [
+        "k: y=x^2",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, -0.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, -0.0],
+                  [0.5, -0.7071067811865476],
+                  [1.0, -1.0],
+                  [2.0, -1.4142135623730951],
+                  [4.0, -2.0],
+                  [8.0, -2.8284271247461903]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, 0.0],
+                  [0.5, 0.7071067811865476],
+                  [1.0, 1.0],
+                  [2.0, 1.4142135623730951],
+                  [4.0, 2.0],
+                  [8.0, 2.8284271247461903]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 64.0],
+                  [-4.0, 16.0],
+                  [-2.0, 4.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.25],
+                  [0.0, 0.0],
+                  [0.5, 0.25],
+                  [1.0, 1.0],
+                  [2.0, 4.0],
+                  [4.0, 16.0],
+                  [8.0, 64.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-033",
+      "group": "cas",
+      "script": [
+        "k: y=x^2+x",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [-1.0, 0.0, 0.0, 0.0, -0.5, 0.5],
+            "vertex": [-0.5, -0.25],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, 0.0],
+                  [0.5, 0.3660254037844386],
+                  [1.0, 0.6180339887498949],
+                  [2.0, 1.0],
+                  [4.0, 1.5615528128088303],
+                  [8.0, 2.3722813232690143]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, -1.0],
+                  [0.5, -1.3660254037844386],
+                  [1.0, -1.618033988749895],
+                  [2.0, -2.0],
+                  [4.0, -2.5615528128088303],
+                  [8.0, -3.3722813232690143]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 56.0],
+                  [-4.0, 12.0],
+                  [-2.0, 2.0],
+                  [-1.0, 0.0],
+                  [-0.5, -0.25],
+                  [0.0, 0.0],
+                  [0.5, 0.75],
+                  [1.0, 2.0],
+                  [2.0, 6.0],
+                  [4.0, 20.0],
+                  [8.0, 72.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-034",
+      "group": "cas",
+      "script": [
+        "k: x^2+2x-y=3",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, -3.0, 0.0, 1.0, -0.5],
+            "vertex": [-1.0, -4.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, -1.0],
+                  [-2.0, 0.41421356237309515],
+                  [-1.0, 0.7320508075688772],
+                  [-0.5, 0.8708286933869707],
+                  [0.0, 1.0],
+                  [0.5, 1.1213203435596424],
+                  [1.0, 1.2360679774997898],
+                  [2.0, 1.4494897427831779],
+                  [4.0, 1.8284271247461903],
+                  [8.0, 2.4641016151377544]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, -1.0],
+                  [-2.0, -2.414213562373095],
+                  [-1.0, -2.732050807568877],
+                  [-0.5, -2.8708286933869704],
+                  [0.0, -3.0],
+                  [0.5, -3.1213203435596424],
+                  [1.0, -3.23606797749979],
+                  [2.0, -3.449489742783178],
+                  [4.0, -3.8284271247461903],
+                  [8.0, -4.464101615137754]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 45.0],
+                  [-4.0, 5.0],
+                  [-2.0, -3.0],
+                  [-1.0, -4.0],
+                  [-0.5, -3.75],
+                  [0.0, -3.0],
+                  [0.5, -1.75],
+                  [1.0, 0.0],
+                  [2.0, 5.0],
+                  [4.0, 21.0],
+                  [8.0, 77.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-035",
+      "group": "cas",
+      "script": [
+        "k: x^2+y=3",
+        "r1 = Solutions(k)",
+        "r2 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [1.0, 0.0, -3.0, 0.0, 0.0, 0.5],
+            "vertex": [0.0, 3.0],
+            "p": 0.5,
+            "eigenvectors": [
+              [-0.0, -1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -3.3166247903554],
+                  [-4.0, -2.6457513110645907],
+                  [-2.0, -2.23606797749979],
+                  [-1.0, -2.0],
+                  [-0.5, -1.8708286933869707],
+                  [0.0, -1.7320508075688772],
+                  [0.5, -1.5811388300841898],
+                  [1.0, -1.4142135623730951],
+                  [2.0, -1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 3.3166247903554],
+                  [-4.0, 2.6457513110645907],
+                  [-2.0, 2.23606797749979],
+                  [-1.0, 2.0],
+                  [-0.5, 1.8708286933869707],
+                  [0.0, 1.7320508075688772],
+                  [0.5, 1.5811388300841898],
+                  [1.0, 1.4142135623730951],
+                  [2.0, 1.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -61.0],
+                  [-4.0, -13.0],
+                  [-2.0, -1.0],
+                  [-1.0, 2.0],
+                  [-0.5, 2.75],
+                  [0.0, 3.0],
+                  [0.5, 2.75],
+                  [1.0, 2.0],
+                  [2.0, -1.0],
+                  [4.0, -13.0],
+                  [8.0, -61.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-036",
+      "group": "cas",
+      "script": [
+        "k: x^2-y^2=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 1.0, -0.0],
+              [1.0, 1.0, 0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0],
+                  [-4.0, 4.0],
+                  [-2.0, 2.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.5],
+                  [0.0, -0.0],
+                  [0.5, -0.5],
+                  [1.0, -1.0],
+                  [2.0, -2.0],
+                  [4.0, -4.0],
+                  [8.0, -8.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0],
+                  [-4.0, 4.0],
+                  [-2.0, 2.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.5],
+                  [0.0, -0.0],
+                  [0.5, -0.5],
+                  [1.0, -1.0],
+                  [2.0, -2.0],
+                  [4.0, -4.0],
+                  [8.0, -8.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-037",
+      "group": "cas",
+      "script": [
+        "k: x^2+2x*y+y^2=1",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 1.0, -1.0, 1.0, 0.0, 0.0],
+            "lines": [
+              [0.7071067811865475, 0.7071067811865475, -0.7071067811865476],
+              [0.7071067811865475, 0.7071067811865475, 0.7071067811865476]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 7.0],
+                  [-4.0, 3.0],
+                  [-2.0, 1.0],
+                  [-1.0, 0.0],
+                  [-0.5, -0.5],
+                  [0.0, -1.0],
+                  [0.5, -1.5],
+                  [1.0, -2.0],
+                  [2.0, -3.0],
+                  [4.0, -5.0],
+                  [8.0, -9.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 9.0],
+                  [-4.0, 5.0],
+                  [-2.0, 3.0],
+                  [-1.0, 2.0],
+                  [-0.5, 1.5],
+                  [0.0, 1.0],
+                  [0.5, 0.5],
+                  [1.0, 0.0],
+                  [2.0, -1.0],
+                  [4.0, -3.0],
+                  [8.0, -7.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 7.0],
+                  [-4.0, 3.0],
+                  [-2.0, 1.0],
+                  [-1.0, 0.0],
+                  [-0.5, -0.5],
+                  [0.0, -1.0],
+                  [0.5, -1.5],
+                  [1.0, -2.0],
+                  [2.0, -3.0],
+                  [4.0, -5.0],
+                  [8.0, -9.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 9.0],
+                  [-4.0, 5.0],
+                  [-2.0, 3.0],
+                  [-1.0, 2.0],
+                  [-0.5, 1.5],
+                  [0.0, 1.0],
+                  [0.5, 0.5],
+                  [1.0, 0.0],
+                  [2.0, -1.0],
+                  [4.0, -3.0],
+                  [8.0, -7.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-038",
+      "group": "cas",
+      "script": [
+        "k: x^2-2x*y+y^2=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 1.0, 0.0, -1.0, 0.0, 0.0],
+            "lines": [
+              [0.7071067811865475, -0.7071067811865475, 0.0],
+              [0.7071067811865475, -0.7071067811865475, 0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-039",
+      "group": "cas",
+      "script": [
+        "k: x*y=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            "lines": [
+              [1.414213562373095, 0.0, 0.0],
+              [0.0, -1.414213562373095, -0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-040",
+      "group": "cas",
+      "script": [
+        "k: x^2-2y^2=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -2.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.7071067811865476, 1.0, -0.0],
+              [0.7071067811865476, 1.0, 0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.4142135623730951, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.4142135623730951, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -11.313708498984761],
+                  [-4.0, -5.656854249492381],
+                  [-2.0, -2.8284271247461903],
+                  [-1.0, -1.4142135623730951],
+                  [-0.5, -0.7071067811865476],
+                  [0.0, 0.0],
+                  [0.5, 0.7071067811865476],
+                  [1.0, 1.4142135623730951],
+                  [2.0, 2.8284271247461903],
+                  [4.0, 5.656854249492381],
+                  [8.0, 11.313708498984761]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 11.313708498984761],
+                  [-4.0, 5.656854249492381],
+                  [-2.0, 2.8284271247461903],
+                  [-1.0, 1.4142135623730951],
+                  [-0.5, 0.7071067811865476],
+                  [0.0, -0.0],
+                  [0.5, -0.7071067811865476],
+                  [1.0, -1.4142135623730951],
+                  [2.0, -2.8284271247461903],
+                  [4.0, -5.656854249492381],
+                  [8.0, -11.313708498984761]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -0.7071067811865476, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 0.7071067811865476, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -5.656854249492381],
+                  [-4.0, -2.8284271247461903],
+                  [-2.0, -1.4142135623730951],
+                  [-1.0, -0.7071067811865476],
+                  [-0.5, -0.3535533905932738],
+                  [0.0, 0.0],
+                  [0.5, 0.3535533905932738],
+                  [1.0, 0.7071067811865476],
+                  [2.0, 1.4142135623730951],
+                  [4.0, 2.8284271247461903],
+                  [8.0, 5.656854249492381]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 5.656854249492381],
+                  [-4.0, 2.8284271247461903],
+                  [-2.0, 1.4142135623730951],
+                  [-1.0, 0.7071067811865476],
+                  [-0.5, 0.3535533905932738],
+                  [0.0, -0.0],
+                  [0.5, -0.3535533905932738],
+                  [1.0, -0.7071067811865476],
+                  [2.0, -1.4142135623730951],
+                  [4.0, -2.8284271247461903],
+                  [8.0, -5.656854249492381]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-041",
+      "group": "cas",
+      "script": [
+        "k: (x-2y)*(x-3y)=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, 6.0, 0.0, -2.5, 0.0, 0.0],
+            "lines": [
+              [-4.460884994775326, 13.38265498432598, -0.0],
+              [6.3086440597979, -12.6172881195958, -0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -2.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": -3.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -16.0],
+                  [-4.0, -8.0],
+                  [-2.0, -4.0],
+                  [-1.0, -2.0],
+                  [-0.5, -1.0],
+                  [0.0, 0.0],
+                  [0.5, 1.0],
+                  [1.0, 2.0],
+                  [2.0, 4.0],
+                  [4.0, 8.0],
+                  [8.0, 16.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -24.0],
+                  [-4.0, -12.0],
+                  [-2.0, -6.0],
+                  [-1.0, -3.0],
+                  [-0.5, -1.5],
+                  [0.0, 0.0],
+                  [0.5, 1.5],
+                  [1.0, 3.0],
+                  [2.0, 6.0],
+                  [4.0, 12.0],
+                  [8.0, 24.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": -0.3333333333333333, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -4.0],
+                  [-4.0, -2.0],
+                  [-2.0, -1.0],
+                  [-1.0, -0.5],
+                  [-0.5, -0.25],
+                  [0.0, 0.0],
+                  [0.5, 0.25],
+                  [1.0, 0.5],
+                  [2.0, 1.0],
+                  [4.0, 2.0],
+                  [8.0, 4.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -2.6666666666666665],
+                  [-4.0, -1.3333333333333333],
+                  [-2.0, -0.6666666666666666],
+                  [-1.0, -0.3333333333333333],
+                  [-0.5, -0.16666666666666666],
+                  [0.0, 0.0],
+                  [0.5, 0.16666666666666666],
+                  [1.0, 0.3333333333333333],
+                  [2.0, 0.6666666666666666],
+                  [4.0, 1.3333333333333333],
+                  [8.0, 2.6666666666666665]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-042",
+      "group": "cas",
+      "script": [
+        "k: (x-y/2)*(x-2y)=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, 1.0, 0.0, -1.25, 0.0, 0.0],
+            "lines": [
+              [-1.414213562373095, 2.82842712474619, -0.0],
+              [2.82842712474619, -1.414213562373095, -0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -2.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": -0.5, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -16.0],
+                  [-4.0, -8.0],
+                  [-2.0, -4.0],
+                  [-1.0, -2.0],
+                  [-0.5, -1.0],
+                  [0.0, 0.0],
+                  [0.5, 1.0],
+                  [1.0, 2.0],
+                  [2.0, 4.0],
+                  [4.0, 8.0],
+                  [8.0, 16.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -4.0],
+                  [-4.0, -2.0],
+                  [-2.0, -1.0],
+                  [-1.0, -0.5],
+                  [-0.5, -0.25],
+                  [0.0, 0.0],
+                  [0.5, 0.25],
+                  [1.0, 0.5],
+                  [2.0, 1.0],
+                  [4.0, 2.0],
+                  [8.0, 4.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -16.0],
+                  [-4.0, -8.0],
+                  [-2.0, -4.0],
+                  [-1.0, -2.0],
+                  [-0.5, -1.0],
+                  [0.0, 0.0],
+                  [0.5, 1.0],
+                  [1.0, 2.0],
+                  [2.0, 4.0],
+                  [4.0, 8.0],
+                  [8.0, 16.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -4.0],
+                  [-4.0, -2.0],
+                  [-2.0, -1.0],
+                  [-1.0, -0.5],
+                  [-0.5, -0.25],
+                  [0.0, 0.0],
+                  [0.5, 0.25],
+                  [1.0, 0.5],
+                  [2.0, 1.0],
+                  [4.0, 2.0],
+                  [8.0, 4.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-043",
+      "group": "cas",
+      "script": [
+        "k: (x-y)*(x-2)=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, 0.0, 0.0, -0.5, -1.0, 1.0],
+            "lines": [
+              [-1.847759065022574, 1.8477590650225735, 8.881784197001252E-16],
+              [2.613125929752753, 2.220446049250313E-16, -5.226251859505506]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -8.0],
+                  [-4.0, -4.0],
+                  [-2.0, -2.0],
+                  [-1.0, -1.0],
+                  [-0.5, -0.5],
+                  [0.0, 0.0],
+                  [0.5, 0.5],
+                  [1.0, 1.0],
+                  [2.0, 2.0],
+                  [4.0, 4.0],
+                  [8.0, 8.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-044",
+      "group": "cas",
+      "script": [
+        "k: (x-2y-1)*(x+2y-3)=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -4.0, 3.0, 0.0, -2.0, 2.0],
+            "lines": [
+              [-0.5, 1.0, 0.5],
+              [0.5, 1.0, -1.5]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -2.0, "c": -1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -3.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -15.0],
+                  [-4.0, -7.0],
+                  [-2.0, -3.0],
+                  [-1.0, -1.0],
+                  [-0.5, 0.0],
+                  [0.0, 1.0],
+                  [0.5, 2.0],
+                  [1.0, 3.0],
+                  [2.0, 5.0],
+                  [4.0, 9.0],
+                  [8.0, 17.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 19.0],
+                  [-4.0, 11.0],
+                  [-2.0, 7.0],
+                  [-1.0, 5.0],
+                  [-0.5, 4.0],
+                  [0.0, 3.0],
+                  [0.5, 2.0],
+                  [1.0, 1.0],
+                  [2.0, -1.0],
+                  [4.0, -5.0],
+                  [8.0, -13.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": 0.5 },
+              { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": -1.5 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -4.5],
+                  [-4.0, -2.5],
+                  [-2.0, -1.5],
+                  [-1.0, -1.0],
+                  [-0.5, -0.75],
+                  [0.0, -0.5],
+                  [0.5, -0.25],
+                  [1.0, 0.0],
+                  [2.0, 0.5],
+                  [4.0, 1.5],
+                  [8.0, 3.5]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 5.5],
+                  [-4.0, 3.5],
+                  [-2.0, 2.5],
+                  [-1.0, 2.0],
+                  [-0.5, 1.75],
+                  [0.0, 1.5],
+                  [0.5, 1.25],
+                  [1.0, 1.0],
+                  [2.0, 0.5],
+                  [4.0, -0.5],
+                  [8.0, -2.5]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-045",
+      "group": "cas",
+      "script": [
+        "k: x^2+3x*y+2y^2=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, 2.0, 0.0, 1.5, 0.0, 0.0],
+            "lines": [
+              [4.414389310029773, 4.414389310029773, 0.0],
+              [-2.7919049396786515, -5.583809879357303, -0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0],
+                  [-4.0, 4.0],
+                  [-2.0, 2.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.5],
+                  [0.0, -0.0],
+                  [0.5, -0.5],
+                  [1.0, -1.0],
+                  [2.0, -2.0],
+                  [4.0, -4.0],
+                  [8.0, -8.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 16.0],
+                  [-4.0, 8.0],
+                  [-2.0, 4.0],
+                  [-1.0, 2.0],
+                  [-0.5, 1.0],
+                  [0.0, -0.0],
+                  [0.5, -1.0],
+                  [1.0, -2.0],
+                  [2.0, -4.0],
+                  [4.0, -8.0],
+                  [8.0, -16.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 0.5, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 8.0],
+                  [-4.0, 4.0],
+                  [-2.0, 2.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.5],
+                  [0.0, -0.0],
+                  [0.5, -0.5],
+                  [1.0, -1.0],
+                  [2.0, -2.0],
+                  [4.0, -4.0],
+                  [8.0, -8.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 4.0],
+                  [-4.0, 2.0],
+                  [-2.0, 1.0],
+                  [-1.0, 0.5],
+                  [-0.5, 0.25],
+                  [0.0, -0.0],
+                  [0.5, -0.25],
+                  [1.0, -0.5],
+                  [2.0, -1.0],
+                  [4.0, -2.0],
+                  [8.0, -4.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-046",
+      "group": "cas",
+      "script": [
+        "k: 2x^2-x*y-y^2+x+2y=1",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [2.0, -1.0, -1.0, -0.5, 0.5, 1.0],
+            "lines": [
+              [-1.2093284481786837, 1.209328448178685, -1.209328448178685],
+              [1.5296929341926195, 0.7648464670963084, -0.7648464670963084]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.5, "c": -0.5 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -9.0],
+                  [-4.0, -5.0],
+                  [-2.0, -3.0],
+                  [-1.0, -2.0],
+                  [-0.5, -1.5],
+                  [0.0, -1.0],
+                  [0.5, -0.5],
+                  [1.0, 0.0],
+                  [2.0, 1.0],
+                  [4.0, 3.0],
+                  [8.0, 7.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 4.5],
+                  [-4.0, 2.5],
+                  [-2.0, 1.5],
+                  [-1.0, 1.0],
+                  [-0.5, 0.75],
+                  [0.0, 0.5],
+                  [0.5, 0.25],
+                  [1.0, 0.0],
+                  [2.0, -0.5],
+                  [4.0, -1.5],
+                  [8.0, -3.5]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -1.0 },
+              { "type": "line", "defined": true, "a": 2.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -7.0],
+                  [-4.0, -3.0],
+                  [-2.0, -1.0],
+                  [-1.0, 0.0],
+                  [-0.5, 0.5],
+                  [0.0, 1.0],
+                  [0.5, 1.5],
+                  [1.0, 2.0],
+                  [2.0, 3.0],
+                  [4.0, 5.0],
+                  [8.0, 9.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 17.0],
+                  [-4.0, 9.0],
+                  [-2.0, 5.0],
+                  [-1.0, 3.0],
+                  [-0.5, 2.0],
+                  [0.0, 1.0],
+                  [0.5, 0.0],
+                  [1.0, -1.0],
+                  [2.0, -3.0],
+                  [4.0, -7.0],
+                  [8.0, -15.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-047",
+      "group": "cas",
+      "script": [
+        "k: (x-2y+5)*(x-2y-4)=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 4.0, -20.0, -2.0, 0.5, -1.0],
+            "lines": [
+              [0.4472135954999579, -0.8944271909999159, -1.7888543819998317],
+              [0.4472135954999579, -0.8944271909999159, 2.23606797749979]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -2.0, "c": 5.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": -2.0, "c": -4.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -21.0],
+                  [-4.0, -13.0],
+                  [-2.0, -9.0],
+                  [-1.0, -7.0],
+                  [-0.5, -6.0],
+                  [0.0, -5.0],
+                  [0.5, -4.0],
+                  [1.0, -3.0],
+                  [2.0, -1.0],
+                  [4.0, 3.0],
+                  [8.0, 11.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -12.0],
+                  [-4.0, -4.0],
+                  [-2.0, 0.0],
+                  [-1.0, 2.0],
+                  [-0.5, 3.0],
+                  [0.0, 4.0],
+                  [0.5, 5.0],
+                  [1.0, 6.0],
+                  [2.0, 8.0],
+                  [4.0, 12.0],
+                  [8.0, 20.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": -0.5, "b": 1.0, "c": -2.5 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -6.0],
+                  [-4.0, -4.0],
+                  [-2.0, -3.0],
+                  [-1.0, -2.5],
+                  [-0.5, -2.25],
+                  [0.0, -2.0],
+                  [0.5, -1.75],
+                  [1.0, -1.5],
+                  [2.0, -1.0],
+                  [4.0, 0.0],
+                  [8.0, 2.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -1.5],
+                  [-4.0, 0.5],
+                  [-2.0, 1.5],
+                  [-1.0, 2.0],
+                  [-0.5, 2.25],
+                  [0.0, 2.5],
+                  [0.5, 2.75],
+                  [1.0, 3.0],
+                  [2.0, 3.5],
+                  [4.0, 4.5],
+                  [8.0, 6.5]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-048",
+      "group": "cas",
+      "script": [
+        "k: (x+y/3)*(x-y/2)=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -0.16666666666666666, 0.0, -0.08333333333333334, 0.0, 0.0],
+            "lines": [
+              [-2.3372508850777973, 1.1686254425389018, -0.0],
+              [2.479028925259158, 0.8263429750863828, -0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -0.5, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.3333333333333333, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -4.0],
+                  [-4.0, -2.0],
+                  [-2.0, -1.0],
+                  [-1.0, -0.5],
+                  [-0.5, -0.25],
+                  [0.0, 0.0],
+                  [0.5, 0.25],
+                  [1.0, 0.5],
+                  [2.0, 1.0],
+                  [4.0, 2.0],
+                  [8.0, 4.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 2.6666666666666665],
+                  [-4.0, 1.3333333333333333],
+                  [-2.0, 0.6666666666666666],
+                  [-1.0, 0.3333333333333333],
+                  [-0.5, 0.16666666666666666],
+                  [0.0, -0.0],
+                  [0.5, -0.16666666666666666],
+                  [1.0, -0.3333333333333333],
+                  [2.0, -0.6666666666666666],
+                  [4.0, -1.3333333333333333],
+                  [8.0, -2.6666666666666665]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -2.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 3.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -16.0],
+                  [-4.0, -8.0],
+                  [-2.0, -4.0],
+                  [-1.0, -2.0],
+                  [-0.5, -1.0],
+                  [0.0, 0.0],
+                  [0.5, 1.0],
+                  [1.0, 2.0],
+                  [2.0, 4.0],
+                  [4.0, 8.0],
+                  [8.0, 16.0]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 24.0],
+                  [-4.0, 12.0],
+                  [-2.0, 6.0],
+                  [-1.0, 3.0],
+                  [-0.5, 1.5],
+                  [0.0, -0.0],
+                  [0.5, -1.5],
+                  [1.0, -3.0],
+                  [2.0, -6.0],
+                  [4.0, -12.0],
+                  [8.0, -24.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-049",
+      "group": "cas",
+      "script": [
+        "k: x^2-2x*y-y^2=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -1.0, 0.0, -1.0, 0.0, 0.0],
+            "lines": [
+              [-0.5411961001461969, 1.3065629648763766, -0.0],
+              [1.3065629648763766, 0.5411961001461969, -0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": -2.414213562373095, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.41421356237309515, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -19.31370849898476],
+                  [-4.0, -9.65685424949238],
+                  [-2.0, -4.82842712474619],
+                  [-1.0, -2.414213562373095],
+                  [-0.5, -1.2071067811865475],
+                  [0.0, 0.0],
+                  [0.5, 1.2071067811865475],
+                  [1.0, 2.414213562373095],
+                  [2.0, 4.82842712474619],
+                  [4.0, 9.65685424949238],
+                  [8.0, 19.31370849898476]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 3.313708498984761],
+                  [-4.0, 1.6568542494923806],
+                  [-2.0, 0.8284271247461903],
+                  [-1.0, 0.41421356237309515],
+                  [-0.5, 0.20710678118654757],
+                  [0.0, -0.0],
+                  [0.5, -0.20710678118654757],
+                  [1.0, -0.41421356237309515],
+                  [2.0, -0.8284271247461903],
+                  [4.0, -1.6568542494923806],
+                  [8.0, -3.313708498984761]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": -0.41421356237309515, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 2.414213562373095, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, -3.313708498984761],
+                  [-4.0, -1.6568542494923806],
+                  [-2.0, -0.8284271247461903],
+                  [-1.0, -0.41421356237309515],
+                  [-0.5, -0.20710678118654757],
+                  [0.0, 0.0],
+                  [0.5, 0.20710678118654757],
+                  [1.0, 0.41421356237309515],
+                  [2.0, 0.8284271247461903],
+                  [4.0, 1.6568542494923806],
+                  [8.0, 3.313708498984761]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 19.31370849898476],
+                  [-4.0, 9.65685424949238],
+                  [-2.0, 4.82842712474619],
+                  [-1.0, 2.414213562373095],
+                  [-0.5, 1.2071067811865475],
+                  [0.0, -0.0],
+                  [0.5, -1.2071067811865475],
+                  [1.0, -2.414213562373095],
+                  [2.0, -4.82842712474619],
+                  [4.0, -9.65685424949238],
+                  [8.0, -19.31370849898476]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-050",
+      "group": "cas",
+      "script": [
+        "k: (x-2)*(y-1)=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = Solve(k, y)",
+        "r4 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [0.0, 0.0, 4.0, 1.0, -1.0, -2.0],
+            "lines": [
+              [1.414213562373095, 0.0, -2.82842712474619],
+              [0.0, -1.414213562373095, 1.414213562373095]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-051",
+      "group": "cas",
+      "script": [
+        "k: x^2+y^2=-4",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = Solve(k, y)",
+        "r6 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 1.0, 4.0, 0.0, 0.0, 0.0]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-052",
+      "group": "cas",
+      "script": [
+        "k: x^2+y^2=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = Solve(k, y)",
+        "r6 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": { "type": "list", "defined": false },
+          "r4": { "type": "list", "defined": false },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-053",
+      "group": "cas",
+      "script": [
+        "k: x^2+1=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = Solve(k, y)",
+        "r6 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-054",
+      "group": "cas",
+      "script": [
+        "k: x^2=0",
+        "r1 = Solve(k)",
+        "r2 = Solutions(k)",
+        "r3 = NSolve(k)",
+        "r4 = NSolutions(k)",
+        "r5 = Solve(k, y)",
+        "r6 = Solutions(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -0.0],
+              [-1.0, 0.0, -0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r5": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-055",
+      "group": "cas",
+      "script": [
+        "a = 4",
+        "k: x^2=a",
+        "r1 = Solve(k)",
+        "r2 = NSolutions(k)",
+        "r3 = Solutions(k, x)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 9.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -9.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -3.0],
+              [-1.0, 0.0, 3.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 3.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -3.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -3.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 0.0, -0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -0.0],
+              [-1.0, 0.0, -0.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -2.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -1.4142135623730951],
+              [-1.0, 0.0, 1.4142135623730951]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 1.4142135623730951 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.4142135623730951 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.414213562373 },
+              { "type": "number", "defined": true, "value": 1.414213562373 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.4142135623730951 },
+              { "type": "number", "defined": true, "value": 1.4142135623730951 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-056",
+      "group": "cas",
+      "script": [
+        "a = 4",
+        "k: x^2+y^2=a",
+        "r1 = Solutions(k)",
+        "r2 = Solve(k, y)",
+        "r3 = NSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 9.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.0],
+                  [-1.0, -1.7320508075688772],
+                  [-0.5, -1.9364916731037085],
+                  [0.0, -2.0],
+                  [0.5, -1.9364916731037085],
+                  [1.0, -1.7320508075688772],
+                  [2.0, -0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 0.0],
+                  [-1.0, 1.7320508075688772],
+                  [-0.5, 1.9364916731037085],
+                  [0.0, 2.0],
+                  [0.5, 1.9364916731037085],
+                  [1.0, 1.7320508075688772],
+                  [2.0, 0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -0.0],
+                  [-1.0, -1.7320508075688772],
+                  [-0.5, -1.9364916731037085],
+                  [0.0, -2.0],
+                  [0.5, -1.9364916731037085],
+                  [1.0, -1.7320508075688772],
+                  [2.0, -0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 0.0],
+                  [-1.0, 1.7320508075688772],
+                  [-0.5, 1.9364916731037085],
+                  [0.0, 2.0],
+                  [0.5, 1.9364916731037085],
+                  [1.0, 1.7320508075688772],
+                  [2.0, 0.0],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -9.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [3.0, 3.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -2.23606797749979],
+                  [-1.0, -2.8284271247461903],
+                  [-0.5, -2.958039891549808],
+                  [0.0, -3.0],
+                  [0.5, -2.958039891549808],
+                  [1.0, -2.8284271247461903],
+                  [2.0, -2.23606797749979],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.23606797749979],
+                  [-1.0, 2.8284271247461903],
+                  [-0.5, 2.958039891549808],
+                  [0.0, 3.0],
+                  [0.5, 2.958039891549808],
+                  [1.0, 2.8284271247461903],
+                  [2.0, 2.23606797749979],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -2.23606797749979],
+                  [-1.0, -2.8284271247461903],
+                  [-0.5, -2.958039891549808],
+                  [0.0, -3.0],
+                  [0.5, -2.958039891549808],
+                  [1.0, -2.8284271247461903],
+                  [2.0, -2.23606797749979],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.23606797749979],
+                  [-1.0, 2.8284271247461903],
+                  [-0.5, 2.958039891549808],
+                  [0.0, 3.0],
+                  [0.5, 2.958039891549808],
+                  [1.0, 2.8284271247461903],
+                  [2.0, 2.23606797749979],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "single_point",
+            "matrix": [1.0, 1.0, -0.0, 0.0, 0.0, 0.0],
+            "point": [0.0, 0.0]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          },
+          "r3": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -1.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.0],
+                  [-0.5, -0.8660254037844386],
+                  [0.0, -1.0],
+                  [0.5, -0.8660254037844386],
+                  [1.0, -0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, 0.8660254037844386],
+                  [0.0, 1.0],
+                  [0.5, 0.8660254037844386],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.0],
+                  [-0.5, -0.8660254037844386],
+                  [0.0, -1.0],
+                  [0.5, -0.8660254037844386],
+                  [1.0, -0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 0.0],
+                  [-0.5, 0.8660254037844386],
+                  [0.0, 1.0],
+                  [0.5, 0.8660254037844386],
+                  [1.0, 0.0],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r3": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-057",
+      "group": "cas",
+      "script": [
+        "A = (1, 2)",
+        "k = Circle(A, 3)",
+        "r1 = Solutions(k)",
+        "r2 = Solve(k, y)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": -2.0, "y": 1.5 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.0],
+                  [-0.5, 2.6583123951777],
+                  [0.0, 3.23606797749979],
+                  [0.5, 3.598076211353316],
+                  [1.0, 3.8284271247461903],
+                  [2.0, 4.0],
+                  [4.0, 3.23606797749979],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, 1.0],
+                  [-0.5, -0.6583123951776999],
+                  [0.0, -1.2360679774997898],
+                  [0.5, -1.598076211353316],
+                  [1.0, -1.8284271247461903],
+                  [2.0, -2.0],
+                  [4.0, -1.2360679774997898],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.0],
+                  [-1.0, 4.23606797749979],
+                  [-0.5, 4.598076211353316],
+                  [0.0, 4.82842712474619],
+                  [0.5, 4.958039891549808],
+                  [1.0, 5.0],
+                  [2.0, 4.82842712474619],
+                  [4.0, 2.0],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.0],
+                  [-1.0, -0.2360679774997898],
+                  [-0.5, -0.598076211353316],
+                  [0.0, -0.8284271247461903],
+                  [0.5, -0.9580398915498081],
+                  [1.0, -1.0],
+                  [2.0, -0.8284271247461903],
+                  [4.0, 2.0],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -2.23606797749979],
+                  [-1.0, -2.8284271247461903],
+                  [-0.5, -2.958039891549808],
+                  [0.0, -3.0],
+                  [0.5, -2.958039891549808],
+                  [1.0, -2.8284271247461903],
+                  [2.0, -2.23606797749979],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.23606797749979],
+                  [-1.0, 2.8284271247461903],
+                  [-0.5, 2.958039891549808],
+                  [0.0, 3.0],
+                  [0.5, 2.958039891549808],
+                  [1.0, 2.8284271247461903],
+                  [2.0, 2.23606797749979],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, -2.23606797749979],
+                  [-1.0, -2.8284271247461903],
+                  [-0.5, -2.958039891549808],
+                  [0.0, -3.0],
+                  [0.5, -2.958039891549808],
+                  [1.0, -2.8284271247461903],
+                  [2.0, -2.23606797749979],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, 2.23606797749979],
+                  [-1.0, 2.8284271247461903],
+                  [-0.5, 2.958039891549808],
+                  [0.0, 3.0],
+                  [0.5, 2.958039891549808],
+                  [1.0, 2.8284271247461903],
+                  [2.0, 2.23606797749979],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 1.5 },
+          "k": { "type": "circle", "defined": true, "cx": -2.0, "cy": 1.5, "r": 3.0 },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -0.3416876048223001],
+                  [-0.5, 0.2360679774997898],
+                  [0.0, 0.598076211353316],
+                  [0.5, 0.8284271247461903],
+                  [1.0, 0.9580398915498081],
+                  [2.0, 0.9580398915498081],
+                  [4.0, -0.3416876048223001],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, -3.6583123951777],
+                  [-0.5, -4.23606797749979],
+                  [0.0, -4.598076211353316],
+                  [0.5, -4.82842712474619],
+                  [1.0, -4.958039891549808],
+                  [2.0, -4.958039891549808],
+                  [4.0, -3.6583123951777],
+                  [8.0, null]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, 3.73606797749979],
+                  [-2.0, 4.5],
+                  [-1.0, 4.32842712474619],
+                  [-0.5, 4.098076211353316],
+                  [0.0, 3.73606797749979],
+                  [0.5, 3.1583123951777],
+                  [1.0, 1.5],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, -0.7360679774997898],
+                  [-2.0, -1.5],
+                  [-1.0, -1.3284271247461903],
+                  [-0.5, -1.098076211353316],
+                  [0.0, -0.7360679774997898],
+                  [0.5, -0.1583123951776999],
+                  [1.0, 1.5],
+                  [2.0, null],
+                  [4.0, null],
+                  [8.0, null]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-058",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "r1 = NSolutions(k, x=1)",
+        "r2 = NSolve(k, x=-1)",
+        "r3 = Solve(k, x=1)",
+        "r4 = Solutions(k, x=1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 2.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-conic-059",
+      "group": "cas",
+      "script": [
+        "k: x^2+y^2=4",
+        "r1 = Solutions(k, x=1)",
+        "r2 = NSolve(k, y=1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false }
+        }
+      ]
+    }
+  ]
+}

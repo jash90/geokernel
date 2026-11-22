@@ -523,14 +523,14 @@ GroebnerDegRevLex,,cas,,out_of_scope,,,
 GroebnerLexDeg,,cas,,out_of_scope,,,
 NIntegral,,function,P2,done,6,6,
 NInvert,,function,P2,done,1,1,
-NSolve,,algebra,P2,partial,10,4,Bounded real polynomial equations and systems with optional variable binding.
-NSolutions,,algebra,P2,partial,10,4,Bounded real polynomial equations and systems with optional variable binding.
+NSolve,,algebra,P2,partial,10,8,Bounded real polynomial equations and systems with optional variable binding.
+NSolutions,,algebra,P2,partial,10,8,Bounded real polynomial equations and systems with optional variable binding.
 Numeric,,cas,,out_of_scope,,,
 Evaluate,,english,,out_of_scope,,,
 MixedNumber,,cas,,out_of_scope,,,
 Rationalize,,cas,,out_of_scope,,,
-Solutions,,algebra,P2,partial,10,4,Real polynomial equations and small systems are in scope for the 1.0 CAS.
-Solve,,algebra,P2,partial,10,4,Real polynomial equations and small systems are in scope for the 1.0 CAS.
+Solutions,,algebra,P2,partial,10,8,Real polynomial equations and small systems are in scope for the 1.0 CAS.
+Solve,,algebra,P2,partial,10,6,Real polynomial equations and small systems are in scope for the 1.0 CAS.
 PlotSolve,,function,P2,todo,5,0,
 SolveCubic,,cas,,out_of_scope,,,
 SolveQuartic,,cas,,out_of_scope,,,

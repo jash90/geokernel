@@ -1,12 +1,14 @@
 use super::input::{read, variables};
+use super::single::{self, solution, Mode, Nesting};
 use super::{Poly, Rat, Slot, Work};
-use crate::cas::{affine_system, real_roots, systems, Root, Roots, SystemRoots};
+use crate::cas::{affine_system, systems, Root, SystemRoots};
 use crate::expr::{eval::Ctx, Node};
 use crate::{Kind, Value};
 
 pub(super) fn list<const M: bool>(
     ctx: &Ctx<'_, M>,
     equations: u32,
+    guess: u32,
     op: super::Op,
     work: &mut Work<'_>,
 ) -> Option<(u32, u32)> {
@@ -16,6 +18,8 @@ pub(super) fn list<const M: bool>(
         width,
         axes,
         system,
+        rows,
+        points,
     } = op
     else {
         return None;
@@ -23,6 +27,7 @@ pub(super) fn list<const M: bool>(
     let Node::List(start, length) = ctx.node(equations) else {
         return None;
     };
+    let single = !system && length == 1 && width <= 1;
     let vars = &variables();
     let mut polynomials = Vec::with_capacity(length as usize);
     for item in start..start + length {
@@ -40,11 +45,44 @@ pub(super) fn list<const M: bool>(
                     polynomials.push(object_equation(ctx.c, list.object(k)?)?);
                 }
             }
+            Node::Obj(id)
+                if single && ctx.c.kind(id) == Kind::Line && !ctx.c.value(id).is_defined() =>
+            {
+                // An undefined line prints no equation: the exact commands
+                // answer no solution, the numeric ones nothing.
+                return if approximate || points {
+                    None
+                } else {
+                    ctx.cas_slots(std::iter::empty())
+                };
+            }
             Node::Obj(id) if matches!(ctx.c.kind(id), Kind::Line | Kind::Conic | Kind::Circle) => {
                 polynomials.push(object_equation(ctx.c, id)?);
             }
             _ => polynomials.push(read(ctx.c, ctx.e, i, vars, work)?),
         }
+    }
+    let mode = |nesting| Mode {
+        assignments,
+        approximate,
+        points,
+        nesting,
+    };
+    if single {
+        // A list of variables after one equation gives one row per value.
+        let nesting = if rows && !assignments {
+            Nesting::Rows
+        } else {
+            Nesting::Flat
+        };
+        let guess = (guess != crate::expr::NONE).then(|| ctx.full_number(guess));
+        let hint = (width == 1).then_some(axes[0]);
+        return single::solve(ctx, polynomials.pop()?, hint, mode(nesting), guess, work);
+    }
+    if points {
+        // `PlotSolve` of a list passes the variables as a second argument,
+        // which the command does not take.
+        return None;
     }
     let active = |j| {
         polynomials.iter().any(|eq| {
@@ -59,50 +97,13 @@ pub(super) fn list<const M: bool>(
     if polynomials.len() == 1 && width <= 1 && used.len() <= 1 {
         let axis = used.first().copied().unwrap_or(0);
         let coordinate = if width == 1 { axes[0] } else { axis as u8 };
-        let equation = polynomials.pop()?;
-        let mut coefficients = dense_at(&equation.numerator, axis);
-        let mut denominator = dense_at(&equation.denominator, axis);
-        if approximate && denominator.len() > 1 {
-            // The numeric path simplifies the equation first, so a root the
-            // numerator and the denominator share survives: NSolutions(x^2/x)
-            // answers {0}, while Solutions(x^2/x = 0) answers {}.
-            if let Some(common) = crate::cas::polynomial_gcd(&coefficients, &denominator, work) {
-                if common.len() > 1 {
-                    coefficients = crate::cas::polynomial_quotient(&coefficients, &common, work)?;
-                    denominator = crate::cas::polynomial_quotient(&denominator, &common, work)?;
-                }
-            }
-        }
-        if coefficients.len() == 1 {
-            // At this entry point GeoGebra treats constant false equations as
-            // Boolean input and reports an undefined list.
-            return None;
-        }
-        let slots = match real_roots(&coefficients, work)? {
-            Roots::All if denominator.len() > 1 => return None,
-            Roots::All if assignments => vec![identity(coordinate)],
-            Roots::All => vec![Slot::polynomial(Poly::variable(0))],
-            Roots::Finite(roots) => roots
-                .into_iter()
-                .filter(|r| !is_pole(*r, &denominator))
-                .map(|r| solution(r, assignments, approximate, coordinate))
-                .collect(),
+        let nesting = if assignments {
+            Nesting::OneRow
+        } else {
+            Nesting::Rows
         };
-        if !system || slots.is_empty() {
-            return ctx.cas_slots(slots.into_iter());
-        }
-        let lists = ctx.lists?;
-        if assignments {
-            let (inner, len) = ctx.cas_slots(slots.into_iter())?;
-            return ctx.cas_slots(std::iter::once(Slot::list(inner, len)));
-        }
-        let count = slots.len().try_into().ok()?;
-        let start = lists.reserve(count)?;
-        for (i, slot) in slots.into_iter().enumerate() {
-            let (inner, len) = ctx.cas_slots(std::iter::once(slot))?;
-            lists.set(start + i as u32, Slot::list(inner, len));
-        }
-        return Some((start, count));
+        let equation = polynomials.pop()?;
+        return single::univariate(ctx, equation, axis, coordinate, mode(nesting), None, work);
     }
     let width = if width == 0 {
         used.last().copied().map_or(1, |j| j + 1)
@@ -241,51 +242,7 @@ fn as_equation(terms: &[([u8; 3], f64)]) -> Option<crate::cas::Quotient> {
     Some(crate::cas::Quotient::polynomial(Poly(coefficients)))
 }
 
-fn dense_at(poly: &Poly, index: usize) -> Vec<Rat> {
-    let len = poly
-        .0
-        .keys()
-        .map(|p| p[index])
-        .max()
-        .map_or(0, |degree| usize::from(degree) + 1);
-    let mut dense = vec![Rat::ZERO; len];
-    for (power, &coefficient) in &poly.0 {
-        dense[usize::from(power[index])] = coefficient;
-    }
-    dense
-}
-
-fn is_pole(root: Root, denominator: &[Rat]) -> bool {
-    if denominator.len() <= 1 {
-        return denominator.is_empty();
-    }
-    if let Root::Rational(r) = root {
-        if let Some(value) = denominator
-            .iter()
-            .rev()
-            .try_fold(Rat::ZERO, |v, &c| v.mul(r)?.add(c))
-        {
-            return value == Rat::ZERO;
-        }
-    }
-    let x = root.value();
-    let horner = |(v, m): (f64, f64), c: &Rat, x: f64| {
-        (v.mul_add(x, c.to_f64()), m * x.abs() + c.to_f64().abs())
-    };
-    let (value, magnitude) = if x.abs() > 1.0 {
-        denominator
-            .iter()
-            .fold((0.0, 0.0), |p, c| horner(p, c, x.recip()))
-    } else {
-        denominator
-            .iter()
-            .rev()
-            .fold((0.0, 0.0), |p, c| horner(p, c, x))
-    };
-    value.abs() <= magnitude * (16.0 * f64::EPSILON)
-}
-
-fn identity(axis: u8) -> Slot {
+pub(super) fn identity(axis: u8) -> Slot {
     let variable = ["x", "y", "z"][usize::from(axis)];
     Slot::undefined(Kind::Line).with_symbolic(format!("{variable} = {variable}"))
 }
@@ -305,30 +262,6 @@ fn affine_assignment(j: usize, free: usize, axes: [u8; 3], coefficients: &[Rat])
         (-scale, 1.0)
     };
     Slot::line(Value::Line { a, b, c: -value })
-}
-
-fn solution(root: Root, assignment: bool, approximate: bool, axis: u8) -> Slot {
-    let value = root.value();
-    if assignment && axis > 1 {
-        return Slot::undefined(Kind::Line);
-    }
-    let slot = if assignment {
-        let (a, b) = if axis == 0 { (1.0, 0.0) } else { (0.0, 1.0) };
-        Slot::line(Value::Line { a, b, c: -value })
-    } else {
-        Slot::number(value)
-    };
-    let text = if approximate { None } else { exact(root) };
-    if let Some(text) = text {
-        slot.with_symbolic(if assignment {
-            let variable = if axis == 0 { "x" } else { "y" };
-            format!("{variable} = {text}")
-        } else {
-            text
-        })
-    } else {
-        slot
-    }
 }
 
 pub(super) fn exact(root: Root) -> Option<String> {

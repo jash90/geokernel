@@ -29,6 +29,9 @@ pub(crate) struct Slot {
 enum SlotExtra {
     Text(String),
     Polynomial(crate::cas::Poly),
+    /// A solved branch with a pole or a square root, and the name of its
+    /// parameter.
+    Algebraic(crate::cas::Algebraic, &'static str),
     Symbolic(String),
 }
 
@@ -145,6 +148,16 @@ impl Slot {
         Slot {
             value: Value::Function,
             extra: Some(Arc::new(SlotExtra::Polynomial(value))),
+            ..Self::undefined(Kind::Function)
+        }
+    }
+
+    /// A function of one parameter that is no polynomial with rational
+    /// coefficients.
+    pub(super) fn algebraic(value: crate::cas::Algebraic, variable: &'static str) -> Slot {
+        Slot {
+            value: Value::Function,
+            extra: Some(Arc::new(SlotExtra::Algebraic(value, variable))),
             ..Self::undefined(Kind::Function)
         }
     }
@@ -475,6 +488,7 @@ impl<'a> List<'a> {
         let slot = &self.slots[self.start as usize + k];
         match slot.extra.as_deref() {
             Some(SlotExtra::Polynomial(p)) => Some(p.value([x, f64::NAN, f64::NAN])),
+            Some(SlotExtra::Algebraic(f, _)) => Some(f.value(x)),
             _ => c.function_value(self.function_at(k)?, x),
         }
     }
@@ -486,6 +500,7 @@ impl<'a> List<'a> {
         }
         match self.slots[self.start as usize + k].extra.as_deref()? {
             SlotExtra::Polynomial(value) => Some(super::cas::print_poly(value)),
+            SlotExtra::Algebraic(value, variable) => Some(value.display(variable)),
             SlotExtra::Symbolic(text) => Some(text.clone()),
             _ => None,
         }

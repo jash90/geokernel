@@ -376,6 +376,8 @@ pub fn script_uses_form(
                 let binding = match (command, args.len()) {
                     ("CurveCartesian", 4) | ("Function", 4) => Some(1),
                     ("CurveCartesian", 5) => Some(2),
+                    // The variable an equation is solved for.
+                    ("Solve" | "Solutions" | "NSolve" | "NSolutions", 2) => Some(1),
                     _ => None,
                 };
                 if let Some(i) = binding {
