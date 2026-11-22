@@ -10,7 +10,7 @@
 use crate::table::Table;
 use geo_kernel::Kind;
 use serde::Deserialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Tokens that stand for many kinds. A wildcard form needs a disposition or
 /// full case coverage of its supported input kinds.
@@ -80,6 +80,10 @@ pub struct Evidence {
     pub cases: Vec<String>,
     /// A row of `DIFFERENCES.md`, written `section-slug: Area text`.
     pub difference: Option<String>,
+    /// The reference refuses the form: the cited cases show it with a
+    /// `reject` step, which the replay checks against the kernel.
+    #[serde(default)]
+    pub refusal: bool,
 }
 
 #[derive(Deserialize)]
@@ -424,27 +428,23 @@ pub fn script_uses_form(
                         kinds[3] = Some(Kind::Number);
                     }
                 }
+                if matches!(command, "Solve" | "Solutions" | "NSolve" | "NSolutions")
+                    && args.len() == 2
+                {
+                    // The second argument counts only as a variable of the
+                    // equation, an assignment to one, or a list of them.
+                    kinds[1] =
+                        solving_variables(&args[0], &args[1], labels).then_some(Kind::Number);
+                }
                 let binding = match (command, args.len()) {
                     ("CurveCartesian", 4) | ("Function", 4) => Some(1),
                     ("CurveCartesian", 5) => Some(2),
-                    // The variable an equation is solved for.
-                    ("Solve" | "Solutions" | "NSolve" | "NSolutions", 2) => Some(1),
                     _ => None,
                 };
                 if let Some(i) = binding {
                     let mut chars = args[i].chars();
-                    // The solving variable is a name the case does not use
-                    // for anything but a number: the label of a point or a
-                    // text there is that object, not a variable.
-                    let solving =
-                        matches!(command, "Solve" | "Solutions" | "NSolve" | "NSolutions");
-                    let other_object = solving
-                        && labels
-                            .get(args[i].trim())
-                            .is_some_and(|&kind| kind != Kind::Number);
                     if chars.next().is_some_and(|c| c.is_alphabetic() || c == '_')
                         && chars.all(is_ident_char)
-                        && !other_object
                     {
                         kinds[i] = Some(Kind::Number);
                     }
@@ -460,6 +460,61 @@ pub fn script_uses_form(
             }
         })
     })
+}
+
+/// Whether `hint` names variables of the equation `equation` of a solve:
+/// one variable, `variable = value`, or a list of variables. A function
+/// holds `x`; a line, a conic, an implicit curve or a list of them `x` and
+/// `y`; an equation typed in place the free names it uses and the
+/// variables of the objects it names.
+fn solving_variables(equation: &str, hint: &str, labels: &BTreeMap<String, Kind>) -> bool {
+    let equation = equation.trim();
+    let variables: BTreeSet<String> = match labels.get(equation) {
+        Some(Kind::Function) => ["x".to_owned()].into(),
+        Some(Kind::Line | Kind::Conic | Kind::Circle | Kind::ImplicitCurve | Kind::List) => {
+            ["x".to_owned(), "y".to_owned()].into()
+        }
+        Some(_) => return false,
+        None => {
+            let mut names = BTreeSet::new();
+            let mut rest = equation;
+            while let Some(start) = rest.find(|c: char| c.is_alphabetic()) {
+                let tail = &rest[start..];
+                let end = tail.find(|c: char| !is_ident_char(c)).unwrap_or(tail.len());
+                let name = &tail[..end];
+                let call = tail[end..].trim_start().starts_with('(');
+                match labels.get(name) {
+                    _ if call => {}
+                    None => {
+                        names.insert(name.to_owned());
+                    }
+                    Some(Kind::Function) => {
+                        names.insert("x".to_owned());
+                    }
+                    Some(Kind::Line | Kind::Conic | Kind::Circle | Kind::ImplicitCurve) => {
+                        names.extend(["x".to_owned(), "y".to_owned()]);
+                    }
+                    Some(_) => {}
+                }
+                rest = &tail[end..];
+            }
+            names
+        }
+    };
+    let hint = hint.trim();
+    let (listed, items) = match hint.strip_prefix('{').and_then(|h| h.strip_suffix('}')) {
+        Some(inner) => (true, split_args(inner)),
+        None => (false, vec![hint.to_owned()]),
+    };
+    !items.is_empty()
+        && items.iter().all(|item| {
+            let (name, value) = match item.split_once('=') {
+                Some((name, value)) if !listed => (name.trim(), Some(value)),
+                Some(_) => return false,
+                None => (item.trim(), None),
+            };
+            variables.contains(name) && value.is_none_or(|v| !v.trim().is_empty())
+        })
 }
 
 /// An inline one-variable inequality, as opposed to a scalar comparison
@@ -712,10 +767,15 @@ mod tests {
             script_uses_form(&[line.to_string()], &l, &names, "Solve", form)
         };
         assert!(uses("r = Solve(f, x)", "function,number"));
-        assert!(uses("r = Solve(f, b)", "function,number"));
-        assert!(!uses("r = Solve(f, P)", "function,number"));
-        assert!(!uses("r = Solve(f, s)", "function,number"));
-        assert!(uses("r = Solve(f, P)", "function,point"));
+        assert!(uses("r = Solve(f, x=1)", "function,any"));
+        assert!(uses("r = Solve(f, {x})", "function,any"));
+        // Not a variable of the equation: a typo, a number, a point, a text.
+        assert!(!uses("r = Solve(f, typo)", "function,any"));
+        assert!(!uses("r = Solve(f, b)", "function,any"));
+        assert!(!uses("r = Solve(f, P)", "function,any"));
+        assert!(!uses("r = Solve(f, P)", "function,point"));
+        assert!(!uses("r = Solve(f, s)", "function,any"));
+        assert!(!uses("r = Solve(f, {x, typo})", "function,any"));
         // A call quoted in a text is no evidence.
         assert!(!uses("r = \"Solve(f, x)\"", "function,number"));
     }

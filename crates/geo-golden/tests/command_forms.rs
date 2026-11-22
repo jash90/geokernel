@@ -188,6 +188,12 @@ fn every_evidence_row_is_backed() {
             errors.push(format!("{what}: forms.csv has no such form"));
             continue;
         }
+        if e.refusal && e.cases.is_empty() {
+            errors.push(format!(
+                "{what}: a refused form needs a case that refuses it"
+            ));
+            continue;
+        }
         if let Some(d) = &e.difference {
             if let Err(msg) = forms::check_difference(d, &e.command, &e.form, &differences) {
                 errors.push(format!("{what}: DIFFERENCES.md: {msg}"));
@@ -213,8 +219,22 @@ fn every_evidence_row_is_backed() {
                 errors.push(format!("{what}: no golden case `{id}`"));
                 continue;
             };
+            let rejected: Vec<String> = case
+                .steps
+                .iter()
+                .filter_map(|step| match step {
+                    model::Step::Reject { line, .. } => Some(line.clone()),
+                    _ => None,
+                })
+                .collect();
             if gaps.contains_key(id) {
                 errors.push(format!("{what}: `{id}` is a known gap"));
+            } else if e.refusal {
+                // A refused form is shown by a `reject` step in that form.
+                if !forms::script_uses_form(&rejected, &kinds_of(case), &names, &e.command, &e.form)
+                {
+                    errors.push(format!("{what}: `{id}` does not refuse it in this form"));
+                }
             } else if !forms::script_calls(&case.script, &names, &e.command) {
                 errors.push(format!("{what}: `{id}` does not use the command"));
             } else if let Some(required) = required {
