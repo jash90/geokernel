@@ -32,6 +32,7 @@ pub(super) const NAMES: &[&str] = &[
     "Solutions",
     "NSolve",
     "NSolutions",
+    "PlotSolve",
     "Polynomial",
     "Numerator",
     "Denominator",
@@ -86,7 +87,7 @@ impl Op {
             "IsFactored" => Self::IsFactored,
             "NextPrime" => Self::NextPrime,
             "PreviousPrime" => Self::PreviousPrime,
-            "Solve" | "Solutions" | "NSolve" | "NSolutions" => Self::Solve {
+            "Solve" | "Solutions" | "NSolve" | "NSolutions" | "PlotSolve" => Self::Solve {
                 assignments: false,
                 approximate: false,
                 width: 0,

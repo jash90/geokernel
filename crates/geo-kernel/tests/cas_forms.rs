@@ -305,3 +305,63 @@ fn a_simplified_text_follows_its_source() {
         script::exec(&mut c, "s = Simplify(t)").ok();
     }
 }
+
+fn points(c: &Construction, label: &str) -> Option<Vec<(f64, f64)>> {
+    let list = c.elements(id(c, label))?;
+    Some(
+        list.iter()
+            .map(|e| match e {
+                Element::Value(Kind::Point, Value::Point { x, y }) => (x, y),
+                other => panic!("{label} holds {other:?}"),
+            })
+            .collect(),
+    )
+}
+
+#[test]
+fn plot_solve_puts_the_roots_on_the_x_axis() {
+    // CommandsUsingMockedCasTest.cmdPlotSolve
+    let c = build(&["r = PlotSolve(x^3-x)"]);
+    assert_eq!(
+        points(&c, "r").unwrap(),
+        [(-1.0, 0.0), (0.0, 0.0), (1.0, 0.0)]
+    );
+    let mut c = build(&["a = 1", "f(x) = x^2-a", "r = PlotSolve(f)"]);
+    assert_eq!(points(&c, "r").unwrap(), [(-1.0, 0.0), (1.0, 0.0)]);
+    // No root is an undefined list, not an empty one, and it recovers.
+    c.set_number(id(&c, "a"), -1.0).unwrap();
+    assert!(points(&c, "r").is_none());
+    c.set_number(id(&c, "a"), 4.0).unwrap();
+    assert_eq!(points(&c, "r").unwrap(), [(-2.0, 0.0), (2.0, 0.0)]);
+}
+
+#[test]
+fn plot_solve_of_a_list_or_a_proper_conic_is_undefined() {
+    let c = build(&[
+        "g: x+y=1",
+        "h: x-y=0",
+        "k: x^2+y^2=4",
+        "r = PlotSolve({g, h})",
+        "s = PlotSolve({x^2=1})",
+        "t = PlotSolve(k)",
+    ]);
+    for label in ["r", "s", "t"] {
+        assert!(c.elements(id(&c, label)).is_none(), "{label}");
+    }
+}
+
+#[test]
+fn plot_solve_takes_one_equation_and_no_number() {
+    let mut c = build(&["f(x) = x^2-3", "a = 2", "A = (1, 2)"]);
+    for line in [
+        "r = PlotSolve(f, x)",
+        "r = PlotSolve(f, x=1)",
+        "r = PlotSolve(2)",
+        "r = PlotSolve(a)",
+        "r = PlotSolve(1=0)",
+        "r = PlotSolve()",
+        "r = PlotSolve(A)",
+    ] {
+        rejected(&mut c, line);
+    }
+}

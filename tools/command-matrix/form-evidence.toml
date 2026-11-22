@@ -3572,3 +3572,20 @@ difference = "polynomial-cas: `Simplify(text)`"
 command = "Simplify"
 form = "list"
 difference = "polynomial-cas: `Simplify(list)`"
+
+[[form]]
+command = "PlotSolve"
+form = "list"
+cases = ["cas-plot-004", "cas-plot-021"]
+
+[[form]]
+command = "PlotSolve"
+form = "function"
+cases = ["cas-plot-001", "cas-plot-009"]
+difference = "polynomial-cas: `PlotSolve(function)`, `PlotSolve(line)`"
+
+[[form]]
+command = "PlotSolve"
+form = "line"
+cases = ["cas-plot-002", "cas-plot-007", "cas-plot-008"]
+difference = "polynomial-cas: `PlotSolve(function)`, `PlotSolve(line)`"

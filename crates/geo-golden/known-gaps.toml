@@ -726,6 +726,21 @@ reason = "A list of variables after one equation runs GeoGebra's system solver, 
 mismatches = ["0:result"]
 
 [[gap]]
+id = "cas-plot-023"
+reason = "PlotSolve of a proper conic answers one parametric curve per root in GeoGebra: the real and imaginary part of +-sqrt(4 - y^2) over the parameter interval from -10 to 10. A kernel list holds numbers, points, lines, functions and texts, not a curve that is no named object, and the curve needs the complex square root of a negative number. The kernel answers an undefined list."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-plot-024"
+reason = "PlotSolve of a hyperbola x y = 1 answers the parametric curve (1 / y, 0) in GeoGebra. A kernel list cannot hold a curve that is no named object, so the kernel answers an undefined list."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-plot-025"
+reason = "GeoGebra's CAS solves sin(x) = 0 symbolically as n pi and PlotSolve shows the point for n = 0. The bounded polynomial CAS reads polynomials and rational functions only, so the kernel answers an undefined list for a transcendental equation."
+mismatches = ["0:result"]
+
+[[gap]]
 id = "georestintersect-spline-001"
 reason = "IntersectLineSpline leaves the previous point defined when adjacent spline inputs coincide, while the kernel propagates the undefined spline to the intersection"
 mismatches = ["2:P_{1}"]

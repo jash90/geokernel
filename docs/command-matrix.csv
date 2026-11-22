@@ -5,9 +5,9 @@ Min,,algebra,P2,done,5,5,"Min(number, number); Min(list)"
 Max,,algebra,P2,done,5,5,"Max(number, number); Max(list)"
 LCM,,algebra,P2,done,2,2,"LCM(number, number)"
 GCD,,algebra,P2,done,2,2,"GCD(number, number)"
-Expand,,algebra,P2,partial,6,5,Polynomial and rational functions are in scope for the 1.0 CAS.
-Factor,,algebra,P2,partial,6,5,Exact polynomial and rational functions are in scope for the 1.0 CAS.
-Simplify,,algebra,P2,partial,8,7,Polynomial and rational functions and number inputs are in scope for the 1.0 CAS.
+Expand,,algebra,P2,partial,6,5,Polynomial and rational functions and the coordinates of curves. The implicit-curve form needs an implicit curve object.
+Factor,,algebra,P2,partial,6,5,Exact polynomial and rational functions and the coordinates of curves. The implicit-curve form needs an implicit curve object.
+Simplify,,algebra,P2,partial,8,7,"Polynomial and rational functions, numbers, lines, parabolas in y, curves and formula texts. The implicit-curve form needs an implicit curve object."
 PrimeFactors,,algebra,P2,done,1,1,
 CompleteSquare,,algebra,P2,done,1,1,"Quadratic polynomials, including quadratic polynomials in a power of x."
 ToBase,,algebra,P2,done,1,1,
@@ -510,7 +510,7 @@ Reflect,Mirror,transformation,P1,done,,,
 Assume,,cas,,out_of_scope,,,
 CFactor,,cas,,out_of_scope,,,
 CIFactor,,cas,,out_of_scope,,,
-IFactor,,algebra,P2,partial,6,5,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms."
+IFactor,,algebra,P2,partial,6,5,"Polynomial and rational functions and the coordinates of curves, with bounded radical forms. The implicit-curve form needs an implicit curve object."
 IntegralSymbolic,,cas,,out_of_scope,,,
 CommonDenominator,,algebra,P2,done,2,2,Number pairs and rational-function pairs.
 Cross,,algebra,P2,done,5,5,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)
@@ -523,15 +523,15 @@ GroebnerDegRevLex,,cas,,out_of_scope,,,
 GroebnerLexDeg,,cas,,out_of_scope,,,
 NIntegral,,function,P2,done,6,6,
 NInvert,,function,P2,done,1,1,
-NSolve,,algebra,P2,partial,10,8,Bounded real polynomial equations and systems with optional variable binding.
-NSolutions,,algebra,P2,partial,10,8,Bounded real polynomial equations and systems with optional variable binding.
+NSolve,,algebra,P2,partial,10,8,Bounded real polynomial equations and systems with an optional variable or start value. The implicit-curve forms need an implicit curve object.
+NSolutions,,algebra,P2,partial,10,8,Bounded real polynomial equations and systems with an optional variable or start value. The implicit-curve forms need an implicit curve object.
 Numeric,,cas,,out_of_scope,,,
 Evaluate,,english,,out_of_scope,,,
 MixedNumber,,cas,,out_of_scope,,,
 Rationalize,,cas,,out_of_scope,,,
-Solutions,,algebra,P2,partial,10,8,Real polynomial equations and small systems are in scope for the 1.0 CAS.
-Solve,,algebra,P2,partial,10,6,Real polynomial equations and small systems are in scope for the 1.0 CAS.
-PlotSolve,,function,P2,todo,5,0,
+Solutions,,algebra,P2,partial,10,8,"Real polynomial equations, small systems, and one equation solved for a variable. The implicit-curve forms need an implicit curve object."
+Solve,,algebra,P2,partial,10,6,"Real polynomial equations, small systems, and one equation solved for a variable. A conic solved into implicit curves and the implicit-curve forms need an implicit curve object."
+PlotSolve,,function,P2,partial,5,3,"Polynomial and rational equations, lines and degenerate conics. A proper conic needs curves inside a list, the implicit-curve form an implicit curve object."
 SolveCubic,,cas,,out_of_scope,,,
 SolveQuartic,,cas,,out_of_scope,,,
 JordanDiagonalization,,cas,,out_of_scope,,,

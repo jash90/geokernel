@@ -377,4 +377,39 @@ c.case("text", ['t = ""'], [reject("r = Simplify(t)"), reject('r = Simplify("")'
 c.case("rejected", ["l = {1, 2}", "A = (0, 1)", "B = (1, 0)", "C = (2, 3)", "p = Polygon(A, B, C)"],
        [reject(f"r = Simplify({argument})") for argument in
         ["l", "{1, 2}", "{x^2-1, (x+1)^2}", "A", "p"]])
+
+# PlotSolve: the solutions of one equation as points on the x-axis.
+c.case("plot", ["f(x) = x^2-3", "result = PlotSolve(f)"], [])
+c.case("plot", ["g: x=3", "result = PlotSolve(g)"], [])
+c.case("plot", ["k: x^2=4", "result = PlotSolve(k)"], [])
+c.case("plot", ["g: x+y=1", "h: x-y=0", "l = {g, h}", "result = PlotSolve(l)"], [])
+# The upstream test and other equations in x.
+c.case("plot", results(f"PlotSolve({equation})" for equation in
+                       ["x^3-x", "x^2=2", "x=x", "(x-1)^2*(x+2)", "x^2+1", "x^2=0", "2x=7"]), [])
+c.case("plot", ["f(x) = 0x", "g(x) = x^2+1", "h(x) = (x^2-1)/(x-1)", "r1 = PlotSolve(f)",
+                "r2 = PlotSolve(g)", "r3 = PlotSolve(h)"], [])
+# A second variable stays as the parameter of a line along the x-axis.
+c.case("plot", ["g: x+y=1", "h: 2x+3y=6", "i: y=2", "j: 2x-y=0", "r1 = PlotSolve(g)",
+                "r2 = PlotSolve(h)", "r3 = PlotSolve(i)", "r4 = PlotSolve(j)"], [])
+c.case("plot", ["A = (0, 1)", "B = (1, 0)", "g = Line(A, B)", "result = PlotSolve(g)"],
+       [mv("B", 3, 0), mv("B", 0, 5), mv("B", 0, 1), mv("B", 2, 2)])
+c.case("plot", ["a = 1", "f(x) = x^2-a", "result = PlotSolve(f)"],
+       [setn("a", 4), setn("a", -1), setn("a", 0), setn("a", 2)])
+# Conics in one variable and degenerate conics.
+for equation in ["y^2=4", "x^2-5x+6=0", "x^2+1=0", "x^2=0", "x^2-y^2=0", "x*y=0", "x^2-2y^2=0",
+                 "(x-y)*(x-2)=0", "x^2+2x*y+y^2=1", "x^2+y^2=-4"]:
+    c.case("plot", [f"k: {equation}", "result = PlotSolve(k)"], [])
+c.case("plot", ["a = 4", "k: x^2=a", "result = PlotSolve(k)"],
+       [setn("a", 9), setn("a", -1), setn("a", 0), setn("a", 2)])
+# A list always passes its variables as a second argument, which the
+# command does not take.
+c.case("plot", ["g: x+y=1", "h: x-y=0", "r1 = PlotSolve({g, h})", "r2 = PlotSolve({x^2=1})"], [])
+c.case("plot", ["f(x) = x^2-3", "g: x=3"],
+       [reject("r = PlotSolve(f, x)"), reject("r = PlotSolve(g, y)"), reject("r = PlotSolve(2)"),
+        reject("r = PlotSolve(x, y)"), reject("r = PlotSolve(f, x=1)")])
+# Results the kernel does not reach: curves inside the list, and a
+# function that is no polynomial.
+c.case("plot", ["k: x^2+y^2=4", "result = PlotSolve(k)"], [])
+c.case("plot", ["k: x*y=1", "result = PlotSolve(k)"], [])
+c.case("plot", ["f(x) = sin(x)", "result = PlotSolve(f)"], [])
 c.write()

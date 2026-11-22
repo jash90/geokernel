@@ -97,6 +97,20 @@ impl Parser<'_> {
         }
         self.cas_variables = old;
         self.split_names = old_split;
+        if let ([equation], true) = (&equations[..], points && !is_list) {
+            // `CmdSolve.solve`: a list, an equation or a function; a number
+            // is an illegal argument.
+            let equation = *equation;
+            let accepted = match self.checked_type(equation)? {
+                Ty::Num(_) => self.reads_variable(equation),
+                Ty::Function | Ty::List(_) => true,
+                Ty::Object => self.as_function(equation),
+                _ => false,
+            };
+            if !accepted {
+                return Err(format!("invalid arguments to `{name}`"));
+            }
+        }
         let mut guess = NONE;
         if let [comma] = commas[..] {
             if self.pos != comma {
@@ -158,6 +172,28 @@ impl Parser<'_> {
         } else {
             Ok(left)
         }
+    }
+
+    /// Whether the subtree holds a variable or a function, so that it is
+    /// more than a number.
+    fn reads_variable(&self, root: u32) -> bool {
+        let mut pending = vec![root];
+        while let Some(i) = pending.pop() {
+            let node = self.node(i);
+            if matches!(
+                node,
+                Node::Var
+                    | Node::VarY
+                    | Node::CasVariable(_)
+                    | Node::FunctionObject(_)
+                    | Node::Apply(..)
+                    | Node::Apply2(..)
+            ) {
+                return true;
+            }
+            pending.extend(crate::expr::children(&node));
+        }
+        false
     }
 
     /// The second argument of a solve: one variable, `variable = value` as
