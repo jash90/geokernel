@@ -2733,3 +2733,97 @@ cases = ["funcanalysis-forms-018"]
 command = "SlopeField"
 form = "function,number,number,number,number,number,number"
 cases = ["funcanalysis-forms-019"]
+
+[[form]]
+command = "Tangent"
+form = "point,curve"
+cases = ["georesttangent-curve-001", "georesttangent-curve-002", "georesttangent-curve-003", "georesttangent-curve-004", "georesttangent-curve-005", "georesttangent-curve-006", "georesttangent-curve-008"]
+
+[[form]]
+command = "Intersect"
+form = "line,curve"
+cases = ["georestintersect-trig-001", "georestintersect-tangent-001", "georestintersect-bounded-001", "georestintersect-growth-001"]
+
+[[form]]
+command = "Intersect"
+form = "curve,line"
+cases = ["georestintersect-trig-002", "georestintersect-tangent-002", "georestintersect-polynomial-001", "georestintersect-splineend-001", "georestintersect-splineend-002"]
+
+[[form]]
+command = "Intersect"
+form = "curve,curve,number,number"
+cases = ["georestintersect-seed-001", "georestintersect-seedlines-001"]
+
+[[form]]
+command = "Intersect"
+form = "path,point"
+cases = ["georestintersect-pathline-001", "georestintersect-pathcurve-001"]
+difference = "curve-and-implicit-intersections: `Intersect(path, point)` and `Intersect(point, path)`"
+
+[[form]]
+command = "Intersect"
+form = "point,path"
+cases = ["georestintersect-pathline-002", "georestintersect-pathcurve-002"]
+difference = "curve-and-implicit-intersections: `Intersect(path, point)` and `Intersect(point, path)`"
+
+[[form]]
+command = "Vertex"
+form = "image,number"
+difference = "geometry-command-arguments: `Vertex(image, number)`"
+
+[[form]]
+command = "IntersectPath"
+form = "segment,conic"
+cases = ["georestclip-segment-003"]
+
+[[form]]
+command = "IntersectPath"
+form = "conic,segment"
+cases = ["georestclip-segment-004"]
+
+[[form]]
+command = "IntersectPath"
+form = "polyline,conic"
+cases = ["georestclip-polyline-003"]
+
+[[form]]
+command = "IntersectPath"
+form = "conic,polyline"
+cases = ["georestclip-polyline-004"]
+
+[[form]]
+command = "IntersectPath"
+form = "polygon,conic"
+cases = ["georestclip-polygon-002"]
+
+[[form]]
+command = "Dilate"
+form = "curve,number"
+cases = ["georestsmall-dilatecurve-001", "georestsmall-dilatecurve-002"]
+
+[[form]]
+command = "Dilate"
+form = "curve,number,point"
+cases = ["georestsmall-dilatecurve-001", "georestsmall-dilatecurve-002", "georestsmall-dilatecurve-003"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,curve"
+cases = ["georestsmall-matrixcurve-001", "georestsmall-matrixcurve-002", "georestsmall-matrixcurve-003"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,function"
+cases = ["georestsmall-matrixfunction-001", "georestsmall-matrixfunction-002"]
+difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyMatrix(list, function)`"
+
+[[form]]
+command = "SurdText"
+form = "point"
+cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
+
+[[form]]
+command = "If"
+form = "boolean,any,..."
+cases = ["georestsmall-ifgeometry-001", "georestsmall-ifgeometry-002", "georestsmall-ifgeometry-003", "georestsmall-ifgeometry-004"]
+difference = "remaining-transformations-equation-sides-and-conditionals: `If(boolean, any, ...)`"

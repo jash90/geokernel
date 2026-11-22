@@ -16,9 +16,73 @@ use crate::expr::eval::{Ctx, Ex, Val};
 use crate::expr::lex::Tok;
 use crate::expr::parse::Parser;
 use crate::expr::{children, IfMode, Node, Ty, NONE};
+use crate::script::split_call;
+use crate::{Construction, Def, Id, Kind, Value};
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &["If", "CountIf", "KeepIf", "Defined", "IsDefined"];
+
+pub(crate) fn conditional_kind(kind: Kind) -> Option<&'static [Kind]> {
+    Some(match kind {
+        Kind::Line => &[Kind::Line],
+        Kind::Segment => &[Kind::Segment],
+        Kind::Ray => &[Kind::Ray],
+        Kind::Circle => &[Kind::Circle],
+        Kind::Conic => &[Kind::Conic],
+        _ => return None,
+    })
+}
+
+/// `AlgoIf` where the alternatives are named geometric objects of one kind.
+pub(crate) fn define_geometry_if(
+    c: &mut Construction,
+    label: &str,
+    input: &str,
+) -> Option<Result<Id, String>> {
+    let ("If", args) = split_call(input)? else {
+        return None;
+    };
+    let kind = c.kind(c.id(args.get(1)?)?);
+    conditional_kind(kind)?;
+    let checkpoint = c.checkpoint();
+    let result = (|| {
+        let mut parents = Vec::with_capacity(args.len());
+        for (index, arg) in args.iter().enumerate() {
+            let is_condition = index % 2 == 0 && index + 1 < args.len();
+            let expected = if is_condition { Kind::Boolean } else { kind };
+            let id = if let Some(id) = c.id(arg).filter(|&id| c.kind(id) == expected) {
+                id
+            } else if is_condition {
+                let label = format!("\0arg{}", c.len());
+                if !crate::expr::argument_object(c, arg, &label, Kind::Boolean) {
+                    return Err(format!("`If` needs a boolean condition, got `{arg}`"));
+                }
+                c.id(&label).expect("argument object was just added")
+            } else {
+                return Err(format!(
+                    "`If` needs a named {kind} alternative, got `{arg}`"
+                ));
+            };
+            parents.push(id);
+        }
+        c.add_with_list(label, &parents, |args| Def::Conditional { args, kind })
+            .map_err(|e| e.to_string())
+    })();
+    if result.is_err() {
+        c.discard_since(checkpoint);
+    }
+    Some(result)
+}
+
+pub(crate) fn conditional_branch(c: &Construction, ids: &[Id]) -> Option<Id> {
+    let (pairs, fallback) = ids.as_chunks::<2>();
+    pairs
+        .iter()
+        .find_map(|&[condition, branch]| {
+            (c.value(condition) == Value::Bool(true)).then_some(branch)
+        })
+        .or_else(|| fallback.first().copied())
+}
 
 /// `If(...)`.
 pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {

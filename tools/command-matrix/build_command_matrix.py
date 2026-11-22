@@ -83,7 +83,7 @@ FORM_NOTES = {
     "CommonDenominator": "Number pairs. The function pair delegates to the CAS (AlgoPolynomialCD).",
     "LeftSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
     "RightSide": "Lines and conics. The implicit-curve form needs an implicit curve object.",
-    "If": "Scalar, coordinate, boolean, text, list and numeric-function branches. Other geometry branches are pending.",
+    "If": "Scalar, coordinate, boolean, text, list and numeric-function branches, and named alternatives of a single line, segment, ray, circle or conic kind.",
     "Relation": "Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.",
 }
 P1_GROUPS = {"geometry", "conic", "transformation"}
@@ -105,10 +105,10 @@ PARTIAL = {
     "OrthogonalLine": "OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)",
     "Circle": "Circle(centre, point); Circle(centre, radius); Circle(centre, segment); "
               "Circle(point, point, point)",
-    "Intersect": "line/line; line/circle; circle/circle; line/conic; optional index 1 or 2",
+    "Intersect": "Carrier, conic, function and polygonal boundary forms; line and Cartesian curve; seeded curve pairs; path and point incidence",
     "LineBisector": "LineBisector(point, point); LineBisector(segment)",
     "AngularBisector": "AngularBisector(point, point, point); AngularBisector(line, line)",
-    "Tangent": "Tangent(point, circle or conic); Tangent(line or segment, circle or conic)",
+    "Tangent": "Tangents to conics, functions and Cartesian curves. Implicit curve forms are pending.",
     "Polar": "Polar(point, circle or conic)",
     "Incircle": "Incircle(point, point, point)",
     "Center": "Center(circle or conic); Center(segment)",
@@ -141,8 +141,8 @@ PARTIAL = {
     ),
     "Mirror": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector in a point or a line; point, line, segment, circle, arc or sector in a circle (inversion)",
     "Rotate": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by an angle, about the origin or a point",
-    "Dilate": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function or list by a factor, from the origin or a point",
-    "ApplyMatrix": "2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline or list",
+    "Dilate": "point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function, Cartesian curve or list by a factor, from the origin or a point",
+    "ApplyMatrix": "2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph or list",
     "Shear": "point, line, segment, ray, vector, polygon, circle, conic, arc or sector with a line and a ratio",
     "Stretch": "point, line, segment, ray, vector, polygon, circle, conic, arc or sector with a line and a ratio, or by a vector",
     "Vector": "Vector(point, point); Vector(point); a free (x, y) under a lower-case label",
@@ -165,7 +165,7 @@ PARTIAL = {
     "Polygon": "Live list of points, separate points, or two points and a regular polygon vertex count",
     "PolyLine": "Live list with optional Boolean or separate points with an optional false flag",
     "Centroid": "Centroid(polygon)",
-    "Vertex": "Conic, polygon, polyline or a kernel graphics corner, including indexed polygon, polyline and segment forms",
+    "Vertex": "Conic, polygon, polyline or graphics view, including indexed polygon, polyline, segment and raster image forms",
     "InteriorAngles": "InteriorAngles(polygon)",
     "If": "If(condition, then); If(condition, then, else); If(condition, value, condition, value, ..., else)",
     "Element": "Element(list, index); Element(list, index, index, ...)",
@@ -222,7 +222,7 @@ PARTIAL = {
     "RigidPolygon": "Copy of a polygon with optional offsets or rigid polygon from three or more points",
     "TriangleCenter": "TriangleCenter(point, point, point, index)",
     "PointIn": "PointIn(polygon, conic or conic part as a single region argument)",
-    "IntersectPath": "Polygon and line, segment, ray or conic in either order; two polygons",
+    "IntersectPath": "Polygon and line, segment or ray; conic and segment, polyline or polygon; two polygons",
     "Difference": "Difference(polygon, polygon); Difference(polygon, polygon, boolean)",
 }
 

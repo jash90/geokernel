@@ -406,6 +406,21 @@ impl Matrix {
         }
     }
 
+    /// Homogeneous image of a Cartesian point (`z = 1`) or derivative
+    /// (`z = 0`). In two dimensions the last coordinate stays equal to `z`.
+    pub(crate) fn curve_coordinates(self, (x, y): (f64, f64), z: f64) -> (f64, f64, f64) {
+        let [a, b, c, d, e, f, g, h, i] = self.data;
+        if self.size == 2 {
+            (a * x + b * y, c * x + d * y, z)
+        } else {
+            (
+                a * x + b * y + c * z,
+                d * x + e * y + f * z,
+                g * x + h * y + i * z,
+            )
+        }
+    }
+
     pub(crate) fn conic(self, out: &mut crate::algo::conic_nd::ConicData) {
         let [a, b, c, d, e, f, g, h, i] = self.data;
         if self.size == 2 {
@@ -497,11 +512,6 @@ pub(crate) fn exec(
     };
     let src = c.id(target)?;
     let kind = c.kind(src);
-    if kind == Kind::Function {
-        return Some(Err(
-            "`ApplyMatrix` of a function requires a parametric curve".into(),
-        ));
-    }
     if !matches!(
         kind,
         Kind::Point
@@ -511,6 +521,8 @@ pub(crate) fn exec(
             | Kind::Conic
             | Kind::Polygon
             | Kind::PolyLine
+            | Kind::Curve
+            | Kind::Function
     ) {
         return None;
     }

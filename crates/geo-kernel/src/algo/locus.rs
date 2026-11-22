@@ -198,10 +198,15 @@ impl Construction {
             }
         }
         for (i, def) in self.defs.iter().enumerate() {
-            if matches!(
-                def,
-                Def::Point(crate::algo::point::PointDef::ViewCorner { .. })
-            ) || matches!(def, Def::Analysis(analysis) if analysis.uses_view())
+            if matches!(def, Def::Point(point) if point.reads_view())
+                || matches!(
+                    def,
+                    Def::Vector(crate::algo::vector::VectorDef::ApplyMatrix {
+                        kind: crate::Kind::Function,
+                        ..
+                    })
+                )
+                || matches!(def, Def::Analysis(analysis) if analysis.uses_view())
             {
                 dirty.insert(i);
             }

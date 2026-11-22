@@ -670,3 +670,8 @@ mismatches = ["0:R"]
 id = "funcanalysis-discontinuity-006"
 reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole at (1, 0)."
 mismatches = ["0:R"]
+
+[[gap]]
+id = "georestintersect-spline-001"
+reason = "IntersectLineSpline leaves the previous point defined when adjacent spline inputs coincide, while the kernel propagates the undefined spline to the intersection"
+mismatches = ["2:P_{1}"]

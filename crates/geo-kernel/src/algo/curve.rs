@@ -5,11 +5,31 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoLengthCurve.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoCurveCartesianND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoIntegralDefinite.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoCurveCartesian.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoFunction.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/Kernel.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use crate::expr::derivative::FunctionDerivative;
-use crate::{Construction, Id};
+use crate::{Construction, Id, Value};
+
+use super::{transform::TransformDef, vector::matrix::Matrix};
+
+/// Bounds of the reference function-to-curve conversion. `Function(f, a, b)`
+/// is a piecewise function whose restriction remains in its expression.
+pub(super) fn function_graph_range(c: &Construction, id: Id) -> Option<Value> {
+    if c.value(id) != Value::Function {
+        return None;
+    }
+    let [xmin, xmax, ymin, ymax, ..] = c
+        .locus_view()
+        .unwrap_or(crate::kernel::locus::HEADLESS_VIEW);
+    Some(Value::Curve {
+        start: (2.0 * xmin) - xmax + ymin - ymax,
+        end: (2.0 * xmax) - xmin + ymax - ymin,
+    })
+}
 
 /// A bracket with a nonpositive left value and a nonnegative right value.
 pub(crate) fn bisect(mut lo: f64, mut hi: f64, f: impl Fn(f64) -> f64) -> f64 {
@@ -132,6 +152,30 @@ enum CurveSource<'a> {
     Coordinates(Box<[FunctionDerivative<'a>; 2]>),
     Spline(std::sync::Arc<super::analysis::Spline>),
     ParametricDerivative(Box<Cartesian<'a>>),
+    Dilated {
+        original: Box<Cartesian<'a>>,
+        ratio: f64,
+        center: (f64, f64),
+    },
+    MatrixCurve(Box<Cartesian<'a>>, Matrix),
+    MatrixGraph {
+        construction: &'a Construction,
+        function: Id,
+        derivative: Option<Box<FunctionDerivative<'a>>>,
+        matrix: Matrix,
+    },
+}
+
+fn matrix_value(matrix: Matrix, value: (f64, f64)) -> (f64, f64) {
+    let (x, y, w) = matrix.curve_coordinates(value, 1.0);
+    (x / w, y / w)
+}
+
+fn matrix_first(matrix: Matrix, value: (f64, f64), first: (f64, f64)) -> (f64, f64) {
+    let (x, y, w) = matrix.curve_coordinates(value, 1.0);
+    let (dx, dy, dw) = matrix.curve_coordinates(first, 0.0);
+    let square = w * w;
+    ((dx * w - x * dw) / square, (dy * w - y * dw) / square)
 }
 
 impl<'a> Cartesian<'a> {
@@ -140,8 +184,8 @@ impl<'a> Cartesian<'a> {
     }
 
     fn with_depth(c: &'a Construction, id: Id, depth: u8) -> Option<Self> {
-        use super::{analysis::AnalysisDef, measure::MeasureDef};
-        use crate::{Def, Value};
+        use super::{analysis::AnalysisDef, measure::MeasureDef, vector::VectorDef};
+        use crate::{Def, Kind};
         let Value::Curve { start, end } = c.value(id) else {
             return None;
         };
@@ -163,6 +207,34 @@ impl<'a> Cartesian<'a> {
                     depth.checked_sub(1)?,
                 )?))
             }
+            Def::Transform(TransformDef::Dilate {
+                src,
+                factor,
+                center,
+                ..
+            }) => CurveSource::Dilated {
+                original: Box::new(Self::with_depth(c, src, depth.checked_sub(1)?)?),
+                ratio: c.number(factor).unwrap_or(f64::NAN),
+                center: center.map_or((0.0, 0.0), |id| c.point(id).unwrap_or((f64::NAN, f64::NAN))),
+            },
+            Def::Vector(VectorDef::ApplyMatrix {
+                matrix,
+                src,
+                kind: Kind::Curve,
+            }) => CurveSource::MatrixCurve(
+                Box::new(Self::with_depth(c, src, depth.checked_sub(1)?)?),
+                Matrix::read(c.elements(matrix)?)?,
+            ),
+            Def::Vector(VectorDef::ApplyMatrix {
+                matrix,
+                src,
+                kind: Kind::Function,
+            }) => CurveSource::MatrixGraph {
+                construction: c,
+                function: src,
+                derivative: FunctionDerivative::new(c, src).map(Box::new),
+                matrix: Matrix::read(c.elements(matrix)?)?,
+            },
             _ => return None,
         };
         Some(Self {
@@ -185,6 +257,31 @@ impl<'a> Cartesian<'a> {
                 let (dx, dy) = original.first(t);
                 (x, dy / dx)
             }
+            CurveSource::Dilated {
+                original,
+                ratio,
+                center: (cx, cy),
+            } => {
+                let (x, y) = original.value(t);
+                (ratio * (x - cx) + cx, ratio * (y - cy) + cy)
+            }
+            CurveSource::MatrixCurve(original, matrix) => matrix_value(*matrix, original.value(t)),
+            CurveSource::MatrixGraph {
+                construction,
+                function,
+                derivative,
+                matrix,
+            } => {
+                let y = derivative.as_ref().map_or_else(
+                    || {
+                        construction
+                            .function_value(*function, t)
+                            .unwrap_or(f64::NAN)
+                    },
+                    |f| f.value(t),
+                );
+                matrix_value(*matrix, (t, y))
+            }
         }
     }
 
@@ -200,6 +297,32 @@ impl<'a> Cartesian<'a> {
                 let (ddx, ddy) = original.second(t);
                 (dx, (ddy * dx - ddx * dy) / (dx * dx))
             }
+            CurveSource::Dilated {
+                original, ratio, ..
+            } => {
+                let (dx, dy) = original.first(t);
+                (ratio * dx, ratio * dy)
+            }
+            CurveSource::MatrixCurve(original, matrix) => {
+                matrix_first(*matrix, original.value(t), original.first(t))
+            }
+            CurveSource::MatrixGraph {
+                construction,
+                function,
+                derivative,
+                matrix,
+            } => {
+                let evaluate = |x| {
+                    construction
+                        .function_value(*function, x)
+                        .unwrap_or(f64::NAN)
+                };
+                let (y, dy) = derivative.as_ref().map_or_else(
+                    || (evaluate(t), slope(evaluate, t)),
+                    |f| (f.value(t), f.slope(t)),
+                );
+                matrix_first(*matrix, (t, y), (1.0, dy))
+            }
         }
     }
 
@@ -210,7 +333,11 @@ impl<'a> Cartesian<'a> {
         (slope(|t| self.first(t).0, t), slope(|t| self.first(t).1, t))
     }
 
-    fn has_budget(&self) -> bool {
+    pub(super) fn parameter_bounds(&self) -> (f64, f64) {
+        (self.start, self.end)
+    }
+
+    pub(super) fn has_budget(&self) -> bool {
         crate::expr::work_done().wrapping_sub(self.work_at_start) < crate::expr::MAX_EVALUATION_WORK
     }
 
@@ -226,6 +353,10 @@ impl<'a> Cartesian<'a> {
     }
 
     pub(super) fn closest(&self, (px, py): (f64, f64)) -> f64 {
+        self.closest_from((px, py), self.start)
+    }
+
+    pub(super) fn closest_from(&self, (px, py): (f64, f64), seed: f64) -> f64 {
         let squared = |t| {
             if !self.has_budget() {
                 return f64::NAN;
@@ -259,8 +390,8 @@ impl<'a> Cartesian<'a> {
             }
         };
         let result = adjust(minimum(left, right, squared));
-        if self.start < left {
-            let alternate = adjust(minimum(self.start - step, self.start + step, squared));
+        if seed < left || right < seed {
+            let alternate = adjust(minimum(seed - step, seed + step, squared));
             if squared(alternate) < squared(result) + crate::tol::MIN_PRECISION / 2.0 {
                 return alternate;
             }

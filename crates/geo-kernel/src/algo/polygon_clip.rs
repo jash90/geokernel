@@ -3,6 +3,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/CmdIntersectPath.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectPathLinePolygon.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectPolyLineConicRegion.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectSegmentConicRegion.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolygonOperation.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoPolygonDifference.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
@@ -18,6 +19,9 @@ use std::num::NonZeroU32;
 
 type XY = (f64, f64);
 type Edge = (XY, XY);
+
+const CONIC_CLIP_PATHS: &[Kind] = &[Kind::Polygon, Kind::PolyLine, Kind::Segment];
+const MAX_CLIPPED_POLYLINE_VERTICES: usize = polygon::MAX_REGULAR_VERTICES;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ClipMode {
@@ -77,6 +81,15 @@ impl ClipDef {
                     ClipMode::Difference
                 }
             }
+        } else if CONIC_OBJECTS.contains(&c.kind(first))
+            && CONIC_CLIP_PATHS.contains(&c.kind(second))
+        {
+            (first, second) = (second, first);
+            ClipMode::Conic
+        } else if CONIC_CLIP_PATHS.contains(&c.kind(first))
+            && CONIC_OBJECTS.contains(&c.kind(second))
+        {
+            ClipMode::Conic
         } else {
             if c.kind(first) != Kind::Polygon {
                 (first, second) = (second, first);
@@ -86,11 +99,7 @@ impl ClipDef {
             match c.kind(second) {
                 Kind::Polygon => ClipMode::Intersection,
                 kind if CARRIERS.contains(&kind) => ClipMode::Carrier,
-                kind if CONIC_OBJECTS.contains(&kind) => ClipMode::Conic,
-                _ => return Err(
-                    "`IntersectPath` needs a polygon and a polygon, line, ray, segment or conic"
-                        .into(),
-                ),
+                _ => return Err("`IntersectPath` needs two polygons, a polygon and a carrier, or a segment, polyline or polygon and a conic".into()),
             }
         };
         let output = if matches!(mode, ClipMode::Carrier | ClipMode::Conic) {
@@ -137,7 +146,14 @@ impl ClipDef {
     }
 
     pub(crate) fn check(self, c: &Construction) -> Result<(), Error> {
-        c.expect(self.first, &[Kind::Polygon])?;
+        c.expect(
+            self.first,
+            if self.mode == ClipMode::Conic {
+                CONIC_CLIP_PATHS
+            } else {
+                &[Kind::Polygon]
+            },
+        )?;
         c.expect(
             self.second,
             match self.mode {
@@ -154,6 +170,25 @@ impl ClipDef {
 
     pub(crate) fn is_carrier(self) -> bool {
         self.mode == ClipMode::Carrier
+    }
+
+    pub(crate) fn is_conic(self) -> bool {
+        self.mode == ClipMode::Conic
+    }
+
+    /// A line can have at most three inside intervals after cutting at two
+    /// conic intersections and two closure edges. Saved labels can outnumber
+    /// the currently defined intervals.
+    pub(crate) fn output_capacity(self, c: &Construction) -> usize {
+        if c.kind(self.first) == Kind::Segment {
+            3
+        } else {
+            c.vertices(self.first)
+                .size_hint()
+                .0
+                .max(MAX_CLIPPED_POLYLINE_VERTICES)
+                .saturating_mul(3)
+        }
     }
 
     pub(crate) fn slot(self, output: ClipOutput, index: usize) -> Self {
@@ -182,14 +217,13 @@ impl ClipDef {
     }
 
     pub(crate) fn segments(self, c: &Construction) -> Vec<Edge> {
+        if self.mode == ClipMode::Conic {
+            return conic_segments(c, self.first, self.second, usize::MAX);
+        }
         let Some(vertices) = c.vertices(self.first).collect::<Option<Vec<_>>>() else {
             return Vec::new();
         };
-        if self.mode == ClipMode::Carrier {
-            carrier(c.value(self.second), &vertices)
-        } else {
-            conic_segments(c, self.second, &vertices)
-        }
+        carrier(c.value(self.second), &vertices)
     }
 
     pub(crate) fn compute(self, c: &Construction) -> Option<Value> {
@@ -208,6 +242,12 @@ impl ClipDef {
                 .flat_map(|ring| edges(ring))
                 .nth(index)
                 .map(segment),
+            ClipOutput::Segment if self.mode == ClipMode::Conic => {
+                conic_segments(c, self.first, self.second, index + 1)
+                    .get(index)
+                    .copied()
+                    .map(segment)
+            }
             ClipOutput::Segment => self.segments(c).get(index).copied().map(segment),
         }
     }
@@ -313,7 +353,7 @@ fn carrier(line: Value, polygon: &[XY]) -> Vec<Edge> {
     segments
 }
 
-fn conic_segments(c: &Construction, id: Id, polygon: &[XY]) -> Vec<Edge> {
+fn conic_segments(c: &Construction, path: Id, id: Id, limit: usize) -> Vec<Edge> {
     let Some(d) = conic_object(c, id).filter(|d| d.defined) else {
         return Vec::new();
     };
@@ -321,9 +361,40 @@ fn conic_segments(c: &Construction, id: Id, polygon: &[XY]) -> Vec<Edge> {
     let inside = |p| conic_contains(&d, p) && arc.as_ref().is_none_or(|a| part_contains(a, p));
     let [xx, yy, z, xy, xz, yz] = d.matrix;
     let mut result = Vec::new();
-    for (p, end) in edges(polygon) {
+    let vertices;
+    let path_edges: Box<dyn Iterator<Item = Edge>> = match c.kind(path) {
+        Kind::Segment => {
+            let Value::Segment { x1, y1, x2, y2 } = c.value(path) else {
+                return result;
+            };
+            Box::new(std::iter::once(((x1, y1), (x2, y2))))
+        }
+        Kind::PolyLine => {
+            let points = c.vertices(path);
+            if points.size_hint().0 > MAX_CLIPPED_POLYLINE_VERTICES {
+                return result;
+            }
+            Box::new(
+                points
+                    .zip(c.vertices(path).skip(1))
+                    .filter_map(|(p, q)| p.zip(q)),
+            )
+        }
+        _ => {
+            let Some(points) = c.vertices(path).collect::<Option<Vec<_>>>() else {
+                return result;
+            };
+            vertices = points;
+            Box::new(edges(&vertices))
+        }
+    };
+    let mut cuts = Vec::with_capacity(6);
+    for (p, end) in path_edges {
         let dir = sub(end, p);
         if dir == (0.0, 0.0) {
+            if c.kind(path) == Kind::Segment && inside(p) {
+                result.push((p, end));
+            }
             continue;
         }
         let (x, y) = p;
@@ -331,7 +402,8 @@ fn conic_segments(c: &Construction, id: Id, polygon: &[XY]) -> Vec<Edge> {
         let qa = xx * u * u + yy * v * v + 2.0 * xy * u * v;
         let qb = u * (xx * x + xy * y + xz) + v * (xy * x + yy * y + yz);
         let qc = xx * x * x + yy * y * y + 2.0 * (xy * x * y + xz * x + yz * y) + z;
-        let mut cuts = vec![0.0, 1.0];
+        cuts.clear();
+        cuts.extend([0.0, 1.0]);
         let discriminant = qb * qb - qa * qc;
         if qa.abs() < STANDARD_PRECISION {
             if qb.abs() >= STANDARD_PRECISION {
@@ -358,6 +430,9 @@ fn conic_segments(c: &Construction, id: Id, polygon: &[XY]) -> Vec<Edge> {
             let (a, b) = (interval[0], interval[1]);
             if inside(along(a.midpoint(b))) {
                 result.push((along(a), along(b)));
+                if result.len() == limit {
+                    return result;
+                }
             }
         }
     }

@@ -1,0 +1,845 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "georestsmall-matrixfunction-001",
+      "group": "georestsmall",
+      "script": [
+        "A = (1, 2)",
+        "n = 2",
+        "f(x) = x^2 + x(A)",
+        "m = {{n, 1}, {1, 0}}",
+        "c = ApplyMatrix(m, f)",
+        "r = {{1, 1, 0}, {1, 0, 1}, {0, 1, n}}",
+        "d = ApplyMatrix(r, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -1.0, "y": 2.0 },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [
+                -32.3,
+                [979.6899999999997, -32.3]
+              ],
+              [
+                -23.299999999999997,
+                [497.28999999999985, -23.299999999999997]
+              ],
+              [
+                -14.299999999999997,
+                [176.88999999999993, -14.299999999999997]
+              ],
+              [
+                3.700000000000003,
+                [22.090000000000025, 3.700000000000003]
+              ],
+              [
+                21.700000000000003,
+                [515.2900000000001, 21.700000000000003]
+              ],
+              [
+                30.700000000000003,
+                [1004.8900000000001, 30.700000000000003]
+              ],
+              [
+                39.7,
+                [1656.4900000000002, 39.7]
+              ]
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "d": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [
+                -32.3,
+                [0.9672175018398341, -0.02991522426860622]
+              ],
+              [
+                -23.299999999999997,
+                [0.9536536664895859, -0.040850720841195114]
+              ],
+              [
+                -14.299999999999997,
+                [0.9214419972046847, -0.06409947467347825]
+              ],
+              [
+                3.700000000000003,
+                [1.1018573996405034, 0.28160575194727366]
+              ],
+              [
+                21.700000000000003,
+                [1.0415708286733207, 0.04790141172001941]
+              ],
+              [
+                30.700000000000003,
+                [1.0303546309321092, 0.033527588869263554]
+              ],
+              [
+                39.7,
+                [1.0238745100025965, 0.025774338384765907]
+              ]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 63.0],
+              [-4.0, 15.0],
+              [-2.0, 3.0],
+              [-1.0, 0.0],
+              [-0.5, -0.75],
+              [0.0, -1.0],
+              [0.5, -0.75],
+              [1.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 15.0],
+              [8.0, 63.0]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [
+                -32.3,
+                [977.6899999999997, -32.3]
+              ],
+              [
+                -23.299999999999997,
+                [495.28999999999985, -23.299999999999997]
+              ],
+              [
+                -14.299999999999997,
+                [174.88999999999993, -14.299999999999997]
+              ],
+              [
+                3.700000000000003,
+                [20.090000000000025, 3.700000000000003]
+              ],
+              [
+                21.700000000000003,
+                [513.2900000000001, 21.700000000000003]
+              ],
+              [
+                30.700000000000003,
+                [1002.8900000000001, 30.700000000000003]
+              ],
+              [
+                39.7,
+                [1654.4900000000002, 39.7]
+              ]
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "d": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [
+                -32.3,
+                [0.9671547175592987, -0.029972517212651664]
+              ],
+              [
+                -23.299999999999997,
+                [0.9534832410965454, -0.04100093768960636]
+              ],
+              [
+                -14.299999999999997,
+                [0.9206774052265317, -0.06472334420166433]
+              ],
+              [
+                3.700000000000003,
+                [1.11572498298162, 0.319945541184479]
+              ],
+              [
+                21.700000000000003,
+                [1.041747017313357, 0.04810443111742143]
+              ],
+              [
+                30.700000000000003,
+                [1.0304189763537506, 0.03359866029316686]
+              ],
+              [
+                39.7,
+                [1.0239047866640458, 0.025807024329619743]
+              ]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 63.0],
+              [-4.0, 15.0],
+              [-2.0, 3.0],
+              [-1.0, 0.0],
+              [-0.5, -0.75],
+              [0.0, -1.0],
+              [0.5, -0.75],
+              [1.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 15.0],
+              [8.0, 63.0]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": -1.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [
+                -32.3,
+                [1074.5899999999997, -32.3]
+              ],
+              [
+                -23.299999999999997,
+                [565.1899999999998, -23.299999999999997]
+              ],
+              [
+                -14.299999999999997,
+                [217.7899999999999, -14.299999999999997]
+              ],
+              [
+                3.700000000000003,
+                [8.990000000000018, 3.700000000000003]
+              ],
+              [
+                21.700000000000003,
+                [448.1900000000001, 21.700000000000003]
+              ],
+              [
+                30.700000000000003,
+                [910.7900000000001, 30.700000000000003]
+              ],
+              [
+                39.7,
+                [1535.39, 39.7]
+              ]
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": -1.0 }
+                ]
+              }
+            ]
+          },
+          "d": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [
+                -32.3,
+                [0.9699411307128658, -0.03005886928713423]
+              ],
+              [
+                -23.299999999999997,
+                [0.9587716541256078, -0.04122834587439221]
+              ],
+              [
+                -14.299999999999997,
+                [0.9343177440861278, -0.0656822559138723]
+              ],
+              [
+                3.700000000000003,
+                [1.402053036783575, 0.40205303678357524]
+              ],
+              [
+                21.700000000000003,
+                [1.0484122075540105, 0.04841220755401053]
+              ],
+              [
+                30.700000000000003,
+                [1.0337058341928145, 0.03370583419281438]
+              ],
+              [
+                39.7,
+                [1.0258562089842385, 0.025856208984238512]
+              ]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 63.0],
+              [-4.0, 15.0],
+              [-2.0, 3.0],
+              [-1.0, 0.0],
+              [-0.5, -0.75],
+              [0.0, -1.0],
+              [0.5, -0.75],
+              [1.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 15.0],
+              [8.0, 63.0]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [
+                -32.3,
+                [1042.2899999999997, -32.3]
+              ],
+              [
+                -23.299999999999997,
+                [541.8899999999999, -23.299999999999997]
+              ],
+              [
+                -14.299999999999997,
+                [203.48999999999992, -14.299999999999997]
+              ],
+              [
+                3.700000000000003,
+                [12.69000000000002, 3.700000000000003]
+              ],
+              [
+                21.700000000000003,
+                [469.8900000000001, 21.700000000000003]
+              ],
+              [
+                30.700000000000003,
+                [941.4900000000001, 30.700000000000003]
+              ],
+              [
+                39.7,
+                [1575.0900000000001, 39.7]
+              ]
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 0.0 },
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              }
+            ]
+          },
+          "d": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [
+                -32.3,
+                [0.9690105440904163, -0.030030030030030033]
+              ],
+              [
+                -23.299999999999997,
+                [0.9570023436490801, -0.041152263374485604]
+              ],
+              [
+                -14.299999999999997,
+                [0.9297262764755025, -0.06535947712418301]
+              ],
+              [
+                3.700000000000003,
+                [1.291568163908589, 0.37037037037036996]
+              ],
+              [
+                21.700000000000003,
+                [1.0461810210900424, 0.048309178743961345]
+              ],
+              [
+                30.700000000000003,
+                [1.0326078874974773, 0.03367003367003367]
+              ],
+              [
+                39.7,
+                [1.0252049089258393, 0.025839793281653745]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "georestsmall-matrixfunction-002",
+      "group": "georestsmall",
+      "script": [
+        "A = (1, 2)",
+        "n = 2",
+        "f = Function(sin(x) + x(A), -1, 2)",
+        "m = {{1, 0}, Sequence(n)}",
+        "c = ApplyMatrix(m, f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 3.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 2.0 },
+        { "action": "set_number", "label": "n", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, 0.1585290151921035],
+              [-0.5, 0.520574461395797],
+              [0.0, 1.0],
+              [0.5, 1.479425538604203],
+              [1.0, 1.8414709848078965],
+              [2.0, 1.9092974268256817],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [-32.3, null],
+              [-23.299999999999997, null],
+              [-14.299999999999997, null],
+              [3.700000000000003, null],
+              [21.700000000000003, null],
+              [30.700000000000003, null],
+              [39.7, null]
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, 0.1585290151921035],
+              [-0.5, 0.520574461395797],
+              [0.0, 1.0],
+              [0.5, 1.479425538604203],
+              [1.0, 1.8414709848078965],
+              [2.0, 1.9092974268256817],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              }
+            ]
+          },
+          "c": { "type": "curve", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 },
+                  { "type": "number", "defined": true, "value": 3.0 }
+                ]
+              }
+            ]
+          },
+          "c": { "type": "curve", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, null],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "m": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 0.0 }
+                ]
+              },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "number", "defined": true, "value": 1.0 },
+                  { "type": "number", "defined": true, "value": 2.0 }
+                ]
+              }
+            ]
+          },
+          "c": {
+            "type": "curve",
+            "defined": true,
+            "start": -32.3,
+            "end": 39.7,
+            "samples_curve": [
+              [-32.3, null],
+              [-23.299999999999997, null],
+              [-14.299999999999997, null],
+              [3.700000000000003, null],
+              [21.700000000000003, null],
+              [30.700000000000003, null],
+              [39.7, null]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

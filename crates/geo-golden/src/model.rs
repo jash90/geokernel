@@ -884,6 +884,8 @@ fn validate_case(case: &Case) -> Result<(), String> {
                                 let (a, b) = (kind(a), kind(b));
                                 if boundary(a) && (boundary(b) || carrier(b))
                                     || boundary(b) && carrier(a)
+                                    || a == Some(Kind::Curve) && carrier(b)
+                                    || b == Some(Kind::Curve) && carrier(a)
                                 {
                                     boundary_prefixes.insert(label_prefix(label));
                                 }

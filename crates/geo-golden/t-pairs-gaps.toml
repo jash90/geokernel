@@ -6279,12 +6279,6 @@ reason = "the kernel refuses the input: unknown command `Object`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:4396"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `SurdText`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:4401"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Sxx`"
