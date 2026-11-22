@@ -587,10 +587,12 @@ fn type_node(
             let elem = match state.tys[l as usize] {
                 Ty::List(e) => e,
                 _ => {
-                    // `First(locus, n)`: the points of the locus
-                    // (`AlgoFirstLocus`)
+                    // `First(locus, n)`: the points of the locus or of the
+                    // freehand function (`AlgoFirstLocus`)
                     if matches!(op, ListOp::First | ListOp::Last)
-                        && matches!(nodes[l as usize], Node::Obj(id) if c.kind(id) == Kind::Locus)
+                        && matches!(nodes[l as usize], Node::Obj(id)
+                            if c.kind(id) == Kind::Locus
+                                || crate::algo::calculus::freehand_list(c, id).is_some())
                         && (n == NONE || matches!(state.tys[n as usize], Ty::Num(_) | Ty::Bool))
                     {
                         return Ok(assign(

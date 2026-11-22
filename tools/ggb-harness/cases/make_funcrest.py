@@ -218,11 +218,24 @@ case("splinelong", "n = 4\ns = Spline(Sequence((k, Mod(k, 3)), k, 1, n))\nd = De
      [setn("n", 3), setn("n", 2), setn("n", 1), setn("n", 4), setn("n", 0)])
 cases.cases[-1]["sample_curves"] = True
 
+# ------------------------------------------------------ First(function, n)
+# The freehand function as a locus: one point per value of its list, at
+# min + step * i, with the function's value there.
+cases.topic("freehandpoints")
+case("freehandpoints", "n = 2\nf = Function({-2, 4, 1, 5, 2})\nl = First(f, n)",
+     [setn("n", 4), setn("n", 1)])
+case("freehandpoints", "n = 3\nf = Function({0, 1, 1, 5, 2, 7})\nl = First(f, n)\nm = First(f, 4)\no = First(f, 0)",
+     [setn("n", 5), setn("n", -1), setn("n", 2.7), setn("n", 0)])
+case("freehandpoints", "a = 0.1\nf = Function({a, 0.7, 1, 5, 2, 7})\nl = First(f, 4)\nm = First(f, 3)",
+     [setn("a", 1), setn("a", 0.7), setn("a", 0.3), setn("a", 0.1)])
+case("freehandpoints", "n = 4\nl0 = Sequence(k, k, 1, n)\nf = Function(l0)\nl = First(f, 1)\nm = First(f, 2)",
+     [setn("n", 3), setn("n", 5), setn("n", 4)])
+case("freehandpoints", "f = Function({-1, 1, 0, 1/0, 2})\nl = First(f, 3)\ng(x) = f(x) + 1",
+     [reject("m = First(g, 1)"), reject("m = First(x^2, 1)")])
+
 cases.write()
 
 cases = Cases("funcrest")
-case("freehandpoints", "n = 2\nf = Function({-2, 4, 1, 5, 2})\nl = First(f, n)",
-     [setn("n", 4), setn("n", 1)])
 case("conditionalmixed",
      "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\ng = Line(A, C)\ns = If(n > 0, r, g)",
      [setn("n", -1), setn("n", 1)])

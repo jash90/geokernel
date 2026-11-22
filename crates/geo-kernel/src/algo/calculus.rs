@@ -915,6 +915,39 @@ fn freehand_defined(c: &Construction, list: Id) -> bool {
     })
 }
 
+/// The list of the freehand function `id` (`Function(list)`), which
+/// `CmdFirst` reads as a `GeoLocusable`.
+pub(crate) fn freehand_list(c: &Construction, id: Id) -> Option<Id> {
+    match c.def(id) {
+        Def::Calculus(CalculusDef::Freehand { list }) => Some(gid(list)),
+        _ => None,
+    }
+}
+
+/// `AlgoFunctionFreehand.getPoints`: the point of every value of the
+/// list, at `min + step * i`, with the function's value there; no point
+/// for fewer than four elements or a reversed interval.
+pub(crate) fn freehand_points(c: &Construction, list_id: Id) -> Vec<(f64, f64)> {
+    let Some(list) = c.elements(list_id) else {
+        return Vec::new();
+    };
+    if list.len() < 4 {
+        return Vec::new();
+    }
+    let at = |k: usize| list.numeric_cell(k).unwrap_or(f64::NAN);
+    let (min, max) = (at(0), at(1));
+    if min > max {
+        return Vec::new();
+    }
+    let step = (max - min) / (list.len() - 3) as f64;
+    (2..list.len())
+        .map(|i| {
+            let x = min + step * (i - 2) as f64;
+            (x, freehand_value(c, list_id, x))
+        })
+        .collect()
+}
+
 /// `Operation.FREEHAND`: the value at `x` of the freehand function of the
 /// list `{min, max, y1, ..., yn+1}`. The `n` steps divide `[min, max]`
 /// evenly; outside the interval and for a reversed interval the value is

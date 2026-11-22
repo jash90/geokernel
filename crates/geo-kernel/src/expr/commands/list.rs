@@ -349,6 +349,28 @@ fn first_last(
         return Ok(Some(node));
     }
     let saved = p.saved();
+    if !last {
+        // `First(f, n)` of a freehand function, named bare like a locus
+        // (`GeoFunction.isGeoLocusable`)
+        let freehand = p
+            .kind_at(p.pos + 1, Kind::Function)
+            .filter(|&id| crate::algo::calculus::freehand_list(p.c, id).is_some());
+        if let Some(id) = freehand {
+            if matches!(p.toks.get(p.pos + 2).map(|t| &t.tok), Some(Tok::Comma)) {
+                p.expect(&Tok::LParen, "(")?;
+                p.pos += 1;
+                p.read(id, true);
+                let l = p.push(Node::Obj(id));
+                p.expect(&Tok::Comma, ",")?;
+                let n = p.argument(false)?;
+                if p.eat(&Tok::RParen) && p.is_number(n) {
+                    return Ok(Some(p.push(Node::ListOp(op, l, n))));
+                }
+                p.reset(saved);
+                return Ok(None);
+            }
+        }
+    }
     match p.arguments()?.as_slice() {
         [l, n] if p.is_locus(*l) && p.is_number(*n) => Ok(Some(p.push(Node::ListOp(op, *l, *n)))),
         _ => {
@@ -761,8 +783,11 @@ impl Parser<'_> {
     }
 
     /// Whether the subtree at `i` is a locus object.
+    /// Whether the subtree at `i` is a locus or a freehand function, the
+    /// `GeoLocusable` objects of `CmdFirst`.
     pub(crate) fn is_locus(&self, i: u32) -> bool {
-        matches!(self.nodes[i as usize], Node::Obj(id) if self.c.kind(id) == Kind::Locus)
+        matches!(self.nodes[i as usize], Node::Obj(id)
+            if self.c.kind(id) == Kind::Locus || crate::algo::calculus::freehand_list(self.c, id).is_some())
     }
 
     /// Whether every subtree in `args` is a number (`wrapInList` with
@@ -1767,12 +1792,32 @@ impl<const M: bool> Ctx<'_, M> {
         let Node::Obj(id) = self.node(l) else {
             return None;
         };
-        if self.c.kind(id) != Kind::Locus {
+        let freehand = crate::algo::calculus::freehand_list(self.c, id);
+        if self.c.kind(id) != Kind::Locus && freehand.is_none() {
             return None;
         }
         let run = (|| -> Option<(u32, u32)> {
             let lists = self.lists?;
-            let points = &self.c.locus(id)?.points;
+            let points: Vec<(f64, f64)> = match freehand {
+                // `AlgoFunctionFreehand.getPoints` of a defined function
+                Some(list) => {
+                    if !self.c.value(id).is_defined() {
+                        return None;
+                    }
+                    let len = self.c.elements(list).map_or(0, |l| l.len());
+                    if !lists.charge(len as u64) {
+                        return None;
+                    }
+                    crate::algo::calculus::freehand_points(self.c, list)
+                }
+                None => {
+                    let locus = self.c.locus(id)?;
+                    if !lists.charge(locus.points.len() as u64) {
+                        return None;
+                    }
+                    locus.points.iter().map(|p| (p.x, p.y)).collect()
+                }
+            };
             let outsize = if n == NONE { 1.0 } else { self.full_number(n) } as i32;
             if points.is_empty() || outsize < 0 || outsize > points.len() as i32 {
                 return None;
@@ -1785,8 +1830,8 @@ impl<const M: bool> Ctx<'_, M> {
                 return None;
             }
             for k in 0..outsize {
-                let p = &points[k as usize];
-                lists.set(start + k as u32, Slot::coords(Kind::Point, p.x, p.y));
+                let (x, y) = points[k as usize];
+                lists.set(start + k as u32, Slot::coords(Kind::Point, x, y));
             }
             Some((start, outsize as u32))
         })();

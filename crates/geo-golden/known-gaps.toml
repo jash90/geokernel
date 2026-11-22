@@ -1034,11 +1034,6 @@ reason = "The cyclic rotation sweep exceeds the kernel work budget on the dense 
 mismatches = ["0:d"]
 
 [[gap]]
-id = "funcrest-freehandpoints-001"
-reason = "The kernel has no First overload that reads a freehand function as a list of its sample points. It rejects the command instead of returning a live prefix."
-mismatches = ["0:script line 3"]
-
-[[gap]]
 id = "locusequation-boolean-001"
 reason = "The reference prover replaces the distance operands of the input Boolean with temporary segments. After an edit the Boolean reads those segment values. The kernel compares the current distances, and the implicit equation agrees."
 mismatches = ["2:b", "3:b"]
