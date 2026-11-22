@@ -95,7 +95,7 @@ impl Walker<'_> {
             Node::Num(_) | Node::MinusOne | Node::Degree | Node::Obj(_) | Node::VarY => 0.0,
             Node::Bool(_) => 0.0,
             Node::Var => 1.0,
-            Node::FnName(_) => f64::NAN,
+            Node::FnName(_) | Node::Call(..) => f64::NAN,
             Node::Un(Un::Floor | Un::Ceil | Un::Round, _) => 0.0,
             // The rule is the tree `0 / x`, regardless of the argument.
             Node::Un(Un::Sgn, _) => 0.0 / self.x,

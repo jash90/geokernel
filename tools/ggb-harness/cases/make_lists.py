@@ -8,7 +8,10 @@ indices), `Length`, `Sum` (with a truncation), the forms of `Sequence`
 element-wise arithmetic, with lists of unequal length, and a list minus a
 point; `Product`, `Min`, `Max`, `Mean` and `Sum` of points; `Reverse`,
 `First`, `Last` and `Sort`; `Append` and `Join`; the same operations
-and commands on list objects; `If` with list branches.
+and commands on list objects; `If` with list branches; the same
+commands on lists of texts (`Sort` by `GeoText.getComparator`,
+`Unique`, `Frequency`, the element and set commands) and the string
+forms of `First`, `Last` and `Element` (UTF-16 units).
 
 The steps set the free numbers (`set_number`) and move the free points so
 that lists grow, shrink and change, and come back to the first state.
@@ -209,5 +212,256 @@ for rhs in ("{Sequence(1, n), {1}}", "Sequence(Sequence(1, n), k, 1, 3)",
     case("limit", nums(n=3) + [f"l = {rhs}"], [setn("n", 1e20), setn("n", 3)])
 case("limit", nums(n=1) + ["l = {Sequence(k, k, 0, n, 1E-320), {1}}"],
      [setn("n", 2), setn("n", 1)])
+
+# ------------------------------------------------------- Take
+# `AlgoTake`: the bounds are truncated towards zero, a missing to-bound is
+# the end of the list; an undefined bound gives an empty list, a zero
+# to-bound inside the list does too, any other run outside it is undefined.
+topic("take")
+for rhs in ("Take(l, m)", "Take(l, m, n)", "Take(l, 2)", "Take(l, 2, 4)", "Take(l, 4)",
+            "Take(l, 0)", "Take(l, 2, 6)", "Take(l, 3, 2)", "Take(l, 2, 0)", "Take(l, 9, 0)",
+            "Take(l, 1.9, 3.7)", "Take(l, -1)", "Take({}, 1, 2)", "Take(w, 1, 2)",
+            "Take({{1, 2}, {3, 4}}, 2, 2)", "Take(l, m) + 1", "Take(l, 1, n)",
+            "Take(l, u, 3)"):
+    case("take", nums(m=2, n=3, a=1) + [pt("A", 1, 2), "u = 0 / 0",
+                                        "l = {a, 1, 2, a + 2, 4}", "w = {A, (2, 0), (a, 3)}",
+                                        f"p = {rhs}"],
+         [setn("m", 3), setn("n", 5), setn("m", 1), setn("n", 0), setn("m", 6), setn("n", 2),
+          setn("n", 4), setn("m", 2), setn("n", 3), setn("a", 5), setn("a", 1)])
+
+# ------------------------------------------------------- RemoveUndefined
+# `AlgoRemoveUndefined`: undefined numbers and points drop out, a defined
+# list stays whatever its elements are.
+topic("undef")
+for rhs in ("RemoveUndefined(l)", "RemoveUndefined({})", "RemoveUndefined(m)",
+            "RemoveUndefined({1 / 0, sqrt(-1), 2})", "RemoveUndefined({(1 / 0, 2), (1, 1)})",
+            "RemoveUndefined(q)", "RemoveUndefined(b)", "RemoveUndefined(l) + 1",
+            "RemoveUndefined({r, 1})", "RemoveUndefined({a / 0, a})"):
+    case("undef", nums(a=2) + [pt("A", 1, 2), pt("B", 4, 0), "r = sqrt(-a)",
+                               "l = {a, 1 / 0, a + 1, sqrt(-a)}", "m = {A, B / (a - 2), (1 / 0, 1)}",
+                               "q = {{a, 1 / 0}, {2, 3}}", "b = {a < 0, true}", f"p = {rhs}"],
+         [setn("a", -1), setn("a", 0), setn("a", 2), mv("B", 3, 3), setn("a", 2)])
+
+# ------------------------------------------------------- Flatten
+topic("flatten")
+for rhs in ("Flatten({})", "Flatten({{}, {{{}}}})", "Flatten({{(1, 1)}, {{{4}}}})",
+            "Flatten(l)", "Flatten(q)", "Flatten({1, {2, {3}}})", "Flatten({l, {1}})",
+            "Sum(Flatten({{1, 2}, {3}}))"):
+    case("flatten", nums(a=2) + [pt("A", 1, 2), "l = {{a, 1}, {2, a}}",
+                                 "q = {{{1}}, {{}, {2}}}", f"p = {rhs}"],
+         [setn("a", 5), setn("a", 2)])
+
+# ------------------------------------------------------- Unique
+# `AlgoUnique`: numbers in the order of `FrequencyGgb`, which also folds
+# values within `1e-8` of each other into the first of them; other kinds
+# keep their first appearance.
+topic("unique")
+for rhs in ("Unique(l)", "Unique({})", "Unique({1, 2, 3, 3, 4, 5})", "Unique({5, 1, 4, 1})",
+            "Unique({1 / 3, 1 / 3 + 1E-16})", "Unique({1 / 3 * 3, 1})", "Unique(m)",
+            "Unique(b)", "Unique(q)", "Unique(l) + 1", "Unique({2.800000000000001, 2.8, 2.9})"):
+    case("unique", nums(a=2) + [pt("A", 1, 2), pt("B", 3, -1),
+                                "l = {a, 1, a, 2, a + 1}", "m = {A, B, (1, 2)}",
+                                "b = {true, true, false}", "q = {{1}, {1}, {2}}", f"p = {rhs}"],
+         [setn("a", 1), setn("a", 3), mv("A", 3, -1), setn("a", 2), mv("A", 1, 2)])
+
+# ------------------------------------------------------- Frequency
+# `AlgoFrequency`: counts per unique value, per class bounds (the highest
+# class holds both bounds, a falling class list its first), cumulative,
+# density and a scale factor.
+topic("freq")
+for rhs in ("Frequency(l)", "Frequency({2, 3, 4})", "Frequency({1, 2, 3, 3, 4, 5})",
+            "Frequency(t, l)", "Frequency(b, l)", "Frequency(k, l)",
+            "Frequency(false, k, l)", "Frequency(t, k, l)", "Frequency(b, k, l)",
+            "Frequency(k, l, b)", "Frequency(t, k, l, b)", "Frequency(k, l, b, s)",
+            "Frequency(t, k, l, b, s)", "Frequency(k, l, b, -s)", "Frequency(k, l, b, 0)",
+            "Frequency(k, l, true, 4)", "Frequency(w, l)", "Frequency({1}, l)",
+            "Frequency(k, {})", "Frequency(k, {1})", "Frequency(m, l)", "Frequency(k, k)",
+            "Frequency({5, 4, 3}, {3, 4, 5})", "Frequency(k, l, t)"):
+    case("freq", nums(s=2, a=1) + ["b = false", "t = true",
+                                   "l = {a, 2, a + 1, 2, a + 3}", "k = {0, 2, 4, 6}",
+                                   "w = {2, 4}", "m = {(1, 1), (2, 2)}", f"p = {rhs}"],
+         [setn("a", 2), setn("a", 0), setn("a", 1), setn("s", 4), setn("s", 0), setn("s", 2)])
+
+# ------------------------------------------------------- Classes
+topic("classes")
+for rhs in ("Classes(l, n)", "Classes(l, 1)", "Classes(l, 2)", "Classes(l, 4)",
+            "Classes(l, 2.9)", "Classes(l, 0)", "Classes(l, -1)", "Classes(l, n, w)",
+            "Classes(l, 2, 0.5)", "Classes(l, 3, -1)", "Classes(l, 13, 4)", "Classes(l, 1, 2)",
+            "Classes({}, 3)", "Classes(m, 2)", "Classes({1 / 0, 2}, 2)"):
+    case("classes", nums(n=3, w=1) + ["a = 3", "l = {2, a, 4}", "m = {(1, 1), (2, 2)}",
+                                      f"p = {rhs}"],
+         [setn("n", 1), setn("n", 5), setn("n", 2), setn("w", 2), setn("w", 0), setn("a", 6),
+          setn("w", 1), setn("a", 3), setn("n", 3)])
+
+# ------------------------------------------------------- IndexOf
+topic("indexof")
+for rhs in ("IndexOf(a, l)", "IndexOf(5, l)", "IndexOf(5, l, n)", "IndexOf(5, l, 4)",
+            "IndexOf(5, l, 6)", "IndexOf(5, l, 0)", "IndexOf(5, l, 2.9)", "IndexOf(3, l)",
+            "IndexOf(a, l, 2)", "IndexOf((1, 2), m)", "IndexOf(A, m)", "IndexOf(true, b)",
+            "IndexOf(A, m, 2)", "IndexOf(a, {})", "IndexOf(a, l) + 1",
+            "IndexOf(2, l, -1E300)", "IndexOf(2, l, 1E300)"):
+    case("indexof", nums(a=2, n=4) + [pt("A", 1, 2), "l = {1, 3, a, 2, a, 4}",
+                                      "m = {A, (1, 2), (0, 0)}", "b = {false, true}",
+                                      f"c = {rhs}"],
+         [setn("a", 5), setn("n", 5), setn("a", 2), setn("n", 0), mv("A", 0, 0), setn("n", 6),
+          mv("A", 1, 2), setn("n", 4)])
+
+# ------------------------------------------------------- Insert
+topic("insert")
+for rhs in ("Insert(a, l, 2)", "Insert(a, l, 1)", "Insert(a, l, 6)", "Insert(a, l, 0)",
+            "Insert(a, l, -1)", "Insert(a, l, -2)", "Insert(a, l, 1.9)", "Insert(a, {}, 1)",
+            "Insert(k, l, 2)", "Insert(k, l, 4)", "Insert(A, l, 2)", "Insert(a, l, u)",
+            "Insert(a, m, 2)", "Length(Insert(k, l, 2))"):
+    case("insert", nums(a=9) + [pt("A", 1, 2), "u = 0 / 0", "l = {1, 2, 3, 4, 5}",
+                                "k = {6, 7}", "m = {(1, 1), (2, 2)}", f"p = {rhs}"],
+         [setn("a", 4), setn("a", 9)])
+
+# ------------------------------------------------------- set operations
+topic("setops")
+for rhs in ("Intersection(l, k)", "Intersection(k, l)", "Intersection(l, {})",
+            "Intersection({}, {})", "Intersection(m, n)", "Union(l, k)", "Union(k, l)",
+            "Union(l, {})", "Union({}, {})", "Union(m, n)", "Union(b, {false})",
+            "Remove(l, k)", "Remove(k, l)", "Remove(l, {9})", "Remove(l, {})",
+            "Remove({1, 1 / 0, 2}, {1 / 0, 1})", "Remove({1, 2, 3}, {2, 4})"):
+    case("setops", nums(a=1) + [pt("A", 1, 2), pt("B", 3, -1), "l = {a, 2, 3, 2}",
+                                "k = {2, 2, 2, 4, a}", "m = {A, B, (1, 2)}", "n = {(1, 2), A}",
+                                "b = {true, true}", f"p = {rhs}"],
+         [setn("a", 2), setn("a", 4), mv("A", 1, 2), setn("a", 1)])
+
+# ------------------------------------------------------- Sort of two lists
+# `AlgoSort` with a value list: the keys sort, the values follow their
+# keys; every key must be of one class (`geo.getClass()`), and equal
+# keys keep the order of the list (their construction indexes tie, so
+# the comparator sends the later one to the right).
+# ------------------------------------------------------- wrapped forms
+topic("wrapped")
+for rhs in ("Last(l)", "Reverse(a, b, 3)", "Reverse(A, (0, 1))",
+            "Sort(A, (0, 1), B)", "OrdinalRank(A, (0, 0))", "TiedRank(A, (0, 0))"):
+    case("wrapped", nums(a=2, b=1) + [pt("A", 1, 2), pt("B", 3, 0),
+                                      "l = {a, b, a + b}", f"p = {rhs}"],
+         [setn("a", 5), setn("a", 2), mv("A", 0, 1)])
+
+topic("sort2")
+for rhs in ("Sort(l, k)", "Sort(k, l)", "Sort({3, 1, 2}, {10, 20, 30})",
+            "Sort({3, 1, 3}, {10, 20, 30})", "Sort({3, 1, 2}, {10, 20})",
+            "Sort({3, 1, 2}, m)", "Sort({2.800000000000001, 1}, {10, 20})",
+            "Sort(m, {A, u})", "Sort(m, {u, u, A})", "Sort({1, 2}, {45°, 1})",
+            "Sort({1, 2}, {1, 45°})", "Sort({30, 10, 20}, {2, 1, 2})",
+            "Sort({\"c\", \"a\", \"b\"}, {2, 1, 2})", "Sort(l, {2, 1, 2})"):
+    case("sort2", nums(a=2) + [pt("A", 1, 2), "u = (1, 0)", "l = {a, 1, 2}", "k = {10, 20, 30}",
+                               "m = {A, (0, 0), (5, 5)}", f"p = {rhs}"],
+         [setn("a", 3), setn("a", 1), setn("a", 2)])
+
+# ------------------------------------------------------- ranks
+topic("ranks")
+for rhs in ("OrdinalRank(l)", "TiedRank(l)", "OrdinalRank({3, 1, 3})", "TiedRank({3, 1, 3})",
+            "OrdinalRank({1, 2, 3, 4, 5})", "TiedRank({1, 2, 3, 4, 5})",
+            "OrdinalRank({})", "TiedRank({})", "OrdinalRank(3, 1, 2)", "TiedRank(3, 1, 3)",
+            "OrdinalRank(m)", "OrdinalRank({r, 2})", "TiedRank({r, 2})",
+            "Sum(TiedRank(l))", "OrdinalRank({-2, 5, -2, 0})"):
+    case("ranks", nums(a=2) + [pt("A", 1, 2), "r = sqrt(-a)", "l = {a, 1, a, 3}",
+                               "m = {A, (0, 0)}", f"p = {rhs}"],
+         [setn("a", 3), setn("a", 1), setn("a", 2)])
+
+# ------------------------------------------------------- PointList
+topic("pointlist")
+for rhs in ("PointList(l)", "PointList({{1, 2}, {3, 4}})", "PointList({1, 2, 3, 4, 5})",
+            "PointList({{1, 2}, {3}, {1, 2}})", "PointList({{1, 2}, {3, 4}, {5}})",
+            "PointList(1, 2)", "PointList(A, (3, 4))", "PointList({})", "PointList({{a, 2}})",
+            "Length(PointList(l))", "PointList({{1 / 0, 2}, {3, 4}})"):
+    case("pointlist", nums(a=1) + [pt("A", 1, 2), "l = {{a, 2}, {3, 4}}", f"p = {rhs}"],
+         [setn("a", 4), setn("a", 1), mv("A", 5, 5), mv("A", 1, 2)])
+
+# ------------------------------------------------------- Zip
+# `AlgoZip`: the expression at the elements the lists share, as many as the
+# shortest list holds.
+topic("zip")
+for rhs in ("Zip(t^2, t, l)", "Zip(t, t, l)", "Zip(t + u, t, l, u, k)",
+            "Zip(u + t, u, l, t, k)", "Zip(t, t, l, u, {3})", "Zip(2 * P, P, m)",
+            "Zip(P + V, P, m, V, w)", "Zip(x(P), P, m)", "Zip((t, t + 1), t, l)",
+            "Zip({t, t + 1}, t, l)", "Zip(t^2, t, Sequence(n))", "Zip(t, t, {})",
+            "Zip(t + u, t, l, u, {})", "Sum(Zip(t^2, t, l))", "Zip(t, t, q)",
+            "Zip(Zip(t + u, t, k), u, l)"):
+    case("zip", nums(n=4) + [pt("A", 1, 2), pt("B", 2, 1), "v = (1, 1)",
+                             "l = {1, 2, 3}", "k = {4, 5, 6}", "m = {A, B}",
+                             "w = {v, (0, 2)}", "q = {{1}, {2}}", f"p = {rhs}"],
+         [setn("n", 2), setn("n", 5), mv("A", 3, 3), mv("B", 4, 4), setn("n", 4),
+          mv("A", 1, 2), mv("B", 2, 1)])
+# a `Zip` earlier in a list of expressions must not retype the local of a
+# `Sequence` later in it: the binding of `f` ends with its `Zip`
+case("zip", nums(n=4) + [pt("A", 1, 2), pt("B", 2, 1), "v = (1, 1)",
+                         "l = {1, 2, 3}", "k = {4, 5, 6}", "m = {A, B}",
+                         "w = {v, (0, 2)}", "q = {{1}, {2}}",
+                         "p = {Zip(2 * f, f, {(1, 1)}), Sequence(g^2, g, 1, 3)}"],
+     [setn("n", 2), setn("n", 5), mv("A", 3, 3), mv("B", 4, 4), setn("n", 4),
+      mv("A", 1, 2), mv("B", 2, 1)])
+
+# ------------------------------------------------------- Product of an expression
+# `AlgoFoldExpression`: the expression at `from` and at every whole number
+# up to `to`.
+topic("fold")
+for rhs in ("Product(k^2, k, 1, 4)", "Product(k^2, k, a, b)", "Product(k^2, k, 3, 1)",
+            "Product(k^2, k, 1.5, 3.8)", "Product(k, k, 1, 0)",
+            "Product(2, k, a, b)", "Product(1 / k, k, 1, b)"):
+    case("fold", nums(a=1, b=4) + [f"c = {rhs}"],
+         [setn("a", 2), setn("b", 6), setn("a", 5), setn("b", 1), setn("a", 1), setn("b", 4)])
+
+# ------------------------------------------------------- Product with frequencies
+topic("prodfreq")
+for rhs in ("Product(l, k)", "Product({2, 3}, {3, 2})", "Product({2, 3, 4}, {1, 2})", "Product({2, 3, 4}, {-1})", "Product({2, 3, 4}, {t, 2})"):
+    case("prodfreq", nums(t=1) + ["l = {2, 3, 4}", "k = {2, 2}", f"c = {rhs}"],
+         [setn("t", 3), setn("t", -1), setn("t", 1)])
+
+# ------------------------------------------------------- First of a locus
+topic("locusfirst")
+for rhs in ("First(c, 2)", "First(c, n)", "First(c, 1)", "First(c, 0)", "First(c, 9)",
+            "Length(First(c, n))"):
+    case("locusfirst", nums(n=2) + [pt("A", 0, 0), pt("B", 2, 0), "s = Segment(A, B)",
+                                    "P = Point(s)", "Q = P + (1, 1)", "c = Locus(Q, P)",
+                                    f"p = {rhs}"],
+         [setn("n", 1), setn("n", 5), setn("n", 0), mv("A", 1, 0), setn("n", 2), mv("A", 0, 0)])
+
+# ------------------------------------------------------- Element of nested lists
+topic("element2")
+for rhs in ("Element(m, 1, 2)", "Element(m, 2, 1)", "Element(m, 1, 3)", "Element(m, 2)",
+            "Element(m, n, 2)", "Element(m, 1, n)", "Element(q, 1, 1)", "Element(m, n)"):
+    case("element2", nums(n=1) + ["m = {{1, 2}, {3, 4}}", "q = {{5}}", f"c = {rhs}"],
+         [setn("n", 2), setn("n", 3), setn("n", 0), setn("n", 1)])
+
+# ------------------------------------------------------- commands on text lists
+# `AlgoSort` orders texts by `GeoText.getComparator` (accents folded away,
+# then the raw strings), `AlgoUnique` and `AlgoFrequency` count equal
+# strings, and the element and set commands read texts like any other
+# kind.
+topic("textlists")
+for rhs in ("Sort(l)", "Sort(m)", "Sort({})", "Sort({\"b\", \"a\"})",
+            "Sort({\"10\", \"9\", \"100\"})", "Sort({\"b\", 1})", "Sort({true, \"b\"})",
+            "Unique(l)", "Unique({\"b\", \"a\", \"b\", \"B\"})", "Unique({})",
+            "Unique({\"é\", \"e\"})", "Frequency(l)",
+            "Frequency({\"b\", \"a\", \"b\", \"B\"})", "Reverse(l)", "First(l)",
+            "First(l, n)", "Last(l, n)", "Take(l, 2, 3)", "Take(l, n, 4)",
+            "Element(l, n)", "Element(l, 0)", "IndexOf(\"a\", l)", "IndexOf(\"b\", l, 3)",
+            "IndexOf(\"x\", l)", "Append(l, \"z\")", "Append(\"z\", l)",
+            "Insert(\"z\", l, 2)", "Insert(\"z\", l, 0)", "Remove(l, {\"b\"})",
+            "Remove(l, k)", "Remove(l, {\"x\"})", "Union(l, k)", "Union(k, l)",
+            "Intersection(l, k)", "Intersection(k, l)", "Length(Unique(l))"):
+    case("textlists", nums(n=2) + ["l = {\"b\", \"a\", \"b\", \"c\", \"A\"}",
+                                   "k = {\"a\", \"d\"}",
+                                   "m = {\"é\", \"e\", \"È\", \"Z\", \"a\"}", f"p = {rhs}"],
+         [setn("n", 0), setn("n", 1), setn("n", 5), setn("n", 3), setn("n", -1), setn("n", 2)])
+
+# ------------------------------------------------------- First, Last, Element of a text
+# The string forms of the element commands: a count of UTF-16 units from
+# either end, one unit at an index (`AlgoFirstString`, `AlgoLastString`,
+# `AlgoTextElement`), all `(int)` casts of their counts and indices.
+topic("textelem")
+for rhs in ("First(\"hello\")", "First(\"hello\", n)", "First(\"\", 2)", "First(\"hello\", 0)",
+            "First(\"hello\", 9)", "First(\"hello\", 1.9)", "Last(\"hello\")", "Last(\"hello\", n)",
+            "Last(\"hello\", 0)", "Last(\"hello\", 9)", "Last(\"héllo\", 2)",
+            "Last(\"😀ab\", 2)", "Element(\"hello\", n)", "Element(\"hello\", 0)",
+            "Element(\"hello\", 9)", "Element(\"hello\", 2.9)", "Element(\"héllo\", 2)",
+            "Element(\"😀ab\", 3)", "First(\"😀ab\", 3)"):
+    case("textelem", nums(n=2) + [f"p = {rhs}"],
+         [setn("n", 0), setn("n", 1), setn("n", 5), setn("n", 6), setn("n", -1), setn("n", 2)])
 
 cases.write()

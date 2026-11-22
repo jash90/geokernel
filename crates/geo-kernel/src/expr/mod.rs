@@ -129,6 +129,7 @@ fn sample_system(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::
                 depth: 0,
                 value: eval::Val::N(t),
                 run: None,
+                vector: false,
                 up: None,
             };
             eval::system_locals(
@@ -287,6 +288,9 @@ pub(crate) enum Node {
     /// expression, from, to, step ([`NONE`] when absent), and the depth of
     /// its variable `k`, a [`Node::Local`].
     Seq(u32, u32, u32, u32, u32),
+    /// A list command of more arguments than [`Node::ListOp`] holds: its
+    /// `len` arguments are the nodes from `first` on (`Take`, `Zip`, ...).
+    Call(CallOp, u32, u32),
     /// The variable of the enclosing `Sequence` of this depth (0 for the
     /// outermost).
     Local(u32, Elem),
@@ -330,6 +334,26 @@ impl AlgebraOp {
     }
 }
 
+/// The commands behind a [`Node::Call`] (see there).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CallOp {
+    /// `Take(list, from[, to])` (`AlgoTake`).
+    Take,
+    /// `IndexOf(object, list[, start])` (`AlgoIndexOf`).
+    IndexOf,
+    /// `Insert(object, list, position)` (`AlgoInsert`).
+    Insert,
+    /// `Classes(list, number of classes | start, width)` (`AlgoClasses`).
+    Classes,
+    /// `Frequency(...)` (`AlgoFrequency`).
+    Frequency,
+    /// `Zip(expression, variable, list, ...)` (`AlgoZip`): the expression,
+    /// then a [`Node::Local`] and its list per variable.
+    Zip,
+    /// `Product(expression, variable, from, to)` (`AlgoFoldExpression`).
+    Fold,
+}
+
 /// The commands that read a list.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ListOp {
@@ -355,6 +379,24 @@ pub(crate) enum ListOp {
     /// `Join(list of lists)`; `Join(l1, l2, ...)` joins the list of its
     /// arguments (`AlgoJoin`).
     Join,
+    /// `Take` is a [`Node::Call`]; `RemoveUndefined(list)`
+    /// (`AlgoRemoveUndefined`).
+    RemoveUndefined,
+    /// `Unique(list)` (`AlgoUnique`).
+    Unique,
+    /// `Flatten(list)` (`AlgoFlatten`).
+    Flatten,
+    /// `PointList(list)` (`AlgoPointList`).
+    PointList,
+    /// `OrdinalRank(list)` (`AlgoOrdinalRank`).
+    OrdinalRank,
+    /// `TiedRank(list)` (`AlgoTiedRank`).
+    TiedRank,
+    /// `Union(l1, l2)` (`AlgoUnion`); `Intersection(l1, l2)`
+    /// (`AlgoIntersection`); `Remove(l1, l2)` (`AlgoRemove`).
+    Union,
+    Intersect,
+    Remove,
 
     // statistics (`commands/statistics.rs`)
     /// `Sum(list)` and `Sum(list, n)` of numbers (`AlgoStats1D`).
@@ -869,7 +911,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
             fixed[..3].copy_from_slice(&[formula, initial, count]);
         }
         Node::Seq(a, b, c, d, _) => fixed = [a, b, c, d],
-        Node::List(first, len) | Node::TextCmd(_, first, len) => {
+        Node::List(first, len) | Node::TextCmd(_, first, len) | Node::Call(_, first, len) => {
             run = first..first.saturating_add(len)
         }
         _ => {}
@@ -940,7 +982,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(c);
             shift(d);
         }
-        Node::List(first, _) | Node::TextCmd(_, first, _) => shift(first),
+        Node::List(first, _) | Node::TextCmd(_, first, _) | Node::Call(_, first, _) => shift(first),
         _ => {}
     }
 }
@@ -956,6 +998,7 @@ fn is_list_node(node: &Node) -> bool {
             | Node::ListOp(..)
             | Node::Range(..)
             | Node::Seq(..)
+            | Node::Call(..)
             | Node::Local(..)
             | Node::Filter { .. }
             | Node::Algebra(..)

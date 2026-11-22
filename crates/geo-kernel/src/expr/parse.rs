@@ -192,7 +192,7 @@ fn parse_in(c: &Construction, src: &str, mode: Mode<'_>) -> Result<Parsed, Strin
 }
 
 pub(super) struct Parser<'a> {
-    c: &'a Construction,
+    pub(super) c: &'a Construction,
     src: &'a str,
     pub(super) toks: Vec<Token>,
     pub(super) pos: usize,
@@ -1084,8 +1084,28 @@ impl Parser<'_> {
         }
     }
 
+    /// The state a command that read its arguments leaves behind (see
+    /// [`Parser::reset`]), so that a command that takes no part of them
+    /// can hand them to the script parser untouched.
+    pub(super) fn saved(&self) -> (usize, usize, usize, bool) {
+        (
+            self.pos,
+            self.parents.len(),
+            self.inputs.len(),
+            self.uses_var,
+        )
+    }
+
+    /// Puts the parser back to a [`Parser::saved`] state.
+    pub(super) fn reset(&mut self, saved: (usize, usize, usize, bool)) {
+        self.pos = saved.0;
+        self.parents.truncate(saved.1);
+        self.inputs.truncate(saved.2);
+        self.uses_var = saved.3;
+    }
+
     /// Whether the subtree at `i` is a list.
-    fn is_list(&self, i: u32) -> bool {
+    pub(super) fn is_list(&self, i: u32) -> bool {
         matches!(check(self.c, &self.nodes, i), Ok((tys, ..)) if matches!(tys[i as usize], Ty::List(_)))
     }
 

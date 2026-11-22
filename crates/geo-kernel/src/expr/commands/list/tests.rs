@@ -963,3 +963,761 @@ fn small_lists_do_exactly_their_work() {
         assert_eq!(work, units, "{what}");
     }
 }
+
+// The commands below are ported from GeoGebra's own tests where it has them
+// (`CommandsTest.cmdClasses`, `cmdFlatten`, `cmdFrequency`, `cmdIndexOf`,
+// `cmdInsert`, `cmdIntersection`, `cmdOrdinalRank`, `cmdPointList`,
+// `cmdRemoveUndefined`, `cmdSort`, `cmdTake`, `cmdTiedRank`, `cmdUnion`,
+// `cmdUnique`, `cmdZip`) and from the upstream algorithms otherwise
+// (`AlgoTake`, `AlgoRemoveUndefined`, `AlgoFlatten`, `AlgoInsert`,
+// `AlgoUnique`, `AlgoFrequency`, `AlgoClasses`, `AlgoZip`, `AlgoUnion`,
+// `AlgoIntersection`, `AlgoRemove`, `AlgoPointList`, `AlgoOrdinalRank`,
+// `AlgoTiedRank`), with the degenerate inputs of the harness cases.
+
+#[test]
+fn take_reads_a_run_of_the_list() {
+    let mut c = load(
+        "n = 1\n\
+         m = 3\n\
+         u = 0 / 0\n\
+         l = {1, 2, 3, 4, 5}\n\
+         a = Take(l, 1, 3)\n\
+         b = Take(l, 4)\n\
+         d = Take(l, n, m)\n\
+         e = Take({}, 1, 2)\n\
+         f = Take(l, 0)\n\
+         g = Take(l, 2, 6)\n\
+         h = Take(l, 3, 2)\n\
+         i = Take(l, 2, 0)\n\
+         j = Take(l, 9, 0)\n\
+         k = Take(l, 1.9, 3.7)\n\
+         t = Take(l, u, 3)\n\
+         w = Take(l, 1, u)\n\
+         p = Take({(1, 1), (2, 2), (3, 3)}, 2, 3)",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "a"), "{1, 2, 3}");
+    assert_eq!(elems(&c, "b"), "{4, 5}");
+    assert_eq!(elems(&c, "d"), "{1, 2, 3}");
+    // an empty or out-of-range run is undefined; a zero end inside the list
+    // is an empty run (`AlgoTake`)
+    assert_eq!(elems(&c, "e"), "undefined");
+    assert_eq!(elems(&c, "f"), "undefined");
+    assert_eq!(elems(&c, "g"), "undefined");
+    assert_eq!(elems(&c, "h"), "undefined");
+    assert_eq!(elems(&c, "i"), "{}");
+    assert_eq!(elems(&c, "j"), "undefined");
+    // the bounds are truncated towards zero
+    assert_eq!(elems(&c, "k"), "{1, 2, 3}");
+    assert_eq!(elems(&c, "p"), "{(2, 2), (3, 3)}");
+    // an undefined bound gives an empty list
+    assert_eq!(elems(&c, "t"), "{}");
+    assert_eq!(elems(&c, "w"), "{}");
+    // `a` keeps its value below
+    assert_eq!(elems(&c, "a"), "{1, 2, 3}");
+    // a run that grows past the end appears and disappears again
+    c.set_number(c.id("n").unwrap(), 3.0).unwrap();
+    c.set_number(c.id("m").unwrap(), 6.0).unwrap();
+    assert_eq!(elems(&c, "d"), "undefined");
+    c.set_number(c.id("m").unwrap(), 5.0).unwrap();
+    assert_eq!(elems(&c, "d"), "{3, 4, 5}");
+    rebuilt(&c);
+}
+
+#[test]
+fn remove_undefined_keeps_the_defined_elements() {
+    let c = load(
+        "l = {1, 1 / 0, 2, sqrt(-1), 3}\n\
+         a = RemoveUndefined(l)\n\
+         b = RemoveUndefined({})\n\
+         d = RemoveUndefined({{1, 1 / 0}, {2, 3}})\n\
+         e = RemoveUndefined({true, 1 / 0})\n\
+         f = RemoveUndefined({(1, 1), (1 / 0, 2)})",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "a"), "{1, 2, 3}");
+    assert_eq!(elems(&c, "b"), "{}");
+    // a defined list with undefined elements is itself defined
+    assert_eq!(elems(&c, "d"), "{{1, ?number}, {2, 3}}");
+    assert_eq!(elems(&c, "e"), "{true}");
+    assert_eq!(elems(&c, "f"), "{(1, 1)}");
+    rebuilt(&c);
+}
+
+#[test]
+fn flatten_removes_every_level_of_nesting() {
+    let c = load(
+        "a = Flatten({})\n\
+         b = Flatten({{}, {{{}}}})\n\
+         d = Flatten({{(1, 1)}, {{{4}}}})\n\
+         e = Flatten({1, {2, {3}}})\n\
+         f = Flatten({1, 2})",
+    )
+    .unwrap();
+    // `CommandsTest.cmdFlatten`
+    assert_eq!(elems(&c, "a"), "{}");
+    assert_eq!(elems(&c, "b"), "{}");
+    assert_eq!(elems(&c, "d"), "{(1, 1), 4}");
+    assert_eq!(elems(&c, "e"), "{1, 2, 3}");
+    assert_eq!(elems(&c, "f"), "{1, 2}");
+    rebuilt(&c);
+}
+
+#[test]
+fn unique_sorts_numbers_and_dedups_the_rest_in_order() {
+    let c = load(
+        "a = Unique({1, 2, 3, 3, 4, 5})\n\
+         b = Unique({})\n\
+         d = Unique({5, 1, 4, 1})\n\
+         e = Unique({1 / 3, 1 / 3 + 1E-16})\n\
+         f = Unique({(2, 1), (1, 1), (2, 1)})\n\
+         g = Unique({true, true, false})",
+    )
+    .unwrap();
+    // `CommandsTest.cmdUnique`: numbers ascending, values within `1e-8` of
+    // each other are one (`FrequencyGgb`)
+    assert_eq!(elems(&c, "a"), "{1, 2, 3, 4, 5}");
+    assert_eq!(elems(&c, "b"), "undefined");
+    assert_eq!(elems(&c, "d"), "{1, 4, 5}");
+    assert_eq!(elems(&c, "e"), "{0.3333333333333333}");
+    // other kinds keep their first appearance (`AlgoUnion.addToOutputList`)
+    assert_eq!(elems(&c, "f"), "{(2, 1), (1, 1)}");
+    assert_eq!(elems(&c, "g"), "{true, false}");
+    rebuilt(&c);
+}
+
+#[test]
+fn frequency_counts_values_and_classes() {
+    let c = load(
+        "a = Frequency({2, 3, 4})\n\
+         b = Frequency({1, 2, 3, 3, 4, 5})\n\
+         d = Frequency(true, {1, 2, 3, 3, 4, 5})\n\
+         e = Frequency(false, {1, 2, 3, 4, 5}, {2, 3, 4})\n\
+         f = Frequency(false, {1, 2, 3, 4, 5}, {2, 3, 4}, true, 4)\n\
+         g = Frequency({1, 2, 3, 4, 5}, {2, 3, 4}, false)\n\
+         h = Frequency({1, 2, 3, 4, 5}, {2, 3, 4}, true, 4)\n\
+         i = Frequency({2, 3, 4})",
+    )
+    .unwrap();
+    // `CommandsTest.cmdFrequency`
+    assert_eq!(elems(&c, "a"), "{1, 1, 1}");
+    assert_eq!(elems(&c, "b"), "{1, 1, 2, 1, 1}");
+    assert_eq!(elems(&c, "d"), "{1, 2, 4, 5, 6}");
+    assert_eq!(elems(&c, "e"), "{0, 1, 1, 1}");
+    assert_eq!(elems(&c, "f"), "{0, 4, 4, 4}");
+    assert_eq!(elems(&c, "g"), "{0, 1, 1, 1}");
+    assert_eq!(elems(&c, "h"), "{0, 4, 4, 4}");
+    assert_eq!(elems(&c, "i"), "{1, 1, 1}");
+    rebuilt(&c);
+}
+
+#[test]
+fn frequency_classes_edge_cases() {
+    let c = load(
+        "b = false\n\
+         t = true\n\
+         s = 4\n\
+         l = {1, 2, 3, 4, 5}\n\
+         m = {2, 3, 9}\n\
+         a = Frequency(l, m)\n\
+         d = Frequency({5, 4, 3}, {3, 4, 5})\n\
+         e = Frequency(b, l, l)\n\
+         f = Frequency({}, {1, 2})\n\
+         g = Frequency(l, {})\n\
+         h = Frequency({1}, {1, 2})\n\
+         i = Frequency({(1, 1)}, {1, 2})\n\
+         j = Frequency(t, l, m, t, s)\n\
+         p = Frequency(l, m, t, s)\n\
+         q = Frequency(l, m, t, -1)",
+    )
+    .unwrap();
+    // three bounds cut two classes; the last one holds both its bounds
+    assert_eq!(elems(&c, "a"), "{0, 1, 1, 0}");
+    // a falling class list keeps its highest class first
+    assert_eq!(elems(&c, "d"), "{2, 1}");
+    assert_eq!(elems(&c, "e"), "{1, 1, 1, 2}");
+    // empty data, an empty class list, a class list with one bound or a
+    // non-numeric one is undefined
+    assert_eq!(elems(&c, "f"), "undefined");
+    assert_eq!(elems(&c, "g"), "undefined");
+    assert_eq!(elems(&c, "h"), "undefined");
+    assert_eq!(elems(&c, "i"), "undefined");
+    // cumulative with density and a scale
+    assert_eq!(elems(&c, "j"), "{0, 4, 8, 8}");
+    assert_eq!(elems(&c, "p"), "{0, 4, 4, 0}");
+    // a negative scale is undefined
+    assert_eq!(elems(&c, "q"), "undefined");
+    rebuilt(&c);
+}
+
+#[test]
+fn classes_cut_the_range() {
+    let c = load(
+        "a = Classes({2, 3, 4}, 42)\n\
+         b = Classes({2, 3, 4}, 13, 4)\n\
+         d = Classes({2, 3, 4}, 2)\n\
+         e = Classes({2, 3, 4}, 4.9)\n\
+         f = Classes({2, 3, 4}, 0)\n\
+         g = Classes({2, 3, 4}, 3, 0.5)\n\
+         h = Classes({2, 3, 4}, 3, -1)\n\
+         i = Classes({}, 3)\n\
+         j = Classes({2, 3, 4}, 13, 4)",
+    )
+    .unwrap();
+    // `CommandsTest.cmdClasses`: 43 cuts from 2 to 4
+    let a = c.id("a").unwrap();
+    assert_eq!(c.elements(a).unwrap().len(), 43);
+    let first = match c.elements(a).unwrap().get(0) {
+        Some(crate::expr::Element::Value(_, Value::Number(v))) => v,
+        other => panic!("first class {other:?}"),
+    };
+    assert!((first - 2.0).abs() < 1e-12);
+    // a start past the data gives one class only, which is undefined
+    assert_eq!(elems(&c, "b"), "undefined");
+    assert_eq!(elems(&c, "j"), "undefined");
+    assert_eq!(elems(&c, "d"), "{2, 3, 4}");
+    // the count is truncated towards zero
+    assert_eq!(elems(&c, "e"), "{2, 2.5, 3, 3.5, 4}");
+    // a count below 1 is undefined
+    assert_eq!(elems(&c, "f"), "undefined");
+    assert_eq!(elems(&c, "g"), "{3, 3.5, 4}");
+    // a width of 0 or less is undefined
+    assert_eq!(elems(&c, "h"), "undefined");
+    assert_eq!(elems(&c, "i"), "undefined");
+    rebuilt(&c);
+}
+
+#[test]
+fn index_of_finds_the_first_hit() {
+    let mut c = load(
+        "k = 4\n\
+         l = {1, 3, 5, 2, 5, 4}\n\
+         a = IndexOf(5, l)\n\
+         b = IndexOf(5, l, k)\n\
+         d = IndexOf(5, l, 6)\n\
+         e = IndexOf(5, l, 0)\n\
+         f = IndexOf(5, l, 2.9)\n\
+         g = IndexOf((1, 2), {(0, 0), (1, 2)})\n\
+         h = IndexOf(3, {1, 2})\n\
+         i = IndexOf(true, {false, true})\n\
+         j = IndexOf(5, l, 0 / 0)",
+    )
+    .unwrap();
+    // `CommandsTest.cmdIndexOf`
+    assert_eq!(num(&c, "a"), 3.0);
+    assert_eq!(num(&c, "b"), 5.0);
+    assert_eq!(c.value(c.id("d").unwrap()), Value::Undefined);
+    // a start below 1 is undefined
+    assert_eq!(c.value(c.id("e").unwrap()), Value::Undefined);
+    // the start is truncated towards zero, then counts from 1
+    assert_eq!(num(&c, "f"), 3.0);
+    assert_eq!(num(&c, "g"), 2.0);
+    assert_eq!(c.value(c.id("h").unwrap()), Value::Undefined);
+    assert_eq!(num(&c, "i"), 2.0);
+    // the search starts inside the list when the start grows
+    c.set_number(c.id("k").unwrap(), 5.0).unwrap();
+    assert_eq!(num(&c, "b"), 5.0);
+    c.set_number(c.id("k").unwrap(), 6.0).unwrap();
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Undefined);
+    // an undefined start is undefined
+    assert_eq!(c.value(c.id("j").unwrap()), Value::Undefined);
+    rebuilt(&c);
+}
+
+#[test]
+fn insert_splices_at_a_position() {
+    let c = load(
+        "l = {1, 2, 3, 4, 5}\n\
+         m = {1, 2}\n\
+         a = Insert(l, l, 4)\n\
+         b = Insert(9, m, 2)\n\
+         d = Insert(9, m, -1)\n\
+         e = Insert(9, m, -2)\n\
+         f = Insert(9, m, 0)\n\
+         g = Insert(9, m, 4)\n\
+         h = Insert(9, m, 1.9)\n\
+         i = Insert(9, {}, 1)\n\
+         j = Insert({}, m, 1)\n\
+         k = Insert({3, 4}, m, 2)",
+    )
+    .unwrap();
+    // `CommandsTest.cmdInsert`: a list inserts its elements
+    assert_eq!(elems(&c, "a"), "{1, 2, 3, 1, 2, 3, 4, 5, 4, 5}");
+    assert_eq!(elems(&c, "b"), "{1, 9, 2}");
+    // -1 is after the last element, -2 before it
+    assert_eq!(elems(&c, "d"), "{1, 2, 9}");
+    assert_eq!(elems(&c, "e"), "{1, 9, 2}");
+    assert_eq!(elems(&c, "f"), "undefined");
+    assert_eq!(elems(&c, "g"), "undefined");
+    // the position is truncated towards zero
+    assert_eq!(elems(&c, "h"), "{9, 1, 2}");
+    assert_eq!(elems(&c, "i"), "{9}");
+    assert_eq!(elems(&c, "j"), "{1, 2}");
+    assert_eq!(elems(&c, "k"), "{1, 3, 4, 2}");
+    rebuilt(&c);
+}
+
+#[test]
+fn intersection_union_and_remove_dedup_by_equality() {
+    let c = load(
+        "a = Intersection({1, 2, 3, 4, 5}, {1, 2, 3, 4, 5})\n\
+         b = Intersection({3, 1}, {1, 2, 3, 3})\n\
+         d = Intersection({1, 2}, {})\n\
+         e = Union({1, 2, 3}, {2, 2, 2, 4, 4, 4})\n\
+         f = Union({1, 2}, {})\n\
+         g = Remove({1, 2, 3, 4, 5}, {2, 4})\n\
+         h = Remove({1, 2, 3}, {9})\n\
+         i = Remove({1, 1 / 0, 2}, {1 / 0, 1})\n\
+         j = Remove({1, 2}, {})",
+    )
+    .unwrap();
+    // `CommandsTest.cmdIntersection`, `cmdUnion`
+    assert_eq!(elems(&c, "a"), "{1, 2, 3, 4, 5}");
+    // the second list gives the order of the shared elements
+    assert_eq!(elems(&c, "b"), "{1, 3}");
+    assert_eq!(elems(&c, "d"), "{}");
+    assert_eq!(elems(&c, "e"), "{1, 2, 3, 4}");
+    assert_eq!(elems(&c, "f"), "{1, 2}");
+    assert_eq!(elems(&c, "g"), "{1, 3, 5}");
+    assert_eq!(elems(&c, "h"), "{1, 2, 3}");
+    // an undefined element removes one undefined element
+    assert_eq!(elems(&c, "i"), "{2}");
+    assert_eq!(elems(&c, "j"), "{1, 2}");
+    rebuilt(&c);
+}
+
+#[test]
+fn sort_permutes_a_value_list_by_its_keys_and_wraps_points() {
+    let c = load(
+        "A = (3, 1)\n\
+         B = (1, 2)\n\
+         C = (3, 0)\n\
+         a = Sort({3, 1, 2}, {10, 20, 30})\n\
+         b = Sort({10, 20, 30}, {3, 1, 2})\n\
+         k = {2, 1, 2}\n\
+         c = Sort({10, 20, 30}, k)\n\
+         d = Sort({1, 2, 3, 4, 5}, {2, 3, 4})\n\
+         e = Sort(A, B, C)\n\
+         f = Sort({(3, 1), (1, 2)})\n\
+         g = Sort({3, 1, 2}, {A, (0, 0), (5, 5)})",
+    )
+    .unwrap();
+    // the second list holds the keys, and the values of the first one
+    // follow them (`AlgoSort(cons, label, valueList, inputList)`)
+    assert_eq!(elems(&c, "a"), "{3, 1, 2}");
+    assert_eq!(elems(&c, "b"), "{20, 30, 10}");
+    // equal keys keep their order: the comparator never returns 0
+    assert_eq!(elems(&c, "c"), "{20, 10, 30}");
+    // a value list of the wrong size is undefined (`AlgoSort`)
+    assert_eq!(elems(&c, "d"), "undefined");
+    assert_eq!(elems(&c, "e"), "{(1, 2), (3, 0), (3, 1)}");
+    assert_eq!(elems(&c, "f"), "{(1, 2), (3, 1)}");
+    // point keys sort by x (`GeoPoint.getComparatorX`)
+    assert_eq!(elems(&c, "g"), "{1, 3, 2}");
+    rebuilt(&c);
+}
+
+#[test]
+fn point_list_ranks_and_literal_arguments() {
+    let c = load(
+        "a = PointList({{1, 2}, {3, 4}})\n\
+         b = PointList({1, 2, 3, 4, 5})\n\
+         d = PointList({{1, 2}, {3}, {1, 2}})\n\
+         e = OrdinalRank({1, 2, 3, 4, 5})\n\
+         f = OrdinalRank({3, 1, 3})\n\
+         g = OrdinalRank({})\n\
+         h = OrdinalRank(3, 1, 2)\n\
+         i = TiedRank({1, 2, 3, 4, 5})\n\
+         j = TiedRank({3, 1, 3})\n\
+         k = TiedRank({})\n\
+         l = TiedRank(3, 1, 3)\n\
+         m = Reverse(1, 2, 3)\n\
+         n = Reverse((3, 1), (1, 2))\n\
+         p = PointList(1, 2)\n\
+         q = PointList({})\n\
+         r = OrdinalRank({(1, 2), (0, 0)})\n\
+         s = TiedRank({true, false})",
+    )
+    .unwrap();
+    // `CommandsTest.cmdPointList`: numbers alone are no point
+    assert_eq!(elems(&c, "a"), "{(1, 2), (3, 4)}");
+    assert_eq!(elems(&c, "b"), "{}");
+    assert_eq!(elems(&c, "d"), "{(1, 2), (1, 2)}");
+    // an empty input makes an undefined list (`AlgoPointList`)
+    assert_eq!(elems(&c, "q"), "undefined");
+    // elements that are no numbers make an undefined list, but the line
+    // still runs (`AlgoOrdinalRank`, `AlgoTiedRank`)
+    assert_eq!(elems(&c, "r"), "undefined");
+    assert_eq!(elems(&c, "s"), "undefined");
+    // `CommandsTest.cmdOrdinalRank`, `cmdTiedRank`
+    assert_eq!(elems(&c, "e"), "{1, 2, 3, 4, 5}");
+    assert_eq!(elems(&c, "f"), "{2, 1, 3}");
+    assert_eq!(elems(&c, "g"), "undefined");
+    assert_eq!(elems(&c, "h"), "{3, 1, 2}");
+    assert_eq!(elems(&c, "i"), "{1, 2, 3, 4, 5}");
+    // tied values share the average of their ranks
+    assert_eq!(elems(&c, "j"), "{2.5, 1, 2.5}");
+    assert_eq!(elems(&c, "k"), "undefined");
+    assert_eq!(elems(&c, "l"), "{2.5, 1, 2.5}");
+    assert_eq!(elems(&c, "m"), "{3, 2, 1}");
+    assert_eq!(elems(&c, "n"), "{(1, 2), (3, 1)}");
+    assert_eq!(elems(&c, "p"), "{}");
+    rebuilt(&c);
+}
+
+#[test]
+fn zip_walks_its_lists_together() {
+    let c = load(
+        "a = Zip(t^2, t, {1, 2, 3, 4, 5})\n\
+         b = Zip(i, i, {1, 2})\n\
+         d = Zip(i + j, i, {1, 2}, j, {3, 4})\n\
+         e = Zip(i + j, j, {1, 2}, i, {3, 4})\n\
+         f = Zip(2 * A, A, {(1, 1), (2, 3)})\n\
+         g = Zip(k, k, {1, 2}, m, {3})\n\
+         u = (0, 1)\n\
+         w = (0, 2)\n\
+         h = Zip(A + B, A, {(1, 0), (2, 0)}, B, {u, w})\n\
+         i = Zip(t^2, t, Sequence(4))\n\
+         j = Zip({t, t + 1}, t, {1, 2})",
+    )
+    .unwrap();
+    // `CommandsTest.cmdZip`
+    assert_eq!(elems(&c, "a"), "{1, 4, 9, 16, 25}");
+    assert_eq!(elems(&c, "b"), "{1, 2}");
+    assert_eq!(elems(&c, "d"), "{4, 6}");
+    assert_eq!(elems(&c, "e"), "{4, 6}");
+    assert_eq!(elems(&c, "f"), "{(2, 2), (4, 6)}");
+    // the shortest list ends the walk
+    assert_eq!(elems(&c, "g"), "{1}");
+    assert_eq!(elems(&c, "h"), "{(1, 1), (2, 2)}");
+    assert_eq!(elems(&c, "i"), "{1, 4, 9, 16}");
+    assert_eq!(elems(&c, "j"), "{{1, 2}, {2, 3}}");
+    rebuilt(&c);
+}
+
+#[test]
+fn product_reads_frequencies_and_an_expression() {
+    let c = load(
+        "a = Product({2, 3}, {3, 2})\n\
+         b = Product({2, 3, 4}, {1, 2})\n\
+         d = Product({2, 3, 4}, {-1})\n\
+         e = Product(k^2, k, 1, 4)\n\
+         f = Product(k^2, k, 3, 1)\n\
+         g = Product(k^2, k, 1.5, 3.8)\n\
+         h = Product(k, k, 1, 0)",
+    )
+    .unwrap();
+    // a list of frequencies repeats each value (`AlgoStats1D`)
+    assert_eq!(num(&c, "a"), 72.0);
+    // a class list one longer than the frequencies uses midpoints
+    assert_eq!(num(&c, "b"), 2.5 * 3.5 * 3.5);
+    // a negative frequency is undefined
+    assert_eq!(c.value(c.id("d").unwrap()), Value::Undefined);
+    // `AlgoFoldExpression`: the expression runs over whole numbers
+    assert_eq!(num(&c, "e"), 576.0);
+    // the bounds are truncated towards zero; an empty fold is the value at
+    // the start
+    assert_eq!(num(&c, "f"), 9.0);
+    assert_eq!(num(&c, "g"), 2.25 * 4.0 * 9.0);
+    assert_eq!(num(&c, "h"), 1.0);
+    rebuilt(&c);
+}
+
+#[test]
+fn element_walks_into_nested_lists() {
+    let mut c = load(
+        "k = 1\n\
+         m = {{1, 2}, {3, 4}}\n\
+         a = Element(m, 1, 2)\n\
+         b = Element(m, 2, 1)\n\
+         d = Element(m, 1, 3)\n\
+         e = Element(m, 2)",
+    )
+    .unwrap();
+    assert_eq!(num(&c, "a"), 2.0);
+    assert_eq!(num(&c, "b"), 3.0);
+    assert_eq!(c.value(c.id("d").unwrap()), Value::Undefined);
+    assert_eq!(elems(&c, "e"), "{3, 4}");
+    c.set_number(c.id("k").unwrap(), 2.0).unwrap();
+    rebuilt(&c);
+}
+
+#[test]
+fn first_and_last_read_a_locus() {
+    let c = load(
+        "A = (0, 0)\n\
+         B = (2, 0)\n\
+         s = Segment(A, B)\n\
+         P = Point(s)\n\
+         Q = P + (1, 1)\n\
+         l = Locus(Q, P)\n\
+         a = First(l, 2)\n\
+         b = First(l, 1)",
+    )
+    .unwrap();
+    // `AlgoFirstLocus`: the first n points of the locus
+    let a = c.id("a").unwrap();
+    assert_eq!(c.elements(a).unwrap().len(), 2);
+    let b = c.id("b").unwrap();
+    assert_eq!(c.elements(b).unwrap().len(), 1);
+    rebuilt(&c);
+}
+
+#[test]
+fn text_lists_take_the_list_commands() {
+    let c = load(
+        "l = {\"b\", \"a\", \"b\", \"c\", \"A\"}\n\
+         k = {\"a\", \"d\"}\n\
+         m = {\"é\", \"e\", \"È\", \"Z\", \"a\"}\n\
+         a = Sort(l)\n\
+         b = Sort(m)\n\
+         d = Sort({\"10\", \"9\", \"100\"})\n\
+         e = Sort({\"b\", 1})\n\
+         f = Sort({true, \"b\"})\n\
+         g = Unique(l)\n\
+         h = Unique({\"b\", \"a\", \"b\", \"B\"})\n\
+         i = Unique({\"é\", \"e\"})\n\
+         j = Frequency(l)\n\
+         p = Frequency({\"b\", \"a\", \"b\", \"B\"})\n\
+         q = Reverse(l)\n\
+         r = First(l, 2)\n\
+         s = Last(l, 2)\n\
+         t = Take(l, 2, 3)\n\
+         u = Element(l, 2)\n\
+         v = IndexOf(\"a\", l)\n\
+         w = IndexOf(\"b\", l, 3)\n\
+         x2 = IndexOf(\"x\", l)\n\
+         ap = Append(l, \"z\")\n\
+         ins = Insert(\"z\", l, 2)\n\
+         A = Remove(l, {\"b\"})\n\
+         B = Remove(l, k)\n\
+         C = Union(l, k)\n\
+         D = Intersection(l, k)",
+    )
+    .unwrap();
+    // `GeoText.getComparator`: accents folded away (which lowercases),
+    // then the raw UTF-16 units, so "A" folds to "a" but sorts before it
+    assert_eq!(elems(&c, "a"), "{A, a, b, b, c}");
+    assert_eq!(elems(&c, "b"), "{a, e, È, é, Z}");
+    // a string order, not a numeric one
+    assert_eq!(elems(&c, "d"), "{10, 100, 9}");
+    // one class of keys only (`geo.getClass()`)
+    assert_eq!(c.value(c.id("e").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("f").unwrap()), Value::Undefined);
+    // `AlgoUnique` sorts the equal strings away, case and all
+    assert_eq!(elems(&c, "g"), "{A, a, b, c}");
+    assert_eq!(elems(&c, "h"), "{B, a, b}");
+    assert_eq!(elems(&c, "i"), "{e, é}");
+    // counts in the sorted order of the strings
+    assert_eq!(elems(&c, "j"), "{1, 1, 2, 1}");
+    assert_eq!(elems(&c, "p"), "{1, 1, 2}");
+    assert_eq!(elems(&c, "q"), "{A, c, b, a, b}");
+    assert_eq!(elems(&c, "r"), "{b, a}");
+    assert_eq!(elems(&c, "s"), "{c, A}");
+    assert_eq!(elems(&c, "t"), "{a, b}");
+    assert_eq!(c.text(c.id("u").unwrap()), Some("a"));
+    assert_eq!(num(&c, "v"), 2.0);
+    assert_eq!(num(&c, "w"), 3.0);
+    assert_eq!(c.value(c.id("x2").unwrap()), Value::Undefined);
+    assert_eq!(elems(&c, "ap"), "{b, a, b, c, A, z}");
+    assert_eq!(elems(&c, "ins"), "{b, z, a, b, c, A}");
+    // one element of the removing list takes one element of the list out
+    assert_eq!(elems(&c, "A"), "{a, b, c, A}");
+    assert_eq!(elems(&c, "B"), "{b, b, c, A}");
+    assert_eq!(elems(&c, "C"), "{b, a, c, A, d}");
+    assert_eq!(elems(&c, "D"), "{a}");
+    rebuilt(&c);
+}
+
+#[test]
+fn first_last_and_element_read_utf16_units_of_a_text() {
+    let mut c = load(
+        "n = 2\n\
+         a = First(\"hello\")\n\
+         b = First(\"hello\", n)\n\
+         d = First(\"hello\", 0)\n\
+         e = First(\"hello\", 9)\n\
+         f = First(\"\", 2)\n\
+         g = Last(\"hello\")\n\
+         h = Last(\"hello\", n)\n\
+         i = Last(\"hello\", 0)\n\
+         j = Last(\"héllo\", 2)\n\
+         k = Last(\"\u{1f600}ab\", 2)\n\
+         m = Element(\"hello\", n)\n\
+         p = Element(\"hello\", 0)\n\
+         q = Element(\"hello\", 9)\n\
+         r = Element(\"héllo\", 2)\n\
+         s = Element(\"\u{1f600}ab\", 3)\n\
+         t = First(\"\u{1f600}ab\", 3)",
+    )
+    .unwrap();
+    let text = |c: &Construction, label: &str| c.text(c.id(label).unwrap()).map(str::to_owned);
+    // `AlgoFirstString`, `AlgoLastString`, `AlgoTextElement`: UTF-16
+    // units from either end, one at an index, the counts `(int)` casts
+    assert_eq!(text(&c, "a").as_deref(), Some("h"));
+    assert_eq!(text(&c, "b").as_deref(), Some("he"));
+    // a count of 0 is an empty text, past the end is undefined
+    assert_eq!(text(&c, "d").as_deref(), Some(""));
+    assert_eq!(c.value(c.id("e").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("f").unwrap()), Value::Undefined);
+    assert_eq!(text(&c, "g").as_deref(), Some("o"));
+    assert_eq!(text(&c, "h").as_deref(), Some("lo"));
+    assert_eq!(text(&c, "i").as_deref(), Some(""));
+    // é is one UTF-16 unit, an emoji two
+    assert_eq!(text(&c, "j").as_deref(), Some("lo"));
+    assert_eq!(text(&c, "k").as_deref(), Some("ab"));
+    assert_eq!(text(&c, "m").as_deref(), Some("e"));
+    assert_eq!(c.value(c.id("p").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("q").unwrap()), Value::Undefined);
+    assert_eq!(text(&c, "r").as_deref(), Some("é"));
+    assert_eq!(text(&c, "s").as_deref(), Some("a"));
+    assert_eq!(text(&c, "t").as_deref(), Some("\u{1f600}a"));
+    // the counts and indices are `(int)` casts of their numbers
+    c.set_number(c.id("n").unwrap(), 2.9).unwrap();
+    assert_eq!(text(&c, "b").as_deref(), Some("he"));
+    c.set_number(c.id("n").unwrap(), -1.0).unwrap();
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Undefined);
+    rebuilt(&c);
+}
+
+#[test]
+fn a_zip_does_not_retype_a_later_sequence_local() {
+    // the binding of the `Zip` local ends with its `Zip`: the `Sequence`
+    // later in the same list keeps its own number local
+    let c = load(
+        "p = {Zip(2 * f, f, {(1, 1)}), Sequence(g^2, g, 1, 3)}\n\
+         q = {Zip(f + (0, 1), f, {(1, 1), (2, 2)}), Sequence(g + g, g, 1, 3)}",
+    )
+    .unwrap();
+    assert_eq!(elems(&c, "p"), "{{(2, 2)}, {1, 4, 9}}");
+    // a second `Zip` in the same list, with its own local again
+    assert_eq!(elems(&c, "q"), "{{(1, 2), (2, 3)}, {2, 4, 6}}");
+    rebuilt(&c);
+}
+
+#[test]
+fn keyed_sort_takes_one_class_of_keys_and_keeps_equal_keys_in_order() {
+    let c = load(
+        "A = (1, 2)\n\
+         u = (1, 0)\n\
+         m = {A, (0, 0), (5, 5)}\n\
+         a = Sort(m, {A, u})\n\
+         b = Sort(m, {u, u, A})\n\
+         d = Sort({1, 2}, {45\u{b0}, 1})\n\
+         e = Sort({1, 2}, {1, 45\u{b0}})\n\
+         f = Sort({30, 10, 20}, {2, 1, 2})\n\
+         g = Sort({\"c\", \"a\", \"b\"}, {2, 1, 2})\n\
+         h = Sort({1, 2}, {A, (0, 0)})\n\
+         i = Sort({\"b\", \"a\"}, {2, 1})",
+    )
+    .unwrap();
+    // a vector is neither a point nor a number, an angle sits next to a
+    // number: mixed keys are undefined (`geo.getClass()`)
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("d").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("e").unwrap()), Value::Undefined);
+    // equal keys keep the order of the list: their construction indexes
+    // tie, so the comparator sends the later one to the right
+    assert_eq!(elems(&c, "f"), "{10, 30, 20}");
+    assert_eq!(elems(&c, "g"), "{a, c, b}");
+    // point keys sort by x then y; text values under number keys
+    assert_eq!(elems(&c, "h"), "{2, 1}");
+    assert_eq!(elems(&c, "i"), "{a, b}");
+    rebuilt(&c);
+}
+
+#[test]
+fn classes_charges_before_it_allocates_the_bounds() {
+    // a count that saturates `(int)` would allocate the bounds before any
+    // element was charged: the work is charged first now, so the command
+    // stops at once instead
+    let script = "l = {2, 3, 4}\na = Classes(l, 2000000000)\nb = Classes(l, 1E10)";
+    let (c, work) = work_of(|| load(script).unwrap());
+    assert!(!is_defined(&c, "a"));
+    assert!(!is_defined(&c, "b"));
+    assert!(work <= 1000, "the scripts did {work} units of work");
+    // a small count still cuts the range
+    let c = load("l = {2, 3, 4}\na = Classes(l, 2)").unwrap();
+    assert_eq!(elems(&c, "a"), "{2, 3, 4}");
+    rebuilt(&c);
+}
+
+#[test]
+fn unique_frequency_and_remove_charge_the_work_they_do() {
+    // `Sequence(1, k, 1, 500000)` holds half a million equal elements: a
+    // quadratic scan would cross the work bound, the charged ones finish
+    let script = |command: &str| format!("l = Sequence(1, k, 1, 500000)\n{command}");
+    let (c, work) = work_of(|| load(&script("a = Unique(l)")).unwrap());
+    assert_eq!(elems(&c, "a"), "{1}");
+    assert!(work < 80_000_000, "Unique did {work} units of work");
+    let (c, work) = work_of(|| load(&script("a = Frequency(l)")).unwrap());
+    assert_eq!(elems(&c, "a"), "{500000}");
+    assert!(work < 80_000_000, "Frequency did {work} units of work");
+    // one element of the removing list takes one element of the list out
+    // (`AlgoRemove` consumes its `geosToRemove` one by one)
+    let (c, work) = work_of(|| load(&script("a = Remove(l, {1})")).unwrap());
+    let kept = c.id("a").unwrap();
+    assert_eq!(c.elements(kept).unwrap().len(), 499999);
+    assert!(work < 80_000_000, "Remove did {work} units of work");
+    let (c, work) = work_of(|| load(&script("a = Remove(l, {2})")).unwrap());
+    let kept = c.id("a").unwrap();
+    assert_eq!(c.elements(kept).unwrap().len(), 500000, "the elements stay");
+    assert!(work < 80_000_000, "Remove did {work} units of work");
+    // half a million distinct values: a cumulative count that walked the
+    // buckets below every value again (as `getCumFreq` does) would be the
+    // work of a square, the running sums make every count a lookup
+    let (c, work) =
+        work_of(|| load("l = Sequence(k, k, 1, 500000)\na = Frequency(true, l)").unwrap());
+    let counts = c.id("a").unwrap();
+    assert_eq!(c.elements(counts).unwrap().len(), 500000);
+    assert!(c.value(c.id("l").unwrap()) != Value::Undefined);
+    assert!(
+        work < 80_000_000,
+        "cumulative Frequency did {work} units of work"
+    );
+    let (c, work) = work_of(|| {
+        load("l = Sequence(k, k, 1, 500000)\na = Frequency({0, 250000, 500001}, l)").unwrap()
+    });
+    // the first class holds its lower bound but not its upper one, the
+    // highest both
+    assert_eq!(elems(&c, "a"), "{249999, 250001}");
+    assert!(
+        work < 80_000_000,
+        "class Frequency did {work} units of work"
+    );
+    // the charged scans are the work of a product: removing the elements
+    // of a list by a list as long as it crosses the work bound and the
+    // command is undefined
+    let (c, work) = work_of(|| {
+        load("l = Sequence(1, k, 1, 20000)\na = Remove(l, Sequence(1, k, 1, 20000))").unwrap()
+    });
+    assert!(!is_defined(&c, "a"));
+    assert!(work < 80_000_000, "Remove did {work} units of work");
+}
+
+#[test]
+fn the_casts_of_a_start_and_a_fold_saturate_like_java() {
+    let c = load(
+        "l = {1, 2, 3}\n\
+         a = IndexOf(2, l, -1E300)\n\
+         b = IndexOf(2, l, 1E300)\n\
+         d = Product(k, k, 1E300, 1E300)\n\
+         e = Product(k, k, -5.5, -2.5)\n\
+         f = Product(k, k, 5.5, 2.5)",
+    )
+    .unwrap();
+    // `(int)` of a count past `int` saturates to MIN or MAX, and the
+    // index counted from it finds nothing; the fold compares its `int`
+    // counter with the doubles of its bounds
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("d").unwrap()), Value::Undefined);
+    // the value at `from` is folded in first, then the counter from
+    // `(int) from + 1` while it is `<= to`: -5.5, -4, -3
+    assert_eq!(num(&c, "e"), -66.0);
+    // the counter starts at `(int) 5.5 + 1 = 6` and stops at once: the
+    // value at `from` alone
+    assert_eq!(num(&c, "f"), 5.5);
+    rebuilt(&c);
+}

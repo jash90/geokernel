@@ -105,12 +105,14 @@ impl<'a> FunctionFraction<'a> {
             depth: 0,
             value: Val::N(x),
             run: None,
+            vector: false,
             up: None,
         };
         let second = Local {
             depth: 1,
             value: Val::N(y),
             run: None,
+            vector: false,
             up: Some(&first),
         };
         let ctx = Ctx::<true> {

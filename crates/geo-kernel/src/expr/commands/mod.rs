@@ -23,6 +23,8 @@ use super::eval::{Ctx, Val};
 use super::parse::Parser;
 use super::{Bin, Elem, ListOp, Node, Ty};
 
+pub(in crate::expr) use list::{call_type, call_value, second_list};
+
 /// Whether `name` is a command that expressions compute themselves (the
 /// two-number commands are built-in names instead, see
 /// [`binary_command`]).
