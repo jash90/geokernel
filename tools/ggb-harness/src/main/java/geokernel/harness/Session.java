@@ -58,6 +58,7 @@ import org.geogebra.common.kernel.implicit.GeoImplicitCurve;
 import org.geogebra.common.kernel.implicit.AlgoIntersectImplicitpolyParametric;
 import org.geogebra.common.kernel.implicit.AlgoIntersectImplicitpolyPolyLine;
 import org.geogebra.common.kernel.implicit.AlgoIntersectImplicitPolynomials;
+import org.geogebra.common.kernel.implicit.AlgoTangentImplicitpoly;
 import org.geogebra.common.kernel.StringTemplate;
 import org.geogebra.common.kernel.kernelND.GeoConicND;
 import org.geogebra.common.kernel.kernelND.GeoConicNDConstants;
@@ -268,7 +269,8 @@ final class Session {
                     || parent instanceof AlgoIntersectPolyLines
                     || parent instanceof AlgoIntersectImplicitpolyParametric
                     || parent instanceof AlgoIntersectImplicitpolyPolyLine
-                    || parent instanceof AlgoIntersectImplicitPolynomials)) {
+                    || parent instanceof AlgoIntersectImplicitPolynomials
+                    || parent instanceof AlgoTangentImplicitpoly)) {
                 growingPoints.put(parent, label.split("_", 2)[0] + "_{");
                 recordGrowingPoints();
                 return first;
@@ -302,6 +304,11 @@ final class Session {
         if (out != null && out.length == 2 && definition.startsWith("Angle(")
                 && out[1].toGeoElement() instanceof GeoPoint) {
             return runFixedAngle(line, label, out);
+        }
+        if (out != null && out.length > 0 && definition.startsWith("Tangent(")
+                && out[0].toGeoElement().getParentAlgorithm() instanceof AlgoTangentImplicitpoly
+                && (out.length > 1 || !label.equals(out[0].getLabelSimple()))) {
+            return runMulti(line, expected, out);
         }
         if (out != null && ((out.length == 2 && isMultiOutput(definition))
                 || (out.length == 4 && definition.startsWith("Tangent(")))) {
@@ -695,8 +702,9 @@ final class Session {
                 if (!geo.isLabelSet() || label == null || !label.startsWith(entry.getValue())) {
                     continue;
                 }
-                if (!(geo instanceof GeoPoint)) {
-                    throw new IllegalStateException("expected a growing point output: " + label);
+                if (!(geo instanceof GeoPoint)
+                        && !(entry.getKey() instanceof AlgoTangentImplicitpoly && geo instanceof GeoLine)) {
+                    throw new IllegalStateException("unexpected growing output: " + label);
                 }
                 GeoElement previous = objects.putIfAbsent(label, geo);
                 if (previous != null && previous != geo) {
@@ -1214,6 +1222,8 @@ final class Session {
             case "Directrix":
                 return "line";
             case "ImplicitCurve":
+            case "Cubic":
+            case "TriangleCurve":
                 return "implicit";
             case "Asymptote":
                 return first instanceof GeoFunction || first instanceof GeoImplicitCurve ? "list" : "line";

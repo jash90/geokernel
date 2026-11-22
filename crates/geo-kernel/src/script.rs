@@ -708,6 +708,15 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(result) = ConicDef::exec_interval(c, name, rhs) {
         return result;
     }
+    if let Some((command @ "Tangent", args)) = split_call(rhs) {
+        if let Some(defs) = crate::algo::implicit::tangent::Tangent::multi(c, command, &args) {
+            return if defs.is_empty() {
+                Ok(None)
+            } else {
+                add_outputs(c, name, defs).map(Some)
+            };
+        }
+    }
     if let Some(result) = intersect::exec_selected(c, name, rhs) {
         return result;
     }
@@ -1255,6 +1264,8 @@ fn resolve_geometry_arguments(c: &mut Construction, rhs: &str) -> Option<String>
     let (func, mut args) = split_call(rhs)?;
     let is_kind = |arg, kind| c.id(arg).is_some_and(|id| c.kind(id) == kind);
     let inputs: &[(usize, Kind)] = match (func, args.as_slice()) {
+        ("Tangent", [f, _]) if is_kind(f, Kind::ImplicitCurve) => &[(1, Kind::Point)],
+        ("Tangent", [_, f]) if is_kind(f, Kind::ImplicitCurve) => &[(0, Kind::Point)],
         ("Tangent", [f, _]) if is_kind(f, Kind::Function) => &[(1, Kind::Point)],
         ("Tangent", [_, f]) if is_kind(f, Kind::Curve) => &[(0, Kind::Point)],
         ("Tangent", [_, f]) if is_kind(f, Kind::Function) => &[(0, Kind::Number)],
@@ -1384,6 +1395,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
     if let Some(defs) = analysis::existing_outputs(c, func, &args) {
         return Some(defs);
     }
+    if let Some(defs) = crate::algo::implicit::tangent::Tangent::multi(c, func, &args) {
+        return Some(Ok(defs));
+    }
     if let Some(defs) = intersect::parse_multi(c, func, &args) {
         return Some(Ok(defs));
     }
@@ -1480,7 +1494,8 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
         };
     }
     let count = defined.iter().filter(|&&d| d).count();
-    let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed());
+    let indexed = matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_indexed())
+        || matches!(defs.first(), Some(Def::Lines(LineDef::ImplicitTangent(_))));
     let all_indexed =
         matches!(defs.first(), Some(Def::IntersectBoundary(d)) if d.labels_all_indexed());
     // Construction.getIndexLabel: the prefix is the name up to the first `_`.

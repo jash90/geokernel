@@ -1,4 +1,4 @@
-//! Intersect a polynomial with a conic by eliminating the quadratic variable.
+//! Projection and refinement for intersections of polynomial equations.
 
 use super::polynomial::{add_scaled, elimination_roots, evaluate, product, roots, Polynomial};
 use crate::expr::IntersectionWork;
@@ -7,7 +7,7 @@ use crate::{ConicData, ConicType};
 
 type Point = (f64, f64);
 
-pub(super) fn intersect(f: &[Vec<f64>], conic: &ConicData, work: &IntersectionWork) -> Vec<Point> {
+pub(super) fn conic(f: &[Vec<f64>], conic: &ConicData, work: &IntersectionWork) -> Vec<Point> {
     intersect_eliminated(f, conic, work).unwrap_or_default()
 }
 
@@ -167,4 +167,111 @@ pub(super) fn insert(points: &mut Vec<Point>, point: Point) {
         }
     }
     points.insert(slot, point);
+}
+
+/// Eliminate x via a bounded Sylvester determinant over polynomials in y.
+pub(super) fn pair(f: &[Vec<f64>], g: &[Vec<f64>], work: &IntersectionWork) -> Option<Vec<Point>> {
+    let degree = |coefficients: &[Vec<f64>]| {
+        coefficients
+            .iter()
+            .rposition(|row| row.iter().any(|&v| v != 0.0))
+    };
+    let (m, n) = (degree(f)?, degree(g)?);
+    if m == 0 && n == 0 {
+        return Some(Vec::new());
+    }
+    if m == 0 {
+        return Some(constant_in_x(g, &f[0], work));
+    }
+    if n == 0 {
+        return Some(constant_in_x(f, &g[0], work));
+    }
+    let only_x = |matrix: &[Vec<f64>]| {
+        matrix
+            .iter()
+            .all(|row| row.iter().skip(1).all(|&v| v == 0.0))
+    };
+    if only_x(g) {
+        return Some(constant_in_y(f, g, work));
+    }
+    if only_x(f) {
+        return Some(constant_in_y(g, f, work));
+    }
+    let projection = sylvester(&f[..=m], &g[..=n], work)?;
+    let (lower, higher) = if m < n { (f, g) } else { (g, f) };
+    let mut points = Vec::new();
+    for y in elimination_roots(&projection, work) {
+        let mut slice: Vec<_> = lower.iter().map(|row| evaluate(row, y)).collect();
+        if slice
+            .iter()
+            .all(|&value| value.abs() <= crate::tol::STANDARD_PRECISION)
+        {
+            slice = higher.iter().map(|row| evaluate(row, y)).collect();
+        }
+        for x in elimination_roots(&slice, work) {
+            if let Some(pair) = polish((x, y), f, g) {
+                insert(&mut points, pair);
+            }
+        }
+    }
+    Some(points)
+}
+
+fn constant_in_y(f: &[Vec<f64>], g: &[Vec<f64>], work: &IntersectionWork) -> Vec<Point> {
+    let x_poly: Vec<_> = g
+        .iter()
+        .map(|row| row.first().copied().unwrap_or(0.0))
+        .collect();
+    let mut points = Vec::new();
+    for x in roots(&x_poly, work) {
+        let mut slice = Vec::new();
+        for row in f.iter().rev() {
+            for value in &mut slice {
+                *value *= x;
+            }
+            add_scaled(&mut slice, row, 1.0);
+        }
+        for y in elimination_roots(&slice, work) {
+            if let Some(pair) = polish((x, y), f, g) {
+                insert(&mut points, pair);
+            }
+        }
+    }
+    points
+}
+
+fn sylvester(f: &[Vec<f64>], g: &[Vec<f64>], work: &IntersectionWork) -> Option<Polynomial> {
+    const MAX_ROWS: usize = 12;
+    let (m, n) = (f.len() - 1, g.len() - 1);
+    let size = m + n;
+    if size > MAX_ROWS {
+        return None;
+    }
+    let all = (1usize << size) - 1;
+    let mut minors = vec![Vec::new(); all + 1];
+    minors[0].push(1.0);
+    // One minor per subset of selected columns. Each row has a shifted
+    // block of coefficients from just one of the input polynomials.
+    for columns in 0..all {
+        if minors[columns].is_empty() {
+            continue;
+        }
+        let row = columns.count_ones() as usize;
+        let (offset, block) = if row < n { (row, f) } else { (row - n, g) };
+        for (j, coefficient) in block.iter().enumerate() {
+            let col = offset + j;
+            let bit = 1 << col;
+            if columns & bit != 0 {
+                continue;
+            }
+            let term = product(&minors[columns], coefficient, work)?;
+            let inversions = (columns >> (col + 1)).count_ones();
+            add_scaled(
+                &mut minors[columns | bit],
+                &term,
+                if inversions % 2 == 0 { 1.0 } else { -1.0 },
+            );
+        }
+    }
+    minors.pop()
 }

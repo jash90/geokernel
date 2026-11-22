@@ -21,7 +21,16 @@ pub fn plot(coefficients: &[Vec<f64>], frame: &Frame) -> Vec<Path> {
     }
     const MAX_CELLS_PER_AXIS: usize = 112;
     let cells = |pixels: f64| ((pixels / 7.0).ceil() as usize).clamp(1, MAX_CELLS_PER_AXIS);
-    let (nx, ny) = (cells(frame.width()), cells(frame.height()));
+    let (mut nx, mut ny) = (cells(frame.width()), cells(frame.height()));
+    const MAX_COEFFICIENT_EVALUATIONS: usize = 750_000;
+    let cost = coefficients.iter().map(Vec::len).sum::<usize>().max(1);
+    // A cell can evaluate its centre in addition to the shared grid.
+    let samples = MAX_COEFFICIENT_EVALUATIONS / cost / 2;
+    let ratio = (samples as f64 / ((nx + 1) * (ny + 1)) as f64).sqrt();
+    if ratio < 1.0 {
+        nx = ((nx as f64 * ratio) as usize).max(1);
+        ny = ((ny as f64 * ratio) as usize).max(1);
+    }
     let point = |i, j| {
         (
             frame.width() * i as f64 / nx as f64,

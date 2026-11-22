@@ -4,7 +4,7 @@ use crate::compare::{
     compare_arc, compare_conic, compare_extra, compare_list, compare_locus, compare_sampled,
     line_scale_agrees, Sign,
 };
-use crate::model::{implicit_intersection_label, indexed_prefix, label_prefix, Case, Step};
+use crate::model::{implicit_output, indexed_prefix, label_prefix, Case, Step};
 use geo_kernel::{script, Construction, Kind};
 
 /// One disagreement between GeoGebra and the kernel.
@@ -72,7 +72,7 @@ pub fn replay(case: &Case) -> CaseOutcome {
     let implicit_outputs: Vec<_> = case
         .script
         .iter()
-        .filter_map(|line| implicit_intersection_label(line, &case.snapshots[0]))
+        .filter_map(|line| implicit_output(line, &case.snapshots[0]).map(|(label, _)| label))
         .collect();
     for (i, (step, snapshot)) in case.steps.iter().zip(&case.snapshots).enumerate() {
         match apply(&mut c, step) {
@@ -95,7 +95,7 @@ pub fn replay(case: &Case) -> CaseOutcome {
                         i,
                         label,
                         "no output",
-                        "unexpected intersection point".into(),
+                        "unexpected command output".into(),
                     ));
                 }
             }

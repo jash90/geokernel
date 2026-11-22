@@ -106,4 +106,44 @@ cases.case("conic", ["c: x^4 + y^4 = 2", "k: x + y^2 = 0", "P = Intersect(c, k)"
 
 cases.case("conic", ["c: x^4 + y^4 = 2", "k: x^2 + y^2 = 2", "Q = Intersect(k, c)"], [])
 
+cases.case(
+    "pair", ["a = 2", "c: x^4 + y^4 = 2", "d: (x-a)^4 + y^4 = 2", "P = Intersect(c, d)"],
+    [setn("a", 3), setn("a", 0), setn("a", 2)],
+)
+cases.case("pair", ["c: y^3 - y = 0", "d: x^3 - x + y = 0", "P = Intersect(c, d)"], [])
+cases.case("pair", ["c: x^3 + y^3 = 1", "d: x^3 - y^3 = 1", "P = Intersect(c, d)"], [])
+cases.case(
+    "pair", ["c: (x^2 + y^2 - 1)*(x+3) = 0", "d: (x^2 + y^2 - 1)*(y+3) = 0",
+             "P = Intersect(c, d)"],
+    [],
+)
+
+cases.case(
+    "tangents", ["f(x,y) = x^2 + y^2 - 1", "c = ImplicitCurve(f)", "A = (1, 1)",
+                 "t = Tangent(A, c)"],
+    [mv("A", 0, 0), mv("A", 1, 0), mv("A", 1, 1)],
+)
+cases.case(
+    "tangents", ["f(x,y) = x^2 + y^2 - 1", "c = ImplicitCurve(f)", "A = (1, 1)",
+                 "t = Tangent(c, A)"],
+    [mv("A", 1, 0), mv("A", 2, 0), mv("A", 1, 1)],
+)
+cases.case(
+    "tangents", ["c: x^4 + y^4 = 1", "A = (0, 0)", "B = (2, 0)", "g = Line(A, B)",
+                 "t = Tangent(g, c)"],
+    [mv("B", 0, 0), mv("B", 0, 2), mv("B", 2, 0)],
+)
+cases.case(
+    "tangents", ["c: x^4 + y^4 = 1", "A = (1, 0)", "t = Tangent(A, c)"],
+    [mv("A", -1, 0), mv("A", 2, 0), mv("A", 1, 0)],
+)
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("tangents", ["c: x^4 + y^4 = 1", "A = (1, 1)", "t = Tangent(A, c)"], [])
+
+triangle = ["P = (1, 1)", "Q = (2, 0.5)", "R = (3, 1/3)"]
+cases.case("barycentric", triangle + ["n = 42", "c = Cubic(P, Q, R, n)"],
+           [setn("n", 0), setn("n", 42), mv("Q", 1, 1), mv("Q", 2, 0.5)])
+cases.case("barycentric", triangle + ["c = TriangleCurve(P, Q, R, A+B=C)"],
+           [mv("Q", 1, 1), mv("Q", 2, 0.5)])
+
 cases.write()

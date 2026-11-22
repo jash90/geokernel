@@ -897,6 +897,7 @@ fn validate_case(case: &Case) -> Result<(), String> {
     }
     let mut previous_keys: Option<BTreeSet<String>> = None;
     let mut boundary_prefixes = BTreeSet::new();
+    let mut tangent_prefixes = BTreeSet::new();
     let mut has_point_list = false;
     let mut has_root_interval = false;
     for (i, snap) in case.snapshots.iter().enumerate() {
@@ -928,9 +929,13 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     {
                         clip_prefixes.insert(label_prefix(label));
                     }
-                    if let Some(label) = implicit_intersection_label(line, snap) {
+                    if let Some((label, kind)) = implicit_output(line, snap) {
                         let prefix = label_prefix(label);
-                        boundary_prefixes.insert(prefix);
+                        if kind == Kind::Line {
+                            tangent_prefixes.insert(prefix);
+                        } else {
+                            boundary_prefixes.insert(prefix);
+                        }
                         if !keys.contains(label)
                             && !keys.iter().any(|key| indexed_prefix(key) == Some(prefix))
                         {
@@ -1017,11 +1022,16 @@ fn validate_case(case: &Case) -> Result<(), String> {
                 // These algorithms retain their earlier outputs and can
                 // publish new point labels on a move.
                 if !previous.is_subset(&keys)
-                    || keys.difference(previous).any(|key| {
-                        snap[key].kind != Kind::Point
-                            || !(indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
+                    || keys.difference(previous).any(|key| match snap[key].kind {
+                        Kind::Point => {
+                            !(indexed_prefix(key).is_some_and(|p| boundary_prefixes.contains(p))
                                 || (has_point_list || has_root_interval)
                                     && POINT_LABELS.contains(&label_prefix(key)))
+                        }
+                        Kind::Line => {
+                            !indexed_prefix(key).is_some_and(|p| tangent_prefixes.contains(p))
+                        }
+                        _ => true,
                     })
                 {
                     return Err(format!("snapshot {i} labels differ from snapshot 0"));
@@ -1250,23 +1260,36 @@ fn command_args(line: &str) -> Option<(&str, &str, Vec<&str>)> {
     Some((label.trim(), name.trim(), args))
 }
 
-pub(crate) fn implicit_intersection_label<'a>(
+pub(crate) fn implicit_output<'a>(
     line: &'a str,
     snapshot: &BTreeMap<String, Expected>,
-) -> Option<&'a str> {
-    let (label, "Intersect", args) = command_args(line)? else {
-        return None;
-    };
+) -> Option<(&'a str, Kind)> {
+    let (label, command, args) = command_args(line)?;
     let [a, b] = args.as_slice() else { return None };
     let (a, b) = (snapshot.get(*a)?.kind, snapshot.get(*b)?.kind);
+    if command == "Tangent" {
+        return matches!(
+            (a, b),
+            (Kind::Point | Kind::Line, Kind::ImplicitCurve) | (Kind::ImplicitCurve, Kind::Point)
+        )
+        .then_some((label, Kind::Line));
+    }
+    if command != "Intersect" {
+        return None;
+    }
     let partner = |k| {
         matches!(
             k,
-            Kind::Line | Kind::PolyLine | Kind::Function | Kind::Conic | Kind::Circle
+            Kind::Line
+                | Kind::PolyLine
+                | Kind::Function
+                | Kind::Conic
+                | Kind::Circle
+                | Kind::ImplicitCurve
         )
     };
     (a == Kind::ImplicitCurve && partner(b) || b == Kind::ImplicitCurve && partner(a))
-        .then_some(label)
+        .then_some((label, Kind::Point))
 }
 
 /// The transformed object of a script line `name = Mirror(p, ...)` and the

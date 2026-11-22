@@ -27,6 +27,14 @@ fn all_agree(pairs: &[(f64, f64)]) -> bool {
     pairs.iter().all(|&(p, q)| numbers_agree(p, q))
 }
 
+pub(crate) fn implicit_matrices_agree(expected: &[Vec<f64>], matrix: &[Vec<f64>]) -> bool {
+    expected.len() == matrix.len()
+        && expected
+            .iter()
+            .zip(matrix)
+            .all(|(a, b)| a.len() == b.len() && a.iter().zip(b).all(|(&x, &y)| numbers_agree(x, y)))
+}
+
 /// Scales `(a, b, c)` so that `(a, b)` has length 1. `None` for a zero `(a, b)`.
 fn normalise(a: f64, b: f64, c: f64) -> Option<(f64, f64, f64)> {
     let n = a.hypot(b);
@@ -227,11 +235,7 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
             let matrix = c
                 .implicit_coefficients(id)
                 .ok_or("missing implicit coefficients")?;
-            if coefficients.len() != matrix.len()
-                || coefficients.iter().zip(matrix).any(|(a, b)| {
-                    a.len() != b.len() || a.iter().zip(b).any(|(&x, &y)| !numbers_agree(x, y))
-                })
-            {
+            if !implicit_matrices_agree(coefficients, matrix) {
                 return Err(format!(
                     "expected coefficients {coefficients:?}, got {matrix:?}"
                 ));

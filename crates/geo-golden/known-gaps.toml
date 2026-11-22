@@ -791,3 +791,18 @@ reason = "The kernel has no complex point mode, so the input point cannot be con
 mismatches = [
   "0:script line 1",
 ]
+
+[[gap]]
+id = "implicit-tangents-005"
+reason = "The reference keeps two numerically separated contact candidates for the same horizontal tangent to the quartic. The bounded eliminant yields one horizontal and one vertical line."
+mismatches = ["0:t_{2}", "0:t_{3}"]
+
+[[gap]]
+id = "implicit-barycentric-001"
+reason = "The numbered triangle cubic catalogue and its coefficient substitution have no kernel implementation."
+mismatches = ["0:script line 5"]
+
+[[gap]]
+id = "implicit-barycentric-002"
+reason = "The kernel has no scoped binding and substitution of the three barycentric coordinates in the command equation."
+mismatches = ["0:script line 4"]

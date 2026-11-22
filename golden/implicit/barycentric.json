@@ -1,0 +1,148 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-barycentric-001",
+      "group": "implicit",
+      "script": [
+        "P = (1, 1)",
+        "Q = (2, 0.5)",
+        "R = (3, 1/3)",
+        "n = 42",
+        "c = Cubic(P, Q, R, n)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 42.0 },
+        { "action": "move", "label": "Q", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "Q", "x": 2.0, "y": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "n": { "type": "number", "defined": true, "value": 42.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [354741.21554768074, -616987.5503638929, 256970.21097996994, 653.9626105014759],
+              [-371104.61727442464, 481421.6333812809, -129048.41967687852, 0.0],
+              [122469.63661217807, -86298.35010859629, 0.0, 0.0],
+              [-12817.721707818935, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-12817.72x³ - 86298.35x² y + 122469.64x² - 129048.42x y² + 481421.63x y - 371104.62x + 653.96y³ + 256970.21y² - 616987.55y = -354741.22",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "n": { "type": "number", "defined": true, "value": 42.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [354741.21554768074, -616987.5503638929, 256970.21097996994, 653.9626105014759],
+              [-371104.61727442464, 481421.6333812809, -129048.41967687852, 0.0],
+              [122469.63661217807, -86298.35010859629, 0.0, 0.0],
+              [-12817.721707818935, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-12817.72x³ - 86298.35x² y + 122469.64x² - 129048.42x y² + 481421.63x y - 371104.62x + 653.96y³ + 256970.21y² - 616987.55y = -354741.22",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "n": { "type": "number", "defined": true, "value": 42.0 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "n": { "type": "number", "defined": true, "value": 42.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [354741.21554768074, -616987.5503638929, 256970.21097996994, 653.9626105014759],
+              [-371104.61727442464, 481421.6333812809, -129048.41967687852, 0.0],
+              [122469.63661217807, -86298.35010859629, 0.0, 0.0],
+              [-12817.721707818935, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-12817.72x³ - 86298.35x² y + 122469.64x² - 129048.42x y² + 481421.63x y - 371104.62x + 653.96y³ + 256970.21y² - 616987.55y = -354741.22",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit-barycentric-002",
+      "group": "implicit",
+      "script": [
+        "P = (1, 1)",
+        "Q = (2, 0.5)",
+        "R = (3, 1/3)",
+        "c = TriangleCurve(P, Q, R, A+B=C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "Q", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "Q", "x": 2.0, "y": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [10.0, -5.999999999999999],
+              [-3.0, 0.0]
+            ],
+            "equation": "-3x - 6y = -10",
+            "input_form": false
+          }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 0.5 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.3333333333333333 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [10.0, -5.999999999999999],
+              [-3.0, 0.0]
+            ],
+            "equation": "-3x - 6y = -10",
+            "input_form": false
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,526 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "implicit-tangents-001",
+      "group": "implicit",
+      "script": [
+        "f(x,y) = x^2 + y^2 - 1",
+        "c = ImplicitCurve(f)",
+        "A = (1, 1)",
+        "t = Tangent(A, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 352.0],
+              [-4.0, 9.0, 96.0],
+              [-2.0, 5.0, 28.0],
+              [-1.0, 3.0, 9.0],
+              [-0.5, 2.0, 3.25],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.75],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 12.0],
+              [4.0, -7.0, 64.0],
+              [8.0, -15.0, 288.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 1",
+            "input_form": false
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 1.0 }
+        },
+        {
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 352.0],
+              [-4.0, 9.0, 96.0],
+              [-2.0, 5.0, 28.0],
+              [-1.0, 3.0, 9.0],
+              [-0.5, 2.0, 3.25],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.75],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 12.0],
+              [4.0, -7.0, 64.0],
+              [8.0, -15.0, 288.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 1",
+            "input_form": false
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": false },
+          "t_{2}": { "type": "line", "defined": false }
+        },
+        {
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 352.0],
+              [-4.0, 9.0, 96.0],
+              [-2.0, 5.0, 28.0],
+              [-1.0, 3.0, 9.0],
+              [-0.5, 2.0, 3.25],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.75],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 12.0],
+              [4.0, -7.0, 64.0],
+              [8.0, -15.0, 288.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 1",
+            "input_form": false
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 2.0, "b": 0.0, "c": -2.0 },
+          "t_{2}": { "type": "line", "defined": false }
+        },
+        {
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 352.0],
+              [-4.0, 9.0, 96.0],
+              [-2.0, 5.0, 28.0],
+              [-1.0, 3.0, 9.0],
+              [-0.5, 2.0, 3.25],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.75],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 12.0],
+              [4.0, -7.0, 64.0],
+              [8.0, -15.0, 288.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 1",
+            "input_form": false
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-tangents-002",
+      "group": "implicit",
+      "script": [
+        "f(x,y) = x^2 + y^2 - 1",
+        "c = ImplicitCurve(f)",
+        "A = (1, 1)",
+        "t = Tangent(c, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 352.0],
+              [-4.0, 9.0, 96.0],
+              [-2.0, 5.0, 28.0],
+              [-1.0, 3.0, 9.0],
+              [-0.5, 2.0, 3.25],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.75],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 12.0],
+              [4.0, -7.0, 64.0],
+              [8.0, -15.0, 288.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 1",
+            "input_form": false
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 1.0 }
+        },
+        {
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 352.0],
+              [-4.0, 9.0, 96.0],
+              [-2.0, 5.0, 28.0],
+              [-1.0, 3.0, 9.0],
+              [-0.5, 2.0, 3.25],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.75],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 12.0],
+              [4.0, -7.0, 64.0],
+              [8.0, -15.0, 288.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 1",
+            "input_form": false
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 2.0, "b": 0.0, "c": -2.0 },
+          "t_{2}": { "type": "line", "defined": false }
+        },
+        {
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 352.0],
+              [-4.0, 9.0, 96.0],
+              [-2.0, 5.0, 28.0],
+              [-1.0, 3.0, 9.0],
+              [-0.5, 2.0, 3.25],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.75],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 12.0],
+              [4.0, -7.0, 64.0],
+              [8.0, -15.0, 288.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 1",
+            "input_form": false
+          },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -0.8660254037844387, "b": 1.5, "c": 1.7320508075688774 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.8660254037844387, "b": 1.5, "c": -1.7320508075688774 }
+        },
+        {
+          "f": {
+            "type": "function_nvar",
+            "defined": true,
+            "samples_xy": [
+              [-8.0, 17.0, 352.0],
+              [-4.0, 9.0, 96.0],
+              [-2.0, 5.0, 28.0],
+              [-1.0, 3.0, 9.0],
+              [-0.5, 2.0, 3.25],
+              [0.0, 1.0, 0.0],
+              [0.5, 0.0, -0.75],
+              [1.0, -1.0, 1.0],
+              [2.0, -3.0, 12.0],
+              [4.0, -7.0, 64.0],
+              [8.0, -15.0, 288.0]
+            ]
+          },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 1",
+            "input_form": false
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": -1.0, "b": 0.0, "c": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-tangents-003",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 1",
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "g = Line(A, B)",
+        "t = Tangent(g, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 2.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": -2.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "g": { "type": "line", "defined": false },
+          "t_{1}": { "type": "line", "defined": false },
+          "t_{2}": { "type": "line", "defined": false }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": -2.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": -2.0, "b": 0.0, "c": 2.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 2.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "implicit-tangents-004",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 1",
+        "A = (1, 0)",
+        "t = Tangent(A, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -1.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 4.0, "b": 0.0, "c": -4.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": -4.0 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": -0.881264520127971, "b": 1.2062994740159003, "c": 1.762529040255942 },
+          "t_{2}": { "type": "line", "defined": true, "a": 0.881264520127971, "b": 1.2062994740159003, "c": -1.762529040255942 }
+        },
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 4.0, "b": 0.0, "c": -4.0 },
+          "t_{2}": { "type": "line", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "implicit-tangents-005",
+      "group": "implicit",
+      "script": [
+        "c: x^4 + y^4 = 1",
+        "A = (1, 1)",
+        "t = Tangent(A, c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-1.0, 0.0, 0.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [0.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x^(4) + y^(4) = 1",
+            "input_form": true
+          },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "t_{1}": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.0 },
+          "t_{2}": { "type": "line", "defined": true, "a": 4.909406214892442E-13, "b": 0.9989619315402737, "c": -0.9989619315407646 },
+          "t_{3}": { "type": "line", "defined": true, "a": -1.0000053842875658, "b": 0.0, "c": 1.0000053842875658 }
+        }
+      ]
+    }
+  ]
+}

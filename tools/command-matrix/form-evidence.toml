@@ -3498,3 +3498,13 @@ cases = ["implicit-graph-001"]
 command = "Intersect"
 form = "implicit,conic,number"
 cases = ["implicit-conic-001"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,implicit"
+cases = ["implicit-pair-001", "implicit-pair-002", "implicit-pair-003", "implicit-pair-004"]
+
+[[form]]
+command = "Tangent"
+form = "line,implicit"
+cases = ["implicit-tangents-003"]

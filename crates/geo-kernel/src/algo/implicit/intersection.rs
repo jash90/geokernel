@@ -35,6 +35,7 @@ impl Intersection {
             )
         };
         match (c.kind(a), c.kind(b)) {
+            (Kind::ImplicitCurve, Kind::ImplicitCurve) => Some([a, b]),
             (Kind::ImplicitCurve, kind) if partner(kind) => Some([a, b]),
             (kind, Kind::ImplicitCurve) if partner(kind) => Some([b, a]),
             _ => None,
@@ -80,7 +81,7 @@ impl Intersection {
         }
         let [selector] = tail else { return None };
         let partner = c.kind(pair[1]);
-        if partner == Kind::PolyLine
+        if matches!(partner, Kind::PolyLine | Kind::ImplicitCurve)
             || (matches!(partner, Kind::Conic | Kind::Circle) && c.id(a) != Some(pair[0]))
         {
             return Some(Err("no indexed intersection for those arguments".into()));
@@ -177,6 +178,7 @@ impl Group for Intersection {
                 Kind::Function,
                 Kind::Conic,
                 Kind::Circle,
+                Kind::ImplicitCurve,
             ],
         )?;
         if let Method::Index(index) = self.method {
@@ -233,7 +235,13 @@ fn solve(c: &Construction, [first, other]: [Id; 2]) -> Option<Points> {
         Kind::PolyLine => polyline(c, other, matrix, &work)?,
         Kind::Function => graph(c, other, matrix, &work)?,
         Kind::Conic | Kind::Circle if c.value(other).is_defined() => {
-            super::conic::intersect(matrix, &c.conic(other)?, &work)
+            super::elimination::conic(matrix, &c.conic(other)?, &work)
+                .into_iter()
+                .map(Some)
+                .collect()
+        }
+        Kind::ImplicitCurve => {
+            super::elimination::pair(matrix, c.implicit_coefficients(other)?, &work)?
                 .into_iter()
                 .map(Some)
                 .collect()
