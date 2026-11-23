@@ -1869,12 +1869,6 @@ cases = ["algebralogic-logic-013", "algebralogic-logic-014"]
 
 [[form]]
 command = "If"
-form = "boolean,any,..."
-cases = ["funcrest-conditionalmixed-001", "funcrest-conditionalmixed-003", "funcrest-conditionalmixed-004"]
-difference = "remaining-transformations-equation-sides-and-conditionals: `If(boolean, any, ...)`"
-
-[[form]]
-command = "If"
 form = "function,any,..."
 cases = ["algebralogic-logic-015"]
 

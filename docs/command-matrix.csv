@@ -99,7 +99,7 @@ Ordinal,,text,P2,done,1,1,
 ContinuedFraction,,text,P2,done,4,4,
 ReplaceAll,,text,P2,done,1,1,
 Split,,text,P2,done,1,1,
-If,,logical,P2,done,2,2,"Scalar, coordinate, boolean, text, list and numeric-function branches, plus same-kind geometry alternatives with live shape records and mixed segment and line alternatives."
+If,,logical,P2,partial,2,1,"Scalar, coordinate, boolean, text, list and numeric-function branches, plus same-kind geometry alternatives with live shape records and mixed segment and line alternatives."
 CountIf,,logical,P2,done,2,2,
 IsInteger,,logical,P2,done,1,1,
 KeepIf,,logical,P2,done,2,2,
