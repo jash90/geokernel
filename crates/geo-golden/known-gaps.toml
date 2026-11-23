@@ -3090,6 +3090,11 @@ undefined = true
 # prove
 
 [[gap]]
+id = "prove-peer-001"
+reason = "The reference's peer choice depends on identity-hash iteration order. This recording returns false and {false}; the kernel reports true on components."
+mismatches = ["0:p_{3}", "0:q_{3}"]
+
+[[gap]]
 id = "prove-relation-001"
 reason = "intended difference, recorded in DIFFERENCES.md: the relation-tool form of ProveDetails returns an undefined list when the reference supplies a localized condition sentence."
 mismatches = ["0:r"]

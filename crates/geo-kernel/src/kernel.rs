@@ -1756,7 +1756,7 @@ impl Construction {
             lists: self.lists.len(),
             exprs: self.exprs.len(),
             frozen_line_starts: self.frozen_line_starts.len(),
-            proof_intersections: self.proof_intersections.len(),
+            proof_intersections: self.proof_intersections.checkpoint(),
             image_assets: self.images.asset_count(),
             step: self.step,
             generation: self.generation,
@@ -2193,6 +2193,10 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
+        // Rebuilding an intersection also replaces its symbolic helper.
+        // Drop all affected outputs before any surviving proof translates them.
+        self.proof_intersections
+            .forget_rebuilt(old_reads.keys().copied());
         self.propagate_dirty(dirty, 0, true);
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;

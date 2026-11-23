@@ -1,0 +1,55 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-peer-001",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "A = (4, 0)",
+        "c = Circle(O, A)",
+        "g = Line(O, A)",
+        "Q = Intersect(g, c, 1)",
+        "b = AreEqual(A, Q)",
+        "p = Prove(b)",
+        "S = Intersect(g, c)",
+        "b_{2} = AreCollinear(O, A, S_{1})",
+        "p_{2} = Prove(b_{2})",
+        "R = Intersect(g, c, 2)",
+        "b_{3} = AreEqual(Q, R)",
+        "p_{3} = Prove(b_{3})",
+        "q_{3} = ProveDetails(b_{3})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "S_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "b_{2}": { "type": "boolean", "defined": true, "value": true },
+          "p_{2}": { "type": "boolean", "defined": true, "value": true },
+          "R": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "b_{3}": { "type": "boolean", "defined": true, "value": false },
+          "p_{3}": { "type": "boolean", "defined": true, "value": false },
+          "q_{3}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

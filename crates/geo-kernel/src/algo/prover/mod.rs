@@ -597,11 +597,11 @@ pub(crate) fn can_rewrite_statement(
     statement: Id,
     intersections: &mut IntersectionTranslations,
 ) -> bool {
-    let len = intersections.len();
+    let checkpoint = intersections.checkpoint();
     let can_rewrite =
         translate::System::hypotheses(c, statement, &Budget::new(PROOF_WORK), intersections)
             .is_ok();
-    intersections.truncate(len);
+    intersections.truncate(checkpoint);
     can_rewrite
 }
 
@@ -695,7 +695,7 @@ mod tests {
     }
 
     #[test]
-    fn a_shared_point_and_two_hidden_outputs_leave_the_proof_undecided() {
+    fn a_shared_point_and_two_hidden_outputs_leave_the_proof_unknown() {
         for (construction, pair, statement) in [
             (
                 "O = (0, 0)\nA = (4, 0)\nc = Circle(O, A)\ng = Line(O, A)",
@@ -711,39 +711,72 @@ mod tests {
             let script = format!(
                 "{construction}\nP = Intersect({pair}, 1)\nQ = Intersect({pair}, 2)\n{statement}"
             );
-            assert_eq!(outcome(&script, Question::Prove), Outcome::Undecided);
+            let c = crate::script::load(&format!("{script}\np = Prove(b)\nq = ProveDetails(b)"))
+                .unwrap();
+            assert_eq!(c.value(c.id("p").unwrap()), Value::Undefined);
+            assert_eq!(c.elements(c.id("q").unwrap()).unwrap().len(), 0);
         }
     }
 
     #[test]
     fn a_later_proof_sees_the_hidden_intersection_outputs_already_translated() {
-        let mut c = crate::script::load(
-            "O = (0, 0)\nA = (4, 0)\nc = Circle(O, A)\ng = Line(O, A)\n\
-             Q = Intersect(g, c, 1)\nM = Midpoint(A, Q)\nb = AreEqual(M, O)",
-        )
-        .unwrap();
-        let before = c.checkpoint();
-        for line in ["p = Prove(b)", "q = ProveDetails(b)"] {
-            crate::script::exec(&mut c, line).unwrap();
-        }
-        assert_eq!(c.value(c.id("p").unwrap()), Value::Bool(true));
-
+        const SCRIPT: &str = "O = (0, 0)\nA = (4, 0)\nc = Circle(O, A)\ng = Line(O, A)\n\
+             Q = Intersect(g, c, 1)\nM = Midpoint(A, Q)\nb = AreEqual(M, O)";
         let later = [
             "R = Intersect(g, c, 2)",
             "b_{2} = AreEqual(A, R)",
             "p_{2} = Prove(b_{2})",
+            "q_{2} = ProveDetails(b_{2})",
         ];
-        for line in later {
+        let first = ["p = Prove(b)", "q = ProveDetails(b)"];
+        let assert_later_unknown = |c: &mut Construction| {
+            for line in later {
+                crate::script::exec(c, line).unwrap();
+            }
+            assert_eq!(c.value(c.id("p_{2}").unwrap()), Value::Undefined);
+            assert_eq!(c.elements(c.id("q_{2}").unwrap()).unwrap().len(), 0);
+        };
+        let mut c = crate::script::load(SCRIPT).unwrap();
+        for line in first {
             crate::script::exec(&mut c, line).unwrap();
         }
-        // GeoGebra's algebraic prover encounters a null equation here.
-        assert_eq!(c.value(c.id("p_{2}").unwrap()), Value::Undefined);
+        assert_eq!(c.value(c.id("p").unwrap()), Value::Bool(true));
+        let after_first_proof = c.checkpoint();
+        assert_later_unknown(&mut c);
+        c.rollback(after_first_proof).unwrap();
+        assert_later_unknown(&mut c);
 
-        c.rollback(before).unwrap();
+        let mut c = crate::script::load(SCRIPT).unwrap();
+        let before_first_proof = c.checkpoint();
+        for line in first {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        assert_later_unknown(&mut c);
+        c.rollback(before_first_proof).unwrap();
         for line in later {
             crate::script::exec(&mut c, line).unwrap();
         }
         assert_eq!(c.value(c.id("p_{2}").unwrap()), Value::Bool(false));
+    }
+
+    #[test]
+    fn redefining_an_intersection_input_rebuilds_its_proof_translation() {
+        let mut c = crate::script::load(
+            "O = (0, 0)\nB = (4, 0)\ng = Line(O, B)\nA = Point(g, 0.25)\nc = Circle(O, A)\n\
+             P = Intersect(g, c, 1)\nQ = Intersect(g, c, 2)\nb = AreCollinear(O, P, Q)\n\
+             p = Prove(b)",
+        )
+        .unwrap();
+        let p = c.id("p").unwrap();
+        assert_eq!(c.value(p), Value::Undefined);
+        crate::script::exec(&mut c, "A = (2, 0)").unwrap();
+        assert_eq!(c.value(p), Value::Bool(true));
+
+        // A newer direct dependency must be translated before the old point.
+        for line in ["D = (0, 4)", "h = Line(O, D)", "A = Point(h, 0.25)"] {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        assert_eq!(c.value(p), Value::Bool(true));
     }
 
     #[test]

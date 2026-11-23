@@ -341,4 +341,25 @@ for carrier in ("Segment", "Ray"):
                         "P = Intersect(s, k, 1)", "Q = Intersect(s, k, 2)",
                         "M = Midpoint(P, Q)"], "AreEqual(M, O)")
 
+# A labelled pair can share the hidden helper of an earlier indexed output.
+cases.topic("peer")
+cases.case("peer", INDEXED_DIAMETER + [
+    "b = AreEqual(A, Q)", "p = Prove(b)", "S = Intersect(g, c)",
+    "b_{2} = AreCollinear(O, A, S_{1})", "p_{2} = Prove(b_{2})",
+    "R = Intersect(g, c, 2)", "b_{3} = AreEqual(Q, R)",
+    "p_{3} = Prove(b_{3})", "q_{3} = ProveDetails(b_{3})",
+], [])
+
+# The symbolic incidence uses the supporting line of each carrier.
+cases.topic("parabola")
+PARABOLA = ["D = (-3, -1)", "E = (3, -1)", "d = Line(D, E)",
+            "F = (0, 1)", "k = Parabola(F, d)", "A = (-4, 1)", "B = (4, 1)"]
+for carrier in ("Line", "Segment", "Ray"):
+    proof("parabola", PARABOLA + [f"s = {carrier}(A, B)", "P = Intersect(s, k, 1)"],
+          "AreCollinear(A, B, P)")
+proof("parabola", PARABOLA + ["s = Line(A, B)", "P = Intersect(s, k, 1)",
+                              "h = PerpendicularLine(P, d)", "H = Intersect(h, d)",
+                              "u = Segment(P, F)", "v = Segment(P, H)"],
+      "u == v", details=False)
+
 cases.write()

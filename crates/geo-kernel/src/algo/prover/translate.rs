@@ -16,6 +16,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectSingle.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectConics.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoParabolaPointLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/adapters/IntersectConicsAdapter.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCirclePointRadius.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLineBisector.java
@@ -38,6 +39,8 @@ use super::groebner;
 use super::poly::{Order, Poly, MAX_VARS};
 use super::{Budget, Outcome};
 use crate::algo::conic::ConicDef;
+use crate::algo::conic_nd::ConicType;
+use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::intersect::pair::Output;
 use crate::algo::lines::LineDef;
 use crate::algo::path::PathDef;
@@ -61,24 +64,40 @@ enum IntersectionConstraint {
 /// stand for symbolic points across proofs, whose variable indices are local.
 #[derive(Default)]
 pub(crate) struct IntersectionTranslations {
-    constraints: BTreeMap<Id, IntersectionConstraint>,
-    order: Vec<Id>,
+    constraints: BTreeMap<Id, (usize, IntersectionConstraint)>,
+    order: BTreeMap<usize, Id>,
 }
 
 impl IntersectionTranslations {
-    pub(crate) fn len(&self) -> usize {
-        self.order.len()
+    pub(crate) fn checkpoint(&self) -> usize {
+        self.order
+            .last_key_value()
+            .map_or(0, |(&index, _)| index + 1)
     }
 
-    pub(crate) fn truncate(&mut self, len: usize) {
-        for id in self.order.drain(len..) {
-            self.constraints.remove(&id);
+    pub(crate) fn truncate(&mut self, checkpoint: usize) {
+        if checkpoint < self.checkpoint() {
+            for id in self.order.split_off(&checkpoint).into_values() {
+                self.constraints.remove(&id);
+            }
+        }
+    }
+
+    pub(crate) fn forget_rebuilt(&mut self, outputs: impl IntoIterator<Item = Id>) {
+        if self.constraints.is_empty() {
+            return;
+        }
+        for id in outputs {
+            if let Some((index, _)) = self.constraints.remove(&id) {
+                self.order.remove(&index);
+            }
         }
     }
 
     fn insert(&mut self, id: Id, constraint: IntersectionConstraint) {
-        self.order.push(id);
-        self.constraints.insert(id, constraint);
+        let index = self.checkpoint();
+        self.order.insert(index, id);
+        self.constraints.insert(id, (index, constraint));
     }
 }
 
@@ -96,12 +115,13 @@ pub(crate) struct System {
     pub(super) path_points: Vec<Id>,
     line_vars: BTreeMap<Id, [usize; 4]>,
     circle_vars: BTreeMap<Id, [usize; 4]>,
+    parabola_feet: BTreeMap<Id, [usize; 2]>,
     radius_vars: BTreeMap<Id, usize>,
     pending_distinct_outputs: Vec<(Id, [usize; 2])>,
     /// How many coordinates of the first two free points are fixed.
     fixed_coordinates: usize,
     budget_vars: usize,
-    /// The statement has no translation in the reference either.
+    /// The reference leaves the proof result unknown.
     unknown: bool,
     /// The statement is an arithmetic formula the reference has its CAS
     /// rewrite, which also words its conditions.
@@ -164,6 +184,7 @@ impl System {
             path_points: Vec::new(),
             line_vars: BTreeMap::new(),
             circle_vars: BTreeMap::new(),
+            parabola_feet: BTreeMap::new(),
             radius_vars: BTreeMap::new(),
             pending_distinct_outputs: Vec::new(),
             fixed_coordinates: 4,
@@ -180,9 +201,13 @@ impl System {
             return Err(Outcome::Unknown);
         }
         for &id in &predecessors {
-            system
-                .object(c, id, budget, intersections)
-                .ok_or(Outcome::Undecided)?;
+            system.object(c, id, budget, intersections).ok_or({
+                if system.unknown {
+                    Outcome::Unknown
+                } else {
+                    Outcome::Undecided
+                }
+            })?;
         }
         for (other, p) in std::mem::take(&mut system.pending_distinct_outputs) {
             // Without hypotheses for the other output, its unconstrained
@@ -277,6 +302,16 @@ impl System {
                 self.add(collinear([h[0], h[1]], [h[2], h[3]], [x, y], budget)?);
                 self.point_vars.insert(id, [x, y]);
             }
+            Def::IntersectLineConic(d)
+                if self.parabola_feet.contains_key(&d.conic)
+                    && matches!(d.output, Output::Slot(0 | 1) | Output::Index(0 | 1)) =>
+            {
+                let p = [self.new_var(false)?, self.new_var(false)?];
+                let [a, b, x, y] = self.line(d.line)?;
+                self.add_parabola_equations(c, d.conic, p, budget)?;
+                self.add(collinear(p, [a, b], [x, y], budget)?);
+                self.point_vars.insert(id, p);
+            }
             Def::IntersectLineConic(_)
             | Def::IntersectLineCircle { .. }
             | Def::IntersectConics(_)
@@ -353,6 +388,15 @@ impl System {
                 self.add(equidistant(a, [o1, o2], d, budget)?);
                 self.circle_vars.insert(id, [o1, o2, a[0], a[1]]);
             }
+            Def::GeneralConic(GeneralConicDef::Parabola { .. })
+                if c.conic(id)
+                    .is_some_and(|conic| conic.ty == ConicType::Parabola) =>
+            {
+                let p = [self.new_var(false)?, self.new_var(false)?];
+                let foot = [self.new_var(false)?, self.new_var(false)?];
+                self.parabola_feet.insert(id, foot);
+                self.add_parabola_equations(c, id, p, budget)?;
+            }
             Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => {
                 let x = self.new_var(true)?;
                 let y = self.new_var(false)?;
@@ -376,6 +420,28 @@ impl System {
         Some(())
     }
 
+    /// Like the reference's substitution, reuse the conic's foot variables
+    /// when adding its equations for an intersection point.
+    fn add_parabola_equations(
+        &mut self,
+        c: &Construction,
+        conic: Id,
+        p: [usize; 2],
+        budget: &Budget,
+    ) -> Option<()> {
+        let Def::GeneralConic(GeneralConicDef::Parabola { focus, directrix }) = c.def(conic) else {
+            return None;
+        };
+        let f = self.point(focus)?;
+        let [a, b, x, y] = self.line(directrix)?;
+        let [tx, ty] = *self.parabola_feet.get(&conic)?;
+        let foot = [tx, ty];
+        self.add(equidistant(f, p, foot, budget)?);
+        self.add(collinear([a, b], [x, y], foot, budget)?);
+        self.add(perpendicular([p[0], p[1], tx, ty], [a, b, x, y], budget)?);
+        Some(())
+    }
+
     fn circle_intersection(
         &mut self,
         c: &Construction,
@@ -385,7 +451,10 @@ impl System {
     ) -> Option<()> {
         let ([first, second], indexed) = symbolic_intersection(c, id)?;
         let two_circles = c.kind(first) == Kind::Circle;
-        let cached = intersections.constraints.get(&id).copied();
+        let cached = intersections
+            .constraints
+            .get(&id)
+            .map(|&(_, constraint)| constraint);
         if cached.is_none()
             && (!proper_circle(c, second) || (two_circles && !proper_circle(c, first)))
         {
@@ -429,7 +498,12 @@ impl System {
             IntersectionConstraint::ExcludedPoint(other) => {
                 self.add_distinct(p, self.point(other)?, budget)?;
             }
-            IntersectionConstraint::MissingEquation => return None,
+            IntersectionConstraint::MissingEquation => {
+                // The reference's worker stops at the null equation and
+                // leaves the result at its initial value, UNKNOWN.
+                self.unknown = true;
+                return None;
+            }
         }
         self.point_vars.insert(id, p);
         Some(())
@@ -757,7 +831,9 @@ fn predecessors(c: &Construction, statement: Id) -> Option<Vec<Id>> {
             stack.extend(c.reads(id));
         }
     }
-    Some(seen.into_iter().collect())
+    let mut ordered: Vec<_> = seen.into_iter().collect();
+    ordered.sort_unstable_by_key(|&id| c.evaluation_rank(id));
+    Some(ordered)
 }
 
 /// `sum c_i * v_i`.
