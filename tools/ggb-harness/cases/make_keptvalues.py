@@ -101,4 +101,28 @@ cases.case(
      "b = UpperSum(g, 1/0, 0, 4)"],
     [],
 )
+cases.case(
+    "vectorlength",
+    ["a = 2", "v = Vector((a, 1))", "f(x) = x Length(v)", "nf = NDerivative(f)",
+     "j = Integral(f, 0, 3)", "q = NIntegral(f)"],
+    [setn("a", 3)],
+)
+cases.case(
+    "vectorlength",
+    ["a = 2", "v = Vector((a, 1))", "f(x) = sin(x) + Length(v)", "nf = NDerivative(f)",
+     "q = NIntegral(f)", "j = Integral(f, 0, 3)"],
+    [setn("a", 3)],
+)
+cases.case(
+    "vectorlength",
+    ["a = 2", "v = Vector((a, 1))", "f(x) = x + Length(v)", "df = Derivative(f)",
+     "nf = NDerivative(f)", "j = Integral(f, 0, 3)", "q = NIntegral(f)"],
+    [setn("a", 0), setn("a", 3)],
+)
+cases.case(
+    "vectorlength",
+    ["a = 2", "v = Vector((a, 1))", "f(x) = x Length(v + v)", "df = Derivative(f)",
+     "nf = NDerivative(f)", "j = Integral(f, 0, 3)", "q = NIntegral(f)"],
+    [setn("a", 3)],
+)
 cases.write()

@@ -1956,8 +1956,10 @@ fn integrate_unary(c: &Construction, b: &mut Builder, op: Un, arg: u32, i: u32, 
         }
         Un::Sqrt => root_rule(c, b, arg, Un::Sqrt, 3.0, 2.0),
         Un::Cbrt => root_rule(c, b, arg, Un::Cbrt, 4.0, 3.0),
-        // XCOORD and YCOORD integrate to this times x
-        Un::X | Un::Y => {
+        // GeoGebra resolves Length of a point or vector to a number object.
+        // Like XCOORD and YCOORD, a constant length integrates to this times x.
+        Un::Length if b.contains_var(arg) => b.push(Node::Num(f64::NAN)),
+        Un::X | Un::Y | Un::Length => {
             let var = b.push(Node::Var);
             b.push(Node::Bin(Bin::Mul, i, var))
         }
@@ -2492,6 +2494,8 @@ fn differentiate_unary(c: &Construction, b: &mut Builder, op: Un, u: u32, depth:
             b.push(Node::Bin(Bin::Div, t, three))
         }
         Un::Floor | Un::Ceil | Un::Round | Un::Not => b.push(Node::Num(0.0)),
+        // CmdLength supplies a number object for a fixed point or vector.
+        Un::Length if !b.contains_var(u) => b.push(Node::Num(0.0)),
         Un::X | Un::Y => {
             // x(A) / y(A): 0 unless the argument reads the function
             // variable, which the coordinate rules would have to expand

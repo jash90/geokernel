@@ -1440,7 +1440,7 @@ cases = ["calculus-fraction-001", "cas-projection-002", "cas-projection-006"]
 [[form]]
 command = "Derivative"
 form = "function"
-cases = ["calculus-derivative-001", "calculus-rootpower-001"]
+cases = ["calculus-derivative-001", "calculus-rootpower-001", "keptvalues-vectorlength-003", "keptvalues-vectorlength-004"]
 
 [[form]]
 command = "Derivative"
@@ -1517,7 +1517,7 @@ difference = "calculus-commands: The variable forms `Derivative(function, any)`,
 [[form]]
 command = "Integral"
 form = "function,number,number"
-cases = ["calculus-integral-002"]
+cases = ["calculus-integral-002", "keptvalues-vectorlength-001", "keptvalues-vectorlength-002", "keptvalues-vectorlength-003", "keptvalues-vectorlength-004"]
 
 [[form]]
 command = "Integral"
@@ -1577,7 +1577,7 @@ cases = ["calculus-between-002"]
 [[form]]
 command = "NDerivative"
 form = "function"
-cases = ["calculus-derivative-001", "calculus-rootpower-001"]
+cases = ["calculus-derivative-001", "calculus-rootpower-001", "keptvalues-vectorlength-001", "keptvalues-vectorlength-002", "keptvalues-vectorlength-003", "keptvalues-vectorlength-004"]
 
 [[form]]
 command = "NDerivative"
@@ -1587,7 +1587,7 @@ cases = ["calculus-derivative-003", "funcrest-derivative-001"]
 [[form]]
 command = "NIntegral"
 form = "function"
-cases = ["calculus-integral-001", "calculus-rootpower-001"]
+cases = ["calculus-integral-001", "calculus-rootpower-001", "keptvalues-vectorlength-001", "keptvalues-vectorlength-002", "keptvalues-vectorlength-003", "keptvalues-vectorlength-004"]
 
 [[form]]
 command = "NIntegral"
@@ -4434,7 +4434,7 @@ cases = ["lists-undef-003", "lists-undef-005"]
 [[form]]
 command = "Length"
 form = "vector"
-cases = ["infinity-inputs-034", "keptvalues-defined-001"]
+cases = ["infinity-inputs-034", "keptvalues-defined-001", "keptvalues-vectorlength-001", "keptvalues-vectorlength-002", "keptvalues-vectorlength-003"]
 
 [[form]]
 command = "LowerSum"

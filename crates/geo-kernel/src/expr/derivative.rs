@@ -113,6 +113,13 @@ impl Walker<'_> {
             // tree has none for the operations behind them.
             Node::Financial(..) => f64::NAN,
             Node::Un(Un::Floor | Un::Ceil | Un::Round, _) => 0.0,
+            Node::Un(Un::Length, arg) => {
+                if self.reads_variable(arg)? {
+                    f64::NAN
+                } else {
+                    0.0
+                }
+            }
             // The rule is the tree `0 / x`, regardless of the argument.
             Node::Un(Un::Sgn, _) => 0.0 / self.x,
             Node::Un(op, arg) => {
@@ -226,14 +233,14 @@ impl Walker<'_> {
             Un::Sqrt => (du * math::java_pow(u, -0.5)) / 2.0,
             Un::Cbrt => (du / math::cbrt(squared(u))) / 3.0,
             Un::Abs => (du * u) / u.abs(),
-            Un::Floor | Un::Ceil | Un::Round | Un::Sgn => unreachable!(),
+            Un::Floor | Un::Ceil | Un::Round | Un::Sgn | Un::Length => unreachable!(),
             Un::Exp => du * u.exp(),
             Un::Ln => du / u,
             Un::Log10 => (du / u) / LN_10,
             Un::Log2 => (du / u) / LN_2,
             Un::Gamma => (self.digamma(u) * math::gamma(u)) * du,
             Un::Factorial => (self.digamma(u + 1.0) * math::factorial(u)) * du,
-            Un::X | Un::Y | Un::Length | Un::Not => 0.0,
+            Un::X | Un::Y | Un::Not => 0.0,
         }
     }
 
