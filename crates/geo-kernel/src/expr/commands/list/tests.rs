@@ -337,6 +337,12 @@ fn a_list_past_the_element_cap_is_undefined() {
 }
 
 #[test]
+fn a_list_coordinate_creates_a_list_of_points() {
+    let c = load("l = {1, 2}\nb = (l, 1)").unwrap();
+    assert_eq!(elems(&c, "b"), "{(1, 1), (2, 1)}");
+}
+
+#[test]
 fn misplaced_lists_are_errors() {
     let base = "a = 2\nA = (1, 2)\nl = {1, 2}";
     for line in [
@@ -348,7 +354,6 @@ fn misplaced_lists_are_errors() {
         "f(x) = {x, 1}",
         "f(x) = x + l(1)",
         "f(x) = Sum({x})",
-        "b = (l, 1)",
         "b = Sequence(k, k, 1)",
         "b = Sequence(k, 2, 1, 3)",
         "b = Sequence(k, k, 1, 2, 3, 4)",
