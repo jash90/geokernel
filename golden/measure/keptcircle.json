@@ -54,6 +54,55 @@
           "Q": { "type": "point", "defined": true, "x": 1.8369701987210297E-16, "y": 3.0 }
         }
       ]
+    },
+    {
+      "id": "measure-keptcircle-002",
+      "group": "measure",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "Q = Point(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -2.0 },
+        { "action": "move", "label": "Q", "x": 0.0, "y": 10.0 },
+        { "action": "move", "label": "O", "x": 1.0, "y": 0.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "k": { "type": "circle", "defined": false },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "k": { "type": "circle", "defined": false },
+          "Q": { "type": "point", "defined": true, "x": 1.2246467991473532E-16, "y": 2.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "k": { "type": "circle", "defined": false },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 0.0, "r": 3.0 },
+          "Q": { "type": "point", "defined": true, "x": 1.0000000000000002, "y": 3.0 }
+        }
+      ]
     }
   ]
 }

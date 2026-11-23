@@ -625,6 +625,12 @@ impl Log {
             self.ops
                 .push(Op::SavedProperty(Box::new(Property::ResetCircleRecords)));
         }
+        if c.reset_arc_records()
+            && !matches!(self.ops.last(), Some(Op::SavedProperty(p)) if **p == Property::ResetArcRecords)
+        {
+            self.ops
+                .push(Op::SavedProperty(Box::new(Property::ResetArcRecords)));
+        }
     }
 
     fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {

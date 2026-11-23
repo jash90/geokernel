@@ -17,6 +17,7 @@ use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::algo::predicate::PredicateDef;
 use geo_kernel::script::exec;
 use geo_kernel::{Construction, Def, Error, Id, Kind, PathState, Value};
+use std::collections::HashMap;
 use std::f64::consts::PI;
 
 // ------------------------------------------------ random constructions
@@ -196,7 +197,6 @@ fn reads_kept_input(c: &Construction, id: Id, parent: Id) -> bool {
                     )
                 })
         }
-        Def::Path(PathDef::On { path }) => path == parent && c.kind(path) == Kind::Circle,
         Def::Polygon(PolygonDef::RegularVertex { a, b, .. })
         | Def::Arc(ArcDef::ConicPoints { p: a, q: b, .. }) => a == parent || b == parent,
         Def::Arc(ArcDef::Length(part) | ArcDef::Area(part)) => {
@@ -206,9 +206,25 @@ fn reads_kept_input(c: &Construction, id: Id, parent: Id) -> bool {
     }
 }
 
+/// Remember only states produced by placing a point directly on an
+/// undefined circle. A move can reach an ancestor without changing any
+/// circle input, so dependency reachability alone cannot expire the state.
+fn track_circle_placement(c: &Construction, moved: Id, placed: &mut HashMap<Id, PathState>) {
+    let on_undefined_circle = |id| {
+        matches!(c.def(id), Def::Path(PathDef::On { path })
+            if c.kind(path) == Kind::Circle && !c.value(path).is_defined())
+    };
+    placed.retain(|&id, state| on_undefined_circle(id) && c.path_state(id) == Some(*state));
+    if on_undefined_circle(moved) && c.value(moved).is_defined() {
+        if let Some(state) = c.path_state(moved) {
+            placed.insert(moved, state);
+        }
+    }
+}
+
 /// A reader of an undefined input must itself be undefined, except for the
 /// reference readers listed here and the existing expression and path rules.
-fn check_contagion(case: &Case) -> Result<(), String> {
+fn check_contagion(case: &Case, placed_on_circle: &HashMap<Id, PathState>) -> Result<(), String> {
     for id in case.c.ids() {
         if case.lenient[id.index()] {
             continue;
@@ -240,6 +256,8 @@ fn check_contagion(case: &Case) -> Result<(), String> {
                 && !read_as_value(p)
                 && !kept_parameter(p)
                 && !on_part(p)
+                && !matches!(case.c.def(id), Def::Path(PathDef::On { path })
+                    if path == p && placed_on_circle.contains_key(&id))
                 && !reads_kept_input(&case.c, id, p)
         };
         let broken = parents.iter().find(|&&p| undefined(id_at(&case.c, p)));
@@ -402,7 +420,8 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
     if let Some(bad) = first_non_finite(&case.c) {
         fail!("non-finite value after creation: {bad}");
     }
-    if let Err(e) = check_contagion(&case) {
+    let mut placed_on_circle = HashMap::new();
+    if let Err(e) = check_contagion(&case, &placed_on_circle) {
         fail!("after creation: {e}");
     }
     if let Err(e) = check_twins(&case) {
@@ -472,7 +491,8 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 fail!("incremental update differs from recompute after move {step_no}: {d}");
             }
             // 4. undefined is contagious
-            if let Err(e) = check_contagion(&case) {
+            track_circle_placement(&case.c, moved, &mut placed_on_circle);
+            if let Err(e) = check_contagion(&case, &placed_on_circle) {
                 fail!("after move {step_no}: {e}");
             }
             if let Err(e) = check_twins(&case) {
@@ -509,6 +529,7 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 Ok(Err(e)) => fail!("home move failed: {e}"),
                 Err(e) => fail!("after the home move: {e}"),
             }
+            track_circle_placement(&case.c, home.id(), &mut placed_on_circle);
             let snapshot = values(&case.c);
             // the points on paths at home, and whether each is where
             // following its path once more would put it
@@ -542,12 +563,14 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 Ok(Err(e)) => fail!("away move failed: {e}"),
                 Err(e) => fail!("after the away move: {e}"),
             }
+            track_circle_placement(&case.c, away.id(), &mut placed_on_circle);
             moves.push(format!("  back: {}", home.describe(&case.c)));
             match home.apply_watched(&mut case.c) {
                 Ok(Ok(_)) => {}
                 Ok(Err(e)) => fail!("back move failed: {e}"),
                 Err(e) => fail!("after the back move: {e}"),
             }
+            track_circle_placement(&case.c, home.id(), &mut placed_on_circle);
             let restored = match rebuild_from_defs(&case.c) {
                 Ok(f) => f,
                 Err(e) => fail!("{e}"),

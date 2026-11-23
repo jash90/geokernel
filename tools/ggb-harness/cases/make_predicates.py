@@ -628,4 +628,8 @@ case("keptcircle", [pt("O", 0, 0), num("r", 2), "k = Circle(O, r)", "j = Circle(
                     num("m", 1), "t = AreEqual(k, j)"],
      [{"action": "redefine", "line": "r = -m"}])
 
+case("keptcircle", [pt("O", 0, 0), num("r", 2), "k = Circle(O, r)", num("m", 2),
+                    "j = Circle(O, m)", "f = Circle(O, 2)", "e = AreEqual(j, f)", num("n", 1)],
+     [setn("m", -1), {"action": "redefine", "line": "r = 2 * n"}])
+
 cases.write()
