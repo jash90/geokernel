@@ -1,0 +1,65 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-literal-001",
+      "group": "cas",
+      "script": [
+        "g: x=-0.5",
+        "k: x^2=-0.25+x",
+        "r1 = Solve(g)",
+        "r2 = Solutions(k)",
+        "r3 = Solutions(2x=-0.5)",
+        "r4 = Solve(x+y=-0.75, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.5 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 0.0, 0.25, 0.0, -0.5, 0.0],
+            "lines": [
+              [-1.0, 0.0, 0.5],
+              [-1.0, 0.0, 0.5]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.5 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.25 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": 0.75 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

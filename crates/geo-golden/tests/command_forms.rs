@@ -227,11 +227,27 @@ fn every_evidence_row_is_backed() {
     let m = matrix();
     let names = names(&m);
     let cases = harness_cases();
-    let gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));
+    let plain_gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));
+    let giac_gaps = gaps::load_giac().unwrap_or_else(|e| panic!("{e}"));
     let differences = forms::difference_rows(&read("DIFFERENCES.md"));
     let mut errors = Vec::new();
     for e in evidence() {
         let what = format!("`{}` `{}`", e.command, e.form);
+        let gaps = if e.giac { &giac_gaps } else { &plain_gaps };
+        if e.giac {
+            // Done with Giac only when every recorded case calling the form
+            // agrees with Giac.
+            for case in cases.values() {
+                if gaps.contains_key(&case.id)
+                    && case_uses_form(case, lines_of(&e), &names, &e.command, &e.form)
+                {
+                    errors.push(format!(
+                        "{what}: `{}` calls it and is a known gap with Giac",
+                        case.id
+                    ));
+                }
+            }
+        }
         let Some(cf) = f.get(&e.command) else {
             errors.push(format!("{what}: no such in-scope command in forms.csv"));
             continue;
@@ -353,6 +369,66 @@ fn matrix_counts_agree_with_forms_and_evidence() {
     );
 }
 
+/// `cargo test -p geo-golden --test command_forms print_giac_form_status
+/// -- --ignored --nocapture` prints, for every form, how many recorded cases
+/// call it and how many of those are known gaps with and without Giac.
+#[test]
+#[ignore]
+fn print_giac_form_status() {
+    let f = forms();
+    let m = matrix();
+    let names = names(&m);
+    let cases = harness_cases();
+    let plain = gaps::load().unwrap_or_else(|e| panic!("{e}"));
+    let giac = gaps::load_giac().unwrap_or_else(|e| panic!("{e}"));
+    let done: BTreeSet<(String, String)> = evidence()
+        .into_iter()
+        .map(|e| (e.command, e.form))
+        .collect();
+    for (command, cf) in &f {
+        for form in &cf.forms {
+            let which = if matches!(
+                command.as_str(),
+                "Solve" | "Solutions" | "NSolve" | "NSolutions"
+            ) {
+                Lines::Script
+            } else {
+                Lines::All
+            };
+            let using: Vec<&Case> = cases
+                .values()
+                .filter(|c| case_uses_form(c, which, &names, command, form))
+                .collect();
+            let gaps_plain = using.iter().filter(|c| plain.contains_key(&c.id)).count();
+            let gaps_giac: Vec<&String> = using
+                .iter()
+                .filter(|c| giac.contains_key(&c.id))
+                .map(|c| &c.id)
+                .collect();
+            if !using.is_empty()
+                && gaps_giac.is_empty()
+                && !done.contains(&(command.clone(), form.clone()))
+            {
+                let ids: Vec<&String> = using.iter().map(|c| &c.id).take(3).collect();
+                println!("GIAC-DONE {command}|{form}|{ids:?}");
+            }
+            if gaps_plain != gaps_giac.len() || !done.contains(&(command.clone(), form.clone())) {
+                println!(
+                    "{command}({form}): {} cases, {gaps_plain} gaps, {} with Giac {:?}{}",
+                    using.len(),
+                    gaps_giac.len(),
+                    gaps_giac.iter().take(4).collect::<Vec<_>>(),
+                    if done.contains(&(command.clone(), form.clone())) {
+                        " [done]"
+                    } else {
+                        ""
+                    }
+                );
+            }
+        }
+    }
+}
+
 /// Prints evidence candidates; see the module documentation.
 #[test]
 #[ignore]
@@ -385,18 +461,23 @@ fn print_form_candidates() {
 /// [`forms::script_may_use_form`] reads it, so a circle reaches a `conic`
 /// form and a nested call any form its arity fits, unless the call shows
 /// another form of the command exactly.
+/// A row marked `giac` is checked against the gaps that remain with the
+/// Giac backend (`known-gaps-giac.toml` applied).
 #[test]
 fn no_done_form_is_called_by_a_known_gap() {
     let f = forms();
     let m = matrix();
     let names = names(&m);
     let cases = harness_cases();
-    let gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));
+    let plain_gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));
+    let giac_gaps = gaps::load_giac().unwrap_or_else(|e| panic!("{e}"));
     let mut errors = Vec::new();
     for e in evidence() {
         let Some(cf) = f.get(&e.command) else {
             continue; // reported by every_evidence_row_is_backed
         };
+        // A form that is done only with Giac is held to the gaps with Giac.
+        let gaps = if e.giac { &giac_gaps } else { &plain_gaps };
         let which = lines_of(&e);
         let calling: Vec<&str> = gaps
             .keys()

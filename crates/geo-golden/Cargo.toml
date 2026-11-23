@@ -7,6 +7,11 @@ license.workspace = true
 repository.workspace = true
 publish = false
 
+[features]
+default = []
+# Runs the golden data with the kernel's Giac backend (docs/cas-giac.md).
+giac = ["geo-kernel/giac"]
+
 [dependencies]
 geo-app-core = { path = "../geo-app-core" }
 geo-kernel = { path = "../geo-kernel" }

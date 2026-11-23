@@ -46,6 +46,19 @@ pub(super) fn is_command(name: &str) -> bool {
     ]
     .iter()
     .any(|names| names.contains(&name))
+        // Evaluated only by the Giac backend (docs/cas-giac.md).
+        || (name == "PlotSolve" && plot_solve_admitted())
+}
+
+fn plot_solve_admitted() -> bool {
+    #[cfg(feature = "giac")]
+    {
+        super::cas::giac_admits()
+    }
+    #[cfg(not(feature = "giac"))]
+    {
+        false
+    }
 }
 
 /// The call `text(...)` of a command that a group parses itself: its node,

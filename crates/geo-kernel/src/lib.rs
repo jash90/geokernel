@@ -22,6 +22,19 @@ pub mod script;
 pub mod svg;
 pub mod tol;
 
+/// Whether CAS commands are evaluated by Giac in this process (the `giac`
+/// feature with the pinned library loaded; docs/cas-giac.md).
+pub fn giac_backend_active() -> bool {
+    #[cfg(feature = "giac")]
+    {
+        geo_giac::backend() == geo_giac::Backend::Giac
+    }
+    #[cfg(not(feature = "giac"))]
+    {
+        false
+    }
+}
+
 pub use algo::arc::ArcData;
 pub use algo::conic_nd::{ConicData, ConicType};
 pub use algo::path::PathState;

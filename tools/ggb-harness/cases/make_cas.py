@@ -902,5 +902,9 @@ reference.case("textrefusal", [], [reject('r = Simplify("")')])
 reference.case("hintobject", ["P = (1, 2)", "f(x) = x^2-9", "result = Solve(f, P)"], [])
 reference.case("hintobject", ["P = (1, 2)", "f(x) = x^2-9", "result = Solutions(f, P)"], [])
 reference.case("hintobject", ["b = 2", "result = Solutions({x^2=4}, b)"], [])
+# Typed decimals between -1 and 0 keep their sign in the reference's CAS
+# input (convertScientificNotationGiac of "-0.5" is "(-05/10)").
+reference.case("literal", ["g: x=-0.5", "k: x^2=-0.25+x", "r1 = Solve(g)", "r2 = Solutions(k)",
+                           "r3 = Solutions(2x=-0.5)", "r4 = Solve(x+y=-0.75, y)"], [])
 reference.cases.extend(refused)
 reference.write("reference")

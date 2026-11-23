@@ -3402,3 +3402,8 @@ mismatches = ["0:p", "0:q"]
 id = "prove-review-008"
 reason = "A point on the first circle as its path is a point the second circle was drawn through, so it lies on both by construction. The reference excludes it only for the indexed `Intersect(a, b, n)`; the kernel does not record which command made the intersection, and the prover answers undefined. The kernel's intersection finds the path point by incidence and agrees on Q and the Boolean."
 mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "cas-literal-001"
+reason = "Without the giac feature the kernel's own solver reads Solve(x+y=-0.75, y) with the free x in the place of the solving variable y and answers the line y = -0.375; the reference's CAS answers y = -x - 3/4 (recorded with Giac). The case was added to check typed decimals between -1 and 0 in the Giac input, and agrees with the feature (known-gaps-giac.toml)."
+mismatches = ["0:r4"]
