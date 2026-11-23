@@ -1781,9 +1781,13 @@ fn labelled_values(w: &Workbench) -> Vec<String> {
     values
 }
 
+/// A script, the slider it edits, the values it takes, and the labels
+/// present and absent at the end.
+type LabelCase<'a> = (&'a str, &'a str, &'a [f64], &'a [&'a str], &'a [&'a str]);
+
 #[test]
 fn interval_roots_free_labels_and_take_new_ones_through_every_replay() {
-    let cases: [(&str, &str, &[f64], &[&str], &[&str]); 2] = [
+    let cases: [LabelCase; 2] = [
         (
             "f(x) = x^2 - 1\nh(x) = 0\na = 3\nb = -3\nR = Intersect(f, h, a, b)",
             "a",

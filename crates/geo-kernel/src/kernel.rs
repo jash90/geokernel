@@ -2333,7 +2333,9 @@ impl Construction {
     /// Whether `id` is an output whose label [`Self::free_output_label`]
     /// freed.
     pub fn is_freed_output(&self, id: Id) -> bool {
-        self.labels.get(id.0).is_some_and(|label| *label == freed_label(id))
+        self.labels
+            .get(id.0)
+            .is_some_and(|label| *label == freed_label(id))
     }
 
     fn add_with_path_state(

@@ -277,7 +277,11 @@ impl BoundaryOutputs {
 pub(crate) fn existing_slot(c: &Construction, owner: Id, def: Def) -> Option<Id> {
     GrowthAnchor::from_def(c.def(owner))
         .filter(GrowthAnchor::default_labels)
-        .and_then(|_| (owner.index() + 1..c.len()).map(Id).find(|&id| c.def(id) == def))
+        .and_then(|_| {
+            (owner.index() + 1..c.len())
+                .map(Id)
+                .find(|&id| c.def(id) == def)
+        })
 }
 
 fn dependencies(c: &Construction, first: Id) -> BTreeSet<Id> {

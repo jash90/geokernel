@@ -673,7 +673,12 @@ impl Log {
     }
 
     fn keep_last_set(&mut self) {
-        if let Some(Op::Set { label, to, ordered: false }) = self.ops.last() {
+        if let Some(Op::Set {
+            label,
+            to,
+            ordered: false,
+        }) = self.ops.last()
+        {
             let set = Op::Set {
                 label: label.clone(),
                 to: *to,
