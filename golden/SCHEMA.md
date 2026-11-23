@@ -70,6 +70,8 @@ One JSON object per file, stored under `golden/<group>/`.
 | `redefine` | `line` | Assign a new definition to an existing label. |
 | `delete` | `label` | Remove the object and its dependents from the construction. Subsequent snapshots omit the deleted labels. |
 | `reject` | `line`, optional `error` | Check that the command reports an error and creates no output. With `error`, the kernel's error must be exactly that text (GeoGebra's message is not recorded). |
+| `reload_ggb` | none | Save the construction in GeoGebra's file format and open it again. |
+| `slider_animation` | `label`, `options` | Check the saved animation step and speed of a slider. The harness supplies the values in `options` from the XML. |
 | `animate` | `frames` | Run that many frames of the playing sliders at 30 frames per second, the rate of a first frame: every playing number takes one animation step, the newest first, then what depends on the changed ones is updated once. |
 
 A `move` step may include `reference_parse_error`, which records whether the

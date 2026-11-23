@@ -507,6 +507,18 @@ pub(in crate::expr) fn map_list<const M: bool>(
             Slot::list(dest, len)
         } else if matches!(slot.kind, Kind::Point | Kind::Vector) {
             last = Some(target);
+            let slot = match previous.map(|p| p.kind) {
+                Some(kind @ (Kind::Point | Kind::Vector)) if kind != slot.kind => {
+                    match slot.value {
+                        Value::Vector { x, y } => Slot::coords(Kind::Point, x, y),
+                        Value::HomogeneousPoint { x, y, z: 0.0 } => {
+                            Slot::coords(Kind::Vector, x, y)
+                        }
+                        _ => Slot::undefined(kind),
+                    }
+                }
+                _ => slot,
+            };
             transformed(slot)
         } else if slot.kind.is_number() && previous.is_some_and(|p| p.kind == Kind::Point) {
             // GeoPoint.set copies a number as (value, 0) into the old point.

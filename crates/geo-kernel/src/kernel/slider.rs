@@ -8,15 +8,15 @@ use std::collections::HashSet;
 pub(super) enum Bound {
     Literal(f64),
     Object(Id),
-    /// A direct self-reference is read during a set without a listener edge.
-    SelfReference(Id),
+    /// An endpoint that reads the slider is evaluated without a listener edge.
+    Passive(Id),
 }
 
 impl Bound {
     fn read(self, c: &Construction) -> Option<f64> {
         match self {
             Self::Literal(v) => Some(v),
-            Self::Object(id) | Self::SelfReference(id) => match c.value(id) {
+            Self::Object(id) | Self::Passive(id) => match c.value(id) {
                 Value::Number(v) if v.is_finite() => Some(v),
                 _ => None,
             },
@@ -25,7 +25,7 @@ impl Bound {
 
     pub(super) fn exists_before(self, len: usize) -> bool {
         match self {
-            Self::Object(id) | Self::SelfReference(id) => {
+            Self::Object(id) | Self::Passive(id) => {
                 id.index() < len || super::axis::get(id).is_some()
             }
             Self::Literal(_) => true,
@@ -46,6 +46,13 @@ impl Construction {
                 let (_, min, max) = self.sliders[slot];
                 [Some(min), Some(max)]
             })
+    }
+
+    pub(super) fn slider_upper_bound(&self, id: Id) -> Option<Bound> {
+        match self.saved_slider_bounds.get(&id) {
+            Some(bounds) => bounds[1],
+            None => self.slider_bounds(id)[1].map(Bound::Literal),
+        }
     }
 
     /// Whether both endpoints of the slider `id` exist, whatever their values
@@ -165,12 +172,46 @@ impl Construction {
         Ok(())
     }
 
+    pub(super) fn install_redefined_slider_bounds(
+        &mut self,
+        id: Id,
+        bounds: [Option<Bound>; 2],
+        old_max: Option<Bound>,
+    ) {
+        // CmdSlider sets the lower endpoint first. That can make the
+        // slider undefined before the upper endpoint brings it back.
+        if old_max.is_some() {
+            self.saved_slider_bounds.insert(id, [bounds[0], old_max]);
+            self.update_slider_bounds(id);
+        }
+        self.saved_slider_bounds.insert(id, bounds);
+        self.update_slider_bounds(id);
+    }
+
+    /// Explicit step and speed expressions from the slider command.
+    pub fn slider_animation_options(&self, id: Id) -> [Option<&str>; 2] {
+        self.slider_animation_options
+            .get(&id)
+            .map_or([None; 2], |options| {
+                options.each_ref().map(|arg| arg.as_deref())
+            })
+    }
+
+    pub(crate) fn set_slider_animation_options(&mut self, id: Id, args: &[&str]) {
+        if !args.is_empty() {
+            let options = self.slider_animation_options.entry(id).or_default();
+            for (option, &arg) in options.iter_mut().zip(args) {
+                *option = Some(arg.to_owned());
+            }
+        }
+    }
+
     fn slider_bound(&mut self, owner: Option<Id>, source: &str) -> Result<Bound, String> {
         if let Some(v) = crate::expr::plain_number(source).filter(|v| v.is_finite()) {
             return Ok(Bound::Literal(v));
         }
         if let Some(owner) = owner.filter(|&id| source == self.label(id)) {
-            return Ok(Bound::SelfReference(owner));
+            return Ok(Bound::Passive(owner));
         }
         let id = if let Some(id) = self.resolve_label(source) {
             id
@@ -190,12 +231,18 @@ impl Construction {
         let mut seen = HashSet::new();
         let mut parents = vec![id];
         let mut remaining = super::MAX_REDEFINITION_EDGES;
-        while let Some(id) = parents.pop() {
-            if id == owner {
-                return Err("slider endpoint is circular".into());
+        while let Some(parent) = parents.pop() {
+            if parent == owner {
+                // The live expression can be read during a set. A listener
+                // edge here would make a cycle in the construction graph.
+                return if self.replacement_target == Some(owner) {
+                    Ok(Bound::Passive(id))
+                } else {
+                    Err("slider endpoint is circular".into())
+                };
             }
-            if seen.insert(id) {
-                let reads = self.reads(id);
+            if seen.insert(parent) {
+                let reads = self.reads(parent);
                 remaining = remaining
                     .checked_sub(reads.len())
                     .ok_or("slider endpoint exceeds the dependency budget")?;

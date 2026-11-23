@@ -7,7 +7,6 @@ use super::Workbench;
 use crate::scriptlog::{Log, Rejected};
 use geo_import::export::{self, Definition, Presentation, View};
 use geo_kernel::script::boundary_slot_owner;
-use geo_kernel::script::saved::Property;
 use geo_kernel::{script, Kind};
 use std::collections::BTreeMap;
 
@@ -103,6 +102,7 @@ impl Workbench {
                 .map(|(label, animation)| (label.as_str(), animation))
                 .collect(),
             hidden: self.log.hidden.iter().map(String::as_str).collect(),
+            slider_bounds: self.log.saved_slider_bounds(),
             ..Presentation::default()
         };
         for id in self.object_ids() {
@@ -125,13 +125,6 @@ impl Workbench {
                 presentation
                     .label_offsets
                     .insert(label, (x as i32, y as i32));
-            }
-        }
-        for property in self.log.saved_properties() {
-            if let Property::SliderBounds { label, bounds } = property {
-                presentation
-                    .slider_bounds
-                    .insert(label, bounds.each_ref().map(|b| b.as_deref()));
             }
         }
         presentation

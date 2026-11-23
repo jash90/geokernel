@@ -49,4 +49,45 @@ cases.case("forms", ["b = 6", "h = 0.1", "a = Slider(0, b, h)", "d = 2a"], [
 cases.case("forms", ["b = 6", "a = Slider(0, b, 0.1, 2)", "d = 2a"], [
     setn("a", 5), setn("b", 2),
 ])
+cases.case("redefine", ["b = 6", "a = Slider(0, b)", "d = 2a"], [
+    setn("a", 5), setn("b", 4), redefine("a = Slider(0, b)"),
+])
+cases.case("redefine", ["a = Slider(-4, -2)", "d = 2a"], [
+    redefine("a = Slider(0, 6)"),
+])
+cases.case("redefine", ["a = 3", "b = 2a"], [
+    redefine("a = Slider(0, b + 1)"), setn("a", 5),
+])
+cases.case("redefine", ["a = Slider(-2, -1)", "d = 2a"], [
+    redefine("a = Slider(-0.5, 6)"),
+])
+for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"]:
+    cases.case("transform", [
+        "t = 1", "A = (1, 2)", "v = Vector((3, 4))",
+        "L = If(t > 0, {A}, {v})", f"M = {command}",
+    ], [setn("t", 0), setn("t", 1)])
+cases.case("roundtrip", ["b = 6", "a = Slider(0, If(b == 6, 6, 2))", "d = 2a"], [
+    {"action": "reload_ggb"}, redefine("a = Slider(0, 10)"),
+    {"action": "reload_ggb"}, setn("a", 8),
+])
+cases.case("mixedmover", [
+    "A = (0, 0)", "B = (4, 0)", "g = Segment(A, B)", "P = Point(g)",
+    "a = Slider(0, 6)", "m = Minimize((a - (x(P) + 1))^2, a)",
+    "N = Minimize((m - 3)^2, P)",
+], [])
+cases.case("finalupdate", [
+    "b = 36", "a = Slider(0, sqrt(b))", "m = Minimize((a - 3)^2, a)",
+    "t = Slider(0, 6)", "k = 2", "n = Minimize((t - k)^2, t)",
+    *(f"d_{{{i}}} = If(IsDefined(m), 0, Sum(Sequence(sqrt(j), j, 1, 2000)))"
+      for i in range(1, 21)),
+], [setn("b", -1), setn("k", 4)])
+cases.case("locus", [
+    "b = 4", "t = Slider(0, b)", "Q = (t, 0)", "L = Locus(Q, t)",
+], [setn("b", 6), setn("t", 1)])
+cases.case("animationoptions", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
+    redefine("a = Slider(0, 8)"),
+    {"action": "slider_animation", "label": "a"},
+    redefine("a = Slider(0, 9, 0.4)"),
+    {"action": "slider_animation", "label": "a"},
+])
 cases.write()

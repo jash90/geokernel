@@ -54,6 +54,7 @@ use crate::algo::path::{self, inf_function, inverse_inf_function, Geom, PathDef,
 use crate::algo::{Group, Parents, NUMBER, POINT};
 use crate::expr::fraction::FunctionFraction;
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 /// `PathMover.MIN_STEPS`.
@@ -313,10 +314,15 @@ fn path_of(c: &Construction, id: Id) -> Option<Id> {
 
 /// Every object `q` depends on, `q` excluded, as flags by index
 /// (`GeoElement.getAllPredecessors`).
-fn ancestors(c: &Construction, q: Id) -> Vec<bool> {
+fn ancestors(c: &Construction, q: Id, follow_slider_bounds: bool) -> Vec<bool> {
     let mut seen = vec![false; c.predecessor_storage_len(q)];
     let mut stack = vec![q];
     while let Some(id) = stack.pop() {
+        // Interval listeners change the slider's value separately from the
+        // value dependencies that a slider locus uses for invalidation.
+        if !follow_slider_bounds && matches!(c.def(id), Def::Number(_)) {
+            continue;
+        }
         for parent in c.reads(id) {
             if parent.0 < seen.len() && !seen[parent.0] {
                 seen[parent.0] = true;
@@ -329,7 +335,7 @@ fn ancestors(c: &Construction, q: Id) -> Vec<bool> {
 
 /// `GeoElement.isParentOf`: whether `b` depends on `a`.
 fn is_ancestor(c: &Construction, a: Id, b: Id) -> bool {
-    c.evaluation_rank(a) < c.evaluation_rank(b) && ancestors(c, b)[a.0]
+    c.evaluation_rank(a) < c.evaluation_rank(b) && ancestors(c, b, true)[a.0]
 }
 
 /// `isPointerChangeable`: a free object, or a point that can be moved on a
@@ -369,7 +375,10 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
     if let LocusDef::Path { mover, .. } = d {
         ids.extend(path_of(c, mover));
     }
-    for (i, &is) in ancestors(c, point).iter().enumerate() {
+    for (i, &is) in ancestors(c, point, !matches!(d, LocusDef::Slider { .. }))
+        .iter()
+        .enumerate()
+    {
         let id = Id(i);
         let reads = match d {
             LocusDef::Path { mover, .. } => id != mover && pointer_changeable(c, id),
@@ -389,7 +398,7 @@ pub(crate) fn reads(c: &Construction, d: LocusDef) -> Vec<Id> {
 /// The objects that depend on `mover` and that `q` depends on, `q`
 /// included, in dependency order: what a sample recomputes.
 pub(crate) fn chain(c: &Construction, q: Id, mover: Id) -> Vec<usize> {
-    let anc = ancestors(c, q);
+    let anc = ancestors(c, q, true);
     let mut desc = vec![false; anc.len()];
     let last = c.evaluation_rank(q);
     let mut stack = vec![mover];
@@ -510,13 +519,11 @@ impl Saved {
     }
 }
 
-/// The live cascade shared by optimizers with the same mover. A sample
-/// updates the mover's dependents; after copying the result and restoring
-/// the parameter, the construction update also recomputes the mover itself.
+/// The live cascade shared by optimizers affected by a trial. Each active
+/// search cascades from its own mover, with a guard for each optimizer.
 pub(crate) struct OptimizerCascade {
-    mover: Id,
-    descendants: Vec<usize>,
-    running: Vec<Id>,
+    descendants: BTreeMap<Id, Vec<usize>>,
+    running: Vec<(Id, Id)>,
     remaining: [usize; Self::MAX_DEPTH],
     start: u64,
     exhausted: bool,
@@ -530,28 +537,47 @@ impl OptimizerCascade {
 
     pub(crate) fn new(c: &Construction, owner: Id, mover: Id) -> Option<Self> {
         const MAX_EDGES: usize = 16_384;
-        if !c.children(mover).take(MAX_EDGES).any(|id| {
-            id != owner && matches!(c.def(id), Def::Optimize(d) if d.independent == mover)
-        }) {
+        if !c
+            .children(mover)
+            .take(MAX_EDGES)
+            .any(|id| id != owner && matches!(c.def(id), Def::Optimize(_)))
+        {
             return None;
         }
 
-        let mut seen = std::collections::HashSet::new();
-        let mut pending = vec![mover];
+        let mut descendants = BTreeMap::new();
+        let mut movers = vec![mover];
         let mut remaining = MAX_EDGES;
         let mut exhausted = false;
-        while let Some(id) = pending.pop() {
-            let Some(left) = remaining.checked_sub(c.child_count(id)) else {
-                exhausted = true;
+        while let Some(mover) = movers.pop() {
+            if descendants.contains_key(&mover) {
+                continue;
+            }
+            let mut seen = std::collections::HashSet::new();
+            let mut pending = vec![mover];
+            while let Some(id) = pending.pop() {
+                let Some(left) = remaining.checked_sub(c.child_count(id)) else {
+                    exhausted = true;
+                    break;
+                };
+                remaining = left;
+                for child in c.children(id).filter(|&child| seen.insert(child.0)) {
+                    pending.push(child);
+                    if let Def::Optimize(d) = c.def(child) {
+                        if child != owner {
+                            movers.push(d.independent);
+                        }
+                    }
+                }
+            }
+            if exhausted {
                 break;
-            };
-            remaining = left;
-            pending.extend(c.children(id).filter(|&child| seen.insert(child.0)));
+            }
+            let mut children: Vec<_> = seen.into_iter().collect();
+            children.sort_unstable_by_key(|&i| c.evaluation_rank(Id(i)));
+            descendants.insert(mover, children);
         }
-        let mut descendants: Vec<_> = seen.into_iter().collect();
-        descendants.sort_unstable_by_key(|&i| c.evaluation_rank(Id(i)));
         Some(Self {
-            mover,
             descendants,
             running: Vec::new(),
             remaining: [Self::MAX_VISITS_PER_DEPTH; Self::MAX_DEPTH],
@@ -569,24 +595,24 @@ impl OptimizerCascade {
         if self.exhausted {
             return Value::Undefined;
         }
-        let mut ids = self.descendants.clone();
-        ids.push(self.mover.0);
+        let mut ids: Vec<_> = self.descendants.values().flatten().copied().collect();
+        ids.extend(self.descendants.keys().map(|mover| mover.0));
+        ids.sort_unstable_by_key(|&i| c.evaluation_rank(Id(i)));
+        ids.dedup();
         let saved = Saved::of(c, &ids);
-        self.running.push(owner);
+        self.running.push((owner, def.independent));
         let result = crate::algo::optimize::search(c, def, Some(self));
         self.running.pop();
         if self.exhausted {
-            saved.restore(c, &self.descendants);
+            saved.restore(c, &ids);
             return Value::Undefined;
         }
         result
     }
 
     pub(crate) fn set_result(&self, c: &mut Construction, value: Value) {
-        if let Some(slot) = c
-            .values
-            .get_mut(self.running.last().expect("active optimizer").0)
-        {
+        let &(owner, _) = self.running.last().expect("active optimizer");
+        if let Some(slot) = c.values.get_mut(owner.0) {
             *slot = value;
         }
     }
@@ -595,15 +621,18 @@ impl OptimizerCascade {
         if self.exhausted {
             return false;
         }
-        if restore {
-            recompute(c, self.mover.0);
-        }
         let depth = self.running.len() - 1;
-        for index in 0..self.descendants.len() {
-            let i = self.descendants[index];
+        let (_, mover) = self.running[depth];
+        if restore {
+            recompute(c, mover.0);
+        }
+        for index in 0..self.descendants[&mover].len() {
+            let i = self.descendants[&mover][index];
             let def = c.defs[i];
-            if matches!(def, Def::Optimize(d)
-                if d.independent == self.mover && self.running.contains(&Id(i)))
+            if matches!(def, Def::Optimize(_))
+                && (self.running.iter().any(|&(owner, _)| owner == Id(i))
+                    || c.optimizer_final_update
+                        .is_some_and(|(owner, _)| owner == Id(i)))
             {
                 continue;
             }
@@ -617,15 +646,11 @@ impl OptimizerCascade {
                 break;
             }
             if let Def::Optimize(def) = def {
-                let owner = Id(i);
-                if def.independent != self.mover {
-                    continue;
-                }
                 if self.running.len() == Self::MAX_DEPTH {
                     self.exhausted = true;
                     break;
                 }
-                self.running.push(owner);
+                self.running.push((Id(i), def.independent));
                 c.values[i] = crate::algo::optimize::search(c, def, Some(self));
                 self.running.pop();
                 if self.exhausted {

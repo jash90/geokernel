@@ -570,11 +570,31 @@ impl Log {
         })
     }
 
-    pub(crate) fn saved_properties(&self) -> impl Iterator<Item = &Property> {
-        self.ops.items().into_iter().filter_map(|op| match op {
-            Op::SavedProperty(property) => Some(property.as_ref()),
-            _ => None,
-        })
+    pub(crate) fn saved_slider_bounds(&self) -> BTreeMap<&str, [Option<&str>; 2]> {
+        let mut saved = BTreeMap::new();
+        for op in self.ops.items() {
+            match op {
+                Op::SavedProperty(property) => {
+                    if let Property::SliderBounds { label, bounds } = property.as_ref() {
+                        saved.insert(label.as_str(), bounds.each_ref().map(|b| b.as_deref()));
+                    }
+                }
+                Op::Define(entry) => {
+                    if let [label] = entry.labels.as_slice() {
+                        if saved.contains_key(label.as_str())
+                            && matches!(
+                                geo_kernel::script::split_call(entry.rhs()),
+                                Some(("Slider", _))
+                            )
+                        {
+                            saved.remove(label.as_str());
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        saved
     }
 
     /// The accepted lines, newest first, without collecting them.

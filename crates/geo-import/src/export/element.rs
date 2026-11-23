@@ -92,25 +92,18 @@ impl Writer<'_> {
         // A free number is a slider when it has a bound, or when its file
         // placed one for it.
         let numeric = c.slider_bounds(id).map(|n| n.map(|n| n.to_string()));
-        let command_bounds = match script::split_comment(line)
+        let slider_command = script::split_comment(line)
             .0
             .split_once([':', '='])
             .and_then(|(_, rhs)| script::split_call(rhs.trim_start_matches('=').trim()))
-        {
-            Some(("Slider", args))
-                if args.len() >= 2 && (!c.reads(id).is_empty() || args[..2].contains(&label)) =>
-            {
-                Some([Some(args[0]), Some(args[1])])
-            }
-            _ => None,
-        };
+            .filter(|(command, args)| *command == "Slider" && args.len() >= 2);
         let bounds = match c.def(id) {
             Def::Number(_) => self
                 .presentation
                 .slider_bounds
                 .get(label)
                 .copied()
-                .or(command_bounds)
+                .or_else(|| slider_command.map(|(_, args)| [Some(args[0]), Some(args[1])]))
                 .unwrap_or_else(|| numeric.each_ref().map(|n| n.as_deref())),
             _ => [None; 2],
         };
@@ -373,44 +366,31 @@ impl Writer<'_> {
             .copied()
             .or(saved.and_then(|style| style.animation.as_deref()));
         if bounded {
-            let command_options = line
-                .split_once(['=', ':'])
-                .and_then(|(_, rhs)| {
-                    script::split_call(script::split_comment(rhs).0.trim_start_matches('=').trim())
-                })
-                .filter(|(name, _)| *name == "Slider")
-                .map(|(_, args)| args);
-            let option = |index, default| {
-                command_options
-                    .as_ref()
-                    .and_then(|args| args.get(index).copied())
-                    .unwrap_or(default)
-            };
+            let [step, speed] = c.slider_animation_options(id);
             match animation {
-                // the construction knows whether the slider still plays
-                Some(animation) if c.animation(id).is_some() => {
-                    let playing = c.animation(id).is_some_and(|a| a.playing);
-                    self.animation(&SliderAnimation {
-                        playing,
-                        ..animation.clone()
-                    })?
-                }
-                Some(animation) => self.animation(animation)?,
+                Some(animation) => self.animation(&SliderAnimation {
+                    step: step.map(str::to_owned).or_else(|| animation.step.clone()),
+                    speed: speed.map(str::to_owned).or_else(|| animation.speed.clone()),
+                    playing: c.animation(id).map_or(animation.playing, |a| a.playing),
+                    mode: animation.mode,
+                })?,
                 // The file of the slider had no such tag.
-                None if saved.is_some() => {}
+                None if saved.is_some() && step.is_none() && speed.is_none() => {}
                 // An animation the construction runs (`SlowPlot`).
                 None if c.animation(id).is_some() => {
                     // As the reference writes it: an automatic increment has
                     // no step, the default speed is left out.
                     let a = c.animation(id).expect("checked above");
-                    let (step, speed, mode) =
-                        (number(a.step), number(a.speed), a.mode.code().to_string());
+                    let saved_step = number(a.step);
+                    let saved_speed = number(a.speed);
+                    let mode = a.mode.code().to_string();
                     let mut attrs = Vec::new();
-                    if !a.auto_step {
-                        attrs.push(("step", step.as_str()));
+                    if let Some(step) = step.or((!a.auto_step).then_some(saved_step.as_str())) {
+                        attrs.push(("step", step));
                     }
-                    if a.speed != 1.0 {
-                        attrs.push(("speed", speed.as_str()));
+                    if let Some(speed) = speed.or((a.speed != 1.0).then_some(saved_speed.as_str()))
+                    {
+                        attrs.push(("speed", speed));
                     }
                     attrs.extend([("type", mode.as_str()), ("playing", flag(a.playing))]);
                     self.xml.tag("animation", &attrs)?;
@@ -418,10 +398,10 @@ impl Writer<'_> {
                 None => self.xml.tag(
                     "animation",
                     &[
-                        ("speed", option(3, "1")),
+                        ("speed", speed.unwrap_or("1")),
                         ("type", "0"),
                         ("playing", "false"),
-                        ("step", option(2, "0.1")),
+                        ("step", step.unwrap_or("0.1")),
                     ],
                 )?,
             }

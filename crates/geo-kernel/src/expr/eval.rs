@@ -137,6 +137,23 @@ fn limit() -> u64 {
 thread_local! {
     /// The work done on this thread (see [`work_done`]).
     static WORK: Cell<u64> = const { Cell::new(0) };
+    static WORK_DEADLINE: Cell<u64> = const { Cell::new(u64::MAX) };
+}
+
+/// Shares a work deadline across otherwise independent evaluations.
+pub(crate) fn with_work_deadline<T>(end: u64, f: impl FnOnce() -> T) -> T {
+    struct Restore(u64);
+
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            WORK_DEADLINE.set(self.0);
+        }
+    }
+
+    let previous = WORK_DEADLINE.get();
+    WORK_DEADLINE.set(end.min(previous));
+    let _restore = Restore(previous);
+    f()
 }
 
 /// The evaluation work done on this thread so far, in units of about 3.5
@@ -191,7 +208,7 @@ impl Lists {
             objects: RefCell::new(([Id(0); MAX_OBJECTS], 0)),
             built: Cell::new(0),
             invalid_transform_list: Cell::new(false),
-            end: work_done().saturating_add(limit()),
+            end: work_done().saturating_add(limit()).min(WORK_DEADLINE.get()),
         }
     }
 

@@ -49,6 +49,7 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("lists-objects-001", 0),
     ("locus-slider-001", 0),
     ("optimizerreview-reload-001", 1),
+    ("optimizerreview-roundtrip-001", 4),
     ("optimizerreview-redefine-001", 2),
     ("optimizerreview-redefine-002", 1),
     ("optimizerreview-forms-001", 1),
@@ -216,7 +217,14 @@ fn corpus() -> Vec<Case> {
                     wb.set_number(id, *value);
                 }
                 Step::Redefine { line } => wb.run_line(line).unwrap(),
-                Step::Reject { .. } | Step::Delete { .. } | Step::SetSliderBounds { .. } => {
+                Step::ReloadGgb => {
+                    let bytes = wb.export_ggb(None).unwrap();
+                    wb.load_for_export(&bytes, name).unwrap();
+                }
+                Step::Reject { .. }
+                | Step::Delete { .. }
+                | Step::SetSliderBounds { .. }
+                | Step::SliderAnimation { .. } => {
                     panic!("{name}: unexpected step")
                 }
                 Step::Animate { frames } => {

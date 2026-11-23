@@ -46,11 +46,12 @@ fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch
 }
 
 pub fn replay(case: &Case) -> CaseOutcome {
-    if case
-        .steps
-        .iter()
-        .any(|step| matches!(step, Step::Delete { .. }))
-    {
+    if case.steps.iter().any(|step| {
+        matches!(
+            step,
+            Step::Delete { .. } | Step::ReloadGgb | Step::SliderAnimation { .. }
+        )
+    }) {
         return replay_document(case);
     }
     let mut out = CaseOutcome::default();
@@ -137,6 +138,13 @@ fn replay_document(case: &Case) -> CaseOutcome {
         let id = |label: &str| document.construction().id(label);
         let result = match step {
             Step::Initial => Ok(()),
+            Step::ReloadGgb => document
+                .export_ggb(None)
+                .map_err(|error| error.to_string())
+                .and_then(|bytes| document.load_for_export(&bytes, "roundtrip.ggb")),
+            Step::SliderAnimation { label, options } => {
+                check_slider_animation(&document, label, options)
+            }
             Step::Redefine { line } => document.run_line(line),
             Step::Reject { line, error } => match document.run_line(line) {
                 Ok(()) => Err("the document accepted the line".into()),
@@ -182,6 +190,39 @@ fn replay_document(case: &Case) -> CaseOutcome {
         compare_snapshot(&mut out, c, i, snapshot, &Default::default());
     }
     out
+}
+
+fn check_slider_animation(
+    document: &Workbench,
+    label: &str,
+    options: &crate::model::AnimationOptions,
+) -> Result<(), String> {
+    let bytes = document
+        .export_ggb(None)
+        .map_err(|error| error.to_string())?;
+    let imported = geo_import::import(&bytes).map_err(|error| error.to_string())?;
+    let actual = imported
+        .slider_animation
+        .get(label)
+        .ok_or_else(|| format!("no saved animation for `{label}`"))?;
+    let number = |source: &str| document.construction().numeric_value(source);
+    for (name, actual, expected) in [
+        ("step", actual.step.as_deref(), options.step.as_deref()),
+        ("speed", actual.speed.as_deref(), options.speed.as_deref()),
+    ] {
+        if actual != expected {
+            let equal = actual
+                .and_then(number)
+                .zip(expected.and_then(number))
+                .is_some_and(|(a, b)| crate::compare::numbers_agree(a, b));
+            if !equal {
+                return Err(format!(
+                    "animation {name} for `{label}`: expected {expected:?}, got {actual:?}"
+                ));
+            }
+        }
+    }
+    Ok(())
 }
 
 fn compare_snapshot(
@@ -290,6 +331,7 @@ fn compare_snapshot(
 
 fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, String> {
     match step {
+        Step::ReloadGgb | Step::SliderAnimation { .. } => unreachable!("document step"),
         Step::Initial => Ok(None),
         Step::Delete { .. } => unreachable!("deletions replay on the document"),
         Step::Move { label, x, y } => {

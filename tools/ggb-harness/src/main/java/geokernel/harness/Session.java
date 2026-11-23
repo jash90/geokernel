@@ -240,6 +240,31 @@ final class Session {
         growingPoints.putAll(liveGroups);
     }
 
+    void reloadGgb() {
+        try {
+            app.getXMLio().processXMLString(app.getXML(), true, false);
+        } catch (org.geogebra.common.io.XMLParseException error) {
+            throw new IllegalStateException("cannot reload the saved construction", error);
+        }
+        objects.replaceAll((label, old) -> kernel.lookupLabel(label));
+    }
+
+    Map<String, String> sliderAnimation(String label) {
+        if (!(lookup(label) instanceof GeoNumeric slider)) {
+            throw new IllegalArgumentException(label + " is not a number");
+        }
+        Matcher animation = Pattern.compile("<animation\\s+([^>]*)>").matcher(slider.getXML());
+        if (!animation.find()) {
+            throw new IllegalStateException("no saved animation for " + label);
+        }
+        Map<String, String> options = new LinkedHashMap<>();
+        Matcher attribute = Pattern.compile("(step|speed)=\"([^\"]*)\"").matcher(animation.group(1));
+        while (attribute.find()) {
+            options.put(attribute.group(1), attribute.group(2));
+        }
+        return options;
+    }
+
     void delete(String label) {
         lookup(label).remove();
         objects.entrySet().removeIf(entry -> kernel.lookupLabel(entry.getKey()) == null);

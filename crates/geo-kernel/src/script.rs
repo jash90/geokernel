@@ -1206,10 +1206,13 @@ fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String>
             return Err(format!("expected a number, got `{arg}`"));
         }
     }
-    if let (Some(min), Some(max)) = (number(c, min), number(c, max)) {
-        return c.add_slider(name, min, max).map_err(|e| e.to_string());
-    }
-    c.add_expression_slider(name, [min, max])
+    let id = if let (Some(min), Some(max)) = (number(c, min), number(c, max)) {
+        c.add_slider(name, min, max).map_err(|e| e.to_string())?
+    } else {
+        c.add_expression_slider(name, [min, max])?
+    };
+    c.set_slider_animation_options(id, options);
+    Ok(id)
 }
 
 /// `CmdPolyLine` reads its trailing flag at creation. A false flag leaves

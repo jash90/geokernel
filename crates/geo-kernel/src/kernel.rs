@@ -1119,6 +1119,7 @@ pub struct Construction {
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
     saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
+    slider_animation_options: HashMap<Id, [Option<String>; 2]>,
     controls: Vec<(Id, control::Control)>,
     pub(crate) object_scripts: HashMap<String, Vec<control::ControlScript>>,
 }
@@ -1840,6 +1841,7 @@ impl Construction {
                 self.object_scripts.remove(&label);
             }
         }
+        self.slider_animation_options.retain(|id, _| id.0 < at.len);
         self.saved_slider_bounds.retain(|&id, bounds| {
             let keep = id.0 < at.len
                 && bounds
@@ -2136,6 +2138,7 @@ impl Construction {
             }
         };
 
+        let slider_options = self.slider_animation_options.remove(&new);
         let mut value = self.values[new.0];
         if bounds.is_some() && matches!(old, Def::Number(_)) {
             def = old;
@@ -2177,8 +2180,16 @@ impl Construction {
         self.values[id.0] = value;
         self.hints[id.0] = hint;
         if let Some(bounds) = bounds {
-            self.saved_slider_bounds.insert(id, bounds);
-            self.update_slider_bounds(id);
+            let old_max = self.slider_upper_bound(id);
+            self.install_redefined_slider_bounds(id, bounds, old_max);
+        }
+        if let Some(slider_options) = slider_options {
+            let options = self.slider_animation_options.entry(id).or_default();
+            for (option, replacement) in options.iter_mut().zip(slider_options) {
+                if replacement.is_some() {
+                    *option = replacement;
+                }
+            }
         }
         for (child, new) in changed {
             let old = &old_reads[&child];
@@ -3107,9 +3118,10 @@ impl Construction {
         if let Some(slot) = self.values.get_mut(owner.0) {
             *slot = value;
         }
-        self.optimizer_final_update = Some((owner, expr::work_done()));
+        let end = expr::work_done().saturating_add(expr::MAX_EVALUATION_WORK);
+        self.optimizer_final_update = Some((owner, end));
         let changed_root = self.last_update_changed_automatic_root;
-        self.propagate_dirty(dirty, 0, false);
+        expr::with_work_deadline(end, || self.propagate_dirty(dirty, 0, false));
         self.last_update_changed_automatic_root |= changed_root;
         self.optimizer_final_update = None;
         value
@@ -3127,7 +3139,16 @@ impl Construction {
         self.analysis.clear();
         let mut recomputed = 0;
         let mut restored_pairs = BTreeSet::new();
+        let final_update_end = self.optimizer_final_update.map(|(_, end)| end);
         while let Some(rank) = dirty.pop_first(from) {
+            if let Some(end) = final_update_end {
+                if expr::work_done() >= end {
+                    // The pending bits belong only to this sweep. Dropping
+                    // them keeps the reusable dirty set empty between edits.
+                    return recomputed;
+                }
+                expr::charge(1);
+            }
             from = rank + 1;
             let i = self.evaluation_id(rank);
             let mut def = self.defs[i];
@@ -3259,9 +3280,10 @@ impl Construction {
                     }
                 }
                 Def::Optimize(d) => {
-                    if self.optimizer_final_update.is_some_and(|(owner, start)| {
-                        owner == Id(i) || expr::work_done() - start > expr::MAX_EVALUATION_WORK
-                    }) {
+                    if self
+                        .optimizer_final_update
+                        .is_some_and(|(owner, _)| owner == Id(i))
+                    {
                         continue;
                     }
                     let d = match algo::optimize::disabled(self, d) {

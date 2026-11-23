@@ -570,6 +570,35 @@ mod cascade_tests {
     }
 
     #[test]
+    fn final_update_shares_work_across_optimizer_descendants() {
+        let mut c = script::load(
+            "b = 36\na = Slider(0, sqrt(b))\nm = Minimize((a - 3)^2, a)\nt = Slider(0, 6)",
+        )
+        .unwrap();
+        for i in 1..=20 {
+            script::exec(
+                &mut c,
+                &format!("d_{{{i}}} = If(IsDefined(m), 0, Sum(Sequence(sqrt(j), j, 1, 1000000)))"),
+            )
+            .unwrap();
+        }
+        c.set_number(c.id("b").unwrap(), -1.0).unwrap();
+
+        let before = crate::expr::work_done();
+        script::exec(&mut c, "n = Minimize((t - 2)^2, t)").unwrap();
+        let work = crate::expr::work_done() - before;
+        assert_eq!(c.value(c.id("m").unwrap()), Value::Undefined);
+        assert!(c.number(c.id("d_{1}").unwrap()).unwrap() > 0.0);
+        assert!(
+            work <= crate::expr::MAX_EVALUATION_WORK + crate::expr::MAX_OVERRUN + 4096,
+            "final update and the small outer search visited {work} work units",
+        );
+
+        let unrelated = script::exec(&mut c, "unrelated = 0").unwrap().unwrap();
+        assert_eq!(c.set_number(unrelated, 1.0).unwrap(), 0);
+    }
+
+    #[test]
     fn two_optimizers_on_a_circle_with_a_kept_record() {
         let mut c = script::load(
             "r = 5\nC = (1, 2)\nc = Circle(C, r)\nP = Point(c)\nk = 1\n\

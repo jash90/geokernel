@@ -88,6 +88,7 @@ pub(crate) mod fraction;
 pub(crate) mod inequality;
 mod inverse;
 #[doc(hidden)]
+pub(crate) use eval::with_work_deadline;
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
 
 /// Shared expression-work allowance for one intersection solve.
