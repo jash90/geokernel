@@ -197,7 +197,8 @@ fn view_corner(c: &Construction, view: Option<Count>, index: Count) -> Option<Va
 /// `(xmin, ymax)` of the view. A text needs its rendered bounds, which the
 /// kernel does not have.
 fn drawable_corner(c: &Construction, source: Id, index: Count) -> Option<Value> {
-    if c.kind(source) != Kind::Boolean {
+    // Only a labeled object gets a drawable (`EuclidianView.drawableNeeded`).
+    if c.kind(source) != Kind::Boolean || c.label(source).starts_with('\0') {
         return None;
     }
     // `AlgoTextCorner.compute` casts the index with `(int)`.

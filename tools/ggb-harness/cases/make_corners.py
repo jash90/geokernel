@@ -77,6 +77,15 @@ cases.case("text", [
 cases.case("checkbox", [
     "b = true", num("n", 1), "P = Vertex(b, n)",
 ], [setn("n", 3), setn("n", 5), setn("n", 2)])
+# A hidden checkbox keeps the empty label rectangle at the pixel origin;
+# an unlabeled boolean has no drawable.
+cases.case("checkbox", [
+    num("a", 1), "b = a > 0", num("n", 1), "P = Vertex(b, n)", "Q = Vertex(b, 4)",
+], [setn("a", -1), setn("n", 4), setn("n", 1.7), setn("n", 0), setn("n", 4.9),
+    setn("n", -1), setn("n", 3)])
+cases.case("checkbox", [num("a", 1), "P = Vertex(a > 0, 2)"], [setn("a", -1)])
+cases.case("checkbox", ["c = false", "P = Vertex(c, 3)", "Q = Vertex(c, 1)"], [])
+cases.cases[-1]["view"] = [-2.5, 7.5, -1.25, 3.75, 40, 80]
 cases.case("vertex", [
     "q(x,y) = x > 0 && y > 0 && x + y < 2 && y > sin(x) - 10",
     "P = Vertex(q)",

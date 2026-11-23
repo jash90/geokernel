@@ -254,6 +254,32 @@ fn point_segment_distance(p: (f64, f64), x1: f64, y1: f64, x2: f64, y2: f64) -> 
     }
 }
 
+/// `GeoSegment.distance(GeoPoint)` for a segment whose line coefficients
+/// `(x, y, z)` were copied from another line: `getParameter` projects on
+/// that line and measures from the start point along `(y, -x)`, and a
+/// parameter outside `[0, 1]` gives the distance to an end point.
+fn carried_segment_distance(
+    p: (f64, f64),
+    start: (f64, f64),
+    end: (f64, f64),
+    (x, y, z): (f64, f64, f64),
+) -> f64 {
+    let t = -(z + x * p.0 + y * p.1) / (x * x + y * y);
+    let (px, py) = (p.0 + t * x, p.1 + t * y);
+    let parameter = if x.abs() <= y.abs() {
+        (px - start.0) / y
+    } else {
+        (start.1 - py) / x
+    };
+    if parameter < 0.0 {
+        my_length(start.0 - p.0, start.1 - p.1)
+    } else if parameter > 1.0 {
+        my_length(end.0 - p.0, end.1 - p.1)
+    } else {
+        ((x * p.0 + y * p.1 + z) / my_length(x, y)).abs()
+    }
+}
+
 /// `GeoLine.distance(GeoLine)` for `this` = `g` and the argument `h`:
 /// zero unless the lines are parallel.
 fn line_line_distance(g: (f64, f64, f64), h: (f64, f64, f64)) -> f64 {
@@ -621,9 +647,10 @@ impl Group for MeasureDef {
                     Value::Line { a, b, c: z } => {
                         number(((a * p.0 + b * p.1 + z) / my_length(a, b)).abs())
                     }
-                    Value::Segment { x1, y1, x2, y2 } => {
-                        number(point_segment_distance(p, x1, y1, x2, y2))
-                    }
+                    Value::Segment { x1, y1, x2, y2 } => match c.segment_carrier(path) {
+                        Some(line) => number(carried_segment_distance(p, (x1, y1), (x2, y2), line)),
+                        None => number(point_segment_distance(p, x1, y1, x2, y2)),
+                    },
                     _ => {
                         let q = closest_coords(c, path, p)?;
                         number(my_length(p.0 - q.0, p.1 - q.1))

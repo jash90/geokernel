@@ -3381,11 +3381,6 @@ reason = "The kernel lacks the reference sign convention for the initial rank-on
 mismatches = ["0:s", "2:s", "3:s"]
 
 [[gap]]
-id = "funcrest-conditionalmixed-001"
-reason = "The kernel lacks a segment record with a separately assignable supporting line and retained endpoints. It therefore rejects a segment followed by a plain line."
-mismatches = ["0:script line 7"]
-
-[[gap]]
 id = "misc-maximizepoint-006"
 reason = "While the circle is undefined (negative radius) the reference's search stops at its first undefined sample and the optimizer keeps its previous point, still defined; the kernel reports the optimum undefined. The recorded runs show the retained value, but the readable sources do not settle how the point copy keeps it (the moving point returns to its last coordinates after a NaN path parameter), so the kernel does not guess it. The steps before and after agree."
 mismatches = ["1:M"]
