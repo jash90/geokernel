@@ -1866,3 +1866,46 @@ fn export_refuses_interval_roots_with_a_freed_label() {
     let error = w.export_ggb(None).unwrap_err().to_string();
     assert!(error.contains("freed"), "{error}");
 }
+
+#[test]
+fn deleting_a_reader_keeps_an_interval_root_that_a_later_line_reads() {
+    let src = "f(x) = sin(x)\nh(x) = 0\nb = 10\nR = Intersect(f, h, 1, b)\nd = x(R_{2})";
+    let mut w = Workbench::from_script(src).unwrap();
+    let b = w.construction().id("b").unwrap();
+    // d keeps R_{2} labelled while it is undefined; e reads it then
+    assert!(w.set_number(b, 4.0));
+    w.run_line("e = x(R_{2}) + 1").unwrap();
+    assert!(w.set_number(b, 10.0));
+    let d = w.construction().id("d").unwrap();
+    assert!(w.delete(d));
+    let c = w.construction();
+    assert!(c.id("d").is_none());
+    let root = c.id("R_{2}").expect("R_{2} stays labelled");
+    let Value::Point { x, .. } = c.value(root) else {
+        panic!("R_{{2}} is undefined");
+    };
+    assert!((x - 2.0 * std::f64::consts::PI).abs() < 1e-6, "{x}");
+    let e = c.id("e").expect("e survives");
+    assert!(matches!(c.value(e), Value::Number(v) if (v - x - 1.0).abs() < 1e-9));
+}
+
+#[test]
+fn deleting_an_object_replays_labels_another_command_took() {
+    let src = concat!(
+        "P = (1, 1)\nb = 1.5\nf(x) = (x - 1) (x - 2)\ng(x) = (x - 3) (x - 4) (x - 5)\n",
+        "h(x) = 0\nR = Intersect(f, h, b, 3)\nS = Intersect(g, h, 0, b)"
+    );
+    let mut w = Workbench::from_script(src).unwrap();
+    for value in [0.5, 5.5] {
+        let b = w.construction().id("b").unwrap();
+        assert!(w.set_number(b, value));
+    }
+    // R freed A, which S took
+    let before: Vec<_> = labelled_values(&w)
+        .into_iter()
+        .filter(|row| !row.starts_with("P "))
+        .collect();
+    let p = w.construction().id("P").unwrap();
+    assert!(w.delete(p));
+    assert_eq!(labelled_values(&w), before);
+}
