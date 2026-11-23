@@ -530,6 +530,11 @@ fn function_equal(c: &Construction, a: Id, b: Id) -> bool {
     }
 }
 
+/// `isEqualExtended` of two objects, for `==` of an expression.
+pub(crate) fn objects_equal(c: &Construction, a: Id, b: Id) -> bool {
+    equal(c, a, b)
+}
+
 /// `isEqualExtended` of the first object, called with the second. Kinds added
 /// later are equal to nothing until they are handled here.
 #[allow(unreachable_patterns)]

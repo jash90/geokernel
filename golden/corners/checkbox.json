@@ -39,6 +39,134 @@
           "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
         }
       ]
+    },
+    {
+      "id": "corners-checkbox-002",
+      "group": "corners",
+      "script": [
+        "a = 1",
+        "b = a > 0",
+        "n = 1",
+        "P = Vertex(b, n)",
+        "Q = Vertex(b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": 4.0 },
+        { "action": "set_number", "label": "n", "value": 1.7 },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 4.9 },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 },
+          "Q": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 },
+          "Q": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "number", "defined": true, "value": 4.0 },
+          "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 },
+          "Q": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "number", "defined": true, "value": 1.7 },
+          "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 },
+          "Q": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "number", "defined": true, "value": 4.9 },
+          "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 },
+          "Q": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "P": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 },
+          "Q": { "type": "point", "defined": true, "x": -4.3, "y": 6.3 }
+        }
+      ]
+    },
+    {
+      "id": "corners-checkbox-003",
+      "group": "corners",
+      "script": [
+        "a = 1",
+        "P = Vertex(a > 0, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "P": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-checkbox-004",
+      "group": "corners",
+      "script": [
+        "c = false",
+        "P = Vertex(c, 3)",
+        "Q = Vertex(c, 1)"
+      ],
+      "view": [
+        -2.5,
+        7.5,
+        -1.25,
+        3.75,
+        40,
+        80
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false },
+          "P": { "type": "point", "defined": true, "x": -2.5, "y": 3.75 },
+          "Q": { "type": "point", "defined": true, "x": -2.5, "y": 3.75 }
+        }
+      ]
     }
   ]
 }

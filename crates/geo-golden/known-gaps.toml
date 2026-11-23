@@ -17,29 +17,23 @@
 # `failure = "error text"` (the kernel refuses the line with exactly this
 # error). The test fails when the kernel answers anything else there.
 
-# intersectgrowth
-
-[[gap]]
-id = "intersectgrowth-interval-003"
-reason = "AlgoRoots.initPoints removes every output from slot max(number, 1) on that has no dependents and is undefined, which unsets its label; when the slot is defined again AlgoGeoPointsFunction.updateLabels gives it the next default point label (B, then D past the taken C). The harness still reads the same object under its old label R_{2} or R_{3}. The kernel keeps one fixed label per output, so the slots stay R_{2} and R_{3} and no B or D exists"
-mismatches = ["3:B", "3:D", "4:B", "4:D"]
-
-[[gap]]
-id = "intersectgrowth-interval-005"
-reason = "AlgoRoots.initPoints unlabels the undefined second slot when the interval collapses; when it is defined again it is labelled with the next default point label A, which the harness reads besides the old label R_{2}. The kernel keeps one fixed label per output, so the slot stays R_{2} and no A exists"
-mismatches = ["2:A", "3:A", "4:A"]
-
-[[gap]]
-id = "intersectgrowth-interval-007"
-reason = "When b moves to 5.5, R = Intersect(f, h, b, 3) loses its roots and AlgoRoots.initPoints removes its second output A, which frees the label before S = Intersect(g, h, 0, b) grows; S then names its roots 4 and 5 A and B. The kernel keeps A on R's undefined slot, so S's new outputs are B and C"
-mismatches = ["2:A", "2:B"]
-
 # corners
 
 [[gap]]
 id = "corners-review-004"
-reason = "AlgoVertexIneq keeps the intersection helper it created on the first update. The helper for y > x^n and x > 1 was made while n = 2 made the border polynomial; after n becomes 0.5 that cached polynomial helper still evaluates the border on the vertical line and finds (1, 1). Which helper exists depends on the edit history, so the kernel leaves the variable exponent undefined instead"
+reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 1 got a polynomial helper at n = 2, so at n = 0.5 it still finds (1, 1), where a fresh Newton helper finds nothing (corners-review-016 shows the reverse order)."
 mismatches = ["1:P_{1}"]
+
+[[gap]]
+id = "corners-review-016"
+reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 1 got a Newton helper at n = 0.5, so at n = 2 it still finds nothing, where a fresh polynomial helper finds (1, 1) (corners-review-004 shows the reverse order)."
+mismatches = ["1:P_{1}"]
+
+[[gap]]
+id = "corners-review-017"
+reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 4 got a polynomial helper at n = 2, so at n = 0.5 it evaluates the live border on the vertical line and finds (4, 2), where a fresh Newton helper finds nothing; it reads the current exponent, not the one it was made with."
+mismatches = ["1:P_{1}"]
+undefined = true
 
 # conic
 
@@ -3100,11 +3094,6 @@ reason = "A text corner reads the drawable's font metrics and anchor bounds. The
 mismatches = ["0:P", "3:P"]
 
 [[gap]]
-id = "corners-checkbox-001"
-reason = "A Boolean corner reads the checkbox drawable. This headless drawable reports a zero-size rectangle at the pixel origin, and the kernel has no checkbox bounds."
-mismatches = ["0:P", "1:P", "3:P"]
-
-[[gap]]
 id = "curvepairs-growth-001"
 reason = "The reference orders the positive integer root first when the height reaches one. The kernel orders the real solutions by ascending first parameter."
 mismatches = ["1:P_{1}", "1:P_{2}"]
@@ -3274,48 +3263,8 @@ mismatches = ["0:c", "3:c"]
 
 [[gap]]
 id = "georestsmall-ifgeometry-003"
-reason = "The selected circle has an infinite radius, which Radius returns as positive infinity in the reference: infinity-legacy-075 records d as `infinity: 1` at step 1, where this schema 2 file writes an undefined number. The kernel represents that circle as undefined and Radius is undefined."
+reason = "The selected circle has an infinite radius, which Radius returns as positive infinity in the reference: the recording has d as `infinity: 1` at step 1. The kernel represents that circle as undefined and Radius is undefined."
 mismatches = ["1:d"]
-
-[[gap]]
-id = "infinity-legacy-010"
-reason = "Same script as calculus-sums-012: UpperSum of a constant function over an infinite interval is positive infinity in the reference. Its first rectangle starts at the NaN 0 + 0 * Infinity, and the kernel's minimum search requires a finite bracket. LeftSum agrees."
-mismatches = ["0:u"]
-
-[[gap]]
-id = "infinity-legacy-075"
-reason = "Radius of the selected circle with an infinite radius is positive infinity in the reference. The kernel represents the circle as undefined."
-mismatches = ["1:d"]
-
-[[gap]]
-id = "infinity-legacy-113"
-reason = "RemoveUndefined in the reference retains projective points with infinite coordinates. The kernel drops those points from the list."
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
-
-[[gap]]
-id = "infinity-legacy-114"
-reason = "RemoveUndefined in the reference retains projective points with infinite coordinates. The kernel drops those points from the list."
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
-
-[[gap]]
-id = "infinity-legacy-152"
-reason = "Same script as funcanalysis-asymptote-001: the headless harness uses CASFactoryDummy and returns an empty list for 1/x. The numeric result has the horizontal line y=0 and the pole x=0."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "infinity-legacy-153"
-reason = "Same script as funcanalysis-asymptote-002: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the oblique line y=x+1 and the pole x=1."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "infinity-legacy-154"
-reason = "Same script as funcanalysis-asymptote-004: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has y=x+1 and discards the removable pole."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "infinity-legacy-155"
-reason = "Same script as funcanalysis-asymptote-007: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the logarithmic pole x=0."
-mismatches = ["0:r"]
 
 [[gap]]
 id = "infinity-outputs-039"
@@ -3326,6 +3275,7 @@ mismatches = ["1:s", "2:s", "4:s"]
 id = "infinity-outputs-040"
 reason = "UpperSum of a constant function up to an infinite bound is positive or negative infinity in the reference, with the sign of the step. The first rectangle starts at 1 + 0 * Infinity, which is NaN, and the kernel's minimum search requires a finite bracket, as in calculus-sums-012."
 mismatches = ["1:s", "2:s", "4:s"]
+
 # odesymbolic
 
 [[gap]]
@@ -3358,47 +3308,12 @@ id = "odesymbolic-cas-006"
 reason = "The polynomial solver cannot integrate a slope with a noninteger power during slider edits. The reference returns a defined symbolic function for those powers."
 mismatches = ["1:g", "2:g"]
 
+[[gap]]
+id = "misc-maximizepoint-019"
+reason = "Two optimizers over the same point while its circle keeps its last record. Each sample of one search updates the point's dependents, which runs the other optimizer's whole search and its construction update inside it (AlgoOptimize guards only its own recursion). In the recording the optimizer computed second in an update returns the point's coordinates before the search, (-1.236, -2.472) on the kept circle, instead of its optimum on that circle: N at the radius step and M at the step of k. The readable sources do not show which part of the nested searches gives up, so the kernel runs each search alone and returns both optima on the kept circle. One optimizer over the point agrees in misc-maximizepoint-008 to -017 and misc-minimizepoint-008 to -010, and two optimizers over a defined circle agree in misc-maximizepoint-018."
+mismatches = ["1:N", "2:M"]
+
 # funcrest
-
-[[gap]]
-id = "funcrest-freehandreaders-010"
-reason = "Bounded intersection of two functions in the kernel requires two expression trees. It lacks an intersection search over freehand samples, so the recorded point stays undefined."
-mismatches = ["0:S"]
-
-[[gap]]
-id = "funcrest-svd-002"
-reason = "The kernel orients each left vector by its largest component. It lacks the reference sign convention for both diagonal matrices."
-mismatches = ["0:s", "0:t"]
-
-[[gap]]
-id = "funcrest-svd-003"
-reason = "The kernel orients each left vector by its largest component. It lacks the reference negative signs on both vectors of the one-row and one-column decompositions."
-mismatches = ["0:s", "0:t"]
-
-[[gap]]
-id = "funcrest-svd-005"
-reason = "The kernel uses its own singular vector signs and orthonormal completion. It lacks the reference null-space basis for the rank-one matrix and the reference signs for the identity."
-mismatches = ["0:s", "0:t"]
-
-[[gap]]
-id = "funcrest-svd-006"
-reason = "The kernel lacks the reference sign convention for the initial rank-one input and has no persistent undefined state for SVD after an empty input."
-mismatches = ["0:s", "2:s", "3:s"]
-
-[[gap]]
-id = "funcrest-conditionalmixed-001"
-reason = "The kernel lacks a segment record with a separately assignable supporting line and retained endpoints. It therefore rejects a segment followed by a plain line."
-mismatches = ["0:script line 7"]
-
-[[gap]]
-id = "misc-maximizepoint-006"
-reason = "While the circle is undefined (negative radius) the reference's search stops at its first undefined sample and the optimizer keeps its previous point, still defined; the kernel reports the optimum undefined. The recorded runs show the retained value, but the readable sources do not settle how the point copy keeps it (the moving point returns to its last coordinates after a NaN path parameter), so the kernel does not guess it. The steps before and after agree."
-mismatches = ["1:M"]
-
-[[gap]]
-id = "misc-minimizepoint-006"
-reason = "While the circle is undefined (negative radius) the reference's search stops at its first undefined sample and the optimizer keeps its previous point, still defined; the kernel reports the optimum undefined. The recorded runs show the retained value, but the readable sources do not settle how the point copy keeps it (the moving point returns to its last coordinates after a NaN path parameter), so the kernel does not guess it. The steps before and after agree."
-mismatches = ["1:M"]
 
 [[gap]]
 id = "misc-optimizebounds-001"
@@ -3412,63 +3327,13 @@ mismatches = ["0:g", "0:h", "3:g", "3:h"]
 
 [[gap]]
 id = "funcrest-derivative-004"
-reason = "The 260-point spline system is solved with the reference elimination and agrees bit for bit on the x coordinates. Seven of its y inputs sin(k) (k = 18, 64, 89, 131, 202, 224, 233) differ by one ulp: the kernel evaluates sin with the portable fdlibm algorithm, the recording JVM with its Math.sin intrinsic. The ill-conditioned 260-piece monomial system amplifies the ulp to a relative 1.5e-9 in y(0.875). Both derivatives agree."
+reason = "The 260-point spline system is solved with the reference elimination. Its y inputs come from MyDouble.sin, which calls Math.sin; on the recording JVM (HotSpot x86_64, OpenJDK 17) that call runs the libm intrinsic stub, which differs by one ulp from StrictMath (fdlibm, the kernel's algorithm) for k = 18, 24, 26, 62, 89, 131, 202 and 233 in 1..260. The ill-conditioned 260-piece monomial system amplifies these ulps to a relative 1.5e-9 in y(0.875). Black-box check: substituting the intrinsic's Math.sin values for those inputs makes the case agree, and with -XX:-UseLibmIntrinsic the JVM's Math.sin equals StrictMath.sin. The stub is HotSpot assembly under GPLv2 with no EUPL or published description, so the kernel does not port it."
 mismatches = ["1:s"]
 
 [[gap]]
 id = "funcrest-splinelong-003"
-reason = "Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM's Math.pow intrinsic is off by one ulp when the exact power lies within about 0.003 ulp of a rounding midpoint, which happens for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. The later steps, including the stale point-count check, agree."
+reason = "Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM (HotSpot x86_64, OpenJDK 17) runs Math.pow as its libm intrinsic stub, which is off by one ulp from that for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. Black-box check: substituting the intrinsic's Math.pow values for all 3963 powers the kernel's spline code asks for makes the case agree. The stub is HotSpot assembly under GPLv2 with no EUPL or published description, so the kernel does not port it. The later steps, including the stale point-count check, agree."
 mismatches = ["1:d", "1:s"]
-
-[[gap]]
-id = "funcrest-svd-008"
-reason = "A ragged row makes both results undefined. The kernel has no persistent undefined state after an invalid matrix and decomposes the repaired matrix."
-mismatches = ["2:s"]
-
-[[gap]]
-id = "funcrest-svd-009"
-reason = "The kernel rejects every nonfinite matrix entry. For a one-cell matrix with an infinite entry the reference returns two unit factors and an undefined singular value. Both reject a NaN entry."
-mismatches = ["0:s"]
-
-[[gap]]
-id = "funcrest-svd-010"
-reason = "The kernel lacks the reference singular vector sign convention for the rank-deficient 3 by 3 matrix. The reference also makes its smallest singular value exactly zero."
-mismatches = ["0:s"]
-
-[[gap]]
-id = "funcrest-svd-011"
-reason = "The cyclic rotation sweep exceeds the kernel work budget on the dense 200 by 200 matrix. The enclosing IsDefined becomes undefined, while the reference finishes and returns true."
-mismatches = ["0:d"]
-
-[[gap]]
-id = "locusequation-boolean-001"
-reason = "The reference prover replaces the distance operands of the input Boolean with temporary segments. After an edit the Boolean reads those segment values. The kernel compares the current distances, and the implicit equation agrees."
-mismatches = ["2:b", "3:b"]
-
-[[gap]]
-id = "locusequation-boolean-003"
-reason = "After the prover substitutes temporary segments for the distances, the reference condition becomes true on edits of the fixed decimal point. The kernel compares the current distances, and the rounded implicit equation agrees."
-mismatches = ["1:b", "2:b", "3:b"]
-
-[[gap]]
-id = "locusequation-boolean-004"
-reason = "The reference condition reads temporary segment lengths after the edit of the fractional point. The kernel compares the current distances, and the implicit equation agrees."
-mismatches = ["1:b"]
-
-[[gap]]
-id = "locusequation-boolean-006"
-reason = "The reference condition reads temporary segment lengths after editing the circle intersection. The kernel compares the current distances, and the symbolic implicit equation agrees."
-mismatches = ["1:b"]
-
-[[gap]]
-id = "locusequation-boolean-007"
-reason = "The reference condition reads temporary segment lengths after rotating or resizing the carrier circle. The kernel compares the current distances, and the product representing the two solutions agrees."
-mismatches = ["1:b", "2:b"]
-
-[[gap]]
-id = "locusequation-boolean-008"
-reason = "Editing the fixed point changes the standalone distance comparison to false. The reference condition passed to the prover reads temporary segment lengths and stays true. Both kernel comparisons use the current distances."
-mismatches = ["2:b"]
 
 # stroke
 
@@ -3477,12 +3342,68 @@ id = "stroke-limits-001"
 reason = "intended difference, recorded in DIFFERENCES.md: the smoothed stroke has 32,489 points whose exact coordinates are longer than the 1 MiB an imported XML attribute may hold; the kernel makes a stroke that could not be saved, journaled and read back undefined at creation, while the reference keeps it"
 mismatches = ["0:s"]
 
-# prove
+[[gap]]
+id = "locusequation-classic-001"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["3:c"]
 
 [[gap]]
-id = "prove-expression-001"
-reason = "The statement is an arithmetic Boolean (`D == E`). The reference has the CAS rewrite the expression into a polynomial with extra distance variables before the elimination; the kernel translates only the predicate commands and answers undefined."
-mismatches = ["0:p", "0:q"]
+id = "locusequation-classic-002"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["0:c", "1:c"]
+
+[[gap]]
+id = "locusequation-classic-005"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["0:c", "1:c"]
+
+[[gap]]
+id = "locusequation-classic-006"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["0:c", "1:c"]
+
+[[gap]]
+id = "locusequation-classic-008"
+reason = "The traced point is an intersection of a line and a circle that are both drawn through the mover. The reference excludes the mover from that intersection with an extra equation (its recorded system has t*|MP|^2 = 1), but only for the indexed `Intersect(a, b, n)`; the unindexed command and saved files make the same kernel definition, and the kernel does not record which command made it. Its translation has no exclusion and the curve is undefined."
+mismatches = ["0:c", "1:c"]
+undefined = true
+
+[[gap]]
+id = "envelope-classic-001"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["2:c"]
+
+[[gap]]
+id = "prove-expression-012"
+reason = "`ProveDetails` of an arithmetic statement: the reference words the conditions from its CAS's factorization of the rewritten polynomial divided by the user's formula, read back through `NDGDetector`'s formula parser. The kernel decides `Prove` (the truth does not depend on the CAS's normalization) but answers an undefined list here."
+mismatches = ["0:q"]
+undefined = true
+
+[[gap]]
+id = "prove-expression-014"
+reason = "`ProveDetails` of an arithmetic statement: the reference words the conditions from its CAS's factorization of the rewritten polynomial divided by the user's formula, read back through `NDGDetector`'s formula parser. The kernel decides `Prove` (the truth does not depend on the CAS's normalization) but answers an undefined list here."
+mismatches = ["0:q"]
+undefined = true
+
+[[gap]]
+id = "prove-expression-019"
+reason = "`ProveDetails` of an arithmetic statement: the reference words the conditions from its CAS's factorization of the rewritten polynomial divided by the user's formula, read back through `NDGDetector`'s formula parser. The kernel decides `Prove` (the truth does not depend on the CAS's normalization) but answers an undefined list here."
+mismatches = ["0:q"]
+undefined = true
+
+[[gap]]
+id = "prove-expression-020"
+reason = "`ProveDetails` of an arithmetic statement: the reference words the conditions from its CAS's factorization of the rewritten polynomial divided by the user's formula, read back through `NDGDetector`'s formula parser. The kernel decides `Prove` (the truth does not depend on the CAS's normalization) but answers an undefined list here."
+mismatches = ["0:q"]
+undefined = true
+
+[[gap]]
+id = "prove-expression-021"
+reason = "`ProveDetails` of an arithmetic statement: the reference words the conditions from its CAS's factorization of the rewritten polynomial divided by the user's formula, read back through `NDGDetector`'s formula parser. The kernel decides `Prove` (the truth does not depend on the CAS's normalization) but answers an undefined list here."
+mismatches = ["0:q"]
+undefined = true
+
+# prove
 
 [[gap]]
 id = "prove-relation-001"

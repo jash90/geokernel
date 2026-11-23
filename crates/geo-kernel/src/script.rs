@@ -68,7 +68,9 @@ use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
 
-pub use intersect::growth::{boundary_slot_owner, restore_boundary_labels, BoundaryOutputs};
+pub use intersect::growth::{
+    boundary_slot_owner, first_slot_owner, growth_owner, restore_boundary_labels, BoundaryOutputs,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScriptError {
@@ -846,6 +848,12 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     }
     if let Some(def) = intersect::growth::parse_slot(c, rhs) {
         let (def, owner) = def?;
+        if let Some(id) = intersect::growth::existing_slot(c, owner, def) {
+            return c
+                .relabel_output(id, name)
+                .map(|()| Some(id))
+                .map_err(|e| e.to_string());
+        }
         return c
             .add_output(name, def, owner)
             .map(Some)
@@ -868,6 +876,22 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
                 }
                 let count = crate::expr::inequality::vertices(c, source).len().max(1);
                 return add_outputs(c, name, PointDef::inequality_slots(source, count)).map(Some);
+            }
+            // A boolean expression becomes an unlabeled helper, which has
+            // no checkbox drawable.
+            let helper;
+            let mut args = args;
+            if let [source, _] = args[..] {
+                if c.id(source).is_none() {
+                    let label = format!("\0arg{}", c.len());
+                    let checkpoint = c.checkpoint();
+                    if crate::expr::argument_object(c, source, &label, Kind::Boolean) {
+                        helper = label;
+                        args[0] = &helper;
+                    } else {
+                        c.discard_since(checkpoint);
+                    }
+                }
             }
             let def = PointDef::parse_image_vertex(c, &args)
                 .or_else(|| PointDef::parse_segment_vertex(c, func, &args))

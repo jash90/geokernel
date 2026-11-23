@@ -131,6 +131,11 @@ impl translate::System {
         if !details {
             return Some(Outcome::True(Vec::new()));
         }
+        // The reference words the conditions of a formula from its CAS's
+        // factorization of the rewritten polynomial.
+        if self.arithmetic {
+            return None;
+        }
         let mut texts = Vec::new();
         if fixed_two {
             texts.push(conditions::equal_text(
@@ -556,20 +561,32 @@ pub(crate) fn define(c: &mut Construction, label: &str, input: &str) -> Option<R
                 c.value(flag) == Value::Bool(true)
             }
         };
-        c.add(
-            label,
-            crate::kernel::Def::Prove(ProveDef {
-                statement,
-                details,
-                relation,
-            }),
-        )
-        .map_err(|e| e.to_string())
+        let id = c
+            .add(
+                label,
+                crate::kernel::Def::Prove(ProveDef {
+                    statement,
+                    details,
+                    relation,
+                }),
+            )
+            .map_err(|e| e.to_string())?;
+        rewrite_statement(c, statement);
+        Ok(id)
     })();
     if result.is_err() {
         c.discard_since(start);
     }
     Some(result)
+}
+
+/// The translation of the thesis rewrites a Boolean expression once the
+/// construction has been translated (`DependentBooleanAdapter`). Tells
+/// whether the Boolean changed.
+pub(crate) fn rewrite_statement(c: &mut Construction, statement: Id) -> bool {
+    matches!(c.def(statement), crate::kernel::Def::Expr(_))
+        && translate::System::hypotheses(c, statement, &Budget::new(PROOF_WORK)).is_ok()
+        && crate::expr::replace_distance_operands(c, statement)
 }
 
 fn boolean_argument(c: &mut Construction, text: &str) -> Result<Id, String> {
@@ -642,6 +659,53 @@ mod tests {
         assert_eq!(c.value(p), Value::Bool(false));
         crate::script::exec(&mut c, "A = Point(f)").unwrap();
         assert_eq!(c.value(p), Value::Bool(true));
+    }
+
+    #[test]
+    fn proves_formulas_over_segments_without_their_conditions() {
+        let tri = "A = (0, 0)\nB = (5, 1)\nC = (2, 4)\nM = Midpoint(A, B)\n\
+            s = Segment(A, M)\nt = Segment(A, B)";
+        assert_eq!(
+            outcome(&format!("{tri}\nb = 2s == t"), Question::Prove),
+            Outcome::True(Vec::new())
+        );
+        assert_eq!(
+            outcome(&format!("{tri}\nb = s == 2t"), Question::Prove),
+            Outcome::False
+        );
+        assert_eq!(
+            outcome(&format!("{tri}\nb = 2s == t"), Question::Details),
+            Outcome::Undecided
+        );
+    }
+
+    #[test]
+    fn a_formula_past_the_variable_limit_is_undecided() {
+        // Two points, but 21 segment objects: each needs two variables.
+        let mut script = String::from("A = (0, 0)\nB = (3, 4)");
+        let mut sum = Vec::new();
+        for i in 1..=21 {
+            script.push_str(&format!("\ns{i} = Segment(A, B)"));
+            sum.push(format!("s{i}"));
+        }
+        script.push_str(&format!("\nb = {} == 1", sum.join(" + ")));
+        assert_eq!(outcome(&script, Question::Prove), Outcome::Undecided);
+    }
+
+    #[test]
+    fn a_proof_rewrites_the_distances_of_its_statement() {
+        let mut c = crate::script::load(
+            "A = (0, 0)\nB = (5, 1)\nC = (2, 4)\nd = Distance(A, B)\nr = Distance(A, C)\n\
+             b = d == r\np = Prove(b)",
+        )
+        .unwrap();
+        let (b, p, c_id) = (c.id("b").unwrap(), c.id("p").unwrap(), c.id("C").unwrap());
+        assert_eq!(c.value(p), Value::Bool(false));
+        assert_eq!(c.value(b), Value::Bool(false));
+        // Both distances now read segments of length 0.
+        c.move_point(c_id, 1.0, 5.0).unwrap();
+        assert_eq!(c.value(b), Value::Bool(true));
+        assert_eq!(c.value(p), Value::Bool(false));
     }
 
     #[test]

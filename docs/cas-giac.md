@@ -176,8 +176,8 @@ the reason for those that still differ.
 
 | | ggb-harness cases | agree | known gaps |
 | --- | --- | --- | --- |
-| default build | 7065 | 6455 | 611 |
-| `giac` feature | 7065 | 6768 | 298 |
+| default build | 7003 | 6410 | 594 |
+| `giac` feature | 7003 | 6723 | 281 |
 
 Only one case that agrees without the feature differs with it:
 `cas-plot-022` records the kernel's old refusal text for `PlotSolve`, a
@@ -188,15 +188,19 @@ arguments `z = 1` and `z = 0`, which the reference's two-dimensional parser
 reads as numbers, and powers of ten that the reference prints from a
 different tree) are byte for byte the reference's.
 
-Eighteen solving forms agree in every recorded case only with the feature
-and are counted as done, marked `giac = true` in
+Eight solving forms agree in every recorded case that may call them only
+with the feature and are counted as done, marked `giac = true` in
 `tools/command-matrix/form-evidence.toml` and in the matrix notes:
-`Solve(line)`, `Solve(conic)`, `Solve(list)`, `Solve(function, any)`,
-`Solutions(line)`, `Solutions(list)`, `Solutions(function, any)`,
-`NSolve(conic)`, `NSolve(list)`, `NSolve(function, any)`,
-`NSolve(line, any)`, `NSolve(conic, any)`, `NSolutions(conic)`,
-`NSolutions(list)`, `NSolutions(function, any)`, `NSolutions(line, any)`,
-`NSolutions(conic, any)`, `PlotSolve(list)`. The implicit-curve forms stay
+`Solve(list)`, `Solutions(list)`, `NSolve(list)`, `NSolutions(list)`,
+`NSolutions(function, any)`, `NSolutions(line, any)`,
+`NSolutions(conic, any)`, `PlotSolve(list)`. Ten more forms agree in the
+cases that call them directly but stay open, because a case that is still a
+gap with the feature may call them (`cas-implicit-013`, `cas-name-004`,
+`cas-name-012`, `cas-degree-001`, `-003`, `-004`, `cas-hintobject-001`,
+`-002`): `Solve(line)`, `Solve(conic)`, `Solve(function, any)`,
+`Solutions(line)`, `Solutions(function, any)`, `NSolve(conic)`,
+`NSolve(function, any)`, `NSolve(line, any)`, `NSolve(conic, any)`,
+`NSolutions(conic)`. The implicit-curve forms stay
 open because the same cases also call `PlotSolve` of an implicit curve,
 whose curves the kernel does not read back yet.
 

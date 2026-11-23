@@ -73,6 +73,52 @@ cases.case("nondegenerate", ["O = (0, 0)", "A = (0, 3)", "k = Circle(O, A)",
                              "c = LocusEquation(M, P)"],
            [mv("C", 3, 2), mv("C", 2, 1)])
 
+# The prover replaces each distance operand of the Boolean with a segment: an
+# existing segment between the same points, otherwise a new one whose length
+# is never computed. Later updates of the Boolean read those segments.
+cases.case("boolean", ["O = (0, 0)", "A = (3, 0)", "P = (2, 1)", "s = Segment(P, O)",
+                      "d = Distance(P, O)", "r = Distance(A, O)", "b = d == r",
+                      "c = LocusEquation(b, P)"], [mv("P", 3, 0), mv("A", 2, 0), mv("P", 1, 1)])
+cases.case("boolean", ["O = (0, 0)", "A = (3, 0)", "P = (2, 1)",
+                      "b = Distance(P, O) == Distance(A, O)", "c = LocusEquation(b, P)"], [mv("P", 3, 0), mv("A", 2, 0)])
+cases.case("boolean", ["O = (0, 0)", "P = (2, 1)", "d = Distance(P, O)", "b = d == 3",
+                      "c = LocusEquation(b, P)"], [mv("P", 3, 0), mv("P", 1, 0)])
+cases.case("boolean", ["O = (0, 0)", "A = (3, 0)", "P = (2, 1)", "s = Segment(P, O)",
+                      "t = Segment(A, O)", "b = s == t", "c = LocusEquation(b, P)"],
+           [mv("P", 3, 0), mv("A", 2, 0)])
+cases.case("boolean", ["O = (0, 0)", "A = (3, 0)", "P = (2, 1)", "d = Distance(P, O)",
+                      "r = Distance(P, A)", "b = d < r", "c = LocusEquation(b, P)"],
+           [mv("P", 3, 0), mv("A", 2, 0)])
+
+# Classical loci of a point driven along a line or a circle.
+circle_driver = ["O = (0, 0)", "R = (3, 0)", "k = Circle(O, R)", "P = Point(k)"]
+cases.case("classic", circle_driver + ["F = (1, 1)", "b = PerpendicularBisector(P, F)",
+                                       "h = Line(O, P)", "M = Intersect(b, h)",
+                                       "c = LocusEquation(M, P)"],
+           [mv("F", 2, 0), mv("R", 4, 0), mv("F", 5, 1)])
+cases.case("classic", circle_driver + ["F = (5, 1)", "b = PerpendicularBisector(P, F)",
+                                       "h = Line(O, P)", "M = Intersect(b, h)",
+                                       "c = LocusEquation(M, P)"], [mv("F", 4, -2)])
+cases.case("classic", circle_driver + ["A = (5, 2)", "M = Midpoint(A, P)",
+                                       "c = LocusEquation(M, P)"], [mv("A", -1, 4)])
+cases.case("classic", circle_driver + ["A = (1, 2)", "g = Line(A, P)",
+                                       "B = (4, 4)", "n = PerpendicularLine(B, g)",
+                                       "M = Intersect(g, n)", "c = LocusEquation(M, P)"],
+           [mv("B", 0, 0), mv("A", 3, 0)])
+cases.case("classic", ["A = (-2, 0)", "B = (2, 1)", "g = Segment(A, B)", "P = Point(g)",
+                       "C = (0, 4)", "M = Midpoint(C, P)", "c = LocusEquation(M, P)"],
+           [mv("C", 1, -3)])
+cases.case("classic", ["A = (0, -2)", "B = (4, 0)", "g = Line(A, B)", "P = Point(g)",
+                       "F = (0, 3)", "h = Line(F, P)", "n = PerpendicularLine(P, h)",
+                       "O = (0, 0)", "m = PerpendicularLine(O, n)", "M = Intersect(n, m)",
+                       "c = LocusEquation(M, P)"], [mv("F", 1, 2)])
+cases.case("classic", circle_driver + ["A = (-3, 0)", "B = (3, 0)", "a = Line(A, P)",
+                                       "b = PerpendicularLine(B, a)", "M = Intersect(a, b)",
+                                       "c = LocusEquation(M, P)"], [mv("B", 1, 2)])
+cases.case("classic", circle_driver + ["Q = (6, 0)", "j = Circle(Q, P)", "h = Line(O, P)",
+                                       "M = Intersect(h, j, 1)", "c = LocusEquation(M, P)"],
+           [mv("Q", 5, 1)])
+
 cases.case("rejections", line + ["F = (1, 3)", "M = Midpoint(A, F)", "N = Midpoint(P, F)",
                                 "d = Distance(N, F)", "r = Distance(A, B)", "b = d == r"],
            [{"action": "reject", "line": source} for source in

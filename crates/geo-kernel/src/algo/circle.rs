@@ -11,7 +11,7 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 use super::length;
-use crate::kernel::{Construction, Id, Value};
+use crate::kernel::{Construction, Def, Id, Value};
 use crate::tol::STANDARD_PRECISION;
 
 /// The radius GeoGebra keeps: `GeoQuadricND.setSphereND` turns a radius
@@ -43,6 +43,26 @@ pub(crate) fn with_radius_value(c: &Construction, center: Id, r: f64) -> Option<
     let (cx, cy) = c.point(center)?;
     let r = radius(r).filter(|r| r.is_finite())?;
     Some(Value::Circle { cx, cy, r })
+}
+
+/// Whether the circle command behind `def` leaves the circle's last record
+/// in place for the current inputs: `GeoQuadricND.setSphereND` returns
+/// before it writes the matrix when the centre is undefined or the radius
+/// is negative, and `GeoConicND.setCircle(M, P)` when either point is
+/// undefined. Only the flag `defined` changes, so the half axes, midpoint
+/// and type stay those of the last circle written. An undefined radius
+/// (`NaN`) with a defined centre is written, as `NaN`. `None` for any other
+/// definition.
+pub(crate) fn keeps_record(c: &Construction, def: Def) -> Option<bool> {
+    match def {
+        Def::CircleRadius { center, radius } => Some(
+            c.point(center).is_none() || c.number(radius).is_some_and(|r| r <= -STANDARD_PRECISION),
+        ),
+        Def::CircleThrough { center, through } => {
+            Some(c.point(center).is_none() || c.point(through).is_none())
+        }
+        _ => None,
+    }
 }
 
 #[cfg(test)]
