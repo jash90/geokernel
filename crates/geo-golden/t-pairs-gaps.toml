@@ -1599,12 +1599,6 @@ reason = "the kernel refuses the input: unknown command `FillRow`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1684"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Function`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1691"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `MajorAxis`"
@@ -2535,12 +2529,6 @@ reason = "Number(3.0) does not match `NaN` (expected undefined, kernel has a val
 mismatches = ["intervalMax"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2712"
-category = "kernel-mismatch"
-reason = "Point { x: 3.000000000000307, y: 9.0 } does not match `(3, 9)` (values differ)"
-mismatches = ["A"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2718"
 category = "unsupported-command"
 reason = "the kernel refuses the input: `Mean` of a list does not take 2 arguments"
@@ -2599,12 +2587,6 @@ id = "commands/CommandsTest.java:2748"
 category = "cascade"
 reason = "the kernel refuses the input: unknown object `(x-1)^2+(y-1)^2=pi`; the method's step `commands/CommandsTest.java:2745` fails earlier here, so the object is missing only in its wake"
 mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2765"
-category = "kernel-mismatch"
-reason = "Point { x: 2.999999999999956, y: -1.0 } does not match `(3, -1)` (values differ)"
-mismatches = ["A"]
 
 [[gap]]
 id = "commands/CommandsTest.java:2770"

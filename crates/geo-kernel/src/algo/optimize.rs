@@ -31,6 +31,11 @@ pub struct OptimizeDef {
     pub independent: Id,
     pub maximize: bool,
     point: bool,
+    /// `AlgoOptimize.compute` met the number without slider bounds: it
+    /// returns with its recursion guard still set, so the result stays
+    /// undefined from then on. The watched objects are kept, so the
+    /// dependency edges stay those of the definition.
+    disabled: bool,
     watch: Watch,
 }
 
@@ -48,6 +53,7 @@ impl OptimizeDef {
             independent,
             maximize,
             point: c.kind(independent) == Kind::Point,
+            disabled: false,
             watch: Watch::Unattached,
         }
     }
@@ -143,6 +149,19 @@ impl Group for OptimizeDef {
     }
 }
 
+/// The definition to keep once `d` meets a number without slider bounds
+/// (`OptimizerNumeric.hasBounds`): `AlgoOptimize.compute` sets its guard
+/// against recursive calls and returns before clearing it, so every later
+/// update returns at once and the result stays undefined, also after
+/// bounds are added. The endpoints count as bounds whatever their values.
+/// A point on a path always has bounds.
+pub(crate) fn disabled(c: &Construction, d: OptimizeDef) -> Option<OptimizeDef> {
+    (!d.point && !d.disabled && !c.has_slider_bounds(d.independent)).then_some(OptimizeDef {
+        disabled: true,
+        ..d
+    })
+}
+
 /// Runs the search and returns the value of the result: the independent
 /// number at the optimum, or undefined when it has no bounds or the search
 /// fails (`AlgoOptimize.compute`).
@@ -152,9 +171,10 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         independent,
         maximize,
         point,
+        disabled,
         watch,
     } = d;
-    if watch == Watch::OverBudget {
+    if disabled || watch == Watch::OverBudget {
         return Value::Undefined;
     }
     let on_path = if point {
@@ -190,6 +210,12 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
     if chain.len() as u64 > crate::expr::MAX_EVALUATION_WORK / 106 {
         return Value::Undefined;
     }
+    if on_path.is_none() {
+        // `Optimizer.setValue` goes through `GeoNumeric.setValue`, which
+        // drops an exact decimal of the number for good; the trials must
+        // not read it.
+        crate::expr::forget_decimal(c, independent);
+    }
     let mut ids = chain.clone();
     ids.push(independent.0);
     let saved = crate::kernel::locus::Saved::of(c, &ids);
@@ -197,7 +223,7 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
     let mut undefined_trial = None;
     let start = crate::expr::work_done();
     let mut exhausted = false;
-    let optimum = crate::expr::fmin(min, max, |x| {
+    let optimum = local_min(min, max, TOLERANCE, |x| {
         if exhausted {
             return f64::NAN;
         }
@@ -242,4 +268,192 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
     // the optimum alone (`result.set`, `setValue(old)`)
     saved.restore(c, &chain);
     result
+}
+
+/// The precision `AlgoOptimize` asks of its search.
+const TOLERANCE: f64 = 5.0e-8;
+
+/// Most iterations of [`local_min`] after the first sample.
+const MAX_ITERATIONS: usize = 101;
+
+/// The minimum search of `AlgoOptimize`: Brent's method without
+/// derivatives (Brent, *Algorithms for Minimization without Derivatives*,
+/// 1973, chapter 5; the `fmin` procedure of Forsythe, Malcolm and Moler,
+/// *Computer Methods for Mathematical Computations*, 1977), parabolic
+/// interpolation safeguarded by golden-section steps.
+///
+/// The details are fixed from black-box recordings of the reference's
+/// search (its sample sequences, not its source): the
+/// relative part of the step floor is the square root of `1.2e-16`; a zero
+/// or undefined step falls back to the floor downwards; a parabola with an
+/// undefined coefficient is refused; a sample that equals the best value
+/// moves to it and narrows the interval to the two samples; the first
+/// undefined sample ends the search without a result, and so does an
+/// iteration past [`MAX_ITERATIONS`]. Checked against the reference's own
+/// sample sequences for random objectives and intervals.
+fn local_min(a: f64, b: f64, tol: f64, mut f: impl FnMut(f64) -> f64) -> Option<f64> {
+    let golden = 0.5 * (3.0 - 5.0_f64.sqrt());
+    let eps = 1.2e-16_f64.sqrt();
+    let toward = |floor: f64, d: f64| if d > 0.0 { floor } else { -floor };
+    let (mut a, mut b) = (a, b);
+    let mut x = a + golden * (b - a);
+    let (mut v, mut w) = (x, x);
+    let (mut d, mut e) = (0.0_f64, 0.0_f64);
+    let mut fx = f(x);
+    if fx.is_nan() {
+        return None;
+    }
+    let (mut fv, mut fw) = (fx, fx);
+    for _ in 0..MAX_ITERATIONS {
+        let xm = 0.5 * (a + b);
+        let tol1 = eps * x.abs() + tol / 3.0;
+        let tol2 = 2.0 * tol1;
+        if (x - xm).abs() <= tol2 - 0.5 * (b - a) {
+            return Some(x);
+        }
+        let mut parabolic = false;
+        if e.abs() > tol1 {
+            let r = (x - w) * (fx - fv);
+            let mut q = (x - v) * (fx - fw);
+            let mut p = (x - v) * q - (x - w) * r;
+            q = 2.0 * (q - r);
+            if q > 0.0 {
+                p = -p;
+            }
+            q = q.abs();
+            let previous = e;
+            e = d;
+            if p.abs() < (0.5 * q * previous).abs() && p > q * (a - x) && p < q * (b - x) {
+                d = p / q;
+                let u = x + d;
+                if u - a < tol2 || b - u < tol2 {
+                    d = toward(tol1, xm - x);
+                }
+                parabolic = true;
+            }
+        }
+        if !parabolic {
+            e = if x >= xm { a - x } else { b - x };
+            d = golden * e;
+        }
+        let u = if d.abs() >= tol1 {
+            x + d
+        } else {
+            x + toward(tol1, d)
+        };
+        let fu = f(u);
+        if fu.is_nan() {
+            return None;
+        }
+        if fu <= fx {
+            if fu == fx {
+                (a, b) = if u >= x { (x, u) } else { (u, x) };
+            } else if u >= x {
+                a = x;
+            } else {
+                b = x;
+            }
+            (v, fv, w, fw, x, fx) = (w, fw, x, fx, u, fu);
+            continue;
+        }
+        if u < x {
+            a = u;
+        } else {
+            b = u;
+        }
+        if fu <= fw || w == x {
+            (v, fv, w, fw) = (w, fw, u, fu);
+        } else if fu <= fv || v == x || v == w {
+            (v, fv) = (u, fu);
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::local_min;
+
+    #[test]
+    fn local_min_follows_the_recorded_samples() {
+        // the reference's samples for the maximum of 4 + 5 sin(t) on
+        // [-pi, pi] (misc-maximizepoint-001)
+        let mut samples = Vec::new();
+        let pi = std::f64::consts::PI;
+        let best = local_min(-pi, pi, 5.0e-8, |t| {
+            samples.push(t);
+            -(4.0 + 5.0 * t.sin())
+        });
+        assert_eq!(best, Some(1.5707963279430484));
+        assert_eq!(
+            samples,
+            [
+                -0.7416294238611401,
+                0.7416294238611396,
+                1.658333805867513,
+                1.9482463800077365,
+                1.5642244467043525,
+                1.5702086670936306,
+                1.5707984276102673,
+                1.5707963279430484,
+                1.57079629406917,
+                1.5707963618169267,
+            ]
+        );
+    }
+
+    #[test]
+    fn local_min_gives_up_on_undefined_samples_and_long_searches() {
+        assert_eq!(local_min(0.0, 1.0, 5.0e-8, |_| f64::NAN), None);
+        let mut count = 0;
+        let best = local_min(-1e300, 1e300, 1e-300, |x| {
+            count += 1;
+            (x - 1e-20).abs()
+        });
+        assert_eq!((best, count), (None, 102));
+        // a constant objective narrows onto the golden sections
+        assert!(local_min(-6.0, 4.0, 5.0e-8, |_| 1.0).is_some());
+    }
+}
+
+#[cfg(test)]
+mod bound_tests {
+    use crate::{script, Construction, Value};
+
+    fn m(c: &Construction) -> Option<f64> {
+        match c.value(c.id("m").unwrap()) {
+            Value::Number(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    /// Case `misc-optimizebounds-001`: endpoint objects are bounds whatever
+    /// their values, and rollback leaves no stale edge.
+    #[test]
+    fn expression_bounds_do_not_disable_and_rollback_is_clean() {
+        let mut c = Construction::new();
+        for line in ["b = 36", "a = 0", "w = 2", "g = w + 1", "f = (a - g)^2"] {
+            script::exec(&mut c, line).unwrap();
+        }
+        let (a, b, w) = (c.id("a").unwrap(), c.id("b").unwrap(), c.id("w").unwrap());
+        c.restore_slider_bounds(a, [Some("0"), Some("sqrt(b)")])
+            .unwrap();
+        let checkpoint = c.checkpoint();
+        script::exec(&mut c, "m = Minimize(f, a)").unwrap();
+        let near = |v: Option<f64>| v.is_some_and(|v| (v - 3.0).abs() < 1e-6);
+        // the trials do not read the exact decimal of `a = 0`
+        assert!(near(m(&c)), "{:?}", m(&c));
+        c.set_number(b, -1.0).unwrap();
+        c.set_number(w, 3.0).unwrap();
+        assert_eq!(m(&c), None);
+        c.set_number(b, 36.0).unwrap();
+        c.set_number(w, 2.0).unwrap();
+        assert!(near(m(&c)), "{:?}", m(&c));
+        // the same after the optimizer is rolled back
+        c.set_number(b, -1.0).unwrap();
+        c.set_number(w, 3.0).unwrap();
+        c.rollback(checkpoint).unwrap();
+        c.set_number(w, 4.0).unwrap();
+        assert!(c.id("m").is_none());
+    }
 }

@@ -70,6 +70,13 @@ cases.case("optimize", [
     "f = If(x(P) > 0, a * (2 * x(P) - a))", "g = -f",
     "c = Circle(A, Maximize(f, a))", "d = Circle(A, Minimize(g, a))",
 ], [mv("P", 2, 0), mv("P", 0, 0), mv("P", 4, 0)])
+# Optimizers created before the number has slider bounds stay undefined
+# after the bounds arrive; one created afterwards searches.
+cases.case("optimize", [
+    "a = 2", "f = (a - 3)^2", "m = Minimize(f, a)", "n = Maximize(-f, a)",
+    "b = Slider(0, 6)", "g = (a - 3)^2 + b", "p = Minimize(g, b)",
+], [{"action": "set_slider_bounds", "label": "a", "min": 0, "max": 6}, setn("a", 4),
+    setn("b", 2), setn("a", 1)])
 
 # Hull: the convex hull of a list of points, as a locus.
 cases.case("hull", [
@@ -243,6 +250,14 @@ cases.case("maximizepoint", [
     "b = 1", "f = sqrt(x(P) - b)", "M = Maximize(f, P)", "w = x(P)",
 ], [setn("b", 4), setn("b", -1), setn("b", 1)])
 
+cases.case("maximizepoint", [
+    "r = 5", "C = (1, 2)", "c = Circle(C, r)", "P = Point(c)", "M = Maximize(x(P) + y(P), P)",
+], [setn("r", -1), setn("r", 2), mv("C", -3, 0)])
+cases.case("maximizepoint", [
+    "A = (0, 0)", "B = (4, 0)", "C = (4, 3)", "D = (0, 3)", "q = Polygon(A, B, C, D)",
+    "F = (1, 1)", "P = Point(q)", "M = Maximize(Distance(P, F), P)", "F1 = (0, 0)", "F2 = (3, 0)", "k = 4", "e = Ellipse(F1, F2, k)",
+    "Q = Point(e)", "N = Maximize(x(Q) * y(Q), Q)",
+], [mv("C", 6, 5)])
 cases.case("minimizepoint", [
     "C = (3, 4)", "c = Circle(C, 5)", "P = Point(c)", "a = y(P)", "M = Minimize(a, P)",
 ], [mv("P", 8, 4)])
@@ -261,6 +276,14 @@ cases.case("minimizepoint", [
     "A = (0, 0)", "B = (6, 0)", "P = Point(Segment(A, B))",
     "b = 1", "f = sqrt(x(P) - b)", "M = Minimize(f, P)",
 ], [setn("b", 4), setn("b", -1), setn("b", 1)])
+cases.case("minimizepoint", [
+    "r = 5", "C = (1, 2)", "c = Circle(C, r)", "P = Point(c)", "M = Minimize(x(P) - 2y(P), P)",
+], [setn("r", -1), setn("r", 2), mv("C", -3, 0)])
+cases.case("minimizepoint", [
+    "A = (0, 0)", "B = (4, 0)", "C = (4, 3)", "D = (0, 3)", "q = Polygon(A, B, C, D)",
+    "F = (1, 1)", "P = Point(q)", "M = Minimize(Distance(P, F), P)", "F1 = (0, 0)", "F2 = (3, 0)", "k = 4", "e = Ellipse(F1, F2, k)",
+    "Q = Point(e)", "N = Minimize(x(Q) * y(Q), Q)",
+], [mv("C", 6, 5)])
 
 # The remaining Sum forms.
 cases.case("sum", [
@@ -350,3 +373,14 @@ cases.case("alias", [
 ], [mv("C", 2, 3), mv("C", 2, 1)])
 
 cases.write()
+
+# Slider bounds given by expressions, which the kernel restores only from
+# saved files: the endpoint objects are bounds whatever their values, so
+# an undefined upper bound leaves the search undefined without disabling
+# the optimizer.
+cases = Cases("misc")
+cases.case("optimizebounds", [
+    "b = 36", "a = Slider(0, sqrt(b))", "w = 2", "g = w + 1", "f = (a - g)^2",
+    "m = Minimize(f, a)",
+], [setn("b", -1), setn("w", 3), setn("b", 36), setn("w", 2)])
+cases.write("reference")

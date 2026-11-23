@@ -425,6 +425,9 @@ pub(crate) enum ListOp {
     /// `First(list)`, `First(list, n)` and `Last` (`AlgoFirst`, `AlgoLast`).
     First,
     Last,
+    /// `First(Function(list), n)`: the points of the freehand function of
+    /// the list written inline (`AlgoFirstLocus`).
+    FirstFreehand,
     /// `Sort(list)` of numbers or points (`AlgoSort`).
     Sort,
     /// `Append(list, object)` and `Append(object, list)`: the second
@@ -1122,7 +1125,6 @@ fn reads_list(nodes: &[Node], tys: &[Ty]) -> bool {
 
 /// The commands that expressions compute themselves; `Length` and `Sum`
 /// also of a list.
-pub(crate) use commands::fmin;
 pub(crate) use commands::polynomial::division_list;
 
 pub(crate) fn is_expression_command(name: &str) -> bool {

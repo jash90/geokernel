@@ -220,11 +220,70 @@ case("derivative", "n = 5\ns = Spline(Sequence((k, sin(k)), k, 1, n))\nd = Deriv
      [setn("n", 260), setn("n", 5)])
 cases.cases[-1]["sample_curves"] = True
 
+# ------------------------------------------------------------ long splines
+# Splines over exact inputs, so the long systems compare the elimination
+# itself: an open spline growing to 260 points and back, a closed one, a
+# quartic one that becomes undefined with too few points, and coincident
+# points.
+cases.topic("splinelong")
+case("splinelong", "n = 5\ns = Spline(Sequence((k, Mod(k^2, 7)), k, 1, n))\nd = Derivative(s)\ne = NDerivative(s)",
+     [setn("n", 260), setn("n", 5)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 6\nl = Append(Sequence((k, Mod(k, 3)), k, 0, n), (0, 0))\ns = Spline(l)\nd = Derivative(s)",
+     [setn("n", 200), setn("n", 6)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 6\ns = Spline(Sequence((k, Mod(k, 2)), k, 1, n), 4)\nd = Derivative(s)",
+     [setn("n", 120), setn("n", 3), setn("n", 6)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "A = (1, 1)\nl = {(0, 0), A, (3, 0), (4, 2)}\ns = Spline(l)\nd = Derivative(s)\ne = NDerivative(s)",
+     [mv("A", 0, 0), mv("A", 3, 0), mv("A", 1, 1)])
+cases.cases[-1]["sample_curves"] = True
+# The degree is checked against the number of points of the last solve
+# that passed the check (the initial list at creation).
+case("splinelong", "n = 5\ns = Spline(Sequence((k, Mod(k^2, 7)), k, 1, n))\nd = Derivative(s)",
+     [setn("n", 2), setn("n", 5), setn("n", 4)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 2\ns = Spline(Sequence((k, k^2), k, 1, n))",
+     [setn("n", 3), setn("n", 6)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 6\ns = Spline(Sequence((k, Mod(k, 2)), k, 1, n), 4)\nd = Derivative(s)",
+     [setn("n", 3), setn("n", 6), setn("n", 4)])
+cases.cases[-1]["sample_curves"] = True
+case("splinelong", "n = 4\ns = Spline(Sequence((k, Mod(k, 3)), k, 1, n))\nd = Derivative(s)\ne = NDerivative(s)",
+     [setn("n", 3), setn("n", 2), setn("n", 1), setn("n", 4), setn("n", 0)])
+cases.cases[-1]["sample_curves"] = True
+# A locus over the slider samples a copy: the live spline keeps its own
+# remembered point count.
+case("splinelong", "a = Slider(2, 4)\ns = Spline(Sequence((k, k^2), k, 1, 6 - a))\nP = Point(s, 0.5)\nO = (0, 0)\nQ = Midpoint(P, O)\nl = Locus(Q, a)",
+     [setn("a", 3), setn("a", 4), setn("a", 2.5), setn("a", 2)])
+cases.cases[-1]["sample_curves"] = True
+# High degrees: the end conditions use factorials computed in 32-bit
+# integers, which wrap from 13! on.
+case("splinelong", "n = 13\nl0 = Sequence((k, Mod(k, 2)), k, 1, n)\ns = Spline(l0, 13)\nt = Spline(l0, 12)\nu = Spline(l0, 9)",
+     [setn("n", 14), setn("n", 13)])
+cases.cases[-1]["sample_curves"] = True
+
+# ------------------------------------------------------ First(function, n)
+# The freehand function as a locus: one point per value of its list, at
+# min + step * i, with the function's value there.
+cases.topic("freehandpoints")
+case("freehandpoints", "n = 2\nf = Function({-2, 4, 1, 5, 2})\nl = First(f, n)",
+     [setn("n", 4), setn("n", 1)])
+case("freehandpoints", "n = 3\nf = Function({0, 1, 1, 5, 2, 7})\nl = First(f, n)\nm = First(f, 4)\no = First(f, 0)",
+     [setn("n", 5), setn("n", -1), setn("n", 2.7), setn("n", 0)])
+case("freehandpoints", "a = 0.1\nf = Function({a, 0.7, 1, 5, 2, 7})\nl = First(f, 4)\nm = First(f, 3)",
+     [setn("a", 1), setn("a", 0.7), setn("a", 0.3), setn("a", 0.1)])
+case("freehandpoints", "n = 4\nl0 = Sequence(k, k, 1, n)\nf = Function(l0)\nl = First(f, 1)\nm = First(f, 2)",
+     [setn("n", 3), setn("n", 5), setn("n", 4)])
+case("freehandpoints", "f = Function({-1, 1, 0, 1/0, 2})\nl = First(f, 3)\ng(x) = f(x) + 1",
+     [reject("m = First(g, 1)"), reject("m = First(x^2, 1)")])
+case("freehandpoints", "n = 2\nl = First(Function({-2, 4, 1, 5, 2}), n)\nm = First(Function({0, 1, n, 2, 3}), 3)",
+     [setn("n", 3), setn("n", 4), setn("n", 2)])
+case("freehandpoints", "l = First(Function({-1, 1, 0, 1/0, 2}), 3)\nm = First(Function({-1, 1, 0, 0/0, 2}), 3)")
+
 cases.write()
 
 cases = Cases("funcrest")
-case("freehandpoints", "n = 2\nf = Function({-2, 4, 1, 5, 2})\nl = First(f, n)",
-     [setn("n", 4), setn("n", 1)])
 case("conditionalmixed",
      "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\ng = Line(A, C)\ns = If(n > 0, r, g)",
      [setn("n", -1), setn("n", 1)])

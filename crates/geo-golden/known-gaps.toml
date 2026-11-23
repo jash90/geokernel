@@ -3386,19 +3386,24 @@ reason = "The kernel lacks the reference sign convention for the initial rank-on
 mismatches = ["0:s", "2:s", "3:s"]
 
 [[gap]]
-id = "misc-maximizepoint-001"
-reason = "The independent bounded search lacks the reference parameter selection on the rounded circle maximum. The x coordinate is 3.000000000000307 instead of 2.9999999942592415."
-mismatches = ["0:M", "1:M", "2:M"]
-
-[[gap]]
-id = "misc-minimizepoint-001"
-reason = "The independent bounded search lacks the reference parameter selection on the rounded circle minimum. The x coordinate is 2.999999999999956 instead of 2.9999999942609166."
-mismatches = ["0:M", "1:M"]
-
-[[gap]]
 id = "funcrest-conditionalmixed-001"
 reason = "The kernel lacks a segment record with a separately assignable supporting line and retained endpoints. It therefore rejects a segment followed by a plain line."
 mismatches = ["0:script line 7"]
+
+[[gap]]
+id = "misc-maximizepoint-006"
+reason = "While the circle is undefined (negative radius) the reference's search stops at its first undefined sample and the optimizer keeps its previous point, still defined; the kernel reports the optimum undefined. The recorded runs show the retained value, but the readable sources do not settle how the point copy keeps it (the moving point returns to its last coordinates after a NaN path parameter), so the kernel does not guess it. The steps before and after agree."
+mismatches = ["1:M"]
+
+[[gap]]
+id = "misc-minimizepoint-006"
+reason = "While the circle is undefined (negative radius) the reference's search stops at its first undefined sample and the optimizer keeps its previous point, still defined; the kernel reports the optimum undefined. The recorded runs show the retained value, but the readable sources do not settle how the point copy keeps it (the moving point returns to its last coordinates after a NaN path parameter), so the kernel does not guess it. The steps before and after agree."
+mismatches = ["1:M"]
+
+[[gap]]
+id = "misc-optimizebounds-001"
+reason = "The kernel's Slider command takes constant endpoints only; endpoint expressions are restored from saved files. The kernel unit test optimize::bound_tests replays the recorded steps through the restored bounds: the optimizer stays enabled while the upper endpoint is undefined and recovers to 3."
+mismatches = ["0:script line 2"]
 
 [[gap]]
 id = "odesymbolic-nocas-001"
@@ -3406,14 +3411,14 @@ reason = "The kernel always integrates supported polynomial slopes. It has no mo
 mismatches = ["0:g", "0:h", "3:g", "3:h"]
 
 [[gap]]
-id = "misc-optimize-013"
-reason = "The kernel reads the mover bounds at each solve and has no persistent disabled state for an optimizer created without them. It starts minimizing after the endpoints are attached and the number is edited."
-mismatches = ["2:m"]
+id = "funcrest-derivative-004"
+reason = "The 260-point spline system is solved with the reference elimination and agrees bit for bit on the x coordinates. Seven of its y inputs sin(k) (k = 18, 64, 89, 131, 202, 224, 233) differ by one ulp: the kernel evaluates sin with the portable fdlibm algorithm, the recording JVM with its Math.sin intrinsic. The ill-conditioned 260-piece monomial system amplifies the ulp to a relative 1.5e-9 in y(0.875). Both derivatives agree."
+mismatches = ["1:s"]
 
 [[gap]]
-id = "funcrest-derivative-004"
-reason = "The 260-point spline exceeds the kernel work budget for dense elimination. It yields an undefined source and two undefined derivatives at that step. All three recover when the point count returns to five."
-mismatches = ["1:d", "1:e", "1:s"]
+id = "funcrest-splinelong-003"
+reason = "Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM's Math.pow intrinsic is off by one ulp when the exact power lies within about 0.003 ulp of a rounding midpoint, which happens for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. The later steps, including the stale point-count check, agree."
+mismatches = ["1:d", "1:s"]
 
 [[gap]]
 id = "funcrest-svd-008"
@@ -3434,11 +3439,6 @@ mismatches = ["0:s"]
 id = "funcrest-svd-011"
 reason = "The cyclic rotation sweep exceeds the kernel work budget on the dense 200 by 200 matrix. The enclosing IsDefined becomes undefined, while the reference finishes and returns true."
 mismatches = ["0:d"]
-
-[[gap]]
-id = "funcrest-freehandpoints-001"
-reason = "The kernel has no First overload that reads a freehand function as a list of its sample points. It rejects the command instead of returning a live prefix."
-mismatches = ["0:script line 3"]
 
 [[gap]]
 id = "locusequation-boolean-001"

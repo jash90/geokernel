@@ -1,0 +1,68 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "misc-optimizebounds-001",
+      "group": "misc",
+      "script": [
+        "b = 36",
+        "a = Slider(0, sqrt(b))",
+        "w = 2",
+        "g = w + 1",
+        "f = (a - g)^2",
+        "m = Minimize(f, a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": -1.0 },
+        { "action": "set_number", "label": "w", "value": 3.0 },
+        { "action": "set_number", "label": "b", "value": 36.0 },
+        { "action": "set_number", "label": "w", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "number", "defined": true, "value": 36.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "g": { "type": "number", "defined": true, "value": 3.0 },
+          "f": { "type": "number", "defined": true, "value": 9.0 },
+          "m": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "g": { "type": "number", "defined": true, "value": 3.0 },
+          "f": { "type": "number", "defined": true, "value": 9.0 },
+          "m": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 3.0 },
+          "g": { "type": "number", "defined": true, "value": 4.0 },
+          "f": { "type": "number", "defined": true, "value": 16.0 },
+          "m": { "type": "number", "defined": false }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 36.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 3.0 },
+          "g": { "type": "number", "defined": true, "value": 4.0 },
+          "f": { "type": "number", "defined": true, "value": 16.0 },
+          "m": { "type": "number", "defined": false }
+        },
+        {
+          "b": { "type": "number", "defined": true, "value": 36.0 },
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "w": { "type": "number", "defined": true, "value": 2.0 },
+          "g": { "type": "number", "defined": true, "value": 3.0 },
+          "f": { "type": "number", "defined": true, "value": 9.0 },
+          "m": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    }
+  ]
+}

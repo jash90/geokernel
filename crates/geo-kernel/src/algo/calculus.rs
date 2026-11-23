@@ -953,19 +953,62 @@ fn freehand_defined(c: &Construction, list: Id) -> bool {
     })
 }
 
+/// The list of the freehand function `id` (`Function(list)`), which
+/// `CmdFirst` reads as a `GeoLocusable`.
+pub(crate) fn freehand_list(c: &Construction, id: Id) -> Option<Id> {
+    match c.def(id) {
+        Def::Calculus(CalculusDef::Freehand { list }) => Some(gid(list)),
+        _ => None,
+    }
+}
+
+/// `AlgoFunctionFreehand.getPoints`: the point of every value of the
+/// list, at `min + step * i`, with the function's value there; no point
+/// for fewer than four elements or a reversed interval.
+pub(crate) fn freehand_points(c: &Construction, list_id: Id) -> Vec<(f64, f64)> {
+    let Some(list) = c.elements(list_id) else {
+        return Vec::new();
+    };
+    let values: Vec<f64> = (0..list.len())
+        .map(|k| list.numeric_cell(k).unwrap_or(f64::NAN))
+        .collect();
+    freehand_points_of(&values)
+}
+
+/// [`freehand_points`] of the values of the list.
+pub(crate) fn freehand_points_of(values: &[f64]) -> Vec<(f64, f64)> {
+    if values.len() < 4 {
+        return Vec::new();
+    }
+    let (min, max) = (values[0], values[1]);
+    if min > max {
+        return Vec::new();
+    }
+    let step = (max - min) / (values.len() - 3) as f64;
+    (2..values.len())
+        .map(|i| {
+            let x = min + step * (i - 2) as f64;
+            (x, freehand_value_at(values.len(), |k| values[k], x))
+        })
+        .collect()
+}
+
 /// `Operation.FREEHAND`: the value at `x` of the freehand function of the
 /// list `{min, max, y1, ..., yn+1}`. The `n` steps divide `[min, max]`
 /// evenly; outside the interval and for a reversed interval the value is
-/// undefined.
+/// undefined. It reads at most four cells.
 fn freehand_value(c: &Construction, list: Id, x: f64) -> f64 {
     let Some(list) = c.elements(list) else {
         return f64::NAN;
     };
-    if list.len() < 4 {
+    freehand_value_at(list.len(), |k| list.numeric_cell(k).unwrap_or(f64::NAN), x)
+}
+
+fn freehand_value_at(len: usize, at: impl Fn(usize) -> f64, x: f64) -> f64 {
+    if len < 4 {
         return f64::NAN;
     }
-    let at = |k: usize| list.numeric_cell(k).unwrap_or(f64::NAN);
-    let n = list.len() - 3;
+    let n = len - 3;
     let (min, max) = (at(0), at(1));
     if min > max || x > max || x < min {
         return f64::NAN;
@@ -2148,6 +2191,31 @@ fn differentiate_node(c: &Construction, b: &mut Builder, i: u32, depth: u32) -> 
         // FunctionVariable.derivative: the variable itself derives to 1,
         // every other leaf (MyDouble, an object) to 0
         Node::Var => b.push(Node::Num(1.0)),
+        Node::If(IfMode::List, ..) => {
+            // An `IF_LIST` is one node holding its lists of conditions and
+            // payloads, so its pieces are siblings, not a nesting: walk the
+            // chain at one depth and charge each piece.
+            let mut pieces = Vec::new();
+            let mut node = i;
+            while let Node::If(IfMode::List, cond, then, rest) = b.node(node) {
+                expr::charge(1);
+                pieces.push((cond, differentiate_node(c, b, then, depth + 1)));
+                if b.exhausted || rest == u32::MAX {
+                    node = u32::MAX;
+                    break;
+                }
+                node = rest;
+            }
+            let mut root = if node == u32::MAX {
+                u32::MAX
+            } else {
+                differentiate_node(c, b, node, depth + 1)
+            };
+            for (cond, then) in pieces.into_iter().rev() {
+                root = b.push(Node::If(IfMode::List, cond, then, root));
+            }
+            root
+        }
         Node::If(mode, cond, then, rest) => {
             // IF and IF_ELSE keep the condition and differentiate the
             // payload
@@ -3623,10 +3691,45 @@ fn derivative_discards_a_tree_that_exceeds_the_depth_limit() {
     let mut b = Builder::empty();
     let x = b.push(Node::Var);
     let condition = b.push(Node::Bool(false));
+    // nested through the payloads: each level is one step deeper
     let mut root = x;
     for _ in 0..=expr::MAX_DEPTH {
-        root = b.push(Node::If(IfMode::List, condition, x, root));
+        root = b.push(Node::If(IfMode::List, condition, root, x));
     }
     let entry = expr::function_entry(&c, b.finish(&c, root).unwrap());
     assert!(rule_derivative(&c, &entry, 1).is_none());
+}
+
+#[test]
+fn derivative_walks_a_long_condition_list_at_one_depth() {
+    // the pieces of one `IF_LIST` are siblings (a 600-piece spline)
+    let c = Construction::new();
+    let mut b = Builder::empty();
+    let x = b.push(Node::Var);
+    let condition = b.push(Node::Bool(false));
+    let mut root = x;
+    for _ in 0..600 {
+        root = b.push(Node::If(IfMode::List, condition, x, root));
+    }
+    let entry = expr::function_entry(&c, b.finish(&c, root).unwrap());
+    assert!(rule_derivative(&c, &entry, 1).is_some());
+}
+
+#[test]
+fn freehand_samples_read_a_few_cells_each() {
+    // 100 000 samples of a 100 000-value freehand function: each sample
+    // interpolates between two cells, as `Operation.FREEHAND` does
+    let mut c = Construction::new();
+    for line in [
+        "L = Sequence(k, k, 1, 100000)",
+        "f = Function(L)",
+        "R = Sequence(f(1 + k / 100000), k, 1, 100000)",
+    ] {
+        crate::script::exec(&mut c, line).unwrap();
+    }
+    let start = std::time::Instant::now();
+    assert!(c.value(c.id("R").unwrap()).is_defined());
+    crate::script::exec(&mut c, "g = Sequence(f(1 + k / 50000), k, 1, 100000)").unwrap();
+    assert!(c.value(c.id("g").unwrap()).is_defined());
+    assert!(start.elapsed() < std::time::Duration::from_secs(10));
 }

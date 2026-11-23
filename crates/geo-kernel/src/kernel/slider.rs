@@ -44,6 +44,17 @@ impl Construction {
             })
     }
 
+    /// Whether both endpoints of the slider `id` exist, whatever their values
+    /// (`OptimizerNumeric.hasBounds` checks the endpoint objects).
+    pub(crate) fn has_slider_bounds(&self, id: Id) -> bool {
+        if let Some(bounds) = self.saved_slider_bounds.get(&id) {
+            return bounds.iter().all(Option::is_some);
+        }
+        self.sliders
+            .binary_search_by_key(&id.index(), |&(owner, _, _)| owner)
+            .is_ok()
+    }
+
     /// The finite interval used when sampling a locus on a slider.
     pub fn slider_interval(&self, id: Id) -> Option<(f64, f64)> {
         let [min, max] = self.slider_bounds(id);

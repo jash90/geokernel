@@ -1767,6 +1767,7 @@ impl Construction {
         self.function_roots.clear();
         self.clips.clear();
         self.analysis.clear();
+        self.analysis.truncate(at.len);
         self.conic_intersections.truncate(
             self.conic_intersections
                 .partition_point(|&(owner, _)| owner < at.len),
@@ -2355,7 +2356,11 @@ impl Construction {
                 let data = locus::record(self, d, id);
                 self.store_locus(id, data)
             }
-            Def::Optimize(d) => algo::optimize::record(self, d),
+            Def::Optimize(d) => {
+                let d = algo::optimize::disabled(self, d).unwrap_or(d);
+                def = Def::Optimize(d);
+                algo::optimize::record(self, d)
+            }
             Def::Calculus(d) if d.has_record() => {
                 let (value, record) = algo::calculus::initialize(self, &d);
                 self.calculus.push((id.0, record));
@@ -2894,6 +2899,13 @@ impl Construction {
                     }
                 }
                 Def::Optimize(d) => {
+                    let d = match algo::optimize::disabled(self, d) {
+                        Some(disabled) => {
+                            self.defs[i] = Def::Optimize(disabled);
+                            disabled
+                        }
+                        None => d,
+                    };
                     let new = algo::optimize::record(self, d);
                     if new.identical(&self.values[i]) {
                         // Nothing downstream can change because of this
@@ -3615,6 +3627,12 @@ impl Construction {
 
     /// `def` is the definition of the object at index `i`.
     fn compute(&self, def: Def, i: usize) -> Value {
+        if let Def::Analysis(AnalysisDef::Spline(input)) = def {
+            return self
+                .analysis
+                .spline_object(self, i, input)
+                .unwrap_or(Value::Undefined);
+        }
         if let Def::PenStroke = def {
             return self
                 .strokes

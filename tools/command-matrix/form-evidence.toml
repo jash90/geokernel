@@ -379,6 +379,11 @@ form = "text,number"
 cases = ["lists-textelem-002", "lists-textelem-019"]
 
 [[form]]
+command = "First"
+form = "function,number"
+cases = ["funcrest-freehandpoints-001", "funcrest-freehandpoints-002", "funcrest-freehandpoints-003", "funcrest-freehandpoints-004", "funcrest-freehandpoints-005"]
+
+[[form]]
 command = "FirstAxis"
 form = "conic"
 cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
