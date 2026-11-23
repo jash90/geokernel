@@ -69,37 +69,19 @@
       "id": "keptvalues-conditional-002",
       "group": "keptvalues",
       "script": [
-        "m = 1",
-        "t = Take({1, 2}, m)",
+        "s = ConstructionStep()",
+        "t = Take({1, 2}, If(s == 2, 1, 4))",
+        "A = (0, 0)",
         "u = If(false, t) + 1"
       ],
       "steps": [
-        { "action": "initial" },
-        { "action": "set_number", "label": "m", "value": 4.0 }
+        { "action": "initial" }
       ],
       "snapshots": [
         {
-          "m": { "type": "number", "defined": true, "value": 1.0 },
-          "t": {
-            "type": "list",
-            "defined": true,
-            "elements": [
-              { "type": "number", "defined": true, "value": 1.0 },
-              { "type": "number", "defined": true, "value": 2.0 }
-            ]
-          },
-          "u": {
-            "type": "list",
-            "defined": true,
-            "elements": [
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
-            ]
-          }
-        },
-        {
-          "m": { "type": "number", "defined": true, "value": 4.0 },
+          "s": { "type": "number", "defined": true, "value": 4.0 },
           "t": { "type": "list", "defined": false },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
           "u": {
             "type": "list",
             "defined": true,

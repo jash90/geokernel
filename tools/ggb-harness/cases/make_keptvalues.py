@@ -23,8 +23,10 @@ cases.case(
 )
 cases.case(
     "conditional",
-    ["m = 1", "t = Take({1, 2}, m)", "u = If(false, t) + 1"],
-    [setn("m", 4)],
+    # The third construction step invalidates t before u is created.
+    ["s = ConstructionStep()", "t = Take({1, 2}, If(s == 2, 1, 4))",
+     "A = (0, 0)", "u = If(false, t) + 1"],
+    [],
 )
 cases.case(
     "transpose",
