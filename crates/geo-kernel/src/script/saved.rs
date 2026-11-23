@@ -3,7 +3,7 @@
 use super::{object, split_call};
 use crate::kernel::control::{
     decode_bytes, decode_scripts, decode_text, encode_scripts, encode_text, CheckboxStyle,
-    ControlScript, SliderStyle,
+    ControlScript, NumberRounding, SliderLabel, SliderStyle,
 };
 use crate::kernel::image::{RasterAsset, MAX_ASSET_BYTES};
 use crate::kernel::DrawingStyle;
@@ -20,6 +20,11 @@ pub enum Property {
     DrawingStyle {
         label: String,
         style: DrawingStyle,
+    },
+    NumberRounding(NumberRounding),
+    SliderLabel {
+        label: String,
+        presentation: SliderLabel,
     },
     SliderBounds {
         label: String,
@@ -53,11 +58,12 @@ impl Property {
         match self {
             Self::DrawingStyle { label, .. }
             | Self::SliderBounds { label, .. }
+            | Self::SliderLabel { label, .. }
             | Self::SliderStyle { label, .. }
             | Self::CheckboxStyle { label, .. }
             | Self::ObjectScripts { label, .. }
             | Self::SliderAnimation { label, .. } => Some(label),
-            Self::ImageAsset { .. } => None,
+            Self::ImageAsset { .. } | Self::NumberRounding(_) => None,
         }
     }
 
@@ -66,6 +72,17 @@ impl Property {
             Self::ImageAsset { name, asset } => c.register_image_asset(name.clone(), asset.clone()),
             Self::DrawingStyle { label, style } => {
                 c.set_drawing_style(object(c, label)?, *style);
+                Ok(())
+            }
+            Self::NumberRounding(rounding) => {
+                c.set_number_rounding(*rounding);
+                Ok(())
+            }
+            Self::SliderLabel {
+                label,
+                presentation,
+            } => {
+                c.set_slider_label(object(c, label)?, presentation.clone());
                 Ok(())
             }
             Self::SliderBounds { label, bounds } => {
@@ -164,6 +181,23 @@ impl fmt::Display for Property {
                 style.show_label,
                 style.line_thickness
             ),
+            Self::NumberRounding(rounding) => {
+                let (mode, digits) = match rounding {
+                    NumberRounding::Decimals(digits) => ("decimals", digits),
+                    NumberRounding::SignificantFigures(digits) => ("figures", digits),
+                };
+                write!(f, "$numberRounding({mode}, {digits})")
+            }
+            Self::SliderLabel {
+                label,
+                presentation,
+            } => write!(
+                f,
+                "$sliderLabel({}, {}, {})",
+                encode_text(label),
+                presentation.mode,
+                encode_text(&presentation.caption),
+            ),
             Self::SliderBounds {
                 label,
                 bounds: [min, max],
@@ -260,6 +294,8 @@ pub fn load_image_asset(
 pub fn parse(line: &str) -> Option<Result<Property, String>> {
     if !line.starts_with("$sliderBounds(")
         && !line.starts_with("$sliderAnimation(")
+        && !line.starts_with("$numberRounding(")
+        && !line.starts_with("$sliderLabel(")
         && !line.starts_with("$sliderStyle(")
         && !line.starts_with("$checkboxStyle(")
         && !line.starts_with("$objectScripts(")
@@ -281,6 +317,21 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                     style,
                 })
             }
+            ("$numberRounding", [mode, digits]) => {
+                let digits = digits.parse().map_err(|_| "invalid rounding precision")?;
+                Ok(Property::NumberRounding(match *mode {
+                    "decimals" => NumberRounding::Decimals(digits),
+                    "figures" => NumberRounding::SignificantFigures(digits),
+                    _ => return Err("invalid number rounding mode".into()),
+                }))
+            }
+            ("$sliderLabel", [label, mode, caption]) => Ok(Property::SliderLabel {
+                label: decode_text(label)?,
+                presentation: SliderLabel {
+                    mode: mode.parse().map_err(|_| "invalid slider label mode")?,
+                    caption: decode_text(caption)?.into(),
+                },
+            }),
             ("$sliderBounds", [label, min, max]) => {
                 let bound = |field| (field != "_").then(|| decode_text(field)).transpose();
                 Ok(Property::SliderBounds {

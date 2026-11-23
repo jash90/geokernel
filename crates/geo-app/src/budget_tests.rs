@@ -1355,6 +1355,10 @@ fn a_thousand_canvas_sliders_and_checkboxes_fit_the_frame_budget() {
                 old,
                 "{name}: the control did not change in active frame {i}"
             );
+            assert_eq!(
+                counts.raster_quads, shown.raster_quads,
+                "{name}: {counts:?}"
+            );
             assert_eq!(counts.texts, shown.texts, "{name}: {counts:?}");
             assert!(
                 counts.shapes <= 4700

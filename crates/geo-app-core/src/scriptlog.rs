@@ -535,6 +535,18 @@ impl Log {
             .map(|condition| condition.boolean.as_str())
     }
 
+    pub(crate) fn is_visible(&self, c: &Construction, id: Id) -> bool {
+        let label = c.label(id);
+        !is_internal_label(label)
+            && self
+                .condition(label)
+                .and_then(|boolean| c.id(boolean))
+                .map_or_else(
+                    || !self.hidden.contains(label),
+                    |boolean| c.value(boolean) == Value::Bool(true),
+                )
+    }
+
     pub(crate) fn condition_source(&self, label: &str) -> Option<&str> {
         self.conditions
             .get(label)
@@ -571,11 +583,15 @@ impl Log {
     }
 
     pub(crate) fn record_saved_property(&mut self, property: Property) {
-        let replace = matches!(
-            (&property, self.ops.last()),
-            (Property::SliderStyle { label, .. }, Some(Op::SavedProperty(previous)))
-                if matches!(previous.as_ref(), Property::SliderStyle { label: old, .. } if old == label)
-        );
+        let replace = match (&property, self.ops.last()) {
+            (Property::SliderStyle { label, .. }, Some(Op::SavedProperty(previous))) => {
+                matches!(previous.as_ref(), Property::SliderStyle { label: old, .. } if old == label)
+            }
+            (Property::CheckboxStyle { label, .. }, Some(Op::SavedProperty(previous))) => {
+                matches!(previous.as_ref(), Property::CheckboxStyle { label: old, .. } if old == label)
+            }
+            _ => false,
+        };
         let op = Op::SavedProperty(Box::new(property));
         if replace {
             self.ops.replace_last(op);
@@ -597,6 +613,44 @@ impl Log {
             Op::Define(e) => Some(e),
             _ => None,
         })
+    }
+
+    pub(crate) fn record_new_definition(
+        &mut self,
+        c: &mut Construction,
+        from: usize,
+        first: Option<Id>,
+        line: &str,
+    ) {
+        for index in from..c.len() {
+            let id = c.ids().nth(index).expect("new object");
+            let Some(slot) = c.slider_default_slot(id) else {
+                continue;
+            };
+            let mut style = c.slider_style(id).clone();
+            if style.position.is_some() {
+                continue;
+            }
+            // Only overrides can hide an earlier slider. Count them once
+            // here, when placing a new control, and journal the position.
+            let hidden = self
+                .hidden
+                .iter()
+                .filter(|label| !self.conditions.contains_key(label.as_str()))
+                .chain(self.conditions.keys())
+                .filter_map(|label| c.id(label))
+                .filter(|&other| {
+                    c.slider_default_slot(other).is_some_and(|old| old < slot)
+                        && !self.is_visible(c, other)
+                })
+                .count();
+            style.position = Some(Construction::default_slider_position(
+                style.absolute,
+                slot.saturating_sub(hidden),
+            ));
+            c.set_slider_style(id, style);
+        }
+        self.record_definition(c, from, first, line);
     }
 
     /// Records new objects, a slider assignment or a protocol step.
@@ -1815,7 +1869,7 @@ impl Log {
                 return Err(undo(c, reason));
             }
         }
-        self.record_definition(c, before, first, line);
+        self.record_new_definition(c, before, first, line);
         Ok(first)
     }
 
@@ -1879,7 +1933,7 @@ impl Log {
                 .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))
                 .unwrap_or_else(|| exec_definition(&mut c, &line))
                 .map_err(at)?;
-            log.record_definition(&c, before, first, &line);
+            log.record_new_definition(&mut c, before, first, &line);
             log.apply_hidden_requests(&mut c);
             if let Some(id) = first.filter(|_| grow) {
                 groups.record(&c, &line, id, c.len() - before);

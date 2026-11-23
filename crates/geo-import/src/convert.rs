@@ -13,7 +13,9 @@ use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
-use geo_kernel::kernel::control::{encode_scripts, encode_text, visibility_boolean};
+use geo_kernel::kernel::control::{
+    encode_scripts, encode_text, visibility_boolean, NumberRounding, SliderLabel,
+};
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
 use geo_kernel::kernel::{angle::AngleStyle, Def, DrawingStyle};
@@ -58,6 +60,18 @@ pub(crate) fn convert_with_assets(
         function_path_bounds: doc.function_path_bounds,
         ..Converter::default()
     };
+    if let Some(rounding) = doc
+        .settings
+        .significant_figures
+        .map(NumberRounding::SignificantFigures)
+        .or_else(|| doc.settings.decimals.map(NumberRounding::Decimals))
+    {
+        let property = Property::NumberRounding(rounding);
+        property
+            .apply(&mut c.kernel)
+            .expect("rounding does not require an object");
+        c.out.script.push(property.to_string());
+    }
     let mut flags = Flags::default();
     let mut elements = BTreeMap::new();
     let mut polygon_inputs = BTreeMap::new();
@@ -247,6 +261,19 @@ pub(crate) fn convert_with_assets(
         }
         let canvas_property = match c.kernel.def(id) {
             Def::Number(_) if el.slider.is_some() => {
+                if let Some(mode) = saved_style.label_mode {
+                    let property = Property::SliderLabel {
+                        label: el.label.clone(),
+                        presentation: SliderLabel {
+                            mode,
+                            caption: el.caption.as_str().into(),
+                        },
+                    };
+                    property
+                        .apply(&mut c.kernel)
+                        .expect("the slider was just checked");
+                    c.out.script.push(property.to_string());
+                }
                 use geo_kernel::kernel::control::SliderStyle;
                 let layout = saved_style.slider.as_deref().filter(|layout| {
                     layout.absolute || layout.width.is_some() || layout.position.is_some()
@@ -261,6 +288,7 @@ pub(crate) fn convert_with_assets(
                 let step = step_source
                     .and_then(|step| step.parse::<f64>().ok())
                     .filter(|step| step.is_finite());
+                style.line_thickness = el.thickness.unwrap_or(style.line_thickness);
                 style.show_label = el.label_shown.unwrap_or(style.show_label);
                 let style = SliderStyle {
                     position: layout

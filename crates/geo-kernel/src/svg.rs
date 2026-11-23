@@ -526,8 +526,8 @@ fn render_geometry(
                         let (x, y) = (x + dx, y + dy);
                         let _ = writeln!(
                             controls,
-                            r#"<text x="{x:.2}" y="{y:.2}">{} = {value}</text>"#,
-                            escape(c.label(id))
+                            r#"<text x="{x:.2}" y="{y:.2}">{}</text>"#,
+                            escape(&c.slider_label(id, value))
                         );
                     }
                 }
@@ -551,13 +551,30 @@ fn render_geometry(
                         );
                     }
                     if c.drawing_style(id).show_label {
-                        let _ = writeln!(
-                            controls,
-                            r#"<text x="{:.2}" y="{:.2}">{}</text>"#,
-                            x + size + 9.0,
-                            y + size / 2.0 + 5.0,
-                            escape(c.checkbox_caption(id)),
-                        );
+                        let caption = c.checkbox_caption(id);
+                        let (x, y) = (x + size + 9.0, y + size / 2.0);
+                        if let Some(source) = crate::kernel::control::latex_caption(&caption) {
+                            let formula = geo_latex::layout(
+                                source,
+                                16.0,
+                                geo_latex::Style::Display,
+                                geo_latex::Face::default(),
+                            );
+                            geo_latex::write_svg(
+                                &mut controls,
+                                &formula,
+                                x - 4.0,
+                                y - f64::from(formula.size()[1]) / 2.0,
+                                TEXT_COLOR,
+                            );
+                        } else {
+                            let _ = writeln!(
+                                controls,
+                                r#"<text x="{x:.2}" y="{:.2}">{}</text>"#,
+                                y + 5.0,
+                                escape(&caption),
+                            );
+                        }
                     }
                 }
             }

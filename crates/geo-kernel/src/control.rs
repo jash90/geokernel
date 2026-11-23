@@ -9,6 +9,11 @@
 
 use crate::{Construction, Def, Id, Kind};
 
+#[path = "control/label.rs"]
+mod label;
+pub(crate) use label::write_decimal;
+pub use label::{latex_caption, NumberRounding, SliderLabel};
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Control {
     pub caption: String,
@@ -247,23 +252,28 @@ impl Construction {
         self.slider_styles.get(&id).unwrap_or(&DEFAULT_SLIDER_STYLE)
     }
 
+    /// The number of sliders installed before this one.
+    pub fn slider_default_slot(&self, id: Id) -> Option<usize> {
+        self.slider_default_slots.get(&id).copied()
+    }
+
     /// The classic desktop placement in GeoNumeric.initScreenLocation.
+    pub fn default_slider_position(absolute: bool, count: usize) -> Position {
+        if absolute {
+            let y = 50 + 40 * count;
+            (30.0, (y / 400 * 10 + y % 400) as f64)
+        } else {
+            (-5.0, 10.0 - count as f64)
+        }
+    }
+
     pub fn slider_position(&self, id: Id, style: &SliderStyle) -> Position {
         style.position.unwrap_or_else(|| {
-            let count = self
-                .slider_default_slots
-                .get(&id)
-                .copied()
-                .unwrap_or_else(|| {
-                    self.sliders
-                        .partition_point(|&(index, ..)| index < id.index())
-                });
-            if style.absolute {
-                let y = 50 + 40 * count;
-                (30.0, (y / 400 * 10 + y % 400) as f64)
-            } else {
-                (-5.0, 10.0 - count as f64)
-            }
+            let count = self.slider_default_slot(id).unwrap_or_else(|| {
+                self.sliders
+                    .partition_point(|&(index, ..)| index < id.index())
+            });
+            Self::default_slider_position(style.absolute, count)
         })
     }
 
@@ -395,13 +405,6 @@ impl Construction {
             [5, (y / 400 * 10 + y % 400) as i32]
         });
         Some((f64::from(x), f64::from(y)))
-    }
-
-    pub fn checkbox_caption(&self, id: Id) -> &str {
-        self.control(id)
-            .map(|control| control.caption.as_str())
-            .filter(|caption| !caption.is_empty())
-            .unwrap_or_else(|| self.label(id))
     }
 }
 

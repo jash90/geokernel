@@ -1028,6 +1028,8 @@ pub struct Construction {
     pub(crate) strokes: std::collections::BTreeMap<Id, algo::stroke::StrokeData>,
     slider_styles: std::collections::BTreeMap<Id, control::SliderStyle>,
     checkbox_styles: std::collections::BTreeMap<Id, control::CheckboxStyle>,
+    slider_labels: BTreeMap<Id, control::SliderLabel>,
+    number_rounding: control::NumberRounding,
     free_booleans: Vec<Id>,
     drawing_styles: std::collections::BTreeMap<Id, DrawingStyle>,
     drawing_layers: u16,
@@ -1829,6 +1831,7 @@ impl Construction {
         self.hidden_requests.retain(|id| id.0 < at.len);
         self.slider_styles.split_off(&Id(at.len));
         self.slider_default_slots.split_off(&Id(at.len));
+        self.slider_labels.split_off(&Id(at.len));
         self.checkbox_styles.split_off(&Id(at.len));
         self.free_booleans
             .truncate(self.free_booleans.partition_point(|id| id.0 < at.len));

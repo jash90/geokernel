@@ -472,28 +472,9 @@ fn format_number_with_template(value: f64, latex: bool) -> String {
         );
         return formatted;
     }
-    // Java DecimalFormat rounds a binary value at a true half away from
-    // zero. Recover the direction of the rounding error if x*100 rounded
-    // to a half in the multiplication.
-    let absolute = value.abs();
-    let fraction = absolute.fract();
-    let scaled = fraction * 100.0;
-    let rounded = if scaled.fract() == 0.5 && fraction.mul_add(100.0, -scaled) < 0.0 {
-        scaled.floor()
-    } else {
-        scaled.round()
-    };
-    let cents = (absolute as u64) * 100 + rounded as u64;
-    let sign = if value.is_sign_negative() && cents != 0 {
-        "-"
-    } else {
-        ""
-    };
-    match cents % 100 {
-        0 => format!("{sign}{}", cents / 100),
-        fractional if fractional % 10 == 0 => format!("{sign}{}.{}", cents / 100, fractional / 10),
-        fractional => format!("{sign}{}.{fractional:02}", cents / 100),
-    }
+    let mut out = String::new();
+    crate::kernel::control::write_decimal(&mut out, value, 2);
+    out
 }
 
 fn format_coords(x: f64, y: f64) -> String {

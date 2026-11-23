@@ -525,8 +525,12 @@ impl Workbench {
                                 )
                             })
                             .unwrap_or(line);
-                        self.log
-                            .record_definition(&self.construction, before, first, &line);
+                        self.log.record_new_definition(
+                            &mut self.construction,
+                            before,
+                            first,
+                            &line,
+                        );
                         self.log.apply_hidden_requests(&mut self.construction);
                         if let Some(first) = first.filter(|_| added) {
                             self.boundary_outputs.record(
@@ -908,18 +912,7 @@ impl Workbench {
         if id.index() >= self.construction.len() {
             return true;
         }
-        let label = self.construction.label(id);
-        if crate::scriptlog::is_internal_label(label) {
-            return false;
-        }
-        if let Some(condition) = self
-            .log
-            .condition(label)
-            .and_then(|label| self.construction.id(label))
-        {
-            return self.construction.value(condition) == Value::Bool(true);
-        }
-        !self.log.hidden.contains(label)
+        self.log.is_visible(&self.construction, id)
     }
 
     /// Shows or hides an object in the drawing, as one undo step.
@@ -1173,6 +1166,29 @@ impl Workbench {
         self.construction.set_slider_style(id, style.clone());
         self.log
             .record_saved_property(geo_kernel::script::saved::Property::SliderStyle {
+                label: self.construction.label(id).to_owned(),
+                style,
+            });
+        self.version += 1;
+    }
+
+    /// Moves an unlocked checkbox without toggling it or its dependents.
+    pub fn move_checkbox(&mut self, id: Id, position: [i32; 2]) {
+        let mut style = self.construction.checkbox_style(id);
+        let [x, y] = position.map(f64::from);
+        if style.fixed
+            || self
+                .construction
+                .checkbox_position(id)
+                .is_none_or(|p| p == (x, y))
+        {
+            return;
+        }
+        style.position = Some(position);
+        self.note_change();
+        self.construction.set_checkbox_style(id, style);
+        self.log
+            .record_saved_property(geo_kernel::script::saved::Property::CheckboxStyle {
                 label: self.construction.label(id).to_owned(),
                 style,
             });

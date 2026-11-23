@@ -214,6 +214,10 @@ pub enum Hold {
         old: TextMove,
         start: (f64, f64),
     },
+    Checkbox {
+        old: (f64, f64),
+        start: (f64, f64),
+    },
     Slider,
     SliderTrack {
         old: (f64, f64),
@@ -252,6 +256,10 @@ pub enum Step {
     Slider {
         x: f64,
         y: f64,
+    },
+    CheckboxPosition {
+        x: i32,
+        y: i32,
     },
     SliderPosition {
         x: f64,
@@ -334,13 +342,10 @@ impl Drag {
         let slider = c.slider_geometry(id, (t.xscale(), t.yscale()), |(x, y)| {
             t.world_to_screen(x, y)
         })?;
-        let direct = crate::hit::knob_hit(slider, press, reach.threshold);
-        let retry = reach.retry.is_some_and(|threshold| {
-            crate::hit::hit(c, id, t, press, reach.threshold, reach).is_none()
-                && crate::hit::knob_hit(slider, press, threshold)
-        });
         let style = c.slider_style(id);
-        let hold = if direct || retry || style.fixed {
+        let hold = if style.fixed
+            || !crate::hit::slider_track_grab(c, id, slider, press, reach.threshold)
+        {
             Hold::Slider
         } else {
             Hold::SliderTrack {
@@ -354,6 +359,15 @@ impl Drag {
             }
         };
         Some(Drag { id, hold })
+    }
+
+    /// Keeps the pointer's offset from an unlocked checkbox's screen position.
+    pub fn checkbox(c: &Construction, id: Id, start: (f64, f64)) -> Option<Drag> {
+        let old = c.checkbox_position(id)?;
+        (!c.checkbox_style(id).fixed).then_some(Drag {
+            id,
+            hold: Hold::Checkbox { old, start },
+        })
     }
 
     /// Starts dragging a text using its placement's coordinate system.
@@ -390,6 +404,10 @@ impl Drag {
     /// `transformCoords`, then moves what is held).
     pub fn step(&mut self, t: &ViewTransform, snap: &Snap, sx: f64, sy: f64) -> Step {
         match &mut self.hold {
+            Hold::Checkbox { old, start } => Step::CheckboxPosition {
+                x: (old.0 + sx - start.0).round() as i32,
+                y: (old.1 + sy - start.1).round() as i32,
+            },
             Hold::Slider => Step::Slider { x: sx, y: sy },
             Hold::SliderTrack {
                 old,

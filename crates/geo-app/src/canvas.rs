@@ -450,6 +450,20 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         }
     }
 
+    let apply_slider_press = |app: &mut App| {
+        if let (Some(pos), Some(drag)) = (fed.owned, app.press_slider) {
+            if matches!(drag.hold(), Hold::Slider) {
+                let (local, pt) = at_press(app, pos);
+                slider_pointer(app, drag.id(), &pt, local, true);
+            }
+        }
+    };
+    // A value grab advances a notch before its drag. When this frame also
+    // ends an earlier press, finish that gesture before advancing the new one.
+    if fed.early_release.is_none() {
+        apply_slider_press(app);
+    }
+
     // Which axis the press sits on, within the press's reach
     // (`HitDetector.addXAxis` / `addYAxis`: `< threshold`).
     let axis_under = |pt: &ViewTransform, (sx, sy): (f64, f64)| -> Option<bool> {
@@ -527,6 +541,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 .capture(pt.screen_to_world(sx, sy), (0.0, 0.0));
             grabbed = if c.kind(id) == Kind::Text {
                 Drag::text(c, id, (sx, sy), press)
+            } else if c.kind(id) == Kind::Boolean {
+                Drag::checkbox(c, id, (sx, sy))
             } else if c.kind(id) == Kind::Number {
                 Drag::slider(c, id, &pt, (sx, sy), &press_reach)
             } else {
@@ -616,6 +632,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Step::Text(movement) => app.wb.move_text(drag.id(), movement),
             Step::Slider { x, y } => slider_pointer(app, drag.id(), &now, (x, y), false),
             Step::SliderPosition { x, y } => app.wb.move_slider(drag.id(), (x, y)),
+            Step::CheckboxPosition { x, y } => app.wb.move_checkbox(drag.id(), [x, y]),
         }
         app.drag = Some(drag);
     }
@@ -748,11 +765,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     if earlier_slider.is_some() && tap_before_press && app.drag.is_none() {
         app.wb.end_gesture();
     }
-    if let (Some(pos), Some(drag)) = (fed.owned, app.press_slider) {
-        if matches!(drag.hold(), Hold::Slider) {
-            let (local, pt) = at_press(app, pos);
-            slider_pointer(app, drag.id(), &pt, local, true);
-        }
+    if fed.early_release.is_some() {
+        apply_slider_press(app);
     }
     // A fixed checkbox toggles on press, even if the pointer then drags.
     if let Some(id) = fixed_checkbox {

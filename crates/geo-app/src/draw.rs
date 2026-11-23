@@ -711,7 +711,7 @@ fn paint_layer<'c>(
                 if c.drawing_style(id).show_label {
                     labels.push(label(
                         id,
-                        Cow::Owned(format!("{} = {value}", c.label(id))),
+                        c.slider_label(id, value),
                         slider.label_anchor(),
                         col,
                         Align2::LEFT_BOTTOM,
@@ -748,9 +748,8 @@ fn paint_layer<'c>(
                 if c.drawing_style(id).show_label {
                     let anchor = top + vec2(size + 9.0, size * 0.5);
                     let caption = c.checkbox_caption(id);
-                    let width = if let Some(source) = caption
-                        .strip_prefix('$')
-                        .and_then(|source| source.strip_suffix('$'))
+                    let width = if let Some(source) =
+                        geo_kernel::kernel::control::latex_caption(&caption)
                     {
                         let cache = formulas
                             .get_or_insert_with(|| crate::latex::FormulaCache::new(painter));
@@ -768,7 +767,7 @@ fn paint_layer<'c>(
                             .text(
                                 anchor,
                                 Align2::LEFT_CENTER,
-                                caption,
+                                caption.as_ref(),
                                 FontId::proportional(LABEL_FONT),
                                 col,
                             )
