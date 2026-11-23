@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -36,7 +36,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -59,7 +59,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -85,7 +85,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 }
             ]
           }
@@ -100,7 +100,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -123,7 +123,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -149,7 +149,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -165,7 +165,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -188,7 +188,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -214,7 +214,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -230,7 +230,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -253,7 +253,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -279,7 +279,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 }
             ]
           }
@@ -294,7 +294,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -317,7 +317,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -343,7 +343,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 }
             ]
           }
@@ -358,7 +358,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -381,7 +381,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -407,7 +407,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 }
             ]
           }
@@ -447,7 +447,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -470,7 +470,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -507,7 +507,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -530,7 +530,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -567,7 +567,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -590,7 +590,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -627,7 +627,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -650,7 +650,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -687,7 +687,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -710,7 +710,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -747,7 +747,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -770,7 +770,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -832,7 +832,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -855,7 +855,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -895,7 +895,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -918,7 +918,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -959,7 +959,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -982,7 +982,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1023,7 +1023,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1046,7 +1046,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1086,7 +1086,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1109,7 +1109,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1149,7 +1149,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1172,7 +1172,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1237,7 +1237,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1260,7 +1260,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1285,7 +1285,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }
@@ -1300,7 +1300,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -1323,7 +1323,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1348,7 +1348,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }
@@ -1363,7 +1363,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -1386,7 +1386,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1411,7 +1411,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }
@@ -1426,7 +1426,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1449,7 +1449,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1474,7 +1474,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }
@@ -1489,7 +1489,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1512,7 +1512,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1537,7 +1537,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }
@@ -1552,7 +1552,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1575,7 +1575,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1600,7 +1600,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }
@@ -1640,7 +1640,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1663,7 +1663,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1703,7 +1703,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -1726,7 +1726,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1766,7 +1766,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -1789,7 +1789,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1829,7 +1829,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1852,7 +1852,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1892,7 +1892,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1915,7 +1915,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -1955,7 +1955,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -1978,7 +1978,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2043,7 +2043,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -2066,7 +2066,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2096,7 +2096,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2120,7 +2120,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -2143,7 +2143,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2173,7 +2173,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2197,7 +2197,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -2220,7 +2220,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2250,7 +2250,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2274,7 +2274,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -2297,7 +2297,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2327,7 +2327,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2351,7 +2351,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -2374,7 +2374,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2404,7 +2404,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2428,7 +2428,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -2451,7 +2451,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2481,7 +2481,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2530,7 +2530,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -2553,7 +2553,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2593,7 +2593,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -2616,7 +2616,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2656,7 +2656,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -2679,7 +2679,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2719,7 +2719,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -2742,7 +2742,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2782,7 +2782,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -2805,7 +2805,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2845,7 +2845,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -2868,7 +2868,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2933,7 +2933,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -2956,7 +2956,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -2982,7 +2982,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 3.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 4.0 }
             ]
           }
@@ -2997,7 +2997,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -3020,7 +3020,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3046,7 +3046,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
@@ -3062,7 +3062,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -3085,7 +3085,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3111,7 +3111,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -3127,7 +3127,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -3150,7 +3150,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3176,7 +3176,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 3.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 4.0 }
             ]
           }
@@ -3191,7 +3191,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -3214,7 +3214,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3240,7 +3240,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 3.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 4.0 }
             ]
           }
@@ -3255,7 +3255,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -3278,7 +3278,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3304,7 +3304,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 3.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 4.0 }
             ]
           }
@@ -3344,7 +3344,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -3367,7 +3367,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3406,7 +3406,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -3429,7 +3429,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3469,7 +3469,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -3492,7 +3492,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3532,7 +3532,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -3555,7 +3555,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3594,7 +3594,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -3617,7 +3617,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3656,7 +3656,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -3679,7 +3679,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3743,7 +3743,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -3766,7 +3766,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3791,7 +3791,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }
@@ -3806,7 +3806,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": -1.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 0.0 },
               { "type": "number", "defined": true, "value": 1.0 }
             ]
@@ -3829,7 +3829,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": -1.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3854,7 +3854,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": -1 },
               { "type": "number", "defined": true, "value": -1.0 }
             ]
           }
@@ -3869,7 +3869,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 0.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 1.0 },
               { "type": "number", "defined": true, "value": -0.0 }
             ]
@@ -3892,7 +3892,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 0.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3931,7 +3931,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -3954,7 +3954,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -3979,7 +3979,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }
@@ -3994,7 +3994,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -4017,7 +4017,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -4042,7 +4042,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }
@@ -4057,7 +4057,7 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": true, "value": 2.0 },
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 3.0 },
               { "type": "number", "defined": false }
             ]
@@ -4080,7 +4080,7 @@
                 "defined": true,
                 "elements": [
                   { "type": "number", "defined": true, "value": 2.0 },
-                  { "type": "number", "defined": false }
+                  { "type": "number", "defined": true, "infinity": 1 }
                 ]
               },
               {
@@ -4105,7 +4105,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": 2.0 }
             ]
           }

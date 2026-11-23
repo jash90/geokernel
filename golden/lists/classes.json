@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -4297,8 +4297,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         },
@@ -4328,8 +4328,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         },
@@ -4359,8 +4359,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         },
@@ -4390,8 +4390,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         },
@@ -4421,8 +4421,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         },
@@ -4452,8 +4452,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         },
@@ -4483,8 +4483,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         },
@@ -4514,8 +4514,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         },
@@ -4545,8 +4545,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         },
@@ -4576,8 +4576,8 @@
             "defined": true,
             "elements": [
               { "type": "number", "defined": false },
-              { "type": "number", "defined": false },
-              { "type": "number", "defined": false }
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
             ]
           }
         }

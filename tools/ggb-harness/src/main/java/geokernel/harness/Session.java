@@ -492,6 +492,10 @@ final class Session {
             // the class of the folded expression decides, not the label
             expected = actual.equals("vector") ? "vector" : "point";
         }
+        if (FOLDED.equals(expected)) {
+            // a sum of an expression: numbers, points or vectors
+            expected = List.of("number", "point", "vector").contains(actual) ? actual : "number";
+        }
         if (expression && !equationLine && !planeInequality) {
             expected = expressionType(label, actual, line);
         }
@@ -1040,10 +1044,38 @@ final class Session {
     /** Stands for a point or a vector where the script cannot tell which. */
     private static final String COORDINATES = "point or vector";
 
+    /** Stands for the value of a sum of an expression: a number, a point or a vector. */
+    private static final String FOLDED = "folded sum";
+
     /**
      * Whether the expression of a four-argument `Sum` or `Product` is a
      * point or a vector: it holds a coordinate pair or names such an object.
      */
+    /**
+     * What `Sum` of the list `expression` (a literal such as `{A, B}`, or the
+     * list object `lead`) gives when the list holds points (a point) or
+     * vectors (a vector); null for any other list.
+     */
+    private String foldedListType(String expression, GeoElement lead) {
+        GeoElement element = null;
+        String first = null;
+        if (lead instanceof GeoList list) {
+            element = list.size() > 0 ? list.get(0) : null;
+        } else if (expression.startsWith("{") && expression.endsWith("}")) {
+            List<String> elements =
+                    arguments("f(" + expression.substring(1, expression.length() - 1) + ")");
+            if (!elements.isEmpty()) {
+                first = elements.get(0).trim();
+                element = objects.get(first);
+            }
+        }
+        if (element instanceof GeoVector) {
+            return "vector";
+        }
+        return element instanceof GeoPoint || first != null && POINT.matcher(first).matches()
+                ? "point" : null;
+    }
+
     private boolean foldsCoordinates(String expression) {
         int depth = 0;
         for (int i = 0; i < expression.length(); i++) {
@@ -1459,7 +1491,8 @@ final class Session {
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":
             case "Midpoint":
-                return (VARIABLE_X.matcher(arguments).find() && arguments.matches(".*[<>].*")
+                return (VARIABLE_X.matcher(arguments).find()
+                        && arguments.matches(".*([<>\u2264\u2265\u2260]|==|!=).*")
                         || first instanceof GeoFunction && ((GeoFunction) first).isBooleanFunction())
                         ? "number" : "point";
             case "Line":
@@ -1637,6 +1670,11 @@ final class Session {
                 if (folded.size() == 4 && foldsCoordinates(folded.get(0))) {
                     return COORDINATES;
                 }
+                String listed = folded.isEmpty() ? null
+                        : foldedListType(folded.get(0).trim(), lead);
+                if (listed != null) {
+                    return listed;
+                }
                 return !folded.isEmpty()
                         && (POINT.matcher(folded.get(0).trim()).matches()
                                 || lead instanceof GeoPoint
@@ -1647,7 +1685,11 @@ final class Session {
                                         || folded.get(0).trim().startsWith("{\"")
                                         || lead instanceof GeoText)
                                 ? "text"
-                        : lead instanceof GeoFunction ? "function" : "number";
+                        : lead instanceof GeoFunction ? "function"
+                        // an expression argument (`Sum(If(a > 0, m, {A}))`)
+                        // folds to whatever its value holds
+                        : lead == null && !folded.isEmpty()
+                                && !folded.get(0).trim().startsWith("{") ? FOLDED : "number";
             case "Angle":
             case "InteriorAngles":
                 return "angle";
