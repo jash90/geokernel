@@ -984,6 +984,10 @@ impl<const M: bool> Ctx<'_, M> {
                     Kind::Number
                         | Kind::Angle
                         | Kind::Segment
+                        | Kind::Polygon
+                        | Kind::PolyLine
+                        | Kind::Arc
+                        | Kind::Sector
                         | Kind::Point
                         | Kind::Vector
                         | Kind::Boolean
