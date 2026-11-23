@@ -595,6 +595,14 @@ mod tests {
     }
 
     #[test]
+    fn inline_projective_images_keep_their_homogeneous_scale() {
+        let c = load("P = ApplyMatrix({{1, 2, 3}, {3, 4, -1}, {1, 2, 1}}, (1, 1))").unwrap();
+        let p = c.id("P").unwrap();
+        assert_eq!(c.value(p), Value::Point { x: 1.5, y: 1.5 });
+        assert_eq!(c.stored_value(p).point_coords(), Some((6.0, 6.0, 4.0)));
+    }
+
+    #[test]
     fn identity_stays_undefined_after_a_nonpositive_size() {
         let mut c = load("n = 3\nm = Identity(n)").unwrap();
         let m = c.id("m").unwrap();

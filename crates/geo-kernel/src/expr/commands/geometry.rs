@@ -107,15 +107,13 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
                 (&[matrix, src], [true, true]) => {
                     Some(Node::ListOp(ListOp::ApplyMatrix, matrix, src))
                 }
-                (&[matrix, src], [true, false]) if p.is_point_or_vector(src) => {
-                    Some(Node::ListOp(
-                        ListOp::ApplyMatrixCoordinates {
-                            vector: p.is_vector_argument(src),
-                        },
-                        matrix,
-                        src,
-                    ))
-                }
+                (&[matrix, src], [true, false]) if p.is_point_or_vector(src) => Some(Node::ListOp(
+                    ListOp::ApplyMatrixCoordinates {
+                        vector: p.is_vector_argument(src),
+                    },
+                    matrix,
+                    src,
+                )),
                 _ => None,
             })
         }),
@@ -315,7 +313,12 @@ pub(super) fn list_value<const M: bool>(
         ListOp::Length | ListOp::Dimension => {
             Val::N(ctx.list(l).map_or(f64::NAN, |(_, len)| f64::from(len)))
         }
-        ListOp::ApplyMatrixCoordinates { vector } => apply_matrix_coordinates(ctx, l, n, vector),
+        ListOp::ApplyMatrixCoordinates { vector } => {
+            match apply_matrix_coordinates(ctx, l, n, vector).map(Value::cartesian) {
+                Some(Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
+                _ => Val::V(f64::NAN, f64::NAN),
+            }
+        }
         ListOp::Dot => Val::N(dot_lists(ctx, l, n).unwrap_or(f64::NAN)),
         ListOp::Determinant | ListOp::MatrixRank => {
             Val::N(matrix_number(ctx, op, l).unwrap_or(f64::NAN))
@@ -498,35 +501,29 @@ pub(in crate::expr) fn map_list<const M: bool>(
     }
 }
 
-fn apply_matrix_coordinates<const M: bool>(
+pub(in crate::expr) fn apply_matrix_coordinates<const M: bool>(
     ctx: &Ctx<'_, M>,
     matrix: u32,
     src: u32,
     vector: bool,
-) -> Val {
-    let image = || {
-        let lists = ctx.lists?;
-        let (start, len) = ctx.list(matrix)?;
-        let matrix = lists.with_list(ctx.c, start, len, matrix::Matrix::read)?;
-        let source = match ctx.e.nodes[src as usize] {
-            Node::Obj(id) => ctx.c.stored_value(id),
-            _ => {
-                let Val::V(x, y) = ctx.full(src).val else {
-                    return None;
-                };
-                if vector {
-                    Value::Vector { x, y }
-                } else {
-                    Value::Point { x, y }
-                }
+) -> Option<Value> {
+    let lists = ctx.lists?;
+    let (start, len) = ctx.list(matrix)?;
+    let matrix = lists.with_list(ctx.c, start, len, matrix::Matrix::read)?;
+    let source = match ctx.e.nodes[src as usize] {
+        Node::Obj(id) => ctx.c.stored_value(id),
+        _ => {
+            let Val::V(x, y) = ctx.full(src).val else {
+                return None;
+            };
+            if vector {
+                Value::Vector { x, y }
+            } else {
+                Value::Point { x, y }
             }
-        };
-        match matrix.apply(source)?.cartesian() {
-            Value::Point { x, y } | Value::Vector { x, y } => Some(Val::V(x, y)),
-            _ => None,
         }
     };
-    image().unwrap_or(Val::V(f64::NAN, f64::NAN))
+    matrix.apply(source)
 }
 
 fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option<(u32, u32)> {
@@ -544,9 +541,7 @@ fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option
         let y = lists.read(ctx.c, b + j);
         cross_arithmetic(ctx, Bin::Mul, x, y, 0)
     };
-    let component = |i, j| {
-        cross_arithmetic(ctx, Bin::Sub, product(i, j)?, product(j, i)?, 0)
-    };
+    let component = |i, j| cross_arithmetic(ctx, Bin::Sub, product(i, j)?, product(j, i)?, 0);
     let start = lists.reserve(3)?;
     let (x, y) = if len == 3 {
         (component(1, 2)?, component(2, 0)?)
@@ -632,7 +627,6 @@ impl Construction {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -646,7 +640,10 @@ mod tests {
         let a = c.elements(c.id("a").unwrap()).unwrap();
         assert_eq!(a.len(), 3);
         for i in 0..2 {
-            assert!(matches!(a.get(i), Some(Element::Value(_, Value::Number(0.0)))));
+            assert!(matches!(
+                a.get(i),
+                Some(Element::Value(_, Value::Number(0.0)))
+            ));
         }
         let Some(Element::List(z)) = a.get(2) else {
             panic!("the third component must be a list");

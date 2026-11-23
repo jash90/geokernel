@@ -167,7 +167,7 @@ pub(super) fn list_value<const M: bool>(
 
 /// The list that the list command `op` whose result is a list builds (see
 /// [`makes_list`]).
-pub(super) use geometry::map_list;
+pub(super) use geometry::{apply_matrix_coordinates, map_list};
 
 pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,

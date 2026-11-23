@@ -487,7 +487,9 @@ pub(crate) enum ListOp {
     MatrixDimension,
     Identity,
     ApplyMatrix,
-    ApplyMatrixCoordinates { vector: bool },
+    ApplyMatrixCoordinates {
+        vector: bool,
+    },
 }
 
 impl ListOp {
@@ -684,6 +686,8 @@ pub(crate) enum Elem {
 pub(crate) enum Raw {
     Num(f64),
     Vec(f64, f64),
+    /// Homogeneous coordinates from a projective point transform.
+    Homogeneous([f64; 3]),
     /// A defined list of this many elements, kept in the entry.
     List(u32),
 }
@@ -696,6 +700,9 @@ impl Raw {
             (Raw::Num(a), Raw::Num(b)) => a.to_bits() == b.to_bits(),
             (Raw::Vec(a, b), Raw::Vec(c, d)) => {
                 a.to_bits() == c.to_bits() && b.to_bits() == d.to_bits()
+            }
+            (Raw::Homogeneous(a), Raw::Homogeneous(b)) => {
+                a.map(f64::to_bits) == b.map(f64::to_bits)
             }
             (Raw::List(a), Raw::List(b)) => a == b,
             _ => false,
@@ -2080,6 +2087,7 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
         (Kind::Number, Raw::Num(v)) if !v.is_nan() => Value::Number(v),
         (Kind::Angle, Raw::Num(v)) if v.is_finite() => Value::Number(d.angle_style.value(v)),
         (Kind::Point, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Point { x, y },
+        (Kind::Point, Raw::Homogeneous([x, y, z])) => Value::homogeneous_point(x, y, z),
         (Kind::Vector, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Vector { x, y },
         (Kind::Function, Raw::Num(v)) if !v.is_nan() => Value::Function,
         // `AlgoDependentBoolean`: a boolean is never undefined, a
@@ -2329,9 +2337,7 @@ fn argument_is_vector_at(c: &Construction, nodes: &[Node], types: &[Ty], root: u
                 Node::Cmd(def, _) => def.kind() == Kind::Vector,
                 Node::Vector(_) => true,
                 Node::ListOp(ListOp::ApplyMatrixCoordinates { vector }, ..) => vector,
-                Node::Bin(Bin::Add, a, b) if types[a as usize] == Ty::Vec => {
-                    read(a) && read(b)
-                }
+                Node::Bin(Bin::Add, a, b) if types[a as usize] == Ty::Vec => read(a) && read(b),
                 Node::Bin(Bin::Add | Bin::Sub | Bin::Mul | Bin::Div, a, b) => read(a) || read(b),
                 Node::If(_, _, value, _) => read(value),
                 _ => false,
@@ -2674,7 +2680,7 @@ fn add_parsed(
             } else {
                 Def::FreePoint { x, y }
             }),
-            Raw::List(_) | Raw::Num(_) | Raw::Vec(..) => None,
+            Raw::List(_) | Raw::Num(_) | Raw::Vec(..) | Raw::Homogeneous(_) => None,
         };
         if let Some(def) = free {
             let id = c.add(name, def)?;

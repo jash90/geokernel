@@ -114,6 +114,11 @@ case("inlineimages", [
     "l = ApplyMatrix({{1, 2}, {3, n}}, {(1, 1), (n, 1)})",
 ], [setn("n", 2), setn("n", -1)])
 
+case("inlineimages", [
+    "n = 1", "P = ApplyMatrix({{1, 2, 3}, {3, 4, -1}, {1, 2, n}}, (1, 1))",
+    "v = OrthogonalVector(P)", "d = Dimension(P)",
+], [setn("n", -3), setn("n", -4), setn("n", 1)])
+
 case("projective", ["A = (2, 4)", "n = 2", "l = {{n, 0, 0}, {0, n, 0}, {0, 0, n}}",
                     "P = ApplyMatrix(l, A)", "u = OrthogonalVector(P)", "v = Direction(P)",
                     "b = (1, -2)", "T = Translate(P, b)", "w = Direction(T)",

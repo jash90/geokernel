@@ -125,6 +125,48 @@
           }
         }
       ]
+    },
+    {
+      "id": "vectorforms-inlineimages-002",
+      "group": "vectorforms",
+      "script": [
+        "n = 1",
+        "P = ApplyMatrix({{1, 2, 3}, {3, 4, -1}, {1, 2, n}}, (1, 1))",
+        "v = OrthogonalVector(P)",
+        "d = Dimension(P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -3.0 },
+        { "action": "set_number", "label": "n", "value": -4.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.5, "y": 1.5 },
+          "v": { "type": "vector", "defined": true, "x": -6.0, "y": 6.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "P": { "type": "point", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": -6.0, "y": 6.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -4.0 },
+          "P": { "type": "point", "defined": true, "x": -6.0, "y": -6.0 },
+          "v": { "type": "vector", "defined": true, "x": 6.0, "y": -6.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.5, "y": 1.5 },
+          "v": { "type": "vector", "defined": true, "x": -6.0, "y": 6.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
     }
   ]
 }
