@@ -94,49 +94,14 @@ form = "conic,number,number"
 cases = ["arcs-conicparams-007"]
 
 [[form]]
-command = "AreCollinear"
-form = "point,point,point"
-cases = ["logic-boolobj-002", "predicates-collinear-001", "predicates-collinear-002"]
-
-[[form]]
 command = "AreConcurrent"
 form = "line,line,line"
 cases = ["predicates-concurrent-001", "predicates-concurrent-002", "predicates-concurrent-003"]
 
 [[form]]
-command = "AreConcyclic"
-form = "point,point,point,point"
-cases = ["predicates-concyclic-001", "predicates-concyclic-002", "predicates-concyclic-003"]
-
-[[form]]
-command = "AreParallel"
-form = "line,line"
-cases = ["predicates-equal-028", "predicates-parallel-001", "predicates-parallel-002"]
-
-[[form]]
-command = "ArePerpendicular"
-form = "line,line"
-cases = ["predicates-perpendicular-001", "predicates-perpendicular-002", "predicates-perpendicular-003"]
-
-[[form]]
-command = "Area"
-form = "polygon"
-cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
-
-[[form]]
 command = "Area"
 form = "point,point,point,..."
 cases = ["expr-cmd-006", "expr-fncmd-005", "expr-ptcmd-017"]
-
-[[form]]
-command = "Axes"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
-command = "Center"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 
 [[form]]
 command = "Center"
@@ -159,44 +124,14 @@ form = "polygon"
 cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
 
 [[form]]
-command = "Circle"
-form = "point,number"
-cases = ["arcs-conicparams-001", "arcs-conicparams-002", "arcs-conicparams-003", "inlineargs-points-001"]
-
-[[form]]
-command = "Circle"
-form = "point,point"
-cases = ["arcs-conicpoints-005", "conic-center-001", "conic-center-002"]
-
-[[form]]
-command = "Circle"
-form = "point,point,point"
-cases = ["conic-center-007", "conic-center-008", "conic-diameter-006"]
-
-[[form]]
-command = "CircleArc"
-form = "point,point,point"
-cases = ["arcs-chain-001", "arcs-chain-002", "arcs-circular-001"]
-
-[[form]]
 command = "CircleSector"
 form = "point,point,point"
 cases = ["arcs-chain-002", "arcs-circular-003", "arcs-circular-004"]
 
 [[form]]
-command = "CircumcircleArc"
-form = "point,point,point"
-cases = ["arcs-circum-001", "arcs-circum-002", "arcs-circum-005"]
-
-[[form]]
-command = "CircumcircleSector"
-form = "point,point,point"
-cases = ["arcs-circum-003", "arcs-circum-004", "arcs-circum-007"]
-
-[[form]]
 command = "Classes"
 form = "list,number"
-cases = ["lists-classes-001", "lists-classes-002", "lists-classes-003", "infinity-legacy-001"]
+cases = ["lists-classes-001", "lists-classes-002", "lists-classes-003", "lists-classes-015"]
 
 [[form]]
 command = "Classes"
@@ -207,11 +142,6 @@ cases = ["lists-classes-008", "lists-classes-009", "lists-classes-010"]
 command = "ClosestPoint"
 form = "line,line"
 cases = ["points-pathpair-001"]
-
-[[form]]
-command = "Conic"
-form = "point,point,point,point,point"
-cases = ["conics-fivepoints-001", "conics-fivepoints-002", "conics-fivepoints-003"]
 
 [[form]]
 command = "Conic"
@@ -227,11 +157,6 @@ cases = ["conicforms-coefficients-001", "conicforms-coefficients-002"]
 command = "CrossRatio"
 form = "point,point,point,point"
 cases = ["measure-cross-001", "measure-cross-002", "measure-cross-003"]
-
-[[form]]
-command = "Diameter"
-form = "line,conic"
-cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
 
 [[form]]
 command = "Diameter"
@@ -294,34 +219,9 @@ form = "polyline,number,point"
 cases = ["transform-dilate-023"]
 
 [[form]]
-command = "Direction"
-form = "line"
-cases = ["vector-chain-003", "vector-direction-001", "vector-direction-002"]
-
-[[form]]
-command = "Directrix"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
-command = "Distance"
-form = "point,point"
-cases = ["expr-chain-006", "expr-cmd-001", "expr-cmd-004"]
-
-[[form]]
-command = "Distance"
-form = "line,line"
-cases = ["conic-diameter-009", "lines-bisector-015", "lines-polar-006"]
-
-[[form]]
 command = "Div"
 form = "number,number"
 cases = ["expr-syntax-013", "expr-twonum-002", "expr-twonum-007"]
-
-[[form]]
-command = "Eccentricity"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 
 [[form]]
 command = "Element"
@@ -339,29 +239,9 @@ form = "text,number"
 cases = ["lists-textelem-013", "lists-textelem-016", "lists-textelem-018"]
 
 [[form]]
-command = "Ellipse"
-form = "point,point,number"
-cases = ["conics-focilength-001", "conics-focilength-002", "conics-focilength-003"]
-
-[[form]]
-command = "Ellipse"
-form = "point,point,point"
-cases = ["arcs-conicparams-006", "arcs-conicparams-007", "conics-ellipse-001"]
-
-[[form]]
-command = "Excentricity"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
 command = "First"
 form = "list"
 cases = ["lists-order-003", "lists-order-006"]
-
-[[form]]
-command = "First"
-form = "list,number"
-cases = ["lists-objects-037", "lists-order-004", "lists-order-017"]
 
 [[form]]
 command = "First"
@@ -384,24 +264,9 @@ form = "function,number"
 cases = ["funcrest-freehandpoints-001", "funcrest-freehandpoints-002", "funcrest-freehandpoints-003", "funcrest-freehandpoints-004", "funcrest-freehandpoints-005"]
 
 [[form]]
-command = "FirstAxis"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
-command = "FirstAxisLength"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
 command = "Flatten"
 form = "list"
 cases = ["lists-flatten-001", "lists-flatten-002", "lists-flatten-003"]
-
-[[form]]
-command = "Focus"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
 
 [[form]]
 command = "Frequency"
@@ -485,53 +350,13 @@ cases = ["polygon-angles-001", "polygon-angles-002", "polygon-angles-003"]
 
 [[form]]
 command = "Intersect"
-form = "line,line"
-cases = ["expr-cmd-013", "expr-ptcmd-005", "expr-ptcmd-006"]
-
-[[form]]
-command = "Intersect"
-form = "line,conic"
-cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007"]
-
-[[form]]
-command = "Intersect"
-form = "line,conic,number"
-cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003"]
-
-[[form]]
-command = "Intersect"
-form = "conic,line,number"
-cases = ["conics-intersection-001", "conics-intersection-002", "conics-intersection-003"]
-
-[[form]]
-command = "Intersect"
 form = "line,line,number"
 cases = ["intersections-lines-001", "intersections-lines-002", "intersections-lines-006"]
 
 [[form]]
 command = "Intersect"
-form = "conic,line"
-cases = ["intersections-conicline-003", "intersections-conicline-004"]
-
-[[form]]
-command = "Intersect"
-form = "line,conic,point"
-cases = ["intersections-lineconicseed-001", "intersections-lineconicseed-005"]
-
-[[form]]
-command = "Intersect"
-form = "conic,line,point"
-cases = ["intersections-lineconicseed-002", "intersections-lineconicseed-006"]
-
-[[form]]
-command = "Intersect"
 form = "conic,conic"
 cases = ["intersections-conics-001", "intersectconics-pencil-001", "intersectconics-pencil-002"]
-
-[[form]]
-command = "Intersect"
-form = "conic,conic,number"
-cases = ["intersections-conics-002", "intersectconics-index-001", "intersectconics-index-002"]
 
 [[form]]
 command = "Intersect"
@@ -685,11 +510,6 @@ cases = ["lists-textelem-008", "lists-textelem-012"]
 
 [[form]]
 command = "Length"
-form = "vector"
-cases = ["expr-cmd-011", "vector-chain-004", "vector-free-006"]
-
-[[form]]
-command = "Length"
 form = "list"
 cases = ["lists-length-001", "lists-length-002", "lists-length-003"]
 
@@ -700,18 +520,8 @@ cases = ["measure-length-001", "measure-length-002", "measure-length-003"]
 
 [[form]]
 command = "Line"
-form = "point,point"
-cases = ["conic-diameter-001", "conic-diameter-002", "conic-diameter-003"]
-
-[[form]]
-command = "Line"
 form = "point,vector"
 cases = ["paths-start-010", "predicates-concurrent-013", "predicates-equal-024"]
-
-[[form]]
-command = "Line"
-form = "point,line"
-cases = ["geometry-ixll-019", "geometry-ixll-020", "geometry-ixll-021"]
 
 [[form]]
 command = "Line"
@@ -722,21 +532,6 @@ cases = ["geometry-parallel-009", "geometry-parallel-010", "geometry-parallel-01
 command = "LineBisector"
 form = "segment"
 cases = ["lines-bisector-007", "lines-bisector-008", "lines-bisector-009"]
-
-[[form]]
-command = "LineBisector"
-form = "point,point"
-cases = ["intersect-groups-001", "intersect-startpoint-005", "lines-bisector-001"]
-
-[[form]]
-command = "Locus"
-form = "point,point"
-cases = ["locus-circle-001", "locus-segment-001", "locus-line-001", "locus-arc-001", "locus-polygon-001", "locus-undefined-001", "redefine-locus-001"]
-
-[[form]]
-command = "Locus"
-form = "point,number"
-cases = ["locus-slider-001", "locus-slider-002", "locus-slider-005"]
 
 [[form]]
 command = "Max"
@@ -750,11 +545,6 @@ cases = ["expr-special-017", "expr-special-019", "expr-special-021"]
 
 [[form]]
 command = "Midpoint"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
-command = "Midpoint"
 form = "segment"
 cases = ["conic-midseg-001", "conic-midseg-002", "conic-midseg-003"]
 
@@ -762,11 +552,6 @@ cases = ["conic-midseg-001", "conic-midseg-002", "conic-midseg-003"]
 command = "Midpoint"
 form = "interval"
 cases = ["conicreview-interval-001"]
-
-[[form]]
-command = "Midpoint"
-form = "point,point"
-cases = ["arcs-chain-001", "conic-midseg-001", "conic-midseg-002"]
 
 [[form]]
 command = "Min"
@@ -794,11 +579,6 @@ form = "any,circle"
 cases = ["transform-invert-001", "transform-invert-011", "transform-invert-013", "transform-invert-015", "transform-invert-019", "transform-invert-021"]
 
 [[form]]
-command = "Mod"
-form = "number,number"
-cases = ["expr-syntax-008", "expr-syntax-010", "expr-syntax-011"]
-
-[[form]]
 command = "OrdinalRank"
 form = "list"
 cases = ["lists-ranks-001", "lists-ranks-003", "lists-ranks-005"]
@@ -815,11 +595,6 @@ cases = ["lists-wrapped-005"]
 
 [[form]]
 command = "OrthogonalLine"
-form = "point,line"
-cases = ["geometry-chain-001", "geometry-chain-002", "geometry-chain-003"]
-
-[[form]]
-command = "OrthogonalLine"
 form = "point,segment"
 cases = ["geometry-chain-006", "geometry-chain-007", "geometry-chain-008"]
 
@@ -830,45 +605,14 @@ cases = ["paths-start-011", "predicates-perpendicular-011", "vector-chain-003"]
 
 [[form]]
 command = "OrthogonalVector"
-form = "line"
-cases = ["vector-chain-003", "vector-direction-010", "vector-direction-011"]
-
-[[form]]
-command = "OrthogonalVector"
 form = "vector"
 cases = ["expr-ptcmd-015", "expr-ptcmd-016", "vector-chain-005"]
-
-[[form]]
-command = "Parabola"
-form = "point,line"
-cases = ["conics-intersection-007", "conics-intersection-008", "conics-intersection-022"]
-
-[[form]]
-command = "Parameter"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
-command = "PathParameter"
-form = "point"
-cases = ["arcs-chain-001", "arcs-chain-002", "arcs-points-001"]
-
-[[form]]
-command = "PenStroke"
-form = "point,point,..."
-cases = ["stroke-points-003", "stroke-points-004", "stroke-points-010"]
-difference = "geometry-command-arguments: `PenStroke(point, point, ...)`"
 
 [[form]]
 command = "PenStroke"
 form = "number,number,..."
 cases = ["stroke-numbers-001", "stroke-numbers-002", "stroke-numbers-003"]
 difference = "geometry-command-arguments: `PenStroke(number, number, ...)`"
-
-[[form]]
-command = "Perimeter"
-form = "polygon"
-cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
 
 [[form]]
 command = "PointList"
@@ -887,28 +631,8 @@ cases = ["lists-pointlist-007"]
 
 [[form]]
 command = "Polar"
-form = "point,conic"
-cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
-
-[[form]]
-command = "Polar"
 form = "line,conic"
 cases = ["conicforms-pole-001", "conicforms-pole-002"]
-
-[[form]]
-command = "PolyLine"
-form = "point,point,..."
-cases = ["paths-polyline-001", "paths-polyline-002", "paths-polyline-003"]
-
-[[form]]
-command = "Polygon"
-form = "point,point,number"
-cases = ["paths-polygon-005", "polygon-labels-005", "polygon-regsmall-001", "inlineargs-points-002"]
-
-[[form]]
-command = "Polygon"
-form = "point,point,..."
-cases = ["paths-chain-003", "paths-polygon-001", "paths-polygon-002"]
 
 [[form]]
 command = "Product"
@@ -932,11 +656,6 @@ cases = ["lists-stats-003"]
 
 [[form]]
 command = "Ray"
-form = "point,point"
-cases = ["conics-parabola-010", "conics-tangent-015", "paths-closest-003"]
-
-[[form]]
-command = "Ray"
 form = "point,vector"
 cases = ["paths-ray-006", "points-closestray-006", "predicates-equal-026"]
 
@@ -944,11 +663,6 @@ cases = ["paths-ray-006", "points-closestray-006", "predicates-equal-026"]
 command = "Remove"
 form = "list,list"
 cases = ["lists-setops-012", "lists-setops-013", "lists-setops-014"]
-
-[[form]]
-command = "RemoveUndefined"
-form = "list"
-cases = ["lists-undef-002", "lists-undef-006", "lists-undef-007", "infinity-legacy-002", "infinity-legacy-003", "infinity-legacy-005"]
 
 [[form]]
 command = "Reverse"
@@ -976,24 +690,9 @@ form = "any,number,point"
 cases = ["transform-rotate-014", "transform-rotate-015", "transform-rotate-016", "transform-rotate-017", "transform-rotate-019", "transform-rotate-021", "transform-rotate-022", "transform-rotate-023", "transform-rotate-024", "transform-rotate-025", "transform-rotate-026"]
 
 [[form]]
-command = "SecondAxis"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
-command = "SecondAxisLength"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
 command = "Sector"
 form = "conic,number,number"
 cases = ["arcs-conicparams-006"]
-
-[[form]]
-command = "Segment"
-form = "point,point"
-cases = ["conic-diameter-004", "conic-diameter-008", "conic-midseg-001"]
 
 [[form]]
 command = "Semicircle"
@@ -1002,18 +701,8 @@ cases = ["arcs-points-006", "arcs-semicircle-001", "arcs-semicircle-002"]
 
 [[form]]
 command = "Sequence"
-form = "any,number,number,number"
-difference = "list-commands: `Sequence(any, number, number, number)` and `Sequence(any, number, number, number, number)`"
-
-[[form]]
-command = "Sequence"
 form = "any,number,number,number,number"
 difference = "list-commands: `Sequence(any, number, number, number)` and `Sequence(any, number, number, number, number)`"
-
-[[form]]
-command = "Sequence"
-form = "number"
-cases = ["lists-arith-013", "lists-if-012", "lists-join-012"]
 
 [[form]]
 command = "Sequence"
@@ -1034,11 +723,6 @@ cases = ["transform-shear-001", "transform-shear-002", "transform-shear-003", "t
 command = "Shear"
 form = "any,vector,number"
 cases = ["transformsfix-shear-001", "transformsfix-shear-002", "transformsfix-shear-003", "transformsfix-shear-004", "transformsfix-shear-005", "transformsfix-shear-006", "transformsfix-shear-007", "transformsfix-shear-008", "transformsfix-shear-009"]
-
-[[form]]
-command = "Slope"
-form = "line"
-cases = ["conic-diameter-009", "expr-cmd-007", "expr-fncmd-003"]
 
 [[form]]
 command = "Sort"
@@ -1077,11 +761,6 @@ cases = ["lists-objects-030", "lists-stats-018", "lists-sum-005"]
 
 [[form]]
 command = "Take"
-form = "list,number"
-cases = ["lists-take-001", "lists-take-003", "lists-take-005"]
-
-[[form]]
-command = "Take"
 form = "list,number,number"
 cases = ["lists-take-002", "lists-take-004", "lists-take-007"]
 
@@ -1089,16 +768,6 @@ cases = ["lists-take-002", "lists-take-004", "lists-take-007"]
 command = "Tangent"
 form = "conic,conic"
 cases = ["commontangents-conics-001", "commontangents-conics-002"]
-
-[[form]]
-command = "Tangent"
-form = "line,conic"
-cases = ["conics-tangent-002", "conics-tangent-005", "conics-tangent-008"]
-
-[[form]]
-command = "Tangent"
-form = "point,conic"
-cases = ["conics-tangent-001", "conics-tangent-004", "conics-tangent-007"]
 
 [[form]]
 command = "TiedRank"
@@ -1157,11 +826,6 @@ cases = ["vector-chain-005", "vector-free-004", "vector-free-005"]
 
 [[form]]
 command = "UnitVector"
-form = "line"
-cases = ["vector-rawscale-001", "vector-rawscale-005", "vector-rawscale-006"]
-
-[[form]]
-command = "UnitVector"
 form = "vector"
 cases = ["expr-ptcmd-009", "expr-ptcmd-010", "vector-free-001"]
 
@@ -1177,11 +841,6 @@ cases = ["conics-tangent-003", "conics-tangent-006", "conics-tangent-009"]
 
 [[form]]
 command = "Vertex"
-form = "conic"
-cases = ["conics-readers-001", "conics-readers-002", "conics-readers-003"]
-
-[[form]]
-command = "Vertex"
 form = "polygon"
 cases = ["polygon-derived-008", "polygon-derived-009", "polygon-derived-010"]
 
@@ -1192,28 +851,8 @@ cases = ["polygon-polyline-001", "polygon-polyline-002", "polygon-polyline-003"]
 
 [[form]]
 command = "Vertex"
-form = "polygon,number"
-cases = ["polygon-regular-015", "polygon-shrink-001", "polygon-triangle-022"]
-
-[[form]]
-command = "Vertex"
 form = "polyline,number"
 cases = ["polygon-polyline-001", "polygon-polyline-002", "polygon-polyline-003"]
-
-[[form]]
-command = "Area"
-form = "conic"
-cases = ["geomforms-area-001", "geomforms-area-003"]
-
-[[form]]
-command = "Difference"
-form = "polygon,polygon"
-cases = ["geomclip-difference-003", "geomclip-difference-005", "geomclip-difference-007"]
-
-[[form]]
-command = "Difference"
-form = "polygon,polygon,boolean"
-cases = ["geomclip-difference-004", "geomclip-difference-008"]
 
 [[form]]
 command = "IntersectPath"
@@ -1224,16 +863,6 @@ cases = ["geomclip-carrier-001", "geomclip-carrier-002", "geomclip-carrier-005"]
 command = "IntersectPath"
 form = "polygon,line"
 cases = ["geomclip-carrier-001", "geomclip-carrier-002", "georestclip-longcarrier-001", "georestclip-homogeneous-001"]
-
-[[form]]
-command = "IntersectPath"
-form = "polygon,polygon"
-cases = ["geomclip-polygon-001", "geomclip-polygon-002"]
-
-[[form]]
-command = "IsTangent"
-form = "line,conic"
-cases = ["geomforms-tangent-001"]
 
 [[form]]
 command = "Line"
@@ -1251,11 +880,6 @@ form = "point,conic"
 cases = ["geomforms-normal-002"]
 
 [[form]]
-command = "Radius"
-form = "conic"
-cases = ["geomforms-area-001", "geomforms-area-003"]
-
-[[form]]
 command = "RigidPolygon"
 form = "polygon"
 cases = ["geomforms-rigidpolygon-002"]
@@ -1264,11 +888,6 @@ cases = ["geomforms-rigidpolygon-002"]
 command = "RigidPolygon"
 form = "polygon,number,number"
 cases = ["geomforms-rigidpolygon-003"]
-
-[[form]]
-command = "Segment"
-form = "point,number"
-cases = ["geomforms-segment-001", "geomforms-segment-002", "geomforms-segment-003"]
 
 [[form]]
 command = "Segment"
@@ -1284,11 +903,6 @@ cases = ["geomforms-slope-001", "geomforms-slope-002", "geomforms-slope-003"]
 command = "TriangleCenter"
 form = "point,point,point,number"
 cases = ["geomforms-trianglecenter-001", "geomforms-trianglecenter-002", "geomforms-trianglecenter-003"]
-
-[[form]]
-command = "ApplyMatrix"
-form = "list,point"
-cases = ["vectorforms-images-001", "vectorforms-images-002", "vectorforms-images-003"]
 
 [[form]]
 command = "ApplyMatrix"
@@ -1327,11 +941,6 @@ cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-003"]
 
 [[form]]
 command = "Dimension"
-form = "point"
-cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-005"]
-
-[[form]]
-command = "Dimension"
 form = "vector"
 cases = ["vectorforms-position-002", "vectorforms-coordinates-003"]
 
@@ -1341,29 +950,9 @@ form = "vector"
 cases = ["vectorforms-position-002", "vectorforms-coordinates-003"]
 
 [[form]]
-command = "Identity"
-form = "number"
-cases = ["vectorforms-identity-001"]
-
-[[form]]
 command = "MatrixRank"
 form = "list"
 cases = ["vectorforms-matrixnumbers-001", "vectorforms-matrixnumbers-003"]
-
-[[form]]
-command = "OrthogonalVector"
-form = "point"
-cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-004", "vectorforms-coordinates-005"]
-
-[[form]]
-command = "UnitOrthogonalVector"
-form = "point"
-cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-004", "vectorforms-coordinates-005"]
-
-[[form]]
-command = "UnitVector"
-form = "point"
-cases = ["vectorforms-coordinates-001", "vectorforms-coordinates-003", "vectorforms-coordinates-004", "vectorforms-coordinates-005"]
 
 [[form]]
 command = "Vector"
@@ -1396,16 +985,6 @@ form = "function,point,point"
 cases = ["geomextras-lengthfunction-001"]
 
 [[form]]
-command = "Perimeter"
-form = "conic"
-cases = ["geomextras-perimeterconic-001"]
-
-[[form]]
-command = "Point"
-form = "list"
-cases = ["geomextras-pointlist-001", "geomextras-pointlist-002", "geomextras-pointlist-003", "geomextras-pointlist-004", "geomextras-pointlist-005", "geomextras-pointlist-006", "geomextras-pointlist-008"]
-
-[[form]]
 command = "Point"
 form = "point,vector"
 cases = ["geomextras-pointvector-001"]
@@ -1429,6 +1008,12 @@ cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-003", "ge
 command = "Tangent"
 form = "point,function"
 cases = ["geomextras-tangentfunction-001", "geomextras-tangentfunction-002"]
+
+[[form]]
+command = "Vertex"
+form = "boolean,number"
+cases = ["corners-checkbox-001", "corners-checkbox-002", "corners-checkbox-004"]
+difference = "geometry-command-arguments: `Vertex(boolean, number)`"
 
 [[form]]
 command = "Vertex"
@@ -1506,56 +1091,15 @@ form = "function,function,point"
 cases = ["intersections-functions-003", "intersections-functions-006", "intersectfunctions-pair-005"]
 
 [[form]]
-command = "Arc"
-form = "conic,point,point"
-cases = ["geomextras-conicparts-001", "geomclosure-openarc-001", "geomclosure-openarc-002"]
-
-[[form]]
-command = "AreCongruent"
-form = "any,any"
-cases = ["geomclosure-comparison-001", "geomclosure-comparison-002", "geomformsreview-angle-001"]
-difference = "geometry-command-arguments: `AreCongruent(any, any)`"
-
-[[form]]
-command = "AreEqual"
-form = "any,any"
-cases = ["geomclosure-comparison-001", "geomclosure-comparison-002", "geomclosure-comparison-003", "geomformsreview-angle-001", "geomformsreview-shapes-001", "geomformsreview-function-001", "geomformsreview-booleanfunction-001", "geomformsreview-functionofy-001"]
-difference = "geometry-command-arguments: `AreEqual(any, any)`"
-
-[[form]]
 command = "Circumference"
 form = "locus"
 cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
 
 [[form]]
-command = "ClosestPoint"
-form = "path,point"
-cases = ["geomclosure-projection-001"]
-difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
-
-[[form]]
-command = "ClosestPoint"
-form = "point,path"
-cases = ["geomclosure-projection-001"]
-difference = "geometry-command-arguments: `ClosestPoint(path, point)` and `ClosestPoint(point, path)`"
-
-[[form]]
 command = "Distance"
 form = "path,point"
 cases = ["geomclosure-projection-001"]
 difference = "geometry-command-arguments: `Distance(point, path)` and `Distance(path, point)`"
-
-[[form]]
-command = "Distance"
-form = "point,path"
-cases = ["geomclosure-projection-001"]
-difference = "geometry-command-arguments: `Distance(point, path)` and `Distance(path, point)`"
-
-[[form]]
-command = "Length"
-form = "conic"
-cases = ["geomclosure-partlength-001"]
-difference = "geometry-command-arguments: `Length(conic)`"
 
 [[form]]
 command = "Length"
@@ -1571,11 +1115,6 @@ cases = ["geomclosure-curvelength-001"]
 command = "Length"
 form = "locus"
 cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
-
-[[form]]
-command = "Length"
-form = "point"
-cases = ["geomclosure-pointlength-001", "geomextras-lengthpoint-001"]
 
 [[form]]
 command = "Length"
@@ -1598,27 +1137,10 @@ form = "locus"
 cases = ["geomclosure-locusmeasure-001", "geomclosure-locusmeasure-002"]
 
 [[form]]
-command = "Point"
-form = "path"
-cases = ["geomclosure-path-001", "geomclosure-openarc-001", "geomclosure-openarc-002"]
-difference = "geometry-command-arguments: `Point(path)` and `Point(path, number)`"
-
-[[form]]
-command = "Point"
-form = "path,number"
-cases = ["geomclosure-path-001"]
-difference = "geometry-command-arguments: `Point(path)` and `Point(path, number)`"
-
-[[form]]
 command = "PointIn"
 form = "region"
 cases = ["geomclosure-region-001", "geomclosure-region-002", "geomclosure-regionmoves-001"]
 difference = "geometry-command-arguments: `PointIn(region)`"
-
-[[form]]
-command = "PolyLine"
-form = "list"
-cases = ["geomextras-polylinelist-001", "geomclosure-shapelist-001"]
 
 [[form]]
 command = "PolyLine"
@@ -1632,19 +1154,9 @@ cases = ["geomclosure-polylineflag-001"]
 difference = "geometry-command-arguments: `PolyLine(point, point, ..., boolean)`"
 
 [[form]]
-command = "Polygon"
-form = "list"
-cases = ["geomextras-polygonlist-001", "geomclosure-shapelist-001"]
-
-[[form]]
 command = "RigidPolygon"
 form = "point,point,..."
 cases = ["geomclosure-rigid-001", "geomextras-rigidpoints-001", "geomforms-rigidpolygon-004"]
-
-[[form]]
-command = "Sector"
-form = "conic,point,point"
-cases = ["geomextras-conicparts-001", "geomextras-conicparts-002"]
 
 [[form]]
 command = "Vertex"
@@ -1665,11 +1177,6 @@ cases = ["matrixdilate-upstream-001", "matrixdilate-elimination-002", "vectorfor
 command = "Invert"
 form = "function"
 cases = ["vectorforms-matrixlists-009", "matrixdilate-inverse-001", "matrixdilate-inverse-002", "matrixdilate-inverse-003"]
-
-[[form]]
-command = "Transpose"
-form = "list"
-cases = ["matrixdilate-upstream-001", "matrixdilate-elimination-001", "matrixdilate-elimination-006", "vectorforms-matrixlists-001"]
 
 [[form]]
 command = "Transpose"
@@ -1717,11 +1224,6 @@ form = "list,polyline"
 cases = ["matrixdilate-applypoly-001", "matrixdilate-applypoly-002"]
 
 [[form]]
-command = "ApplyMatrix"
-form = "list,list"
-cases = ["matrixdilate-applylist-001", "matrixdilate-applylist-002", "matrixdilate-applylist-003"]
-
-[[form]]
 command = "Dilate"
 form = "function,number"
 cases = ["matrixdilate-dilatefunction-001"]
@@ -1730,11 +1232,6 @@ cases = ["matrixdilate-dilatefunction-001"]
 command = "Dilate"
 form = "function,number,point"
 cases = ["matrixdilate-dilatefunction-001", "matrixdilate-dilatefunction-002", "matrixdilate-dilatefunction-003"]
-
-[[form]]
-command = "Dilate"
-form = "list,number"
-cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-002", "matrixdilate-dilatelist-003"]
 
 [[form]]
 command = "Dilate"
@@ -1857,16 +1354,6 @@ form = "boolean,any,list"
 cases = ["algebralogic-logic-004", "algebralogic-logic-016"]
 
 [[form]]
-command = "Defined"
-form = "any"
-cases = ["algebralogic-logic-013", "algebralogic-logic-014"]
-
-[[form]]
-command = "If"
-form = "function,any,..."
-cases = ["algebralogic-logic-015"]
-
-[[form]]
 command = "ToBase"
 form = "number,number"
 cases = ["algebralogic-base-001", "algebralogic-base-003", "algebraedge-base-001"]
@@ -1902,16 +1389,6 @@ form = "any,any"
 cases = ["algebralogic-products-001", "algebralogic-products-002", "algebralogic-products-003", "algebralogic-products-004", "algebralogic-products-007"]
 
 [[form]]
-command = "Cross"
-form = "list,list"
-cases = ["algebralogic-products-005", "algebralogic-products-006", "algebralogic-products-007"]
-
-[[form]]
-command = "IsInRegion"
-form = "point,region"
-cases = ["algebralogic-logic-013", "algebralogic-logic-019", "algebralogic-logic-020", "algebralogic-logic-021", "algebralogic-logic-023", "algebralogic-logic-024"]
-
-[[form]]
 command = "Relation"
 form = "any,any"
 cases = ["algebralogic-relation-001", "algebralogic-relation-002", "algebralogic-relation-004", "algebralogic-relation-005", "algebralogic-relation-006", "relationreview-paths-001", "relationreview-paths-002", "relationreview-segments-001", "relationreview-vectors-001", "relationreview-polygons-001", "relationreview-arcs-001", "relationreview-conics-001", "relationreview-conics-002", "relationreview-asymptotes-001"]
@@ -1930,11 +1407,6 @@ cases = ["relationreview-asymptotes-001"]
 command = "Coefficients"
 form = "function"
 cases = ["calculus-coefficients-001", "calculus-coefficients-011", "cas-coefficients-001", "cas-coefficients-006"]
-
-[[form]]
-command = "Degree"
-form = "function"
-cases = ["calculus-degree-001", "calculus-degree-009", "cas-coefficients-001", "cas-coefficients-006"]
 
 [[form]]
 command = "Denominator"
@@ -2084,16 +1556,6 @@ form = "function,function,number,number,boolean"
 cases = ["calculus-between-002"]
 
 [[form]]
-command = "LeftSum"
-form = "function,number,number,number"
-cases = ["calculus-sums-001"]
-
-[[form]]
-command = "LowerSum"
-form = "function,number,number,number"
-cases = ["calculus-sums-001"]
-
-[[form]]
 command = "NDerivative"
 form = "function"
 cases = ["calculus-derivative-001"]
@@ -2169,11 +1631,6 @@ form = "function,number,number,number"
 cases = ["calculus-sums-001"]
 
 [[form]]
-command = "UpperSum"
-form = "function,number,number,number"
-cases = ["calculus-sums-001"]
-
-[[form]]
 command = "Text"
 form = "any"
 cases = ["textformat-signatures-001", "tpairfixes-numbertext-001", "tpairfixes-numbertext-002"]
@@ -2182,12 +1639,6 @@ difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Tex
 [[form]]
 command = "Text"
 form = "any,boolean"
-cases = ["textformat-signatures-001"]
-difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
-
-[[form]]
-command = "Text"
-form = "any,point"
 cases = ["textformat-signatures-001"]
 difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
 
@@ -2394,13 +1845,6 @@ form = "number,number,boolean"
 cases = ["textnumbers-continuedlong-001"]
 
 [[form]]
-command = "CurveCartesian"
-form = "number,number,number,number,number"
-cases = ["importgaps-curve-001"]
-
-# financial
-
-[[form]]
 command = "FutureValue"
 form = "number,number,number"
 cases = ["financial-future-001", "financial-future-002", "financial-future-005"]
@@ -2474,13 +1918,6 @@ form = "number,number"
 cases = ["financial-npr-001", "financial-npr-002", "financial-npr-003"]
 
 # optimization
-
-[[form]]
-command = "Maximize"
-form = "number,number"
-cases = ["misc-optimize-001", "misc-optimize-004", "misc-optimize-006", "misc-optimize-011", "misc-optimize-012", "misc-optimize-014"]
-
-# statistics
 
 [[form]]
 command = "Sum"
@@ -2795,11 +2232,6 @@ cases = ["misc-hull-006", "discrete-upstream-001", "discrete-hull-006", "discret
 
 [[form]]
 command = "IntersectRegion"
-form = "polygon,polygon"
-cases = ["misc-alias-001"]
-
-[[form]]
-command = "IntersectRegion"
 form = "line,polygon"
 cases = ["misc-alias-004"]
 
@@ -2951,33 +2383,13 @@ cases = ["misc-hull-001", "misc-hull-002", "misc-hull-003", "misc-hull-004", "mi
 
 [[form]]
 command = "DelauneyTriangulation"
-form = "list"
-cases = ["discrete-upstream-002", "discrete-delaunay-009"]
-
-[[form]]
-command = "DelauneyTriangulation"
 form = "point,point,..."
 cases = ["discrete-delaunay-001"]
 
 [[form]]
 command = "MinimumSpanningTree"
-form = "list"
-cases = ["discrete-upstream-003", "discrete-tree-006", "discrete-tree-008"]
-
-[[form]]
-command = "MinimumSpanningTree"
 form = "number,number,..."
 difference = "discrete-geometry: `MinimumSpanningTree(number, number, ...)`"
-
-[[form]]
-command = "MinimumSpanningTree"
-form = "point,point,..."
-cases = ["discrete-tree-004"]
-
-[[form]]
-command = "ShortestDistance"
-form = "list,point,point,boolean"
-cases = ["discrete-path-001", "discrete-path-002", "discrete-path-003"]
 
 [[form]]
 command = "TravelingSalesman"
@@ -3081,16 +2493,6 @@ cases = ["funcrest-emptyfunction-001", "funcrest-emptyfunction-002"]
 
 [[form]]
 command = "Function"
-form = "list"
-cases = ["funcrest-freehand-002", "funcrest-freehand-005", "funcrest-freehand-008"]
-
-[[form]]
-command = "Function"
-form = "function,number,number"
-cases = ["funcanalysis-forms-009"]
-
-[[form]]
-command = "Function"
 form = "function,any,number,number"
 cases = ["funcanalysis-forms-010"]
 difference = "numerical-function-analysis: `Function(function, any, number, number)`"
@@ -3109,11 +2511,6 @@ cases = ["funcanalysis-curveedge-012"]
 command = "ParametricDerivative"
 form = "curve"
 cases = ["funcanalysis-curveedge-005", "funcanalysis-curveupstream-003"]
-
-[[form]]
-command = "Spline"
-form = "list,number"
-cases = ["funcanalysis-splineupstream-002", "funcanalysis-splineupstream-004", "funcanalysis-curveedge-009"]
 
 [[form]]
 command = "Spline"
@@ -3161,6 +2558,11 @@ form = "function,function,function,number,number,number,number,number"
 cases = ["funcanalysis-forms-022"]
 
 [[form]]
+command = "SVD"
+form = "list"
+cases = ["funcrest-svd-001", "funcrest-svd-004", "funcrest-svd-006", "funcrest-svd-010"]
+
+[[form]]
 command = "NSolveODE"
 form = "list,number,list,number"
 cases = ["funcanalysis-nsode-001", "funcanalysis-nsode-002", "funcanalysis-nsode-003"]
@@ -3177,21 +2579,6 @@ cases = ["funcanalysis-forms-012"]
 
 [[form]]
 command = "Curvature"
-form = "point,conic"
-cases = ["funcanalysis-forms-013"]
-
-[[form]]
-command = "CurvatureVector"
-form = "point,function"
-cases = ["funcanalysis-forms-011"]
-
-[[form]]
-command = "CurvatureVector"
-form = "point,curve"
-cases = ["funcanalysis-forms-012"]
-
-[[form]]
-command = "CurvatureVector"
 form = "point,conic"
 cases = ["funcanalysis-forms-013"]
 
@@ -3276,16 +2663,6 @@ form = "function"
 cases = ["cas-ifactor-003", "cas-ifactor-004"]
 
 [[form]]
-command = "Simplify"
-form = "function"
-cases = ["cas-simplify-003", "cas-simplify-004"]
-
-[[form]]
-command = "Simplify"
-form = "number"
-cases = ["cas-simplify-005"]
-
-[[form]]
 command = "CompleteSquare"
 form = "function"
 cases = ["cas-square-004"]
@@ -3331,54 +2708,9 @@ form = "number"
 cases = ["cas-factors-002"]
 
 [[form]]
-command = "Asymptote"
-form = "function"
-cases = ["cas-delegated-001", "cas-delegated-004"]
-
-[[form]]
-command = "RemovableDiscontinuity"
-form = "function"
-cases = ["cas-delegated-002"]
-
-[[form]]
-command = "Solve"
-form = "function"
-cases = ["cas-solve-017"]
-
-[[form]]
-command = "Solutions"
-form = "function"
-cases = ["cas-solve-021"]
-
-[[form]]
-command = "NSolve"
-form = "function"
-cases = ["cas-solve-025"]
-
-[[form]]
-command = "NSolve"
-form = "line"
-cases = ["cas-solve-026"]
-
-[[form]]
-command = "NSolutions"
-form = "function"
-cases = ["cas-solve-029"]
-
-[[form]]
-command = "NSolutions"
-form = "line"
-cases = ["cas-solve-030"]
-
-[[form]]
 command = "Tangent"
 form = "point,curve"
 cases = ["georesttangent-curve-001", "georesttangent-curve-002", "georesttangent-curve-003", "georesttangent-curve-004", "georesttangent-curve-005", "georesttangent-curve-006", "georesttangent-curve-008"]
-
-[[form]]
-command = "Intersect"
-form = "line,curve"
-cases = ["georestintersect-trig-001", "georestintersect-tangent-001", "georestintersect-bounded-001", "georestintersect-growth-001", "georestintersect-affine-001", "georestintersect-affine-003", "georestintersect-affine-004"]
 
 [[form]]
 command = "Intersect"
@@ -3426,22 +2758,6 @@ cases = ["georestsmall-dilatecurve-001", "georestsmall-dilatecurve-002"]
 command = "Dilate"
 form = "curve,number,point"
 cases = ["georestsmall-dilatecurve-001", "georestsmall-dilatecurve-002", "georestsmall-dilatecurve-003"]
-
-[[form]]
-command = "ApplyMatrix"
-form = "list,curve"
-cases = ["georestsmall-matrixcurve-001", "georestsmall-matrixcurve-002", "georestsmall-matrixcurve-003"]
-
-[[form]]
-command = "ApplyMatrix"
-form = "list,function"
-cases = ["georestsmall-matrixfunction-001", "georestsmall-matrixfunction-003", "georestsmall-matrixfunction-004"]
-difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyMatrix(list, function)`"
-
-[[form]]
-command = "SurdText"
-form = "point"
-cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
 
 [[form]]
 command = "Expand"
@@ -3521,18 +2837,8 @@ difference = "polynomial-cas: `Simplify(list)`"
 
 [[form]]
 command = "IntersectPath"
-form = "polyline,conic"
-cases = ["georestclip-polyline-003", "georestclip-conicpart-002", "georestclip-conicpart-005", "georestclip-conicpart-008", "georestclip-conicpart-011"]
-
-[[form]]
-command = "IntersectPath"
 form = "conic,polyline"
 cases = ["georestclip-polyline-004", "georestclip-conicpart-002", "georestclip-conicpart-005", "georestclip-conicpart-008", "georestclip-conicpart-011"]
-
-[[form]]
-command = "IntersectPath"
-form = "polygon,conic"
-cases = ["georestclip-polygon-002", "georestclip-conicpart-003", "georestclip-conicpart-006", "georestclip-conicpart-009", "georestclip-conicpart-012"]
 
 [[form]]
 command = "IntersectPath"
@@ -3706,18 +3012,8 @@ cases = ["implicit-line-001"]
 
 [[form]]
 command = "Intersect"
-form = "implicit,polyline"
-cases = ["implicit-polyline-001"]
-
-[[form]]
-command = "Intersect"
 form = "polyline,implicit"
 cases = ["implicit-polyline-002"]
-
-[[form]]
-command = "Intersect"
-form = "implicit,function"
-cases = ["implicit-graph-001", "implicit-graph-002"]
 
 [[form]]
 command = "Intersect"

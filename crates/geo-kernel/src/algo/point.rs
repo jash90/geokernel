@@ -188,6 +188,27 @@ fn view_corner(c: &Construction, view: Option<Count>, index: Count) -> Option<Va
     Some(Value::Point { x, y })
 }
 
+/// `GeoButton.calculateFromBounds` for a boolean: the corner of the
+/// checkbox drawable's `labelRectangle`, in world coordinates. The kernel
+/// never shows a boolean in the graphics view, and `DrawBoolean.update`
+/// returns before `updateLabel` for a hidden one, so the rectangle stays
+/// the empty one at the pixel origin that `Drawable` starts with. Every
+/// corner is then `(toRealWorldCoordX(0), toRealWorldCoordY(0))`, which is
+/// `(xmin, ymax)` of the view. A text needs its rendered bounds, which the
+/// kernel does not have.
+fn drawable_corner(c: &Construction, source: Id, index: Count) -> Option<Value> {
+    // Only a labeled object gets a drawable (`EuclidianView.drawableNeeded`).
+    if c.kind(source) != Kind::Boolean || c.label(source).starts_with('\0') {
+        return None;
+    }
+    // `AlgoTextCorner.compute` casts the index with `(int)`.
+    if !(1..=4).contains(&(index.value(c) as i32)) {
+        return None;
+    }
+    let [xmin, _, _, ymax, _, _] = c.view();
+    Some(Value::Point { x: xmin, y: ymax })
+}
+
 fn id_of(raw: u32) -> Id {
     Id(raw as usize)
 }
@@ -285,7 +306,10 @@ impl PointDef {
     }
 
     pub(crate) fn reads_view(self) -> bool {
-        matches!(self, Self::ViewCorner { .. } | Self::ImageVertex { .. })
+        matches!(
+            self,
+            Self::ViewCorner { .. } | Self::ImageVertex { .. } | Self::DrawableCorner { .. }
+        )
     }
 
     pub(crate) fn parse_drawable_corner(
@@ -697,7 +721,7 @@ impl Group for PointDef {
         match *self {
             PointDef::ViewCorner { view, index } => view_corner(c, view, index),
             PointDef::ImageVertex { image, index } => c.image_vertex(image, index.value(c) as i32),
-            PointDef::DrawableCorner { .. } => None,
+            PointDef::DrawableCorner { source, index } => drawable_corner(c, source, index),
             PointDef::InequalityVertex { source, slot } => {
                 let points = crate::expr::inequality::vertices(c, source);
                 let (x, y) = *points.get(usize::from(slot))?;
