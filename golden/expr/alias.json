@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -102,7 +102,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.33 },
@@ -250,7 +250,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -2.83 },
@@ -579,7 +579,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.27 },
-          "c": { "type": "number", "defined": true, "value": -0.2768638226551001 }
+          "c": { "type": "number", "defined": true, "value": -0.27686382265510007 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
@@ -657,7 +657,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -4.59 },
@@ -694,7 +694,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.52 },
@@ -731,7 +731,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -4.73 },
@@ -767,7 +767,7 @@
           "b": { "type": "number", "defined": true, "value": 3.0 },
           "c": { "type": "number", "defined": true, "value": 0.5880026035475675 },
           "d": { "type": "number", "defined": true, "value": 1.0 },
-          "g": { "type": "number", "defined": true, "value": 0.6309297535714575 }
+          "g": { "type": "number", "defined": true, "value": 0.6309297535714574 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.0 },
@@ -787,7 +787,7 @@
           "a": { "type": "number", "defined": true, "value": 0.0 },
           "b": { "type": "number", "defined": true, "value": 0.0 },
           "c": { "type": "number", "defined": true, "value": 0.0 },
-          "d": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
           "g": { "type": "number", "defined": false }
         },
         {
@@ -802,7 +802,7 @@
           "b": { "type": "number", "defined": true, "value": 3.0 },
           "c": { "type": "number", "defined": true, "value": 0.5880026035475675 },
           "d": { "type": "number", "defined": true, "value": 1.0 },
-          "g": { "type": "number", "defined": true, "value": 0.6309297535714575 }
+          "g": { "type": "number", "defined": true, "value": 0.6309297535714574 }
         }
       ]
     }

@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -131,12 +131,12 @@
         {
           "a": { "type": "number", "defined": true, "value": -1.5 },
           "b": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 4.0 },
           "b": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 4.0 },
@@ -523,12 +523,12 @@
         {
           "a": { "type": "number", "defined": true, "value": -1.5 },
           "b": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 4.0 },
           "b": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 4.0 },

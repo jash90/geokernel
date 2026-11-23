@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -1558,7 +1558,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": -2.0 },
               { "type": "number", "defined": true, "value": 3.0 }
             ]
@@ -1592,7 +1592,7 @@
             "type": "list",
             "defined": true,
             "elements": [
-              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 },
               { "type": "number", "defined": true, "value": -2.0 },
               { "type": "number", "defined": true, "value": 3.0 }
             ]

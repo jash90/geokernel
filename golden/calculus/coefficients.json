@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -517,11 +517,11 @@
               [-1.0, null],
               [-0.5, null],
               [0.0, 0.0],
-              [0.5, 0.17677669529663687],
+              [0.5, 0.1767766952966369],
               [1.0, 1.0],
-              [2.0, 5.65685424949238],
+              [2.0, 5.656854249492381],
               [4.0, 32.0],
-              [8.0, 181.01933598375615]
+              [8.0, 181.01933598375618]
             ]
           },
           "c": {
@@ -580,14 +580,14 @@
             "defined": true,
             "samples": [
               [-8.0, 3.38385702007491E253],
-              [-4.0, 1.3689147905858839E143],
+              [-4.0, 1.3689147905858837E143],
               [-2.0, 1.0],
               [-1.0, 0.0],
-              [-0.5, 4.9090934652977266E-91],
+              [-0.5, 4.909093465297727E-91],
               [0.0, 1.0],
-              [0.5, 6.720130653014568E52],
+              [0.5, 6.720130653014567E52],
               [1.0, 2.037035976334486E90],
-              [2.0, 1.3689147905858839E143],
+              [2.0, 1.3689147905858837E143],
               [4.0, 4.909093465297727E209],
               [8.0, 1.873927703884794E286]
             ]
@@ -605,8 +605,8 @@
               { "type": "number", "defined": true, "value": 9.628228467E11 },
               { "type": "number", "defined": true, "value": 4.04385595614E13 },
               { "type": "number", "defined": true, "value": 1.481062243936275E15 },
-              { "type": "number", "defined": true, "value": 4.8052241692154704E16 },
-              { "type": "number", "defined": true, "value": 1.39832023324170189E18 },
+              { "type": "number", "defined": true, "value": 4.80522416921547E16 },
+              { "type": "number", "defined": true, "value": 1.398320233241702E18 },
               { "type": "number", "defined": true, "value": 3.686480614909941E19 },
               { "type": "number", "defined": true, "value": 8.878274147574774E20 },
               { "type": "number", "defined": true, "value": 1.9668791957704115E22 },
@@ -886,7 +886,7 @@
               { "type": "number", "defined": true, "value": 1.9668791957704115E22 },
               { "type": "number", "defined": true, "value": 8.878274147574772E20 },
               { "type": "number", "defined": true, "value": 3.6864806149099405E19 },
-              { "type": "number", "defined": true, "value": 1.39832023324170189E18 },
+              { "type": "number", "defined": true, "value": 1.398320233241702E18 },
               { "type": "number", "defined": true, "value": 4.8052241692154696E16 },
               { "type": "number", "defined": true, "value": 1.481062243936275E15 },
               { "type": "number", "defined": true, "value": 4.04385595614E13 },

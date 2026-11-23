@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -272,7 +272,7 @@
       "snapshots": [
         {
           "m": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "infinity": 1 },
           "q": {
             "type": "list",
             "defined": true,

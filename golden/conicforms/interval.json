@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -27,42 +27,42 @@
           "b": { "type": "number", "defined": true, "value": 2.0 },
           "m": { "type": "number", "defined": true, "value": -1.0 },
           "n": { "type": "number", "defined": true, "value": -1.0 },
-          "q": { "type": "number", "defined": false }
+          "q": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -4.0 },
           "b": { "type": "number", "defined": true, "value": -4.0 },
           "m": { "type": "number", "defined": true, "value": -4.0 },
           "n": { "type": "number", "defined": true, "value": -4.0 },
-          "q": { "type": "number", "defined": false }
+          "q": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -4.0 },
           "b": { "type": "number", "defined": true, "value": -4.000000001 },
           "m": { "type": "number", "defined": false },
           "n": { "type": "number", "defined": false },
-          "q": { "type": "number", "defined": false }
+          "q": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -4.0 },
           "b": { "type": "number", "defined": true, "value": -6.0 },
           "m": { "type": "number", "defined": false },
           "n": { "type": "number", "defined": false },
-          "q": { "type": "number", "defined": false }
+          "q": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -8.0 },
           "b": { "type": "number", "defined": true, "value": -6.0 },
           "m": { "type": "number", "defined": true, "value": -7.0 },
           "n": { "type": "number", "defined": true, "value": -7.0 },
-          "q": { "type": "number", "defined": false }
+          "q": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -8.0 },
           "b": { "type": "number", "defined": true, "value": 4.0 },
           "m": { "type": "number", "defined": true, "value": -2.0 },
           "n": { "type": "number", "defined": true, "value": -2.0 },
-          "q": { "type": "number", "defined": false }
+          "q": { "type": "number", "defined": true, "infinity": -1 }
         }
       ]
     },

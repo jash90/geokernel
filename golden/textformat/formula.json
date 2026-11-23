@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -140,7 +140,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "b": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
           "c": { "type": "number", "defined": true, "value": 0.0 },
           "m": { "type": "text", "defined": true, "text": "0" },
           "n": { "type": "text", "defined": true, "text": "0" },

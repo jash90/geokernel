@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -190,9 +190,9 @@
         {
           "a": { "type": "number", "defined": true, "value": 3.0 },
           "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
-          "P": { "type": "point", "defined": true, "x": 3.0, "y": 1.0986122886681096 },
-          "w": { "type": "vector", "defined": true, "x": 3.0, "y": 1.0986122886681096 },
-          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 2.0986122886681096 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 1.0986122886681098 },
+          "w": { "type": "vector", "defined": true, "x": 3.0, "y": 1.0986122886681098 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 2.09861228866811 },
           "d": { "type": "number", "defined": true, "value": 2.193741052663268 }
         },
         {

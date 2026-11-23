@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -158,8 +158,8 @@
             ]
           },
           "P": { "type": "point", "defined": true, "x": 6.0, "y": 2.0 },
-          "X": { "type": "point", "defined": true, "x": 2.2077231917343028, "y": 2.0546216999681484 },
-          "Y": { "type": "point", "defined": true, "x": 2.2077231917343028, "y": 2.0546216999681484 },
+          "X": { "type": "point", "defined": true, "x": 2.2077231917343028, "y": 2.0546216999681555 },
+          "Y": { "type": "point", "defined": true, "x": 2.2077231917343028, "y": 2.0546216999681555 },
           "d": { "type": "number", "defined": true, "value": 3.792670157107954 },
           "q": { "type": "number", "defined": true, "value": 3.792670157107954 }
         },
@@ -269,8 +269,8 @@
             ]
           },
           "P": { "type": "point", "defined": true, "x": -4.0, "y": -3.0 },
-          "X": { "type": "point", "defined": true, "x": -1.6357924653542937, "y": -3.6614936730355043 },
-          "Y": { "type": "point", "defined": true, "x": -1.6357924653542937, "y": -3.6614936730355043 },
+          "X": { "type": "point", "defined": true, "x": -1.6357924653542941, "y": -3.6614936730355057 },
+          "Y": { "type": "point", "defined": true, "x": -1.6357924653542941, "y": -3.6614936730355057 },
           "d": { "type": "number", "defined": true, "value": 2.4550053251146995 },
           "q": { "type": "number", "defined": true, "value": 2.4550053251146995 }
         },
@@ -338,8 +338,8 @@
             ]
           },
           "P": { "type": "point", "defined": true, "x": 6.0, "y": 2.0 },
-          "X": { "type": "point", "defined": true, "x": 3.634241185664279, "y": 3.301927248894626 },
-          "Y": { "type": "point", "defined": true, "x": 3.634241185664279, "y": 3.301927248894626 },
+          "X": { "type": "point", "defined": true, "x": 3.6342411856642793, "y": 3.3019272488946267 },
+          "Y": { "type": "point", "defined": true, "x": 3.6342411856642793, "y": 3.3019272488946267 },
           "d": { "type": "number", "defined": true, "value": 2.7003387433841493 },
           "q": { "type": "number", "defined": true, "value": 2.7003387433841493 }
         },
@@ -1163,8 +1163,8 @@
             ]
           },
           "P": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 },
-          "X": { "type": "point", "defined": true, "x": -3.5385847084772624, "y": 3.1303954347672778 },
-          "Y": { "type": "point", "defined": true, "x": -3.5385847084772624, "y": 3.1303954347672778 },
+          "X": { "type": "point", "defined": true, "x": -3.538584708477263, "y": 3.1303954347672787 },
+          "Y": { "type": "point", "defined": true, "x": -3.538584708477263, "y": 3.1303954347672787 },
           "d": { "type": "number", "defined": true, "value": 1.767329908374114 },
           "q": { "type": "number", "defined": true, "value": 1.767329908374114 }
         },
@@ -1251,7 +1251,7 @@
             ]
           },
           "P": { "type": "point", "defined": true, "x": -2.0, "y": -2.0 },
-          "X": { "type": "point", "defined": true, "x": -1.783812979664605, "y": -0.9773976143904175 },
+          "X": { "type": "point", "defined": true, "x": -1.783812979664605, "y": -0.9773976143904174 },
           "d": { "type": "number", "defined": true, "value": 1.0452045095654274 }
         },
         {

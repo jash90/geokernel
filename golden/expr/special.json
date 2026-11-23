@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -1030,19 +1030,19 @@
       "snapshots": [
         {
           "a": { "type": "number", "defined": true, "value": -2.5 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.5 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 1.0E-300 },
@@ -1050,15 +1050,15 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.0E-300 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -3.5 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -2.5 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },
@@ -1086,11 +1086,11 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.5 },
@@ -1098,7 +1098,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 1.0E-300 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.0E-300 },
@@ -1134,19 +1134,19 @@
       "snapshots": [
         {
           "a": { "type": "number", "defined": true, "value": -2.5 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.5 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 1.0E-300 },
@@ -1154,15 +1154,15 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.0E-300 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -3.5 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -2.5 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         }
       ]
     },
@@ -1190,11 +1190,11 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.5 },
@@ -1202,7 +1202,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 1.0E-300 },
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.0E-300 },

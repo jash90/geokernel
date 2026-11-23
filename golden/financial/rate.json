@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -14,7 +14,7 @@
       ],
       "snapshots": [
         {
-          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+          "r": { "type": "number", "defined": true, "value": -0.0836454174661505 }
         }
       ]
     },
@@ -29,7 +29,7 @@
       ],
       "snapshots": [
         {
-          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+          "r": { "type": "number", "defined": true, "value": -0.0836454174661505 }
         }
       ]
     },
@@ -44,7 +44,7 @@
       ],
       "snapshots": [
         {
-          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+          "r": { "type": "number", "defined": true, "value": -0.0836454174661505 }
         }
       ]
     },
@@ -59,7 +59,7 @@
       ],
       "snapshots": [
         {
-          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+          "r": { "type": "number", "defined": true, "value": -0.0836454174661505 }
         }
       ]
     },
@@ -79,7 +79,7 @@
       "snapshots": [
         {
           "n": { "type": "number", "defined": true, "value": 4.0 },
-          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+          "r": { "type": "number", "defined": true, "value": -0.0836454174661505 }
         },
         {
           "n": { "type": "number", "defined": true, "value": 12.0 },
@@ -91,7 +91,7 @@
         },
         {
           "n": { "type": "number", "defined": true, "value": 4.0 },
-          "r": { "type": "number", "defined": true, "value": -0.08364541746615056 }
+          "r": { "type": "number", "defined": true, "value": -0.0836454174661505 }
         }
       ]
     },
@@ -166,7 +166,7 @@
       ],
       "snapshots": [
         {
-          "r": { "type": "number", "defined": true, "value": 0.01364703067769356 }
+          "r": { "type": "number", "defined": true, "value": 0.01364703067769399 }
         }
       ]
     },
@@ -234,7 +234,7 @@
       "snapshots": [
         {
           "a": { "type": "number", "defined": true, "value": 9.999999974752426E-9 },
-          "b": { "type": "number", "defined": true, "value": 0.016231328174462472 }
+          "b": { "type": "number", "defined": true, "value": 0.016231328174461452 }
         }
       ]
     }

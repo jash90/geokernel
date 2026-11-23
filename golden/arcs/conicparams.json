@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -170,7 +170,7 @@
             "start": 2.363,
             "end": 4.083,
             "arc_length": 5.870360000000001,
-            "area": 4.258194003650192,
+            "area": 4.258194003650191,
             "midpoint": [0.6, 5.89],
             "half_axes": [3.413, 3.413],
             "eigenvectors": [
@@ -179,7 +179,7 @@
             ]
           },
           "len": { "type": "number", "defined": true, "value": 5.870360000000001 },
-          "ar": { "type": "number", "defined": true, "value": 4.258194003650192 },
+          "ar": { "type": "number", "defined": true, "value": 4.258194003650191 },
           "per": { "type": "number", "defined": true, "value": 11.043393334323163 }
         },
         {
@@ -954,7 +954,7 @@
             "orientation": "positive",
             "start": 4.0,
             "end": 5.283185307179586,
-            "arc_length": 4.408818502195115,
+            "arc_length": 4.408818502195116,
             "area": 4.626590420958005,
             "midpoint": [0.0, 0.0],
             "half_axes": [3.6055512754639882, 1.9999999999999993],
@@ -963,7 +963,7 @@
               [-0.0, 1.0]
             ]
           },
-          "len": { "type": "number", "defined": true, "value": 4.408818502195115 },
+          "len": { "type": "number", "defined": true, "value": 4.408818502195116 },
           "ar": { "type": "number", "defined": true, "value": 4.626590420958005 }
         },
         {
@@ -1163,12 +1163,12 @@
           "a": {
             "type": "arc",
             "defined": true,
-            "value": 4.408818502195115,
+            "value": 4.408818502195116,
             "conic_type": "ellipse",
             "orientation": "positive",
             "start": 4.0,
             "end": 5.283185307179586,
-            "arc_length": 4.408818502195115,
+            "arc_length": 4.408818502195116,
             "area": 4.626590420958005,
             "midpoint": [0.0, 0.0],
             "half_axes": [3.6055512754639882, 1.9999999999999993],
@@ -1177,7 +1177,7 @@
               [-0.0, 1.0]
             ]
           },
-          "len": { "type": "number", "defined": true, "value": 4.408818502195115 },
+          "len": { "type": "number", "defined": true, "value": 4.408818502195116 },
           "ar": { "type": "number", "defined": true, "value": 4.626590420958005 }
         },
         {
