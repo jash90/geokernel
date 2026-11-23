@@ -791,6 +791,16 @@ fn defined_function_with_small_work_limit() {
 }
 
 #[test]
+fn a_zero_degree_term_keeps_a_function_defined() {
+    // GeoGebra prints `? + 0°` for this function, which is not `?`.
+    let mut c = crate::script::load("f(x) = ? + 0° + 0x").unwrap();
+    let result = crate::script::exec(&mut c, "b = Defined(f)")
+        .unwrap()
+        .unwrap();
+    assert_eq!(c.value(result), crate::Value::Bool(true));
+}
+
+#[test]
 fn conditional_arc_carrier_respects_the_work_limit() {
     let mut c =
         crate::script::load("O = (1, 2)\nA = (2, 2)\nB = (1, 3)\nr0 = CircleArc(O, A, B)").unwrap();

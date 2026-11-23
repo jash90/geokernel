@@ -68,6 +68,9 @@ impl Format {
                     _ => Printed::Other,
                 }
             }
+            // The degree suffix is printed before the factor rule, as in
+            // `binary()`: 0° prints as 0°, not as the dropped factor 0.
+            Node::Bin(Bin::Mul, _, b) if matches!(ctx.node(b), Node::Degree) => Printed::Other,
             Node::Bin(Bin::Mul, a, b) => match self.multiplier(ctx, a, b)? {
                 Some("1") => self.printed(ctx, b)?,
                 Some("0") => Printed::Zero,
