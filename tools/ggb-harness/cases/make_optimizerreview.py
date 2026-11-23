@@ -123,10 +123,4 @@ cases.case("animationoptions", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
     redefine("a = Slider(0, 8)"), setn("h", 0.4),
     {"action": "slider_animation", "label": "a"},
 ])
-# Increase the range in replay so script mutations start from small inputs.
-cases.case("budget", [
-    "a = Slider(0, 6)", "h = 1", "k = 1",
-    *(f"d_{{{i}}} = Sum(Sequence(sqrt(j + a), j, 1, h))" for i in range(1, 21)),
-    "m = Minimize((a - 3)^2, a)", "n = Minimize(k * (a - 2)^2, a)",
-], [setn("h", 100000), setn("k", 2)])
 cases.write()

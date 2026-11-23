@@ -751,6 +751,11 @@ cases = ["transform-stretch-001", "transform-stretch-002", "transform-stretch-00
 
 [[form]]
 command = "Sum"
+form = "list"
+cases = ["lists-objects-029", "lists-objects-031", "lists-stats-015"]
+
+[[form]]
+command = "Sum"
 form = "list,number"
 cases = ["lists-objects-030", "lists-stats-018", "lists-sum-005"]
 
@@ -1938,6 +1943,26 @@ cases = ["misc-maximizepoint-001"]
 command = "Sum"
 form = "list,list"
 cases = ["misc-sum-001", "misc-sum-002", "misc-sum-003"]
+
+[[form]]
+command = "Sum"
+form = "number,..."
+cases = ["misc-sum-004"]
+
+[[form]]
+command = "Sum"
+form = "point,..."
+cases = ["misc-sum-004"]
+
+[[form]]
+command = "Sum"
+form = "function,..."
+cases = ["misc-sum-006"]
+
+[[form]]
+command = "Sum"
+form = "text,..."
+cases = ["misc-sum-004"]
 
 [[form]]
 command = "BarChart"
@@ -3222,6 +3247,11 @@ cases = ["funcrest-vertexform-008"]
 command = "IsVertexForm"
 form = "sector"
 cases = ["funcrest-vertexform-008"]
+
+[[form]]
+command = "Sum"
+form = "vector,..."
+cases = ["misc-sum-010"]
 
 [[form]]
 command = "SetConstructionStep"

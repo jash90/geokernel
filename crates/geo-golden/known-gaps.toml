@@ -3130,12 +3130,6 @@ mismatches = ["0:r4"]
 # Slider and optimizer update order
 
 [[gap]]
-id = "optimizerreview-budget-002"
-reason = "intended difference, recorded in DIFFERENCES.md: the second optimizer exceeds the shared work budget while running the first optimizer and visiting 20 dependent readers on each trial. Rollback restores the mover and the readers without evaluating their sequences again."
-mismatches = ["2:n"]
-undefined = true
-
-[[gap]]
 id = "optimizerreview-locus-004"
 reason = "GeoGebra samples L as soon as the lower endpoint of s clamps it, while t's upper endpoint is still 4. The kernel resolves the slider values as each endpoint changes, then visits Q and L once in dependency order, after t's endpoint has reached 6. Both resample to the new endpoint when t moves."
 mismatches = ["1:L"]
@@ -3147,5 +3141,5 @@ mismatches = ["2:N"]
 
 [[gap]]
 id = "optimizerreview-redefine-008"
-reason = "The upper endpoint reads its own slider through d. GeoGebra installs the circular listener and clamps a when b lowers that endpoint, including after reload. The kernel has no cyclic listener edge and retains a = 3 and d = 6."
+reason = "The upper endpoint reads its own slider through d. GeoGebra clamps a when b lowers that endpoint, both before and after reload in the recorded construction. During reload, the XML endpoint pass rejects the circular upper endpoint and retains the lower one (ConsElementXMLHandler.java:2647). The kernel has no cyclic listener edge and retains a = 3 and d = 6."
 mismatches = ["2:a", "2:d", "3:a", "3:d", "4:a", "4:d"]

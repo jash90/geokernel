@@ -628,6 +628,40 @@ mod cascade_tests {
     }
 
     #[test]
+    fn cascade_exhaustion_restores_the_first_optimizer_and_all_twenty_readers() {
+        let mut c = script::load("a = Slider(0, 6)\nh = 1\nk = 1").unwrap();
+        let readers: Vec<_> = (1..=20)
+            .map(|i| {
+                script::exec(
+                    &mut c,
+                    &format!("d_{{{i}}} = Sum(Sequence(sqrt(j + a), j, 1, h))"),
+                )
+                .unwrap()
+                .unwrap()
+            })
+            .collect();
+        script::exec(&mut c, "m = Minimize((a - 3)^2, a)").unwrap();
+        script::exec(&mut c, "n = Minimize(k * (a - 2)^2, a)").unwrap();
+        let [a, h, k, m, n] = ["a", "h", "k", "m", "n"].map(|label| c.id(label).unwrap());
+        assert_eq!(c.value(n), Value::Number(2.0));
+
+        c.set_number(h, 100_000.0).unwrap();
+        let previous_readers: Vec<_> = readers.iter().map(|&id| c.value(id)).collect();
+        assert_eq!(c.value(m), Value::Number(3.0));
+        assert!(previous_readers
+            .iter()
+            .all(|value| matches!(value, Value::Number(sum) if *sum > 1.0)));
+
+        c.set_number(k, 2.0).unwrap();
+        assert_eq!(c.value(n), Value::Undefined);
+        assert_eq!(c.value(a), Value::Number(0.0));
+        assert_eq!(c.value(m), Value::Number(3.0));
+        for (id, previous) in readers.into_iter().zip(previous_readers) {
+            assert_eq!(c.value(id), previous, "{}", c.label(id));
+        }
+    }
+
+    #[test]
     fn two_optimizers_on_a_circle_with_a_kept_record() {
         let mut c = script::load(
             "r = 5\nC = (1, 2)\nc = Circle(C, r)\nP = Point(c)\nk = 1\n\
