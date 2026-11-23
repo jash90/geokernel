@@ -431,6 +431,27 @@ mod tests {
     }
 
     #[test]
+    fn the_implicit_polyline_command_creates_sixty_six_outputs() {
+        let c = script::load(
+            "c: y^3 + y = 0\nvertices = Sequence((j, (-1)^j), j, 0, 66)\npath = PolyLine(vertices)\nP = Intersect(c, path)",
+        ).unwrap();
+        for slot in 1..=66 {
+            let output = c.id(&format!("P_{{{slot}}}")).unwrap();
+            let (x, y) = c.point(output).unwrap();
+            assert!((x - (f64::from(slot) - 0.5)).abs() < 1e-9 && y.abs() < 1e-9);
+        }
+        assert!(c.id("P_{67}").is_none());
+    }
+
+    #[test]
+    fn translated_degree_seventy_two_elimination_finds_the_repeated_root() {
+        let c =
+            script::load("c: x^8 + x - (y - 1)^9 = 0\nd: x - (y - 1)^9 = 0\nP = Intersect(c, d)")
+                .unwrap();
+        assert_eq!(c.point(c.id("P_{1}").unwrap()), Some((0.0, 1.0)));
+    }
+
+    #[test]
     fn degree_seventy_two_elimination_keeps_the_reference_origin() {
         let c = script::load("c: x^8 - y = 0\nd: x - y^9 = 0\nP = Intersect(c, d)").unwrap();
         let p = c.id("P").or_else(|| c.id("P_{1}")).unwrap();

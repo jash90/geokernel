@@ -211,7 +211,14 @@ fn corpus() -> Vec<Case> {
                     wb.set_number(id, *value);
                 }
                 Step::Redefine { line } => wb.run_line(line).unwrap(),
-                Step::Reject { .. } | Step::Delete { .. } | Step::SetSliderBounds { .. } => {
+                Step::Reject { .. }
+                | Step::Delete { .. }
+                | Step::SetSliderBounds { .. }
+                | Step::Append { .. }
+                | Step::AnchorText { .. }
+                | Step::Undo
+                | Step::Redo
+                | Step::Reload => {
                     panic!("{name}: unexpected step")
                 }
                 Step::Animate { frames } => {

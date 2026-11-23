@@ -2,6 +2,10 @@
 
 //! Bounded univariate arithmetic for substitution and elimination.
 
+// The repeated-root retry is adapted from GeoGebra, commit
+// 112919f2d450ec7430a5cd3b65dba226fdc43b74, AlgoIntersectImplicitPolynomials.java.
+// Copyright (c) GeoGebra GmbH. Licensed under the EUPL 1.2.
+
 use crate::expr::IntersectionWork;
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
 
@@ -136,6 +140,8 @@ fn near_roots_with(
     if poly.is_empty() || !work.charge(poly.len() as u64) {
         return Vec::new();
     }
+    let degree = poly.iter().rposition(|&v| v != 0.0).unwrap_or(0);
+    let poly = &poly[..=degree];
     let mut found = solve(poly, work);
     let derivative: Vec<_> = poly
         .iter()
@@ -143,21 +149,39 @@ fn near_roots_with(
         .skip(1)
         .map(|(i, &v)| i as f64 * v)
         .collect();
+    let sample = |x| work.charge(poly.len() as u64).then(|| evaluate(poly, x));
     for p in solve(&derivative, work) {
-        if found.len() < poly.len() && evaluate(poly, p).abs() < tolerance {
+        let Some(residual) = sample(p) else {
+            return Vec::new();
+        };
+        if found.len() < poly.len() && residual.abs() < tolerance {
             found.push(p);
         }
     }
     if found.is_empty() {
+        if degree > 0 {
+            // GeoGebra retries at the root of the (degree - 1)st derivative.
+            let repeated = -poly[degree - 1] / degree as f64 / poly[degree];
+            if sample(repeated).is_some_and(|v| v.abs() < STANDARD_PRECISION) {
+                return vec![repeated];
+            }
+        }
         let mut x = 0.0;
-        let mut residual = evaluate(poly, x);
+        let Some(mut residual) = sample(x) else {
+            return Vec::new();
+        };
         for _ in 0..32 {
+            if !work.charge(degree as u64) {
+                return Vec::new();
+            }
             let slope = evaluate(&derivative, x);
             if residual.abs() <= STANDARD_PRECISION || slope.abs() < STANDARD_PRECISION {
                 break;
             }
             let next = x - residual / slope;
-            let value = evaluate(poly, next);
+            let Some(value) = sample(next) else {
+                return Vec::new();
+            };
             if !value.is_finite() || value.abs() >= residual.abs() {
                 break;
             }
@@ -246,7 +270,10 @@ pub(super) fn elimination_roots(poly: &[f64], work: &IntersectionWork) -> Vec<f6
     let mut found = near_roots(poly, 0.1, work);
     for root in &mut found {
         let integer = root.round();
-        if (integer - *root).abs() < MIN_PRECISION && evaluate(poly, integer) == 0.0 {
+        if (integer - *root).abs() < MIN_PRECISION
+            && work.charge(poly.len() as u64)
+            && evaluate(poly, integer) == 0.0
+        {
             *root = integer;
         }
     }
@@ -266,4 +293,18 @@ pub(super) fn pair_roots(poly: &[f64], work: &IntersectionWork) -> Vec<f64> {
         roots.dedup_by(|a, b| (*a - *b).abs() <= MIN_PRECISION);
         roots
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_newton_fallback_charges_each_step() {
+        let work = IntersectionWork::new();
+        assert!(work.charge(crate::expr::MAX_EVALUATION_WORK - 13));
+        let roots = near_roots_with(&[-2.0, 1.0, 1.0], 0.1, &work, |_, _| Vec::new());
+        assert!(roots.is_empty());
+        assert!(work.exhausted());
+    }
 }

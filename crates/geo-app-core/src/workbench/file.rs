@@ -283,7 +283,10 @@ impl Workbench {
                 return Err(format!("Nieznana wersja zapisu: {}", v.trim()));
             }
         }
-        let (c, log, rejected) = Log::load_tolerant(text, header.is_some());
+        let (mut c, mut log, rejected) = Log::load_tolerant(text, header.is_some());
+        if header.is_some() {
+            log.reset_inequality_helpers(&mut c);
+        }
         self.replace(c, log);
         self.notice = rejected_notice(&rejected);
         Ok(rejected)

@@ -72,7 +72,7 @@ use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use crate::script::{object, split_call};
 use crate::tol::STANDARD_PRECISION;
 use std::borrow::Cow;
-use std::collections::BTreeSet;
+use std::collections::HashSet;
 use std::f64::consts::PI;
 
 const POLYGON: &[Kind] = &[Kind::Polygon];
@@ -558,11 +558,7 @@ pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
             ids.extend(n.id());
             ids
         }
-        Def::Polygon(PolygonDef::Clip(d)) => {
-            let mut ids = d.parents().as_slice().to_vec();
-            ids.extend(d.hidden_parents(c));
-            ids
-        }
+        Def::Polygon(PolygonDef::Clip(d)) => d.parents().as_slice().to_vec(),
         // the image reads the vertices of the object it transforms, and so
         // the objects they come from
         Def::Transform(def) if matches!(def.kind(), Kind::Polygon | Kind::PolyLine) => {
@@ -592,7 +588,6 @@ pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
 /// the vertices move. A shear with a vector axis also reads its start point.
 pub(crate) fn hidden_parents(c: &Construction, def: &Def) -> Vec<Id> {
     let mut parents = match *def {
-        Def::Polygon(PolygonDef::Clip(d)) => d.hidden_parents(c),
         Def::Polygon(PolygonDef::ImageVertex { poly, .. }) => {
             let transform = c.def(poly);
             let mut ids = transform.parents().as_slice().to_vec();
@@ -1084,7 +1079,7 @@ const RESERVED: &[&str] = &[
 ];
 
 /// Labels already given to objects of the line being planned.
-type Taken = BTreeSet<String>;
+type Taken = HashSet<String>;
 
 /// `Construction.isFreeLabel`: not taken (by the construction or by an
 /// earlier object of the same line) and not reserved.
@@ -1163,25 +1158,46 @@ fn side_label(c: &Construction, taken: &Taken, vertex: &str) -> String {
     }
 }
 
-/// `Construction.buildIndexedLabel` (as `script::index_label`), also skipping
-/// labels given earlier in the same line.
-fn planned_index_label(c: &Construction, taken: &Taken, prefix: &str) -> String {
-    let free = |label: &str| c.id(label).is_none() && !taken.contains(label);
-    let in_construction = |label: &str| c.id(label).is_none();
-    let family = format!("I:{prefix}");
-    let mut n = c.label_hint(&family).max(1);
-    let mut first_open = None;
-    loop {
-        let long = format!("{prefix}_{{{n}}}");
-        let short = format!("{prefix}_{n}");
-        if in_construction(&long) && (n >= 10 || in_construction(&short)) {
-            first_open.get_or_insert(n);
-            if free(&long) && (n >= 10 || free(&short)) {
-                c.set_label_hint(&family, first_open.unwrap_or(n));
+/// Indexed labels of one plan, in the order of `Construction.buildIndexedLabel`.
+/// The local cursor includes positions already claimed by this plan. The
+/// construction's hint can only skip positions taken by committed objects.
+struct IndexedLabels<'a> {
+    prefix: &'a str,
+    family: String,
+    next: usize,
+    needs_hint: bool,
+}
+
+impl<'a> IndexedLabels<'a> {
+    fn new(c: &Construction, prefix: &'a str) -> Self {
+        let family = format!("I:{prefix}");
+        let next = c.label_hint(&family).max(1);
+        Self {
+            prefix,
+            family,
+            next,
+            needs_hint: true,
+        }
+    }
+
+    fn next(&mut self, c: &Construction, taken: &Taken) -> String {
+        loop {
+            let n = self.next;
+            self.next += 1;
+            let prefix = self.prefix;
+            let long = format!("{prefix}_{{{n}}}");
+            let short = (n < 10).then(|| format!("{prefix}_{n}"));
+            if c.id(&long).is_some() || short.as_ref().is_some_and(|s| c.id(s).is_some()) {
+                continue;
+            }
+            if self.needs_hint {
+                c.set_label_hint(&self.family, n);
+                self.needs_hint = false;
+            }
+            if !taken.contains(&long) && short.as_ref().is_none_or(|s| !taken.contains(s)) {
                 return long;
             }
         }
-        n += 1;
     }
 }
 
@@ -1442,7 +1458,7 @@ pub(super) fn add_transform(
                 if is_free(c, &plan.taken, &prime) {
                     prime
                 } else {
-                    planned_index_label(c, &plan.taken, &prime)
+                    IndexedLabels::new(c, &prime).next(c, &plan.taken)
                 }
             };
             let vertex = Def::Polygon(PolygonDef::ImageVertex { poly, source });
@@ -1612,6 +1628,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
         .next()
         .filter(|s| !s.is_empty())
         .unwrap_or("a");
+    let mut labels = IndexedLabels::new(c, prefix);
     if def.kind() == Kind::Segment {
         let count = def.segments(c).len();
         if count == 0 {
@@ -1619,7 +1636,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
             return plan.commit(c);
         }
         for i in 0..count {
-            let label = planned_index_label(c, &plan.taken, prefix);
+            let label = labels.next(c, &plan.taken);
             let index = if def.is_carrier() { count - 1 - i } else { i };
             plan.push(
                 label,
@@ -1632,7 +1649,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
         let rings = def.rings(c);
         let vertices: usize = rings.iter().map(Vec::len).sum();
         for i in 0..rings.len().max(1) {
-            let label = planned_index_label(c, &plan.taken, prefix);
+            let label = labels.next(c, &plan.taken);
             plan.push(
                 label,
                 Planned::Def(Def::Polygon(PolygonDef::Clip(
@@ -1964,12 +1981,13 @@ fn outputs_line(c: &mut Construction, name: &str, arg: &str, what: Outputs) -> R
         Some(p) if !p.is_empty() => p.to_string(),
         _ => "a".to_string(),
     };
+    let mut labels = IndexedLabels::new(c, &prefix);
     for k in 0..count as u32 {
         let def = match what {
             Outputs::Vertices => PolygonDef::VertexAt { poly, k },
             Outputs::Angles(internal) => PolygonDef::Angle { poly, k, internal },
         };
-        let label = planned_index_label(c, &plan.taken, &prefix);
+        let label = labels.next(c, &plan.taken);
         plan.push(label, Planned::Def(Def::Polygon(def)));
     }
     plan.commit(c)

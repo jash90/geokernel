@@ -41,33 +41,70 @@ pub(crate) struct VertexHelpers {
 
 #[derive(Default)]
 struct HelperRecords {
-    attached: BTreeMap<Id, (Id, Helpers)>,
-    /// Slot counts and checks can solve before any output is added.
-    /// Consume their helper choices only if the command is added.
-    previews: BTreeMap<Id, Helpers>,
+    attached: BTreeMap<Id, Helpers>,
+    /// A command can preview its outputs before the first one is added.
+    preview: Option<(Id, Preview)>,
+}
+
+struct Preview {
+    helpers: Helpers,
+    points: Arc<[(f64, f64)]>,
+    fails: bool,
+}
+
+impl HelperRecords {
+    fn preview(&mut self, c: &Construction, source: Id) -> &Preview {
+        if self.preview.as_ref().is_none_or(|(id, _)| *id != source) {
+            let mut helpers = Helpers::default();
+            let outcome = compute(c, source, &mut helpers);
+            let fails = outcome.as_ref().is_some_and(|outcome| outcome.fails);
+            self.preview = Some((
+                source,
+                Preview {
+                    helpers,
+                    points: points(outcome),
+                    fails,
+                },
+            ));
+        }
+        &self.preview.as_ref().expect("vertex preview").1
+    }
 }
 
 impl VertexHelpers {
-    pub(crate) fn attach(&mut self, source: Id, output: Id) {
+    pub(crate) fn attach(&mut self, source: Id, owner: Id) {
         let records = self.records.get_mut().expect("inequality helpers");
-        let helpers = records.previews.remove(&source).unwrap_or_default();
-        records.attached.entry(source).or_insert((output, helpers));
+        let helpers = match records.preview.take() {
+            Some((id, preview)) if source == id => preview.helpers,
+            _ => Helpers::default(),
+        };
+        records.attached.insert(owner, helpers);
+    }
+
+    pub(crate) fn is_empty(&mut self) -> bool {
+        self.records
+            .get_mut()
+            .expect("inequality helpers")
+            .attached
+            .is_empty()
+    }
+
+    pub(crate) fn forget(&mut self, owner: Id) {
+        self.records
+            .get_mut()
+            .expect("inequality helpers")
+            .attached
+            .remove(&owner);
     }
 
     pub(crate) fn truncate(&mut self, len: usize) {
         let records = self.records.get_mut().expect("inequality helpers");
-        records
-            .attached
-            .retain(|_, (output, _)| output.index() < len);
-        records.previews.clear();
+        records.attached.retain(|owner, _| owner.index() < len);
+        records.preview = None;
     }
 
     pub(crate) fn begin_update(&mut self) {
-        self.records
-            .get_mut()
-            .expect("inequality helpers")
-            .previews
-            .clear();
+        self.records.get_mut().expect("inequality helpers").preview = None;
         *self.changed.get_mut() = false;
     }
 
@@ -119,43 +156,45 @@ fn points(outcome: Option<Outcome>) -> Arc<[(f64, f64)]> {
         .into()
 }
 
-pub(crate) fn vertices(c: &Construction, source: Id) -> Arc<[(f64, f64)]> {
-    c.function_roots.inequality(source, || {
+pub(crate) fn vertices(c: &Construction, source: Id, owner: Id) -> Arc<[(f64, f64)]> {
+    if owner.index() >= c.len() {
+        return preview_vertices(c, source);
+    }
+    c.function_roots.inequality(owner, || {
         let mut records = c
             .inequality_helpers
             .records
             .lock()
             .expect("inequality helpers");
-        if let Some((_, helpers)) = records.attached.get_mut(&source) {
-            helpers.changed = false;
-            let result = points(compute(c, source, helpers));
-            if helpers.changed {
-                c.inequality_helpers.changed.store(true, Ordering::Relaxed);
-            }
-            return result;
+        let helpers = records.attached.entry(owner).or_default();
+        helpers.changed = false;
+        let result = points(compute(c, source, helpers));
+        if helpers.changed {
+            c.inequality_helpers.changed.store(true, Ordering::Relaxed);
         }
-        let mut helpers = Helpers::default();
-        let result = points(compute(c, source, &mut helpers));
-        records.previews.insert(source, helpers);
         result
     })
 }
 
-/// Whether `AlgoVertexIneq` fails on this inequality: a border that is
-/// neither polynomial nor a function of one coordinate stops building
-/// the inequality tree (`FunctionNVar.initIneqs`), and testing a vertex
-/// candidate then reads the missing part of the tree.
-pub(crate) fn fails(c: &Construction, source: Id) -> bool {
-    let mut helpers = c
-        .inequality_helpers
+pub(crate) fn preview_vertices(c: &Construction, source: Id) -> Arc<[(f64, f64)]> {
+    c.inequality_helpers
         .records
         .lock()
         .expect("inequality helpers")
-        .attached
-        .get(&source)
-        .map(|(_, helpers)| helpers.clone())
-        .unwrap_or_default();
-    compute(c, source, &mut helpers).is_some_and(|outcome| outcome.fails)
+        .preview(c, source)
+        .points
+        .clone()
+}
+
+/// A border that is neither polynomial nor a function of one coordinate
+/// stops building the inequality tree. Testing a candidate can then fail.
+pub(crate) fn fails(c: &Construction, source: Id) -> bool {
+    c.inequality_helpers
+        .records
+        .lock()
+        .expect("inequality helpers")
+        .preview(c, source)
+        .fails
 }
 
 struct Outcome {
@@ -1105,9 +1144,9 @@ mod tests {
     fn a_polynomial_helper_reads_the_new_exponent_on_a_vertical_border() {
         let mut c = script::load("n = 2\nq(x,y) = y > x^n && x > 4 && y > 0").unwrap();
         let source = c.id("q").unwrap();
-        let points = super::vertices(&c, source);
+        let points = super::preview_vertices(&c, source);
         let after_first = crate::expr::work_done();
-        assert_eq!(super::vertices(&c, source), points);
+        assert_eq!(super::preview_vertices(&c, source), points);
         assert_eq!(crate::expr::work_done(), after_first);
 
         let p = script::exec(&mut c, "P = Vertex(q)").unwrap().unwrap();
@@ -1131,12 +1170,12 @@ mod tests {
     }
 
     #[test]
-    fn redefining_the_inequality_keeps_its_polynomial_helper() {
+    fn redefining_the_inequality_rebuilds_its_polynomial_helper() {
         let mut c =
             script::load("n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)").unwrap();
         let p = c.id("P_{1}").unwrap();
         script::exec(&mut c, "q(x,y) = y > sqrt(x) && x > 4 && y > 0").unwrap();
-        assert_eq!(c.value(p), Value::Point { x: 4.0, y: 2.0 });
+        assert_eq!(c.value(p), Value::Undefined);
     }
 
     #[test]

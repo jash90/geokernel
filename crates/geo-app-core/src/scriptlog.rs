@@ -34,6 +34,8 @@
 //! update of their command and closes the operations it replayed with a
 //! `$keptLabels()` line: every later replay of the journal frees no label
 //! before it, so it reproduces the labels the deletion kept.
+//! Undo, redo and native file reloads add a `$resetInequalityHelpers()`
+//! entry so later journal rebuilds start the vertex helpers at that point.
 
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::control::{decode_text, encode_text, visibility_boolean};
@@ -64,6 +66,7 @@ const SHOW_OBJECT: &str = "$showObject";
 /// Marks the end of the part of the journal that a deletion replayed
 /// without freeing the labels of command outputs (see `Op::KeptLabels`).
 const KEPT_LABELS: &str = "$keptLabels";
+const RESET_INEQUALITY_HELPERS: &str = "$resetInequalityHelpers";
 
 fn snapshot_labels(comment: &str) -> Option<&str> {
     if saved::inline_argument_positions(comment).is_some() {
@@ -149,6 +152,7 @@ enum Op {
     /// command, as in the reference. A replay frees a label there only for
     /// a line that takes it.
     KeptLabels,
+    ResetInequalityHelpers,
     TextProperties(Box<str>),
     SavedProperty(Box<Property>),
     EquationStyle {
@@ -200,6 +204,7 @@ enum Directive<'a> {
     SavedProperty(Property),
     EquationStyle(EquationStyle<'a>),
     KeptLabels,
+    ResetInequalityHelpers,
 }
 
 /// The directive on a normalised line, if it is one (a definition always has
@@ -219,8 +224,10 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     }
     let (name, rest) = line.split_once('(')?;
     let name = name.trim();
-    if !matches!(name, MOVE_POINTS | ANGLE_STYLE | SHOW_OBJECT | KEPT_LABELS)
-        && !DIRECTIVES.contains(&name)
+    if !matches!(
+        name,
+        MOVE_POINTS | ANGLE_STYLE | SHOW_OBJECT | KEPT_LABELS | RESET_INEQUALITY_HELPERS
+    ) && !DIRECTIVES.contains(&name)
     {
         return None;
     }
@@ -248,6 +255,7 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
             )),
             (SHOW_OBJECT, [target, boolean]) => Some(Directive::Condition(target, boolean)),
             (KEPT_LABELS, [""]) => Some(Directive::KeptLabels),
+            (RESET_INEQUALITY_HELPERS, [""]) => Some(Directive::ResetInequalityHelpers),
             (ANGLE_STYLE, [l, style]) => Some(Directive::Set(
                 l,
                 Setting::AngleStyle(geo_kernel::kernel::angle::AngleStyle::from_xml(
@@ -640,6 +648,15 @@ impl Log {
         }
     }
 
+    /// A save or an undo checkpoint starts each vertex algorithm fresh.
+    pub(crate) fn reset_inequality_helpers(&mut self, c: &mut Construction) {
+        if c.reset_inequality_vertex_helpers()
+            && !matches!(self.ops.last(), Some(Op::ResetInequalityHelpers))
+        {
+            self.ops.push(Op::ResetInequalityHelpers);
+        }
+    }
+
     pub(crate) fn record_move_points(&mut self, c: &Construction, points: &[Position<Id>]) {
         if !points.is_empty() {
             let points = points
@@ -864,7 +881,11 @@ impl Log {
             Op::SavedProperty(property) => {
                 !property.label().is_some_and(|label| labels.contains(label))
             }
-            Op::Freeze { .. } | Op::MovePoints(_) | Op::TextProperties(_) | Op::KeptLabels => true,
+            Op::Freeze { .. }
+            | Op::MovePoints(_)
+            | Op::TextProperties(_)
+            | Op::KeptLabels
+            | Op::ResetInequalityHelpers => true,
         });
         self.removed.extend(labels);
         true
@@ -1051,6 +1072,13 @@ impl Log {
                     Some(n) => *n = i + 1,
                     None => kept.ops.push(Op::KeptLabels),
                 },
+                Op::ResetInequalityHelpers => {
+                    c.reset_inequality_vertex_helpers();
+                    match &mut same {
+                        Some(n) => *n = i + 1,
+                        None => kept.ops.push(Op::ResetInequalityHelpers),
+                    }
+                }
                 Op::Define(e) => {
                     if deferring {
                         for label in &e.labels {
@@ -1287,6 +1315,7 @@ impl Log {
             groups.set_deferred(deferring);
             match op {
                 Op::KeptLabels => kept.ops.push(Op::KeptLabels),
+                Op::ResetInequalityHelpers => kept.reset_inequality_helpers(&mut c),
                 Op::Define(e) => {
                     if deferring {
                         for label in &e.labels {
@@ -1521,6 +1550,7 @@ impl Log {
                     writeln!(out, ")")
                 }
                 Op::KeptLabels => writeln!(out, "{KEPT_LABELS}()"),
+                Op::ResetInequalityHelpers => writeln!(out, "{RESET_INEQUALITY_HELPERS}()"),
                 Op::TextProperties(line) => writeln!(out, "{line}"),
                 Op::SavedProperty(property) => writeln!(out, "{property}"),
                 Op::EquationStyle { label, form } => {
@@ -1590,6 +1620,10 @@ impl Log {
             Directive::TextProperties(props) => {
                 props.apply(c)?;
                 self.ops.push(Op::TextProperties(props.to_string().into()));
+                return Ok(Vec::new());
+            }
+            Directive::ResetInequalityHelpers => {
+                self.reset_inequality_helpers(c);
                 return Ok(Vec::new());
             }
             Directive::KeptLabels => {

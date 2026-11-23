@@ -1941,30 +1941,38 @@ fn deleting_an_object_replays_labels_another_command_took() {
 }
 
 #[test]
-fn inequality_vertex_keeps_its_polynomial_helper_after_snapshot_restore() {
-    let mut w =
-        Workbench::from_script("n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)").unwrap();
+fn undo_redo_and_snapshot_reload_rebuild_inequality_vertex_helpers() {
+    let mut w = Workbench::from_script(
+        "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\nZ = (0, 0)",
+    )
+    .unwrap();
     let n = w.construction().id("n").unwrap();
     assert!(w.set_number(n, 0.5));
-    let assert_vertex = |w: &Workbench| {
+    let vertex = |w: &Workbench| {
         let c = w.construction();
-        assert_eq!(
-            c.value(c.id("P_{1}").unwrap()),
-            Value::Point { x: 4.0, y: 2.0 }
-        );
+        c.value(c.id("P_{1}").unwrap())
     };
-    assert_vertex(&w);
+    assert_eq!(vertex(&w), Value::Point { x: 4.0, y: 2.0 });
 
     let mut restored = Workbench::default();
     assert!(restored
         .restore_text(&w.snapshot_text())
         .unwrap()
         .is_empty());
-    assert_vertex(&restored);
+    assert_eq!(vertex(&restored), Value::Undefined);
+    assert!(restored.delete(restored.construction().id("Z").unwrap()));
+    assert_eq!(vertex(&restored), Value::Undefined);
+
+    assert!(w.undo());
+    assert_eq!(vertex(&w), Value::Point { x: 4.0, y: 16.0 });
+    assert!(w.redo());
+    assert_eq!(vertex(&w), Value::Undefined);
+    assert!(w.delete(w.construction().id("Z").unwrap()));
+    assert_eq!(vertex(&w), Value::Undefined);
 }
 
 #[test]
-fn snapshot_keeps_the_edit_that_first_selects_a_newton_vertex_helper() {
+fn a_construction_step_round_trip_keeps_the_selected_newton_vertex_helper() {
     let mut w =
         Workbench::from_script("n = 0\nq(x,y) = n*y > x^n && x > 4 && y > 0\nP = Vertex(q)")
             .unwrap();
@@ -1977,10 +1985,9 @@ fn snapshot_keeps_the_edit_that_first_selects_a_newton_vertex_helper() {
     };
     assert_undefined(&w);
 
-    let mut restored = Workbench::default();
-    assert!(restored
-        .restore_text(&w.snapshot_text())
-        .unwrap()
-        .is_empty());
-    assert_undefined(&restored);
+    let current = w.construction().step();
+    w.run_line("SetConstructionStep(1)").unwrap();
+    w.run_line(&format!("SetConstructionStep({})", current + 1))
+        .unwrap();
+    assert_undefined(&w);
 }

@@ -1,6 +1,8 @@
 // The pixel alignment rules below are adapted from GeoGebra, commit
 // 112919f2d450ec7430a5cd3b65dba226fdc43b74, source/shared/common/src/main/java/
-// org/geogebra/common/euclidian/draw/AlignDrawText.java and DrawText.java.
+// org/geogebra/common/euclidian/draw/AlignDrawText.java and DrawText.java,
+// org/geogebra/common/euclidian/EuclidianStatic.java, and
+// org/geogebra/common/util/StringUtil.java.
 // Copyright (c) GeoGebra GmbH. Licensed under the EUPL 1.2.
 
 //! The presentation of a text, alongside its separately stored string.
@@ -27,6 +29,13 @@ pub enum TextPosition<Point = Id> {
 }
 
 impl<P> TextPosition<P> {
+    fn point(self) -> Option<P> {
+        match self {
+            Self::Point(point) | Self::ScreenPoint(point) => Some(point),
+            _ => None,
+        }
+    }
+
     pub(crate) fn try_map_point<Q, E>(
         self,
         map: impl FnOnce(P) -> Result<Q, E>,
@@ -208,6 +217,13 @@ fn headless_box(text: &str, size: f64, latex: bool) -> (f64, f64) {
         return (width, (1.5 * size * f64::from(count.max(1))).trunc());
     }
 
+    // EuclidianStatic.blockSplit splits the reversed string, dropping
+    // empty fields at its end, then inserts one empty leading text block.
+    let text = if text.starts_with('$') {
+        &text[text.len() - text.trim_start_matches('$').len() - 1..]
+    } else {
+        text
+    };
     let mut previous = None;
     let mut blocks = text.split(|ch| {
         let delimiter = ch == '$' && previous != Some('\\');
@@ -244,8 +260,12 @@ fn indexed_advance(text: &str, size: f64) -> f64 {
         match unit {
             95 => match text.next() {
                 Some(123) => depth += 1,
+                // Even a single index character goes through
+                // StringUtil.estimateLength, where '_' has negative advance
+                // and '}' has none.
+                Some(95) => width += (0.7_f64 - 1.0) * 0.5 * index_size,
+                Some(125) | None => {}
                 Some(_) => width += index_size * 0.5,
-                None => {}
             },
             125 => depth = depth.saturating_sub(1),
             _ => width += if depth == 0 { size } else { index_size } * 0.5,
@@ -324,6 +344,10 @@ impl Construction {
         (point.0.is_finite() && point.1.is_finite()).then_some(point)
     }
 
+    pub(super) fn saved_text_anchor(&self, id: Id) -> Option<Id> {
+        self.text_presentations.get(&id)?.position?.point()
+    }
+
     pub(crate) fn text_latex_override(&self, id: Id) -> Option<bool> {
         self.text_presentations.get(&id)?.latex
     }
@@ -348,6 +372,28 @@ impl Construction {
                 .is_none_or(|def| def.kind() != Kind::Point)
             {
                 return Err("a text anchor must be a point".into());
+            }
+        }
+        if let Some(position) = props.position {
+            let old_anchor = self.saved_text_anchor(id);
+            let new_anchor = position.point();
+            if new_anchor != old_anchor {
+                let mut parents = self.read_ids_with_hint(&self.def(id), Some(self.hints[id.0]));
+                let remove = old_anchor.filter(|old| !parents.contains(old));
+                let add = new_anchor.filter(|new| !parents.contains(new));
+                if let Some(anchor) = add {
+                    parents.push(anchor);
+                    if self.evaluation_rank(anchor) >= self.evaluation_rank(id) {
+                        let changed = std::collections::BTreeMap::from([(id, parents)]);
+                        let loci = self.locus_order_inputs()?;
+                        self.evaluation_order =
+                            self.replacement_order(&changed, &loci, self.len())?;
+                    }
+                    self.children[anchor.0].insert(id);
+                }
+                if let Some(anchor) = remove {
+                    self.children[anchor.0].remove(id);
+                }
             }
         }
         let current = self.text_presentations.entry(id).or_default();

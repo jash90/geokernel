@@ -297,4 +297,36 @@ cases.case("helperstate", [
 ], [setn("n", 0.5), setn("n", 2)])
 cases.cases[-1]["track_boundary_growth"] = True
 
+
+base = ["n = 2", "q(x,y) = y > x^n && x > 4 && y > 0", "P = Vertex(q)"]
+cases.case("helperstate", base, [
+    setn("n", 0.5), {"action": "append", "line": "Q = Corner(q)"}, setn("n", 2),
+])
+cases.case("helperstate", base, [
+    setn("n", 0.5), {"action": "append", "line": "Q = Corner(q)"},
+    {"action": "delete", "label": "P_{1}"}, setn("n", 2),
+])
+cases.case("helperstate", base, [
+    {"action": "redefine", "line": "q(x,y) = y > sqrt(x) && x > 4 && y > 0"},
+])
+cases.case("helperstate", ["b = 4", "n = 2",
+    "q(x,y) = y > x^n && x > b && y > 0", "P = Vertex(q)"], [
+    setn("n", 0.5), {"action": "redefine", "line": "b = 6 - n"},
+])
+cases.case("helperstate", base, [
+    setn("n", 0.5), {"action": "undo"}, {"action": "redo"}, {"action": "reload"},
+])
+
+cases.case("textbounds", [
+    't = Text("$$abc$$", (0,0), false, true)', "P = Corner(t, 3)",
+], [])
+cases.case("textbounds", ['t = "a__"', "P = Corner(t, 3)"], [])
+cases.case("textbounds", [
+    "n = 1", "A = (sqrt(n), 0)", 't = Text("hi", A)', "Q = Corner(t, 3)",
+], [setn("n", -1), setn("n", 4)])
+cases.case("textbounds", [pt("A", 0, 0), 't = "abc"'], [
+    {"action": "anchor_text", "label": "t", "point": "A"},
+    {"action": "append", "line": "Q = Corner(t, 3)"}, mv("A", 1, 1),
+])
+
 cases.write()

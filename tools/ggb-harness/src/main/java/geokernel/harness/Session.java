@@ -24,6 +24,7 @@ import org.geogebra.common.jre.headless.AppCommon;
 import org.geogebra.common.jre.headless.LocalizationCommon;
 import org.geogebra.common.jre.headless.Utf8Control;
 import org.geogebra.common.kernel.RelationNumerical;
+import org.geogebra.common.kernel.Construction;
 import org.geogebra.common.kernel.Kernel;
 import org.geogebra.common.kernel.AnimationManager;
 import org.geogebra.common.kernel.advanced.AlgoLeftRightSide;
@@ -219,7 +220,7 @@ final class Session {
         if (out == null || out.length != 1 || replacement != out[0]) {
             throw new IllegalStateException("expected one replacement from: " + line);
         }
-        objects.replaceAll((name, old) -> kernel.lookupLabel(name));
+        refreshObjects();
         Map<AlgoElement, String> liveGroups = new LinkedHashMap<>();
         growingPoints.forEach((algo, prefix) -> {
             AlgoElement live = algo;
@@ -238,6 +239,42 @@ final class Session {
         });
         growingPoints.clear();
         growingPoints.putAll(liveGroups);
+    }
+
+    void anchorText(String label, String point) {
+        try {
+            ((GeoText) lookup(label)).setStartPoint((GeoPoint) lookup(point));
+        } catch (org.geogebra.common.kernel.CircularDefinitionException error) {
+            throw new IllegalArgumentException(error);
+        }
+    }
+
+    void restoreStep(String action) {
+        switch (action) {
+            case "undo": kernel.undo(); break;
+            case "redo": kernel.redo(); break;
+            case "reload":
+                try {
+                    app.getXMLio().processXMLString(app.getXML(), true, false);
+                } catch (Exception error) {
+                    throw new IllegalStateException(error);
+                }
+                break;
+            default: throw new IllegalArgumentException(action);
+        }
+        refreshObjects();
+        growingPoints.clear();
+    }
+
+    private void refreshObjects() {
+        objects.replaceAll((label, old) -> {
+            GeoElement live = kernel.lookupLabel(label);
+            if (live instanceof GeoFunctionNVar && namedMultivariate.contains(old)) {
+                namedMultivariate.add(live);
+            }
+            return live;
+        });
+        objects.values().removeIf(java.util.Objects::isNull);
     }
 
     void delete(String label) {
@@ -614,6 +651,42 @@ final class Session {
         return angle;
     }
 
+    /**
+     * Measures selected slots of a large clip. Suppressing labels keeps the
+     * recording of its segment coordinates independent of label allocation.
+     */
+    void sampleClip(String line, List<?> observe) {
+        Matcher matcher = LINE.matcher(line);
+        if (!matcher.matches() || !matcher.group(3).startsWith("IntersectPath(")) {
+            throw new IllegalArgumentException("expected a clipping assignment: " + line);
+        }
+        String prefix = matcher.group(1);
+        Construction cons = kernel.getConstruction();
+        boolean suppressed = cons.isSuppressLabelsActive();
+        Log logger = Log.getLogger();
+        Log.Level level = logger.getLogLevel();
+        cons.setSuppressLabelCreation(true);
+        logger.setLogLevel(Log.Level.ERROR);
+        GeoElementND[] out;
+        try {
+            out = processor.processAlgebraCommandNoExceptionHandling(
+                    line, false, new CommandErrorHandler(line, false), false, null);
+        } finally {
+            cons.setSuppressLabelCreation(suppressed);
+            logger.setLogLevel(level);
+        }
+        if (out == null || out.length == 0 || !(out[0] instanceof GeoSegment)) {
+            throw new IllegalStateException("expected clipped segments from: " + line);
+        }
+        for (int i : new int[] {0, out.length - 1}) {
+            String label = prefix + "_{" + (i + 1) + "}";
+            if (observe.contains(label)) {
+                objects.put(label, out[i].toGeoElement());
+            }
+        }
+        System.out.printf("%d clipped segments from %s%n", out.length, line);
+    }
+
     private GeoElement runClipping(String line, String label, GeoElementND[] out) {
         GeoElement first = out[0].toGeoElement();
         if (!(first instanceof GeoPolygon) && !(first instanceof GeoSegment)) {
@@ -838,9 +911,16 @@ final class Session {
     }
 
     Map<String, Object> snapshot(boolean sampleCurves) {
+        return snapshot(sampleCurves, null);
+    }
+
+    Map<String, Object> snapshot(boolean sampleCurves, List<?> observe) {
         recordGrowingPoints();
         Map<String, Object> snap = new LinkedHashMap<>();
         for (Map.Entry<String, GeoElement> e : objects.entrySet()) {
+            if (observe != null && !observe.contains(e.getKey())) {
+                continue;
+            }
             GeoElement geo = e.getValue();
             GeoElement replacement = kernel.lookupLabel(e.getKey());
             if (replacement != null && schemaType(geo).equals("implicit") && replacement != geo) {

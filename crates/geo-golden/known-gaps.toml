@@ -19,6 +19,12 @@
 
 # corners
 
+[[gap]]
+id = "corners-textbounds-006"
+reason = "when the text anchor becomes undefined, GeoGebra keeps the drawable corner at its previous position; the kernel has no stale value for an undefined parent (W1)"
+mismatches = ["1:Q"]
+undefined = true
+
 # conic
 
 [[gap]]

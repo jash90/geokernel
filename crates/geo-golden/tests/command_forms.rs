@@ -113,7 +113,9 @@ fn case_lines(case: &Case, which: Lines) -> impl Iterator<Item = &String> {
         .filter(move |_| which != Lines::Rejected)
         .chain(case.steps.iter().filter_map(move |step| match step {
             Step::Reject { line, .. } if which != Lines::Script => Some(line),
-            Step::Redefine { line } if which != Lines::Rejected => Some(line),
+            Step::Redefine { line } | Step::Append { line } if which != Lines::Rejected => {
+                Some(line)
+            }
             _ => None,
         }))
 }

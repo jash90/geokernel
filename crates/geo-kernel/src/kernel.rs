@@ -1617,7 +1617,11 @@ impl Construction {
     /// from `id` follows these to tell whether `id` can have changed.
     pub fn reads(&self, id: Id) -> Vec<Id> {
         match self.defs.get(id.0) {
-            Some(def) => self.read_ids_with_hint(def, Some(self.hints[id.0])),
+            Some(def) => {
+                let mut ids = self.read_ids_with_hint(def, Some(self.hints[id.0]));
+                ids.extend(self.saved_text_anchor(id));
+                ids
+            }
             None => Vec::new(),
         }
     }
@@ -2165,6 +2169,9 @@ impl Construction {
             dirty.insert(self.evaluation_rank(child));
         }
         for child in old_reads.keys().copied() {
+            if let Def::Point(PointDef::InequalityVertex { owner, .. }) = self.def(child) {
+                self.inequality_helpers.forget(owner);
+            }
             if matches!(
                 self.def(child),
                 Def::Locus(LocusDef::Path { .. } | LocusDef::Slider { .. })
@@ -2508,9 +2515,6 @@ impl Construction {
         let id = Id(self.defs.len());
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
-        if let Def::Point(PointDef::InequalityVertex { source, .. }) = def {
-            self.inequality_helpers.attach(source, id);
-        }
         let value = match def {
             Def::Lines(LineDef::TangentPoint { .. } | LineDef::TangentLine { .. })
             | Def::ConicPart(
@@ -2601,6 +2605,11 @@ impl Construction {
         if let Def::IntersectBoundary(intersection) = def {
             if let Some(saved) = intersection.with_root(value) {
                 def = Def::IntersectBoundary(saved);
+            }
+        }
+        if let Def::Point(PointDef::InequalityVertex { source, owner, .. }) = def {
+            if id == owner {
+                self.inequality_helpers.attach(source, owner);
             }
         }
         // An object that is read twice is still one child.
@@ -3007,6 +3016,24 @@ impl Construction {
         self.last_update_changed_automatic_root() || self.inequality_helpers.changed()
     }
 
+    /// Rebuilds inequality-vertex algorithms at the current input values,
+    /// as when their definitions are read from a saved construction.
+    pub fn reset_inequality_vertex_helpers(&mut self) -> bool {
+        if self.inequality_helpers.is_empty() {
+            return false;
+        }
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        for (i, def) in self.defs.iter().enumerate() {
+            if matches!(def, Def::Point(PointDef::InequalityVertex { .. })) {
+                dirty.insert(self.evaluation_rank(Id(i)));
+            }
+        }
+        self.inequality_helpers.truncate(0);
+        self.propagate_dirty(dirty, 0, false);
+        true
+    }
+
     /// Recomputes the descendants of `start` in dependency order.
     ///
     /// A set of dirty indices ([`DirtySet`]) gives the order: the smallest
@@ -3194,14 +3221,15 @@ impl Construction {
                         }
                     }
                     if new.identical(&self.values[i])
-                        && !matches!(def.kind(), Kind::Curve | Kind::Image)
+                        && !matches!(
+                            def.kind(),
+                            Kind::Curve | Kind::Image | Kind::Polygon | Kind::PolyLine
+                        )
                         && !matches!(
                             def,
                             Def::Conditional {
                                 kind: Kind::Circle
                                     | Kind::Conic
-                                    | Kind::Polygon
-                                    | Kind::PolyLine
                                     | Kind::Arc
                                     | Kind::Sector
                                     | Kind::Locus,

@@ -90,6 +90,7 @@ pub enum PointDef {
     },
     InequalityVertex {
         source: Id,
+        owner: Id,
         slot: u16,
     },
     /// A segment whose endpoint objects are available even when it is undefined.
@@ -287,11 +288,12 @@ impl PointDef {
         Some(id)
     }
 
-    pub(crate) fn inequality_slots(source: Id, count: usize) -> Vec<Def> {
+    pub(crate) fn inequality_slots(c: &Construction, source: Id, count: usize) -> Vec<Def> {
         (0..count)
             .map(|slot| {
                 Def::Point(Self::InequalityVertex {
                     source,
+                    owner: Id(c.len()),
                     slot: slot as u16,
                 })
             })
@@ -726,8 +728,12 @@ impl Group for PointDef {
             PointDef::ViewCorner { view, index } => view_corner(c, view, index),
             PointDef::ImageVertex { image, index } => c.image_vertex(image, index.value(c) as i32),
             PointDef::DrawableCorner { source, index } => drawable_corner(c, source, index),
-            PointDef::InequalityVertex { source, slot } => {
-                let points = crate::expr::inequality::vertices(c, source);
+            PointDef::InequalityVertex {
+                source,
+                owner,
+                slot,
+            } => {
+                let points = crate::expr::inequality::vertices(c, source, owner);
                 let (x, y) = *points.get(usize::from(slot))?;
                 Some(Value::Point { x, y })
             }

@@ -46,11 +46,12 @@ fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch
 }
 
 pub fn replay(case: &Case) -> CaseOutcome {
-    if case
-        .steps
-        .iter()
-        .any(|step| matches!(step, Step::Delete { .. }))
-    {
+    if case.steps.iter().any(|step| {
+        matches!(
+            step,
+            Step::Delete { .. } | Step::Undo | Step::Redo | Step::Reload
+        )
+    }) {
         return replay_document(case);
     }
     let mut out = CaseOutcome::default();
@@ -84,6 +85,23 @@ pub fn replay(case: &Case) -> CaseOutcome {
         .filter_map(|line| implicit_output(line, &case.snapshots[0]).map(|(label, _)| label))
         .collect();
     for (i, (step, snapshot)) in case.steps.iter().zip(&case.snapshots).enumerate() {
+        if let Step::Append { line } = step {
+            let before = c.len();
+            match script::exec(&mut c, line) {
+                Ok(Some(id)) if c.len() > before => {
+                    boundary_outputs.record(&c, line, id, c.len() - before);
+                }
+                result => {
+                    out.mismatches.push(failure(
+                        i,
+                        "step",
+                        "the kernel appends the definition",
+                        format!("{result:?}"),
+                    ));
+                    return out;
+                }
+            }
+        }
         match apply(&mut c, step) {
             Ok(Some(id)) => {
                 boundary_outputs.grow(&mut c, id, |_, _, _| {});
@@ -137,7 +155,26 @@ fn replay_document(case: &Case) -> CaseOutcome {
         let id = |label: &str| document.construction().id(label);
         let result = match step {
             Step::Initial => Ok(()),
-            Step::Redefine { line } => document.run_line(line),
+            Step::Redefine { line } | Step::Append { line } => document.run_line(line),
+            Step::AnchorText { .. } => Err("unexpected text placement in a document case".into()),
+            Step::Undo => document
+                .undo()
+                .then_some(())
+                .ok_or_else(|| "cannot undo".into()),
+            Step::Redo => document
+                .redo()
+                .then_some(())
+                .ok_or_else(|| "cannot redo".into()),
+            Step::Reload => {
+                let snapshot = document.snapshot_text();
+                document.restore_text(&snapshot).and_then(|rejected| {
+                    if rejected.is_empty() {
+                        Ok(())
+                    } else {
+                        Err(format!("snapshot rejected lines: {rejected:?}"))
+                    }
+                })
+            }
             Step::Reject { line, error } => match document.run_line(line) {
                 Ok(()) => Err("the document accepted the line".into()),
                 Err(e) => match error {
@@ -290,8 +327,14 @@ fn compare_snapshot(
 
 fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, String> {
     match step {
-        Step::Initial => Ok(None),
-        Step::Delete { .. } => unreachable!("deletions replay on the document"),
+        Step::Initial | Step::Append { .. } => Ok(None),
+        Step::AnchorText { label, point } => script::exec(
+            c,
+            &format!("$textProperties({label}, -, -, -, -, -, point, {point})"),
+        ),
+        Step::Delete { .. } | Step::Undo | Step::Redo | Step::Reload => {
+            unreachable!("document step")
+        }
         Step::Move { label, x, y } => {
             let id = c.id(label).ok_or(format!("unknown object `{label}`"))?;
             c.move_point(id, *x, *y)

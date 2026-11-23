@@ -3387,12 +3387,6 @@ cases = ["cas-plot-004", "cas-plot-021"]
 giac = true
 
 [[form]]
-command = "Corner"
-form = "text,number"
-cases = ["corners-text-001", "corners-textbounds-001", "corners-textbounds-002", "corners-textbounds-003"]
-difference = "geometry-command-arguments: `Corner(text, number)`, `Vertex(text, number)`"
-
-[[form]]
 command = "Vertex"
 form = "text,number"
 cases = ["corners-text-002"]
@@ -3412,7 +3406,7 @@ cases = ["implicit-graph-001", "implicit-graph-002", "implicit-graph-003"]
 [[form]]
 command = "Intersect"
 form = "implicit,polyline"
-cases = ["implicit-polyline-001", "implicit-polyline-003"]
+cases = ["implicit-polyline-001", "implicit-polyline-003", "implicit-polyline-004"]
 
 [[form]]
 command = "IntersectPath"

@@ -731,6 +731,7 @@ impl Workbench {
             self.notice = None;
         } else {
             self.restore(next.log)?;
+            self.log.reset_inequality_helpers(&mut self.construction);
         }
         self.restored_view = next.camera.filter(|c| Some(*c) != self.camera);
         Ok(())

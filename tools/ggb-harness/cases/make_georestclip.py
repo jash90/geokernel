@@ -120,4 +120,13 @@ cases.case("longcarrier", [
     "s = IntersectPath(p, g)",
 ], [])
 
+
+cases.case("longpath", [
+    pt("O", 0, 0), "k = Circle(O, 1)",
+    "vertices = Sequence((j/100001, 0), j, 1, 100000)",
+    "p = PolyLine(vertices)", "q = IntersectPath(p, k)",
+], [])
+# Sample the ends without recording the full 100,000-vertex path twice.
+cases.cases[-1]["observe"] = ["q_{1}", "q_{99999}"]
+
 cases.write()

@@ -286,4 +286,14 @@ cases.case("barycentric", triangle + ["n = 42", "c = Cubic(P, Q, R, n)"],
 cases.case("barycentric", triangle + ["c = TriangleCurve(P, Q, R, A+B=C)"],
            [mv("Q", 1, 1), mv("Q", 2, 0.5)])
 
+
+cases.case("pair", [
+    "c: x^8 + x - (y - 1)^9 = 0", "d: x - (y - 1)^9 = 0", "P = Intersect(c, d)",
+], [])
+cases.case("polyline", [
+    "c: y^3 + y = 0",
+    "vertices = Sequence((j, (-1)^j), j, 0, 66)",
+    "path = PolyLine(vertices)", "P = Intersect(c, path)",
+], [])
+
 cases.write()

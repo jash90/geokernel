@@ -13,7 +13,7 @@ use super::conic_nd::ConicType;
 use super::intersect::conics::on_part;
 use super::intersect::{line_conic_points, normalized_coefficients};
 use super::path::{conic_contains, part_contains, polygon_contains};
-use super::{conic_object, polygon, Parents, CARRIERS, CONIC_OBJECTS};
+use super::{conic_object, Parents, CARRIERS, CONIC_OBJECTS};
 use crate::expr::IntersectionWork;
 use crate::script::object;
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
@@ -160,14 +160,6 @@ impl ClipDef {
         } else {
             Parents::of(&[self.first, self.second])
         }
-    }
-
-    pub(crate) fn hidden_parents(self, c: &Construction) -> Vec<Id> {
-        let mut ids = polygon::inputs(c, self.first);
-        if c.kind(self.second) == Kind::Polygon {
-            ids.extend(polygon::inputs(c, self.second));
-        }
-        ids
     }
 
     pub(crate) fn check(self, c: &Construction) -> Result<(), Error> {
@@ -710,7 +702,7 @@ fn remove_collinear(ring: &mut Vec<XY>, work: &IntersectionWork) -> Option<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expr, script};
+    use crate::{algo::polygon::PolygonDef, expr, script, Def};
 
     #[test]
     fn an_empty_polygon_clip_keeps_the_labelled_point_slot() {
@@ -767,6 +759,46 @@ mod tests {
             &[((0.0, 0.0), (1.0, 0.0)), ((1.0, 0.0), (1.5, 0.0))]
         );
         assert_eq!(expr::work_done() - before, 32 * 1001);
+    }
+
+    #[test]
+    fn the_clip_command_builds_all_outputs_of_a_long_path() {
+        let mut c = script::load("O = (0, 0)\nk = Circle(O, 1)").unwrap();
+        let points: Vec<_> = (1..=100_000)
+            .map(|j| {
+                c.add(
+                    &format!("A{j}"),
+                    Def::FreePoint {
+                        x: f64::from(j) / 100_001.0,
+                        y: 0.0,
+                    },
+                )
+                .unwrap()
+            })
+            .collect();
+        let p = c
+            .add_with_list("p", &points, |list| {
+                Def::Polygon(PolygonDef::PolyLine(list))
+            })
+            .unwrap();
+        let k = c.id("k").unwrap();
+        let before = expr::work_done();
+        let len = c.len();
+        let first = script::exec(&mut c, "q = IntersectPath(p, k)")
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.len() - len, 99_999);
+        assert!(expr::work_done() - before < expr::MAX_EVALUATION_WORK);
+        assert_eq!(c.reads(first), vec![p, k]);
+        let last = c.id("q_{99999}").unwrap();
+        assert!(matches!(c.value(last), Value::Segment { .. }));
+        let end = *points.last().unwrap();
+        assert_eq!(c.direct_dependents(end).collect::<Vec<_>>(), vec![p]);
+        // Rotate the last edge around its start without changing its length.
+        let x = 99_999.0 / 100_001.0;
+        let dy = 100_000.0 / 100_001.0 - x;
+        c.move_point(end, x, dy).unwrap();
+        assert_eq!(c.value(last), segment(((x, 0.0), (x, dy))));
     }
 
     #[test]
