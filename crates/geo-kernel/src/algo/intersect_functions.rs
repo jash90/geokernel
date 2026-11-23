@@ -1,5 +1,6 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectFunctions.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectFunctionsNewton.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectFunctionLineNewton.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectPolynomialConic.java
@@ -693,6 +694,29 @@ fn subtract(mut a: Vec<f64>, b: Vec<f64>) -> Vec<f64> {
 #[cfg(test)]
 mod tests {
     use crate::{expr::work_done, script};
+
+    #[test]
+    fn intersects_freehand_functions_with_graphs_lines_and_conics() {
+        let c = script::load(concat!(
+            "f = Function({-2, 4, 1, 5, 2})\ng(x) = x\n",
+            "S = Intersect(f, g, 0, 3)\nl: y = 3\nT = Intersect(f, l)\n",
+            "h = Function({-2, 2, -2, 2})\nO = (0, 0)\nk = Circle(O, sqrt(2))\n",
+            "Q = Intersect(h, k)"
+        ))
+        .unwrap();
+        for (label, expected) in [
+            ("S", (3.0, 3.0)),
+            ("T", (-0.5, 3.0)),
+            ("Q_{1}", (-1.0, -1.0)),
+            ("Q_{2}", (1.0, 1.0)),
+        ] {
+            let (x, y) = c.id(label).and_then(|id| c.point(id)).unwrap_or_else(|| {
+                panic!("expected a defined point {label}");
+            });
+            assert!((x - expected.0).abs() < 1e-9, "{label}: {x}");
+            assert!((y - expected.1).abs() < 1e-9, "{label}: {y}");
+        }
+    }
 
     #[test]
     fn interval_slots_share_charged_root_search() {

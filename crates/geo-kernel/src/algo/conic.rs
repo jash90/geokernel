@@ -37,6 +37,8 @@ pub enum ConicDef {
     Incircle(Id, Id, Id),
     /// `Center(k)` and `Midpoint(k)` of a circle.
     Center(Id),
+    /// `Center(f)` or `Midpoint(f)` of a boolean function of one variable.
+    IntervalCenter(Id),
     /// `Midpoint(s)` of a segment.
     MidpointSegment(Id),
     /// `Diameter(l, k)`: the diameter of the circle `k` conjugate to the
@@ -240,6 +242,7 @@ impl Group for ConicDef {
             | ConicDef::LiteralRadius { .. }
             | ConicDef::Incircle(..) => Kind::Circle,
             ConicDef::Center(_) | ConicDef::MidpointSegment(_) => Kind::Point,
+            ConicDef::IntervalCenter(_) => Kind::Number,
             ConicDef::Diameter { .. } => Kind::Line,
         }
     }
@@ -251,7 +254,9 @@ impl Group for ConicDef {
             }
             ConicDef::SegmentRadius { center, segment } => Parents::of(&[center, segment]),
             ConicDef::LiteralRadius { center, .. } => Parents::of(&[center]),
-            ConicDef::Center(k) | ConicDef::MidpointSegment(k) => Parents::of(&[k]),
+            ConicDef::Center(k) | ConicDef::MidpointSegment(k) | ConicDef::IntervalCenter(k) => {
+                Parents::of(&[k])
+            }
             ConicDef::Diameter { line, circle } => Parents::of(&[line, circle]),
         }
     }
@@ -269,6 +274,7 @@ impl Group for ConicDef {
             }
             ConicDef::LiteralRadius { center, .. } => c.expect(center, POINT),
             ConicDef::Center(k) => c.expect(k, CIRCLE),
+            ConicDef::IntervalCenter(f) => c.expect(f, &[Kind::Function]),
             ConicDef::MidpointSegment(s) => c.expect(s, &[Kind::Segment]),
             ConicDef::Diameter { line, circle } => {
                 c.expect(line, LINE_LIKE)?;
@@ -299,6 +305,7 @@ impl Group for ConicDef {
                 let (cx, cy, _) = c.circle(k)?;
                 Some(Value::Point { x: cx, y: cy })
             }
+            ConicDef::IntervalCenter(f) => Self::named_interval_midpoint(c, f),
             ConicDef::MidpointSegment(s) => match c.value(s) {
                 Value::Segment { x1, y1, x2, y2 } => Some(Value::Point {
                     x: (x1 + x2) / 2.0,
@@ -350,6 +357,12 @@ impl Group for ConicDef {
                     match c.kind(id) {
                         Kind::Circle => Ok(ConicDef::Center(id)),
                         Kind::Segment => Ok(ConicDef::MidpointSegment(id)),
+                        Kind::Function
+                            if crate::expr::function_signature(c, id)
+                                .is_some_and(|signature| signature.boolean) =>
+                        {
+                            Ok(ConicDef::IntervalCenter(id))
+                        }
                         found => Err(Error::WrongKind {
                             label: args[0].to_string(),
                             expected: CIRCLE_OR_SEGMENT,

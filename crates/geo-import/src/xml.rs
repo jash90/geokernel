@@ -568,7 +568,7 @@ fn read_fill(
                     return Ok(false);
                 };
                 // A value outside 0 to 1 is ignored; NaN passes that test.
-                if !(alpha < 0.0 || alpha > 1.0) {
+                if alpha.is_nan() || (0.0..=1.0).contains(&alpha) {
                     style.alpha = Some(alpha);
                 }
             }

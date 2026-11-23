@@ -142,8 +142,8 @@ PARTIAL = {
     "AffineRatio": "AffineRatio(point, point, point)",
     "CrossRatio": "CrossRatio(point, point, point, point)",
     "Cross": (
-        "point or vector pairs and flat list pairs of equal length 2 or 3 "
-        "(vectorforms-listcross-001 and vectorforms-listcross-002)"
+        "point or vector pairs and list pairs of equal length 2 or 3, including row lists "
+        "(vectorforms-listcross-001 and vectorforms-nestedcross-001)"
     ),
     "Angle": (
         "Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); "

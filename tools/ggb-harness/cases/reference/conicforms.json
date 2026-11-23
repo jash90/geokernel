@@ -1,5 +1,6 @@
 {
   "cases": [
-    {"id": "conicforms-namedinterval-001", "group": "conicforms", "script": ["a = -4", "b = 2", "f(x) = a < x < b", "m = Center(f)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "b", "value": -6.0}, {"action": "set_number", "label": "b", "value": 4.0}]}
+    {"id": "conicforms-namedinterval-001", "group": "conicforms", "script": ["a = -4", "b = 2", "f(x) = a < x < b", "m = Center(f)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "b", "value": -6.0}, {"action": "set_number", "label": "b", "value": 4.0}]},
+    {"id": "conicforms-namedmidpoint-001", "group": "conicforms", "script": ["a = -4", "b = 2", "f(x) = a < x < b", "m = Midpoint(f)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "b", "value": -6.0}, {"action": "set_number", "label": "b", "value": 4.0}]}
   ]
 }

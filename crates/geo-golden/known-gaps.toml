@@ -233,13 +233,6 @@ mismatches = [
 ]
 
 [[gap]]
-id = "geomforms-segment-006"
-reason = "The fixed-length endpoint's internal circle falls outside the construction move dispatcher."
-mismatches = [
-  "1:step",
-]
-
-[[gap]]
 id = "geomclip-difference-001"
 reason = "The contours agree geometrically. GeoGebra's sweep selects a different first vertex, which rotates the polygon vertices and the emitted point and segment slots."
 mismatches = [
@@ -283,13 +276,6 @@ mismatches = [
   "3:I", "3:J", "3:K", "3:L", "3:i", "3:j", "3:k", "3:l",
   "3:s_{1}",
 ]
-
-[[gap]]
-id = "conicforms-namedinterval-001"
-reason = "Center accepts the bounds of an inline inequality. Reading interval bounds from a named boolean function is unsupported."
-mismatches = ["0:script line 4"]
-
-# intersections
 
 [[gap]]
 id = "intersections-boundedconicreview-001"
@@ -472,26 +458,6 @@ reason = "The indexed point recomputes with the single-output solver, which drop
 mismatches = ["1:S"]
 
 # intersectgrowth
-
-[[gap]]
-id = "vectorforms-identity-002"
-reason = "AlgoIdentity marks its list undefined at size zero and never marks it defined again. After the size returns to two, the kernel's list expression recomputes a defined identity matrix."
-mismatches = ["2:m"]
-
-[[gap]]
-id = "vectorforms-point-002"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 4"]
-
-[[gap]]
-id = "vectorforms-images-004"
-reason = "ApplyMatrix resolves labelled objects. An inline matrix and point need expression-backed operands that can be evaluated without creating helper objects before the command output."
-mismatches = ["0:script line 1"]
-
-[[gap]]
-id = "vectorforms-nestedcross-001"
-reason = "GeoGebra multiplies and subtracts row lists inside the cross product, producing a list for the third component. The kernel's cross product computes scalar and coordinate entries, and its list arithmetic does not support nested operands."
-mismatches = ["0:a"]
 
 [[gap]]
 id = "geomextras-pointlist-007"

@@ -1038,7 +1038,7 @@ cases = ["intersections-functionconic-002", "intersectfunctions-conic-002"]
 [[form]]
 command = "Intersect"
 form = "function,line"
-cases = ["intersections-functionline-001", "intersections-functionline-009", "intersectfunctions-line-003"]
+cases = ["intersections-functionline-001", "intersections-functionline-009", "intersectfunctions-line-003", "funcrest-freehandintersections-001"]
 
 [[form]]
 command = "Intersect"
@@ -3286,6 +3286,31 @@ command = "Corner"
 form = "inequality"
 cases = ["corners-inequality-014", "corners-inequality-015"]
 difference = "geometry-command-arguments: `Corner(inequality)` and `Vertex(inequality)`"
+
+[[form]]
+command = "Length"
+form = "point"
+cases = ["geomclosure-pointlength-001", "vectorforms-point-001", "vectorforms-point-002"]
+
+[[form]]
+command = "Identity"
+form = "number"
+cases = ["vectorforms-identity-001", "vectorforms-identity-002"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,point"
+cases = ["vectorforms-images-003", "vectorforms-images-004", "vectorforms-inlineimages-001", "vectorforms-inlineimages-002"]
+
+[[form]]
+command = "Cross"
+form = "list,list"
+cases = ["vectorforms-listcross-001", "vectorforms-listcross-002", "vectorforms-nestedcross-001", "vectorforms-crossrows-001"]
+
+[[form]]
+command = "Segment"
+form = "point,number"
+cases = ["geomforms-segment-006"]
 
 # Forms that agree only with the kernel's `giac` feature (docs/cas-giac.md):
 # every recorded case that calls them agrees with known-gaps-giac.toml.

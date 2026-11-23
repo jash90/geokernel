@@ -102,11 +102,18 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
             }
             list_form(text, op, false, args, lists)
         }),
-        "ApplyMatrix" => p.list_command(|_, args, lists| {
+        "ApplyMatrix" => p.list_command(|p, args, lists| {
             Ok(match (args, lists) {
                 (&[matrix, src], [true, true]) => {
                     Some(Node::ListOp(ListOp::ApplyMatrix, matrix, src))
                 }
+                (&[matrix, src], [true, false]) if p.is_point_or_vector(src) => Some(Node::ListOp(
+                    ListOp::ApplyMatrixCoordinates {
+                        vector: p.is_vector_argument(src),
+                    },
+                    matrix,
+                    src,
+                )),
                 _ => None,
             })
         }),
@@ -187,12 +194,10 @@ fn dimension(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node
 }
 
 fn length(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
-    if let (&[a], [false]) = (args, lists) {
-        if matches!(p.node(a), Node::Cmd(def, _) if def.kind() == Kind::Vector) {
-            return Ok(Some(Node::Un(Un::Abs, a)));
-        }
+    match (args, lists) {
+        (&[a], [false]) if p.is_point_or_vector(a) => Ok(Some(Node::Un(Un::Abs, a))),
+        _ => list_form("Length", ListOp::Length, false, args, lists),
     }
-    list_form("Length", ListOp::Length, false, args, lists)
 }
 
 /// `ExpressionNodeEvaluator.vectorProduct` for two 2D inputs.
@@ -235,17 +240,16 @@ fn dot(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, Str
 fn identity(p: &mut Parser, n: u32) -> u32 {
     let one = p.push(Node::Num(1.0));
     let zero = p.push(Node::Num(0.0));
-    let n = p.push(Node::Bin(Bin::Add, n, zero));
-    let floor = p.push(Node::Un(Un::Floor, n));
+    let number = p.push(Node::Bin(Bin::Add, n, zero));
+    let floor = p.push(Node::Un(Un::Floor, number));
     // Floor can snap up within the standard precision. Scale the distance
     // from its result so a representable value just below it still truncates.
-    let delta = p.push(Node::Bin(Bin::Sub, n, floor));
+    let delta = p.push(Node::Bin(Bin::Sub, number, floor));
     let scale = p.push(Node::Num(2.0_f64.powi(32)));
     let delta = p.push(Node::Bin(Bin::Mul, delta, scale));
     let rounded_up = p.push(Node::Bin(Bin::Less, delta, zero));
     let below = p.push(Node::Bin(Bin::Sub, floor, one));
     let size = p.push(Node::If(IfMode::Algo, rounded_up, below, floor));
-    let nonempty = p.push(Node::Bin(Bin::GreaterEqual, size, one));
     let depth = p.locals.len() as u32;
     let i = p.push(Node::Local(depth, Elem::Num));
     let j = p.push(Node::Local(depth + 1, Elem::Num));
@@ -253,7 +257,7 @@ fn identity(p: &mut Parser, n: u32) -> u32 {
     let entry = p.push(Node::If(IfMode::Algo, on_diagonal, one, zero));
     let row = p.push(Node::Seq(entry, one, size, NONE, depth + 1));
     let matrix = p.push(Node::Seq(row, one, size, NONE, depth));
-    p.push(Node::If(IfMode::Algo, nonempty, matrix, NONE))
+    p.push(Node::ListOp(ListOp::Identity, matrix, n))
 }
 
 /// The type of a list command of this group (see `commands::list_type`).
@@ -273,7 +277,10 @@ pub(super) fn list_type(
         | ListOp::Dot
         | ListOp::Dimension => Some(Ty::Num(0)),
         ListOp::MatrixDimension => Some(Ty::List(Elem::Num)),
-        ListOp::Transpose | ListOp::Rref | ListOp::Invert => Some(Ty::List(Elem::List)),
+        ListOp::Transpose | ListOp::Rref | ListOp::Invert | ListOp::Identity => {
+            Some(Ty::List(Elem::List))
+        }
+        ListOp::ApplyMatrixCoordinates { .. } => Some(Ty::Vec),
         ListOp::ApplyMatrix => match tys[n as usize] {
             ty @ Ty::List(_) => Some(ty),
             _ => return Err("`ApplyMatrix` needs a list to transform".into()),
@@ -306,6 +313,12 @@ pub(super) fn list_value<const M: bool>(
         ListOp::Length | ListOp::Dimension => {
             Val::N(ctx.list(l).map_or(f64::NAN, |(_, len)| f64::from(len)))
         }
+        ListOp::ApplyMatrixCoordinates { vector } => {
+            match apply_matrix_coordinates(ctx, l, n, vector).map(Value::cartesian) {
+                Some(Value::Point { x, y } | Value::Vector { x, y }) => Val::V(x, y),
+                _ => Val::V(f64::NAN, f64::NAN),
+            }
+        }
         ListOp::Dot => Val::N(dot_lists(ctx, l, n).unwrap_or(f64::NAN)),
         ListOp::Determinant | ListOp::MatrixRank => {
             Val::N(matrix_number(ctx, op, l).unwrap_or(f64::NAN))
@@ -336,6 +349,7 @@ pub(super) fn makes_list(op: ListOp) -> bool {
             | ListOp::Rref
             | ListOp::Invert
             | ListOp::MatrixDimension
+            | ListOp::Identity
             | ListOp::ApplyMatrix
     )
 }
@@ -350,6 +364,19 @@ pub(super) fn list_fn<const M: bool>(
         return cross_lists(ctx, l, n);
     }
     let lists = ctx.lists?;
+    if op == ListOp::Identity {
+        if ctx.e.stuck.contains(l) {
+            return None;
+        }
+        let size = ctx.full_number(n) as i32;
+        if size <= 0 {
+            if !lists.over() {
+                ctx.e.stuck.insert(l);
+            }
+            return None;
+        }
+        return ctx.list(l);
+    }
     let (start, len) = ctx.list(l)?;
     if op == ListOp::Transpose {
         if len == 0 {
@@ -474,6 +501,31 @@ pub(in crate::expr) fn map_list<const M: bool>(
     }
 }
 
+pub(in crate::expr) fn apply_matrix_coordinates<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    matrix: u32,
+    src: u32,
+    vector: bool,
+) -> Option<Value> {
+    let lists = ctx.lists?;
+    let (start, len) = ctx.list(matrix)?;
+    let matrix = lists.with_list(ctx.c, start, len, matrix::Matrix::read)?;
+    let source = match ctx.e.nodes[src as usize] {
+        Node::Obj(id) => ctx.c.stored_value(id),
+        _ => {
+            let Val::V(x, y) = ctx.full(src).val else {
+                return None;
+            };
+            if vector {
+                Value::Vector { x, y }
+            } else {
+                Value::Point { x, y }
+            }
+        }
+    };
+    matrix.apply(source)
+}
+
 fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option<(u32, u32)> {
     let lists = ctx.lists?;
     let (a, len) = ctx.list(left)?;
@@ -485,21 +537,50 @@ fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option
         return None;
     }
     let product = |i, j| {
-        let x = slot_val(&lists.read(ctx.c, a + i));
-        let y = slot_val(&lists.read(ctx.c, b + j));
-        slot_val(&combine(Bin::Mul, x, y))
+        let x = lists.read(ctx.c, a + i);
+        let y = lists.read(ctx.c, b + j);
+        cross_arithmetic(ctx, Bin::Mul, x, y, 0)
     };
-    let component = |i, j| combine(Bin::Sub, product(i, j), product(j, i));
+    let component = |i, j| cross_arithmetic(ctx, Bin::Sub, product(i, j)?, product(j, i)?, 0);
     let start = lists.reserve(3)?;
     let (x, y) = if len == 3 {
-        (component(1, 2), component(2, 0))
+        (component(1, 2)?, component(2, 0)?)
     } else {
         (Slot::number(0.0), Slot::number(0.0))
     };
-    for (k, value) in [x, y, component(0, 1)].into_iter().enumerate() {
+    for (k, value) in [x, y, component(0, 1)?].into_iter().enumerate() {
         lists.set(start + k as u32, value);
     }
     Some((start, 3))
+}
+
+/// MyList.vectorProduct computes the component expressions with
+/// MyList.apply, so a row list can be a component of the result.
+fn cross_arithmetic<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    op: Bin,
+    left: Slot,
+    right: Slot,
+    depth: u32,
+) -> Option<Slot> {
+    let left_run = left.run();
+    let right_run = right.run();
+    let len = match (left_run, right_run) {
+        (None, None) => return Some(combine(op, slot_val(&left), slot_val(&right))),
+        (Some((_, a)), Some((_, b))) if a != b => 0,
+        (Some((_, len)), _) | (_, Some((_, len))) => len,
+    };
+    let lists = ctx.lists?;
+    if depth >= expr::MAX_DEPTH || !lists.charge(u64::from(len)) {
+        return None;
+    }
+    let start = lists.reserve(len)?;
+    for i in 0..len {
+        let x = left_run.map_or_else(|| left.clone(), |(run, _)| lists.read(ctx.c, run + i));
+        let y = right_run.map_or_else(|| right.clone(), |(run, _)| lists.read(ctx.c, run + i));
+        lists.set(start + i, cross_arithmetic(ctx, op, x, y, depth + 1)?);
+    }
+    Some(Slot::list(start, len))
 }
 
 fn matrix_number<const M: bool>(ctx: &Ctx<'_, M>, op: ListOp, matrix: u32) -> Option<f64> {
@@ -543,5 +624,33 @@ impl Construction {
         let entry = self.exprs.entries.get(index as usize)?;
         let lists = entry.lists.then(|| expr::eval::Lists::new(Vec::new()));
         Some(expr::eval::root(self, entry, lists.as_ref()).0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::expr::Element;
+    use crate::script::load;
+
+    #[test]
+    fn cross_uses_nested_list_arithmetic_for_each_component() {
+        let c = load("a = Cross({{1, 2}, {3, 4}}, {{5, 6}, {7, 8}})\n                      b = Cross((0, 1), (2, 0))\nc = Cross((0, 1), (0, 2))")
+            .unwrap();
+        let a = c.elements(c.id("a").unwrap()).unwrap();
+        assert_eq!(a.len(), 3);
+        for i in 0..2 {
+            assert!(matches!(
+                a.get(i),
+                Some(Element::Value(_, Value::Number(0.0)))
+            ));
+        }
+        let Some(Element::List(z)) = a.get(2) else {
+            panic!("the third component must be a list");
+        };
+        assert_eq!(z.len(), 2);
+        assert!((0..2).all(|i| matches!(z.get(i), Some(Element::Value(_, Value::Number(-8.0))))));
+        assert_eq!(c.value(c.id("b").unwrap()), Value::Number(-2.0));
+        assert_eq!(c.value(c.id("c").unwrap()), Value::Number(0.0));
     }
 }

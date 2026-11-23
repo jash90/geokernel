@@ -2740,7 +2740,10 @@ impl Construction {
         }
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
         if let Def::Path(
-            d @ (PathDef::On { .. } | PathDef::InRegion { .. } | PathDef::RigidEndpoint { .. }),
+            d @ (PathDef::On { .. }
+            | PathDef::InRegion { .. }
+            | PathDef::RigidEndpoint { .. }
+            | PathDef::FixedEndpoint { .. }),
         ) = *def
         {
             return self.move_on_path(id, d, x, y);
@@ -3576,6 +3579,7 @@ impl Construction {
                         PathDef::On { .. }
                             | PathDef::InRegion { .. }
                             | PathDef::RigidEndpoint { .. }
+                            | PathDef::FixedEndpoint { .. }
                     )
             )
         )
@@ -4091,6 +4095,58 @@ impl Construction {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_fixed_length_segment_endpoint_moves_on_its_circle() {
+        let mut c = crate::script::load(
+            "A = (0, 0)\nn = 2\ns = Segment(A, n)\nC = (1, 1)\nt = Segment(C, 4)",
+        )
+        .unwrap();
+        let a = c.id("A").unwrap();
+        let b = c.id("B").unwrap();
+        let n = c.id("n").unwrap();
+        let s = c.id("s").unwrap();
+        let t = c.id("t").unwrap();
+        assert_eq!(
+            c.value(t),
+            Value::Segment {
+                x1: 1.0,
+                y1: 1.0,
+                x2: 5.0,
+                y2: 1.0
+            }
+        );
+        assert_eq!(c.point(b), Some((2.0, 0.0)));
+        assert!(c.is_movable(b));
+        c.move_point(b, 0.0, 4.0).unwrap();
+        let (x, y) = c.point(b).unwrap();
+        assert!(x.abs() < 1e-12);
+        assert_eq!(y, 2.0);
+        assert_eq!(
+            c.value(s),
+            Value::Segment {
+                x1: 0.0,
+                y1: 0.0,
+                x2: x,
+                y2: y
+            }
+        );
+
+        c.set_number(n, 3.0).unwrap();
+        c.move_point(a, -2.0, 0.0).unwrap();
+        let (x, y) = c.point(b).unwrap();
+        assert!((x + 2.0).abs() < 1e-12);
+        assert_eq!(y, 3.0);
+        assert_eq!(
+            c.value(s),
+            Value::Segment {
+                x1: -2.0,
+                y1: 0.0,
+                x2: x,
+                y2: y
+            }
+        );
+    }
+
     #[test]
     fn edits_after_redefinitions_match_a_rebuild_in_rank_order() {
         use crate::script::{exec, load};

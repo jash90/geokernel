@@ -615,12 +615,25 @@ pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, 
     let x = match lists.or(inverse_meter.as_ref()) {
         None => Ctx::<false>::new(c, e, &Env::None).full(e.root),
         Some(meter) => {
-            let x = Ctx::<true> {
+            let ctx = Ctx::<true> {
                 lists,
                 meter: Some(meter),
                 ..Ctx::new(c, e, &Env::None)
+            };
+            // Labelled point images keep the scale for commands that read
+            // their homogeneous coordinates. Scalar expressions use x/z, y/z.
+            if let Node::ListOp(ListOp::ApplyMatrixCoordinates { vector: false }, matrix, src) =
+                e.nodes[e.root as usize]
+            {
+                let point = commands::apply_matrix_coordinates(&ctx, matrix, src, false);
+                let raw = match point.filter(|_| !meter.over()) {
+                    Some(Value::Point { x, y }) => Raw::Vec(x, y),
+                    Some(Value::HomogeneousPoint { x, y, z }) => Raw::Homogeneous([x, y, z]),
+                    _ => Raw::Num(f64::NAN),
+                };
+                return (raw, None);
             }
-            .full(e.root);
+            let x = ctx.full(e.root);
             if meter.over() {
                 return (Raw::Num(f64::NAN), None);
             }
@@ -1955,7 +1968,7 @@ fn object(c: &Construction, id: Id) -> Val {
         (Kind::Number | Kind::Vector, Def::Expr(d), _) => match super::raw(c, d) {
             Raw::Num(v) => Val::N(v),
             Raw::Vec(x, y) => Val::V(x, y),
-            Raw::List(_) => Val::N(nan),
+            Raw::List(_) | Raw::Homogeneous(_) => Val::N(nan),
         },
         (Kind::Angle, Def::Expr(d), Value::Undefined)
             if d.angle_style == super::AngleStyle::Unbounded =>
