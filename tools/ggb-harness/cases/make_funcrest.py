@@ -147,6 +147,10 @@ case("svd", "n = 2\nl = {{1, 2}, Sequence(k, k, 1, n)}\ns = SVD(l)", [setn("n", 
 # (`AlgebraProcessor.processList`); a dependent one is decomposed
 case("svd", "a = SVD({{sqrt(-1)}})\nb = SVD({{0/0, 0/0}, {0/0, 0/0}})\nn = -1\nd = SVD({{sqrt(n)}})\n"
      "e = SVD({{0/0, 0/0}, {0/0, 1}})", [setn("n", 4), setn("n", -1)])
+# a locus samples a copy of the construction: a sample with an undefined
+# input leaves the live result defined
+case("svd", "c = Circle((0, 0), 2)\nA = Point(c)\nm = If(x(A) > 0, {{x(A), 1}, {2, 3}})\ns = SVD(m)\n"
+     "Q = (If(IsDefined(s), 1, 0), y(A))\nL = Locus(Q, A)", [mv("A", 1.2, 1.6), mv("A", 2, 0)])
 
 # ------------------------------------------------------------- IsVertexForm
 cases.topic("vertexform")
