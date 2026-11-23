@@ -20,6 +20,11 @@ pub enum Property {
         label: String,
         style: DrawingStyle,
     },
+    RegularVertex {
+        label: String,
+        x: f64,
+        y: f64,
+    },
     SliderBounds {
         label: String,
         bounds: [Option<String>; 2],
@@ -43,6 +48,7 @@ impl Property {
     pub fn label(&self) -> Option<&str> {
         match self {
             Self::DrawingStyle { label, .. }
+            | Self::RegularVertex { label, .. }
             | Self::SliderBounds { label, .. }
             | Self::ObjectScripts { label, .. }
             | Self::SliderAnimation { label, .. } => Some(label),
@@ -57,6 +63,9 @@ impl Property {
                 c.set_drawing_style(object(c, label)?, *style);
                 Ok(())
             }
+            Self::RegularVertex { label, x, y } => c
+                .restore_regular_vertex(object(c, label)?, *x, *y)
+                .map_err(|e| e.to_string()),
             Self::SliderBounds { label, bounds } => {
                 let id = object(c, label)?;
                 let [min, max] = bounds;
@@ -137,6 +146,9 @@ impl fmt::Display for Property {
                 style.show_label,
                 style.line_thickness
             ),
+            Self::RegularVertex { label, x, y } => {
+                write!(f, "$regularVertex({}, {x:?}, {y:?})", encode_text(label))
+            }
             Self::SliderBounds {
                 label,
                 bounds: [min, max],
@@ -203,6 +215,7 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
         && !line.starts_with("$sliderAnimation(")
         && !line.starts_with("$objectScripts(")
         && !line.starts_with("$drawingStyle(")
+        && !line.starts_with("$regularVertex(")
     {
         return None;
     }
@@ -220,6 +233,11 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                     style,
                 })
             }
+            ("$regularVertex", [label, x, y]) => Ok(Property::RegularVertex {
+                label: decode_text(label)?,
+                x: x.parse().map_err(|_| "invalid vertex x coordinate")?,
+                y: y.parse().map_err(|_| "invalid vertex y coordinate")?,
+            }),
             ("$sliderBounds", [label, min, max]) => {
                 let bound = |field| (field != "_").then(|| decode_text(field)).transpose();
                 Ok(Property::SliderBounds {

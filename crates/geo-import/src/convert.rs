@@ -13,6 +13,7 @@ use crate::xml::{Document, Element, Item};
 use crate::{ImportError, Imported, Mismatch, Skipped};
 use geo_kernel::algo::conic_nd::{ConicData, ConicType};
 use geo_kernel::algo::general_conic::GeneralConicDef;
+use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::kernel::control::{encode_scripts, encode_text, visibility_boolean};
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::{TextFont, TextOverrides, TextPosition};
@@ -871,8 +872,37 @@ impl Converter {
             self.claim(&el.label)?;
             self.define_element(el, expression.as_deref())?;
         }
+        self.restore_regular_vertex(el)?;
         self.apply_text_style(el, font_size);
         self.record_element(el, expression.as_deref(), polygon);
+        Ok(())
+    }
+
+    fn restore_regular_vertex(&mut self, el: &Element) -> Result<(), ImportError> {
+        let Some(id) = self.kernel.id(&el.label).filter(|_| el.kind == "point") else {
+            return Ok(());
+        };
+        let Def::Polygon(PolygonDef::RegularVertex { a, b, .. }) = self.kernel.def(id) else {
+            return Ok(());
+        };
+        if self.kernel.value(a).is_defined() && self.kernel.value(b).is_defined() {
+            return Ok(());
+        }
+        let Some([x, y, z]) = coords3(el) else {
+            return Ok(());
+        };
+        let (x, y) = (x / z, y / z);
+        if x.is_finite() && y.is_finite() && self.kernel.value(id) != (Value::Point { x, y }) {
+            let property = Property::RegularVertex {
+                label: el.label.clone(),
+                x,
+                y,
+            };
+            property
+                .apply(&mut self.kernel)
+                .map_err(ImportError::Internal)?;
+            self.out.script.push(property.to_string());
+        }
         Ok(())
     }
 

@@ -211,14 +211,26 @@ impl Group for ConicPartDef {
     }
 
     fn compute(&self, c: &Construction) -> Option<Value> {
-        // An undefined parent makes the object undefined, also where
-        // GeoGebra would still read the stale record of an undefined conic
-        // or take a point on both objects by construction.
+        // AlgoVertexConic.java, AlgoAxes.java, AlgoAxis.java,
+        // AlgoAxisLength.java, AlgoEccentricity.java, AlgoExcentricity.java,
+        // AlgoParabolaParameter.java and GeoConicND.java (diameterLine)
+        // read the stored fields even if the conic is undefined.
+        let reads_fields = matches!(
+            self,
+            Self::Vertex { .. }
+                | Self::Axis { .. }
+                | Self::AxisLength { .. }
+                | Self::Eccentricity(_)
+                | Self::LinearEccentricity(_)
+                | Self::Parameter(_)
+                | Self::Diameter { .. }
+        );
+        let conic = self.conic();
         if self
             .parents()
             .as_slice()
             .iter()
-            .any(|&p| !c.value(p).is_defined())
+            .any(|&p| !c.value(p).is_defined() && !(p == conic && reads_fields))
         {
             return None;
         }
@@ -228,7 +240,11 @@ impl Group for ConicPartDef {
         if let ConicPartDef::Asymptote { conic, which } = *self {
             return asymptote(&super::conic_object(c, conic)?, which);
         }
-        let d = c.conic(self.conic())?;
+        let d = if reads_fields {
+            c.conic_fields(conic)?
+        } else {
+            c.conic(conic)?
+        };
         match *self {
             ConicPartDef::IntersectLine { .. } | ConicPartDef::Asymptote { .. } => None,
             ConicPartDef::TangentPoint {

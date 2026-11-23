@@ -1065,7 +1065,7 @@ pub struct Construction {
     paths: Vec<(usize, PathState)>,
     /// The last circle written by a circle command whose setter now
     /// returns before writing (see [`algo::circle::keeps_record`]), by
-    /// owner. Only the point optimizer reads it.
+    /// owner. Used by the point optimizer and readers of the conic record.
     circle_records: Vec<(usize, (f64, f64, f64))>,
     rigid_replacements: Vec<(Id, Id, Def)>,
     /// Helper intersection states for common tangents starting on an arc.
@@ -2537,7 +2537,7 @@ impl Construction {
                 PathDef::value(&state)
             }
             Def::Arc(d) if d.has_record() => {
-                let record = d.record(self);
+                let record = d.record(self, None);
                 self.arcs.push((id.0, record));
                 algo::arc::value(d.kind() == Kind::Sector, &record)
             }
@@ -2921,6 +2921,26 @@ impl Construction {
         Ok(self.propagate(id))
     }
 
+    /// Restores the coordinates saved for a generated regular-polygon vertex.
+    /// AlgoPolygonRegularND.java leaves the saved point alone if an endpoint
+    /// is undefined, and replaces its coordinates when both are defined.
+    pub(crate) fn restore_regular_vertex(&mut self, id: Id, x: f64, y: f64) -> Result<(), Error> {
+        if !(x.is_finite() && y.is_finite()) {
+            return Err(Error::NotFinite);
+        }
+        let Def::Polygon(PolygonDef::RegularVertex { a, b, n, k }) = self.def(id) else {
+            return Err(Error::NotFree(self.label(id).into()));
+        };
+        let previous = Some(Value::Point { x, y });
+        if let Some(value) = algo::polygon::regular_vertex(self, a, b, n, k, previous) {
+            if !value.identical(&self.values[id.0]) {
+                self.values[id.0] = value;
+                self.propagate(id);
+            }
+        }
+        Ok(())
+    }
+
     /// Changes a free number and recomputes everything that depends on it.
     /// Returns how many dependent objects were recomputed.
     pub fn set_number(&mut self, id: Id, v: f64) -> Result<usize, Error> {
@@ -3174,7 +3194,7 @@ impl Construction {
                         continue;
                     }
                     let new = self.compute(def, i);
-                    self.keep_circle_record(i, def, new);
+                    let record_changed = self.keep_circle_record(i, def, new);
                     if let Def::IntersectBoundary(intersection) = def {
                         if let Some(saved) = intersection.with_root(new) {
                             self.defs[i] = Def::IntersectBoundary(saved);
@@ -3182,6 +3202,7 @@ impl Construction {
                         }
                     }
                     if new.identical(&self.values[i])
+                        && !record_changed
                         && !matches!(def.kind(), Kind::Curve | Kind::Image)
                         && !matches!(
                             def,
@@ -3656,7 +3677,7 @@ impl Construction {
         let Some(slot) = self.arc_slot(i) else {
             return false;
         };
-        let new = d.record(self);
+        let new = d.record(self, Some(&self.arcs[slot].1));
         if new.same(&self.arcs[slot].1) {
             // A point can be placed directly on an undefined arc. Its next
             // AlgoPointOnPath update clears it even when the arc stays undefined.
@@ -3773,29 +3794,36 @@ impl Construction {
 
     /// Keeps the record of a circle command for [`Self::circle_record`],
     /// before `new` replaces the value of object `i`.
-    fn keep_circle_record(&mut self, i: usize, def: Def, new: Value) {
-        let Some(keeps) = algo::circle::keeps_record(self, def) else {
-            return;
-        };
-        if new.is_defined() || !keeps {
-            // the record is the value, or it was overwritten by NaN
-            self.forget_circle_record(i);
-            return;
+    fn keep_circle_record(&mut self, i: usize, def: Def, new: Value) -> bool {
+        if new.is_defined() {
+            // While defined the circle carries its record in its value.
+            return !self.values[i].is_defined()
+                && matches!(new, Value::Circle { .. })
+                && self.forget_circle_record(i);
         }
-        // an undefined circle before keeps the record it had
-        if let Value::Circle { cx, cy, r } = self.values[i] {
-            let slot = self.circle_records.partition_point(|&(o, _)| o < i);
-            match self.circle_records.get_mut(slot) {
-                Some((owner, record)) if *owner == i => *record = (cx, cy, r),
-                _ => self.circle_records.insert(slot, (i, (cx, cy, r))),
+        match algo::circle::keeps_record(self, def) {
+            None => false,
+            Some(false) => self.forget_circle_record(i),
+            Some(true) => {
+                if let Value::Circle { cx, cy, r } = self.values[i] {
+                    let slot = self.circle_records.partition_point(|&(o, _)| o < i);
+                    self.circle_records.insert(slot, (i, (cx, cy, r)));
+                    true
+                } else {
+                    // An already undefined circle keeps its existing record.
+                    false
+                }
             }
         }
     }
 
-    fn forget_circle_record(&mut self, i: usize) {
+    fn forget_circle_record(&mut self, i: usize) -> bool {
         let slot = self.circle_records.partition_point(|&(o, _)| o < i);
         if self.circle_records.get(slot).is_some_and(|&(o, _)| o == i) {
             self.circle_records.remove(slot);
+            true
+        } else {
+            false
         }
     }
 
@@ -3919,6 +3947,16 @@ impl Construction {
                 _ => None,
             },
         }
+    }
+
+    /// The stored fields a reader sees when it does not check definedness.
+    /// General conics already carry these fields in their current record.
+    pub(crate) fn conic_fields(&self, id: Id) -> Option<ConicData> {
+        self.conic(id).or_else(|| {
+            let mut data = self.circle_record(id)?;
+            data.defined = false;
+            Some(data)
+        })
     }
 
     /// The active source of a conditional object. Branches precede their
@@ -4134,6 +4172,10 @@ impl Construction {
                 .strokes
                 .get(&Id(i))
                 .map_or(Value::Undefined, algo::stroke::StrokeData::value);
+        }
+        if let Def::Polygon(PolygonDef::RegularVertex { a, b, n, k }) = def {
+            return algo::polygon::regular_vertex(self, a, b, n, k, self.values.get(i).copied())
+                .unwrap_or(Value::Undefined);
         }
         self.compute_with(def, |c| c.hints[i])
     }

@@ -3385,3 +3385,158 @@ command = "PlotSolve"
 form = "list"
 cases = ["cas-plot-004", "cas-plot-021"]
 giac = true
+
+[[form]]
+command = "Arc"
+form = "conic,point,point"
+cases = ["geomclosure-openarc-001", "geomclosure-openarc-002", "geomextras-conicparts-001"]
+
+[[form]]
+command = "Area"
+form = "conic"
+cases = ["geomforms-area-001", "geomforms-area-003"]
+
+[[form]]
+command = "Area"
+form = "polygon"
+cases = ["polygon-regundef-001", "funcrest-conditional-004", "polygon-derived-001"]
+
+[[form]]
+command = "Axes"
+form = "conic"
+cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "Center"
+form = "conic"
+cases = ["conics-readers-009", "conicforms-coefficients-001", "conicforms-list-002"]
+
+[[form]]
+command = "CircumcircleArc"
+form = "point,point,point"
+cases = ["arcs-undefined-003", "arcs-circum-001", "arcs-circum-002"]
+
+[[form]]
+command = "CircumcircleSector"
+form = "point,point,point"
+cases = ["arcs-undefined-007", "arcs-circum-003", "arcs-circum-004"]
+
+[[form]]
+command = "Diameter"
+form = "line,conic"
+cases = ["conics-tangent-013", "conics-tangent-003", "conics-tangent-006"]
+
+[[form]]
+command = "Directrix"
+form = "conic"
+cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "Eccentricity"
+form = "conic"
+cases = ["conics-readers-011", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "Ellipse"
+form = "point,point,number"
+cases = ["conics-readers-009", "conicforms-pole-001", "conicpaths-ellipse-007"]
+
+[[form]]
+command = "Excentricity"
+form = "conic"
+cases = ["conics-readers-011", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "FirstAxis"
+form = "conic"
+cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "FirstAxisLength"
+form = "conic"
+cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "Focus"
+form = "conic"
+cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "IsTangent"
+form = "line,conic"
+cases = ["geomforms-tangent-001"]
+
+[[form]]
+command = "Length"
+form = "conic"
+cases = ["arcs-undefined-007", "arcs-circular-001", "arcs-circular-002"]
+
+[[form]]
+command = "Midpoint"
+form = "conic"
+cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "Parameter"
+form = "conic"
+cases = ["conics-readers-011", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "PathParameter"
+form = "point"
+cases = ["arcs-undefined-003", "arcs-chain-001", "arcs-chain-002"]
+
+[[form]]
+command = "Perimeter"
+form = "conic"
+cases = ["geomextras-perimeterconic-001"]
+
+[[form]]
+command = "Perimeter"
+form = "polygon"
+cases = ["polygon-regundef-001", "polygon-derived-001", "polygon-derived-002"]
+
+[[form]]
+command = "Polar"
+form = "point,conic"
+cases = ["conics-tangent-013", "conicforms-pole-001", "conics-tangent-003"]
+
+[[form]]
+command = "Polygon"
+form = "point,point,number"
+cases = ["polygon-regundef-001", "angle-polygon-002", "georestclip-polygon-003"]
+
+[[form]]
+command = "SecondAxis"
+form = "conic"
+cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "SecondAxisLength"
+form = "conic"
+cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "Sector"
+form = "conic,point,point"
+cases = ["geomextras-conicparts-001", "geomextras-conicparts-002"]
+
+[[form]]
+command = "Tangent"
+form = "line,conic"
+cases = ["conics-tangent-013", "conics-tangent-002", "conics-tangent-005"]
+
+[[form]]
+command = "Tangent"
+form = "point,conic"
+cases = ["conics-tangent-013", "conics-tangent-001", "conics-tangent-004"]
+
+[[form]]
+command = "Vertex"
+form = "conic"
+cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+
+[[form]]
+command = "Vertex"
+form = "polygon,number"
+cases = ["polygon-regundef-002", "polygon-regular-015", "polygon-shrink-001"]

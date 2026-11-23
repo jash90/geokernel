@@ -39,7 +39,9 @@ use super::conic::{circumcircle, Circumcircle};
 use super::conic_nd::{my_length, ConicData, ConicType};
 use super::conic_path::{self, type_number};
 use super::general_conic::transform_conic;
-use super::path::{conic_parameter, line_path_changed, line_point_changed, PathState};
+use super::path::{
+    conic_parameter, conic_parameter_from, line_path_changed, line_point_changed, PathState,
+};
 use super::transform::{invert_point, parse_transform_for, shear_axis, TransformOf};
 use super::{join, Group, Parents, LINE_LIKE, NUMBER_OR_ANGLE, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
@@ -147,6 +149,8 @@ pub struct ArcData {
     pub value: f64,
     arc_length: f64,
     area: f64,
+    /// The temporary endpoint parameters of AlgoConicPartConicPoints.java.
+    endpoint_parameters: [f64; 2],
     /// `valueDefined`, which is `GeoConicPart.isDefined`.
     pub defined: bool,
     /// The start and end point of the first line of a degenerate part
@@ -175,6 +179,7 @@ impl ArcData {
             value: 0.0,
             arc_length: 0.0,
             area: 0.0,
+            endpoint_parameters: [0.0; 2],
             defined: false,
             line_points: None,
         }
@@ -198,6 +203,7 @@ impl ArcData {
             && b(self.value, o.value)
             && b(self.arc_length, o.arc_length)
             && b(self.area, o.area)
+            && self.endpoint_parameters.map(f64::to_bits) == o.endpoint_parameters.map(f64::to_bits)
             && self.defined == o.defined
             && pts
     }
@@ -209,20 +215,19 @@ impl ArcData {
         matches!(self.conic.ty, ConicType::Circle | ConicType::Ellipse)
     }
 
-    /// `GeoConicPart.getArcLength`: NaN when undefined. Only parts of
-    /// circles and ellipses have one here (see [`Self::is_curved`]).
+    /// AlgoArcLength.java reads GeoConicPartParameters.java, which keeps
+    /// the last arc length when the part degenerates.
     pub fn arc_length(&self) -> f64 {
-        if self.defined && self.is_curved() {
+        if self.defined {
             self.arc_length
         } else {
             f64::NAN
         }
     }
 
-    /// `GeoConicPart.getArea`: NaN when undefined; like
-    /// [`Self::arc_length`] only for parts of circles and ellipses.
+    /// AlgoAreaConic.java reads the area under the same definedness check.
     pub fn area(&self) -> f64 {
-        if self.defined && self.is_curved() {
+        if self.defined {
             self.area
         } else {
             f64::NAN
@@ -517,12 +522,26 @@ impl ArcDef {
         }
     }
 
-    /// The record of the part for the current positions. It depends only on
-    /// the parents (unlike GeoGebra's, which keeps the parameters and the
-    /// measures of a degenerate part from earlier updates; those are not
-    /// read here, see [`ArcData::is_curved`]).
-    pub(crate) fn record(self, c: &Construction) -> ArcData {
-        let mut a = ArcData::new(self.is_sector());
+    /// Updates a part from its inputs and its previous record. New parts
+    /// start with the defaults of GeoConicPartParameters.java.
+    pub(crate) fn record(self, c: &Construction, previous: Option<&ArcData>) -> ArcData {
+        let initial = ArcData::new(self.is_sector());
+        let kept = previous.copied().unwrap_or(initial);
+        // GeoConicPartParameters.java keeps the parameters and measures when
+        // the part degenerates and only computes its value and orientation.
+        let mut a = ArcData {
+            conic: initial.conic,
+            defined: initial.defined,
+            value: initial.value,
+            line_points: initial.line_points,
+            ..kept
+        };
+        let undefined_part = || {
+            let mut part = kept;
+            part.conic.defined = false;
+            part.set_undefined();
+            part
+        };
         match self {
             ArcDef::Circle {
                 center, start, end, ..
@@ -530,8 +549,7 @@ impl ArcDef {
                 // `AlgoConicPartCircle`
                 let (Some(m), Some(p), Some(q)) = (c.point(center), c.point(start), c.point(end))
                 else {
-                    a.set_undefined();
-                    return a;
+                    return undefined_part();
                 };
                 a.conic = circle_through(m, p);
                 // the temporary points P and Q put on the circle
@@ -542,14 +560,12 @@ impl ArcDef {
             ArcDef::Semicircle { a: pa, b: pb } => {
                 // `AlgoSemicircle`: the circle around the midpoint through B
                 let (Some(pa), Some(pb)) = (c.point(pa), c.point(pb)) else {
-                    a.set_undefined();
-                    return a;
+                    return undefined_part();
                 };
                 let m = ((pa.0 + pb.0) / 2.0, (pa.1 + pb.1) / 2.0);
                 a.conic = circle_through(m, pb);
                 if !a.conic.defined {
-                    a.set_undefined();
-                    return a;
+                    return undefined_part();
                 }
                 let alpha = (pb.1 - pa.1).atan2(pb.0 - pa.0);
                 a.set_parameters(true, alpha, alpha + PI, true);
@@ -562,26 +578,34 @@ impl ArcDef {
             } => {
                 // `AlgoConicPartCircumcircleND` on `AlgoCircleThreePoints`
                 let (Some(pa), Some(pb), Some(pc)) = (c.point(ia), c.point(ib), c.point(ic)) else {
-                    a.set_undefined();
-                    return a;
+                    return undefined_part();
                 };
                 circum_record(&mut a, pa, pb, pc);
+                if a.conic.ty == ConicType::NotClassified {
+                    return undefined_part();
+                }
             }
             ArcDef::ConicPoints { conic, p, q, .. } => {
                 // `AlgoConicPartConicPoints`
-                let Some(d) = c.conic(conic) else {
+                let Some(d) = c.conic_fields(conic) else {
                     a.set_undefined();
                     return a;
                 };
                 a.conic = d;
-                let nan = (f64::NAN, f64::NAN);
-                let s = conic_parameter(&d, c.point(p).unwrap_or(nan), true);
-                let t = conic_parameter(&d, c.point(q).unwrap_or(nan), true);
+                // PathParameter.java (setT) leaves an endpoint's parameter
+                // alone when the projection would write NaN.
+                for (parameter, point) in a.endpoint_parameters.iter_mut().zip([p, q]) {
+                    if let Some(point) = c.point(point) {
+                        *parameter = conic_parameter_from(&d, point, true, *parameter);
+                    }
+                }
+                let [s, t] = a.endpoint_parameters;
                 a.set_parameters(conic_defined(c, conic, &d), s, t, true);
             }
             ArcDef::ConicParameters { conic, s, t, .. } => {
-                // `AlgoConicPartConicParameters` (`AlgoConicPart.compute`)
-                let Some(d) = c.conic(conic) else {
+                // AlgoConicPartConicParameters.java copies the conic record
+                // before GeoConicPartParameters.java checks definedness.
+                let Some(d) = c.conic_fields(conic) else {
                     a.set_undefined();
                     return a;
                 };
@@ -1304,7 +1328,7 @@ impl Group for ArcDef {
             ArcDef::Length(a) => number(c.arc(a)?.arc_length()),
             ArcDef::Area(a) => number(c.arc(a)?.area()),
             ArcDef::Perimeter(a) => number(perimeter(&c.arc(a)?)),
-            d => Some(value(d.is_sector(), &d.record(c))),
+            d => Some(value(d.is_sector(), &d.record(c, None))),
         }
     }
 

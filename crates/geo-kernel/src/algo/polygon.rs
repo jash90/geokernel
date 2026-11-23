@@ -837,11 +837,7 @@ impl Group for PolygonDef {
                     area: r.signed_area(),
                 })
             }
-            PolygonDef::RegularVertex { a, b, n, k } => {
-                let r = Regular::new(c, a, b, vertex_count(n.value(c)))?;
-                let k = k as usize;
-                (k < r.n).then(|| r.vertex(k)).and_then(point)
-            }
+            PolygonDef::RegularVertex { a, b, n, k } => regular_vertex(c, a, b, n, k, None),
             PolygonDef::RegularSide { a, b, n, k } => regular_side(c, a, b, n, k as usize),
             PolygonDef::PolygonFromList(id) => Some(Value::Polygon {
                 area: area_of(point_list(c, id)?.iter().map(list_point))?,
@@ -907,6 +903,29 @@ impl Group for PolygonDef {
     /// The commands of this group need to store a list; see [`exec`].
     fn parse(_c: &Construction, _func: &str, _args: &[&str]) -> Option<Result<Self, String>> {
         None
+    }
+}
+
+/// AlgoPolygonRegularND.java leaves active output vertices alone when an
+/// endpoint is undefined. AlgoPolygonRegular.java creates them at (0, 0).
+/// A vertex is a separate point, so its last coordinates already live in
+/// its own value. The polygon itself is still undefined.
+pub(crate) fn regular_vertex(
+    c: &Construction,
+    a: Id,
+    b: Id,
+    n: Count,
+    k: u32,
+    previous: Option<Value>,
+) -> Option<Value> {
+    let count = vertex_count(n.value(c));
+    let k = k as usize;
+    if k >= count || count > MAX_REGULAR_VERTICES {
+        return None;
+    }
+    match Regular::new(c, a, b, count) {
+        Some(r) => point(r.vertex(k)),
+        None => Some(previous.unwrap_or(Value::Point { x: 0.0, y: 0.0 })),
     }
 }
 
@@ -2167,7 +2186,7 @@ mod tests {
             ("Polygon(A, B, -3)", &["p"], 0),
             ("Polygon(A, B, 2.4)", &["p"], 0),
             ("Polygon(A, B, m)", &["p"], 5),
-            // an undefined point: the vertices, but no sides
+            // An undefined endpoint leaves the new vertices at the origin.
             ("Polygon(X, B, 4)", &["p", "C", "D"], 0),
             ("Polygon(A, X, 3)", &["p", "C"], 0),
         ] {
@@ -2178,7 +2197,7 @@ mod tests {
             let p = c.id("p").unwrap();
             assert_eq!(c.value(p), Value::Undefined, "{rhs}");
             for id in c.ids().skip(n + 1) {
-                assert_eq!(c.value(id), Value::Undefined, "{rhs}");
+                assert_eq!(c.value(id), Value::Point { x: 0.0, y: 0.0 }, "{rhs}");
             }
             // the polygon follows later changes, without new objects
             c.set_number(c.id("m").unwrap(), 5.0).unwrap();

@@ -647,7 +647,11 @@ fn tangent(c: &Construction, line: Id, circle: Id) -> bool {
             return true;
         }
     }
-    let Some(d) = super::conic_object(c, circle) else {
+    // AlgoIsTangent.java uses the stored matrix via AlgoIntersectLineConic.java.
+    let Some(d) = c
+        .conic_fields(circle)
+        .or_else(|| c.arc(circle).map(|a| a.conic))
+    else {
         return false;
     };
     let g = raw_line(c, line);
@@ -700,7 +704,9 @@ fn in_region(c: &Construction, point: Id, region: Id) -> bool {
             .is_some_and(|vertices| polygon_contains(&vertices, p));
     }
     super::conic_object(c, region).is_some_and(|d| {
-        conic_contains(&d, p) && c.arc(region).is_none_or(|arc| part_contains(&arc, p))
+        conic_contains(&d, p)
+            && c.arc(region)
+                .is_none_or(|arc| arc.defined && part_contains(&arc, p))
     })
 }
 
@@ -784,7 +790,22 @@ impl Group for PredicateDef {
                 point(c, d),
                 point(c, e),
             )),
-            PredicateDef::Equal(a, b) => answer(equal(c, a, b)),
+            PredicateDef::Equal(a, b) => {
+                // AlgoAreEqual.java delegates to GeoConicND.java (isEqualExtended).
+                // Keep the argument order: a conic part has its own equality test.
+                let conic = |id| matches!(c.kind(id), Kind::Circle | Kind::Conic);
+                if conic(a) && (conic(b) || matches!(c.kind(b), Kind::Arc | Kind::Sector)) {
+                    let first = c.conic_fields(a);
+                    let second = c.conic_fields(b).or_else(|| c.arc(b).map(|b| b.conic));
+                    answer(match (first, second) {
+                        (Some(a), Some(b)) => conics_equal(a, b),
+                        (None, None) => c.kind(a) == Kind::Circle && c.kind(b) == Kind::Circle,
+                        _ => false,
+                    })
+                } else {
+                    answer(equal(c, a, b))
+                }
+            }
             PredicateDef::Congruent(a, b) => congruent(c, a, b).map(Value::Bool),
             PredicateDef::Tangent { line, circle } => answer(tangent(c, line, circle)),
             PredicateDef::InRegion(point, region) => answer(in_region(c, point, region)),
