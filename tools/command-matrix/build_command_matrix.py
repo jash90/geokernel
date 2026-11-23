@@ -489,13 +489,16 @@ def render_csv(rows):
     return buf.getvalue()
 
 
-def summary(rows, unclassified, declared):
+def summary(rows, unclassified, declared, giac=None):
     lines = ["total entries: %d" % len(rows),
              "aliases: %d" % sum(1 for r in rows if r[1])]
     real = [r for r in rows if not r[1]]
     counted = [r for r in real if r[5]]
     lines.append("in-scope commands: %d, forms_total: %d, forms_done: %d" % (
         len(counted), sum(int(r[5]) for r in counted), sum(int(r[6]) for r in counted)))
+    giac_done = sum(len(v) for v in (giac or {}).values())
+    lines.append("forms_done includes %d forms done only with the giac feature "
+                 "(form-evidence.toml rows with giac = true, docs/cas-giac.md)" % giac_done)
     status = {}
     for r in real:
         status[r[4]] = status.get(r[4], 0) + 1
@@ -544,7 +547,7 @@ def main(argv=None):
         print("\n".join(errors), file=sys.stderr)
         return 1
     text = render_csv(rows)
-    print(summary(rows, unclassified, declared))
+    print(summary(rows, unclassified, declared, giac))
     out = Path(args.out)
     if args.check:
         current = out.read_text(encoding="utf-8") if out.exists() else None

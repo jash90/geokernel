@@ -15,10 +15,12 @@ publish = false
 default = []
 # Loads the Giac library named by GEO_GIAC_LIBRARY and evaluates through it.
 # Without this feature the crate is an empty shell that reports Giac as absent.
-giac = ["dep:libloading"]
+giac = ["dep:libloading", "dep:sha2"]
 
 [dependencies]
 libloading = { version = "0.8", optional = true }
+# Checks the library against its pinned SHA-256 before loading it.
+sha2 = { version = "0.10", optional = true }
 
 [[example]]
 name = "replay"

@@ -354,7 +354,12 @@ pub fn init_inputs(input: &str, timeout_ms: u64, seed: i32) -> Vec<String> {
             }
         }
     }
-    out.push(format!("caseval(\"timeout {}\")", timeout_ms / 1000));
+    // Giac's limit is in whole seconds; a shorter limit rounds up, never to 0
+    // (which would mean no limit).
+    out.push(format!(
+        "caseval(\"timeout {}\")",
+        timeout_ms.div_ceil(1000).max(1)
+    ));
     out.push("caseval(\"ckevery 20\")".to_string());
     out.push(format!("srand({seed})"));
     out

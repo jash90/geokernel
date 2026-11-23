@@ -47,8 +47,75 @@ fn symbol<T: Copy>(library: &Library, name: &str) -> Result<T, Error> {
         .map_err(|error| Error::Load(format!("{PREFIX}{name}: {error}")))
 }
 
+/// SHA-256 of the Giac 70507 library for this platform, as extracted from
+/// the reference's release (`tools/giac/fetch.sh` pins the same values).
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+const PINNED: Option<&str> =
+    Some("d4c7f38357f06cc6a364d551ac3c375568b703c3abc4da76674e9642ce0316ec");
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+const PINNED: Option<&str> =
+    Some("a2ed7741e02e8569c9cc9354c9818d883e3d3175de8389c557930f13bd48c498");
+#[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+const PINNED: Option<&str> =
+    Some("b9abc2abb81c3dbc8397754e716483a61ace680106b15ccb66e19507fca10939");
+#[cfg(all(target_os = "windows", target_arch = "x86_64"))]
+const PINNED: Option<&str> =
+    Some("d54fbab833cc4a6bc07cb5e7f9c3a83cb5b08c33402198b3ca0495c77bdf0d71");
+#[cfg(all(target_os = "android", target_arch = "aarch64"))]
+const PINNED: Option<&str> =
+    Some("f84e31b6f8a55974ff6eaffcd03e12bf911f45190323f52914f3d7c9deb1ae6e");
+#[cfg(all(target_os = "android", target_arch = "arm"))]
+const PINNED: Option<&str> =
+    Some("a8a7823594fa2bc6b6395cf16d960fc91f8f51a6c007510911e0703050ed59b7");
+#[cfg(all(target_os = "android", target_arch = "x86"))]
+const PINNED: Option<&str> =
+    Some("b03501ebf9d53b92c54ee49e8da5b19017936715797e6f69a663e1073ab0332f");
+#[cfg(all(target_os = "android", target_arch = "x86_64"))]
+const PINNED: Option<&str> =
+    Some("8a737510102704b6c59a5d817bdfde7475e0c1723bd2404665f0cd73c99b3983");
+#[cfg(not(any(
+    all(target_os = "linux", target_arch = "x86_64"),
+    all(
+        target_os = "macos",
+        any(target_arch = "aarch64", target_arch = "x86_64")
+    ),
+    all(target_os = "windows", target_arch = "x86_64"),
+    all(
+        target_os = "android",
+        any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "x86",
+            target_arch = "x86_64"
+        )
+    ),
+)))]
+const PINNED: Option<&str> = None;
+
+/// Refuses a library whose contents are not the pinned build: loading runs
+/// its code in this process.
+fn verify(path: &Path) -> Result<(), Error> {
+    use sha2::{Digest, Sha256};
+    let Some(pinned) = PINNED else {
+        return Err(Error::Integrity(
+            "no Giac build is pinned for this platform".into(),
+        ));
+    };
+    let bytes = std::fs::read(path).map_err(|e| Error::Load(format!("{}: {e}", path.display())))?;
+    let digest = Sha256::digest(&bytes);
+    let actual: String = digest.iter().map(|b| format!("{b:02x}")).collect();
+    if actual != pinned {
+        return Err(Error::Integrity(format!(
+            "{} has SHA-256 {actual}, expected the Giac 70507 build {pinned}",
+            path.display()
+        )));
+    }
+    Ok(())
+}
+
 impl Native {
     pub(crate) fn load(path: &Path) -> Result<Self, Error> {
+        verify(path)?;
         // SAFETY: loading Giac runs its static initialisers, which only set up
         // Giac's own tables.
         let library = unsafe { Library::new(path) }
@@ -129,6 +196,9 @@ impl Context<'_> {
         // SAFETY: input outlives the call; the context handle is live.
         let parsed = unsafe { (native.new_gen)(&mut env, null, input.as_ptr(), self.handle, null) };
         native.check("gen")?;
+        if parsed == 0 {
+            return Err(Error::Call("gen: null handle".into()));
+        }
         let parsed = Gen {
             native,
             handle: parsed,
@@ -139,6 +209,9 @@ impl Context<'_> {
         let value =
             unsafe { (native.gen_eval)(&mut env, null, parsed.handle, null, 1, self.handle, null) };
         native.check("eval")?;
+        if value == 0 {
+            return Err(Error::Call("eval: null handle".into()));
+        }
         let value = Gen {
             native,
             handle: value,
@@ -150,5 +223,19 @@ impl Context<'_> {
             unsafe { (native.gen_print)(&mut env, null, value.handle, null, self.handle, null) };
         native.check("print")?;
         jni::read_created(printed).ok_or_else(|| Error::Call("print: no string".into()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_library_with_another_hash_is_refused() {
+        let path = std::env::temp_dir().join(format!("geo-giac-not-giac-{}", std::process::id()));
+        std::fs::write(&path, b"not the Giac library").unwrap();
+        let result = verify(&path);
+        std::fs::remove_file(&path).unwrap();
+        assert!(matches!(result, Err(Error::Integrity(_))), "{result:?}");
     }
 }

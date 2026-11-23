@@ -18,3 +18,9 @@ fn reference_protocol() {
         "(x-1)*(x+1)"
     );
 }
+
+#[test]
+fn errors_name_the_integrity_check() {
+    let error = geo_giac::Error::Integrity("x".into());
+    assert!(error.to_string().starts_with("refusing to load Giac"));
+}

@@ -42,7 +42,12 @@ the command processors at upstream commit 112919f, with every alternative of
 an argument (`polygon|polyline`) written as a form of its own; 3D forms are
 left out. The file must list exactly the in-scope commands of the matrix.
 
-`form-evidence.toml` has one row per done form. It can cite golden case ids
+`form-evidence.toml` has one row per done form. A row with `giac = true`
+marks a form that agrees only with the kernel's optional `giac` feature
+(docs/cas-giac.md): its cases are checked against
+`crates/geo-golden/known-gaps-giac.toml`, every recorded case that calls the
+form must agree there, and the command's notes in the matrix list such forms.
+`forms_done` counts them; the script prints how many of the total they are. It can cite golden case ids
 that call the command in that form, a disposition in `DIFFERENCES.md`, or
 both. A difference reference uses `section-slug: Area text`. Its first cell
 names the command with the form's tokens in backticks, such as

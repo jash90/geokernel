@@ -93,7 +93,20 @@ The reference resets Giac before every evaluation (`CASgiacB.init`,
 
 One worker thread with a 256 MiB stack owns the library and its context:
 Giac's context is not thread-safe (the reference serialises calls too) and it
-recurses deeply.
+recurses deeply. One call is in flight at a time, and a caller waits at most
+the time limit plus five seconds. After that the call returns
+`Error::Timeout`; the worker thread keeps running the stuck Giac call (it
+cannot be interrupted from outside, and a second copy of the library would
+share Giac's global state), every later call returns `Error::Busy` at once,
+and the worker takes calls again as soon as Giac returns. Giac's own limit is
+in whole seconds; a limit under a second rounds up to one.
+
+Before loading, the crate checks the file's SHA-256 against the pinned
+Giac 70507 build for the platform (Linux x86_64, macOS arm64 and x86_64,
+Windows x86_64, the four Android ABIs) and refuses anything else with
+`Error::Integrity`; `tools/giac/fetch.sh` checks the jar, the extracted
+library and any cached copy against the same values. A null handle from Giac
+is an error, never passed back to it.
 
 ### Fidelity check
 

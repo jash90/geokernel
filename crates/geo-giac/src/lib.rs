@@ -34,6 +34,12 @@ pub enum Error {
     Call(String),
     /// The worker thread is gone (it panicked or Giac crashed it).
     Worker,
+    /// Giac did not answer within its time limit plus a margin.
+    Timeout,
+    /// Giac is still running an evaluation that timed out.
+    Busy,
+    /// The library's SHA-256 is not the pinned one for this platform.
+    Integrity(String),
 }
 
 impl fmt::Display for Error {
@@ -44,6 +50,9 @@ impl fmt::Display for Error {
             Error::Load(why) => write!(f, "cannot load Giac: {why}"),
             Error::Call(why) => write!(f, "Giac call failed: {why}"),
             Error::Worker => write!(f, "the Giac worker stopped"),
+            Error::Timeout => write!(f, "Giac did not answer in time"),
+            Error::Busy => write!(f, "Giac is still busy with an evaluation that timed out"),
+            Error::Integrity(why) => write!(f, "refusing to load Giac: {why}"),
         }
     }
 }
