@@ -113,4 +113,9 @@ fn a_simplified_text_follows_its_source() {
     if c.id("t").is_some() {
         script::exec(&mut c, "s = Simplify(t)").ok();
     }
+    // The kernel's text bound (`MAX_TEXT_BYTES` in the text commands).
+    const TEXT_BOUND: usize = 1 << 20;
+    if let Some(s) = c.id("s") {
+        assert!(c.text(s).is_none_or(|text| text.len() <= TEXT_BOUND));
+    }
 }

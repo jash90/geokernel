@@ -101,9 +101,12 @@ pub fn evaluate(cases: &[Case], gaps: &Gaps) -> Report {
                     .iter()
                     .map(|m| format!("{}:{}", m.step, m.label))
                     .collect();
+                // The statement covers the listed mismatches only; an unlisted
+                // one is reported by the set comparison below.
                 let wrong_answer = gap.kernel.as_ref().and_then(|kernel| {
                     out.mismatches
                         .iter()
+                        .filter(|m| gap.mismatches.contains(&format!("{}:{}", m.step, m.label)))
                         .find(|m| !kernel.matches(&m.actual))
                         .map(|m| (kernel, m))
                 });
