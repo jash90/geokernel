@@ -302,13 +302,6 @@ mismatches = [
 ]
 
 [[gap]]
-id = "conicforms-namedinterval-001"
-reason = "Center accepts the bounds of an inline inequality. Reading interval bounds from a named boolean function is unsupported."
-mismatches = ["0:script line 4"]
-
-# intersections
-
-[[gap]]
 id = "intersections-boundedconicreview-001"
 reason = "The parser reaches the carrier/conic type check and rejects a segment with a circle. The intersection solver accepts only an infinite line as the carrier."
 mismatches = ["0:script line 9"]

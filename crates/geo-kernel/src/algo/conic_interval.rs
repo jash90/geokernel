@@ -1,5 +1,6 @@
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdMidpoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntervalMidpoint.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoIntervalUtil.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
@@ -7,9 +8,35 @@
 
 use crate::algo::conic::ConicDef;
 use crate::expr::{self, parse, Bin, IfMode, Node, Ty, Un, NONE};
-use crate::kernel::{Construction, Id, Kind};
+use crate::kernel::{Construction, Id, Kind, Value};
 
 impl ConicDef {
+    pub(crate) fn named_interval_midpoint(c: &Construction, function: Id) -> Option<Value> {
+        let crate::kernel::Def::Expr(def) = c.def(function) else {
+            return None;
+        };
+        if !c.value(function).is_defined() {
+            return None;
+        }
+        let entry = expr::entry(c, def);
+        let bounds = Bounds::read(&entry.nodes, entry.root)?;
+        let meter = expr::eval::Lists::new(Vec::new());
+        let ctx = expr::eval::Ctx::<true> {
+            meter: Some(&meter),
+            ..expr::eval::Ctx::new(c, entry, &expr::eval::Env::None)
+        };
+        let bound = |nodes: Vec<u32>, initial: f64, combine: fn(f64, f64) -> f64| {
+            nodes.into_iter().try_fold(initial, |acc, node| {
+                let value = ctx.full_number(node);
+                (!value.is_nan()).then(|| combine(acc, value))
+            })
+        };
+        let low = bound(bounds.lower, f64::NEG_INFINITY, f64::max)?;
+        let high = bound(bounds.upper, f64::INFINITY, f64::min)?;
+        let center = (low + high) / 2.0;
+        (low <= high && !center.is_nan() && !meter.over()).then_some(Value::Number(center))
+    }
+
     /// `CmdMidpoint` accepts a one-variable boolean function. The script
     /// can supply it inline in either `Center` or `Midpoint`.
     pub(crate) fn exec_interval(
@@ -143,4 +170,22 @@ fn push(parsed: &mut parse::Parsed, node: Node) -> u32 {
     parsed.nodes.push(node);
     parsed.lits.push(Default::default());
     (parsed.nodes.len() - 1) as u32
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::script::load;
+
+    #[test]
+    fn center_reads_the_current_bounds_of_a_named_boolean_function() {
+        let mut c = load("a = -4\nb = 2\nf(x) = a < x < b\nm = Center(f)").unwrap();
+        let b = c.id("b").unwrap();
+        let m = c.id("m").unwrap();
+        assert_eq!(c.value(m), Value::Number(-1.0));
+        c.set_number(b, -6.0).unwrap();
+        assert_eq!(c.value(m), Value::Undefined);
+        c.set_number(b, 4.0).unwrap();
+        assert_eq!(c.value(m), Value::Number(0.0));
+    }
 }
