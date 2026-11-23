@@ -232,7 +232,35 @@ See `NOTICE`.
 | Android | Same entry points in all four ABIs; `libc++_shared.so` from the same AAR must be packaged beside it. Loading needs the app's native library directory instead of `GEO_GIAC_LIBRARY`. |
 | Web | Not covered: the reference uses a JavaScript build of Giac. |
 
-Open questions for the other platforms: how the app ships and locates the
-library (bundle resources on macOS, next to the executable on Windows,
-`jniLibs` on Android), code signing of the downloaded library on macOS, and a
-CI runner per platform to repeat the fidelity check.
+### Plan for the other platforms
+
+The binding needs no change across platforms: it only loads a library and
+calls six C functions, and all four published builds export them. What
+differs is fetching, shipping and locating the library.
+
+1. **macOS.** Add the pinned `macosx-universal` artifact to
+   `tools/giac/fetch.sh` for x86_64 (`libjavagiac.jnilib`) beside arm64,
+   run the `giac-linux` steps on a `macos-14` runner, and repeat the replay
+   of the recorded exchanges there (the harness already records on macOS).
+   The app bundle carries the library in `Contents/Frameworks` and looks for
+   it next to the executable when `GEO_GIAC_LIBRARY` is unset; the bundle
+   must be signed with the library inside.
+2. **Windows.** Pin `javagiac64.dll` (SHA-256 recorded in
+   `tools/giac/fetch.sh`), run the same steps on `windows-latest`. The DLL
+   needs only the Universal C runtime of Windows 10 and later. It ships next
+   to the executable.
+3. **Android.** Take `libjavagiac.so` and `libc++_shared.so` for each ABI from
+   `giac-android-70507.aar`, package them under `jniLibs/<abi>`, and load
+   `libjavagiac.so` from the app's native library directory (the path comes
+   from the Android side instead of `GEO_GIAC_LIBRARY`). The fidelity check
+   runs in an emulator job (x86_64 image) with the replay example built for
+   `x86_64-linux-android`.
+4. **Distribution.** Every package that contains a Giac library is a GPL-3.0
+   combined work: its licence notice, the offer of Giac's source and the
+   complete corresponding source of the application go with it. A store that
+   forbids GPL terms cannot carry such a build; the default build without the
+   feature stays available for it.
+
+Each platform counts as covered only after its runner reproduces every
+recorded Giac exchange and the golden data with the feature agree as on
+Linux.
