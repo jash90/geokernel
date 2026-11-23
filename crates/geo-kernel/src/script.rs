@@ -590,17 +590,13 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
 /// The number that a slider assignment such as `b = 10` sets: a growing
 /// command that depends on it can reveal more outputs.
 pub fn slider_assignment_target(c: &Construction, line: &str) -> Option<Id> {
-    if !is_slider_assignment(c, line) {
-        return None;
-    }
-    let (name, _) = split_comment(line).0.split_once('=')?;
-    c.id(name.trim())
+    let (name, rhs, _) = assignment(split_comment(line).0)?;
+    slider_assignment_value(c, name, rhs).map(|(id, _)| id)
 }
 
 /// Whether the line assigns a literal value to an existing slider.
 pub fn is_slider_assignment(c: &Construction, line: &str) -> bool {
-    assignment(split_comment(line).0)
-        .is_some_and(|(name, rhs, _)| slider_assignment_value(c, name, rhs).is_some())
+    slider_assignment_target(c, line).is_some()
 }
 
 fn slider_assignment_value(c: &Construction, name: &str, rhs: &str) -> Option<(Id, f64)> {
@@ -2524,6 +2520,8 @@ mod tests {
         let mut c = load("a = Slider(0, 4)\nb = 2 a").unwrap();
         let slider = c.id("a").unwrap();
         assert!(is_slider_assignment(&c, "a: 3"));
+        assert_eq!(slider_assignment_target(&c, "a: 3"), Some(slider));
+        assert_eq!(slider_assignment_target(&c, "a := 3"), Some(slider));
         assert_eq!(exec(&mut c, "a: 3"), Ok(None));
         assert_eq!(c.id("a"), Some(slider));
         assert_eq!(c.value(c.id("b").unwrap()), Value::Number(6.0));
