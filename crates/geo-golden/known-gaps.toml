@@ -3509,11 +3509,6 @@ reason = "`ProveDetails` of an arithmetic statement: the reference words the con
 mismatches = ["0:q"]
 undefined = true
 
-[[gap]]
-id = "segmentvalue-contexts-003"
-reason = "`Sum` of a list of segments: the reference reads each segment as its length and adds them. The kernel types a list literal of segments as a list of objects, so `Sum` refuses it; segments are numbers only as operands of arithmetic."
-mismatches = ["0:script line 6"]
-
 # prove
 
 [[gap]]

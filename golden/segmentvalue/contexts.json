@@ -144,58 +144,6 @@
         "C = (6, 0)",
         "s = Segment(A, B)",
         "t = Segment(B, C)",
-        "n = Sum({s, t})"
-      ],
-      "steps": [
-        { "action": "initial" },
-        { "action": "move", "label": "A", "x": 1.0, "y": 0.0 },
-        { "action": "move", "label": "B", "x": 3.0, "y": 1.0 },
-        { "action": "move", "label": "C", "x": 3.0, "y": 1.0 }
-      ],
-      "snapshots": [
-        {
-          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
-          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
-          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
-          "t": { "type": "segment", "defined": true, "x1": 3.0, "y1": 4.0, "x2": 6.0, "y2": 0.0 },
-          "n": { "type": "number", "defined": true, "value": 10.0 }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
-          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
-          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 3.0, "y2": 4.0 },
-          "t": { "type": "segment", "defined": true, "x1": 3.0, "y1": 4.0, "x2": 6.0, "y2": 0.0 },
-          "n": { "type": "number", "defined": true, "value": 9.47213595499958 }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
-          "C": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
-          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
-          "t": { "type": "segment", "defined": true, "x1": 3.0, "y1": 1.0, "x2": 6.0, "y2": 0.0 },
-          "n": { "type": "number", "defined": true, "value": 5.39834563766817 }
-        },
-        {
-          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
-          "B": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
-          "C": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
-          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 3.0, "y2": 1.0 },
-          "t": { "type": "segment", "defined": true, "x1": 3.0, "y1": 1.0, "x2": 3.0, "y2": 1.0 },
-          "n": { "type": "number", "defined": true, "value": 2.23606797749979 }
-        }
-      ]
-    },
-    {
-      "id": "segmentvalue-contexts-004",
-      "group": "segmentvalue",
-      "script": [
-        "A = (0, 0)",
-        "B = (3, 4)",
-        "C = (6, 0)",
-        "s = Segment(A, B)",
-        "t = Segment(B, C)",
         "u = Text(s)"
       ],
       "steps": [
@@ -240,7 +188,7 @@
       ]
     },
     {
-      "id": "segmentvalue-contexts-005",
+      "id": "segmentvalue-contexts-004",
       "group": "segmentvalue",
       "script": [
         "A = (0, 0)",
@@ -356,7 +304,7 @@
       ]
     },
     {
-      "id": "segmentvalue-contexts-006",
+      "id": "segmentvalue-contexts-005",
       "group": "segmentvalue",
       "script": [
         "A = (0, 0)",
@@ -408,7 +356,7 @@
       ]
     },
     {
-      "id": "segmentvalue-contexts-007",
+      "id": "segmentvalue-contexts-006",
       "group": "segmentvalue",
       "script": [
         "A = (0, 0)",
@@ -460,7 +408,7 @@
       ]
     },
     {
-      "id": "segmentvalue-contexts-008",
+      "id": "segmentvalue-contexts-007",
       "group": "segmentvalue",
       "script": [
         "A = (0, 0)",
@@ -512,7 +460,7 @@
       ]
     },
     {
-      "id": "segmentvalue-contexts-009",
+      "id": "segmentvalue-contexts-008",
       "group": "segmentvalue",
       "script": [
         "A = (0, 0)",
@@ -564,7 +512,7 @@
       ]
     },
     {
-      "id": "segmentvalue-contexts-010",
+      "id": "segmentvalue-contexts-009",
       "group": "segmentvalue",
       "script": [
         "A = (0, 0)",
@@ -616,7 +564,7 @@
       ]
     },
     {
-      "id": "segmentvalue-contexts-011",
+      "id": "segmentvalue-contexts-010",
       "group": "segmentvalue",
       "script": [
         "A = (0, 0)",
@@ -696,7 +644,7 @@
       ]
     },
     {
-      "id": "segmentvalue-contexts-012",
+      "id": "segmentvalue-contexts-011",
       "group": "segmentvalue",
       "script": [
         "A = (0, 0)",
@@ -748,7 +696,7 @@
       ]
     },
     {
-      "id": "segmentvalue-contexts-013",
+      "id": "segmentvalue-contexts-012",
       "group": "segmentvalue",
       "script": [
         "A = (0, 0)",
