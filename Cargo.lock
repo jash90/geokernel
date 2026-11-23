@@ -859,6 +859,7 @@ dependencies = [
 name = "geo-kernel"
 version = "0.1.0"
 dependencies = [
+ "geo-giac",
  "geo-latex",
  "image",
  "libm",

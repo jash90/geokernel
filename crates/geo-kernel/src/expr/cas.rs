@@ -1,6 +1,8 @@
 //! Adapter between expression trees and the exact polynomial engine.
 
 mod functional;
+#[cfg(feature = "giac")]
+mod giac;
 mod input;
 mod solutions;
 
@@ -206,7 +208,13 @@ impl<const M: bool> Ctx<'_, M> {
                 self.cas_slots(coefficients.into_iter().map(Slot::number))
             }
             Op::Factors => functional::factor_list(self, a, work),
-            Op::Solve { .. } => solutions::list(self, a, op, work),
+            Op::Solve { .. } => {
+                #[cfg(feature = "giac")]
+                if let Some(result) = giac::solve(self, a, op) {
+                    return result;
+                }
+                solutions::list(self, a, op, work)
+            }
             _ => None,
         }
     }

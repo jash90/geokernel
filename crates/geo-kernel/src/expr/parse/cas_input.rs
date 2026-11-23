@@ -64,8 +64,21 @@ impl Parser<'_> {
 
     fn parse_solve(&mut self, name: &str) -> Result<u32, String> {
         let commas = self.argument_commas();
+        // The Giac translation prints the second argument from its text, and
+        // takes forms the kernel's own solver refuses (`x = 1`, a number).
+        #[cfg(feature = "giac")]
+        let hint = match commas[..] {
+            [comma] => self.hint_text(comma + 1),
+            _ => None,
+        };
         let (names, width, axes) = if let [comma] = commas[..] {
-            self.solution_variables(comma + 1)?
+            #[cfg(feature = "giac")]
+            let variables = self.solution_variables(comma + 1).or_else(|_| {
+                Ok::<_, String>((vec!["x".into(), "y".into(), "z".into()], 0, [0, 1, 2]))
+            })?;
+            #[cfg(not(feature = "giac"))]
+            let variables = self.solution_variables(comma + 1)?;
+            variables
         } else if commas.is_empty() {
             (vec!["x".into(), "y".into(), "z".into()], 0, [0, 1, 2])
         } else {
@@ -109,14 +122,23 @@ impl Parser<'_> {
             axes,
             system: is_list,
         };
-        Ok(self.push(Node::Cas(op, equations, NONE)))
+        let node = self.push(Node::Cas(op, equations, NONE));
+        #[cfg(feature = "giac")]
+        if let Some(hint) = hint {
+            self.mark_hint(node, hint);
+        }
+        Ok(node)
     }
 
     fn cas_equation(&mut self) -> Result<u32, String> {
         let left = self.argument(false)?;
         if self.eat(&Tok::Assign) {
             let right = self.argument(false)?;
-            Ok(self.push(Node::Bin(Bin::Sub, left, right)))
+            let node = self.push(Node::Bin(Bin::Sub, left, right));
+            // The Giac translation prints `left=right`, as the reference does.
+            #[cfg(feature = "giac")]
+            self.mark_equation(node);
+            Ok(node)
         } else {
             Ok(left)
         }
