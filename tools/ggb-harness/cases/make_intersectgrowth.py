@@ -47,4 +47,26 @@ cases.case("interval", ["b = 1.5", "f(x) = (x - 1) (x - 2)", "g(x) = (x - 3) (x 
                          "h(x) = 0", "R = Intersect(f, h, b, 3)", "S = Intersect(g, h, 0, b)"],
            [setn("b", 0.5), setn("b", 5.5)])
 cases.cases[-1]["track_root_growth"] = True
+# Label reuse: AlgoRoots.initPoints removes the undefined outputs no object
+# reads, which frees their labels; AlgoGeoPointsFunction.updateLabels gives
+# a slot that has a root again the next default point label.
+cases.case("reuse", ["f(x) = sin(x)", "h(x) = 0", "b = 10", "R = Intersect(f, h, 1, b)",
+                      "d = x(R_{2})"],
+           [setn("b", value) for value in (4, 10, 7, 13)])
+cases.cases[-1]["track_root_growth"] = True
+cases.case("reuse", ["f(x) = sin(x)", "h(x) = 0", "b = 10", "R = Intersect(f, h, 1, b)",
+                      "d = x(R_{3})"],
+           [setn("b", value) for value in (2, 10, 13)])
+cases.cases[-1]["track_root_growth"] = True
+cases.case("reuse", ["b = 3", "c = 2.6", "f(x) = (x - 1) (x - 2)",
+                      "g(x) = (x - 3) (x - 4) (x - 5)", "k(x) = (x - 6) (x - 7)", "h(x) = 0",
+                      "R = Intersect(f, h, 0, b)", "S = Intersect(g, h, 2.5, c)",
+                      "T = Intersect(k, h, 5.5, c)"],
+           [setn("b", 1.5), setn("c", 8), setn("b", 3), setn("c", 2.6), setn("b", 1.5),
+            setn("b", 3), setn("c", 8)])
+cases.cases[-1]["track_root_growth"] = True
+cases.case("reuse", ["b = 1.5", "f(x) = (x - 1) (x - 2)", "g(x) = (x - 3) (x - 4) (x - 5)",
+                      "h(x) = 0", "R = Intersect(f, h, b, 3)", "S = Intersect(g, h, 0, b)"],
+           [setn("b", value) for value in (0.5, 5.5, 0.5, 1.5, 5.5)])
+cases.cases[-1]["track_root_growth"] = True
 cases.write()

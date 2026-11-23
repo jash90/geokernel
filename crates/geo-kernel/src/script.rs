@@ -68,7 +68,10 @@ use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
 
-pub use intersect::growth::{boundary_slot_owner, restore_boundary_labels, BoundaryOutputs};
+pub use intersect::growth::{
+    boundary_slot_owner, first_slot_owner, free_label_for, growth_owner, restore_boundary_labels,
+    BoundaryOutputs,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScriptError {
@@ -846,6 +849,12 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     }
     if let Some(def) = intersect::growth::parse_slot(c, rhs) {
         let (def, owner) = def?;
+        if let Some(id) = intersect::growth::existing_slot(c, owner, def) {
+            return c
+                .relabel_output(id, name)
+                .map(|()| Some(id))
+                .map_err(|e| e.to_string());
+        }
         return c
             .add_output(name, def, owner)
             .map(Some)

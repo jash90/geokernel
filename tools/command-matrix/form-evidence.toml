@@ -1067,6 +1067,11 @@ cases = ["intersections-functions-002", "intersectfunctions-pair-004"]
 
 [[form]]
 command = "Intersect"
+form = "function,function,number,number"
+cases = ["intersectfunctions-interval-001", "intersectgrowth-interval-003", "intersectgrowth-reuse-002", "funcrest-freehandreaders-010"]
+
+[[form]]
+command = "Intersect"
 form = "function,conic,number"
 cases = ["intersections-functionconic-003", "intersectfunctions-conic-003"]
 
