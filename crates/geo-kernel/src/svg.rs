@@ -98,6 +98,12 @@ impl View {
                     }
                 }
                 Value::Ray { x, y, .. } => grow(x, y),
+                Value::PenStroke { .. } => {
+                    if let Some([xmin, xmax, ymin, ymax]) = c.stroke(id).and_then(|s| s.bounds()) {
+                        grow(xmin, ymin);
+                        grow(xmax, ymax);
+                    }
+                }
                 Value::Polygon { .. } | Value::PolyLine { .. } => {
                     for (x, y) in c.vertices(id).flatten() {
                         grow(x, y);
@@ -483,6 +489,11 @@ fn render_geometry(
                 };
                 write_locus(&locus.points, &mut segments, |x, y| (sx(x), sy(y)));
             }
+            Value::PenStroke { .. } => {
+                if let Some(stroke) = c.stroke(id) {
+                    write_stroke(stroke, &mut segments, |x, y| (sx(x), sy(y)));
+                }
+            }
             Value::Text => {
                 let Some((source, style)) = c
                     .text(id)
@@ -658,6 +669,44 @@ fn write_locus(
         }
     }
     flush(&mut run, out);
+}
+
+/// A pen stroke as one path with round caps, from the path operations of
+/// [`crate::algo::stroke::StrokeData::path`]; a lone point is a line to
+/// itself, which the round cap shows as a dot.
+fn write_stroke(
+    stroke: &crate::algo::stroke::StrokeData,
+    out: &mut String,
+    at: impl Fn(f64, f64) -> (f64, f64),
+) {
+    use crate::algo::stroke::PathOp;
+    let mut d = String::new();
+    for op in stroke.path() {
+        let _ = match op {
+            PathOp::Move([x, y]) => {
+                let (x, y) = at(x, y);
+                write!(d, "M{x:.2} {y:.2}")
+            }
+            PathOp::Line([x, y]) => {
+                let (x, y) = at(x, y);
+                write!(d, "L{x:.2} {y:.2}")
+            }
+            PathOp::Quad([cx, cy], [x, y]) => {
+                let ((cx, cy), (x, y)) = (at(cx, cy), at(x, y));
+                write!(d, "Q{cx:.2} {cy:.2} {x:.2} {y:.2}")
+            }
+            PathOp::Cubic([ax, ay], [bx, by], [x, y]) => {
+                let ((ax, ay), (bx, by), (x, y)) = (at(ax, ay), at(bx, by), at(x, y));
+                write!(d, "C{ax:.2} {ay:.2} {bx:.2} {by:.2} {x:.2} {y:.2}")
+            }
+        };
+    }
+    if !d.is_empty() {
+        let _ = writeln!(
+            out,
+            r##"<path d="{d}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>"##
+        );
+    }
 }
 
 /// The points of an arc or sector, sampled from its start to its end

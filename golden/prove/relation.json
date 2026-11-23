@@ -1,0 +1,168 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-relation-001",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(A, B)",
+        "E = Midpoint(A, C)",
+        "f = Line(D, E)",
+        "g = Line(B, C)",
+        "b = AreParallel(f, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)",
+        "r = ProveDetails(b, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "f": { "type": "line", "defined": true, "a": -1.5, "b": -1.5, "c": 4.5 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "<strong>A</strong> and <strong>B</strong> are not equal" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-relation-002",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 2)",
+        "M = Midpoint(A, B)",
+        "c = Circle(M, A)",
+        "P = Point(c, 0.25)",
+        "f = Line(A, P)",
+        "g = Line(B, P)",
+        "b = ArePerpendicular(f, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)",
+        "r = ProveDetails(b, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "c": { "type": "circle", "defined": true, "cx": 2.0, "cy": 1.0, "r": 2.23606797749979 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": -1.2360679774997898 },
+          "f": { "type": "line", "defined": true, "a": 1.2360679774997898, "b": 2.0, "c": -0.0 },
+          "g": { "type": "line", "defined": true, "a": 3.23606797749979, "b": -2.0, "c": -8.94427190999916 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "<strong>A</strong> and <strong>B</strong> are not equal" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-relation-003",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "b = AreCollinear(A, B, C)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)",
+        "r = ProveDetails(b, true)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          },
+          "r": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

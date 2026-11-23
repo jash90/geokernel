@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -269,7 +269,7 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },
@@ -284,7 +284,7 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },
@@ -299,7 +299,7 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },
@@ -314,7 +314,7 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },
@@ -329,7 +329,7 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },
@@ -344,7 +344,7 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },
@@ -359,7 +359,7 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 }
         }
       ]
     },
@@ -686,20 +686,20 @@
             "type": "function",
             "defined": true,
             "samples": [
-              [-8.0, null],
-              [-4.0, null],
-              [-2.0, null],
-              [-1.0, null],
-              [-0.5, null],
+              [-8.0, { "infinity": -1 }],
+              [-4.0, { "infinity": -1 }],
+              [-2.0, { "infinity": -1 }],
+              [-1.0, { "infinity": -1 }],
+              [-0.5, { "infinity": -1 }],
               [0.0, null],
-              [0.5, null],
-              [1.0, null],
-              [2.0, null],
-              [4.0, null],
-              [8.0, null]
+              [0.5, { "infinity": 1 }],
+              [1.0, { "infinity": 1 }],
+              [2.0, { "infinity": 1 }],
+              [4.0, { "infinity": 1 }],
+              [8.0, { "infinity": 1 }]
             ]
           },
-          "v": { "type": "number", "defined": false }
+          "v": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },
@@ -721,17 +721,17 @@
             "type": "function",
             "defined": true,
             "samples": [
-              [-8.0, null],
-              [-4.0, null],
-              [-2.0, null],
-              [-1.0, null],
-              [-0.5, null],
+              [-8.0, { "infinity": -1 }],
+              [-4.0, { "infinity": -1 }],
+              [-2.0, { "infinity": -1 }],
+              [-1.0, { "infinity": -1 }],
+              [-0.5, { "infinity": -1 }],
               [0.0, null],
-              [0.5, null],
-              [1.0, null],
-              [2.0, null],
-              [4.0, null],
-              [8.0, null]
+              [0.5, { "infinity": 1 }],
+              [1.0, { "infinity": 1 }],
+              [2.0, { "infinity": 1 }],
+              [4.0, { "infinity": 1 }],
+              [8.0, { "infinity": 1 }]
             ]
           },
           "v": { "type": "number", "defined": false }
@@ -756,20 +756,20 @@
             "type": "function",
             "defined": true,
             "samples": [
-              [-8.0, null],
-              [-4.0, null],
-              [-2.0, null],
-              [-1.0, null],
-              [-0.5, null],
+              [-8.0, { "infinity": -1 }],
+              [-4.0, { "infinity": -1 }],
+              [-2.0, { "infinity": -1 }],
+              [-1.0, { "infinity": -1 }],
+              [-0.5, { "infinity": -1 }],
               [0.0, null],
-              [0.5, null],
-              [1.0, null],
-              [2.0, null],
-              [4.0, null],
-              [8.0, null]
+              [0.5, { "infinity": 1 }],
+              [1.0, { "infinity": 1 }],
+              [2.0, { "infinity": 1 }],
+              [4.0, { "infinity": 1 }],
+              [8.0, { "infinity": 1 }]
             ]
           },
-          "v": { "type": "number", "defined": false }
+          "v": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },
@@ -791,17 +791,17 @@
             "type": "function",
             "defined": true,
             "samples": [
-              [-8.0, null],
-              [-4.0, null],
-              [-2.0, null],
-              [-1.0, null],
-              [-0.5, null],
+              [-8.0, { "infinity": -1 }],
+              [-4.0, { "infinity": -1 }],
+              [-2.0, { "infinity": -1 }],
+              [-1.0, { "infinity": -1 }],
+              [-0.5, { "infinity": -1 }],
               [0.0, -1.0E20],
-              [0.5, null],
-              [1.0, null],
-              [2.0, null],
-              [4.0, null],
-              [8.0, null]
+              [0.5, { "infinity": 1 }],
+              [1.0, { "infinity": 1 }],
+              [2.0, { "infinity": 1 }],
+              [4.0, { "infinity": 1 }],
+              [8.0, { "infinity": 1 }]
             ]
           },
           "v": { "type": "number", "defined": true, "value": 0.0 }
@@ -856,7 +856,7 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
           "f": {
             "type": "function",
             "defined": true,
@@ -874,7 +874,7 @@
               [8.0, 8.0E-308]
             ]
           },
-          "v": { "type": "number", "defined": false }
+          "v": { "type": "number", "defined": true, "infinity": 1 }
         }
       ]
     },

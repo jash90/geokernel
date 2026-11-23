@@ -113,6 +113,12 @@ pub fn visible_content_bounds(c: &Construction, visible: impl Fn(Id) -> bool) ->
                     add(&mut b, xmax, ymax);
                 }
             }
+            Value::PenStroke { .. } => {
+                if let Some([xmin, xmax, ymin, ymax]) = c.stroke(id).and_then(|s| s.bounds()) {
+                    add(&mut b, xmin, ymin);
+                    add(&mut b, xmax, ymax);
+                }
+            }
             Value::Image => {
                 if let Some(points) = c
                     .image(id)

@@ -412,6 +412,8 @@ pub(super) struct Local<'a> {
     /// whether the element is a vector: a `Zip` binds the element itself
     /// (`updateLocalVar`), which keeps its class
     pub(super) vector: bool,
+    /// the text of a text element that a `Zip` binds
+    pub(super) text: Option<&'a str>,
     pub(super) up: Option<&'a Local<'a>>,
 }
 
@@ -728,6 +730,7 @@ pub(super) fn system_locals(ctx: &Ctx<'_, true>, root: u32, depth: u32, values: 
             value: Val::N(x),
             run: None,
             vector: false,
+            text: None,
             up: ctx.locals,
         };
         system_locals(
@@ -1287,7 +1290,7 @@ impl<const M: bool> Ctx<'_, M> {
     /// The element the variable of `depth` holds: a number for a `Sequence`
     /// (`AlgoSequence`), any element for a `Zip` (`updateLocalVar`).
     #[inline(never)]
-    fn local(&self, depth: u32) -> Option<&Local<'_>> {
+    pub(super) fn local(&self, depth: u32) -> Option<&Local<'_>> {
         let mut local = self.locals;
         while let Some(l) = local {
             if l.depth == depth {

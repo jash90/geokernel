@@ -146,11 +146,17 @@ pub fn numbers_in(v: &Value) -> Vec<f64> {
         .collect()
 }
 
+/// Whether a value holds only numbers it may hold: finite ones, and for a
+/// number object also an infinity, which the reference keeps as a defined
+/// value (golden group `infinity`). NaN is never a value.
 pub fn is_all_finite(v: &Value) -> bool {
+    if let Value::Number(n) = *v {
+        return !n.is_nan();
+    }
     numbers_in(v).iter().all(|n| n.is_finite())
 }
 
-/// The first object whose value holds a non-finite number.
+/// The first object whose value holds a number it may not hold.
 pub fn first_non_finite(c: &Construction) -> Option<String> {
     c.ids().find_map(|id| {
         let v = c.value(id);

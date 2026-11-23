@@ -117,6 +117,9 @@ case("rigidpolygon", [pt("A", 1, 1), pt("B", 5, 1), pt("C", 2, 3),
 case("rigidpolygon", [pt("A", 1, 1), pt("B", 5, 1), pt("C", 2, 3), num("u", 2), num("v", -3),
                       "p = Polygon(A, B, C)", "q = RigidPolygon(p, u, v)"],
      [mv("B", 4, 4), setn("u", 4), setn("v", 2), mv("C", 5, 1)])
+case("rigidpolygon", [pt("A", 0, 0), pt("B", 4, 0), pt("C", 1, 2),
+                      "p = RigidPolygon(A, B, C)"],
+     [mv("A", 3, 2), mv("B", 3, 6), mv("B", 3, -2), mv("A", 0, 0)])
 
 # Direct manipulation.
 case("segment", [pt("A", 0, 0), num("n", 2), "s = Segment(A, n)"],

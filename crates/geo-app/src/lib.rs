@@ -23,6 +23,8 @@ mod tool_icons;
 mod toolbar;
 
 #[cfg(test)]
+mod animation_tests;
+#[cfg(test)]
 mod budget_tests;
 #[cfg(test)]
 mod cull_tests;

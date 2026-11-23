@@ -108,7 +108,9 @@ fn of_kind(kind: Kind) -> &'static [Kind] {
         Kind::Locus => &[Kind::Locus],
         Kind::Curve => &[Kind::Curve],
         Kind::Image => &[Kind::Image],
-        Kind::Button | Kind::InputBox | Kind::PieChart | Kind::ImplicitCurve => &[],
+        Kind::Button | Kind::InputBox | Kind::PieChart | Kind::ImplicitCurve | Kind::PenStroke => {
+            &[]
+        }
     }
 }
 
@@ -374,6 +376,7 @@ impl Map {
             | Value::InputBox
             | Value::Image
             | Value::PieChart
+            | Value::PenStroke { .. }
             | Value::ImplicitCurve
             | Value::Undefined => None,
         }
@@ -864,11 +867,14 @@ impl Group for TransformDef {
             Kind::PolyLine => {
                 // the image runs through the points like the source
                 // (`transformPoly`): an undefined input leaves a hole rather
-                // than undefining the polyline (GeoPolyLine.isDefined)
+                // than undefining the polyline (GeoPolyLine.isDefined), and
+                // so does an image that is not finite (an infinite ratio)
                 let mut length = 0.0;
                 let mut prev: Option<(f64, f64)> = None;
                 for v in c.vertices(source_of(self)) {
-                    let p = v.and_then(|(x, y)| map.as_ref().map(|m| m.point(x, y)));
+                    let p = v
+                        .and_then(|(x, y)| map.as_ref().map(|m| m.point(x, y)))
+                        .filter(|(x, y)| x.is_finite() && y.is_finite());
                     if let (Some(a), Some(b)) = (prev, p) {
                         let (dx, dy) = (a.0 - b.0, a.1 - b.1);
                         length += (dx * dx + dy * dy).sqrt();

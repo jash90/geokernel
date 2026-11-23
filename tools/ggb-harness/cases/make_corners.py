@@ -170,4 +170,84 @@ cases.case("inequality", [
     "a: y >= x^2", "b = a(0, 0)", "P = Vertex(a)",
 ], [])
 
+# The image transform multiplies every entry, so a zero entry times an
+# infinite anchor is NaN (GeoVec2D.multiplyMatrix): the projective matrix
+# sends two anchors to infinity and the identity then leaves them undefined.
+cases.case("matrix", [
+    image_asset, pt("A", 0, 0), pt("B", 1, 0), pt("D", 0, 1),
+    image("im", f"world(false, false, point({encoded('A')}), point({encoded('B')}), point({encoded('D')}))"),
+    "u = ApplyMatrix({{1, 0, 1}, {0, 1, 1}, {1, 0, 0}}, im)",
+    "w = ApplyMatrix({{1, 0}, {0, 1}}, u)",
+    "P = Corner(u, 1)", "Q = Corner(u, 2)", "R = Corner(w, 1)", "S = Corner(w, 2)",
+    "T = Corner(w, 4)",
+], [mv("A", 1, 1), mv("D", 1, 2), mv("A", 0, 0)])
+
+# Nonpolynomial borders: a function border meets one-variable borders at
+# their zeros, and every border takes part in the Boolean test.
+for script, steps in (
+    (["k = 0", "q(x,y) = y > sin(x) + k && x > -1 && x < 2 && y < 1.5"],
+     [setn("k", 2), setn("k", -3), setn("k", 0)]),
+    (["q(x,y) = y < 1/x && x > 0.5 && x < 4 && y > 0"], []),
+    (["q(x,y) = x < exp(y) && y > -1 && y < 1 && x > 0"], []),
+    (["q(x,y) = y > cos(x) && x^2 > 0"], []),
+    (["q(x,y) = y > cos(x) && x^2 >= 0 && x < 1"], []),
+    (["q(x,y) = x^2 < 4 && y > sqrt(x + 3) && y < 5"], []),
+    (["k = 1", "q(x,y) = y > sqrt(x - k) && x > 0 && x < 3"],
+     [setn("k", 5), setn("k", -1), setn("k", 1)]),
+    (["q(x,y) = sin(x y) > -2 && x > 0 && y > 0 && x + y < 2"], []),
+    (["q(x,y) = x y + sin(y) > 1 && x > 0 && y > 0 && x < 2 && y < 2"], []),
+    (["q(x,y) = y > sin(x) || x < -1 || x > 1"], []),
+    (["q(x,y) = y >= 2^x && x > -2 && x < 2 && y < 3"], []),
+    (["q(x,y) = y > sin(x) && y < 2 - x^2 && x > -1"], []),
+    (["q(x,y) = !(y < 2^x) && x > -2 && x < 2 && y < 3"], []),
+    (["k = 2", "q(x,y) = x > 0 && sin(x y) > k"], [setn("k", -2)]),
+):
+    cases.case("vertex", script + ["P = Vertex(q)"], steps)
+    cases.cases[-1]["track_boundary_growth"] = True
+cases.case("inequality", ["k = 1", "q(x,y) = x > ln(y) + k && y > 0.5 && y < 3",
+                          "P = Corner(q)"], [setn("k", -1), setn("k", 1)])
+cases.cases[-1]["track_boundary_growth"] = True
+# A border that is neither polynomial nor a function of one coordinate
+# stops building the inequality tree; testing a vertex then fails.
+for border in ("x + y < 2 && sin(x y) > -2", "x + y < 2 && x y + sin(x) > 5",
+               "x + y < 2 && (sin(x y) > -2 || x > 5)", "y > sin(x) && sin(x y) > 1",
+               "x^2 < 1 && y^2 < 4 && sin(x y) > 1"):
+    cases.case("inequality", ["q(x,y) = x > 0 && y > 0 && " + border],
+               [{"action": "reject", "line": "P = Vertex(q)"},
+                {"action": "reject", "line": "Q = Corner(q)"}])
+# Without a tested candidate the incomplete tree is never read.
+for script in ("x^2 > -1 && y > sin(x) && sin(x y) > 1", "x > 0 && x^2 < 4 && sin(x y) > 1"):
+    cases.case("inequality", ["q(x,y) = " + script, "P = Vertex(q)"], [])
+# Inline inequalities.
+cases.case("inequality", [num("h", 2), "P = Corner(x > -1 && y > 0 && x + y < h)"],
+           [setn("h", -2), setn("h", 3)])
+cases.case("inequality", ["P = Corner(x^2 < 4 && y > sqrt(x + 3) && y < 5)"], [])
+cases.case("inequality", ["P = Vertex(y > cos(x) && x^2 > 0)"], [])
+cases.case("inequality", ["P = Vertex(x < exp(y) && y^2 < 1)"], [])
+
+# Review reproducers: a tiny normalized quadratic coefficient, negated
+# borders that read NaN, and a variable exponent edited away and back.
+cases.case("review", ["P = Vertex(x > sin(y) && y^2 + 100000*y + 10000000000 > 0)"], [])
+cases.case("review", ["P = Corner(!(y > sqrt(x)) && x > -2 && y > 0)"], [])
+cases.case("review", ["k = 1", "a = sqrt(k)", "P = Vertex(!(y > sin(x) + a) && x > 0 && y > 0)"],
+           [setn("k", -1), setn("k", 1)])
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("review", ["n = 2", "P = Vertex(y > x^n && x > 1 && y > 0)"],
+           [setn("n", 0.5), setn("n", 2)])
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("review", ["q(x,y) = (x > 1 -> y > 2) && x < 3 && y < 4 && y > sqrt(x - 5)",
+                      "P = Vertex(q)"], [])
+
+for script in ("P = Vertex(x > sin(y) && (y^2 + 1000*y + 1000000)/1000000000 > 0)",
+               "P = Vertex(!((x > 0) ⊕ false) && x > 1 && y > 0)",
+               "P = Vertex((!(y > sqrt(x)) ⊕ x > 10) && x > -2 && x < 1 && y > 0)",
+               "P = Vertex(!(-1 < y < sqrt(x) - 2) && x > -2 && x < 1 && y > 0)",
+               "P = Vertex(x > y^2 && y^2 - 10000000000 > 0)",
+               "P = Vertex((x > 0 ⊕ y > 1) && x < 2 && y < 3)",
+               "P = Vertex((x > 0 && true) && x < 2 && y > 0 && y < 1)",
+               "P = Vertex(y > sqrt(x) && x^2 < 4 && y < 3)",
+               "P = Vertex(y > ln(x) && x^2 > 0)",
+               "P = Vertex(y > sqrt(x) && x^2 < 4 && x^2 + y^2 < 16)"):
+    cases.case("review", [script], [])
+
 cases.write()

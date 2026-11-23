@@ -1,0 +1,1101 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-freevariable-001",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x+y=1}, {x, y})",
+        "r2 = Solve({x+y=1}, {x, y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 9.0],
+                      [-4.0, 5.0],
+                      [-2.0, 3.0],
+                      [-1.0, 2.0],
+                      [-0.5, 1.5],
+                      [0.0, 1.0],
+                      [0.5, 0.5],
+                      [1.0, 0.0],
+                      [2.0, -1.0],
+                      [4.0, -3.0],
+                      [8.0, -7.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-002",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x+y=1}, {y, x})",
+        "r2 = Solve({x+y=1}, {y, x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 9.0],
+                      [-4.0, 5.0],
+                      [-2.0, 3.0],
+                      [-1.0, 2.0],
+                      [-0.5, 1.5],
+                      [0.0, 1.0],
+                      [0.5, 0.5],
+                      [1.0, 0.0],
+                      [2.0, -1.0],
+                      [4.0, -3.0],
+                      [8.0, -7.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-003",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x-2y=3}, {x, y})",
+        "r2 = Solve({x-2y=3}, {x, y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -13.0],
+                      [-4.0, -5.0],
+                      [-2.0, -1.0],
+                      [-1.0, 1.0],
+                      [-0.5, 2.0],
+                      [0.0, 3.0],
+                      [0.5, 4.0],
+                      [1.0, 5.0],
+                      [2.0, 7.0],
+                      [4.0, 11.0],
+                      [8.0, 19.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": -2.0, "c": -3.0 },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-004",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({2x+y=3}, {x, y})",
+        "r2 = Solve({2x+y=3}, {x, y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 5.5],
+                      [-4.0, 3.5],
+                      [-2.0, 2.5],
+                      [-1.0, 2.0],
+                      [-0.5, 1.75],
+                      [0.0, 1.5],
+                      [0.5, 1.25],
+                      [1.0, 1.0],
+                      [2.0, 0.5],
+                      [4.0, -0.5],
+                      [8.0, -2.5]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 0.5, "c": -1.5 },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-005",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x+z=1}, {x, y, z})",
+        "r2 = Solve({x+z=1}, {x, y, z})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 9.0],
+                      [-4.0, 5.0],
+                      [-2.0, 3.0],
+                      [-1.0, 2.0],
+                      [-0.5, 1.5],
+                      [0.0, 1.0],
+                      [0.5, 0.5],
+                      [1.0, 0.0],
+                      [2.0, -1.0],
+                      [4.0, -3.0],
+                      [8.0, -7.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "implicit",
+                    "defined": true,
+                    "coefficients": [
+                      [-1.0],
+                      [1.0]
+                    ],
+                    "equation": "x = 1",
+                    "input_form": false
+                  },
+                  { "type": "line", "defined": false },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-006",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({y+z=1}, {x, y, z})",
+        "r2 = Solve({y+z=1}, {x, y, z})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 9.0],
+                      [-4.0, 5.0],
+                      [-2.0, 3.0],
+                      [-1.0, 2.0],
+                      [-0.5, 1.5],
+                      [0.0, 1.0],
+                      [0.5, 0.5],
+                      [1.0, 0.0],
+                      [2.0, -1.0],
+                      [4.0, -3.0],
+                      [8.0, -7.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": false },
+                  {
+                    "type": "implicit",
+                    "defined": true,
+                    "coefficients": [
+                      [-1.0, 1.0]
+                    ],
+                    "equation": "y = 1",
+                    "input_form": false
+                  },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-007",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x+y=1}, {x, y, z})",
+        "r2 = Solve({x+y=1}, {x, y, z})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 9.0],
+                      [-4.0, 5.0],
+                      [-2.0, 3.0],
+                      [-1.0, 2.0],
+                      [-0.5, 1.5],
+                      [0.0, 1.0],
+                      [0.5, 0.5],
+                      [1.0, 0.0],
+                      [2.0, -1.0],
+                      [4.0, -3.0],
+                      [8.0, -7.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+                  { "type": "line", "defined": false },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-008",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x+y=1, z=0}, {x, y, z})",
+        "r2 = Solve({x+y=1, z=0}, {x, y, z})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 9.0],
+                      [-4.0, 5.0],
+                      [-2.0, 3.0],
+                      [-1.0, 2.0],
+                      [-0.5, 1.5],
+                      [0.0, 1.0],
+                      [0.5, 0.5],
+                      [1.0, 0.0],
+                      [2.0, -1.0],
+                      [4.0, -3.0],
+                      [8.0, -7.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+                  { "type": "line", "defined": false },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-009",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x+y+z=1, x-y=0}, {x, y, z})",
+        "r2 = Solve({x+y+z=1, x-y=0}, {x, y, z})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 4.5],
+                      [-4.0, 2.5],
+                      [-2.0, 1.5],
+                      [-1.0, 1.0],
+                      [-0.5, 0.75],
+                      [0.0, 0.5],
+                      [0.5, 0.25],
+                      [1.0, 0.0],
+                      [2.0, -0.5],
+                      [4.0, -1.5],
+                      [8.0, -3.5]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 4.5],
+                      [-4.0, 2.5],
+                      [-2.0, 1.5],
+                      [-1.0, 1.0],
+                      [-0.5, 0.75],
+                      [0.0, 0.5],
+                      [0.5, 0.25],
+                      [1.0, 0.0],
+                      [2.0, -0.5],
+                      [4.0, -1.5],
+                      [8.0, -3.5]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "implicit",
+                    "defined": true,
+                    "coefficients": [
+                      [-0.5],
+                      [1.0]
+                    ],
+                    "equation": "x = 0.5",
+                    "input_form": false
+                  },
+                  {
+                    "type": "implicit",
+                    "defined": true,
+                    "coefficients": [
+                      [-0.5, 1.0]
+                    ],
+                    "equation": "y = 0.5",
+                    "input_form": false
+                  },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-010",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x+y+z=1, y-z=0}, {x, y, z})",
+        "r2 = Solve({x+y+z=1, y-z=0}, {x, y, z})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 17.0],
+                      [-4.0, 9.0],
+                      [-2.0, 5.0],
+                      [-1.0, 3.0],
+                      [-0.5, 2.0],
+                      [0.0, 1.0],
+                      [0.5, 0.0],
+                      [1.0, -1.0],
+                      [2.0, -3.0],
+                      [4.0, -7.0],
+                      [8.0, -15.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "implicit",
+                    "defined": true,
+                    "coefficients": [
+                      [-1.0],
+                      [1.0]
+                    ],
+                    "equation": "x = 1",
+                    "input_form": false
+                  },
+                  {
+                    "type": "implicit",
+                    "defined": true,
+                    "coefficients": [
+                      [-1.0, 1.0]
+                    ],
+                    "equation": "y = 1",
+                    "input_form": false
+                  },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-011",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x+y+z=1, x-z=2}, {x, y, z})",
+        "r2 = Solve({x+y+z=1, x-z=2}, {x, y, z})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -6.0],
+                      [-4.0, -2.0],
+                      [-2.0, 0.0],
+                      [-1.0, 1.0],
+                      [-0.5, 1.5],
+                      [0.0, 2.0],
+                      [0.5, 2.5],
+                      [1.0, 3.0],
+                      [2.0, 4.0],
+                      [4.0, 6.0],
+                      [8.0, 10.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, 15.0],
+                      [-4.0, 7.0],
+                      [-2.0, 3.0],
+                      [-1.0, 1.0],
+                      [-0.5, 0.0],
+                      [0.0, -1.0],
+                      [0.5, -2.0],
+                      [1.0, -3.0],
+                      [2.0, -5.0],
+                      [4.0, -9.0],
+                      [8.0, -17.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "implicit",
+                    "defined": true,
+                    "coefficients": [
+                      [-2.0],
+                      [1.0]
+                    ],
+                    "equation": "x = 2",
+                    "input_form": false
+                  },
+                  {
+                    "type": "implicit",
+                    "defined": true,
+                    "coefficients": [
+                      [1.0, 1.0]
+                    ],
+                    "equation": "y = -1",
+                    "input_form": false
+                  },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-freevariable-012",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions({x=2y}, {x, y})",
+        "r2 = Solve({x=2y}, {x, y})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -16.0],
+                      [-4.0, -8.0],
+                      [-2.0, -4.0],
+                      [-1.0, -2.0],
+                      [-0.5, -1.0],
+                      [0.0, 0.0],
+                      [0.5, 1.0],
+                      [1.0, 2.0],
+                      [2.0, 4.0],
+                      [4.0, 8.0],
+                      [8.0, 16.0]
+                    ]
+                  },
+                  {
+                    "type": "function",
+                    "defined": true,
+                    "samples": [
+                      [-8.0, -8.0],
+                      [-4.0, -4.0],
+                      [-2.0, -2.0],
+                      [-1.0, -1.0],
+                      [-0.5, -0.5],
+                      [0.0, 0.0],
+                      [0.5, 0.5],
+                      [1.0, 1.0],
+                      [2.0, 2.0],
+                      [4.0, 4.0],
+                      [8.0, 8.0]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "line", "defined": true, "a": 1.0, "b": -2.0, "c": 0.0 },
+                  { "type": "line", "defined": false }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

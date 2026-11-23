@@ -1,0 +1,471 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "inlineargs-equations-001",
+      "group": "inlineargs",
+      "script": [
+        "P = Intersect(x = 4, y = 4, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-002",
+      "group": "inlineargs",
+      "script": [
+        "P = Intersect(y = 5, x = 5, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 5.0, "y": 5.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-003",
+      "group": "inlineargs",
+      "script": [
+        "P = Intersect(100 x = -300, 100 y = 200)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-004",
+      "group": "inlineargs",
+      "script": [
+        "n = Area(x^2 + y^2 = 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 3.141592653589793 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-005",
+      "group": "inlineargs",
+      "script": [
+        "n = Circumference(x^2 + y^2 = 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 6.283185307179586 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-006",
+      "group": "inlineargs",
+      "script": [
+        "P = Center(x^2 + y^2 = 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-007",
+      "group": "inlineargs",
+      "script": [
+        "n = Radius(x^2 + y^2 = 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-008",
+      "group": "inlineargs",
+      "script": [
+        "n = Slope(x + y = 17)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-009",
+      "group": "inlineargs",
+      "script": [
+        "u = Direction(-2 x + 3 y + 1 = 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-010",
+      "group": "inlineargs",
+      "script": [
+        "b = AreParallel(x + y = 17, x = 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-011",
+      "group": "inlineargs",
+      "script": [
+        "b = ArePerpendicular(x + y = 17, x = 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-012",
+      "group": "inlineargs",
+      "script": [
+        "b = AreConcurrent(x + y = 17, x = 4, x = 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-013",
+      "group": "inlineargs",
+      "script": [
+        "b = IsTangent(x + y = 17, x^2 + y^2 = 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "b": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-014",
+      "group": "inlineargs",
+      "script": [
+        "u = PerpendicularVector(3 x = 4 y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": -4.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-015",
+      "group": "inlineargs",
+      "script": [
+        "u = UnitPerpendicularVector(3 x = 4 y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": 0.6, "y": -0.8 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-016",
+      "group": "inlineargs",
+      "script": [
+        "u = UnitVector(3 x = 4 y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": -0.8, "y": -0.6 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-017",
+      "group": "inlineargs",
+      "script": [
+        "P = Point(x^2 + y^2 = 1, 0.25)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 6.123233995736766E-17, "y": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-018",
+      "group": "inlineargs",
+      "script": [
+        "n = PathParameter(Point(x^2 + y^2 = 1))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-019",
+      "group": "inlineargs",
+      "script": [
+        "a = 1",
+        "P = Intersect(a x = 4, y = 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-020",
+      "group": "inlineargs",
+      "script": [
+        "a = 1",
+        "n = Area(x^2 + y^2 = a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": 3.141592653589793 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "n": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 12.566370614359172 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-021",
+      "group": "inlineargs",
+      "script": [
+        "a = 1",
+        "n = Slope(x + a y = 17)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "n": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "n": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-022",
+      "group": "inlineargs",
+      "script": [
+        "s = Arc(x^2 + y^2 = 1, (1, 1), (2, 1 / 2))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": {
+            "type": "arc",
+            "defined": true,
+            "value": 5.742765806909002,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.7853981633974483,
+            "end": 0.24497866312686414,
+            "arc_length": 5.742765806909002,
+            "area": 3.1286307811682645,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-023",
+      "group": "inlineargs",
+      "script": [
+        "s = Sector(x^2 + y^2 = 1, (1, 1), (2, 1 / 2))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "s": {
+            "type": "sector",
+            "defined": true,
+            "value": 2.871382903454501,
+            "conic_type": "circle",
+            "orientation": "positive",
+            "start": 0.7853981633974483,
+            "end": 0.24497866312686414,
+            "arc_length": 5.742765806909002,
+            "area": 2.871382903454501,
+            "midpoint": [0.0, 0.0],
+            "half_axes": [1.0, 1.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-equations-024",
+      "group": "inlineargs",
+      "script": [
+        "A = (-3, 2)",
+        "B = (-3, -2)",
+        "C = (3, -2)",
+        "t1 = Polygon(A, B, C)",
+        "s = IntersectPath(t1, -3 x + 2 y = 10)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": -3.0, "y": -2.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": -2.0 },
+          "t1": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [-3.0, 2.0],
+              [-3.0, -2.0],
+              [3.0, -2.0]
+            ],
+            "area": 12.0,
+            "signed_area": 12.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": -3.0, "y1": 2.0, "x2": -3.0, "y2": -2.0 },
+          "a": { "type": "segment", "defined": true, "x1": -3.0, "y1": -2.0, "x2": 3.0, "y2": -2.0 },
+          "b": { "type": "segment", "defined": true, "x1": 3.0, "y1": -2.0, "x2": -3.0, "y2": 2.0 },
+          "s_{1}": { "type": "segment", "defined": true, "x1": -3.0, "y1": 0.5000000000000002, "x2": -2.3076923076923075, "y2": 1.5384615384615388 }
+        }
+      ]
+    }
+  ]
+}

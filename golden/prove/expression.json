@@ -1,0 +1,49 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-expression-001",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = Midpoint(A, B)",
+        "E = Midpoint(B, A)",
+        "b = D == E",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "E": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

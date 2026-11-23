@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -54,7 +54,7 @@
       ],
       "snapshots": [
         {
-          "a": { "type": "number", "defined": false },
+          "a": { "type": "number", "defined": true, "infinity": 1 },
           "n": { "type": "number", "defined": true, "value": 1.0 },
           "d": { "type": "number", "defined": true, "value": 0.0 }
         }
@@ -249,7 +249,7 @@
         {
           "a": { "type": "number", "defined": true, "value": -5.0 },
           "b": { "type": "number", "defined": true, "value": 0.0 },
-          "q": { "type": "number", "defined": false },
+          "q": { "type": "number", "defined": true, "infinity": -1 },
           "n": { "type": "number", "defined": true, "value": -1.0 },
           "d": { "type": "number", "defined": true, "value": 0.0 }
         },
@@ -437,7 +437,7 @@
               [-8.0, 0.8571428571428571],
               [-4.0, 0.6666666666666666],
               [-2.0, -0.0],
-              [-1.0, null],
+              [-1.0, { "infinity": 1 }],
               [-0.5, 3.0],
               [0.0, 2.0],
               [0.5, 1.6666666666666667],
@@ -506,7 +506,7 @@
               [-2.0, -0.3333333333333333],
               [-1.0, -0.6666666666666666],
               [-0.5, -1.3333333333333333],
-              [0.0, null],
+              [0.0, { "infinity": 1 }],
               [0.5, 1.3333333333333333],
               [1.0, 0.6666666666666666],
               [2.0, 0.3333333333333333],

@@ -462,6 +462,28 @@ fn defined_against_undefined_is_a_mismatch_both_ways() {
 }
 
 #[test]
+fn a_saved_infinite_number_is_a_value_to_compare() {
+    // GeoGebra keeps `1 / a` with `a = 0` defined and saves it as `Infinity`
+    let saved = |value: &str| {
+        ok(&format!(
+            "<element type=\"numeric\" label=\"a\"><value val=\"0\"/></element>\
+             <expression label=\"c\" exp=\"1 / a\" type=\"numeric\"/>\
+             <element type=\"numeric\" label=\"c\"><value val=\"{value}\"/></element>"
+        ))
+    };
+    let agreeing = saved("Infinity");
+    assert_eq!(agreeing.script, ["a = 0", "c = 1 / a"]);
+    assert!(agreeing.skipped.is_empty());
+    assert!(agreeing.mismatched.is_empty(), "{:?}", agreeing.mismatched);
+    // the other infinity, a finite value and an undefined one all differ
+    for value in ["-Infinity", "1", "NaN"] {
+        let other = saved(value);
+        assert_eq!(other.mismatched.len(), 1, "{value}");
+        assert_eq!(other.mismatched[0].label, "c", "{value}");
+    }
+}
+
+#[test]
 fn presentation_tags_are_kept_as_the_saved_style() {
     use geo_import::export::{
         DynamicColor, Fill, LineStyle, ObjectStyle, Rounding, SliderAnimation, SliderFlags,

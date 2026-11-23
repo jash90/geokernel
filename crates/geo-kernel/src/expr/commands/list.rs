@@ -701,6 +701,8 @@ pub(crate) fn call_type(
             return Err("`Frequency` needs a list of data".into());
         }
         CallOp::Zip => Ty::List(elem_of(tys[first as usize])),
+        // points and vectors fold to a point (`PointNDFold`)
+        CallOp::Fold | CallOp::SumFold if tys[first as usize] == Ty::Vec => Ty::Vec,
         CallOp::Fold | CallOp::SumFold => Ty::Num(0),
     })
 }
@@ -754,8 +756,8 @@ pub(crate) fn call_value<const M: bool>(
 ) -> Option<Val> {
     Some(match op {
         CallOp::IndexOf => Val::N(ctx.index_of(first, len)),
-        CallOp::Fold => Val::N(ctx.fold(first, len, true)),
-        CallOp::SumFold => Val::N(ctx.fold(first, len, false)),
+        CallOp::Fold => ctx.fold(first, len, true),
+        CallOp::SumFold => ctx.fold(first, len, false),
         // a list: built by `list`
         _ => {
             let _ = len;
@@ -780,6 +782,7 @@ fn zip_element<const M: bool>(ctx: &Ctx<'_, M>, expression: u32, bound: &[(u32, 
                 value: slot_val(slot),
                 run: slot.run(),
                 vector: slot.kind == Kind::Vector,
+                text: slot.text_value(),
                 up: ctx.locals,
             };
             zip_element(
@@ -1188,6 +1191,7 @@ impl<const M: bool> Ctx<'_, M> {
                 value: Val::N(v),
                 run: None,
                 vector: false,
+                text: None,
                 up: self.locals,
             };
             let slot = Ctx {
@@ -1319,26 +1323,35 @@ impl<const M: bool> Ctx<'_, M> {
 
     /// `Product(expression, k, from, to)` (`AlgoFoldExpression`): the
     /// expression at `from` (not truncated), then at every whole number up
-    /// to `to`, multiplied.
-    pub(crate) fn fold(&self, first: u32, len: u32, multiply: bool) -> f64 {
+    /// to `to`, multiplied. Points and vectors fold by coordinates
+    /// (`PointNDFold`): added for a sum, multiplied as complex numbers for
+    /// a product.
+    pub(crate) fn fold(&self, first: u32, len: u32, multiply: bool) -> Val {
+        let coordinates = self.e.tys[first as usize] == Ty::Vec;
+        let undefined = if coordinates {
+            Val::V(f64::NAN, f64::NAN)
+        } else {
+            Val::N(f64::NAN)
+        };
         let Some(lists) = self.lists else {
-            return f64::NAN;
+            return undefined;
         };
         let (expression, variable) = (first, first + 1);
         let Node::Local(depth, _) = self.node(variable) else {
-            return f64::NAN;
+            return undefined;
         };
-        let _ = depth;
         let (a, b) = (self.full_number(first + 2), self.full_number(first + 3));
         if !a.is_finite() || !b.is_finite() || len != 4 {
-            return f64::NAN;
+            return undefined;
         }
-        let value = |v: f64| -> f64 {
+        // one term: a number, or the coordinates of a point or vector
+        let value = |v: f64| -> (f64, f64) {
             let local = Local {
                 depth,
                 value: Val::N(v),
                 run: None,
                 vector: false,
+                text: None,
                 up: self.locals,
             };
             let slot = Ctx {
@@ -1346,9 +1359,16 @@ impl<const M: bool> Ctx<'_, M> {
                 ..*self
             }
             .element(expression);
-            match slot.kind {
-                Kind::Number | Kind::Angle => number_of(slot).unwrap_or(f64::NAN),
-                _ => f64::NAN,
+            match (slot.kind, slot.value) {
+                (Kind::Number | Kind::Angle, _) if !coordinates => {
+                    (number_of(slot).unwrap_or(f64::NAN), 0.0)
+                }
+                (Kind::Point | Kind::Vector, Value::Point { x, y } | Value::Vector { x, y })
+                    if coordinates =>
+                {
+                    (x, y)
+                }
+                _ => (f64::NAN, f64::NAN),
             }
         };
         // the first term, whatever the operation is
@@ -1358,13 +1378,25 @@ impl<const M: bool> Ctx<'_, M> {
         let mut k = (a as i32).wrapping_add(1);
         while f64::from(k) <= b {
             if !lists.charge(1) {
-                return f64::NAN;
+                return undefined;
             }
             let term = value(f64::from(k));
-            acc = if multiply { acc * term } else { acc + term };
+            acc = match (coordinates, multiply) {
+                (false, true) => (acc.0 * term.0, 0.0),
+                (false, false) => (acc.0 + term.0, 0.0),
+                (true, true) => (
+                    acc.0 * term.0 - acc.1 * term.1,
+                    acc.1 * term.0 + acc.0 * term.1,
+                ),
+                (true, false) => (acc.0 + term.0, acc.1 + term.1),
+            };
             k = k.wrapping_add(1);
         }
-        acc
+        if coordinates {
+            Val::V(acc.0, acc.1)
+        } else {
+            Val::N(acc.0)
+        }
     }
 
     /// The element `l(n)` or `Element(l, n)` picks, `None` when there is
@@ -1379,9 +1411,50 @@ impl<const M: bool> Ctx<'_, M> {
         if op == ListOp::Index && k < 0 {
             k += i64::from(len) + 1;
         }
-        (0..i64::from(len))
-            .contains(&k)
-            .then(|| lists.read(self.c, start + k as u32))
+        let present = (0..i64::from(len)).contains(&k);
+        let selected = if present {
+            lists.read(self.c, start + k as u32)
+        } else {
+            if op != ListOp::Index || len == 0 || !lists.charge(u64::from(len)) {
+                return None;
+            }
+            // A missing element copies the last compatible template, then
+            // undefines it. Rows can have different lengths and kinds.
+            let mut template = lists.read(self.c, start);
+            for i in 1..len {
+                let next = lists.read(self.c, start + i);
+                if next.kind != template.kind {
+                    break;
+                }
+                template = next;
+            }
+            template
+        };
+        if op != ListOp::Index {
+            return Some(selected);
+        }
+        let Some((row, width)) = selected.run() else {
+            return present.then_some(selected);
+        };
+        if !lists.charge(u64::from(width)) {
+            return None;
+        }
+        if present && (0..width).all(|j| lists.read(self.c, row + j).kind != Kind::Boolean) {
+            return Some(selected);
+        }
+        let result = lists.reserve(width)?;
+        for j in 0..width {
+            let element = lists.read(self.c, row + j);
+            let value = if let Value::Bool(value) = element.value {
+                Slot::number(f64::from(present && value))
+            } else if present || element.object_id().is_some() {
+                element
+            } else {
+                Slot::undefined(element.kind)
+            };
+            lists.set(result + j, value);
+        }
+        Some(Slot::list(result, width))
     }
 
     /// A list command whose result is a list, built at the end of the

@@ -1,0 +1,1243 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-plot-001",
+      "group": "cas",
+      "script": [
+        "f(x) = x^2-3",
+        "result = PlotSolve(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 61.0],
+              [-4.0, 13.0],
+              [-2.0, 1.0],
+              [-1.0, -2.0],
+              [-0.5, -2.75],
+              [0.0, -3.0],
+              [0.5, -2.75],
+              [1.0, -2.0],
+              [2.0, 1.0],
+              [4.0, 13.0],
+              [8.0, 61.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.7320508075688772, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.7320508075688772, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-002",
+      "group": "cas",
+      "script": [
+        "g: x=3",
+        "result = PlotSolve(g)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-003",
+      "group": "cas",
+      "script": [
+        "k: x^2=4",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-004",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "l = {g, h}",
+        "result = PlotSolve(l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 }
+            ]
+          },
+          "result": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-005",
+      "group": "cas",
+      "script": [
+        "r1 = PlotSolve(x^3-x)",
+        "r2 = PlotSolve(x^2=2)",
+        "r3 = PlotSolve(x=x)",
+        "r4 = PlotSolve((x-1)^2*(x+2))",
+        "r5 = PlotSolve(x^2+1)",
+        "r6 = PlotSolve(x^2=0)",
+        "r7 = PlotSolve(2x=7)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.4142135623730951, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 0.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+            ]
+          },
+          "r5": { "type": "list", "defined": false },
+          "r6": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          },
+          "r7": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 3.5, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-006",
+      "group": "cas",
+      "script": [
+        "f(x) = 0x",
+        "g(x) = x^2+1",
+        "h(x) = (x^2-1)/(x-1)",
+        "r1 = PlotSolve(f)",
+        "r2 = PlotSolve(g)",
+        "r3 = PlotSolve(h)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.0],
+              [-4.0, -0.0],
+              [-2.0, -0.0],
+              [-1.0, -0.0],
+              [-0.5, -0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "h": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -7.0],
+              [-4.0, -3.0],
+              [-2.0, -1.0],
+              [-1.0, -0.0],
+              [-0.5, 0.5],
+              [0.0, 1.0],
+              [0.5, 1.5],
+              [1.0, null],
+              [2.0, 3.0],
+              [4.0, 5.0],
+              [8.0, 9.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 }
+            ]
+          },
+          "r2": { "type": "list", "defined": false },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-007",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: 2x+3y=6",
+        "i: y=2",
+        "j: 2x-y=0",
+        "r1 = PlotSolve(g)",
+        "r2 = PlotSolve(h)",
+        "r3 = PlotSolve(i)",
+        "r4 = PlotSolve(j)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 2.0, "b": 3.0, "c": -6.0 },
+          "i": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -2.0 },
+          "j": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": 0.0 },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": -1.5, "c": 0.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+            ]
+          },
+          "r4": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 0.5, "c": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-008",
+      "group": "cas",
+      "script": [
+        "A = (0, 1)",
+        "B = (1, 0)",
+        "g = Line(A, B)",
+        "result = PlotSolve(g)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 5.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 1.0 },
+        { "action": "move", "label": "B", "x": 2.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 3.0, "c": -3.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": -3.0, "c": 0.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 0.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "g": { "type": "line", "defined": false },
+          "result": { "type": "list", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": -2.0 },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 2.0, "c": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-009",
+      "group": "cas",
+      "script": [
+        "a = 1",
+        "f(x) = x^2-a",
+        "result = PlotSolve(f)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 63.0],
+              [-4.0, 15.0],
+              [-2.0, 3.0],
+              [-1.0, 0.0],
+              [-0.5, -0.75],
+              [0.0, -1.0],
+              [0.5, -0.75],
+              [1.0, 0.0],
+              [2.0, 3.0],
+              [4.0, 15.0],
+              [8.0, 63.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.0, "y": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 60.0],
+              [-4.0, 12.0],
+              [-2.0, 0.0],
+              [-1.0, -3.0],
+              [-0.5, -3.75],
+              [0.0, -4.0],
+              [0.5, -3.75],
+              [1.0, -3.0],
+              [2.0, 0.0],
+              [4.0, 12.0],
+              [8.0, 60.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "result": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 64.0],
+              [-4.0, 16.0],
+              [-2.0, 4.0],
+              [-1.0, 1.0],
+              [-0.5, 0.25],
+              [0.0, 0.0],
+              [0.5, 0.25],
+              [1.0, 1.0],
+              [2.0, 4.0],
+              [4.0, 16.0],
+              [8.0, 64.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 62.0],
+              [-4.0, 14.0],
+              [-2.0, 2.0],
+              [-1.0, -1.0],
+              [-0.5, -1.75],
+              [0.0, -2.0],
+              [0.5, -1.75],
+              [1.0, -1.0],
+              [2.0, 2.0],
+              [4.0, 14.0],
+              [8.0, 62.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.4142135623730951, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-010",
+      "group": "cas",
+      "script": [
+        "k: y^2=4",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [0.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.0, 1.0, -2.0],
+              [-0.0, 1.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-011",
+      "group": "cas",
+      "script": [
+        "k: x^2-5x+6=0",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, 6.0, 0.0, -2.5, 0.0],
+            "lines": [
+              [-1.0, 0.0, 2.0],
+              [-1.0, 0.0, 3.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-012",
+      "group": "cas",
+      "script": [
+        "k: x^2+1=0",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+          },
+          "result": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-013",
+      "group": "cas",
+      "script": [
+        "k: x^2=0",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -0.0],
+              [-1.0, 0.0, -0.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-014",
+      "group": "cas",
+      "script": [
+        "k: x^2-y^2=0",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -1.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 1.0, -0.0],
+              [1.0, 1.0, 0.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-015",
+      "group": "cas",
+      "script": [
+        "k: x*y=0",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            "lines": [
+              [1.414213562373095, 0.0, 0.0],
+              [0.0, -1.414213562373095, -0.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-016",
+      "group": "cas",
+      "script": [
+        "k: x^2-2y^2=0",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, -2.0, 0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-0.7071067811865476, 1.0, -0.0],
+              [0.7071067811865476, 1.0, 0.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.4142135623730951, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": -1.4142135623730951, "c": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-017",
+      "group": "cas",
+      "script": [
+        "k: (x-y)*(x-2)=0",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "intersecting_lines",
+            "matrix": [1.0, 0.0, 0.0, -0.5, -1.0, 1.0],
+            "lines": [
+              [-1.847759065022574, 1.8477590650225735, 8.881784197001252E-16],
+              [2.613125929752753, 2.220446049250313E-16, -5.226251859505506]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-018",
+      "group": "cas",
+      "script": [
+        "k: x^2+2x*y+y^2=1",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 1.0, -1.0, 1.0, 0.0, 0.0],
+            "lines": [
+              [0.7071067811865475, 0.7071067811865475, -0.7071067811865476],
+              [0.7071067811865475, 0.7071067811865475, 0.7071067811865476]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 0.0, "b": -1.0, "c": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-019",
+      "group": "cas",
+      "script": [
+        "k: x^2+y^2=-4",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 1.0, 4.0, 0.0, 0.0, 0.0]
+          },
+          "result": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-020",
+      "group": "cas",
+      "script": [
+        "a = 4",
+        "k: x^2=a",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 9.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -4.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -2.0],
+              [-1.0, 0.0, 2.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 9.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -9.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -3.0],
+              [-1.0, 0.0, 3.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 3.0, "y": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "empty",
+            "matrix": [1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+          },
+          "result": { "type": "list", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "double_line",
+            "matrix": [1.0, 0.0, -0.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -0.0],
+              [-1.0, 0.0, -0.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parallel_lines",
+            "matrix": [1.0, 0.0, -2.0, 0.0, 0.0, 0.0],
+            "lines": [
+              [-1.0, 0.0, -1.4142135623730951],
+              [-1.0, 0.0, 1.4142135623730951]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": -1.4142135623730951, "y": 0.0 },
+              { "type": "point", "defined": true, "x": 1.4142135623730951, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-021",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "h: x-y=0",
+        "r1 = PlotSolve({g, h})",
+        "r2 = PlotSolve({x^2=1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "h": { "type": "line", "defined": true, "a": 1.0, "b": -1.0, "c": 0.0 },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-022",
+      "group": "cas",
+      "script": [
+        "f(x) = x^2-3",
+        "g: x=3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = PlotSolve(f, x)", "error": "unknown command `PlotSolve`" },
+        { "action": "reject", "line": "r = PlotSolve(g, y)", "error": "unknown command `PlotSolve`" },
+        { "action": "reject", "line": "r = PlotSolve(2)", "error": "unknown command `PlotSolve`" },
+        { "action": "reject", "line": "r = PlotSolve(x, y)", "error": "unknown command `PlotSolve`" },
+        { "action": "reject", "line": "r = PlotSolve(f, x=1)", "error": "unknown command `PlotSolve`" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 61.0],
+              [-4.0, 13.0],
+              [-2.0, 1.0],
+              [-1.0, -2.0],
+              [-0.5, -2.75],
+              [0.0, -3.0],
+              [0.5, -2.75],
+              [1.0, -2.0],
+              [2.0, 1.0],
+              [4.0, 13.0],
+              [8.0, 61.0]
+            ]
+          },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 61.0],
+              [-4.0, 13.0],
+              [-2.0, 1.0],
+              [-1.0, -2.0],
+              [-0.5, -2.75],
+              [0.0, -3.0],
+              [0.5, -2.75],
+              [1.0, -2.0],
+              [2.0, 1.0],
+              [4.0, 13.0],
+              [8.0, 61.0]
+            ]
+          },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 61.0],
+              [-4.0, 13.0],
+              [-2.0, 1.0],
+              [-1.0, -2.0],
+              [-0.5, -2.75],
+              [0.0, -3.0],
+              [0.5, -2.75],
+              [1.0, -2.0],
+              [2.0, 1.0],
+              [4.0, 13.0],
+              [8.0, 61.0]
+            ]
+          },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 61.0],
+              [-4.0, 13.0],
+              [-2.0, 1.0],
+              [-1.0, -2.0],
+              [-0.5, -2.75],
+              [0.0, -3.0],
+              [0.5, -2.75],
+              [1.0, -2.0],
+              [2.0, 1.0],
+              [4.0, 13.0],
+              [8.0, 61.0]
+            ]
+          },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 61.0],
+              [-4.0, 13.0],
+              [-2.0, 1.0],
+              [-1.0, -2.0],
+              [-0.5, -2.75],
+              [0.0, -3.0],
+              [0.5, -2.75],
+              [1.0, -2.0],
+              [2.0, 1.0],
+              [4.0, 13.0],
+              [8.0, 61.0]
+            ]
+          },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 61.0],
+              [-4.0, 13.0],
+              [-2.0, 1.0],
+              [-1.0, -2.0],
+              [-0.5, -2.75],
+              [0.0, -3.0],
+              [0.5, -2.75],
+              [1.0, -2.0],
+              [2.0, 1.0],
+              [4.0, 13.0],
+              [8.0, 61.0]
+            ]
+          },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-023",
+      "group": "cas",
+      "script": [
+        "k: x^2+y^2=4",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 },
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-024",
+      "group": "cas",
+      "script": [
+        "k: x*y=1",
+        "result = PlotSolve(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [0.0, 0.0, -2.0, 1.0, 0.0, 0.0],
+            "midpoint": [-0.0, -0.0],
+            "half_axes": [1.4142135623730951, 1.4142135623730951],
+            "eigenvectors": [
+              [-0.7071067811865475, -0.7071067811865475],
+              [0.7071067811865475, -0.7071067811865475]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "curve", "defined": true, "start": -10.0, "end": 10.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-plot-025",
+      "group": "cas",
+      "script": [
+        "f(x) = sin(x)",
+        "result = PlotSolve(f)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.9893582466233818],
+              [-4.0, 0.7568024953079282],
+              [-2.0, -0.9092974268256817],
+              [-1.0, -0.8414709848078965],
+              [-0.5, -0.479425538604203],
+              [0.0, 0.0],
+              [0.5, 0.479425538604203],
+              [1.0, 0.8414709848078965],
+              [2.0, 0.9092974268256817],
+              [4.0, -0.7568024953079282],
+              [8.0, 0.9893582466233818]
+            ]
+          },
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2110 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "infinity-functions-001",
+      "group": "infinity",
+      "script": [
+        "c = cot(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-002",
+      "group": "infinity",
+      "script": [
+        "c = csc(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-003",
+      "group": "infinity",
+      "script": [
+        "c = cosec(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-004",
+      "group": "infinity",
+      "script": [
+        "c = sec(pi / 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-005",
+      "group": "infinity",
+      "script": [
+        "c = coth(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-006",
+      "group": "infinity",
+      "script": [
+        "c = csch(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-007",
+      "group": "infinity",
+      "script": [
+        "c = sech(1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-008",
+      "group": "infinity",
+      "script": [
+        "c = tan(pi / 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-009",
+      "group": "infinity",
+      "script": [
+        "c = 1 / sin(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-010",
+      "group": "infinity",
+      "script": [
+        "c = 1 / cos(pi / 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-011",
+      "group": "infinity",
+      "script": [
+        "c = 1 / tan(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-012",
+      "group": "infinity",
+      "script": [
+        "c = -cot(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-013",
+      "group": "infinity",
+      "script": [
+        "c = cot(-0.0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-014",
+      "group": "infinity",
+      "script": [
+        "c = gamma(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-015",
+      "group": "infinity",
+      "script": [
+        "c = gamma(-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-016",
+      "group": "infinity",
+      "script": [
+        "c = gamma(-2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-017",
+      "group": "infinity",
+      "script": [
+        "c = gamma(171)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 7.257415615308056E306 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-018",
+      "group": "infinity",
+      "script": [
+        "c = gamma(172)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-019",
+      "group": "infinity",
+      "script": [
+        "c = gamma(-0.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -3.5449077018110318 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-020",
+      "group": "infinity",
+      "script": [
+        "c = 170!"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 7.257415615308056E306 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-021",
+      "group": "infinity",
+      "script": [
+        "c = 171!"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-022",
+      "group": "infinity",
+      "script": [
+        "c = (-1)!"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-023",
+      "group": "infinity",
+      "script": [
+        "c = 0.5!"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.886226925452758 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-024",
+      "group": "infinity",
+      "script": [
+        "c = 1000!"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-025",
+      "group": "infinity",
+      "script": [
+        "c = ln(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-026",
+      "group": "infinity",
+      "script": [
+        "c = lg(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-027",
+      "group": "infinity",
+      "script": [
+        "c = ld(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-028",
+      "group": "infinity",
+      "script": [
+        "c = log2(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-029",
+      "group": "infinity",
+      "script": [
+        "c = log10(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-030",
+      "group": "infinity",
+      "script": [
+        "c = log(2, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-031",
+      "group": "infinity",
+      "script": [
+        "c = log(0, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-032",
+      "group": "infinity",
+      "script": [
+        "c = log(1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-033",
+      "group": "infinity",
+      "script": [
+        "c = log(0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-034",
+      "group": "infinity",
+      "script": [
+        "c = ln(-0.0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-035",
+      "group": "infinity",
+      "script": [
+        "c = 0^(-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-036",
+      "group": "infinity",
+      "script": [
+        "c = 0^(-0.5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-037",
+      "group": "infinity",
+      "script": [
+        "c = 0^(-2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-038",
+      "group": "infinity",
+      "script": [
+        "c = (-0.0)^(-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-039",
+      "group": "infinity",
+      "script": [
+        "c = (-0.0)^(-2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-040",
+      "group": "infinity",
+      "script": [
+        "c = 0^0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-041",
+      "group": "infinity",
+      "script": [
+        "c = atanh(1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-042",
+      "group": "infinity",
+      "script": [
+        "c = atanh(-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-043",
+      "group": "infinity",
+      "script": [
+        "c = atanh(2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-044",
+      "group": "infinity",
+      "script": [
+        "c = acosh(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-045",
+      "group": "infinity",
+      "script": [
+        "c = asinh(1E308 * 10)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-046",
+      "group": "infinity",
+      "script": [
+        "c = exp(710)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-047",
+      "group": "infinity",
+      "script": [
+        "c = exp(-800)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-048",
+      "group": "infinity",
+      "script": [
+        "c = 10^400"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-049",
+      "group": "infinity",
+      "script": [
+        "c = -10^400"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-050",
+      "group": "infinity",
+      "script": [
+        "c = 10^(-400)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-051",
+      "group": "infinity",
+      "script": [
+        "c = 1E308 + 1E308"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-052",
+      "group": "infinity",
+      "script": [
+        "c = -1E308 - 1E308"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-053",
+      "group": "infinity",
+      "script": [
+        "c = 1E200^2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-054",
+      "group": "infinity",
+      "script": [
+        "c = (-1E200)^3"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-055",
+      "group": "infinity",
+      "script": [
+        "c = (-1E200)^2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-056",
+      "group": "infinity",
+      "script": [
+        "c = 1E200 * 1E200"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-057",
+      "group": "infinity",
+      "script": [
+        "c = 1E200 / 1E-200"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-058",
+      "group": "infinity",
+      "script": [
+        "c = -1E200 / 1E-200"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-059",
+      "group": "infinity",
+      "script": [
+        "c = sqrt(1E308 * 10)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-060",
+      "group": "infinity",
+      "script": [
+        "c = cbrt(-1E308 * 10)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-061",
+      "group": "infinity",
+      "script": [
+        "c = abs(-1E308 * 10)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-062",
+      "group": "infinity",
+      "script": [
+        "c = nroot(1 / 0, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-063",
+      "group": "infinity",
+      "script": [
+        "c = nroot(-1 / 0, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-064",
+      "group": "infinity",
+      "script": [
+        "c = nroot(-1 / 0, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-065",
+      "group": "infinity",
+      "script": [
+        "c = 2^1024"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-066",
+      "group": "infinity",
+      "script": [
+        "c = 2^1023 * 2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-067",
+      "group": "infinity",
+      "script": [
+        "c = -2^1024"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-068",
+      "group": "infinity",
+      "script": [
+        "c = cosh(1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-069",
+      "group": "infinity",
+      "script": [
+        "c = sinh(1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-070",
+      "group": "infinity",
+      "script": [
+        "c = sinh(-1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-071",
+      "group": "infinity",
+      "script": [
+        "c = tanh(1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-072",
+      "group": "infinity",
+      "script": [
+        "c = floor(1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-073",
+      "group": "infinity",
+      "script": [
+        "c = ceil(1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-074",
+      "group": "infinity",
+      "script": [
+        "c = round(1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-075",
+      "group": "infinity",
+      "script": [
+        "c = round(-1 / 0, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-076",
+      "group": "infinity",
+      "script": [
+        "c = 1 / 0 + 1 / 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-077",
+      "group": "infinity",
+      "script": [
+        "c = 1 / 0 - 1 / 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-078",
+      "group": "infinity",
+      "script": [
+        "c = (1 / 0) * 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-079",
+      "group": "infinity",
+      "script": [
+        "c = (1 / 0) / (1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-080",
+      "group": "infinity",
+      "script": [
+        "c = (1 / 0)^0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-081",
+      "group": "infinity",
+      "script": [
+        "c = 0^(1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-082",
+      "group": "infinity",
+      "script": [
+        "c = 1^(1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-083",
+      "group": "infinity",
+      "script": [
+        "c = (1 / 0) > 1E308"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-084",
+      "group": "infinity",
+      "script": [
+        "c = -(1 / 0) < -1E308"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-085",
+      "group": "infinity",
+      "script": [
+        "c = 1 / (1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-086",
+      "group": "infinity",
+      "script": [
+        "c = 1 / (-1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-087",
+      "group": "infinity",
+      "script": [
+        "c = atan(1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.5707963267948966 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-088",
+      "group": "infinity",
+      "script": [
+        "c = atan2(1 / 0, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.5707963267948966 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-089",
+      "group": "infinity",
+      "script": [
+        "c = atan2(1, 1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-090",
+      "group": "infinity",
+      "script": [
+        "c = sgn(1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-091",
+      "group": "infinity",
+      "script": [
+        "c = sgn(-1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-092",
+      "group": "infinity",
+      "script": [
+        "c = sqrt(-1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-093",
+      "group": "infinity",
+      "script": [
+        "c = exp(-1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-094",
+      "group": "infinity",
+      "script": [
+        "c = ln(1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-095",
+      "group": "infinity",
+      "script": [
+        "c = (1 / 0)°"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "angle", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-096",
+      "group": "infinity",
+      "script": [
+        "c = (1 / 0) (1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "vector", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-097",
+      "group": "infinity",
+      "script": [
+        "c = nroot(-1 / 0, 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-098",
+      "group": "infinity",
+      "script": [
+        "c = nroot(-1 / 0, 5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-099",
+      "group": "infinity",
+      "script": [
+        "c = nroot(1 / 0, 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-100",
+      "group": "infinity",
+      "script": [
+        "c = nroot(-8, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-101",
+      "group": "infinity",
+      "script": [
+        "c = nroot(1 / 0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-102",
+      "group": "infinity",
+      "script": [
+        "c = nroot(1 / 0, -2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-103",
+      "group": "infinity",
+      "script": [
+        "c = nroot(2, 1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-104",
+      "group": "infinity",
+      "script": [
+        "c = nroot(-1 / 0, 1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-105",
+      "group": "infinity",
+      "script": [
+        "c = (-1 / 0)^(1 / 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-106",
+      "group": "infinity",
+      "script": [
+        "c = (-1 / 0)^(1 / 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-107",
+      "group": "infinity",
+      "script": [
+        "c = (-1 / 0)^0.5"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-108",
+      "group": "infinity",
+      "script": [
+        "c = (-1 / 0)^(2 / 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-109",
+      "group": "infinity",
+      "script": [
+        "c = (1 / 0)^(1 / 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-110",
+      "group": "infinity",
+      "script": [
+        "c = (-1 / 0)^(-1 / 3)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-111",
+      "group": "infinity",
+      "script": [
+        "c = cbrt(1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-112",
+      "group": "infinity",
+      "script": [
+        "c = cbrt(-1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-113",
+      "group": "infinity",
+      "script": [
+        "r = Div(3, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-114",
+      "group": "infinity",
+      "script": [
+        "r = Mod(3, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-115",
+      "group": "infinity",
+      "script": [
+        "r = Div(-3, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-116",
+      "group": "infinity",
+      "script": [
+        "r = Mod(0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-117",
+      "group": "infinity",
+      "script": [
+        "r = GCD(0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-118",
+      "group": "infinity",
+      "script": [
+        "r = LCM(0, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-119",
+      "group": "infinity",
+      "script": [
+        "r = nCr(1030, 500)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-120",
+      "group": "infinity",
+      "script": [
+        "r = nCr(3, -1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-121",
+      "group": "infinity",
+      "script": [
+        "r = nPr(200, 150)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-122",
+      "group": "infinity",
+      "script": [
+        "r = Sum({1E308, 1E308})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-123",
+      "group": "infinity",
+      "script": [
+        "r = Product({1E200, 1E200})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-124",
+      "group": "infinity",
+      "script": [
+        "r = Mean({1E308, 1E308})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-125",
+      "group": "infinity",
+      "script": [
+        "r = Sum(10^(100 k), k, 1, 5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-126",
+      "group": "infinity",
+      "script": [
+        "r = Product(10^(100 k), k, 1, 5)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-127",
+      "group": "infinity",
+      "script": [
+        "r = Max({1E308, 1E308 * 10})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-128",
+      "group": "infinity",
+      "script": [
+        "r = Min({-1E308 * 10, 0})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-129",
+      "group": "infinity",
+      "script": [
+        "r = Length(Sequence(1 / 0, k, 1, 3))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-130",
+      "group": "infinity",
+      "script": [
+        "r = Element({1 / 0, -1 / 0}, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-131",
+      "group": "infinity",
+      "script": [
+        "r = Mean({1 / 0, -1 / 0})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-132",
+      "group": "infinity",
+      "script": [
+        "r = Mean({1 / 0, 1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-133",
+      "group": "infinity",
+      "script": [
+        "r = Sum({})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-134",
+      "group": "infinity",
+      "script": [
+        "r = Product({})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-135",
+      "group": "infinity",
+      "script": [
+        "r = Max({})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-136",
+      "group": "infinity",
+      "script": [
+        "r = Min({})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-137",
+      "group": "infinity",
+      "script": [
+        "r = Iteration(x^2, 10, 20)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-138",
+      "group": "infinity",
+      "script": [
+        "r = Iteration(2 x, 1, 2000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-functions-139",
+      "group": "infinity",
+      "script": [
+        "g = IterationList(x^2, 10, 12)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 10.0 },
+              { "type": "number", "defined": true, "value": 100.0 },
+              { "type": "number", "defined": true, "value": 10000.0 },
+              { "type": "number", "defined": true, "value": 1.0E8 },
+              { "type": "number", "defined": true, "value": 1.0E16 },
+              { "type": "number", "defined": true, "value": 1.0E32 },
+              { "type": "number", "defined": true, "value": 1.0000000000000002E64 },
+              { "type": "number", "defined": true, "value": 1.0000000000000003E128 },
+              { "type": "number", "defined": true, "value": 1.0000000000000005E256 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

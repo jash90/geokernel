@@ -101,7 +101,19 @@ pub fn evaluate(cases: &[Case], gaps: &Gaps) -> Report {
                     .iter()
                     .map(|m| format!("{}:{}", m.step, m.label))
                     .collect();
-                if actual == gap.mismatches {
+                let wrong_answer = gap.kernel.as_ref().and_then(|kernel| {
+                    out.mismatches
+                        .iter()
+                        .find(|m| !kernel.matches(&m.actual))
+                        .map(|m| (kernel, m))
+                });
+                if let Some((kernel, m)) = wrong_answer {
+                    r.failures.push(format!(
+                        "known gap `{}` step {} label `{}`: the entry states {kernel:?}, \
+                         the kernel answers {}",
+                        case.id, m.step, m.label, m.actual
+                    ));
+                } else if actual == gap.mismatches {
                     r.known_gaps += 1;
                 } else {
                     let unlisted: Vec<&String> = actual.difference(&gap.mismatches).collect();
@@ -200,6 +212,33 @@ mod tests {
         let r = evaluate(&case(SCRIPT, 2.0), &listed("c1", "0:Q"));
         assert_eq!(r.known_gaps, 0);
         assert!(r.failures[0].contains("changed") && r.failures[0].contains("0:M"));
+    }
+
+    #[test]
+    fn a_gap_that_states_the_kernel_answer_checks_it() {
+        let stated = |extra: &str| {
+            gaps::parse(&format!(
+                "[[gap]]\nid=\"c1\"\nreason=\"r\"\nmismatches=[\"0:M\"]\n{extra}\n"
+            ))
+            .unwrap()
+        };
+        // The kernel's point is defined: neither statement holds.
+        for extra in ["undefined = true", "failure = \"invalid arguments\""] {
+            let r = evaluate(&case(SCRIPT, 2.0), &stated(extra));
+            assert_eq!(r.known_gaps, 0, "{extra}");
+            assert!(r.failures[0].contains("states"), "{extra}");
+        }
+        // A refused line with the stated error passes, another error fails.
+        let refused = case(r#""M = Foo(1)""#, 1.0);
+        let error = |e: &str| stated(&format!("failure = \"{e}\""));
+        let actual = &replay(&refused[0]).mismatches[0].actual;
+        let message = actual.rsplit("`: ").next().unwrap().to_owned();
+        let mut gaps = error(&message);
+        gaps.get_mut("c1").unwrap().mismatches = ["0:script line 1".to_owned()].into();
+        assert_eq!(evaluate(&refused, &gaps).known_gaps, 1);
+        let mut gaps = error("something else");
+        gaps.get_mut("c1").unwrap().mismatches = ["0:script line 1".to_owned()].into();
+        assert_eq!(evaluate(&refused, &gaps).known_gaps, 0);
     }
 
     #[test]

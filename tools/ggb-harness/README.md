@@ -66,6 +66,15 @@ automatically. The `odesymbolic` group's `nocas` topic uses the dummy backend
 to verify behavior without symbolic evaluation. `GGB_HARNESS_CAS=1` selects
 the native backend for other runs. The remaining historical cases default
 to the dummy backend.
+The `prove` group also sets `-DggbHarness.prover`. The headless app's prover
+never decides a statement: its `Prover.compute` is empty, so every `Prove` is
+`false` and every `ProveDetails` is `{}`. `ProverOracle` installs a prover
+that runs `Prover.decideStatement`, synchronously and without a timeout, as the
+desktop app's prover does, with the algebraic engine selected. The numerical
+engine and the external Wu prover of the desktop app are not on the harness
+class path.
+The desktop app abandons a proof after five seconds and pins Giac 70501; the
+oracle has no deadline and uses the Giac library this script downloads.
 Giac is a separate GPL reference backend used only to record and check fixtures.
 The Rust workspace and release builds have no runtime or build dependency on it.
 
@@ -160,7 +169,9 @@ For every case `GoldenGenerator`:
    `move` calls `GeoPoint.setCoords(x, y, 1)` (for a free vector
    `GeoVector.setCoords(x, y, 0)`) and `updateCascade()`;
    `set_number` calls `GeoNumeric.setValue` (it fails if GeoGebra clamps the
-   value) and `updateCascade()`.
+   value) and `updateCascade()`. Use `infinity: 1` or `infinity: -1` in place
+   of `value` to set an infinity. The `delete` step calls the object's removal
+   operation and records the surviving labels.
 
 Snapshot encoding:
 
@@ -170,16 +181,21 @@ Snapshot encoding:
 | `GeoLine` | `line` with the raw fields `x`, `y`, `z` as `a`, `b`, `c` |
 | `GeoSegment` | `segment` with its start point and end point |
 | `GeoConic` from `Circle` | `circle` with the midpoint and the first half-axis |
-| `GeoNumeric` | `number` |
+| `GeoNumeric` | `number`; one that holds `Infinity` or `-Infinity` is defined and carries `infinity` (1 or -1) in place of `value` |
 | `GeoAngle` | `angle` with a radian `value` |
 | `GeoVector` | `vector` with `x`, `y` |
 | `GeoRay` | `ray` with the inhomogeneous start point `x`, `y` and the raw fields `x`, `y`, `z` as `a`, `b`, `c`; a start point at infinity is undefined |
-| `GeoFunction` | `function` with `samples`, the values of `GeoFunction.value` at the sample points (`null` where not finite) |
+| `GeoFunction` | `function` with `samples`, the values of `GeoFunction.value` at the sample points (`null` for NaN, `{ "infinity": 1 }` or `-1` for an infinity) |
 | `GeoPolygon` | `polygon` with `getPoints()` as `vertices`, `getArea()` as `area` and `getAreaWithSign()` as `signed_area`; a vertex that is undefined or at infinity makes it undefined |
 | `GeoPolyLine` | `polyline` with `getPointsND()` as `vertices` (`null` for an undefined point or a point at infinity) and `getLength()` as `length` |
-| `GeoLocus` | `locus` with `getPoints()` as `points`, each `[x, y, getLineTo()]` (`x` and `y` `null` when not finite) |
+| `GeoLocus` | `locus` with `getPoints()` as `points`, each `[x, y, getLineTo()]` (a coordinate is `null` for NaN and `{ "infinity": 1 }` or `-1` for an infinity) |
 
-New files use schema 2, which records angles separately in every group.
+New files use schema 4, which records angles separately in every group, an
+infinite number as such and the sign of every infinite sample, pie fraction,
+curve or locus coordinate, so that `null` there means NaN only
+(`golden/SCHEMA.md`). The snapshots of the export oracle and the verified
+t-pairs keep the schema 2 encoding, where an infinite number is written as
+undefined and every value that is not finite as `null`.
 Schema 1 files use the legacy numeric encoding for angles.
 
 `defined` is GeoGebra's `isDefined()` and, in addition, every recorded field

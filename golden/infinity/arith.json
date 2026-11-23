@@ -1,0 +1,1507 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "infinity-arith-001",
+      "group": "infinity",
+      "script": [
+        "c = 0^inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-002",
+      "group": "infinity",
+      "script": [
+        "c = 1^inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-003",
+      "group": "infinity",
+      "script": [
+        "c = 1^(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-004",
+      "group": "infinity",
+      "script": [
+        "c = 2^inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-005",
+      "group": "infinity",
+      "script": [
+        "c = 2.1^inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-006",
+      "group": "infinity",
+      "script": [
+        "c = (-1)^inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-007",
+      "group": "infinity",
+      "script": [
+        "c = inf^inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-008",
+      "group": "infinity",
+      "script": [
+        "c = ?^inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-009",
+      "group": "infinity",
+      "script": [
+        "c = inf^?"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-010",
+      "group": "infinity",
+      "script": [
+        "c = (-inf)^inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-011",
+      "group": "infinity",
+      "script": [
+        "c = inf^(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-012",
+      "group": "infinity",
+      "script": [
+        "c = (-inf)^(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-013",
+      "group": "infinity",
+      "script": [
+        "c = inf^0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-014",
+      "group": "infinity",
+      "script": [
+        "c = inf^(-1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-015",
+      "group": "infinity",
+      "script": [
+        "c = 1/inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-016",
+      "group": "infinity",
+      "script": [
+        "c = 0/inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-017",
+      "group": "infinity",
+      "script": [
+        "c = 1*inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-018",
+      "group": "infinity",
+      "script": [
+        "c = 2*inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-019",
+      "group": "infinity",
+      "script": [
+        "c = inf*1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-020",
+      "group": "infinity",
+      "script": [
+        "c = inf*-1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-021",
+      "group": "infinity",
+      "script": [
+        "c = 0*inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-022",
+      "group": "infinity",
+      "script": [
+        "c = inf*0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-023",
+      "group": "infinity",
+      "script": [
+        "c = inf+1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-024",
+      "group": "infinity",
+      "script": [
+        "c = inf+0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-025",
+      "group": "infinity",
+      "script": [
+        "c = inf-0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-026",
+      "group": "infinity",
+      "script": [
+        "c = inf-1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-027",
+      "group": "infinity",
+      "script": [
+        "c = 1-inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-028",
+      "group": "infinity",
+      "script": [
+        "c = 1+inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-029",
+      "group": "infinity",
+      "script": [
+        "c = 0+inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-030",
+      "group": "infinity",
+      "script": [
+        "c = sin(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-031",
+      "group": "infinity",
+      "script": [
+        "c = cos(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-032",
+      "group": "infinity",
+      "script": [
+        "c = tan(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-033",
+      "group": "infinity",
+      "script": [
+        "c = ln(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-034",
+      "group": "infinity",
+      "script": [
+        "c = exp(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-035",
+      "group": "infinity",
+      "script": [
+        "c = sin(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-036",
+      "group": "infinity",
+      "script": [
+        "c = cos(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-037",
+      "group": "infinity",
+      "script": [
+        "c = tan(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-038",
+      "group": "infinity",
+      "script": [
+        "c = ln(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-039",
+      "group": "infinity",
+      "script": [
+        "c = exp(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-040",
+      "group": "infinity",
+      "script": [
+        "c = inf * inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-041",
+      "group": "infinity",
+      "script": [
+        "c = inf * -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-042",
+      "group": "infinity",
+      "script": [
+        "c = -inf * inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-043",
+      "group": "infinity",
+      "script": [
+        "c = -inf * -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-044",
+      "group": "infinity",
+      "script": [
+        "c = inf + inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-045",
+      "group": "infinity",
+      "script": [
+        "c = inf + -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-046",
+      "group": "infinity",
+      "script": [
+        "c = -inf + inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-047",
+      "group": "infinity",
+      "script": [
+        "c = -inf + -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-048",
+      "group": "infinity",
+      "script": [
+        "c = inf - inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-049",
+      "group": "infinity",
+      "script": [
+        "c = inf - -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-050",
+      "group": "infinity",
+      "script": [
+        "c = -inf - inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-051",
+      "group": "infinity",
+      "script": [
+        "c = -inf - -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-052",
+      "group": "infinity",
+      "script": [
+        "c = inf / inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-053",
+      "group": "infinity",
+      "script": [
+        "c = inf / -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-054",
+      "group": "infinity",
+      "script": [
+        "c = -inf / inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-055",
+      "group": "infinity",
+      "script": [
+        "c = -inf / -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-056",
+      "group": "infinity",
+      "script": [
+        "c = inf * ?"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-057",
+      "group": "infinity",
+      "script": [
+        "c = inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-058",
+      "group": "infinity",
+      "script": [
+        "c = -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-059",
+      "group": "infinity",
+      "script": [
+        "c = 1/0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-060",
+      "group": "infinity",
+      "script": [
+        "c = -1/0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-061",
+      "group": "infinity",
+      "script": [
+        "c = 0/0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-062",
+      "group": "infinity",
+      "script": [
+        "c = 2/0 + 1"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-063",
+      "group": "infinity",
+      "script": [
+        "c = -(1/0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-064",
+      "group": "infinity",
+      "script": [
+        "c = abs(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-065",
+      "group": "infinity",
+      "script": [
+        "c = sqrt(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-066",
+      "group": "infinity",
+      "script": [
+        "c = sqrt(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-067",
+      "group": "infinity",
+      "script": [
+        "c = floor(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-068",
+      "group": "infinity",
+      "script": [
+        "c = ceil(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-069",
+      "group": "infinity",
+      "script": [
+        "c = round(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-070",
+      "group": "infinity",
+      "script": [
+        "c = sgn(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-071",
+      "group": "infinity",
+      "script": [
+        "c = sgn(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-072",
+      "group": "infinity",
+      "script": [
+        "c = inf^2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-073",
+      "group": "infinity",
+      "script": [
+        "c = (-inf)^2"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-074",
+      "group": "infinity",
+      "script": [
+        "c = (-inf)^3"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-075",
+      "group": "infinity",
+      "script": [
+        "c = inf^0.5"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-076",
+      "group": "infinity",
+      "script": [
+        "c = 2^(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-077",
+      "group": "infinity",
+      "script": [
+        "c = 0.5^inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-078",
+      "group": "infinity",
+      "script": [
+        "c = 0.5^(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-079",
+      "group": "infinity",
+      "script": [
+        "c = ln(0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-080",
+      "group": "infinity",
+      "script": [
+        "c = log(10, 0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-081",
+      "group": "infinity",
+      "script": [
+        "c = exp(1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-082",
+      "group": "infinity",
+      "script": [
+        "c = -exp(1000)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-083",
+      "group": "infinity",
+      "script": [
+        "c = 1E308 * 10"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-084",
+      "group": "infinity",
+      "script": [
+        "c = -1E308 * 10"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-085",
+      "group": "infinity",
+      "script": [
+        "c = atan(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.5707963267948966 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-086",
+      "group": "infinity",
+      "script": [
+        "c = atan(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": -1.5707963267948966 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-087",
+      "group": "infinity",
+      "script": [
+        "c = tanh(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-088",
+      "group": "infinity",
+      "script": [
+        "c = cosh(inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-089",
+      "group": "infinity",
+      "script": [
+        "c = sinh(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-090",
+      "group": "infinity",
+      "script": [
+        "c = cbrt(-inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-091",
+      "group": "infinity",
+      "script": [
+        "c = inf!"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-092",
+      "group": "infinity",
+      "script": [
+        "c = arctan2(inf, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "number", "defined": true, "value": 1.5707963267948966 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-093",
+      "group": "infinity",
+      "script": [
+        "c = inf == inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-094",
+      "group": "infinity",
+      "script": [
+        "c = inf > 1E300"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-095",
+      "group": "infinity",
+      "script": [
+        "c = -inf < 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-096",
+      "group": "infinity",
+      "script": [
+        "c = inf == -inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-097",
+      "group": "infinity",
+      "script": [
+        "c = inf != inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-098",
+      "group": "infinity",
+      "script": [
+        "c = 1/0 == inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-099",
+      "group": "infinity",
+      "script": [
+        "c = inf - inf == 0"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-arith-100",
+      "group": "infinity",
+      "script": [
+        "c = inf >= inf"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}

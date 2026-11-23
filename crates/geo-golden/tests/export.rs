@@ -51,6 +51,13 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("paths-chain-001", 1),
     ("polygon-polyline-001", 0),
     ("polygon-regular-001", 0),
+    // Pen strokes: cubic pieces, breaks and a lone point.
+    ("stroke-breaks-001", 0),
+    ("stroke-literals-002", 0),
+    ("stroke-points-010", 0),
+    ("stroke-points-004", 0),
+    ("redefine-assignment-001", 2),
+    ("redefine-assignment-015", 3),
     ("textobjects-dynamic-001", 1),
     ("vector-chain-001", 0),
 ];
@@ -66,6 +73,7 @@ const SAVED_CASES: &[&str] = &[
     "saved-images-002.ggb",
     "saved-object-scripts-001.xml",
     "saved-slider-bounds-001.xml",
+    "saved-strokes-001.xml",
     "saved-texts-001.ggb",
     "saved-text-equations-001.xml",
     // Presentation properties per kind, set by the reference application.
@@ -84,6 +92,8 @@ const SAVED_CASES: &[&str] = &[
     // Dynamic colour channels, a step and a speed over objects that are
     // undefined in the saved state.
     "saved-styles-012.xml",
+    // Pen strokes with presentation properties.
+    "saved-styles-013.xml",
 ];
 
 const STYLED_FILE: &[u8] = br#"<geogebra format="5.0">
@@ -200,8 +210,15 @@ fn corpus() -> Vec<Case> {
                     let id = wb.construction().id(label).unwrap();
                     wb.set_number(id, *value);
                 }
-                Step::Reject { .. } => panic!("{name}: unexpected rejection step"),
-                Step::SetSliderBounds { .. } => panic!("{name}: unexpected slider bounds edit"),
+                Step::Redefine { line } => wb.run_line(line).unwrap(),
+                Step::Reject { .. } | Step::Delete { .. } | Step::SetSliderBounds { .. } => {
+                    panic!("{name}: unexpected step")
+                }
+                Step::Animate { frames } => {
+                    for _ in 0..*frames {
+                        wb.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);
+                    }
+                }
             }
         }
         let c = wb.construction();
@@ -536,6 +553,17 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                     gave_up.push(name.as_str());
                 } else {
                     assert!(applied.is_none(), "{name}: the reference reads the file");
+                    // A stroke is what the reference reads from the file:
+                    // older vertices smoothed in the file's view, Bezier
+                    // points as written.
+                    let c = live.construction();
+                    for (label, id) in labelled(c) {
+                        if c.kind(id) == Kind::PenStroke {
+                            let expected = expected_from_json(&source["objects"][label]).unwrap();
+                            compare_construction_object(&expected, c, id)
+                                .unwrap_or_else(|why| panic!("{name}: source {label}: {why}"));
+                        }
+                    }
                     // The export makes the reader report nothing that the
                     // source did not: a tag that set nothing is not written,
                     // a tag read halfway is written as far as it was read.
@@ -852,6 +880,10 @@ const WITNESSES: &[(&str, &[(&str, &str)])] = &[
         &[("saved-styles-004", "path"), ("saved-styles-004", "path2")],
     ),
     (
+        "PenStroke",
+        &[("saved-styles-013", "s"), ("saved-styles-013", "s2")],
+    ),
+    (
         "Curve",
         &[("saved-styles-004", "c"), ("saved-styles-004", "c2")],
     ),
@@ -972,7 +1004,8 @@ fn kind_properties(kind: &str) -> Vec<&'static str> {
             &["trace", "start_style", "end_style"],
         ],
         "Vector" => &[SHARED, FLAGS, LABEL, LINE, &["trace", "head_style"]],
-        "Locus" => &[SHARED, &["fixed"], LABEL, LINE, &["trace", "draw_arrows"]],
+        // A pen stroke is a locus in the reference application.
+        "Locus" | "PenStroke" => &[SHARED, &["fixed"], LABEL, LINE, &["trace", "draw_arrows"]],
         "Segment" => &[
             SHARED,
             FLAGS,
@@ -1612,6 +1645,94 @@ const HOSTILE_FILE: &[u8] = br#"<geogebra format="5.0"><construction>
       type="0" playing="false"/>
   </element>
 </construction></geogebra>"#;
+
+/// `SlowPlot` hides its source graph and plays its new slider from 0 to 1,
+/// again and again with the repeat flag 1 and once otherwise. The export of
+/// the same script says so as the file the reference application saved
+/// does: the visibility of every object, and the bounds and animation of
+/// every slider.
+#[test]
+fn slow_plot_hides_its_source_and_plays_its_slider_as_the_reference_saves_it() {
+    let dir = repo_root().join("golden/ggb/saved");
+    let saved = fs::read_to_string(dir.join("saved-slowplot-001.xml")).unwrap();
+    let snapshot: Value =
+        serde_json::from_slice(&fs::read(dir.join("saved-slowplot-001.snapshot")).unwrap())
+            .unwrap();
+    let script: Vec<&str> = snapshot["script"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|line| line.as_str().unwrap())
+        .collect();
+    let wb = Workbench::from_script(&script.join("\n")).unwrap();
+    let elements = |text: &str| {
+        geo_import::xml::parse(text)
+            .unwrap()
+            .items
+            .into_iter()
+            .filter_map(|item| match item {
+                geo_import::xml::Item::Element(el) => Some((el.label.clone(), el)),
+                _ => None,
+            })
+            .collect::<BTreeMap<_, _>>()
+    };
+    let (reference, ours) = (elements(&saved), elements(&exported_xml(&wb)));
+    let mut sliders = 0;
+    for (label, want) in &reference {
+        let got = ours
+            .get(label)
+            .unwrap_or_else(|| panic!("the export has no `{label}`"));
+        assert_eq!(
+            got.shown.unwrap_or(true),
+            want.shown.unwrap_or(true),
+            "{label}: shown"
+        );
+        assert_eq!(got.slider, want.slider, "{label}: slider bounds");
+        // every element of the reference has an animation tag; a slider's
+        // is the one SlowPlot sets
+        if want.slider.is_some() {
+            assert_eq!(
+                got.slider_animation, want.slider_animation,
+                "{label}: animation"
+            );
+            sliders += 1;
+        }
+    }
+    assert_eq!(sliders, 3);
+    assert!(wb.is_animating());
+}
+
+/// A running animation is saved with `<startAnimation>` and the slider as
+/// playing, which the reference reader starts again (`MyXMLHandler`); a
+/// slider that has played once to its end is saved as stopped.
+#[test]
+fn a_running_slow_plot_animation_is_saved_and_restarts_on_load() {
+    let mut wb = Workbench::from_script("f(x) = x\ng = SlowPlot(f)\nh = SlowPlot(f, 0)").unwrap();
+    let xml = exported_xml(&wb);
+    assert!(xml.contains("<startAnimation val=\"true\"/>"), "{xml}");
+    // (the functions read view corners, which the importer skips)
+    let imported = geo_import::import(&wb.export_ggb(None).unwrap()).unwrap();
+    let c = geo_kernel::script::load(&imported.script.join("\n")).unwrap();
+    assert!(c.is_animating());
+    for (label, mode) in [("a", 1), ("b", 3)] {
+        let a = c.animation(c.id(label).unwrap()).unwrap();
+        assert!(a.playing && a.auto_step && a.speed == 1.0, "{label}");
+        assert_eq!(a.mode.code(), mode, "{label}");
+    }
+    // the slider that plays once stops; the other keeps the timer running
+    for _ in 0..400 {
+        wb.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);
+    }
+    let xml = exported_xml(&wb);
+    assert!(xml.contains("<startAnimation val=\"true\"/>"));
+    assert!(xml.contains("type=\"3\" playing=\"false\""), "{xml}");
+    let mut once = Workbench::from_script("f(x) = x\ng = SlowPlot(f, 0)").unwrap();
+    for _ in 0..400 {
+        once.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);
+    }
+    assert!(!once.is_animating());
+    assert!(!exported_xml(&once).contains("startAnimation"));
+}
 
 fn exported_xml(wb: &Workbench) -> String {
     let bytes = wb.export_ggb(None).unwrap();

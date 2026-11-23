@@ -331,10 +331,14 @@ impl Workbench {
     /// Runs what the user typed: `f = Line(A, B)`, `f: Line(A, B)`, or just a
     /// definition, which gets the next free label of its kind.
     pub fn run_line(&mut self, input: &str) -> Result<(), String> {
+        let line = normalize(input);
+        if self.construction.id(&line).is_some() {
+            return Ok(());
+        }
         // The label is chosen once the open tool use is taken back, so that
         // it does not skip the labels of its points.
         let line = self.outside_tool_use(|w| {
-            let line = w.with_label(normalize(input));
+            let line = w.with_label(line);
             w.exec_lines(std::slice::from_ref(&line), false)
                 .map(|()| line)
         })?;
@@ -368,6 +372,12 @@ impl Workbench {
     /// the whole group stays. A tool use in progress does not finish: its
     /// points go first (see `outside_tool_use`).
     pub fn run_lines(&mut self, lines: &[String]) -> Result<(), String> {
+        if lines.iter().all(|line| {
+            let line = normalize(line);
+            line.is_empty() || self.construction.id(&line).is_some()
+        }) {
+            return Ok(());
+        }
         self.outside_tool_use(|w| w.exec_lines(lines, false))
     }
 
@@ -458,6 +468,7 @@ impl Workbench {
         let snapshot = self.copy(&self.log);
         let n0 = self.construction.len();
         let mut updated = false;
+        let mut redefined = false;
         let mut failure = None;
         for raw in lines {
             let line = normalize(raw);
@@ -470,8 +481,10 @@ impl Workbench {
             }
             let before = self.construction.len();
             let step_before = self.construction.step();
-            let assigns_slider =
-                geo_kernel::script::is_slider_assignment(&self.construction, &line);
+            let target = geo_kernel::script::assignment_target(&self.construction, &line);
+            let slider = geo_kernel::script::slider_assignment_target(&self.construction, &line);
+            let assigns_slider = slider.is_some();
+            self.construction.take_hidden_requests();
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
@@ -479,9 +492,24 @@ impl Workbench {
                     let added = self.construction.len() > before;
                     let mutated =
                         !added && (assigns_slider || self.construction.step() != step_before);
-                    if added || mutated {
-                        self.log.record(&self.construction, before, &line);
-                        if let Some(first) = first {
+                    let replaced = target.is_some() && first == target;
+                    if added || mutated || replaced {
+                        // A stroke keeps the points of its creation: the
+                        // journal replays them, not the smoothing in
+                        // another view.
+                        let line = first
+                            .and_then(|id| {
+                                geo_kernel::script::frozen_stroke_line(
+                                    &self.construction,
+                                    id,
+                                    &line,
+                                )
+                            })
+                            .unwrap_or(line);
+                        self.log
+                            .record_definition(&self.construction, before, first, &line);
+                        self.log.apply_hidden_requests(&mut self.construction);
+                        if let Some(first) = first.filter(|_| added) {
                             self.boundary_outputs.record(
                                 &self.construction,
                                 &line,
@@ -489,8 +517,15 @@ impl Workbench {
                                 self.construction.len() - before,
                             );
                         }
+                        if let Some(first) = first.filter(|_| replaced) {
+                            self.grow_boundary_outputs(std::iter::once(first));
+                        }
+                    }
+                    if let Some(id) = slider.filter(|_| mutated) {
+                        self.grow_boundary_outputs(std::iter::once(id));
                     }
                     updated |= mutated;
+                    redefined |= replaced;
                 }
                 Err(e) => {
                     failure = Some(e);
@@ -499,10 +534,10 @@ impl Workbench {
             }
         }
         let objects_added = self.construction.len() != n0;
-        if objects_added {
+        if objects_added || redefined {
             self.objects_changed();
         }
-        let changed = objects_added || updated;
+        let changed = objects_added || updated || redefined;
         match failure {
             Some(e) => {
                 if changed {
@@ -570,7 +605,9 @@ impl Workbench {
         Ok(())
     }
 
-    fn install_replay(&mut self, c: Construction, mut kept: Log) {
+    fn install_replay(&mut self, mut c: Construction, mut kept: Log) {
+        // a replay plays nothing again: the sliders keep where they were
+        c.carry_animations_from(&self.construction);
         let selected = self
             .selected
             .filter(|id| id.index() < self.construction.len())
@@ -620,9 +657,6 @@ impl Workbench {
             return false;
         };
         let made: Vec<String> = made.to_vec();
-        if !next.remove(label) {
-            return false;
-        }
         // A deletion inside a gesture (the eraser's stroke) keeps it: the
         // whole stroke is one undo step.
         // Only the starts the deleted entry froze are written into the
@@ -633,9 +667,12 @@ impl Workbench {
         let mut placed = 0;
         for (line, x, y, owner) in self.construction.frozen_line_starts() {
             if made.iter().any(|m| m == &owner) {
-                next.keep_frozen_start(at + placed, &line, x, y);
+                next.keep_frozen_start(at + 1 + placed, &line, x, y);
                 placed += 1;
             }
+        }
+        if !next.remove(label, &self.construction) {
+            return false;
         }
         let gesture = self.gesture.take();
         let restored = self.restore(next);
@@ -1120,6 +1157,36 @@ impl Workbench {
         }
         self.version += 1;
         true
+    }
+
+    /// Whether a slider of the construction is playing.
+    pub fn is_animating(&self) -> bool {
+        self.construction.is_animating()
+    }
+
+    /// Whether something can be played or paused: a slider has an animation.
+    pub fn has_animation(&self) -> bool {
+        self.construction.has_animations()
+    }
+
+    /// Plays or pauses the animation, as the reference's play button does
+    /// (`AnimationManager.startAnimation` and `stopAnimation`). Pausing
+    /// keeps every slider where it is; playing goes on from there.
+    pub fn set_animation_running(&mut self, running: bool) {
+        self.construction.set_animation_running(running);
+        self.version += 1;
+    }
+
+    /// One animation frame of the playing sliders at `frame_rate` frames per
+    /// second (`AnimationManager.sliderStep`). The values are not journaled,
+    /// as the reference does not store animation frames as undo steps.
+    /// Returns whether a value changed.
+    pub fn animate(&mut self, frame_rate: f64) -> bool {
+        let changed = self.construction.animate(frame_rate);
+        if changed {
+            self.version += 1;
+        }
+        changed
     }
 
     pub fn set_boolean(&mut self, id: Id, value: bool) -> bool {

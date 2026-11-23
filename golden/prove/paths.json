@@ -1,0 +1,702 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-paths-001",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e, 0.2)",
+        "M = Midpoint(P, C)",
+        "N = Midpoint(A, C)",
+        "f = Line(M, N)",
+        "b = AreParallel(f, e)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -7.499999999999999, "y": -1.4999999999999998 },
+          "M": { "type": "point", "defined": true, "x": -2.7499999999999996, "y": 1.25 },
+          "N": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "f": { "type": "line", "defined": true, "a": -0.75, "b": 3.7499999999999996, "c": -6.749999999999999 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-002",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e, 0.3)",
+        "f = Line(P, C)",
+        "g = Line(B, C)",
+        "k = Line(A, f)",
+        "D = Intersect(k, g)",
+        "b = AreCollinear(D, B, C)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -3.333333333333334, "y": -0.6666666666666667 },
+          "f": { "type": "line", "defined": true, "a": -4.666666666666667, "b": 5.333333333333334, "c": -12.000000000000002 },
+          "g": { "type": "line", "defined": true, "a": -3.0, "b": -3.0, "c": 18.0 },
+          "k": { "type": "line", "defined": true, "a": -4.666666666666667, "b": 5.333333333333334, "c": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 3.2000000000000006, "y": 2.8 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-003",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e, 0.4)",
+        "Q = Point(e, 0.5)",
+        "M = Midpoint(P, Q)",
+        "b = AreCollinear(A, M, B)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2499999999999998, "y": -0.24999999999999994 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "M": { "type": "point", "defined": true, "x": -0.6249999999999999, "y": -0.12499999999999997 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "M": { "type": "point", "defined": false },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2499999999999998, "y": -0.24999999999999994 },
+          "Q": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "M": { "type": "point", "defined": true, "x": -0.6249999999999999, "y": -0.12499999999999997 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-004",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e, 0.6)",
+        "f = PerpendicularLine(P, e)",
+        "g = PerpendicularLine(C, e)",
+        "b = AreParallel(f, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.2499999999999998, "y": 0.24999999999999994 },
+          "f": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": 6.499999999999999 },
+          "g": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": 14.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-005",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = (4, 5)",
+        "c = Circle(A, B)",
+        "d = Circle(C, D)",
+        "P = Intersect(c, d, 1)",
+        "Q = Intersect(c, d, 2)",
+        "f = Line(P, Q)",
+        "g = Line(A, C)",
+        "b = ArePerpendicular(f, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.099019513592785 },
+          "d": { "type": "circle", "defined": true, "cx": 2.0, "cy": 4.0, "r": 2.23606797749979 },
+          "P": { "type": "point", "defined": true, "x": 0.05250156445618281, "y": 5.09874921777191 },
+          "Q": { "type": "point", "defined": true, "x": 4.047498435543818, "y": 3.101250782228092 },
+          "f": { "type": "line", "defined": true, "a": 1.9974984355438177, "b": 3.9949968710876353, "c": -20.474358964324132 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-006",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = (4, 5)",
+        "c = Circle(A, B)",
+        "g = Line(C, D)",
+        "P = Intersect(g, c, 1)",
+        "Q = Intersect(g, c, 2)",
+        "M = Midpoint(P, Q)",
+        "f = Line(A, M)",
+        "b = ArePerpendicular(f, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.099019513592785 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": -6.0 },
+          "P": { "type": "point", "defined": true, "x": -5.078143885933064, "y": 0.4609280570334682 },
+          "Q": { "type": "point", "defined": true, "x": 2.678143885933064, "y": 4.339071942966532 },
+          "M": { "type": "point", "defined": true, "x": -1.1999999999999997, "y": 2.4000000000000004 },
+          "f": { "type": "line", "defined": true, "a": -2.4000000000000004, "b": -1.1999999999999997, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-007",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = (4, 5)",
+        "c = Circle(A, B)",
+        "g = Line(C, D)",
+        "P = Intersect(g, c, 1)",
+        "b = AreCollinear(P, C, D)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.099019513592785 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": -6.0 },
+          "P": { "type": "point", "defined": true, "x": -5.078143885933064, "y": 0.4609280570334682 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-008",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "c = Circle(A, B)",
+        "g = Line(A, C)",
+        "P = Intersect(g, c, 1)",
+        "Q = Intersect(g, c, 2)",
+        "M = Midpoint(P, Q)",
+        "b = AreEqual(M, A)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.099019513592785 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.280350850198276, "y": -4.560701700396552 },
+          "Q": { "type": "point", "defined": true, "x": 2.2803508501982765, "y": 4.560701700396553 },
+          "M": { "type": "point", "defined": true, "x": 2.220446049250313E-16, "y": 4.440892098500626E-16 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreCollinear[A,B,C]" },
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-009",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "c = Circle(A, B)",
+        "g = Line(A, C)",
+        "P = Intersect(g, c, 1)",
+        "M = Midpoint(P, B)",
+        "h = Line(A, M)",
+        "k = Line(P, B)",
+        "b = ArePerpendicular(h, k)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.099019513592785 },
+          "g": { "type": "line", "defined": true, "a": -4.0, "b": 2.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -2.280350850198276, "y": -4.560701700396552 },
+          "M": { "type": "point", "defined": true, "x": 1.359824574900862, "y": -1.780350850198276 },
+          "h": { "type": "line", "defined": true, "a": 1.780350850198276, "b": 1.359824574900862, "c": -0.0 },
+          "k": { "type": "line", "defined": true, "a": -5.560701700396552, "b": 7.2803508501982765, "c": 20.523157651784487 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-010",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e, 0.2)",
+        "Q = Point(e, 0.3)",
+        "R = Point(e, 0.4)",
+        "b = AreCollinear(P, Q, R)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -7.499999999999999, "y": -1.4999999999999998 },
+          "Q": { "type": "point", "defined": true, "x": -3.333333333333334, "y": -0.6666666666666667 },
+          "R": { "type": "point", "defined": true, "x": -1.2499999999999998, "y": -0.24999999999999994 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-011",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "f = PerpendicularBisector(A, B)",
+        "P = Point(f, 0.3)",
+        "c = Circle(P, A)",
+        "d = Circle(P, B)",
+        "b = AreEqual(c, d)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "f": { "type": "line", "defined": true, "a": -5.0, "b": -1.0, "c": 13.0 },
+          "P": { "type": "point", "defined": true, "x": 3.166666666666667, "y": -2.833333333333334 },
+          "c": { "type": "circle", "defined": true, "cx": 3.166666666666667, "cy": -2.833333333333334, "r": 4.249182927993988 },
+          "d": { "type": "circle", "defined": true, "cx": 3.166666666666667, "cy": -2.833333333333334, "r": 4.249182927993988 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-012",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e, 0.4)",
+        "f = Line(A, P)",
+        "b = AreEqual(f, e)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2499999999999998, "y": -0.24999999999999994 },
+          "f": { "type": "line", "defined": true, "a": 0.24999999999999994, "b": -1.2499999999999998, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-013",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e, 0.4)",
+        "Q = Point(e, 0.7)",
+        "f = Line(P, Q)",
+        "b = AreEqual(f, e)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2499999999999998, "y": -0.24999999999999994 },
+          "Q": { "type": "point", "defined": true, "x": 3.333333333333332, "y": 0.6666666666666664 },
+          "f": { "type": "line", "defined": true, "a": -0.9166666666666663, "b": 4.583333333333332, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-014",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "e = Line(A, B)",
+        "P = Point(e, 0.4)",
+        "f = Line(C, P)",
+        "g = Line(C, A)",
+        "b = AreEqual(f, g)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "e": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2499999999999998, "y": -0.24999999999999994 },
+          "f": { "type": "line", "defined": true, "a": 4.25, "b": -3.25, "c": 4.499999999999999 },
+          "g": { "type": "line", "defined": true, "a": 4.0, "b": -2.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-paths-015",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = (-1, 3)",
+        "E = (6, 3)",
+        "f = Line(A, B)",
+        "g = Line(C, D)",
+        "h = Line(E, f)",
+        "b = AreParallel(g, h)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "E": { "type": "point", "defined": true, "x": 6.0, "y": 3.0 },
+          "f": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": -3.0, "c": 10.0 },
+          "h": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": -9.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

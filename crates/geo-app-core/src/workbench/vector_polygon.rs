@@ -10,12 +10,7 @@ impl Workbench {
     /// Only free points without dependents can be redefined as offsets.
     pub(crate) fn can_redefine_vertex(&self, id: Id) -> bool {
         let c = self.construction();
-        c.kind(id) == Kind::Point
-            && c.def(id).is_free()
-            && !c
-                .ids()
-                .skip(id.index() + 1)
-                .any(|other| c.reads(other).contains(&id))
+        c.kind(id) == Kind::Point && c.def(id).is_free() && c.direct_dependents(id).next().is_none()
     }
 
     /// Redefines the chosen vertices, or uses independent copies of a
@@ -50,7 +45,7 @@ impl Workbench {
         let mut log = self.copy(&self.log);
         if !copy {
             for p in &picks[1..] {
-                if !self.can_redefine_vertex(find(p)?) || !log.remove(p.label()) {
+                if !self.can_redefine_vertex(find(p)?) || !log.remove(p.label(), c) {
                     return Err(format!("cannot redefine vertex {}", p.label()));
                 }
             }

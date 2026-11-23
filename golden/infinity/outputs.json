@@ -1,0 +1,5364 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "infinity-outputs-001",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = f(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-002",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = f(0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-003",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = -f(a - a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-004",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = f(a) + f(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-005",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Sum({f(a), 1})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-006",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Max(f(a), 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-007",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Min(-f(a), 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": -0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-008",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = If(a < 1, f(a), 7)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 7.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 7.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-009",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Element({f(a), 2}, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-010",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "b = f(a) > 3"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "b": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-011",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = f(f(a))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": -0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.5277777777777777 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": -0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-012",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Mean({f(a), 2})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.375 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-013",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Product({f(a), -2})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": -1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": -0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-014",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Sum(f(a) k, k, 1, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 4.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-015",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Product(f(a) k, k, 1, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 2.53125 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-016",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Max({f(a), f(-a)})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-017",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = Min({f(a), f(-a)})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-018",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "f(x) = 1 / x^2 - 1 / 4",
+        "r = 1 / f(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 1.3333333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -0.234375],
+              [-4.0, -0.1875],
+              [-2.0, 0.0],
+              [-1.0, 0.75],
+              [-0.5, 3.75],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.75],
+              [1.0, 0.75],
+              [2.0, 0.0],
+              [4.0, -0.1875],
+              [8.0, -0.234375]
+            ]
+          },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-019",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = d / (a - a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-020",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = Length(w) / 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-021",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = x(A) / 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-022",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = y(B) / (a - a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-023",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = Radius(k) / 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-024",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = 1 / Distance(A, A)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-025",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = 1 / m"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-026",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = -1 / m"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": -3.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-027",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = 1 / (d - d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-028",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = Area(k) / (a - a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-029",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = m / 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-030",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "A = (1, 2)",
+        "B = (4, 3)",
+        "j = Line(A, B)",
+        "w = Segment(A, B)",
+        "k = Circle(A, a)",
+        "m = Slope(j)",
+        "d = Distance(A, B)",
+        "r = 1 / (a m)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "move", "label": "B", "x": 1.0, "y": 5.0 },
+        { "action": "set_number", "label": "a", "value": 3.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 3.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": 1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 5.0 },
+          "j": { "type": "line", "defined": true, "a": -3.0, "b": 0.0, "c": 3.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 1.0, "y2": 5.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": false },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 },
+          "j": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": -6.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 3.0 },
+          "j": { "type": "line", "defined": true, "a": -1.0, "b": 3.0, "c": -5.0 },
+          "w": { "type": "segment", "defined": true, "x1": 1.0, "y1": 2.0, "x2": 4.0, "y2": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.3333333333333333 },
+          "d": { "type": "number", "defined": true, "value": 3.1622776601683795 },
+          "r": { "type": "number", "defined": true, "value": 1.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-031",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 1",
+        "f(x) = (a x + b)^300"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.38385702007491E253],
+              [-4.0, 1.3689147905858837E143],
+              [-2.0, 1.0],
+              [-1.0, 0.0],
+              [-0.5, 4.909093465297727E-91],
+              [0.0, 1.0],
+              [0.5, 6.720130653014567E52],
+              [1.0, 2.037035976334486E90],
+              [2.0, 1.3689147905858837E143],
+              [4.0, 4.909093465297727E209],
+              [8.0, 1.873927703884794E286]
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, { "infinity": 1 }],
+              [-4.0, 3.38385702007491E253],
+              [-2.0, 1.3689147905858837E143],
+              [-1.0, 1.0],
+              [-0.5, 0.0],
+              [0.0, 1.0],
+              [0.5, 2.037035976334486E90],
+              [1.0, 1.3689147905858837E143],
+              [2.0, 4.909093465297727E209],
+              [4.0, 1.873927703884794E286],
+              [8.0, { "infinity": 1 }]
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 3.38385702007491E253],
+              [-4.0, 1.3689147905858837E143],
+              [-2.0, 1.0],
+              [-1.0, 0.0],
+              [-0.5, 4.909093465297727E-91],
+              [0.0, 1.0],
+              [0.5, 6.720130653014567E52],
+              [1.0, 2.037035976334486E90],
+              [2.0, 1.3689147905858837E143],
+              [4.0, 4.909093465297727E209],
+              [8.0, 1.873927703884794E286]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-032",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = LowerSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.283333371776806 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.283333371776806 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-033",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = UpperSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-034",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = LeftSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-035",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = RectangleSum(f, a, b, 4, 0.5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.574603174603174 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.574603174603174 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-036",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = RectangleSum(f, a, b, 4, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 6.083333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-037",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = RectangleSum(f, a, b, 4, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.283333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.283333333333333 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-038",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1 + 1/x",
+        "s = TrapezoidalSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.683333333333334 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 5.683333333333334 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.875],
+              [-4.0, 0.75],
+              [-2.0, 0.5],
+              [-1.0, 0.0],
+              [-0.5, -1.0],
+              [0.0, { "infinity": 1 }],
+              [0.5, 3.0],
+              [1.0, 2.0],
+              [2.0, 1.5],
+              [4.0, 1.25],
+              [8.0, 1.125]
+            ]
+          },
+          "s": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-039",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = LowerSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-040",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = UpperSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-041",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = LeftSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-042",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = RectangleSum(f, a, b, 4, 0.5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-043",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = RectangleSum(f, a, b, 4, 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-044",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = RectangleSum(f, a, b, 4, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-outputs-045",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 5",
+        "f(x) = 1",
+        "s = TrapezoidalSum(f, a, b, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "infinity": 1 },
+        { "action": "set_number", "label": "b", "infinity": -1 },
+        { "action": "set_number", "label": "b", "value": 5.0 },
+        { "action": "set_number", "label": "b", "infinity": 1 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 5.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 1.0],
+              [-4.0, 1.0],
+              [-2.0, 1.0],
+              [-1.0, 1.0],
+              [-0.5, 1.0],
+              [0.0, 1.0],
+              [0.5, 1.0],
+              [1.0, 1.0],
+              [2.0, 1.0],
+              [4.0, 1.0],
+              [8.0, 1.0]
+            ]
+          },
+          "s": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    }
+  ]
+}

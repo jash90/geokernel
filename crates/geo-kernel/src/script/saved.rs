@@ -28,6 +28,15 @@ pub enum Property {
         label: String,
         scripts: Vec<ControlScript>,
     },
+    /// The animation of a slider a file saved as playing; `running` when
+    /// the file also started the timer (`<startAnimation>`).
+    SliderAnimation {
+        label: String,
+        step: Option<f64>,
+        speed: f64,
+        mode: u8,
+        running: bool,
+    },
 }
 
 impl Property {
@@ -35,7 +44,8 @@ impl Property {
         match self {
             Self::DrawingStyle { label, .. }
             | Self::SliderBounds { label, .. }
-            | Self::ObjectScripts { label, .. } => Some(label),
+            | Self::ObjectScripts { label, .. }
+            | Self::SliderAnimation { label, .. } => Some(label),
             Self::ImageAsset { .. } => None,
         }
     }
@@ -54,6 +64,22 @@ impl Property {
             }
             Self::ObjectScripts { label, scripts } => {
                 c.object_scripts.insert(label.clone(), scripts.clone());
+                Ok(())
+            }
+            Self::SliderAnimation {
+                label,
+                step,
+                speed,
+                mode,
+                running,
+            } => {
+                use crate::kernel::animation::{Animation, AnimationMode};
+                let id = object(c, label)?;
+                if !matches!(c.def(id), crate::Def::Number(_)) {
+                    return Err("an animation needs a free number".into());
+                }
+                let mode = AnimationMode::from_code(i64::from(*mode));
+                c.restore_animation(id, Animation::saved(*step, *speed, mode, true), *running);
                 Ok(())
             }
         }
@@ -126,6 +152,18 @@ impl fmt::Display for Property {
                     field(max)
                 )
             }
+            Self::SliderAnimation {
+                label,
+                step,
+                speed,
+                mode,
+                running,
+            } => write!(
+                f,
+                "$sliderAnimation({}, {}, {speed:?}, {mode}, {running})",
+                encode_text(label),
+                step.map_or_else(|| "_".into(), |s| format!("{s:?}"))
+            ),
             Self::ObjectScripts { label, scripts } => {
                 write!(f, "$objectScripts({}", encode_text(label))?;
                 for field in encode_scripts(scripts) {
@@ -162,6 +200,7 @@ pub fn load_image_asset(
 
 pub fn parse(line: &str) -> Option<Result<Property, String>> {
     if !line.starts_with("$sliderBounds(")
+        && !line.starts_with("$sliderAnimation(")
         && !line.starts_with("$objectScripts(")
         && !line.starts_with("$drawingStyle(")
     {
@@ -186,6 +225,22 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                 Ok(Property::SliderBounds {
                     label: decode_text(label)?,
                     bounds: [bound(*min)?, bound(*max)?],
+                })
+            }
+            ("$sliderAnimation", [label, step, speed, mode, running]) => {
+                let number = |field: &str| -> Result<f64, String> {
+                    field
+                        .parse::<f64>()
+                        .ok()
+                        .filter(|v| v.is_finite())
+                        .ok_or_else(|| "invalid animation number".into())
+                };
+                Ok(Property::SliderAnimation {
+                    label: decode_text(label)?,
+                    step: (*step != "_").then(|| number(step)).transpose()?,
+                    speed: number(speed)?,
+                    mode: mode.parse().map_err(|_| "invalid animation mode")?,
+                    running: running.parse().map_err(|_| "invalid animation state")?,
                 })
             }
             ("$objectScripts", [label, scripts @ ..]) => Ok(Property::ObjectScripts {

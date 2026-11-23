@@ -78,7 +78,7 @@ pub(super) fn project_function(
 /// the sums are put over a common denominator (`AlgoNumeratorDenominator`)
 /// and without it they are left alone
 /// (`AlgoNumeratorDenominatorFun`).
-fn get_fraction(b: &mut Builder, i: u32, expand: bool) -> (Option<u32>, Option<u32>) {
+pub(super) fn get_fraction(b: &mut Builder, i: u32, expand: bool) -> (Option<u32>, Option<u32>) {
     let side = |b: &mut Builder, i: u32| -> (u32, Option<u32>) {
         // checkFraction recurses into a subtree that is itself a node,
         // and leaves the node itself otherwise
@@ -252,6 +252,7 @@ impl<'a> FunctionFraction<'a> {
             value: Val::N(x),
             run: None,
             vector: false,
+            text: None,
             up: None,
         };
         let second = Local {
@@ -259,6 +260,7 @@ impl<'a> FunctionFraction<'a> {
             value: Val::N(y),
             run: None,
             vector: false,
+            text: None,
             up: Some(&first),
         };
         let ctx = Ctx::<true> {
