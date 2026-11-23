@@ -64,14 +64,22 @@ pub(super) fn solve<const M: bool>(
             },
             _ => None,
         })?;
+    let names = hint
+        .as_deref()
+        .and_then(variable_names)
+        .unwrap_or_else(|| vec!["x".into(), "y".into(), "z".into()]);
     let printer = Printer {
         c: ctx.c,
-        names: hint
-            .as_deref()
-            .and_then(variable_names)
-            .unwrap_or_else(|| vec!["x".into(), "y".into(), "z".into()]),
+        names: names.clone(),
+        numeric: false,
+    };
+    let numeric_printer = Printer {
+        c: ctx.c,
+        names,
+        numeric: true,
     };
     let mut items = Vec::with_capacity(length as usize);
+    let mut numeric_items = Vec::with_capacity(length as usize);
     let mut variables = std::collections::BTreeSet::new();
     let mut is_list = false;
     for item in start..start + length {
@@ -80,6 +88,9 @@ pub(super) fn solve<const M: bool>(
         };
         let mut out = String::new();
         printer.top(ctx.e, i, &mut out)?;
+        let mut numeric = String::new();
+        numeric_printer.top(ctx.e, i, &mut numeric)?;
+        numeric_items.push(numeric);
         is_list |= matches!(ctx.node(i), Node::Obj(id) if ctx.c.kind(id) == Kind::List);
         for name in ["x", "y", "z"] {
             if has_variable(&out, name) {
@@ -90,19 +101,28 @@ pub(super) fn solve<const M: bool>(
     }
     // `AlgoSolve.compute`: a list of equations is printed as a list, with
     // the sorted variables of its equations as the second argument.
-    let argument = if system && !is_list {
-        format!("{{{}}}", items.join(", "))
+    let (argument, numeric_argument) = if system && !is_list {
+        (
+            format!("{{{}}}", items.join(", ")),
+            format!("{{{}}}", numeric_items.join(", ")),
+        )
     } else if items.len() == 1 {
-        items.pop()?
+        (items.pop()?, numeric_items.pop()?)
     } else {
         return None;
     };
-    let second = match hint {
-        Some(text) => Some(hint_argument(ctx.c, &text)?),
-        None if system => Some(format!(
-            "{{{}}}",
-            variables.into_iter().collect::<Vec<_>>().join(", ")
+    let second = match &hint {
+        Some(text) => Some((
+            hint_argument(ctx.c, text, false)?,
+            hint_argument(ctx.c, text, true)?,
         )),
+        None if system => {
+            let list = format!(
+                "{{{}}}",
+                variables.into_iter().collect::<Vec<_>>().join(", ")
+            );
+            Some((list.clone(), list))
+        }
         None => None,
     };
     let input = match second {
@@ -113,7 +133,11 @@ pub(super) fn solve<const M: bool>(
                 (true, true) => NSOLVE_2,
                 (false, true) => NSOLUTIONS_2,
             };
-            fill(template, &[&argument, &second])
+            fill(
+                template,
+                &[&argument, &second.0],
+                &[&numeric_argument, &second.1],
+            )
         }
         None => {
             let template = match (assignments, approximate) {
@@ -122,7 +146,7 @@ pub(super) fn solve<const M: bool>(
                 (true, true) => NSOLVE_1,
                 (false, true) => NSOLUTIONS_1,
             };
-            fill(template, &[&argument])
+            fill(template, &[&argument], &[&numeric_argument])
         }
     };
     let seed = geo_giac::session::seed(&input, 1);
@@ -166,7 +190,7 @@ fn has_variable(printed: &str, name: &str) -> bool {
 /// `AlgoSolve.printHint` and the Giac template for it: variables `x`, `y`,
 /// `z` as they are, a number object as its value, any other name as the
 /// CAS variable `ggbtmpvar<name>`, typed decimals as fractions.
-fn hint_argument(c: &Construction, text: &str) -> Option<String> {
+fn hint_argument(c: &Construction, text: &str, numeric: bool) -> Option<String> {
     let mut out = String::new();
     let mut chars = text.char_indices().peekable();
     while let Some((k, ch)) = chars.next() {
@@ -184,7 +208,11 @@ fn hint_argument(c: &Construction, text: &str) -> Option<String> {
                         break;
                     }
                 }
-                out.push_str(&decimal_fraction(&text[k..end]));
+                if numeric {
+                    out.push_str(&canonical_number(&text[k..end]));
+                } else {
+                    out.push_str(&decimal_fraction(&text[k..end]));
+                }
             }
             c0 if c0.is_alphabetic() => {
                 let mut end = k + c0.len_utf8();
@@ -200,6 +228,7 @@ fn hint_argument(c: &Construction, text: &str) -> Option<String> {
                 match name {
                     "x" | "y" | "z" => out.push_str(name),
                     _ => match c.id(name).map(|id| c.value(id)) {
+                        Some(Value::Number(v)) if numeric => numeric_number(v, &mut out),
                         Some(Value::Number(v)) => number(v, &mut out),
                         Some(_) => return None,
                         None => {
@@ -217,16 +246,18 @@ fn hint_argument(c: &Construction, text: &str) -> Option<String> {
 
 /// `GeoGebraCAS.getCASCommand`'s substitution: `%n` and `%%n` (numeric) are
 /// replaced by argument `n`; the `_` escaping of `Ggb2giac.p` is undone.
-fn fill(template: &str, args: &[&str]) -> String {
+fn fill(template: &str, args: &[&str], numeric: &[&str]) -> String {
     let mut out = String::with_capacity(template.len() + 64);
     let bytes = template.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
         if bytes[i] == b'%' {
             let mut j = i + 1;
-            if bytes.get(j) == Some(&b'%') {
+            let numeric_form = bytes.get(j) == Some(&b'%');
+            if numeric_form {
                 j += 1;
             }
+            let args = if numeric_form { numeric } else { args };
             if let Some(d) = bytes.get(j).filter(|b| b.is_ascii_digit()) {
                 if let Some(arg) = args.get(usize::from(d - b'0')) {
                     out.push_str(arg);
@@ -248,6 +279,9 @@ struct Printer<'a> {
     /// The solving variables a command's own equations were parsed with
     /// ([`Node::CasVariable`] indexes them).
     names: Vec<String>,
+    /// The numeric Giac template (`%%n` in a template): decimals as
+    /// decimals, not fractions.
+    numeric: bool,
 }
 
 impl Printer<'_> {
@@ -255,7 +289,7 @@ impl Printer<'_> {
     /// expression.
     fn top(&self, e: &Entry, i: u32, out: &mut String) -> Option<()> {
         match e.nodes[i as usize] {
-            Node::Obj(id) => self.object(id, out),
+            Node::Obj(id) | Node::FunctionObject(id) => self.object(id, out),
             Node::Bin(Bin::Sub, l, r) if matches!(&e.lits[i as usize], Lit::Text(t) if &**t == "=") =>
             {
                 self.expr(e, l, out)?;
@@ -287,13 +321,46 @@ impl Printer<'_> {
                 out.push('}');
                 Some(())
             }
+            Def::Expr(def) if matches!(self.c.kind(id), Kind::Function) => {
+                // `FunctionExpander`: a function prints as its expression.
+                let entry = crate::expr::entry(self.c, def);
+                if entry.function_of_y || entry.curve_parameter.is_some() {
+                    return None;
+                }
+                self.expr(entry, entry.root, out)
+            }
             _ => match self.c.value(id) {
                 Value::Number(v) => {
-                    number(v, out);
+                    self.number(v, out);
                     Some(())
+                }
+                Value::Line { a, b, c }
+                    if self.c.kind(id) == Kind::Line
+                        && matches!(
+                            self.c.equation_form(id),
+                            None | Some(crate::kernel::EquationForm::Implicit)
+                        ) =>
+                {
+                    implicit_line(a, b, c, self.numeric, out)
                 }
                 _ => None,
             },
+        }
+    }
+
+    fn number(&self, v: f64, out: &mut String) {
+        if self.numeric {
+            numeric_number(v, out);
+        } else {
+            number(v, out);
+        }
+    }
+
+    fn literal(&self, dec: &crate::expr::decimal::Dec, out: &mut String) {
+        if self.numeric {
+            out.push_str(&canonical_number(&decimal_text(dec)));
+        } else {
+            literal(dec, out);
         }
     }
 
@@ -314,14 +381,14 @@ impl Printer<'_> {
         match e.nodes[i as usize] {
             Node::Num(v) => {
                 match &e.lits[i as usize] {
-                    Lit::Special(Some(dec)) => literal(&dec.negated(), out),
-                    _ => number(-v, out),
+                    Lit::Special(Some(dec)) => self.literal(&dec.negated(), out),
+                    _ => self.number(-v, out),
                 }
                 Some(())
             }
             Node::Obj(id) => match self.c.value(id) {
                 Value::Number(v) => {
-                    number(-v, out);
+                    self.number(-v, out);
                     Some(())
                 }
                 _ => None,
@@ -347,8 +414,8 @@ impl Printer<'_> {
         match e.nodes[i as usize] {
             Node::Num(v) => {
                 match &e.lits[i as usize] {
-                    Lit::Special(Some(dec)) => literal(dec, out),
-                    _ => number(v, out),
+                    Lit::Special(Some(dec)) => self.literal(dec, out),
+                    _ => self.number(v, out),
                 }
                 Some(())
             }
@@ -374,11 +441,20 @@ impl Printer<'_> {
             }
             Node::Obj(id) => match self.c.value(id) {
                 Value::Number(v) => {
-                    number(v, out);
+                    self.number(v, out);
                     Some(())
                 }
                 _ => None,
             },
+            // `f(x)` and a function named in an expression print as the
+            // function's expression.
+            Node::FunctionObject(id) => self.object(id, out),
+            Node::Apply(id, a) if e.nodes[a as usize] == Node::Var => {
+                out.push('(');
+                self.object(id, out)?;
+                out.push(')');
+                Some(())
+            }
             Node::Bin(Bin::Mul, l, r) if e.nodes[l as usize] == Node::MinusOne => {
                 out.push_str("-(");
                 self.expr(e, r, out)?;
@@ -425,6 +501,121 @@ impl Printer<'_> {
             _ => None,
         }
     }
+}
+
+/// A line without a definition, as `GeoLine.toValueString` prints it in
+/// implicit form (`Kernel.buildImplicitEquation` with cancelling) and the
+/// reference's CAS reads it back: `a x + b y = -c`, integer coefficients
+/// divided by their greatest common divisor, a coefficient 1 left out.
+fn implicit_line(a: f64, b: f64, c: f64, numeric: bool, out: &mut String) -> Option<()> {
+    let number = |v: f64, out: &mut String| {
+        if numeric {
+            numeric_number(v, out);
+        } else {
+            number(v, out);
+        }
+    };
+    let mut numbers = [a, b, c];
+    if numbers.iter().all(|v| v.is_finite()) && numbers.iter().all(|v| (v - v.round()).abs() < 1e-8)
+    {
+        let g = numbers
+            .iter()
+            .map(|v| v.round().abs() as u128)
+            .fold(0, crate::cas::integer_gcd);
+        if g > 1 {
+            for v in &mut numbers {
+                *v /= g as f64;
+            }
+        }
+    }
+    let [a, b, c] = numbers;
+    let zero = |v: f64| v.abs() <= 1e-15;
+    let terms = [(a, "x"), (b, "y")];
+    let leading = terms.iter().position(|(v, _)| !zero(*v))?;
+    let mut lhs = String::new();
+    let (v, name) = terms[leading];
+    if v == 1.0 {
+        lhs.push_str(name);
+    } else if v == -1.0 {
+        lhs.push_str(&format!("-({name})"));
+    } else {
+        lhs.push('(');
+        number(v, &mut lhs);
+        lhs.push_str(&format!(")*({name})"));
+    }
+    for &(v, name) in &terms[leading + 1..] {
+        if zero(v) {
+            continue;
+        }
+        let sign = if v < 0.0 { '-' } else { '+' };
+        let magnitude = v.abs();
+        let term = if magnitude == 1.0 {
+            name.to_string()
+        } else {
+            let mut t = String::from("(");
+            number(magnitude, &mut t);
+            t.push_str(&format!(")*({name})"));
+            t
+        };
+        lhs = format!("({lhs}){sign}({term})");
+    }
+    out.push_str(&lhs);
+    out.push('=');
+    number(-c + 0.0, out);
+    Some(())
+}
+
+/// The text of a typed decimal.
+fn decimal_text(dec: &crate::expr::decimal::Dec) -> String {
+    match dec.signed_coefficient() {
+        Some((coefficient, exp)) if (0..20).contains(&exp) => {
+            (coefficient * 10i128.pow(exp as u32)).to_string()
+        }
+        Some((coefficient, exp)) if (-29..0).contains(&exp) => {
+            let scale = 10i128.pow((-exp) as u32);
+            let sign = if coefficient < 0 { "-" } else { "" };
+            format!(
+                "{sign}{}.{:0width$}",
+                (coefficient / scale).abs(),
+                (coefficient % scale).abs(),
+                width = (-exp) as usize
+            )
+        }
+        _ => format!("{}", dec.to_f64()),
+    }
+}
+
+/// `StringUtil.canonicalNumber`: decimals that are all zeros are dropped.
+fn canonical_number(text: &str) -> String {
+    match text.find('.') {
+        Some(dot) if text[dot + 1..].bytes().all(|b| b == b'0') => {
+            if dot == 0 {
+                "0".into()
+            } else {
+                text[..dot].to_string()
+            }
+        }
+        Some(0) => format!("0{text}"),
+        _ => text.to_string(),
+    }
+}
+
+/// A computed number in the numeric template: its 15-significant-digit text.
+fn numeric_number(v: f64, out: &mut String) {
+    if !v.is_finite() {
+        out.push('?');
+        return;
+    }
+    if v.fract() == 0.0 && v.abs() < 1e15 {
+        out.push_str(&format!("{}", v as i64));
+        return;
+    }
+    let digits = 14 - v.abs().log10().floor() as i32;
+    if !(0..=40).contains(&digits) {
+        out.push_str(&format!("{v}"));
+        return;
+    }
+    out.push_str(&canonical_number(&format!("{:.*}", digits as usize, v)));
 }
 
 /// A typed decimal (`MySpecialDouble`): an integer as written, otherwise
@@ -518,8 +709,32 @@ fn post_process(s: &str) -> String {
     ret.to_string()
 }
 
+/// A function element read from Giac's output: the printed expression in
+/// one free variable, which is the function's input.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct Function {
+    expr: Expr,
+    variable: &'static str,
+    text: String,
+}
+
+impl Function {
+    pub(crate) fn value(&self, t: f64) -> f64 {
+        let (x, y) = if self.variable == "x" {
+            (t, f64::NAN)
+        } else {
+            (f64::NAN, t)
+        };
+        value(&self.expr, x, y).unwrap_or(f64::NAN)
+    }
+
+    pub(crate) fn text(&self) -> &str {
+        &self.text
+    }
+}
+
 /// A value printed by Giac.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Expr {
     Num(f64),
     Name(String),
@@ -764,24 +979,19 @@ fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
             let (start, len) = ctx.cas_slots(slots.into_iter())?;
             Some(Slot::list(start, len))
         }
+        // `y = f(x)` that is not a line defines a function of x.
+        Expr::Eq(left, right)
+            if matches!(&**left, Expr::Name(n) if n == "y")
+                && !has_name(right, "y")
+                && line_slot(left, right).is_none() =>
+        {
+            Some(function_slot(right, "x"))
+        }
         Expr::Eq(left, right) => {
             if has_name(e, "z") {
                 return None;
             }
-            let f = |x, y| Some(value(left, x, y)? - value(right, x, y)?);
-            let c = f(0.0, 0.0)?;
-            let a = f(1.0, 0.0)? - c;
-            let b = f(0.0, 1.0)? - c;
-            let check = f(2.0, 3.0)?;
-            let scale = 1.0 + a.abs() + b.abs() + c.abs();
-            if (check - (2.0 * a + 3.0 * b + c)).abs() > 1e-9 * scale {
-                return None;
-            }
-            if a == 0.0 && b == 0.0 {
-                // `x = x`: a line without coefficients, which is undefined.
-                return Some(Slot::undefined(Kind::Line));
-            }
-            Some(Slot::line(Value::Line { a, b, c }))
+            line_slot(left, right)
         }
         Expr::Tuple(items) if items.len() == 2 => {
             let x = value(&items[0], 0.0, 0.0)?;
@@ -802,17 +1012,56 @@ fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
                     return None;
                 }
                 let variable = if x { "x" } else { "y" };
-                let q = quotient(e, variable)?;
-                let denominator = q.denominator.scalar()?;
-                let one = crate::cas::Rat::ONE;
-                let charge = |_| true;
-                let work = &mut super::Work::new(&charge);
-                let polynomial = q.numerator.scale(one.div(denominator)?, work)?;
-                return Some(Slot::polynomial(polynomial));
+                return Some(function_slot(e, variable));
             }
             Some(Slot::number(value(e, 0.0, 0.0)?))
         }
     }
+}
+
+/// `left = right` as a line, when it is linear in x and y.
+fn line_slot(left: &Expr, right: &Expr) -> Option<Slot> {
+    let f = |x, y| Some(value(left, x, y)? - value(right, x, y)?);
+    let c = f(0.0, 0.0)?;
+    let a = f(1.0, 0.0)? - c;
+    let b = f(0.0, 1.0)? - c;
+    if !(a.is_finite() && b.is_finite() && c.is_finite()) {
+        return None;
+    }
+    let scale = 1.0 + a.abs() + b.abs() + c.abs();
+    for (x, y) in [(2.0, 3.0), (-1.5, 0.5), (0.25, -4.0)] {
+        let d = f(x, y)? - (a * x + b * y + c);
+        if !d.is_finite() || d.abs() > 1e-9 * scale {
+            return None;
+        }
+    }
+    if a == 0.0 && b == 0.0 {
+        // `x = x`: a line without coefficients, which is undefined.
+        return Some(Slot::undefined(Kind::Line));
+    }
+    Some(Slot::line(Value::Line { a, b, c }))
+}
+
+/// A function of `variable`: a polynomial when the expression is one, as
+/// the kernel's own solver gives it, any other expression as printed.
+fn function_slot(e: &Expr, variable: &'static str) -> Slot {
+    if let Some(q) = quotient(e, variable) {
+        let charge = |_| true;
+        let work = &mut super::Work::new(&charge);
+        if let Some(polynomial) = q
+            .denominator
+            .scalar()
+            .and_then(|d| crate::cas::Rat::ONE.div(d))
+            .and_then(|scale| q.numerator.scale(scale, work))
+        {
+            return Slot::polynomial(polynomial);
+        }
+    }
+    Slot::giac_function(Function {
+        expr: e.clone(),
+        variable,
+        text: String::new(),
+    })
 }
 
 /// An exact rational function of `variable` (the function's input).
@@ -886,6 +1135,10 @@ mod tests {
 
     #[test]
     fn templates_take_their_arguments() {
-        assert_eq!(fill(SOLVE_1, &["x=3"]), "ggbsort(normal([op(solve(x=3))]))");
+        assert_eq!(
+            fill(SOLVE_1, &["x=3"], &["x=3"]),
+            "ggbsort(normal([op(solve(x=3))]))"
+        );
+        assert_eq!(fill("f(%0,%%0)", &["(1/2)"], &["0.5"]), "f((1/2),0.5)");
     }
 }

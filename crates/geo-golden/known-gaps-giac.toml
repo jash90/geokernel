@@ -1,0 +1,14 @@
+# Known gaps with the kernel's `giac` feature (docs/cas-giac.md).
+#
+# `cargo test -p geo-golden --features giac` evaluates the CAS commands that
+# have a Giac translation through the Giac library the reference uses. This
+# file is read only then, on top of known-gaps.toml:
+#
+# [[gap]]
+# id = "cas-conic-036"
+# agrees = true          # the case agrees exactly: drop its entry
+#
+# [[gap]]
+# id = "cas-hint-018"
+# reason = "why it still differs with Giac"
+# mismatches = ["0:r1"]  # replaces the entry of known-gaps.toml (or adds one)
