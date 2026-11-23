@@ -408,12 +408,9 @@ impl translate::System {
     }
 }
 
-/// The order of `GeoText.getComparator` for plain ASCII texts: lower case
-/// first, then the texts themselves.
+/// The order of `GeoText.getComparator`, as `Sort` of texts uses it.
 fn condition_order(a: &str, b: &str) -> std::cmp::Ordering {
-    a.to_ascii_lowercase()
-        .cmp(&b.to_ascii_lowercase())
-        .then_with(|| a.cmp(b))
+    crate::expr::text_order(a, b)
 }
 
 fn remove_all(polys: &[Poly], removed: &[Poly]) -> Vec<Poly> {
@@ -632,6 +629,27 @@ mod tests {
                 Some(Element::Text("AreEqual[A,B]"))
             ));
         }
+    }
+
+    #[test]
+    fn a_redefinition_onto_a_path_proves_again() {
+        let mut c = crate::script::load(
+            "B = (1, 0)\nC = (2, 0)\nf = Line(B, C)\nA = (5, 5)\n\
+             b = AreCollinear(A, B, C)\np = Prove(b)",
+        )
+        .unwrap();
+        let p = c.id("p").unwrap();
+        assert_eq!(c.value(p), Value::Bool(false));
+        crate::script::exec(&mut c, "A = Point(f)").unwrap();
+        assert_eq!(c.value(p), Value::Bool(true));
+    }
+
+    #[test]
+    fn conditions_sort_like_texts() {
+        use std::cmp::Ordering::Less;
+        assert_eq!(condition_order("AreEqual[\u{c9},F]", "AreEqual[f,G]"), Less);
+        assert_eq!(condition_order("a", "B"), Less);
+        assert_eq!(condition_order("B", "b"), Less);
     }
 
     #[test]

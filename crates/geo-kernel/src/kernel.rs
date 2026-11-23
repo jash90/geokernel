@@ -2859,6 +2859,13 @@ impl Construction {
                         continue;
                     }
                 }
+                // A redefinition can change the structure the proof reads
+                // (a free point put on a path): the reference rebuilds it.
+                Def::Prove(d) if refresh_definitions => {
+                    let data = d.record(self);
+                    self.values[i] = data.value;
+                    self.proofs.insert(Id(i), data);
+                }
                 // The result does not depend on positions.
                 Def::Prove(_) => continue,
                 Def::Chart(d) => {
