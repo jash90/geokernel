@@ -323,6 +323,9 @@ proof("incidence", ["A = (0, 0)", "B = (4, 0)", "C = (2, 4)", "D = (2, 3)",
 
 proof("incidence", ["A = (0, 0)", "r = 2", "k = Circle(A, r)", "B = (2, 0)",
                     "l = Line(A, B)", "P = Intersect(l, k)", "M = Midpoint(P_{1}, P_{2})"],
-      "AreEqual(M, A)", details=False)
+      "AreEqual(M, A)")
+cases.case("incidence", ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)", "g = Line(O, A)",
+                         "Q = Intersect(g, c, 1)", "M = Midpoint(A, Q)", "b = AreEqual(M, O)",
+                         "p = Prove(b)", "q = ProveDetails(b)", "P = Intersect(g, c)"], [])
 
 cases.write()

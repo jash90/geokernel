@@ -351,15 +351,21 @@ impl System {
                 }
             }
         }
-        if let Some(q) = earlier {
-            // The second translated output differs from the first, whether
-            // the outputs are labelled or indexed.
-            self.add_distinct(p, q, budget)?;
-        }
-        if indexed && !labelled {
-            if let Some(shared) = shared_point(c, id, first, second, two_circles, budget)? {
-                self.add_distinct(p, self.point(shared)?, budget)?;
+        let shared = if indexed && !labelled {
+            shared_point(c, id, first, second, two_circles, budget)?
+        } else {
+            None
+        };
+        match (earlier, shared) {
+            (Some(_), Some(_)) => {
+                // The reference adapters overwrite the distinct-output
+                // equation with the common-point exclusion and leave a null
+                // equation. Decline that proof before solving it.
+                return None;
             }
+            (Some(q), None) => self.add_distinct(p, q, budget)?,
+            (None, Some(shared)) => self.add_distinct(p, self.point(shared)?, budget)?,
+            (None, None) => {}
         }
         self.point_vars.insert(id, p);
         Some(())

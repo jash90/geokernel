@@ -674,6 +674,27 @@ mod tests {
     }
 
     #[test]
+    fn a_shared_point_and_two_hidden_outputs_leave_the_proof_undecided() {
+        for (construction, pair, statement) in [
+            (
+                "O = (0, 0)\nA = (4, 0)\nc = Circle(O, A)\ng = Line(O, A)",
+                "g, c",
+                "M = Midpoint(P, Q)\nb = AreEqual(M, A)",
+            ),
+            (
+                "A = (0, 0)\nB = (4, 1)\nC = (1, 3)\nc = Circle(A, B)\nd = Circle(C, B)",
+                "c, d",
+                "b = AreEqual(P, Q)",
+            ),
+        ] {
+            let script = format!(
+                "{construction}\nP = Intersect({pair}, 1)\nQ = Intersect({pair}, 2)\n{statement}"
+            );
+            assert_eq!(outcome(&script, Question::Prove), Outcome::Undecided);
+        }
+    }
+
+    #[test]
     fn keeps_the_result_while_points_move() {
         let mut c =
             crate::script::load(&format!("{MIDLINE}\np = Prove(b)\nq = ProveDetails(b)")).unwrap();

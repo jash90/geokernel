@@ -204,7 +204,8 @@
         "P = Intersect(l, k)",
         "M = Midpoint(P_{1}, P_{2})",
         "b = AreEqual(M, A)",
-        "p = Prove(b)"
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
       ],
       "steps": [
         { "action": "initial" }
@@ -220,7 +221,68 @@
           "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": -0.0 },
           "M": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
           "b": { "type": "boolean", "defined": true, "value": true },
-          "p": { "type": "boolean", "defined": true, "value": true }
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-incidence-006",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "A = (4, 0)",
+        "c = Circle(O, A)",
+        "g = Line(O, A)",
+        "Q = Intersect(g, c, 1)",
+        "M = Midpoint(A, Q)",
+        "b = AreEqual(M, O)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)",
+        "P = Intersect(g, c)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,O]" }
+                ]
+              }
+            ]
+          },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "P_{2}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 }
         }
       ]
     }
