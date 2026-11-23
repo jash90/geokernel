@@ -2413,8 +2413,10 @@ impl Construction {
         }
         if matches!(
             def,
-            Def::Point(crate::algo::point::PointDef::ViewCorner { .. })
-                | Def::Measure(MeasureDef::AxisStep { .. })
+            Def::Point(
+                crate::algo::point::PointDef::ViewCorner { .. }
+                    | crate::algo::point::PointDef::DrawableCorner { .. }
+            ) | Def::Measure(MeasureDef::AxisStep { .. })
         ) {
             self.view_readers.push(id.0);
         }
