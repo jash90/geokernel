@@ -1,0 +1,25 @@
+[package]
+name = "geo-giac"
+description = "Optional bridge to the Giac computer algebra system, loaded at run time"
+version.workspace = true
+edition.workspace = true
+# This crate's own source is EUPL-1.2. Giac itself is GPL-3.0-or-later and is
+# never compiled or linked in: with the `giac` feature the crate loads a Giac
+# library at run time. A program shipped together with that library is a
+# combined work under the GPL; see docs/cas-giac.md and NOTICE.
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[features]
+default = []
+# Loads the Giac library named by GEO_GIAC_LIBRARY and evaluates through it.
+# Without this feature the crate is an empty shell that reports Giac as absent.
+giac = ["dep:libloading"]
+
+[dependencies]
+libloading = { version = "0.8", optional = true }
+
+[[example]]
+name = "replay"
+required-features = ["giac"]
