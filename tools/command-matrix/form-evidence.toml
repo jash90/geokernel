@@ -196,7 +196,7 @@ cases = ["arcs-circum-003", "arcs-circum-004", "arcs-circum-007"]
 [[form]]
 command = "Classes"
 form = "list,number"
-cases = ["lists-classes-001", "lists-classes-002", "lists-classes-003", "infinity-legacy-001"]
+cases = ["lists-classes-001", "lists-classes-002", "lists-classes-003", "lists-classes-015"]
 
 [[form]]
 command = "Classes"
@@ -948,7 +948,7 @@ cases = ["lists-setops-012", "lists-setops-013", "lists-setops-014"]
 [[form]]
 command = "RemoveUndefined"
 form = "list"
-cases = ["lists-undef-002", "lists-undef-006", "lists-undef-007", "infinity-legacy-002", "infinity-legacy-003", "infinity-legacy-005"]
+cases = ["lists-undef-002", "lists-undef-006", "lists-undef-007", "lists-undef-001", "lists-undef-004", "lists-undef-010"]
 
 [[form]]
 command = "Reverse"

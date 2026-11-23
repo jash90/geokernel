@@ -2152,9 +2152,13 @@ fn restore_legacy_infinities(cases: &mut [Case]) -> Result<(), String> {
         if !same_inputs(legacy, recording) {
             return Err(format!("inputs differ in legacy infinity pair {pair}"));
         }
-        // A legacy file re-recorded in schema 4 carries its own signs.
+        // A legacy file re-recorded in schema 4 carries its own signs, so
+        // its pair is stale and goes.
         if legacy.schema >= 4 {
-            continue;
+            return Err(format!(
+                "legacy infinity pair {pair}: `{old}` is recorded in schema {}, remove the pair",
+                legacy.schema
+            ));
         }
         if !matches!(legacy.schema, 1 | 2) {
             return Err(format!("unexpected formats in legacy infinity pair {pair}"));
