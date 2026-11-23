@@ -59,6 +59,57 @@ impl fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
+/// Which CAS answers, decided once per process at the first use.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Backend {
+    /// The pinned Giac library is loaded: CAS commands go to Giac, and a
+    /// failed Giac call makes its result undefined.
+    Giac,
+    /// No library is configured (`GEO_GIAC_LIBRARY` unset or empty, or the
+    /// file absent), or the build has no `giac` feature: the kernel behaves
+    /// exactly like the default build.
+    KernelOnly,
+    /// A library is configured but cannot be used (wrong hash, unpinned
+    /// platform, load failure): every CAS call that would go to Giac gives
+    /// undefined. The reason is reported once, on standard error.
+    Failed,
+}
+
+/// The backend of this process (see [`Backend`]).
+pub fn backend() -> Backend {
+    #[cfg(feature = "giac")]
+    {
+        worker::backend().0
+    }
+    #[cfg(not(feature = "giac"))]
+    {
+        Backend::KernelOnly
+    }
+}
+
+/// Why the backend is not [`Backend::Giac`], if it is not.
+pub fn backend_reason() -> Option<String> {
+    #[cfg(feature = "giac")]
+    {
+        worker::backend().1.clone()
+    }
+    #[cfg(not(feature = "giac"))]
+    {
+        Some("built without the giac feature".into())
+    }
+}
+
+/// Test support: while set, every evaluation fails with this error, as if
+/// Giac had (for [`Error::Timeout`], [`Error::Busy`], ...). Not for use
+/// outside tests.
+#[doc(hidden)]
+pub fn simulate_failure(error: Option<Error>) {
+    #[cfg(feature = "giac")]
+    worker::simulate_failure(error);
+    #[cfg(not(feature = "giac"))]
+    let _ = error;
+}
+
 /// Whether this build can evaluate with Giac at all.
 pub const fn enabled() -> bool {
     cfg!(feature = "giac")

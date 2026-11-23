@@ -45,6 +45,77 @@ pub(super) fn solve<const M: bool>(
     equations: u32,
     op: Op,
 ) -> Option<Option<(u32, u32)>> {
+    // The backend is chosen once per process (docs/cas-giac.md, "Backends
+    // and failures").
+    match geo_giac::backend() {
+        geo_giac::Backend::KernelOnly => return None,
+        geo_giac::Backend::Failed => return Some(None),
+        geo_giac::Backend::Giac => {}
+    }
+    match translate_and_evaluate(ctx, equations, op) {
+        Evaluation::Done(result) => Some(result),
+        // A Giac call that fails is an undefined result, as a failed CAS
+        // call is in the reference: never the kernel's own answer.
+        Evaluation::Failed => Some(None),
+        // No translation: the kernel's solver answers, unless the command
+        // has a form only the Giac backend accepts, which it would answer
+        // with that form ignored.
+        Evaluation::Untranslated if giac_only(ctx, equations, op) => Some(None),
+        Evaluation::Untranslated => None,
+    }
+}
+
+enum Evaluation {
+    Done(Option<(u32, u32)>),
+    Failed,
+    Untranslated,
+}
+
+/// The text of a solving command's second argument, kept on its node.
+fn hint_of<const M: bool>(ctx: &Ctx<'_, M>, equations: u32) -> Option<Option<std::sync::Arc<str>>> {
+    ctx.e
+        .nodes
+        .iter()
+        .enumerate()
+        .skip(equations as usize)
+        .find_map(|(k, node)| match node {
+            Node::Cas(Op::Solve { .. }, a, _) if *a == equations => match &ctx.e.lits[k] {
+                Lit::Text(text) => Some(Some(text.clone())),
+                _ => Some(None),
+            },
+            _ => None,
+        })
+}
+
+/// Whether the command is `PlotSolve` or has a second argument that is not
+/// a list of variables, which only the Giac backend accepts.
+fn giac_only<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: Op) -> bool {
+    let plot = matches!(op, Op::Solve { plot: true, .. });
+    let hint = hint_of(ctx, equations).flatten();
+    plot || hint.is_some_and(|h| variable_names(&h).is_none())
+}
+
+fn translate_and_evaluate<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: Op) -> Evaluation {
+    match translate(ctx, equations, op) {
+        Some((input, system)) => {
+            let seed = geo_giac::session::seed(&input, 1);
+            match geo_giac::eval_raw(&input, geo_giac::session::DEFAULT_TIMEOUT_MS, seed) {
+                Ok(raw) => {
+                    if std::env::var_os("GEO_GIAC_TRACE").is_some() {
+                        eprintln!("giac input: {input}\ngiac output: {raw}");
+                    }
+                    let result = post_process(&raw);
+                    Evaluation::Done(to_slots(ctx, &result, system))
+                }
+                Err(_) => Evaluation::Failed,
+            }
+        }
+        None => Evaluation::Untranslated,
+    }
+}
+
+/// The Giac input of a solving command, and whether its argument is a list.
+fn translate<const M: bool>(ctx: &Ctx<'_, M>, equations: u32, op: Op) -> Option<(String, bool)> {
     let Op::Solve {
         assignments,
         approximate,
@@ -59,19 +130,7 @@ pub(super) fn solve<const M: bool>(
         return None;
     };
     // The command's node keeps the text of its second argument.
-    let hint = ctx
-        .e
-        .nodes
-        .iter()
-        .enumerate()
-        .skip(equations as usize)
-        .find_map(|(k, node)| match node {
-            Node::Cas(Op::Solve { .. }, a, _) if *a == equations => match &ctx.e.lits[k] {
-                Lit::Text(text) => Some(Some(text.clone())),
-                _ => Some(None),
-            },
-            _ => None,
-        })?;
+    let hint = hint_of(ctx, equations)?;
     let names = hint
         .as_deref()
         .and_then(|h| variable_names(h).or_else(|| start_value_names(h)))
@@ -159,13 +218,7 @@ pub(super) fn solve<const M: bool>(
             fill(template, &[&argument], &[&numeric_argument])
         }
     };
-    let seed = geo_giac::session::seed(&input, 1);
-    let raw = geo_giac::eval_raw(&input, geo_giac::session::DEFAULT_TIMEOUT_MS, seed).ok()?;
-    if std::env::var_os("GEO_GIAC_TRACE").is_some() {
-        eprintln!("giac input: {input}\ngiac output: {raw}");
-    }
-    let result = post_process(&raw);
-    Some(to_slots(ctx, &result, system))
+    Some((input, system))
 }
 
 /// The names of a second argument that is a variable or a list of them,

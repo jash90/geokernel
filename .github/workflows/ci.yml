@@ -96,11 +96,14 @@ jobs:
       - name: Binding tests
         run: cargo test -p geo-giac --features giac
       - name: Kernel tests with the feature
-        run: cargo test -p geo-kernel --features giac --lib
+        run: cargo test -p geo-kernel --features giac
       - name: Golden data with the feature
         run: cargo test -p geo-golden --features giac --test golden -- --nocapture
       - name: Command forms with the feature
         run: cargo test -p geo-golden --features giac --test command_forms
+      # Without a library the feature must change nothing.
+      - name: Golden data with the feature and no library
+        run: env -u GEO_GIAC_LIBRARY cargo test -p geo-golden --features giac --test golden -- --nocapture
 
   # The desktop release targets macOS, Windows and Linux; this job builds and
   # tests the workspace on all three systems. A break that only one target's

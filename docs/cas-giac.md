@@ -108,6 +108,18 @@ Windows x86_64, the four Android ABIs) and refuses anything else with
 library and any cached copy against the same values. A null handle from Giac
 is an error, never passed back to it.
 
+### Backends and failures
+
+With the feature compiled in, the backend is chosen once per process, at the
+first CAS evaluation or the first parse of a form only Giac evaluates, and
+kept for the process's lifetime (`geo_giac::backend()`):
+
+| Situation | Backend | What CAS commands do |
+| --- | --- | --- |
+| `GEO_GIAC_LIBRARY` unset or empty, or the file does not exist | `KernelOnly` | Exactly the default build: the kernel's own solver answers, and the parser refuses what the default build refuses (start values, numbers and unknown names as the second argument, `PlotSolve`). The golden data give the default build's numbers and use `known-gaps.toml` alone. |
+| The library is configured, passes the hash check and loads | `Giac` | Translated forms go to Giac. A failed Giac call (time limit, busy worker, worker gone, null handle, Giac error) makes that result undefined, as a failed CAS call does in the reference; a later recompute can succeed once Giac answers again. A form without a translation keeps the kernel's solver, unless it is `PlotSolve` or has a second argument only Giac accepts: then it is undefined, never answered with that argument ignored. |
+| The library is configured but has another hash, the platform has no pinned build, or it does not load | `Failed` | Every CAS result that would go to Giac is undefined, with no fallback; the reason is printed once on standard error (`geo_giac::backend_reason()`). The parser takes the same forms as with `Giac`. |
+
 ### Fidelity check
 
 The harness records every Giac exchange when run with
@@ -148,7 +160,10 @@ feature; it takes one list, equation or function, as `CmdSolve` does):
   with the numeric template (decimals as written);
 - the second argument is printed from its text (variables, lists of them,
   start values `variable = value`, numbers, other names as
-  `ggbtmpvar<name>`); a list of equations gets its sorted variables;
+  `ggbtmpvar<name>`); a list of equations gets its sorted variables.
+  Beyond lists of variables the parser takes only the shapes the reference
+  takes (one name, or `name = number`); inequalities, plain literals and
+  start values in a list stay refused;
 - the one- and two-argument `Ggb2giac` templates of the four commands, and
   `PointList.1` around `Solve.1` for `PlotSolve`;
 - Giac's printed list is read back as `evaluateToList` does for these
@@ -177,7 +192,8 @@ the reason for those that still differ.
 | | ggb-harness cases | agree | known gaps |
 | --- | --- | --- | --- |
 | default build | 7004 | 6422 | 583 |
-| `giac` feature | 7004 | 6736 | 269 |
+| `giac` feature, library present | 7004 | 6736 | 269 |
+| `giac` feature, no library | 7004 | 6422 | 583 |
 
 Only one case that agrees without the feature differs with it:
 `cas-plot-022` records the kernel's old refusal text for `PlotSolve`, a

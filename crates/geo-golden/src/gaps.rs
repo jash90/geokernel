@@ -96,7 +96,9 @@ pub fn load() -> Result<Gaps, String> {
         std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))
     };
     let gaps = parse(&read("known-gaps.toml")?)?;
-    if cfg!(feature = "giac") {
+    // The overlay describes the Giac backend; a build with the feature but
+    // no Giac library behaves like the default build.
+    if cfg!(feature = "giac") && geo_kernel::giac_backend_active() {
         return overlay(gaps, &read("known-gaps-giac.toml")?);
     }
     Ok(gaps)

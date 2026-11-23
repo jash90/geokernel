@@ -77,7 +77,14 @@ impl Parser<'_> {
         };
         let (names, width, axes) = if let [comma] = commas[..] {
             #[cfg(feature = "giac")]
-            let variables = self.solution_variables(comma + 1).or_else(|_| {
+            let variables = self.solution_variables(comma + 1).or_else(|error| {
+                // Without a Giac library the default build's refusal stands,
+                // and so does the reference's for shapes it refuses too.
+                if !crate::expr::cas::giac_admits()
+                    || !hint.as_deref().is_some_and(|h| self.giac_hint(h))
+                {
+                    return Err(error);
+                }
                 // A start value (`t = 1`) names its variable too.
                 let names = hint
                     .as_deref()
@@ -158,10 +165,45 @@ impl Parser<'_> {
         };
         let node = self.push(Node::Cas(op, equations, NONE));
         #[cfg(feature = "giac")]
-        if let Some(hint) = hint {
+        if let Some(hint) = hint.filter(|_| crate::expr::cas::giac_admits()) {
             self.mark_hint(node, hint);
         }
         Ok(node)
+    }
+
+    /// The second arguments the reference takes beyond lists of solving
+    /// variables (recorded in golden/cas): one name, whatever it names, or a
+    /// start value `name = number`, where the number names no other kind of
+    /// object. It refuses inequalities, plain literals, start values in a
+    /// list and anything else (tests/cas_forms.rs).
+    #[cfg(feature = "giac")]
+    fn giac_hint(&self, hint: &str) -> bool {
+        let is_name = |t: &str| {
+            t.chars().next().is_some_and(char::is_alphabetic)
+                && t.chars().all(|c| c.is_alphanumeric() || c == '_')
+        };
+        let hint = hint.trim();
+        if is_name(hint) {
+            return true;
+        }
+        let Some((name, value)) = hint.split_once('=') else {
+            return false;
+        };
+        let value = value.trim();
+        if !is_name(name.trim())
+            || value.is_empty()
+            || value.contains(['=', '{', '}', '<', '>', ','])
+        {
+            return false;
+        }
+        // Every name in the value is a number object or a known function name.
+        value
+            .split(|c: char| !(c.is_alphanumeric() || c == '_'))
+            .filter(|t| t.chars().next().is_some_and(char::is_alphabetic))
+            .all(|t| match self.lookup(t) {
+                Some(id) => matches!(self.c.value(id), crate::Value::Number(_)),
+                None => false,
+            })
     }
 
     fn cas_equation(&mut self) -> Result<u32, String> {

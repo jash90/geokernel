@@ -5,6 +5,15 @@ mod functional;
 mod giac;
 #[cfg(feature = "giac")]
 pub(super) use giac::{start_value_names, Function as GiacFunction};
+
+/// Whether the parser takes the forms only the Giac backend evaluates
+/// (`PlotSolve`, start values and other second arguments): not when the
+/// process has no Giac library configured, which then behaves exactly like
+/// the default build.
+#[cfg(feature = "giac")]
+pub(crate) fn giac_admits() -> bool {
+    geo_giac::backend() != geo_giac::Backend::KernelOnly
+}
 mod input;
 mod solutions;
 
@@ -95,7 +104,7 @@ impl Op {
                 plot: false,
             },
             #[cfg(feature = "giac")]
-            "PlotSolve" => Self::Solve {
+            "PlotSolve" if giac_admits() => Self::Solve {
                 assignments: false,
                 approximate: false,
                 width: 0,

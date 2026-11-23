@@ -85,6 +85,46 @@ fn serve<J>(
 
 static WORKER: OnceLock<Result<Link<Job>, Error>> = OnceLock::new();
 
+static BACKEND: OnceLock<(crate::Backend, Option<String>)> = OnceLock::new();
+
+static SIMULATED: Mutex<Option<Error>> = Mutex::new(None);
+
+pub(crate) fn simulate_failure(error: Option<Error>) {
+    if let Ok(mut simulated) = SIMULATED.lock() {
+        *simulated = error;
+    }
+}
+
+/// The process's backend, decided at the first call: no configured library
+/// means the kernel alone; a configured library that does not load is a
+/// failure, reported once.
+pub(crate) fn backend() -> &'static (crate::Backend, Option<String>) {
+    BACKEND.get_or_init(|| {
+        let configured = std::env::var_os(LIBRARY_VARIABLE).filter(|path| !path.is_empty());
+        let Some(path) = configured else {
+            return (
+                crate::Backend::KernelOnly,
+                Some(format!("{LIBRARY_VARIABLE} is not set")),
+            );
+        };
+        if !std::path::Path::new(&path).exists() {
+            let reason = format!(
+                "{LIBRARY_VARIABLE} names {}, which does not exist",
+                PathBuf::from(&path).display()
+            );
+            return (crate::Backend::KernelOnly, Some(reason));
+        }
+        match WORKER.get_or_init(start) {
+            Ok(_) => (crate::Backend::Giac, None),
+            Err(error) => {
+                let reason = error.to_string();
+                eprintln!("geo-giac: {reason}; every Giac result is undefined in this process");
+                (crate::Backend::Failed, Some(reason))
+            }
+        }
+    })
+}
+
 fn start() -> Result<Link<Job>, Error> {
     let path = std::env::var_os(LIBRARY_VARIABLE)
         .map(PathBuf::from)
@@ -130,6 +170,16 @@ fn start() -> Result<Link<Job>, Error> {
 }
 
 fn run(job: Job) -> Result<String, Error> {
+    match backend() {
+        (crate::Backend::Giac, _) => {}
+        (crate::Backend::KernelOnly, _) => return Err(Error::NoLibrary),
+        (crate::Backend::Failed, reason) => {
+            return Err(Error::Load(reason.clone().unwrap_or_default()))
+        }
+    }
+    if let Some(error) = SIMULATED.lock().ok().and_then(|s| s.clone()) {
+        return Err(error);
+    }
     let link = WORKER.get_or_init(start).as_ref().map_err(Clone::clone)?;
     let limit = match &job {
         Job::Raw { timeout_ms, .. } => *timeout_ms,
