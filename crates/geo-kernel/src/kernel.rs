@@ -3389,6 +3389,7 @@ impl Construction {
             prior.map(|slot| self.line_conic_outputs[slot].state),
             self.continuous_conic_intersections,
         );
+        state.label_output(d);
         let value = state.value(d, self).unwrap_or(Value::Undefined);
         self.line_conic_pairs
             .insert(d.key(), self.line_conic_outputs.len());

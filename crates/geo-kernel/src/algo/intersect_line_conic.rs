@@ -331,22 +331,22 @@ impl LineConicState {
             state.inputs = None;
         }
         state.refresh(d, c, continuous, false);
-        match d.output {
-            Output::Slot(slot) => {
-                state.labelled[slot] = true;
-                if slot == 1 && state.slots.current[1].is_none() {
-                    state.slots.current[1] = state.slots.suppressed.take();
-                }
-            }
-            _ if d.saved.is_none() => {
-                // AlgoIntersectSingle initializes the parent and computes it
-                // once more before it reads the selected slot.
-                state.slots.reset_permutation();
-                state.update(d, c, continuous);
-            }
-            _ => {}
+        if !matches!(d.output, Output::Slot(_)) && d.saved.is_none() {
+            // AlgoIntersectSingle initializes the parent and computes it
+            // once more before it reads the selected slot.
+            state.slots.reset_permutation();
+            state.update(d, c, continuous);
         }
         state
+    }
+
+    pub(crate) fn label_output(&mut self, d: LineConicDef) {
+        if let Output::Slot(slot) = d.output {
+            self.labelled[slot] = true;
+            if slot == 1 && self.slots.current[1].is_none() {
+                self.slots.current[1] = self.slots.suppressed.take();
+            }
+        }
     }
 
     pub(crate) fn refresh(
