@@ -491,11 +491,6 @@ mismatches = ["1:S"]
 # intersectgrowth
 
 [[gap]]
-id = "vectorforms-images-004"
-reason = "ApplyMatrix resolves labelled objects. An inline matrix and point need expression-backed operands that can be evaluated without creating helper objects before the command output."
-mismatches = ["0:script line 1"]
-
-[[gap]]
 id = "vectorforms-nestedcross-001"
 reason = "GeoGebra multiplies and subtracts row lists inside the cross product, producing a list for the third component. The kernel's cross product computes scalar and coordinate entries, and its list arithmetic does not support nested operands."
 mismatches = ["0:a"]

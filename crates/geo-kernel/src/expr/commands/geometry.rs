@@ -102,10 +102,19 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
             }
             list_form(text, op, false, args, lists)
         }),
-        "ApplyMatrix" => p.list_command(|_, args, lists| {
+        "ApplyMatrix" => p.list_command(|p, args, lists| {
             Ok(match (args, lists) {
                 (&[matrix, src], [true, true]) => {
                     Some(Node::ListOp(ListOp::ApplyMatrix, matrix, src))
+                }
+                (&[matrix, src], [true, false]) if p.is_point_or_vector(src) => {
+                    Some(Node::ListOp(
+                        ListOp::ApplyMatrixCoordinates {
+                            vector: p.is_vector_argument(src),
+                        },
+                        matrix,
+                        src,
+                    ))
                 }
                 _ => None,
             })
@@ -273,6 +282,7 @@ pub(super) fn list_type(
         ListOp::Transpose | ListOp::Rref | ListOp::Invert | ListOp::Identity => {
             Some(Ty::List(Elem::List))
         }
+        ListOp::ApplyMatrixCoordinates { .. } => Some(Ty::Vec),
         ListOp::ApplyMatrix => match tys[n as usize] {
             ty @ Ty::List(_) => Some(ty),
             _ => return Err("`ApplyMatrix` needs a list to transform".into()),
@@ -305,6 +315,7 @@ pub(super) fn list_value<const M: bool>(
         ListOp::Length | ListOp::Dimension => {
             Val::N(ctx.list(l).map_or(f64::NAN, |(_, len)| f64::from(len)))
         }
+        ListOp::ApplyMatrixCoordinates { vector } => apply_matrix_coordinates(ctx, l, n, vector),
         ListOp::Dot => Val::N(dot_lists(ctx, l, n).unwrap_or(f64::NAN)),
         ListOp::Determinant | ListOp::MatrixRank => {
             Val::N(matrix_number(ctx, op, l).unwrap_or(f64::NAN))
@@ -485,6 +496,37 @@ pub(in crate::expr) fn map_list<const M: bool>(
         };
         lists.set(target, result);
     }
+}
+
+fn apply_matrix_coordinates<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    matrix: u32,
+    src: u32,
+    vector: bool,
+) -> Val {
+    let image = || {
+        let lists = ctx.lists?;
+        let (start, len) = ctx.list(matrix)?;
+        let matrix = lists.with_list(ctx.c, start, len, matrix::Matrix::read)?;
+        let source = match ctx.e.nodes[src as usize] {
+            Node::Obj(id) => ctx.c.stored_value(id),
+            _ => {
+                let Val::V(x, y) = ctx.full(src).val else {
+                    return None;
+                };
+                if vector {
+                    Value::Vector { x, y }
+                } else {
+                    Value::Point { x, y }
+                }
+            }
+        };
+        match matrix.apply(source)?.cartesian() {
+            Value::Point { x, y } | Value::Vector { x, y } => Some(Val::V(x, y)),
+            _ => None,
+        }
+    };
+    image().unwrap_or(Val::V(f64::NAN, f64::NAN))
 }
 
 fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option<(u32, u32)> {

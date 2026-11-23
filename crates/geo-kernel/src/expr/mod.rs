@@ -487,6 +487,7 @@ pub(crate) enum ListOp {
     MatrixDimension,
     Identity,
     ApplyMatrix,
+    ApplyMatrixCoordinates { vector: bool },
 }
 
 impl ListOp {
@@ -2274,6 +2275,7 @@ fn define_with_coordinates(
     // (`AlgoFoldExpression`): the result has the class of the expression,
     // whatever the label is.
     let vector_label = match parsed.nodes[parsed.root as usize] {
+        Node::ListOp(ListOp::ApplyMatrixCoordinates { vector }, ..) => Some(vector),
         Node::Call(CallOp::Fold | CallOp::SumFold, first, _) => {
             Some(folds_to_vector(c, &parsed, first))
         }
@@ -2314,15 +2316,20 @@ pub(crate) fn define_plane_inequality(
 
 /// ExpressionNode.evaluatesToVectorNotPoint, for an unlabelled 2D input.
 fn argument_is_vector(c: &Construction, parsed: &parse::Parsed) -> bool {
-    let mut vectors = Vec::with_capacity(parsed.nodes.len());
-    for (node, ty) in parsed.nodes.iter().zip(&parsed.tys) {
+    argument_is_vector_at(c, &parsed.nodes, &parsed.tys, parsed.root)
+}
+
+fn argument_is_vector_at(c: &Construction, nodes: &[Node], types: &[Ty], root: u32) -> bool {
+    let mut vectors = Vec::with_capacity(root as usize + 1);
+    for (node, ty) in nodes.iter().zip(types).take(root as usize + 1) {
         let read = |index: u32| vectors[index as usize];
         let vector = matches!(ty, Ty::Vec)
             && match *node {
                 Node::Obj(id) => c.kind(id) == Kind::Vector,
                 Node::Cmd(def, _) => def.kind() == Kind::Vector,
                 Node::Vector(_) => true,
-                Node::Bin(Bin::Add, a, b) if parsed.tys[a as usize] == Ty::Vec => {
+                Node::ListOp(ListOp::ApplyMatrixCoordinates { vector }, ..) => vector,
+                Node::Bin(Bin::Add, a, b) if types[a as usize] == Ty::Vec => {
                     read(a) && read(b)
                 }
                 Node::Bin(Bin::Add | Bin::Sub | Bin::Mul | Bin::Div, a, b) => read(a) || read(b),
@@ -2331,7 +2338,7 @@ fn argument_is_vector(c: &Construction, parsed: &parse::Parsed) -> bool {
             };
         vectors.push(vector);
     }
-    vectors[parsed.root as usize]
+    vectors[root as usize]
 }
 
 /// `ExpressionNode.shouldEvaluateToGeoVector` for the expression at `at`

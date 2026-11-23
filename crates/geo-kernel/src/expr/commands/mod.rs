@@ -109,7 +109,12 @@ pub(super) fn makes_list(op: ListOp) -> bool {
 pub(super) fn takes_object(op: ListOp) -> bool {
     matches!(
         op,
-        ListOp::Dot | ListOp::Cross | ListOp::ApplyMatrix | ListOp::Min | ListOp::Max
+        ListOp::Dot
+            | ListOp::Cross
+            | ListOp::ApplyMatrix
+            | ListOp::ApplyMatrixCoordinates { .. }
+            | ListOp::Min
+            | ListOp::Max
     ) || list::takes_object(op)
 }
 

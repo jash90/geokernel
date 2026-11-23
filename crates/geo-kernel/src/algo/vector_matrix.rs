@@ -585,6 +585,16 @@ mod tests {
     use crate::script::load;
 
     #[test]
+    fn apply_matrix_accepts_inline_coordinates_without_helpers() {
+        let mut c = load("n = 1\nP = ApplyMatrix({{1, 2}, {3, 4}}, (n, 1))").unwrap();
+        let p = c.id("P").unwrap();
+        assert_eq!(p, Id(1));
+        assert_eq!(c.value(p), Value::Point { x: 3.0, y: 7.0 });
+        c.set_number(c.id("n").unwrap(), 2.0).unwrap();
+        assert_eq!(c.value(p), Value::Point { x: 4.0, y: 10.0 });
+    }
+
+    #[test]
     fn identity_stays_undefined_after_a_nonpositive_size() {
         let mut c = load("n = 3\nm = Identity(n)").unwrap();
         let m = c.id("m").unwrap();

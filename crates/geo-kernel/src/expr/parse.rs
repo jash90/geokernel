@@ -1287,6 +1287,11 @@ impl Parser<'_> {
             .then(|| super::types::vec_kind(self.c, &self.nodes, &types, i))
     }
 
+    pub(super) fn is_vector_argument(&self, i: u32) -> bool {
+        check(self.c, &self.nodes, i)
+            .is_ok_and(|(tys, ..)| super::argument_is_vector_at(self.c, &self.nodes, &tys, i))
+    }
+
     pub(super) fn checked_type(&self, i: u32) -> Result<Ty, String> {
         let (types, ..) = check(self.c, &self.nodes, i)?;
         Ok(types[i as usize])
