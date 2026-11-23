@@ -43,7 +43,7 @@ impl Construction {
 
     /// Changes a free checkbox and updates its mathematical dependents.
     pub fn set_boolean(&mut self, id: Id, value: bool) -> Result<usize, crate::kernel::Error> {
-        self.last_update_changed_automatic_root = false;
+        self.last_update_requires_ordered_replay = false;
         let def = self
             .defs
             .get_mut(id.index())
@@ -213,13 +213,15 @@ pub struct SliderGeometry {
 
 pub const CHECKBOX_SIZE: f64 = 26.0;
 pub const CHECKBOX_INSET: f64 = 5.0;
+pub const CHECKBOX_HIT_SIZE: f64 = CHECKBOX_SIZE + 12.0;
 
 impl SliderGeometry {
-    pub fn fraction(&self, at: Position) -> f64 {
+    /// Pointer distance and track length in the same screen units.
+    pub fn pointer(self, at: Position) -> (f64, f64) {
         if self.horizontal {
-            (at.0 - self.start.0) / (self.end.0 - self.start.0)
+            (at.0 - self.start.0, self.end.0 - self.start.0)
         } else {
-            (at.1 - self.start.1) / (self.end.1 - self.start.1)
+            (self.start.1 - at.1, self.start.1 - self.end.1)
         }
     }
 
@@ -249,8 +251,13 @@ impl Construction {
     pub fn slider_position(&self, id: Id, style: &SliderStyle) -> Position {
         style.position.unwrap_or_else(|| {
             let count = self
-                .sliders
-                .partition_point(|&(index, ..)| index < id.index());
+                .slider_default_slots
+                .get(&id)
+                .copied()
+                .unwrap_or_else(|| {
+                    self.sliders
+                        .partition_point(|&(index, ..)| index < id.index())
+                });
             if style.absolute {
                 let y = 50 + 40 * count;
                 (30.0, (y / 400 * 10 + y % 400) as f64)
@@ -310,14 +317,19 @@ impl Construction {
     }
 
     /// Converts a position along the track into a min-relative increment.
-    pub fn slider_drag_value(&self, id: Id, fraction: f64) -> Option<f64> {
+    pub fn slider_pointer_value(
+        &self,
+        id: Id,
+        (offset, track): Position,
+        click: bool,
+    ) -> Option<f64> {
         use super::animation::{check_decimal_fraction, next_pretty_number, AUTO_STEP_MUL};
         let (min, max) = self.slider_interval(id).filter(|(min, max)| min <= max)?;
-        let fraction = fraction.clamp(0.0, 1.0);
-        let width = max - min;
-        if !width.is_finite() {
-            return Some(min * (1.0 - fraction) + max * fraction);
+        if !(offset.is_finite() && track.is_finite() && track > 0.0) {
+            return None;
         }
+        let offset = offset.clamp(0.0, track);
+        let width = max - min;
         let animation = self.animation(id);
         let style = self.slider_style(id);
         let step = style
@@ -331,18 +343,39 @@ impl Construction {
                 let speed = animation.map_or(1.0, |a| a.speed);
                 next_pretty_number(width * speed * AUTO_STEP_MUL).max(0.1)
             });
-        let distance = fraction * width;
+        // EuclidianController.getSliderValue multiplies before dividing.
+        let product = offset * width;
+        let distance = if product.is_finite() {
+            product / track
+        } else {
+            (offset / track) * width
+        };
         let steps = distance / step;
-        let value = if step > 0.0 && steps.is_finite() {
-            min + steps.round() * step
+        let value = if !width.is_finite() {
+            let fraction = offset / track;
+            min * (1.0 - fraction) + max * fraction
+        } else if step > 0.0 && steps.is_finite() {
+            min + crate::expr::math::java_round(steps) as f64 * step
         } else {
             min + distance
         };
-        let value = if step > crate::tol::MIN_PRECISION {
+        let mut value = if step > crate::tol::MIN_PRECISION {
             check_decimal_fraction(value)
         } else {
             value
         };
+        if click {
+            let old = self.number(id)?;
+            // Clicking advances one step toward the rounded target, even
+            // when the current value is between two notches.
+            if (value - old).abs() >= crate::tol::STANDARD_PRECISION {
+                value = check_decimal_fraction(if value > old {
+                    (old + step).min(max)
+                } else {
+                    (old - step).max(min)
+                });
+            }
+        }
         value.is_finite().then(|| value.clamp(min, max))
     }
 
@@ -378,7 +411,7 @@ mod tests {
     fn a_small_explicit_slider_step_is_not_rounded_away() {
         let c = crate::script::load("a = Slider(0, 0.000000000001, 0.00000000000001)").unwrap();
         let a = c.id("a").unwrap();
-        let value = c.slider_drag_value(a, 0.054).unwrap();
+        let value = c.slider_pointer_value(a, (0.054, 1.0), false).unwrap();
         assert!((value - 5e-14).abs() < 1e-28, "{value}");
     }
 
@@ -392,8 +425,8 @@ mod tests {
         .unwrap();
         let a = c.id("a").unwrap();
         let n = c.id("n").unwrap();
-        assert_eq!(c.slider_drag_value(a, 0.54), Some(6.0));
+        assert_eq!(c.slider_pointer_value(a, (0.54, 1.0), false), Some(6.0));
         c.set_number(n, 0.5).unwrap();
-        assert_eq!(c.slider_drag_value(a, 0.54), Some(5.5));
+        assert_eq!(c.slider_pointer_value(a, (0.54, 1.0), false), Some(5.5));
     }
 }

@@ -174,6 +174,18 @@ pub fn render_visible(
     height: u32,
     visible: impl Fn(crate::Id) -> bool,
 ) -> String {
+    render_visible_with_label_offsets(c, view, width, height, visible, |_| None)
+}
+
+/// Renders visible objects using the caller's saved label positions.
+pub fn render_visible_with_label_offsets(
+    c: &Construction,
+    view: View,
+    width: u32,
+    height: u32,
+    visible: impl Fn(Id) -> bool,
+    label_offset: impl Fn(Id) -> Option<(f64, f64)>,
+) -> String {
     let (w, h) = (width as f64, height as f64);
     let (vw, vh) = (view.xmax - view.xmin, view.ymax - view.ymin);
     let scale = (w / vw).min(h / vh);
@@ -241,6 +253,7 @@ pub fn render_visible(
             view,
             (w, h),
             ids.iter().copied().filter(|&id| same_layer(id)),
+            &label_offset,
         );
     }
     out.push_str("</svg>\n");
@@ -253,6 +266,7 @@ fn render_geometry(
     view: View,
     (w, h): (f64, f64),
     ids: impl Iterator<Item = Id>,
+    label_offset: &impl Fn(Id) -> Option<(f64, f64)>,
 ) {
     let frame = crate::plot::Frame::fit(view, w, h);
     let scale = frame.scale();
@@ -508,6 +522,8 @@ fn render_geometry(
                     );
                     if c.drawing_style(id).show_label {
                         let (x, y) = slider.label_anchor();
+                        let (dx, dy) = label_offset(id).unwrap_or_default();
+                        let (x, y) = (x + dx, y + dy);
                         let _ = writeln!(
                             controls,
                             r#"<text x="{x:.2}" y="{y:.2}">{} = {value}</text>"#,

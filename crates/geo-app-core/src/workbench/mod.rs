@@ -1149,6 +1149,36 @@ impl Workbench {
         }
     }
 
+    /// Moves the slider track without changing the slider's number.
+    pub fn move_slider(&mut self, id: Id, (x, y): (f64, f64)) {
+        let style = self.construction.slider_style(id);
+        if style.fixed
+            || self.construction.slider_interval(id).is_none()
+            || !x.is_finite()
+            || !y.is_finite()
+        {
+            return;
+        }
+        let position = if style.absolute {
+            (x.round().max(0.0), y.round().max(0.0))
+        } else {
+            (x, y)
+        };
+        if position == self.construction.slider_position(id, style) {
+            return;
+        }
+        let mut style = style.clone();
+        style.position = Some(position);
+        self.note_change();
+        self.construction.set_slider_style(id, style.clone());
+        self.log
+            .record_saved_property(geo_kernel::script::saved::Property::SliderStyle {
+                label: self.construction.label(id).to_owned(),
+                style,
+            });
+        self.version += 1;
+    }
+
     pub fn set_number(&mut self, id: Id, v: f64) -> bool {
         if id.index() >= self.construction.len() {
             return false;

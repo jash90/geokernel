@@ -665,6 +665,7 @@ fn paint_layer<'c>(
     }
 
     let mut has_text = false;
+    let mut formulas = None;
     for &id in &ids {
         let value = c.value(id);
         if let Value::Point { x, y } = value {
@@ -719,7 +720,9 @@ fn paint_layer<'c>(
             }
         } else if let Value::Bool(checked) = value {
             if let Some((x, y)) = c.checkbox_position(id) {
-                use geo_kernel::kernel::control::{CHECKBOX_INSET, CHECKBOX_SIZE};
+                use geo_kernel::kernel::control::{
+                    CHECKBOX_HIT_SIZE, CHECKBOX_INSET, CHECKBOX_SIZE,
+                };
                 let size = CHECKBOX_SIZE as f32;
                 let top = origin
                     + vec2(
@@ -743,17 +746,41 @@ fn paint_layer<'c>(
                     painter.line_segment([elbow, top + vec2(21.0, 8.0)], stroke);
                 }
                 if c.drawing_style(id).show_label {
-                    let caption = painter.text(
-                        top + vec2(size + 9.0, size * 0.5),
-                        Align2::LEFT_CENTER,
-                        c.checkbox_caption(id),
-                        FontId::proportional(LABEL_FONT),
-                        col,
-                    );
+                    let anchor = top + vec2(size + 9.0, size * 0.5);
+                    let caption = c.checkbox_caption(id);
+                    let width = if let Some(source) = caption
+                        .strip_prefix('$')
+                        .and_then(|source| source.strip_suffix('$'))
+                    {
+                        let cache = formulas
+                            .get_or_insert_with(|| crate::latex::FormulaCache::new(painter));
+                        let formula = cache.get(
+                            painter,
+                            source,
+                            LABEL_FONT,
+                            geo_latex::Style::Display,
+                            geo_latex::Face::default(),
+                        );
+                        formula.paint(painter, anchor - vec2(4.0, formula.size.y / 2.0), col);
+                        formula.size.x
+                    } else {
+                        painter
+                            .text(
+                                anchor,
+                                Align2::LEFT_CENTER,
+                                caption,
+                                FontId::proportional(LABEL_FONT),
+                                col,
+                            )
+                            .width()
+                    };
                     if let Some(rects) = scene.text_rects {
-                        rects
-                            .borrow_mut()
-                            .push((id, caption.translate(-origin.to_vec2()).core()));
+                        let extent = CHECKBOX_HIT_SIZE as f32;
+                        let bounds = Rect::from_min_size(
+                            Pos2::new(x as f32, y as f32),
+                            vec2(extent + width, extent),
+                        );
+                        rects.borrow_mut().push((id, bounds.core()));
                     }
                 }
             }

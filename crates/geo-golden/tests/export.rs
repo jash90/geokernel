@@ -402,6 +402,19 @@ fn exported_constructions_import_with_all_labelled_kinds_and_properties() {
 }
 
 #[test]
+fn a_session_slider_keeps_its_expression_bound_in_the_archive() {
+    let wb = Workbench::from_script("m = 10\na = Slider(0, m - 1)\na = 8").unwrap();
+    let mut restored = Workbench::default();
+    restored
+        .load_for_export(&wb.export_ggb(None).unwrap(), "live-slider")
+        .unwrap();
+    let m = restored.construction().id("m").unwrap();
+    assert!(restored.set_number(m, 5.0));
+    let c = restored.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), geo_kernel::Value::Number(4.0));
+}
+
+#[test]
 fn archive_preserves_view_kernel_settings_and_application_edits() {
     let mut wb = Workbench::default();
     wb.load_for_export(STYLED_FILE, "settings").unwrap();
@@ -1424,7 +1437,7 @@ fn check_styles(name: &str, wb: &Workbench, view: Option<FileView>, snap: &Value
             "shown": !presentation.hidden.contains(label) && !plain_number,
             "label_shown": drawing.show_label,
             "layer": drawing.layer,
-            "label_mode": 0,
+            "label_mode": i32::from(c.kind(id) == Kind::Number && c.slider_bounds(id) != [None, None]),
             "label_offset": offset,
             "caption": caption,
             "color": presentation.colors[label],
@@ -1981,6 +1994,8 @@ fn geogebra_reloads_session_control_positions_and_values() {
     app.tool.begin_control((124.0, 88.0));
     let slider = app.tool.finish_slider(-5.0, 5.0, 0.25, |_| false);
     app.apply_outcome(slider);
+    let a = app.wb.construction().id("a").unwrap();
+    app.wb.set_label_offset(a, (17.0, -8.0));
     app.select_tool(Tool::Checkbox);
     app.tool.begin_control((51.0, 73.0));
     let checkbox = app.tool.finish_checkbox("Show", |label| label == "a");
@@ -2003,6 +2018,8 @@ fn geogebra_reloads_session_control_positions_and_values() {
         json!([124.0, 88.0])
     );
     assert_eq!(snap["styles"]["a"]["slider"]["width"], json!(200.0));
+    assert_eq!(snap["styles"]["a"]["label_mode"], json!(1));
+    assert_eq!(snap["styles"]["a"]["label_offset"], json!([17, -8]));
     assert_eq!(snap["styles"]["a"]["animation"]["step"], json!(0.25));
     assert_eq!(snap["objects"]["a"]["value"], json!(1.0));
     assert_eq!(snap["styles"]["b"]["label_offset"], json!([51, 73]));

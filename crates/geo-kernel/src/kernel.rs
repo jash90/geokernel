@@ -1062,7 +1062,7 @@ pub struct Construction {
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
     pub(crate) clips: algo::polygon_clip::ClipCache,
     pub(crate) analysis: AnalysisCache,
-    last_update_changed_automatic_root: bool,
+    last_update_requires_ordered_replay: bool,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
@@ -1115,6 +1115,7 @@ pub struct Construction {
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
     saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
+    slider_default_slots: BTreeMap<Id, usize>,
     controls: Vec<(Id, control::Control)>,
     pub(crate) object_scripts: HashMap<String, Vec<control::ControlScript>>,
 }
@@ -1793,11 +1794,28 @@ impl Construction {
         self.controls
             .truncate(self.controls.partition_point(|(id, _)| id.0 < at.len));
         self.saved_slider_bounds.retain(|id, bounds| {
-            id.0 < at.len
+            let keep = id.0 < at.len
                 && bounds
                     .iter()
                     .flatten()
-                    .all(|bound| bound.exists_before(at.len))
+                    .all(|bound| bound.exists_before(at.len));
+            if !keep {
+                if self
+                    .sliders
+                    .binary_search_by_key(&id.0, |&(owner, ..)| owner)
+                    .is_err()
+                {
+                    self.slider_default_slots.remove(id);
+                }
+                for parent in bounds
+                    .iter()
+                    .flatten()
+                    .filter_map(|bound| bound.dependency())
+                {
+                    self.children[parent.index()].remove(*id);
+                }
+            }
+            keep
         });
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
@@ -1810,6 +1828,7 @@ impl Construction {
         }
         self.hidden_requests.retain(|id| id.0 < at.len);
         self.slider_styles.split_off(&Id(at.len));
+        self.slider_default_slots.split_off(&Id(at.len));
         self.checkbox_styles.split_off(&Id(at.len));
         self.free_booleans
             .truncate(self.free_booleans.partition_point(|id| id.0 < at.len));
@@ -2842,7 +2861,7 @@ impl Construction {
     /// its `special` flag is set; with the flag false, moving that point
     /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
-        self.last_update_changed_automatic_root = false;
+        self.last_update_requires_ordered_replay = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -2958,7 +2977,7 @@ impl Construction {
         v: f64,
         clamp_slider: bool,
     ) -> Result<usize, Error> {
-        self.last_update_changed_automatic_root = false;
+        self.last_update_requires_ordered_replay = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -3010,10 +3029,10 @@ impl Construction {
         Ok(self.propagate(id))
     }
 
-    /// True when the last coordinate or value update moved an automatic
-    /// intersection's hidden Newton start point.
-    pub fn last_update_changed_automatic_root(&self) -> bool {
-        self.last_update_changed_automatic_root
+    /// Whether the last update changed state that a later update cannot
+    /// recreate: an automatic intersection seed or a clamped slider value.
+    pub fn last_update_requires_ordered_replay(&self) -> bool {
+        self.last_update_requires_ordered_replay
     }
 
     /// Recomputes the descendants of `start` in dependency order.
@@ -3041,7 +3060,7 @@ impl Construction {
         mut from: usize,
         refresh_definitions: bool,
     ) -> usize {
-        self.last_update_changed_automatic_root = false;
+        self.last_update_requires_ordered_replay = false;
         self.function_roots.clear();
         self.clips.clear();
         self.analysis.clear();
@@ -3061,6 +3080,11 @@ impl Construction {
                 def = self.refresh_intersection_definition(i, def, &mut restored_pairs);
             }
             match def {
+                Def::Number(_) if self.saved_slider_bounds.contains_key(&Id(i)) => {
+                    if !self.update_slider_interval(Id(i)) {
+                        continue;
+                    }
+                }
                 Def::Lines(LineDef::TangentPoint { .. } | LineDef::TangentLine { .. })
                 | Def::ConicPart(
                     ConicPartDef::TangentPoint { .. } | ConicPartDef::TangentLine { .. },
@@ -3198,7 +3222,7 @@ impl Construction {
                     if let Def::IntersectBoundary(intersection) = def {
                         if let Some(saved) = intersection.with_root(new) {
                             self.defs[i] = Def::IntersectBoundary(saved);
-                            self.last_update_changed_automatic_root = true;
+                            self.last_update_requires_ordered_replay = true;
                         }
                     }
                     if new.identical(&self.values[i])

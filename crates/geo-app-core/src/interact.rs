@@ -215,6 +215,11 @@ pub enum Hold {
         start: (f64, f64),
     },
     Slider,
+    SliderTrack {
+        old: (f64, f64),
+        start: (f64, f64),
+        absolute: bool,
+    },
 }
 
 /// A drag in progress: which object is held, and how.
@@ -245,6 +250,10 @@ pub enum Step {
     /// Move a text or update its offset from a named anchor.
     Text(TextMove),
     Slider {
+        x: f64,
+        y: f64,
+    },
+    SliderPosition {
         x: f64,
         y: f64,
     },
@@ -314,7 +323,7 @@ impl Drag {
         }
     }
 
-    /// Starts dragging a slider only when the press reaches its knob.
+    /// A knob or a locked track changes value; an unlocked track moves.
     pub fn slider(
         c: &Construction,
         id: Id,
@@ -322,9 +331,6 @@ impl Drag {
         press: (f64, f64),
         reach: &crate::hit::Reach,
     ) -> Option<Drag> {
-        if c.slider_style(id).fixed {
-            return None;
-        }
         let slider = c.slider_geometry(id, (t.xscale(), t.yscale()), |(x, y)| {
             t.world_to_screen(x, y)
         })?;
@@ -333,10 +339,21 @@ impl Drag {
             crate::hit::hit(c, id, t, press, reach.threshold, reach).is_none()
                 && crate::hit::knob_hit(slider, press, threshold)
         });
-        (direct || retry).then_some(Drag {
-            id,
-            hold: Hold::Slider,
-        })
+        let style = c.slider_style(id);
+        let hold = if direct || retry || style.fixed {
+            Hold::Slider
+        } else {
+            Hold::SliderTrack {
+                old: c.slider_position(id, style),
+                start: if style.absolute {
+                    press
+                } else {
+                    t.screen_to_world(press.0, press.1)
+                },
+                absolute: style.absolute,
+            }
+        };
+        Some(Drag { id, hold })
     }
 
     /// Starts dragging a text using its placement's coordinate system.
@@ -374,6 +391,20 @@ impl Drag {
     pub fn step(&mut self, t: &ViewTransform, snap: &Snap, sx: f64, sy: f64) -> Step {
         match &mut self.hold {
             Hold::Slider => Step::Slider { x: sx, y: sy },
+            Hold::SliderTrack {
+                old,
+                start,
+                absolute,
+            } => {
+                let (x, y) = if *absolute {
+                    (sx, sy)
+                } else {
+                    t.screen_to_world(sx, sy)
+                };
+                let (x, y) = (old.0 + (x - start.0), old.1 + (y - start.1));
+                Step::SliderPosition { x, y }
+            }
+
             Hold::Point => {
                 let (x, y) = snap.apply(t.screen_to_world(sx, sy));
                 Step::Point { x, y }

@@ -1939,3 +1939,30 @@ fn deleting_an_object_replays_labels_another_command_took() {
     assert!(w.delete(p));
     assert_eq!(labelled_values(&w), before);
 }
+
+#[test]
+fn deleting_a_slider_keeps_the_surviving_sliders_default_position() {
+    for script in [
+        "a = Slider(0, 1)\nb = Slider(0, 1)",
+        "m = 10\na = Slider(0, m)\nb = Slider(0, m)",
+        "n = -1\nm = sqrt(n)\na = Slider(0, m)\nb = Slider(0, m)",
+    ] {
+        let mut w = Workbench::from_script(script).unwrap();
+        let position = |w: &Workbench| {
+            let c = w.construction();
+            let b = c.id("b").unwrap();
+            c.slider_position(b, c.slider_style(b))
+        };
+        assert_eq!(position(&w), (30.0, 90.0));
+        assert!(w.delete(w.construction().id("a").unwrap()));
+        assert_eq!(position(&w), (30.0, 90.0));
+        assert!(w.undo());
+        assert_eq!(position(&w), (30.0, 90.0));
+        assert!(w.redo());
+        assert_eq!(position(&w), (30.0, 90.0));
+        assert_eq!(
+            position(&Workbench::from_script(&w.snapshot_text()).unwrap()),
+            (30.0, 90.0)
+        );
+    }
+}

@@ -160,6 +160,8 @@ pub struct App {
     /// what the user saw, even if the area changes in that frame.
     pub view: Option<(Rect, ViewTransform)>,
     pub press_view: Option<(Rect, ViewTransform)>,
+    /// The slider grip the pointer hit, held even if its knob subsequently moves.
+    pub press_slider: Option<Drag>,
     /// What the construction tool's press did, until its release.
     pub tool_press: Option<crate::toolpress::ToolPress>,
     /// The delete tool's drag is erasing (spec E11).
@@ -243,6 +245,7 @@ impl App {
             seen_rebuilds: 0,
             view: None,
             press_view: None,
+            press_slider: None,
             tool_press: None,
             erasing: false,
             view_gesture: crate::camera::ViewGesture::default(),

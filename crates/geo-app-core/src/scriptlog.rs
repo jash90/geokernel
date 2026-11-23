@@ -571,7 +571,17 @@ impl Log {
     }
 
     pub(crate) fn record_saved_property(&mut self, property: Property) {
-        self.ops.push(Op::SavedProperty(Box::new(property)));
+        let replace = matches!(
+            (&property, self.ops.last()),
+            (Property::SliderStyle { label, .. }, Some(Op::SavedProperty(previous)))
+                if matches!(previous.as_ref(), Property::SliderStyle { label: old, .. } if old == label)
+        );
+        let op = Op::SavedProperty(Box::new(property));
+        if replace {
+            self.ops.replace_last(op);
+        } else {
+            self.ops.push(op);
+        }
     }
 
     pub(crate) fn saved_properties(&self) -> impl Iterator<Item = &Property> {
@@ -612,6 +622,16 @@ impl Log {
                 labels,
                 line: mark_inline_arguments(line.to_owned()),
             }));
+            for id in definition_outputs(c, from, first, line).filter(|id| id.index() >= from) {
+                if c.has_slider_bounds(id) {
+                    let mut style = c.slider_style(id).clone();
+                    style.position = Some(c.slider_position(id, &style));
+                    self.record_saved_property(Property::SliderStyle {
+                        label: c.label(id).to_owned(),
+                        style,
+                    });
+                }
+            }
         }
     }
 
@@ -621,7 +641,7 @@ impl Log {
     }
 
     pub(crate) fn record_update(&mut self, c: &Construction, label: &str, to: Setting) {
-        self.push_set(label, to, c.last_update_changed_automatic_root());
+        self.push_set(label, to, c.last_update_requires_ordered_replay());
     }
 
     fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {
@@ -630,8 +650,8 @@ impl Log {
             to,
             ordered,
         };
-        // A hidden Newton start point follows each successful root. Keep
-        // any edit that moved it, since the next edit starts from there.
+        // Keep an edit that changed a hidden intersection seed or clamped
+        // a dependent slider, since the next edit starts from there.
         if !ordered
             && matches!(
                 self.ops.last(),
@@ -1118,7 +1138,7 @@ impl Log {
                     // A set right after a set of the same object is merged
                     // into it by `record_set` (after a `remove` they can
                     // meet): the journal and `kept` part there.
-                    let keep_order = *ordered || c.last_update_changed_automatic_root();
+                    let keep_order = *ordered || c.last_update_requires_ordered_replay();
                     let merges = !keep_order
                         && i > 0
                         && matches!(
@@ -1348,7 +1368,7 @@ impl Log {
                     kept.push_set(
                         label,
                         *to,
-                        *ordered || c.last_update_changed_automatic_root(),
+                        *ordered || c.last_update_requires_ordered_replay(),
                     );
                 }
                 Op::MovePoints(points) => {

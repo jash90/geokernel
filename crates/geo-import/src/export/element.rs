@@ -91,7 +91,7 @@ impl Writer<'_> {
         let label_shown = saved.and_then(|style| style.show_label);
         // A free number is a slider when it has a bound, or when its file
         // placed one for it.
-        let numeric = c.slider_bounds(id).map(|n| n.map(|n| n.to_string()));
+        let numeric = c.slider_bound_sources(id);
         let bounds = match c.def(id) {
             Def::Number(_) => self
                 .presentation
@@ -156,7 +156,8 @@ impl Writer<'_> {
         if saved.is_none_or(|saved| saved.layer.is_some()) {
             self.xml.val("layer", &style.layer.to_string())?;
         }
-        if let Some(mode) = saved.map_or(Some(0), |style| style.label_mode) {
+        let default_mode = i32::from(object_kind == Kind::Number && bounded);
+        if let Some(mode) = saved.map_or(Some(default_mode), |style| style.label_mode) {
             self.xml.val("labelMode", &mode.to_string())?;
         }
         if let Some(mode) = saved.and_then(|style| style.tooltip_mode) {
@@ -534,7 +535,8 @@ impl Writer<'_> {
             // A tag the reader left early is written as far as it got.
             Some(layout) => {
                 attrs.push(("absoluteScreenLocation", flag(layout.absolute).into()));
-                if let Some([x, y]) = layout.position {
+                let placed = self.c.slider_style(id).position.map(|(x, y)| [x, y]);
+                if let Some([x, y]) = placed.or(layout.position) {
                     attrs.extend([("x", number(x)), ("y", number(y))]);
                 }
                 if let Some(width) = layout.width {

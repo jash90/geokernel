@@ -266,9 +266,9 @@ pub fn hit(
             }
         }
         Value::Bool(_) => {
-            use geo_kernel::kernel::control::{CHECKBOX_INSET, CHECKBOX_SIZE};
+            use geo_kernel::kernel::control::CHECKBOX_HIT_SIZE;
             let (x, y) = c.checkbox_position(id)?;
-            let extent = CHECKBOX_SIZE + 2.0 * CHECKBOX_INSET;
+            let extent = CHECKBOX_HIT_SIZE;
             ((x - t..=x + extent + t).contains(&p.0) && (y - t..=y + extent + t).contains(&p.1))
                 .then_some(HitType::Filling)
         }
@@ -576,7 +576,8 @@ struct Choice {
     /// The segment made first.
     first_segment: Option<Id>,
     /// The object drawn on top among the others, and among the polygons.
-    top_knob: Option<(bool, Id)>,
+    top_knob: Option<Id>,
+    layer: Option<u8>,
     top_other: Option<((HitType, u8, usize), Id)>,
     top_polygon: Option<((HitType, u8, usize), Id)>,
     /// How the selected object was hit, if it was.
@@ -586,11 +587,26 @@ struct Choice {
 impl Choice {
     fn add(&mut self, c: &Construction, id: Id, index: usize, how: HitType, selected: bool) {
         let kind = c.kind(id);
+        // Hits.getTopHits keeps points before choosing a layer.
+        let first_point = kind == Kind::Point && self.points == 0;
+        if self.points != 0 && kind != Kind::Point {
+            return;
+        }
+        let layer = c.drawing_style(id).layer;
+        if !first_point && self.layer.is_some_and(|top| layer < top) {
+            return;
+        }
+        if first_point || self.layer != Some(layer) {
+            *self = Self {
+                layer: Some(layer),
+                ..Self::default()
+            };
+        }
         if selected {
             self.selected = Some(kind);
         }
-        if how == HitType::SliderKnob && self.top_knob.is_none_or(|old| (selected, id) > old) {
-            self.top_knob = Some((selected, id));
+        if how == HitType::SliderKnob && self.top_knob.is_none_or(|old| id > old) {
+            self.top_knob = Some(id);
         }
         let key = (how, type_priority(kind), index);
         match kind {
@@ -628,12 +644,8 @@ impl Choice {
     /// `handleMousePressedForMoveMode`: the top hits (only the points when a
     /// point is hit, `Hits.getTopHits`), without the polygons when anything
     /// else is left (`removePolygonsIfNotOnlyCS2D`); the selected object if
-    /// it is among them; else `chooseGeo`. All objects are in one layer, so
-    /// its layer rules choose nothing, and nothing is fixed or on a path.
+    /// it is among them; else `chooseGeo`. The candidates are in the top layer.
     fn choose(&self, selected: Option<Id>) -> Option<Id> {
-        if let Some((_, knob)) = self.top_knob.filter(|_| self.points == 0) {
-            return Some(knob);
-        }
         let kept = |k: Kind| -> bool {
             if self.points > 0 {
                 k == Kind::Point
@@ -654,6 +666,9 @@ impl Choice {
             // lowest construction index, though its comment says the
             // most recent).
             return self.last_free.or(self.first_point);
+        }
+        if let Some(knob) = self.top_knob {
+            return Some(knob);
         }
         if self.others > 0 {
             if self.others == 1 {
@@ -698,7 +713,7 @@ pub fn pick_with_text(
             choice.add(c, id, id.index(), HitType::Filling, Some(id) == selected);
         }
         for (index, id) in c.ids().enumerate() {
-            if !accept(id) {
+            if Some(id) == text || !accept(id) {
                 continue;
             }
             if let Some(how) = hit(c, id, t, position, threshold, reach) {
@@ -1017,7 +1032,7 @@ mod control_tests {
     use super::*;
 
     #[test]
-    fn a_knob_wins_over_an_overlapping_track() {
+    fn a_selected_track_wins_over_an_overlapping_knob() {
         let c = geo_kernel::script::load(
             "a = Slider(0, 10)\na = 5\nb = Slider(0, 10)\n\
              $sliderStyle(_62, true, 30, 50, 200, true, false, _, _)",
@@ -1036,7 +1051,14 @@ mod control_tests {
         );
         assert_eq!(
             pick(&c, &view, (130.0, 50.0), &reach, Some(b), |_| true),
-            Some(a)
+            Some(b)
+        );
+        let mut c = c;
+        let (x, y) = view.screen_to_world(130.0, 50.0);
+        let point = c.add("P", geo_kernel::Def::FreePoint { x, y }).unwrap();
+        assert_eq!(
+            pick(&c, &view, (130.0, 50.0), &reach, Some(b), |_| true),
+            Some(point)
         );
     }
 }

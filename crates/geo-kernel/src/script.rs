@@ -1194,12 +1194,23 @@ fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String>
             .map(|(value, _)| value)
             .ok_or_else(|| format!("expected a constant number, got `{arg}`"))
     };
-    let (min, max, step) = match args {
-        [min, max] => (number(min)?, number(max)?, None),
-        [min, max, step] => (number(min)?, number(max)?, Some(number(step)?)),
+    let (lower, upper, step) = match args {
+        [min, max] => (*min, *max, None),
+        [min, max, step] => (*min, *max, Some(number(step)?)),
         _ => return Err(format!("`Slider` does not take {} argument(s)", args.len())),
     };
-    let id = c.add_slider(name, min, max).map_err(|e| e.to_string())?;
+    let checkpoint = c.checkpoint();
+    let id = match (number(lower), number(upper)) {
+        (Ok(min), Ok(max)) => c.add_slider(name, min, max).map_err(|e| e.to_string())?,
+        _ => {
+            let id = c.add(name, Def::Number(0.0)).map_err(|e| e.to_string())?;
+            if let Err(error) = c.restore_slider_bounds(id, [Some(lower), Some(upper)]) {
+                c.discard_since(checkpoint);
+                return Err(error);
+            }
+            id
+        }
+    };
     if step.is_some() {
         c.set_slider_style(
             id,

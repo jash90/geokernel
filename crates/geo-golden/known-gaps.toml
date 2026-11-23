@@ -3000,11 +3000,6 @@ mismatches = ["1:N", "2:M"]
 # funcrest
 
 [[gap]]
-id = "misc-optimizebounds-001"
-reason = "The kernel's Slider command takes constant endpoints only; endpoint expressions are restored from saved files. The kernel unit test optimize::bound_tests replays the recorded steps through the restored bounds: the optimizer stays enabled while the upper endpoint is undefined and recovers to 3."
-mismatches = ["0:script line 2"]
-
-[[gap]]
 id = "odesymbolic-nocas-001"
 reason = "The kernel always integrates supported polynomial slopes. It has no mode that reproduces the undefined result of the reference when symbolic evaluation is disabled."
 mismatches = ["0:g", "0:h", "3:g", "3:h"]
