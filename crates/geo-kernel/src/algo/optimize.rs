@@ -189,9 +189,20 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
     } else {
         None
     };
+    // A circle whose command returned before writing keeps its last
+    // record, and `OptimizerPoint.setValue` still places the point on it
+    // (`pathChanged` reads the half axes and midpoint whatever `defined`
+    // says): the search runs over that circle. Recorded in
+    // misc-maximizepoint-008 to -017 and misc-minimizepoint-008 to -010.
+    let mut record = None;
     let interval = if let Some((id, _)) = on_path {
         let geometry = path::geom(c, id);
-        geometry.is_defined().then(|| geometry.range())
+        if geometry.is_defined() {
+            Some(geometry.range())
+        } else {
+            record = c.circle_record(id);
+            record.map(|d| path::Geom::Conic(d).range())
+        }
     } else {
         c.slider_interval(independent)
     };
@@ -229,7 +240,9 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         }
         // `Optimizer.value`: set the number, cascade its update, read the
         // dependent value
-        if let Some((path, state)) = on_path {
+        if let (Some((_, state)), Some(d)) = (on_path, record) {
+            crate::kernel::locus::sample_path_point_on(c, independent, d, state, x);
+        } else if let Some((path, state)) = on_path {
             crate::kernel::locus::sample_path_point(c, independent, path, state, x);
         } else {
             c.set_free_number(independent, x);
@@ -258,8 +271,9 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
             // An undefined search parameter leaves a path point at the
             // trial that encountered the undefined objective.
             let optimum = optimum.or(undefined_trial);
-            optimum.map_or(Value::Undefined, |x| {
-                crate::kernel::locus::sample_path_point(c, independent, path, state, x)
+            optimum.map_or(Value::Undefined, |x| match record {
+                Some(d) => crate::kernel::locus::sample_path_point_on(c, independent, d, state, x),
+                None => crate::kernel::locus::sample_path_point(c, independent, path, state, x),
             })
         }
         (false, None) => optimum.map_or(Value::Undefined, Value::Number),

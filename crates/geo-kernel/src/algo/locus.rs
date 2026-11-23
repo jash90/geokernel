@@ -786,6 +786,27 @@ pub(crate) fn sample_path_point(
     c.value(id)
 }
 
+/// [`sample_path_point`] on the conic record `record` instead of the
+/// path's current geometry: a point on a circle that keeps its last record
+/// while undefined is still placed on it (`GeoConicND.pathChanged` reads
+/// the half axes and midpoint whatever `defined` says).
+pub(crate) fn sample_path_point_on(
+    c: &mut Construction,
+    id: Id,
+    record: crate::algo::conic_nd::ConicData,
+    mut st: PathState,
+    parameter: f64,
+) -> Value {
+    st.put_t(parameter);
+    Geom::Conic(record).path_changed(&mut st);
+    st.update_coords();
+    if let Some(slot) = c.path_slot(id.0) {
+        c.paths[slot].1 = st;
+        c.values[id.0] = PathDef::value(&st);
+    }
+    c.value(id)
+}
+
 impl Moving for PathCopy {
     fn key(&self) -> f64 {
         self.st.parameter()

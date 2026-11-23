@@ -285,6 +285,61 @@ cases.case("minimizepoint", [
     "Q = Point(e)", "N = Minimize(x(Q) * y(Q), Q)",
 ], [mv("C", 6, 5)])
 
+# While a circle is undefined, the point optimizer still searches it.
+# Circle(C, r) with a negative radius or an undefined centre, and
+# Circle(A, B) with an undefined point, keep their last circle (the setter
+# returns before it writes); the search runs over that circle with the
+# current objective. A NaN radius, a degenerate three-point circle and a
+# segment do not keep one.
+CIRCLE = ["r = 5", "C = (1, 2)", "c = Circle(C, r)", "P = Point(c)", "k = 1"]
+cases.case("maximizepoint", CIRCLE + ["M = Maximize(x(P) + k y(P), P)"],
+           [setn("r", -1), setn("k", -1), setn("k", 3), setn("r", 2)])
+cases.case("maximizepoint", CIRCLE + ["M = Maximize(x(P) + k y(P), P)"],
+           [setn("r", -1), mv("C", -3, 0), setn("k", 2), setn("r", 1)])
+cases.case("maximizepoint", [
+    "r = -1", "C = (1, 2)", "c = Circle(C, r)", "P = Point(c)", "M = Maximize(x(P) + y(P), P)",
+], [setn("r", -2), setn("r", 2), setn("r", -1)])
+cases.case("maximizepoint", CIRCLE + ["M = Maximize(x(P) + k y(P), P)"],
+           [setn("r", 0), setn("k", 2), setn("r", -1), setn("k", -2)])
+cases.case("maximizepoint", [
+    "a = 1", "C = (sqrt(a), 2)", "r = 5", "c = Circle(C, r)", "P = Point(c)", "k = 1",
+    "M = Maximize(x(P) + k y(P), P)",
+], [setn("a", -1), setn("k", 2), setn("a", 4), setn("a", -1), setn("r", 3)])
+cases.case("maximizepoint", [
+    "a = 1", "A = (0, 0)", "B = (sqrt(a), 3)", "c = Circle(A, B)", "P = Point(c)", "k = 1",
+    "M = Maximize(x(P) + k y(P), P)",
+], [setn("a", -1), setn("k", -1), setn("a", 4)])
+cases.case("maximizepoint", [
+    "a = 1", "A = (0, 0)", "S = (sqrt(a), 0)", "T = (4, 0)", "s = Segment(S, T)",
+    "c = Circle(A, s)", "P = Point(c)", "k = 1", "M = Maximize(x(P) + k y(P), P)",
+], [setn("a", -1), setn("k", -1), setn("a", 4)])
+cases.case("maximizepoint", [
+    "A = (0, 0)", "B = (4, 0)", "D = (0, 4)", "c = Circle(A, B, D)", "P = Point(c)", "k = 1",
+    "M = Maximize(x(P) + k y(P), P)",
+], [mv("D", 8, 0), setn("k", -1)])
+cases.case("maximizepoint", [
+    "a = 1", "A = (sqrt(a), 0)", "B = (6, 3)", "s = Segment(A, B)", "P = Point(s)", "k = 1",
+    "M = Maximize(-(x(P) - k)^2, P)",
+], [setn("a", -1), setn("k", 4), setn("a", 1)])
+# a redefinition keeps the circle's record
+cases.case("maximizepoint", CIRCLE + ["M = Maximize(x(P) + k y(P), P)"],
+           [setn("r", -1), {"action": "redefine", "line": "k = 2"}, setn("k", 3)])
+# two optimizers over one point
+cases.case("maximizepoint", CIRCLE + ["M = Maximize(x(P) + k y(P), P)",
+                                      "N = Minimize(x(P) + k y(P), P)"],
+           [setn("k", 2), setn("r", 3), mv("C", 0, 0)])
+cases.case("maximizepoint", CIRCLE + ["M = Maximize(x(P) + k y(P), P)",
+                                      "N = Minimize(x(P) - y(P), P)"],
+           [setn("r", -1), setn("k", 2)])
+cases.case("minimizepoint", [
+    "r = 5", "C = (1, 2)", "c = Circle(C, 2r - 4)", "P = Point(c)", "k = 1",
+    "M = Minimize(x(P) + k y(P), P)",
+], [setn("r", 1), setn("k", -1), setn("r", 3)])
+cases.case("minimizepoint", CIRCLE + ["M = Minimize(x(P) - 2k y(P), P)"],
+           [setn("r", 3), setn("r", 4), setn("r", -1), setn("k", 0), setn("r", -3), setn("r", 1)])
+cases.case("minimizepoint", CIRCLE + ["M = Minimize(x(P) + k y(P), P)"],
+           [mv("P", 6, 2), setn("r", -1), setn("k", 3), setn("r", 2)])
+
 # The remaining Sum forms.
 cases.case("sum", [
     "l = {1, 10, 0.5}", "a = Sum(l, l)", "b = Sum(l)", "c = Sum(l, 2)",

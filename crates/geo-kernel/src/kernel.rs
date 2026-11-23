@@ -981,6 +981,10 @@ pub struct Construction {
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
+    /// The last circle written by a circle command whose setter now
+    /// returns before writing (see [`algo::circle::keeps_record`]), by
+    /// owner. Only the point optimizer reads it.
+    circle_records: Vec<(usize, (f64, f64, f64))>,
     rigid_replacements: Vec<(Id, Id, Def)>,
     /// Helper intersection states for common tangents starting on an arc.
     limited_common_tangents: Vec<(usize, CommonTangentState)>,
@@ -1782,6 +1786,10 @@ impl Construction {
         while self.paths.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.paths.pop();
         }
+        self.circle_records.truncate(
+            self.circle_records
+                .partition_point(|&(owner, _)| owner < at.len),
+        );
         while self.arcs.last().is_some_and(|&(owner, _)| owner >= at.len) {
             self.arcs.pop();
         }
@@ -2010,6 +2018,8 @@ impl Construction {
         if let Some(path) = path {
             self.paths.insert(slot, (id.0, path));
         }
+        // a redefined object is a new circle without a record
+        self.forget_circle_record(id.0);
         self.defs[id.0] = def;
         self.values[id.0] = value;
         self.hints[id.0] = hint;
@@ -2919,6 +2929,7 @@ impl Construction {
                         continue;
                     }
                     let new = self.compute(def, i);
+                    self.keep_circle_record(i, def, new);
                     if let Def::IntersectBoundary(intersection) = def {
                         if let Some(saved) = intersection.with_root(new) {
                             self.defs[i] = Def::IntersectBoundary(saved);
@@ -3303,6 +3314,46 @@ impl Construction {
         self.paths
             .binary_search_by_key(&i, |&(owner, _)| owner)
             .ok()
+    }
+
+    /// The circle that `id` still holds while its circle command leaves
+    /// the last record in place (`GeoConicND` keeps the half axes,
+    /// midpoint and type and only clears `defined`). `None` for a defined
+    /// circle, for one that never had a record and for other objects.
+    pub(crate) fn circle_record(&self, id: Id) -> Option<ConicData> {
+        let slot = self.circle_records.partition_point(|&(o, _)| o < id.0);
+        match self.circle_records.get(slot) {
+            Some(&(owner, (cx, cy, r))) if owner == id.0 => Some(ConicData::circle(cx, cy, r)),
+            _ => None,
+        }
+    }
+
+    /// Keeps the record of a circle command for [`Self::circle_record`],
+    /// before `new` replaces the value of object `i`.
+    fn keep_circle_record(&mut self, i: usize, def: Def, new: Value) {
+        let Some(keeps) = algo::circle::keeps_record(self, def) else {
+            return;
+        };
+        if new.is_defined() || !keeps {
+            // the record is the value, or it was overwritten by NaN
+            self.forget_circle_record(i);
+            return;
+        }
+        // an undefined circle before keeps the record it had
+        if let Value::Circle { cx, cy, r } = self.values[i] {
+            let slot = self.circle_records.partition_point(|&(o, _)| o < i);
+            match self.circle_records.get_mut(slot) {
+                Some((owner, record)) if *owner == i => *record = (cx, cy, r),
+                _ => self.circle_records.insert(slot, (i, (cx, cy, r))),
+            }
+        }
+    }
+
+    fn forget_circle_record(&mut self, i: usize) {
+        let slot = self.circle_records.partition_point(|&(o, _)| o < i);
+        if self.circle_records.get(slot).is_some_and(|&(o, _)| o == i) {
+            self.circle_records.remove(slot);
+        }
     }
 
     /// The state of the point on a path `id` (made by `Point(path)` or
