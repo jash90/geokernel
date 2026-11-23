@@ -875,7 +875,10 @@ impl Curves {
                 None => (Vec::new(), None, None, None, None, false),
             },
             Value::ImplicitCurve => {
-                let paths: Vec<_> =
+                // The element type is stated here: the label lookup below
+                // reads it before the tuple fixes it, and the search for a
+                // type that fits does not end on every target.
+                let paths: Vec<Vec<Pos2>> =
                     c.implicit_coefficients(id)
                         .map_or_else(Vec::new, |coefficients| {
                             let grown = self.frame.grown(margin);
