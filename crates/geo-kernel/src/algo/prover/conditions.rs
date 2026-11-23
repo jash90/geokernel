@@ -238,18 +238,20 @@ fn rank(mut m: Vec<Vec<Int>>) -> usize {
             continue;
         };
         m.swap(rank, pivot);
-        for r in rank + 1..rows {
-            if m[r][col].is_zero() {
+        let (pivots, lower) = m.split_at_mut(rank + 1);
+        let pivot = &pivots[rank];
+        for row in lower {
+            if row[col].is_zero() {
                 continue;
             }
-            let a = m[rank][col].clone();
-            let b = m[r][col].clone();
-            for k in col..cols {
-                m[r][k] = m[r][k].mul(&a).sub(&m[rank][k].mul(&b));
+            let a = &pivot[col];
+            let b = row[col].clone();
+            for (cell, pivot_cell) in row[col..cols].iter_mut().zip(&pivot[col..cols]) {
+                *cell = cell.mul(a).sub(&pivot_cell.mul(&b));
             }
-            let g = m[r].iter().fold(Int::zero(), |g, x| g.gcd(x));
+            let g = row.iter().fold(Int::zero(), |g, x| g.gcd(x));
             if !g.is_zero() && !g.is_unit() {
-                for x in &mut m[r] {
+                for x in row {
                     *x = x.div_exact(&g).expect("gcd divides");
                 }
             }
