@@ -107,6 +107,49 @@ fn check_review_values(snap: &Snapshot, c: &Construction, skipped: &[&str]) {
 }
 
 #[test]
+fn saved_regular_polygon_keeps_undefined_generated_vertices() {
+    use geo_import::export::{ggb, Definition, Presentation};
+
+    let (snap, imported) = fixture("saved-keptvertices-001");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    let replayed = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snap, &replayed, &[]);
+
+    let definitions = [
+        ("n = 0", "n"),
+        ("U = (0, 0)", "U"),
+        ("A = If(n > 0, U)", "A"),
+        ("B = (2, 0)", "B"),
+        ("nv = 5", "nv"),
+        ("p = $regularPolygon(A, B, nv)", "p C D E f g h i j"),
+    ]
+    .map(|(line, labels)| {
+        (
+            line,
+            labels
+                .split_whitespace()
+                .map(str::to_owned)
+                .collect::<Vec<_>>(),
+        )
+    });
+    let file = ggb(
+        &replayed,
+        definitions
+            .iter()
+            .map(|(line, outputs)| Definition { line, outputs }),
+        &Presentation::default(),
+    )
+    .unwrap();
+    let reimported = import(&file).unwrap();
+    assert!(reimported.skipped.is_empty(), "{:?}", reimported.skipped);
+    check_review_values(
+        &snap,
+        &script::load(&reimported.script.join("\n")).unwrap(),
+        &[],
+    );
+}
+
+#[test]
 fn saved_curve_intersections_keep_their_output_slots() {
     for name in [
         "saved-curve-intersections-001",

@@ -1939,3 +1939,61 @@ fn deleting_an_object_replays_labels_another_command_took() {
     assert!(w.delete(p));
     assert_eq!(labelled_values(&w), before);
 }
+
+#[test]
+fn deleting_a_reader_keeps_the_circle_from_the_intermediate_edit() {
+    let mut w = Workbench::default();
+    for line in [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "j = Circle(O, 3)",
+        "ar = Area(k)",
+        "t = AreEqual(k, j)",
+    ] {
+        w.run_line(line).unwrap();
+    }
+    let r = w.construction.id("r").unwrap();
+    assert!(w.set_number(r, 3.0));
+    assert!(w.set_number(r, -1.0));
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(true)
+    );
+    assert!(w.delete(w.construction.id("ar").unwrap()));
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(true)
+    );
+}
+
+#[test]
+fn redoing_an_undefined_circle_restores_it_from_the_snapshot() {
+    let mut w = Workbench::default();
+    for line in [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "j = Circle(O, 2)",
+        "t = AreEqual(k, j)",
+        "ar = Area(k)",
+    ] {
+        w.run_line(line).unwrap();
+    }
+    assert!(w.set_number(w.construction.id("r").unwrap(), -1.0));
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(true)
+    );
+    assert!(w.undo());
+    assert!(w.redo());
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(false)
+    );
+    assert!(w.delete(w.construction.id("ar").unwrap()));
+    assert_eq!(
+        w.construction.value(w.construction.id("t").unwrap()),
+        Value::Bool(false)
+    );
+}

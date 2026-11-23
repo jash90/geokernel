@@ -11,6 +11,7 @@ use common::*;
 use geo_kernel::algo::arc::ArcDef;
 use geo_kernel::algo::conic::ConicDef;
 use geo_kernel::algo::conic_parts::ConicPartDef;
+use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::algo::path::PathDef;
 use geo_kernel::algo::polygon::PolygonDef;
 use geo_kernel::algo::predicate::PredicateDef;
@@ -183,6 +184,7 @@ fn reads_kept_input(c: &Construction, id: Id, parent: Id) -> bool {
             | ConicPartDef::Parameter(conic)
             | ConicPartDef::Diameter { conic, .. },
         )
+        | Def::Measure(MeasureDef::Radius(conic) | MeasureDef::Circumference(conic))
         | Def::Conic(ConicDef::Diameter { circle: conic, .. })
         | Def::Predicate(PredicateDef::Tangent { circle: conic, .. }) => conic == parent,
         Def::Predicate(PredicateDef::Equal(a, b)) => {
@@ -194,6 +196,7 @@ fn reads_kept_input(c: &Construction, id: Id, parent: Id) -> bool {
                     )
                 })
         }
+        Def::Path(PathDef::On { path }) => path == parent && c.kind(path) == Kind::Circle,
         Def::Polygon(PolygonDef::RegularVertex { a, b, .. })
         | Def::Arc(ArcDef::ConicPoints { p: a, q: b, .. }) => a == parent || b == parent,
         Def::Arc(ArcDef::Length(part) | ArcDef::Area(part)) => {

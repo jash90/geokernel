@@ -621,7 +621,7 @@ impl ArcDef {
                 let mut steps = Vec::new();
                 if let Some(base) = part_source(c, src, &mut steps) {
                     steps.push(PartStep::Map(def));
-                    rebuilt_record(c, &mut a, base, &steps);
+                    rebuilt_record(c, &mut a, kept.conic, base, &steps);
                     return a;
                 }
                 // `AlgoTransformation.compute` with `transformLimitedPath`:
@@ -657,7 +657,7 @@ impl ArcDef {
                 let mut steps = Vec::new();
                 if let Some(base) = part_source(c, src, &mut steps) {
                     steps.push(PartStep::Translate(by));
-                    rebuilt_record(c, &mut a, base, &steps);
+                    rebuilt_record(c, &mut a, kept.conic, base, &steps);
                     return a;
                 }
                 // `AlgoTranslate`: the parameters always stay
@@ -688,7 +688,7 @@ impl ArcDef {
                 let mut steps = Vec::new();
                 if let Some(base) = part_source(c, src, &mut steps) {
                     steps.push(PartStep::Invert(circle));
-                    rebuilt_record(c, &mut a, base, &steps);
+                    rebuilt_record(c, &mut a, kept.conic, base, &steps);
                     return a;
                 }
                 // `AlgoMirror` at a circle: `transformLimitedConic` with the
@@ -923,45 +923,42 @@ fn mapped_conic(c: &Construction, steps: &[PartStep], d: &mut ConicData) {
 /// conic and the projections of the images of `P` and `Q` onto it, which
 /// `AlgoConicPartConicPoints` gives the positive orientation whatever the
 /// source's is.
-fn rebuilt_record(c: &Construction, a: &mut ArcData, base: PartSource, steps: &[PartStep]) {
+fn rebuilt_record(
+    c: &Construction,
+    a: &mut ArcData,
+    previous_conic: ConicData,
+    base: PartSource,
+    steps: &[PartStep],
+) {
     match base {
         PartSource::Circum {
             a: ia,
             b: ib,
             c: ic,
         } => {
-            let (Some(pa), Some(pb), Some(pc)) = (c.point(ia), c.point(ib), c.point(ic)) else {
+            let map = |id| c.point(id).and_then(|p| mapped_point(c, steps, p));
+            if let (Some(pa), Some(pb), Some(pc)) = (map(ia), map(ib), map(ic)) {
+                circum_record(a, pa, pb, pc);
+            } else {
+                a.conic = previous_conic;
                 a.set_undefined();
-                return;
-            };
-            match (
-                mapped_point(c, steps, pa),
-                mapped_point(c, steps, pb),
-                mapped_point(c, steps, pc),
-            ) {
-                (Some(pa), Some(pb), Some(pc)) => circum_record(a, pa, pb, pc),
-                _ => a.set_undefined(),
             }
         }
         PartSource::ConicPoints { conic, p, q } => {
-            let Some(d) = c.conic(conic) else {
+            let Some(d) = c.conic_fields(conic) else {
                 a.set_undefined();
                 return;
             };
             a.conic = d;
             a.conic.defined = conic_defined(c, conic, &d);
             mapped_conic(c, steps, &mut a.conic);
-            if !a.conic.defined {
-                a.set_undefined();
-                return;
+            for (parameter, point) in a.endpoint_parameters.iter_mut().zip([p, q]) {
+                if let Some(point) = c.point(point).and_then(|p| mapped_point(c, steps, p)) {
+                    *parameter = conic_parameter_from(&a.conic, point, false, *parameter);
+                }
             }
-            // the images of the points, projected onto the image conic
-            let nan = (f64::NAN, f64::NAN);
-            let pp = c.point(p).and_then(|p| mapped_point(c, steps, p));
-            let qq = c.point(q).and_then(|q| mapped_point(c, steps, q));
-            let s = conic_parameter(&a.conic, pp.unwrap_or(nan), false);
-            let t = conic_parameter(&a.conic, qq.unwrap_or(nan), false);
-            a.set_parameters(true, s, t, true);
+            let [s, t] = a.endpoint_parameters;
+            a.set_parameters(a.conic.defined, s, t, true);
         }
     }
 }

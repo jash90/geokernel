@@ -71,6 +71,20 @@ pub(crate) fn keeps_record(c: &Construction, def: Def) -> Option<bool> {
     }
 }
 
+/// The matrix setter runs for an undefined numeric radius with a defined
+/// centre. Only the radius-dependent matrix entry is NaN.
+pub(crate) fn undefined_radius_record(c: &Construction, def: Def) -> Option<(f64, f64, f64)> {
+    let Def::CircleRadius { center, radius } = def else {
+        return None;
+    };
+    let (cx, cy) = c.point(center)?;
+    (c.number(radius).is_none() && c.infinite_number(radius).is_none()).then_some((
+        cx,
+        cy,
+        f64::NAN,
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use crate::kernel::Value;

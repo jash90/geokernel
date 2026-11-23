@@ -1,0 +1,58 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "transform-keptcircle-001",
+      "group": "transform",
+      "script": [
+        "O = (0, 0)",
+        "B = (1, 0)",
+        "g = Line(O, B)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "v = (5, 0)",
+        "j = Translate(k, v)",
+        "d = Diameter(g, j)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -2.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 5.0, "y": 0.0 },
+          "j": { "type": "circle", "defined": true, "cx": 5.0, "cy": 0.0, "r": 2.0 },
+          "d": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -5.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "k": { "type": "circle", "defined": false },
+          "v": { "type": "vector", "defined": true, "x": 5.0, "y": 0.0 },
+          "j": { "type": "circle", "defined": false },
+          "d": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "v": { "type": "vector", "defined": true, "x": 5.0, "y": 0.0 },
+          "j": { "type": "circle", "defined": true, "cx": 5.0, "cy": 0.0, "r": 3.0 },
+          "d": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -5.0 }
+        }
+      ]
+    }
+  ]
+}

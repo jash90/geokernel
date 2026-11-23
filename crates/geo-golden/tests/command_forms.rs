@@ -429,7 +429,8 @@ fn print_giac_form_status() {
     }
 }
 
-/// Prints evidence candidates; see the module documentation.
+/// Prints evidence candidates; set GEOKERNEL_ALL_FORM_CANDIDATES to list
+/// every matching case instead of the first three.
 #[test]
 #[ignore]
 fn print_form_candidates() {
@@ -438,6 +439,11 @@ fn print_form_candidates() {
     let names = names(&m);
     let cases = harness_cases();
     let gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));
+    let limit = if std::env::var_os("GEOKERNEL_ALL_FORM_CANDIDATES").is_some() {
+        usize::MAX
+    } else {
+        3
+    };
     for (command, cf) in &f {
         for form in cf.forms.iter().filter(|f| !forms::is_wildcard(f)) {
             let ids: Vec<&String> = cases
@@ -445,7 +451,7 @@ fn print_form_candidates() {
                 .filter(|c| !gaps.contains_key(&c.id))
                 .filter(|c| case_uses_form(c, Lines::All, &names, command, form))
                 .map(|c| &c.id)
-                .take(3)
+                .take(limit)
                 .collect();
             if !ids.is_empty() {
                 println!("\n[[form]]\ncommand = \"{command}\"\nform = \"{form}\"");

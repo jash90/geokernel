@@ -325,4 +325,10 @@ case("shrink", [pt("A", 0, 0), pt("B", 2, 0), num("nv", 5), "p = Polygon(A, B, n
                 "w = InteriorAngles(p)", "V = Vertex(p)", "W = Vertex(p, 4)"],
      [setn("nv", v) for v in (3, 2, 1, 0, 4, 5, 6)] + [mv("B", 0, 2)])
 
+topic("keptsides")
+for count in (4, 5):
+    case("keptsides", [num("n", 1), pt("U", 0, 0), "A = If(n > 0, U)", pt("B", 2, 0),
+                       num("nv", count), "p = Polygon(A, B, nv)"],
+         [setn("n", 0)] + ([setn("nv", 3), setn("nv", 5)] if count == 5 else [setn("n", 1)]))
+
 cases.write()

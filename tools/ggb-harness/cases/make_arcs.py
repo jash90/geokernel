@@ -194,4 +194,18 @@ case("undefined", [pt("A", 0, 0), pt("B", 1, 2), pt("C", 2, 0), "a = Circumcircu
      + ["s = CircumcircularSector(A, B, C)", "sar = Area(s)", "slen = Length(s)"],
      [mv("B", 1, 0), mv("B", 3, 0), mv("B", 1, 1)])
 
+topic("keptpart")
+case("keptpart", [num("n", 1), pt("U", -2, 0), "A = If(n > 0, U)", pt("B", 0, 2), pt("C", 2, 0),
+                  "a = CircumcircleArc(A, B, C)", "v = (5, 0)", "j = Translate(a, v)",
+                  "P = Point(j)", "t = PathParameter(P)", "g = FirstAxis(a)"],
+     [setn("n", 0), mv("P", 5, 4), setn("n", 1)])
+case("keptpart", [num("n", 1), pt("O", 0, 0), "k = Circle(O, 2)", pt("P", 2, 0), pt("U", 0, 2),
+                  "Q = If(n > 0, U)", "a = Arc(k, P, Q)", "v = (5, 0)", "j = Translate(a, v)",
+                  "len = Length(j)"],
+     [setn("n", 0), setn("n", 1)])
+
+case("keptpart", [pt("A", -2, 0), pt("B", 3, 0), pt("C", 2, 0),
+                  "a = CircumcircleArc(A, B, C)", "g = FirstAxis(a)"],
+     [mv("B", 0, 2), mv("B", 3, 0)])
+
 cases.write()

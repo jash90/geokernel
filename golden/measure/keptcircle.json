@@ -1,0 +1,59 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "measure-keptcircle-001",
+      "group": "measure",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "rr = Radius(k)",
+        "cc = Circumference(k)",
+        "Q = Point(k)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -2.0 },
+        { "action": "move", "label": "Q", "x": 0.0, "y": 10.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "cc": { "type": "number", "defined": true, "value": 12.566370614359172 },
+          "Q": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "k": { "type": "circle", "defined": false },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "cc": { "type": "number", "defined": true, "value": 12.566370614359172 },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "k": { "type": "circle", "defined": false },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "cc": { "type": "number", "defined": true, "value": 12.566370614359172 },
+          "Q": { "type": "point", "defined": true, "x": 1.2246467991473532E-16, "y": 2.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "rr": { "type": "number", "defined": true, "value": 3.0 },
+          "cc": { "type": "number", "defined": true, "value": 18.84955592153876 },
+          "Q": { "type": "point", "defined": true, "x": 1.8369701987210297E-16, "y": 3.0 }
+        }
+      ]
+    }
+  ]
+}

@@ -198,7 +198,7 @@ impl Group for ConicPartDef {
             _ => {}
         }
         let conics = match self {
-            Self::Asymptote { .. } => CONIC_OBJECTS,
+            Self::Asymptote { .. } | Self::Axis { .. } => CONIC_OBJECTS,
             Self::Pole { .. } => CIRCLE_OR_CONIC,
             _ => CONIC,
         };
@@ -241,7 +241,8 @@ impl Group for ConicPartDef {
             return asymptote(&super::conic_object(c, conic)?, which);
         }
         let d = if reads_fields {
-            c.conic_fields(conic)?
+            c.conic_fields(conic)
+                .or_else(|| c.arc(conic).map(|a| a.conic))?
         } else {
             c.conic(conic)?
         };
@@ -351,7 +352,12 @@ impl Group for ConicPartDef {
             });
         }
         let [arg] = args else { return None };
-        let conic = c.id(arg).filter(|&k| c.kind(k) == Kind::Conic)?;
+        let kinds = if matches!(func, "MajorAxis" | "FirstAxis" | "MinorAxis" | "SecondAxis") {
+            CONIC_OBJECTS
+        } else {
+            CONIC
+        };
+        let conic = c.id(arg).filter(|&k| kinds.contains(&c.kind(k)))?;
         let def = match func {
             "Center" | "Midpoint" => ConicPartDef::Center(conic),
             "MajorAxis" | "FirstAxis" => ConicPartDef::Axis { conic, which: 0 },
@@ -394,7 +400,7 @@ impl Group for ConicPartDef {
             };
         }
         let [arg] = args else { return None };
-        let kinds = if func == "Asymptote" {
+        let kinds = if matches!(func, "Asymptote" | "Axes") {
             CONIC_OBJECTS
         } else {
             CONIC

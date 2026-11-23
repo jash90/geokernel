@@ -12,6 +12,7 @@ use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Property {
+    ResetCircleRecords,
     ImageAsset {
         name: Arc<str>,
         asset: Arc<RasterAsset>,
@@ -52,12 +53,16 @@ impl Property {
             | Self::SliderBounds { label, .. }
             | Self::ObjectScripts { label, .. }
             | Self::SliderAnimation { label, .. } => Some(label),
-            Self::ImageAsset { .. } => None,
+            Self::ImageAsset { .. } | Self::ResetCircleRecords => None,
         }
     }
 
     pub fn apply(&self, c: &mut Construction) -> Result<(), String> {
         match self {
+            Self::ResetCircleRecords => {
+                c.reset_circle_records();
+                Ok(())
+            }
             Self::ImageAsset { name, asset } => c.register_image_asset(name.clone(), asset.clone()),
             Self::DrawingStyle { label, style } => {
                 c.set_drawing_style(object(c, label)?, *style);
@@ -131,6 +136,7 @@ impl Property {
 impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ResetCircleRecords => f.write_str("$resetCircleRecords()"),
             Self::ImageAsset { name, asset } => {
                 write!(f, "$imageAsset({}, _", encode_text(name))?;
                 for byte in asset.bytes() {
@@ -211,6 +217,9 @@ pub fn load_image_asset(
 }
 
 pub fn parse(line: &str) -> Option<Result<Property, String>> {
+    if line == "$resetCircleRecords()" {
+        return Some(Ok(Property::ResetCircleRecords));
+    }
     if !line.starts_with("$sliderBounds(")
         && !line.starts_with("$sliderAnimation(")
         && !line.starts_with("$objectScripts(")

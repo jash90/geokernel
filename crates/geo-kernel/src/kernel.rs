@@ -897,7 +897,7 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 /// A state to return to with [`Construction::rollback`].
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct Checkpoint {
     len: usize,
     lists: usize,
@@ -907,6 +907,19 @@ pub struct Checkpoint {
     step: usize,
     /// How many rollbacks the construction had made when it was taken.
     generation: u64,
+    protocol_records: Option<Box<ProtocolRecords>>,
+}
+
+/// Appending a construction element can update every existing protocol reader.
+/// These records depend on the sequence of updates and cannot be recomputed
+/// from the old construction step alone.
+#[derive(Clone, Debug)]
+struct ProtocolRecords {
+    circles: Vec<(usize, (f64, f64, f64))>,
+    conics: Vec<(usize, ConicData)>,
+    arcs: Vec<(usize, ArcData)>,
+    paths: Vec<(usize, PathState)>,
+    values: Vec<(usize, Value)>,
 }
 
 /// [`Construction::rollback`] refused a checkpoint: the construction was
@@ -1059,7 +1072,7 @@ pub struct Construction {
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
     pub(crate) clips: algo::polygon_clip::ClipCache,
     pub(crate) analysis: AnalysisCache,
-    last_update_changed_automatic_root: bool,
+    last_update_requires_replay: bool,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
@@ -1738,6 +1751,27 @@ impl Construction {
             image_assets: self.images.asset_count(),
             step: self.step,
             generation: self.generation,
+            protocol_records: (!self.protocol.is_empty()).then(|| {
+                Box::new(ProtocolRecords {
+                    circles: self.circle_records.clone(),
+                    conics: self.conics.clone(),
+                    arcs: self.arcs.clone(),
+                    paths: self.paths.clone(),
+                    values: self
+                        .defs
+                        .iter()
+                        .enumerate()
+                        .filter(|&(_, def)| {
+                            matches!(
+                                def.kind(),
+                                Kind::Circle | Kind::Conic | Kind::Arc | Kind::Sector
+                            ) || matches!(def, Def::Path(d) if d.has_state())
+                                || matches!(def, Def::Polygon(PolygonDef::RegularVertex { .. }))
+                        })
+                        .map(|(i, _)| (i, self.values[i]))
+                        .collect(),
+                })
+            }),
         }
     }
 
@@ -1958,8 +1992,22 @@ impl Construction {
             .get_mut()
             .unwrap_or_else(|e| e.into_inner())
             .clear();
-        if step_changed || elements_changed {
-            self.update_protocol();
+        if (step_changed || elements_changed) && !self.protocol.is_empty() {
+            let mut dirty = std::mem::take(&mut self.dirty);
+            dirty.fit(self.len());
+            if let Some(records) = at.protocol_records {
+                self.circle_records = records.circles;
+                self.conics = records.conics;
+                self.arcs = records.arcs;
+                self.paths = records.paths;
+                for (i, value) in records.values {
+                    self.values[i] = value;
+                    for child in self.children[i].iter() {
+                        dirty.insert(self.evaluation_rank(child));
+                    }
+                }
+            }
+            self.update_protocol_dirty(dirty);
         }
     }
 
@@ -2171,7 +2219,7 @@ impl Construction {
             }
         }
         self.propagate_dirty(dirty, 0, true);
-        // A checkpoint only stores lengths, so it cannot restore a changed definition.
+        // A checkpoint cannot restore a changed definition.
         self.generation += 1;
         Ok(Some(id))
     }
@@ -2607,6 +2655,11 @@ impl Construction {
                 children.insert(id);
             }
         }
+        if !value.is_defined() {
+            if let Some(record) = algo::circle::undefined_radius_record(self, def) {
+                self.circle_records.push((id.0, record));
+            }
+        }
         self.defs.push(def);
         self.values.push(value);
         if def.kind() == Kind::Image {
@@ -2702,7 +2755,11 @@ impl Construction {
             return;
         }
         let mut dirty = std::mem::take(&mut self.dirty);
-        dirty.fit(self.defs.len());
+        dirty.fit(self.len());
+        self.update_protocol_dirty(dirty);
+    }
+
+    fn update_protocol_dirty(&mut self, mut dirty: DirtySet) {
         for &i in &self.protocol {
             dirty.insert(self.evaluation_rank(Id(i)));
         }
@@ -2822,7 +2879,7 @@ impl Construction {
     /// its `special` flag is set; with the flag false, moving that point
     /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
-        self.last_update_changed_automatic_root = false;
+        self.last_update_requires_replay = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -2925,14 +2982,17 @@ impl Construction {
     /// AlgoPolygonRegularND.java leaves the saved point alone if an endpoint
     /// is undefined, and replaces its coordinates when both are defined.
     pub(crate) fn restore_regular_vertex(&mut self, id: Id, x: f64, y: f64) -> Result<(), Error> {
-        if !(x.is_finite() && y.is_finite()) {
+        let saved = if x.is_nan() && y.is_nan() {
+            Value::Undefined
+        } else if x.is_finite() && y.is_finite() {
+            Value::Point { x, y }
+        } else {
             return Err(Error::NotFinite);
-        }
+        };
         let Def::Polygon(PolygonDef::RegularVertex { a, b, n, k }) = self.def(id) else {
             return Err(Error::NotFree(self.label(id).into()));
         };
-        let previous = Some(Value::Point { x, y });
-        if let Some(value) = algo::polygon::regular_vertex(self, a, b, n, k, previous) {
+        if let Some(value) = algo::polygon::regular_vertex(self, a, b, n, k, Some(saved)) {
             if !value.identical(&self.values[id.0]) {
                 self.values[id.0] = value;
                 self.propagate(id);
@@ -2958,7 +3018,7 @@ impl Construction {
         v: f64,
         clamp_slider: bool,
     ) -> Result<usize, Error> {
-        self.last_update_changed_automatic_root = false;
+        self.last_update_requires_replay = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -3010,10 +3070,10 @@ impl Construction {
         Ok(self.propagate(id))
     }
 
-    /// True when the last coordinate or value update moved an automatic
-    /// intersection's hidden Newton start point.
-    pub fn last_update_changed_automatic_root(&self) -> bool {
-        self.last_update_changed_automatic_root
+    /// True when the last coordinate or value update changed a geometric
+    /// record or a hidden intersection start that a later edit can retain.
+    pub fn last_update_requires_replay(&self) -> bool {
+        self.last_update_requires_replay
     }
 
     /// Recomputes the descendants of `start` in dependency order.
@@ -3041,7 +3101,7 @@ impl Construction {
         mut from: usize,
         refresh_definitions: bool,
     ) -> usize {
-        self.last_update_changed_automatic_root = false;
+        self.last_update_requires_replay = false;
         self.function_roots.clear();
         self.clips.clear();
         self.analysis.clear();
@@ -3194,11 +3254,11 @@ impl Construction {
                         continue;
                     }
                     let new = self.compute(def, i);
-                    let record_changed = self.keep_circle_record(i, def, new);
+                    let record_changed = self.keep_circle_record(i, def, new, refresh_definitions);
                     if let Def::IntersectBoundary(intersection) = def {
                         if let Some(saved) = intersection.with_root(new) {
                             self.defs[i] = Def::IntersectBoundary(saved);
-                            self.last_update_changed_automatic_root = true;
+                            self.last_update_requires_replay = true;
                         }
                     }
                     if new.identical(&self.values[i])
@@ -3223,6 +3283,12 @@ impl Construction {
                     }
                     // Shape records can change while their summary values stay equal.
                     self.values[i] = new;
+                    if !new.is_defined()
+                        && (record_changed
+                            || matches!(def, Def::Polygon(PolygonDef::RegularVertex { .. })))
+                    {
+                        self.last_update_requires_replay = true;
+                    }
                 }
             }
             if !refresh_definitions {
@@ -3387,6 +3453,7 @@ impl Construction {
         }
         self.conics[slot].1 = new;
         self.values[i] = algo::general_conic::value(d.kind(), &new);
+        self.last_update_requires_replay |= !new.defined;
         true
     }
 
@@ -3685,6 +3752,7 @@ impl Construction {
         }
         self.arcs[slot].1 = new;
         self.values[i] = algo::arc::value(d.kind() == Kind::Sector, &new);
+        self.last_update_requires_replay |= !new.defined || !new.is_curved();
         true
     }
 
@@ -3794,32 +3862,82 @@ impl Construction {
 
     /// Keeps the record of a circle command for [`Self::circle_record`],
     /// before `new` replaces the value of object `i`.
-    fn keep_circle_record(&mut self, i: usize, def: Def, new: Value) -> bool {
+    fn keep_circle_record(&mut self, i: usize, def: Def, new: Value, rebuilt: bool) -> bool {
         if new.is_defined() {
-            // While defined the circle carries its record in its value.
             return !self.values[i].is_defined()
                 && matches!(new, Value::Circle { .. })
                 && self.forget_circle_record(i);
         }
+        if let Some(record) = algo::circle::undefined_radius_record(self, def) {
+            return self.store_circle_record(i, record);
+        }
         match algo::circle::keeps_record(self, def) {
             None => false,
             Some(false) => self.forget_circle_record(i),
-            Some(true) => {
-                if let Value::Circle { cx, cy, r } = self.values[i] {
-                    let slot = self.circle_records.partition_point(|&(o, _)| o < i);
-                    self.circle_records.insert(slot, (i, (cx, cy, r)));
-                    true
-                } else {
-                    // An already undefined circle keeps its existing record.
-                    false
-                }
-            }
+            Some(true) if rebuilt => self.forget_circle_record(i),
+            Some(true) => match self.values[i] {
+                Value::Circle { cx, cy, r } => self.store_circle_record(i, (cx, cy, r)),
+                _ => false,
+            },
         }
     }
 
+    fn store_circle_record(&mut self, i: usize, record: (f64, f64, f64)) -> bool {
+        match self
+            .circle_records
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+        {
+            Ok(slot) => {
+                let (x, y, r) = self.circle_records[slot].1;
+                if (x.to_bits(), y.to_bits(), r.to_bits())
+                    == (record.0.to_bits(), record.1.to_bits(), record.2.to_bits())
+                {
+                    return false;
+                }
+                self.circle_records[slot].1 = record;
+            }
+            Err(slot) => self.circle_records.insert(slot, (i, record)),
+        }
+        true
+    }
+
+    /// Reloading an undo snapshot rebuilds circles from the current inputs.
+    /// A setter that returns early in that state has no earlier circle to keep.
+    pub fn reset_circle_records(&mut self) -> bool {
+        if self.circle_records.is_empty() {
+            return false;
+        }
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        let mut changed = false;
+        let mut records = std::mem::take(&mut self.circle_records);
+        records.retain_mut(|(i, record)| {
+            let fresh = algo::circle::undefined_radius_record(self, self.defs[*i]);
+            if let Some(fresh) = fresh {
+                if record.0.to_bits() == fresh.0.to_bits()
+                    && record.1.to_bits() == fresh.1.to_bits()
+                    && record.2.is_nan()
+                {
+                    return true;
+                }
+                *record = fresh;
+            }
+            changed = true;
+            for child in self.children[*i].iter() {
+                dirty.insert(self.evaluation_rank(child));
+            }
+            fresh.is_some()
+        });
+        self.circle_records = records;
+        self.propagate_dirty(dirty, 0, false);
+        changed
+    }
+
     fn forget_circle_record(&mut self, i: usize) -> bool {
-        let slot = self.circle_records.partition_point(|&(o, _)| o < i);
-        if self.circle_records.get(slot).is_some_and(|&(o, _)| o == i) {
+        if let Ok(slot) = self
+            .circle_records
+            .binary_search_by_key(&i, |&(owner, _)| owner)
+        {
             self.circle_records.remove(slot);
             true
         } else {
@@ -5288,7 +5406,7 @@ mod tests {
         // A checkpoint taken after the rollback is good, once.
         let fresh = c.checkpoint();
         exec(&mut c, "v = 7").unwrap();
-        c.rollback(fresh).unwrap();
+        c.rollback(fresh.clone()).unwrap();
         assert_eq!(c.id("v"), None);
         assert_eq!(c.rollback(fresh), Err(StaleCheckpoint));
         // Even a checkpoint that the last rollback did not cut is stale.
@@ -5325,6 +5443,47 @@ mod tests {
         assert_eq!(c.id("C"), None);
         c.rollback(outer).unwrap();
         assert_eq!((c.len(), c.id("B")), (1, None));
+    }
+
+    #[test]
+    fn rollback_restores_a_circle_before_the_protocol_advanced() {
+        let mut c = crate::script::load(
+            "O = (0, 0)
+s = ConstructionStep()
+r = If(s > 6, 3, -2)
+\
+             k = Circle(O, r)
+j = Circle(O, 3)
+t = AreEqual(k, j)
+",
+        )
+        .unwrap();
+        let t = c.id("t").unwrap();
+        assert_eq!(c.value(t), Value::Bool(false));
+        let checkpoint = c.checkpoint();
+        crate::script::exec(&mut c, "P = (1, 1)").unwrap();
+        assert_eq!(c.value(t), Value::Bool(true));
+        c.rollback(checkpoint).unwrap();
+        assert_eq!(c.value(t), Value::Bool(false));
+    }
+
+    #[test]
+    fn redefining_the_radius_rebuilds_the_circle_record() {
+        let mut c = crate::script::load(
+            "O = (0, 0)
+r = 2
+k = Circle(O, r)
+j = Circle(O, 2)
+\
+             m = 1
+t = AreEqual(k, j)
+",
+        )
+        .unwrap();
+        let t = c.id("t").unwrap();
+        assert_eq!(c.value(t), Value::Bool(true));
+        crate::script::exec(&mut c, "r = -m").unwrap();
+        assert_eq!(c.value(t), Value::Bool(false));
     }
 
     #[test]
