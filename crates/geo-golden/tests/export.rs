@@ -675,20 +675,46 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
             }
         }
     }
-    let proof = serde_json::to_string_pretty(&proof).unwrap() + "\n";
+    let serialized = serde_json::to_string_pretty(&proof).unwrap() + "\n";
     let path = proof_path();
     if std::env::var_os("GEOKERNEL_EXPORT_BLESS").is_some() {
-        fs::write(&path, &proof).unwrap();
+        fs::write(&path, &serialized).unwrap();
     }
-    assert!(
-        fs::read_to_string(&path).unwrap_or_default() == proof,
-        "tests/fixtures/export-proof.json is stale; rerun with GEOKERNEL_EXPORT_BLESS=1"
-    );
-    let pairs = serde_json::from_str::<BTreeMap<String, BTreeMap<String, Value>>>(&proof)
-        .unwrap()
-        .values()
-        .map(BTreeMap::len)
-        .sum::<usize>();
+    let recorded = fs::read_to_string(&path).unwrap();
+    if recorded != serialized {
+        let recorded: BTreeMap<&str, BTreeMap<&str, Value>> =
+            serde_json::from_str(&recorded).expect("invalid export-proof.json");
+        let mut differences = Vec::new();
+        for kind in recorded.keys().chain(proof.keys()).collect::<BTreeSet<_>>() {
+            let empty = BTreeMap::new();
+            let expected = recorded.get(kind).unwrap_or(&empty);
+            let actual = proof.get(kind).unwrap_or(&empty);
+            for property in expected
+                .keys()
+                .chain(actual.keys())
+                .collect::<BTreeSet<_>>()
+            {
+                let expected = expected.get(property);
+                let actual = actual.get(property);
+                if expected != actual {
+                    let expected = expected.map_or_else(|| "<missing>".into(), Value::to_string);
+                    let actual = actual.map_or_else(|| "<missing>".into(), Value::to_string);
+                    differences.push(format!(
+                        "{kind}.{property}: recorded {expected}, computed {actual}"
+                    ));
+                }
+            }
+        }
+        let details = if differences.is_empty() {
+            "The JSON entries agree, but the file serialization differs.".into()
+        } else {
+            differences.join("\n")
+        };
+        panic!(
+            "tests/fixtures/export-proof.json is stale; rerun with GEOKERNEL_EXPORT_BLESS=1\n{details}"
+        );
+    }
+    let pairs = proof.values().map(BTreeMap::len).sum::<usize>();
     println!(
         "{} exported files, {count} objects, {} kinds, {pairs} proven kind and property pairs, \
          {} files the reference gives up",
