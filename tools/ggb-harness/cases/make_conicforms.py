@@ -53,6 +53,10 @@ reference.case("namedinterval", [
     "a = -4", "b = 2", "f(x) = a < x < b", "m = Center(f)",
 ], [setn("b", -6), setn("b", 4)])
 
+reference.case("namedmidpoint", [
+    "a = -4", "b = 2", "f(x) = a < x < b", "m = Midpoint(f)",
+], [setn("b", -6), setn("b", 4)])
+
 c.case("pole", [
     "A = (1, 0)", "B = (1, 2)", "g = Line(A, B)", "a = 5",
     "F = (-3, 0)", "G = (3, 0)", "k = Ellipse(F, G, a)",

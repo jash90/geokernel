@@ -1,0 +1,80 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "funcrest-freehandintersections-001",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 4, 1, 5, 2})",
+        "l: y = 3",
+        "T = Intersect(f, l)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, 1.0],
+              [-1.0, 2.333333333333333],
+              [-0.5, 3.0],
+              [0.0, 3.6666666666666665],
+              [0.5, 4.333333333333334],
+              [1.0, 5.0],
+              [2.0, 4.0],
+              [4.0, 2.0],
+              [8.0, null]
+            ]
+          },
+          "l": { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -3.0 },
+          "T": { "type": "point", "defined": true, "x": -0.5, "y": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "funcrest-freehandintersections-002",
+      "group": "funcrest",
+      "script": [
+        "f = Function({-2, 2, -2, 2})",
+        "O = (0, 0)",
+        "k = Circle(O, sqrt(2))",
+        "Q = Intersect(f, k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, null],
+              [-4.0, null],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, 0.0],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, null],
+              [8.0, null]
+            ]
+          },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 1.4142135623730951 },
+          "Q_{1}": { "type": "point", "defined": true, "x": -1.0, "y": -1.0 },
+          "Q_{2}": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 }
+        }
+      ]
+    }
+  ]
+}

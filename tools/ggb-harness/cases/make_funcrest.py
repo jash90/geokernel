@@ -76,8 +76,13 @@ case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\ni = NIntegral(f, 0, 1)"
 case("freehandreaders",
      "f = Function({-2, 4, 1, 5, 2})\ng(x) = 1\ni = IntegralBetween(f, g, 0, 1)")
 case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\nA = (1, f(1))\nB = (0.5, f(0.5))")
-# the numeric intersection with a freehand function (a known gap)
+# The numeric intersection with a freehand function.
 case("freehandreaders", "f = Function({-2, 4, 1, 5, 2})\ng(x) = x\nS = Intersect(f, g, 0, 3)")
+
+case("freehandintersections",
+     "f = Function({-2, 4, 1, 5, 2})\nl: y = 3\nT = Intersect(f, l)")
+case("freehandintersections",
+     "f = Function({-2, 2, -2, 2})\nO = (0, 0)\nk = Circle(O, sqrt(2))\nQ = Intersect(f, k)")
 
 # --------------------------------------------------------------- Normalize
 cases.topic("normalize")

@@ -107,6 +107,13 @@ case("images", ["A = (1, 1)", "n = 2", "l = {Sequence(n), {3, 4}}",
                 "P = ApplyMatrix(l, A)"], [setn("n", 3), setn("n", 1), setn("n", 2)])
 case("images", ["P = ApplyMatrix({{1, 2}, {3, 4}}, (1, 1))"], [])
 
+case("inlineimages", [
+    "n = 1", "m = {{1, 2}, {3, 4}}",
+    "P = ApplyMatrix({{1, 2}, {3, n}}, (n, 1))",
+    "v = ApplyMatrix(m, Vector((n, 1)))",
+    "l = ApplyMatrix({{1, 2}, {3, n}}, {(1, 1), (n, 1)})",
+], [setn("n", 2), setn("n", -1)])
+
 case("projective", ["A = (2, 4)", "n = 2", "l = {{n, 0, 0}, {0, n, 0}, {0, 0, n}}",
                     "P = ApplyMatrix(l, A)", "u = OrthogonalVector(P)", "v = Direction(P)",
                     "b = (1, -2)", "T = Translate(P, b)", "w = Direction(T)",
@@ -131,6 +138,11 @@ case("listcross", ["a = Cross({1, 2, 3}, {4, 5, 6})",
 case("listcross", ["n = 2", "l = Sequence(n)", "m = {3, 4}", "a = Cross(l, m)"],
      [setn("n", 3), setn("n", 2), setn("n", 1), setn("n", 2)])
 case("nestedcross", ["a = Cross({{1, 2}, {3, 4}}, {{5, 6}, {7, 8}})"], [])
+case("crossrows", [
+    "a = Cross({{1, 2}, 3}, {4, {5, 6}})",
+    "b = Cross({{1, 2}, {3, 4, 5}}, {{6, 7, 8}, {9, 10}})",
+], [])
+
 case("listdot", ["a = Dot({{1, 2}, {3, 4}}, {{5, 6}, {7, 8}})",
                  "b = Dot({true, false}, {2, 3})", "c = Dot(3, {1, 2})"], [])
 case("listdot", ["l = {1, 2}"], [{"action": "reject", "line": "a = Dot({1, 2}, 3)"},
