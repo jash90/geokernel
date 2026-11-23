@@ -972,7 +972,35 @@ impl<const M: bool> Ctx<'_, M> {
     /// A comparison or a logical operation, by the function `logic`.
     #[inline(never)]
     fn logic(&self, op: Bin, a: u32, b: u32) -> Val {
-        logic(op, self.full(a).val, self.full(b).val)
+        let (l, r) = (self.full(a).val, self.full(b).val);
+        // `ExpressionNode.isEqual`: two objects that are not numbers,
+        // points, vectors or Booleans compare by `isEqualExtended`.
+        if let (Bin::Equal | Bin::NotEqual, Node::Obj(x), Node::Obj(y)) =
+            (op, self.node(a), self.node(b))
+        {
+            let plain = |id: Id| {
+                matches!(
+                    self.c.kind(id),
+                    Kind::Number
+                        | Kind::Angle
+                        | Kind::Segment
+                        | Kind::Polygon
+                        | Kind::PolyLine
+                        | Kind::Arc
+                        | Kind::Sector
+                        | Kind::Point
+                        | Kind::Vector
+                        | Kind::Boolean
+                        | Kind::List
+                        | Kind::Text
+                )
+            };
+            if !plain(x) || !plain(y) {
+                let equal = crate::algo::predicate::objects_equal(self.c, x, y);
+                return Val::B(equal == (op == Bin::Equal), true);
+            }
+        }
+        logic(op, l, r)
     }
 
     /// Whether the subtree at `i` is a constant: no object, no `x`, no
@@ -1946,6 +1974,11 @@ fn object(c: &Construction, id: Id) -> Val {
         // `GeoBoolean.getMyBoolean`: the value, defined
         (Kind::Boolean, _, Value::Bool(b)) => Val::B(b, true),
         (Kind::Boolean, _, _) => Val::B(false, true),
+        // `GeoSegment.getDouble`: the length, snapped to 0 near 0
+        (Kind::Segment, _, Value::Segment { x1, y1, x2, y2 }) => {
+            let length = (x2 - x1).hypot(y2 - y1);
+            Val::N(if math::is_zero(length) { 0.0 } else { length })
+        }
         _ => Val::N(nan),
     }
 }

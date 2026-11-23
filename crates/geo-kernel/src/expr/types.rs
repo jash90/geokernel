@@ -217,8 +217,13 @@ fn type_node(
         }
         Node::Un(op, a) => {
             let a = a as usize;
+            // A segment is a number, its length (see `Node::Bin` below).
+            let ta = match (nodes[a], state.tys[a]) {
+                (Node::Obj(id), Ty::Object) if c.kind(id) == Kind::Segment => Ty::Num(0),
+                (_, t) => t,
+            };
             (
-                unary_type(op, state.tys[a])?,
+                unary_type(op, ta)?,
                 1 + state.depth[a],
                 state.cost[a].saturating_add(1),
                 state.vars[a],
@@ -230,8 +235,38 @@ fn type_node(
                 // GeoGebra rejects `Mod(x, 3)` in a function
                 return Err("a command cannot take `x`".into());
             }
+            // A segment is a number, its length (`GeoSegment` is a
+            // `NumberValue`); `==` and `!=` also compare geometric objects
+            // (`ExpressionNode.isEqual`).
+            let operand = |i: usize| match (nodes[i], state.tys[i]) {
+                (Node::Obj(id), Ty::Object) if c.kind(id) == Kind::Segment => Ty::Num(0),
+                (_, t) => t,
+            };
+            let (ta, tb) = (operand(a), operand(b));
+            let simple = |t: Ty| matches!(t, Ty::Num(_) | Ty::Vec | Ty::Bool | Ty::Object);
+            // Polygons, polylines, arcs and sectors are number values in the
+            // reference (area or length), which `==` compares before their
+            // geometry; the kernel has no such number in an expression, so
+            // those comparisons stay refused.
+            let numbered = |i: usize| {
+                matches!(nodes[i], Node::Obj(id) if matches!(
+                    c.kind(id),
+                    Kind::Polygon | Kind::PolyLine | Kind::Arc | Kind::Sector
+                ))
+            };
+            let ty = if matches!(op, Bin::Equal | Bin::NotEqual)
+                && (ta == Ty::Object || tb == Ty::Object)
+                && simple(ta)
+                && simple(tb)
+                && !numbered(a)
+                && !numbered(b)
+            {
+                Ty::Bool
+            } else {
+                binary_type(op, ta, tb)?
+            };
             (
-                binary_type(op, state.tys[a], state.tys[b])?,
+                ty,
                 1 + state.depth[a].max(state.depth[b]),
                 1u64.saturating_add(state.cost[a])
                     .saturating_add(state.cost[b]),
@@ -1022,5 +1057,28 @@ fn numeric(t: Ty) -> Ty {
     match t {
         Ty::Bool => Ty::Num(0),
         t => t,
+    }
+}
+
+#[cfg(test)]
+mod number_valued_object_tests {
+    #[test]
+    fn comparisons_of_number_valued_objects_stay_refused() {
+        let base = "A = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (4, 3)\n\
+            p = Polygon(A, B, C)\nq = Polygon(A, B, D)\nr = PolyLine(A, B, C)\n";
+        crate::script::load(base).unwrap();
+        for line in [
+            "e = p == q",
+            "e = p != q",
+            "e = p == 6",
+            "e = r == 6",
+            "e = p == r",
+        ] {
+            assert!(
+                crate::script::load(&format!("{base}{line}")).is_err(),
+                "`{line}` should be refused"
+            );
+        }
+        assert!(crate::script::load(&format!("{base}f = Line(A, B)\ne = f != 6")).is_ok());
     }
 }

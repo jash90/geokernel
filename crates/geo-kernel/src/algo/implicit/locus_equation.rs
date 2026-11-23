@@ -660,7 +660,14 @@ impl<'a> Geometry<'a> {
     }
 
     fn condition(&mut self, boolean: Id) -> Option<Polynomial> {
-        let [[a, b], [d, e]] = crate::expr::distance_equality(self.c, boolean)?;
+        // Two segments compared with `==` are congruent: their squared
+        // lengths agree (`AlgoAreCongruent`).
+        use crate::expr::{Bin, Operand};
+        let (Bin::Equal, [Operand::Segment([a, b]), Operand::Segment([d, e])]) =
+            crate::expr::comparison(self.c, boolean)?
+        else {
+            return None;
+        };
         let (a, b) = (self.point(a, 0)?, self.point(b, 0)?);
         let (d, e) = (self.point(d, 0)?, self.point(e, 0)?);
         let lhs = self.squared_distance(a, &b)?;

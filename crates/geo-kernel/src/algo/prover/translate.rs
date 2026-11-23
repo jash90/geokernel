@@ -29,12 +29,15 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::poly::{Poly, MAX_VARS};
+use super::groebner;
+use super::poly::{Order, Poly, MAX_VARS};
 use super::{Budget, Outcome};
 use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::path::PathDef;
 use crate::algo::predicate::PredicateDef;
+use crate::algo::vector::VectorDef;
+use crate::expr::{Bin, Node, Operand};
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 
 /// The largest number of objects a proof translates.
@@ -59,25 +62,47 @@ pub(crate) struct System {
     budget_vars: usize,
     /// The statement has no translation in the reference either.
     unknown: bool,
+    /// The statement is an arithmetic formula the reference has its CAS
+    /// rewrite, which also words its conditions.
+    pub(super) arithmetic: bool,
 }
 
 type Built = Result<System, Outcome>;
 
 impl System {
     pub(super) fn build(c: &Construction, statement: Id, budget: &Budget) -> Built {
+        let mut system = Self::hypotheses(c, statement, budget)?;
+        let done = match c.def(statement) {
+            Def::Predicate(predicate) => system.statement(c, predicate, budget),
+            _ => system.expression(c, statement, budget),
+        };
+        if done.is_none() {
+            return Err(if system.unknown {
+                Outcome::Unknown
+            } else {
+                Outcome::Undecided
+            });
+        }
+        Ok(system)
+    }
+
+    /// The translation of the construction the statement depends on
+    /// (`AlgebraicStatement.setHypotheses`).
+    pub(super) fn hypotheses(c: &Construction, statement: Id, budget: &Budget) -> Built {
         if c.kind(statement) != Kind::Boolean {
             return Err(Outcome::Undecided);
         }
-        let predicate = match c.def(statement) {
-            Def::Predicate(p) => p,
+        match c.def(statement) {
+            Def::Predicate(_) => {}
             // A Boolean without a parent algorithm is trusted
             // (`Prover.decideStatement`, step 2).
             Def::Boolean(_) => return Err(constant(c.value(statement))),
             Def::Expr(_) if c.reads(statement).is_empty() => {
                 return Err(constant(c.value(statement)))
             }
+            Def::Expr(_) => {}
             _ => return Err(Outcome::Undecided),
-        };
+        }
         let mut system = System {
             hypotheses: Vec::new(),
             thesis: Vec::new(),
@@ -91,6 +116,7 @@ impl System {
             fixed_coordinates: 4,
             budget_vars: MAX_VARS,
             unknown: false,
+            arithmetic: false,
         };
         let predecessors = predecessors(c, statement).ok_or(Outcome::Undecided)?;
         // A line of fixed slope (an axis) makes the reference give up.
@@ -102,13 +128,6 @@ impl System {
         }
         for &id in &predecessors {
             system.object(c, id, budget).ok_or(Outcome::Undecided)?;
-        }
-        if system.statement(c, predicate, budget).is_none() {
-            return Err(if system.unknown {
-                Outcome::Unknown
-            } else {
-                Outcome::Undecided
-            });
         }
         Ok(system)
     }
@@ -148,6 +167,14 @@ impl System {
             // Numbers without a parent algorithm or with an arithmetic
             // definition are not part of the algebraic translation.
             Def::Number(_) => return Some(()),
+            // A distance of two points has no equations, but its variables
+            // are the coordinates of both points, and as for a point on a
+            // path the first one is declared free.
+            Def::Distance(p, q) if c.kind(p) == Kind::Point && c.kind(q) == Kind::Point => {
+                let [x, _] = self.point(p)?;
+                self.point(q)?;
+                self.free_vars[x] = true;
+            }
             Def::Expr(_) if matches!(c.kind(id), Kind::Number) => return Some(()),
             Def::FreePoint { .. } => {
                 let x = self.new_var(true)?;
@@ -155,7 +182,9 @@ impl System {
                 self.point_vars.insert(id, [x, y]);
                 self.free_points.push(id);
             }
-            Def::Line(p, q) | Def::Segment(p, q) => {
+            Def::Line(p, q) | Def::Segment(p, q) | Def::Vector(VectorDef::RayPoints(p, q))
+                if c.kind(p) == Kind::Point && c.kind(q) == Kind::Point =>
+            {
                 let [a, b] = self.point(p)?;
                 let [d, e] = self.point(q)?;
                 self.line_vars.insert(id, [a, b, d, e]);
@@ -386,6 +415,180 @@ impl System {
             self.thesis.push(thesis.clone());
         }
         Some(())
+    }
+
+    /// A statement written as a Boolean expression
+    /// (`DependentBooleanAdapter.getBotanaPolynomials`). Two objects
+    /// compared with `==` are congruent (`AlgoAreCongruent`); a formula over
+    /// segments is rewritten by eliminating the segment variables
+    /// ([`Self::formula`]). The other operations have no translation.
+    fn expression(&mut self, c: &Construction, statement: Id, budget: &Budget) -> Option<()> {
+        let (op, [left, right]) = crate::expr::comparison(c, statement)?;
+        if op != Bin::Equal {
+            self.unknown = true;
+            return None;
+        }
+        let expr = crate::expr::boolean_entry(c, statement)?;
+        let objects = match expr.nodes[expr.root as usize] {
+            Node::Bin(_, l, r) => match (expr.nodes[l as usize], expr.nodes[r as usize]) {
+                (Node::Obj(a), Node::Obj(b)) => Some((a, b)),
+                _ => None,
+            },
+            _ => None,
+        };
+        let alternatives = match (left, right) {
+            // Two objects that are not numbers (`AlgoAreCongruent`).
+            // Two segments compare by length below, from their endpoints: a
+            // replaced operand need not be among the predecessors.
+            (Operand::Segment(_), Operand::Segment(_)) => {
+                let (k, l) = (self.segment_vars(c, left)?, self.segment_vars(c, right)?);
+                let length = |v: [usize; 4]| square_distance([v[0], v[1]], [v[2], v[3]], budget);
+                vec![vec![length(k)?.sub(&length(l)?, budget)?]]
+            }
+            _ if objects
+                .is_some_and(|(a, b)| c.kind(a) != Kind::Number && c.kind(b) != Kind::Number) =>
+            {
+                let (a, b) = objects?;
+                self.congruent(c, a, b, budget)?
+            }
+            (
+                Operand::Segment(_) | Operand::Object(_),
+                Operand::Segment(_) | Operand::Object(_),
+            ) if self.segment_vars(c, left).is_some() && self.segment_vars(c, right).is_some() => {
+                let (k, l) = (self.segment_vars(c, left)?, self.segment_vars(c, right)?);
+                let length = |v: [usize; 4]| square_distance([v[0], v[1]], [v[2], v[3]], budget);
+                vec![vec![length(k)?.sub(&length(l)?, budget)?]]
+            }
+            _ => vec![self.formula(c, statement, budget)?],
+        };
+        self.push_alternatives(alternatives);
+        Some(())
+    }
+
+    /// The endpoint variables of a segment operand.
+    fn segment_vars(&self, c: &Construction, operand: Operand) -> Option<[usize; 4]> {
+        match operand {
+            Operand::Segment([a, b]) => {
+                let ([a1, a2], [b1, b2]) = (self.point(a)?, self.point(b)?);
+                Some([a1, a2, b1, b2])
+            }
+            Operand::Object(id) if c.kind(id) == Kind::Segment => self.line(id),
+            _ => None,
+        }
+    }
+
+    /// `AlgoAreCongruent` of two objects that are not numbers.
+    fn congruent(
+        &mut self,
+        c: &Construction,
+        a: Id,
+        b: Id,
+        budget: &Budget,
+    ) -> Option<Vec<Vec<Poly>>> {
+        let line = |k: Kind| matches!(k, Kind::Line | Kind::Segment | Kind::Ray);
+        match (c.kind(a), c.kind(b)) {
+            (Kind::Point, Kind::Point) => self.equal(c, a, b, budget),
+            (Kind::Segment, Kind::Segment) => {
+                let (k, l) = (self.line(a)?, self.line(b)?);
+                let length = |v: [usize; 4]| square_distance([v[0], v[1]], [v[2], v[3]], budget);
+                Some(vec![vec![length(k)?.sub(&length(l)?, budget)?]])
+            }
+            (k, l) if line(k) && line(l) => {
+                let (g, h) = (self.line(a)?, self.line(b)?);
+                Some(vec![
+                    vec![collinear([g[0], g[1]], [g[2], g[3]], [h[0], h[1]], budget)?],
+                    vec![collinear([g[0], g[1]], [g[2], g[3]], [h[2], h[3]], budget)?],
+                ])
+            }
+            (Kind::Circle, Kind::Circle) => {
+                if !proper_circle(c, a) || !proper_circle(c, b) {
+                    return None;
+                }
+                let (k, l) = (self.circle(a)?, self.circle(b)?);
+                let radius = |v: [usize; 4]| square_distance([v[0], v[1]], [v[2], v[3]], budget);
+                Some(vec![vec![radius(k)?.sub(&radius(l)?, budget)?]])
+            }
+            _ => None,
+        }
+    }
+
+    /// A formula over segments and integers (`getStrForGiac`): with a
+    /// variable `s` for each segment and `v` for its length, the CAS
+    /// eliminates the `s` from the formula and `s^2 = v^2`; the result in
+    /// the `v` is the thesis, and `v^2 = |PQ|^2` for each segment `PQ` are
+    /// hypotheses. Only the first point is fixed. The kernel computes the
+    /// elimination with its own basis; a result with more than one element
+    /// (the reference takes the first of the CAS's list) is undecided.
+    fn formula(&mut self, c: &Construction, statement: Id, budget: &Budget) -> Option<Vec<Poly>> {
+        let expr = crate::expr::boolean_entry(c, statement)?;
+        let Node::Bin(Bin::Equal, lhs, rhs) = expr.nodes[expr.root as usize] else {
+            return None;
+        };
+        // A distance operand of the root becomes a new segment, which the
+        // formula translation labels and then cannot read back: the
+        // reference answers unknown (`prove-expression-017`), whether or not
+        // an earlier proof already replaced it.
+        let replaced_distance = |side: u32| {
+            let segment_object = matches!(expr.nodes[side as usize],
+                Node::Obj(id) if matches!(c.def(id), Def::Segment(..)));
+            !segment_object && matches!(crate::expr::operand(c, expr, side), Operand::Segment(_))
+        };
+        if replaced_distance(lhs) || replaced_distance(rhs) {
+            self.unknown = true;
+            return None;
+        }
+        let mut segments = Vec::new();
+        let left = formula_poly(c, expr, lhs, &mut segments, 0, budget)?;
+        let right = formula_poly(c, expr, rhs, &mut segments, 0, budget)?;
+        let difference = left.sub(&right, budget)?;
+        let n = segments.len();
+        if n == 0 || 2 * n > MAX_VARS {
+            return None;
+        }
+        let mut ideal = vec![difference];
+        for i in 0..n {
+            let s = Poly::var(i).mul(&Poly::var(i), budget)?;
+            let v = Poly::var(n + i).mul(&Poly::var(n + i), budget)?;
+            ideal.push(s.sub(&v, budget)?);
+        }
+        let order = Order {
+            split: n,
+            vars: 2 * n,
+        };
+        let eliminated: Vec<Poly> = groebner::basis(&ideal, &order, budget)?
+            .into_iter()
+            .filter(|p| !p.terms[0].0.uses_any(0..n))
+            .collect();
+        let [generator] = eliminated.as_slice() else {
+            return None;
+        };
+        let mut map = vec![0; MAX_VARS];
+        let mut extra = Vec::new();
+        for (i, &FormulaSegment { ends: [a, b], .. }) in segments.iter().enumerate() {
+            let v = self.new_var(false)?;
+            map[n + i] = v;
+            let length = square_distance(self.point(a)?, self.point(b)?, budget)?;
+            extra.push(
+                Poly::var(v)
+                    .mul(&Poly::var(v), budget)?
+                    .sub(&length, budget)?,
+            );
+        }
+        self.fixed_coordinates = self.fixed_coordinates.min(2);
+        self.arithmetic = true;
+        extra.push(generator.rename(&map));
+        Some(extra)
+    }
+
+    fn push_alternatives(&mut self, alternatives: Vec<Vec<Poly>>) {
+        for alternative in alternatives {
+            if let Some((thesis, rest)) = alternative.split_last() {
+                for p in rest {
+                    self.add(p.clone());
+                }
+                self.thesis.push(thesis.clone());
+            }
+        }
     }
 
     fn equal(&mut self, c: &Construction, a: Id, b: Id, budget: &Budget) -> Option<Vec<Vec<Poly>>> {
@@ -678,4 +881,87 @@ fn det_n(m: &[Vec<Poly>], budget: &Budget) -> Option<Poly> {
         };
     }
     Some(total)
+}
+
+/// A segment of a formula: the object, if it is one, and its endpoints.
+struct FormulaSegment {
+    object: Option<Id>,
+    ends: [Id; 2],
+}
+
+/// The polynomial of a formula over segments, integers, `+`, `-`, `*` and
+/// integer powers, with segment `i` as variable `i`. Two operands are the
+/// same variable only if they are the same segment object, as the reference
+/// collects segment objects; a replaced distance is a new segment each time.
+fn formula_poly(
+    c: &Construction,
+    expr: &crate::expr::Entry,
+    index: u32,
+    segments: &mut Vec<FormulaSegment>,
+    depth: usize,
+    budget: &Budget,
+) -> Option<Poly> {
+    const MAX_DEPTH: usize = 32;
+    const MAX_POWER: f64 = 8.0;
+    if depth > MAX_DEPTH {
+        return None;
+    }
+    budget.charge(1)?;
+    match expr.nodes[index as usize] {
+        Node::Num(v) if v.fract() == 0.0 && v.abs() < 1e15 => Some(Poly::constant(v as i64)),
+        Node::MinusOne => Some(Poly::constant(-1)),
+        Node::Bin(op @ (Bin::Add | Bin::Sub | Bin::Mul), a, b) => {
+            let a = formula_poly(c, expr, a, segments, depth + 1, budget)?;
+            let b = formula_poly(c, expr, b, segments, depth + 1, budget)?;
+            match op {
+                Bin::Add => a.add(&b, budget),
+                Bin::Sub => a.sub(&b, budget),
+                _ => a.mul(&b, budget),
+            }
+        }
+        Node::Bin(Bin::Pow, a, b) => {
+            let Node::Num(e) = expr.nodes[b as usize] else {
+                return None;
+            };
+            if e.fract() != 0.0 || !(1.0..=MAX_POWER).contains(&e) {
+                return None;
+            }
+            let base = formula_poly(c, expr, a, segments, depth + 1, budget)?;
+            let mut power = base.clone();
+            for _ in 1..e as u32 {
+                power = power.mul(&base, budget)?;
+            }
+            Some(power)
+        }
+        _ => {
+            let Operand::Segment(ends) = crate::expr::operand(c, expr, index) else {
+                return None;
+            };
+            let object = match expr.nodes[index as usize] {
+                Node::Obj(id) if matches!(c.def(id), Def::Segment(..)) => Some(id),
+                // A distance object inside a formula makes the reference
+                // fail: its formula substitution expects an arithmetic
+                // number. A root operand is handled by `formula`.
+                _ => return None,
+            };
+            match object.and_then(|id| segments.iter().position(|s| s.object == Some(id))) {
+                Some(i) => Some(Poly::var(i)),
+                None => new_segment(segments, object, ends),
+            }
+        }
+    }
+}
+
+/// The variable of a new segment of a formula; none past the variable
+/// limit (each segment needs a second variable for its length).
+fn new_segment(
+    segments: &mut Vec<FormulaSegment>,
+    object: Option<Id>,
+    ends: [Id; 2],
+) -> Option<Poly> {
+    if 2 * (segments.len() + 1) > MAX_VARS {
+        return None;
+    }
+    segments.push(FormulaSegment { object, ends });
+    Some(Poly::var(segments.len() - 1))
 }

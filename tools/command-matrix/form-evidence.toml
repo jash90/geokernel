@@ -534,11 +534,6 @@ form = "segment"
 cases = ["lines-bisector-007", "lines-bisector-008", "lines-bisector-009"]
 
 [[form]]
-command = "LineBisector"
-form = "point,point"
-cases = ["intersect-groups-001", "intersect-startpoint-005", "lines-bisector-001"]
-
-[[form]]
 command = "Max"
 form = "list"
 cases = ["lists-objects-034", "lists-stats-006", "lists-stats-008"]
@@ -3268,6 +3263,17 @@ cases = [
   "locusequation-circle-002", "locusequation-midpointlocus-001",
   "locusequation-midpointlocus-002", "locusequation-midpointlocus-003",
   "locusequation-midpointlocus-004",
+]
+
+[[form]]
+command = "LocusEquation"
+form = "boolean,point"
+cases = [
+  "locusequation-boolean-001", "locusequation-boolean-002", "locusequation-boolean-003",
+  "locusequation-boolean-004", "locusequation-boolean-005", "locusequation-boolean-006",
+  "locusequation-boolean-007", "locusequation-boolean-008", "locusequation-boolean-009",
+  "locusequation-boolean-010", "locusequation-boolean-011", "locusequation-boolean-012",
+  "locusequation-boolean-013", "locusequation-rejections-001",
 ]
 
 [[form]]

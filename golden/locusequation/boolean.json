@@ -472,7 +472,7 @@
             "type": "implicit",
             "defined": true,
             "coefficients": [
-              [8.100222499527944E17, 0.0, -9.00024722E16, 0.0, 1.0E16],
+              [8.1002224995279437E17, 0.0, -9.00024722E16, 0.0, 1.0E16],
               [-5.400074166E17, 0.0, -6.0E16, 0.0, 0.0],
               [2.700024722E17, 0.0, 2.0E16, 0.0, 0.0],
               [-6.0E16, 0.0, 0.0, 0.0, 0.0],
@@ -627,6 +627,340 @@
             "equation": "x² + y² = 9",
             "input_form": false
           }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-boolean-009",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "A = (3, 0)",
+        "P = (2, 1)",
+        "s = Segment(P, O)",
+        "d = Distance(P, O)",
+        "r = Distance(A, O)",
+        "b = d == r",
+        "c = LocusEquation(b, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 1.0, "x2": 0.0, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 2.23606797749979 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-9.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 9",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 3.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-9.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 9",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 3.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-4.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 4",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 0.0, "y2": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-4.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 4",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-boolean-010",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "A = (3, 0)",
+        "P = (2, 1)",
+        "b = Distance(P, O) == Distance(A, O)",
+        "c = LocusEquation(b, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-9.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 9",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-9.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 9",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-4.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 4",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-boolean-011",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "P = (2, 1)",
+        "d = Distance(P, O)",
+        "b = d == 3",
+        "c = LocusEquation(b, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "P", "x": 1.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.23606797749979 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": { "type": "implicit", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-boolean-012",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "A = (3, 0)",
+        "P = (2, 1)",
+        "s = Segment(P, O)",
+        "t = Segment(A, O)",
+        "b = s == t",
+        "c = LocusEquation(b, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 1.0, "x2": 0.0, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 3.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-9.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 9",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 3.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 3.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-9.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 9",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 3.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-4.0, 0.0, 1.0],
+              [0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + y² = 4",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-boolean-013",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "A = (3, 0)",
+        "P = (2, 1)",
+        "d = Distance(P, O)",
+        "r = Distance(P, A)",
+        "b = d < r",
+        "c = LocusEquation(b, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "P", "x": 3.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.23606797749979 },
+          "r": { "type": "number", "defined": true, "value": 1.4142135623730951 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": { "type": "implicit", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "c": { "type": "implicit", "defined": false }
         }
       ]
     }
