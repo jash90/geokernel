@@ -370,4 +370,18 @@ case("internalnames", ["g = FirstAxis(Circle((1, 2), 3))"], [])
 case("internalnames", ["k = Circle((1, 2), 3)", "FirstAxis = (3, 4)"],
      [{"action": "reject", "line": "g = FirstAxis(k)"}])
 
+case("axisreview", [
+    "O = (1, 2)", "A = (2, 2)", "B = (1, 3)", "r = CircleArc(O, A, B)",
+    "g = FirstAxis(r)", "P = Point(g, 0.5)",
+], [mv("O", 2, 3)])
+case("axisreview", [
+    "A = (0, 0)", "B = (0.00000001, 0)", "C = (0, 1)",
+    "r = CircumcircleArc(A, B, C)", "g = FirstAxis(r)",
+], [])
+case("axisreview", [
+    "O = (1, 2)", "A = (2, 2)", "B = (1, 3)", "r0 = CircleArc(O, A, B)",
+    *[f"r{i} = If(true, r{i-1}, r{i-1})" for i in range(1, 65)],
+    "g = FirstAxis(r64)", "P = Point(g, 0.5)",
+], [mv("O", 2, 3)])
+
 cases.write()

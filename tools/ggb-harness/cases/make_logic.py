@@ -227,4 +227,15 @@ case("defined", [
 ], [mv("B", 0, 0), mv("B", 0, 1)])
 case("defined", ["s = Slider(?, 2)", "b = Defined(s)"], [])
 
+case("definedreview", ["f(x) = x + x", "b = Defined(f)"], [])
+case("definedreview", ["a = 1.001", "f(x) = a*?", "b = Defined(f)"],
+     [setn("a", 1.01), setn("a", -1.001), setn("a", 0.001)])
+case("definedreview", ["f(x) = ?+0*If(x > 0, x, -x)", "b = Defined(f)"], [])
+case("definedreview", [
+    "A = (0, 0)", "B = (1, 0)", "C = (0, 1)",
+    "b = !Defined((Polygon(A, B, C)))",
+    "c = Defined((inf, true))",
+], [])
+case("definedreview", ["s = Slider((?), 2)", "b = Defined(s)"], [])
+
 cases.write()

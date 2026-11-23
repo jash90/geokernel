@@ -1063,12 +1063,11 @@ fn circum_degenerate(a: &mut ArcData, pa: (f64, f64), pb: (f64, f64), pc: (f64, 
     // GeoConicND.setCircle with the circumcenter at infinity: the
     // midpoint is A and the first eigenvector is perpendicular to the
     // center's direction.
-    let end =
-        if (pb.0 - pa.0).abs() < STANDARD_PRECISION && (pb.1 - pa.1).abs() < STANDARD_PRECISION {
-            pc
-        } else {
-            pb
-        };
+    let end = if super::conic::is_equal(pa.0, pb.0) && super::conic::is_equal(pa.1, pb.1) {
+        pc
+    } else {
+        pb
+    };
     let (dx, dy) = (pa.0 - end.0, pa.1 - end.1);
     let length = my_length(dx, dy);
     a.conic.midpoint = [pa.0, pa.1];

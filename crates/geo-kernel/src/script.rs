@@ -704,7 +704,7 @@ fn resolve_defined_arguments(c: &mut Construction, rhs: &str) -> Option<String> 
         }
         let start = tokens[index + 1].end;
         let stop = tokens[close].start;
-        let arg = rhs[start..stop].trim();
+        let arg = ungroup(rhs[start..stop].trim());
         if split_call(arg).is_none() {
             continue;
         }
@@ -1282,7 +1282,7 @@ fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String>
             .ok_or_else(|| format!("expected a constant number, got `{arg}`"))
     };
     let endpoint = |arg| {
-        if arg == "?" {
+        if ungroup(arg) == "?" {
             Ok(f64::NAN)
         } else {
             number(arg)
@@ -1429,6 +1429,40 @@ fn call_closes_at_end(rhs: &str, open: usize) -> bool {
         }
     }
     false
+}
+
+fn ungroup(source: &str) -> &str {
+    if !source.starts_with('(') {
+        return source;
+    }
+    let mut opens = Vec::new();
+    let mut groups = Vec::new();
+    for (i, ch) in unquoted(source) {
+        match ch {
+            '(' => opens.push(i),
+            ')' => {
+                let Some(open) = opens.pop() else {
+                    return source;
+                };
+                groups.push((open, i));
+            }
+            _ => (),
+        }
+    }
+    let mut start = 0;
+    let mut end = source.len();
+    for (open, close) in groups.into_iter().rev() {
+        if start != open || close + 1 != end {
+            break;
+        }
+        let inner = &source[open + 1..close];
+        start = open + 1 + inner.len() - inner.trim_start().len();
+        end = open + 1 + inner.trim_end().len();
+        if start >= end {
+            return "";
+        }
+    }
+    &source[start..end]
 }
 
 /// `Name(args)` split into the name and the trimmed arguments; `None` for
@@ -2143,10 +2177,12 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
     if matches!(
         func,
         "Perpendicular" | "PerpendicularLine" | "OrthogonalLine"
-    ) && matches!(args.as_slice(), [_, _, "xOyPlane"])
-        && c.id("xOyPlane").is_none()
-    {
-        args.pop();
+    ) {
+        if let [_, _, orientation @ ("xOyPlane" | "space")] = args.as_slice() {
+            if c.id(orientation).is_none() {
+                args.pop();
+            }
+        }
     }
     let obj = |s: &str| object(c, s);
 
@@ -2621,6 +2657,16 @@ mod tests {
         assert_eq!(c.kind(id), Kind::Conic);
         assert!(c.conic(id).is_some());
         assert!(crate::expr::work_done() - before < crate::expr::MAX_EVALUATION_WORK);
+    }
+
+    #[test]
+    fn a_point_on_an_arc_axis_uses_the_carrier_midpoint() {
+        let c = load(
+            "O = (1, 2)\nA = (2, 2)\nB = (1, 3)\nr = CircleArc(O, A, B)\n\
+             g = FirstAxis(r)\nP = Point(g, 0.5)",
+        )
+        .unwrap();
+        assert_eq!(c.point(c.id("P").unwrap()), Some((1.0, 2.0)));
     }
 
     #[test]

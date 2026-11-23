@@ -18,30 +18,34 @@ use crate::expr::eval::{Ctx, Val};
 use crate::expr::{self, Node, Ty};
 use crate::kernel::{Def, Id, Kind, Value};
 
-pub(in crate::expr::commands) fn function_has_value(c: &crate::Construction, id: Id) -> bool {
-    let Def::Expr(def) = c.def(id) else {
-        return true;
+pub(in crate::expr::commands) fn function_has_value<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    id: Id,
+) -> Option<bool> {
+    let Def::Expr(def) = ctx.c.def(id) else {
+        return Some(true);
     };
-    let entry = expr::entry(c, def);
-    let meter = expr::eval::Lists::new(Vec::new());
-    let ctx = Ctx::<true> {
-        meter: Some(&meter),
-        ..Ctx::new(c, entry, &expr::eval::Env::None)
+    let entry = expr::entry(ctx.c, def);
+    let meter = ctx
+        .meter
+        .is_none()
+        .then(|| expr::eval::Lists::new(Vec::new()));
+    let nested = Ctx::<true> {
+        meter: ctx.meter.or(meter.as_ref()),
+        ..Ctx::new(ctx.c, entry, &expr::eval::Env::None)
     };
-    function_expression_has_value(&ctx, entry.root)
+    function_expression_has_value(&nested, entry.root)
 }
 
 pub(in crate::expr::commands) fn function_expression_has_value<const M: bool>(
     ctx: &Ctx<'_, M>,
     root: u32,
-) -> bool {
+) -> Option<bool> {
     let format = Format {
         simplify_coefficients: true,
         ..Format::new(false)
     };
-    format
-        .expression(ctx, root, true, 0)
-        .is_some_and(|text| text != "?")
+    format.has_value(ctx, root)
 }
 
 pub(super) fn evaluate<const M: bool>(

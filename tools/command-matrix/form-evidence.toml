@@ -1241,7 +1241,7 @@ cases = ["matrixdilate-dilatefunction-001", "matrixdilate-dilatefunction-002", "
 [[form]]
 command = "Dilate"
 form = "list,number,point"
-cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-003"]
+cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-003", "matrixdilate-dilatereview-003"]
 
 [[form]]
 command = "Mod"
@@ -3525,6 +3525,8 @@ cases = [
   "matrixdilate-dilatereject-001",
   "matrixdilate-dilatesegment-001",
   "matrixdilate-dilateslots-001",
+  "matrixdilate-dilatereview-001",
+  "matrixdilate-dilatereview-002",
 ]
 
 [[form]]
@@ -3590,6 +3592,10 @@ cases = [
   "tpairfixes-fnundef-033",
   "tpairfixes-fnundef-034",
   "tpairfixes-fnundef-035",
+  "logic-definedreview-001",
+  "logic-definedreview-002",
+  "logic-definedreview-003",
+  "logic-definedreview-005",
 ]
 
 

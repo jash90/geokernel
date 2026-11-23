@@ -939,7 +939,7 @@ fn defined_line_start(c: &Construction, line: Id) -> Option<(f64, f64, f64)> {
         // `AlgoAxes` and `AlgoAsymptote`: the midpoint of the conic
         Def::ConicPart(
             ConicPartDef::Axis { conic, .. } | ConicPartDef::Asymptote { conic, .. },
-        ) => hom(c.conic(conic).map(|d| (d.midpoint[0], d.midpoint[1]))),
+        ) => hom(super::conic_object(c, conic).map(|d| (d.midpoint[0], d.midpoint[1]))),
         _ => return None,
     })
 }
@@ -1686,4 +1686,19 @@ pub(crate) fn polygon_contains(vertices: &[(f64, f64)], p: (f64, f64)) -> bool {
         prev = next;
     }
     inside
+}
+
+#[cfg(test)]
+mod axis_tests {
+    use super::*;
+
+    #[test]
+    fn an_arc_axis_has_a_defined_start_point() {
+        let c = crate::script::load(
+            "O = (1, 2)\nA = (2, 2)\nB = (1, 3)\nr = CircleArc(O, A, B)\ng = FirstAxis(r)",
+        )
+        .unwrap();
+        let g = c.id("g").unwrap();
+        assert_eq!(defined_line_start(&c, g), Some((1.0, 2.0, 1.0)));
+    }
 }

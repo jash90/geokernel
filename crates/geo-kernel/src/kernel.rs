@@ -3937,16 +3937,20 @@ impl Construction {
     /// The active source of a conditional object. Branches precede their
     /// result in the construction.
     pub(crate) fn conditional_source(&self, mut id: Id) -> Option<Id> {
-        for _ in 0..=id.0 {
+        let end = expr::carrier_deadline();
+        loop {
             let Some(Def::Conditional { args, .. }) = self.defs.get(id.0) else {
                 return Some(id);
             };
             if !self.values[id.0].is_defined() {
                 return None;
             }
-            id = expr::conditional_branch(self, self.list(*args))?;
+            let branch = expr::conditional_branch(self, self.list(*args), end)?;
+            if branch.0 >= id.0 {
+                return None;
+            }
+            id = branch;
         }
-        None
     }
 
     /// The current contents of a text object.
@@ -4187,7 +4191,8 @@ impl Construction {
             Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
             Def::Boolean(v) => Some(Value::Bool(v)),
             Def::Conditional { args, kind } => {
-                let branch = expr::conditional_branch(self, self.list(args))?;
+                let branch =
+                    expr::conditional_branch(self, self.list(args), expr::carrier_deadline())?;
                 match (kind, self.stored_value(branch)) {
                     // `GeoLine.set` copies the coefficients of a segment.
                     (Kind::Line, Value::Segment { .. }) => {

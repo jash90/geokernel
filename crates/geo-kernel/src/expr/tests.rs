@@ -780,3 +780,53 @@ fn arithmetic_is_told_from_trees_the_evaluation_does_not_run() {
     // The value is the one `numeric_value` gives.
     assert_eq!(c.numeric_value("x(A) / 2 + 1"), Some(2.0));
 }
+
+#[test]
+fn defined_function_with_small_work_limit() {
+    let mut c = crate::script::load("f(x) = x + x").unwrap();
+    let result = super::eval::with_work_limit(1, || crate::script::exec(&mut c, "b = Defined(f)"))
+        .unwrap()
+        .unwrap();
+    assert_eq!(c.value(result), crate::Value::Bool(true));
+}
+
+#[test]
+fn conditional_arc_carrier_respects_the_work_limit() {
+    let mut c =
+        crate::script::load("O = (1, 2)\nA = (2, 2)\nB = (1, 3)\nr0 = CircleArc(O, A, B)").unwrap();
+    for i in 1..=64 {
+        let previous = i - 1;
+        crate::script::exec(
+            &mut c,
+            &format!("r{i} = If(true, r{previous}, r{previous})"),
+        )
+        .unwrap();
+    }
+    let before = super::work_done();
+    let r = c.id("r64").unwrap();
+    assert!(super::eval::with_work_limit(4, || c.arc(r)).is_none());
+    assert!(super::work_done() - before <= 4);
+    assert!(c.arc(r).is_some());
+}
+
+#[test]
+fn defined_function_reuses_the_callers_work_budget() {
+    let source = format!("f(x) = x{}", " + x".repeat(24));
+    let c = crate::script::load(&source).unwrap();
+    let id = c.id("f").unwrap();
+    let crate::Def::Expr(def) = c.def(id) else {
+        panic!("expected a function expression");
+    };
+    let entry = super::entry(&c, def);
+    super::eval::with_work_limit(16, || {
+        let meter = super::eval::Lists::new(Vec::new());
+        assert!(meter.charge(14));
+        let ctx = super::eval::Ctx::<true> {
+            meter: Some(&meter),
+            ..super::eval::Ctx::new(&c, entry, &super::eval::Env::None)
+        };
+        let before = super::work_done();
+        assert_eq!(super::commands::defined_object(&ctx, id), None);
+        assert!(super::work_done() - before <= 3);
+    });
+}

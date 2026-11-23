@@ -406,7 +406,13 @@ pub(super) fn list_fn<const M: bool>(
     if op == ListOp::ApplyMatrix {
         let m = lists.with_list(ctx.c, start, len, |list| Some(matrix::Matrix::read(list)))?;
         let source = ctx.list(n)?;
-        return map_list(ctx, node, source, |value| m?.apply(value));
+        return map_list(ctx, node, source, |slot| match m?.apply(slot.value)? {
+            point @ (Value::Point { .. } | Value::HomogeneousPoint { .. }) => {
+                Some(Slot::point(point))
+            }
+            Value::Vector { x, y } => Some(Slot::coords(Kind::Vector, x, y)),
+            _ => None,
+        });
     }
     if op == ListOp::MatrixDimension {
         if len == 0 {
@@ -450,33 +456,61 @@ pub(super) fn list_fn<const M: bool>(
     Some((out, rows))
 }
 
+pub(in crate::expr) fn dilate_slot(
+    c: &Construction,
+    slot: &Slot,
+    r: f64,
+    sx: f64,
+    sy: f64,
+) -> Option<Slot> {
+    if matches!(slot.kind, Kind::Circle | Kind::Conic) {
+        let mut data = slot.conic(c)?;
+        data.dilate(r, (sx, sy));
+        let value = crate::algo::general_conic::value(slot.kind, &data);
+        return Some(Slot::with_conic(data, slot.kind, value));
+    }
+    Some(
+        match crate::algo::transform::dilate_element(slot.value, r, sx, sy)? {
+            point @ (Value::Point { .. } | Value::HomogeneousPoint { .. }) => Slot::point(point),
+            Value::Vector { x, y } => Slot::coords(Kind::Vector, x, y),
+            value @ Value::Segment { x1, y1, x2, y2 }
+                if [x1, y1, x2, y2].into_iter().all(f64::is_finite) =>
+            {
+                Slot::with_value(slot.kind, value)
+            }
+            value @ (Value::Line { .. } | Value::Ray { .. }) => Slot::with_value(slot.kind, value),
+            _ => return None,
+        },
+    )
+}
+
 /// Transform leaves in depth-first order. A scalar is copied, while the
 /// transformation reuses its last point or vector output.
 pub(in crate::expr) fn map_list<const M: bool>(
     ctx: &Ctx<'_, M>,
     node: u32,
     (start, len): (u32, u32),
-    transform: impl Fn(Value) -> Option<Value>,
+    transform: impl Fn(&Slot) -> Option<Slot>,
 ) -> Option<(u32, u32)> {
     let lists = ctx.lists?;
     let dilate = matches!(ctx.node(node), Node::Dilate(..));
-    let transformed = |slot: Slot| match transform(slot.value) {
-        Some(point @ (Value::Point { .. } | Value::HomogeneousPoint { .. })) => Slot::point(point),
-        Some(Value::Vector { x, y }) => Slot::coords(Kind::Vector, x, y),
-        Some(value @ Value::Segment { x1, y1, x2, y2 })
-            if [x1, y1, x2, y2].into_iter().all(f64::is_finite) =>
-        {
-            Slot::with_value(slot.kind, value)
-        }
-        Some(value @ Value::Line { .. }) => Slot::with_value(slot.kind, value),
-        _ => Slot::undefined(slot.kind),
+    let transformed = |slot: Slot| match transform(&slot) {
+        Some(slot) => slot,
+        None => Slot::undefined(slot.kind),
     };
     let out = lists.reserve(len)?;
     let mut pending = Vec::new();
     // AlgoTransformation keeps the output slot at each existing index.
-    let prior = match ctx.e.raw {
-        crate::expr::Raw::List(len) if node == ctx.e.root => (0, len),
-        _ => (0, 0),
+    let retain = dilate && node != ctx.e.root && ctx.locals.is_none();
+    let (previous_items, prior) = match ctx.e.raw {
+        crate::expr::Raw::List(len) if node == ctx.e.root => (&ctx.e.items[..], (0, len)),
+        _ => ctx
+            .e
+            .nested_transforms
+            .get(&node)
+            .map_or((&[][..], (0, 0)), |(len, slots)| {
+                (slots.as_slice(), (0, *len))
+            }),
     };
     let mut current = (start, out, len, prior);
     let mut last = None;
@@ -484,15 +518,18 @@ pub(in crate::expr) fn map_list<const M: bool>(
         let (source, target, size, (prior, prior_len)) = current;
         if size == 0 {
             let Some(next) = pending.pop() else {
+                if retain {
+                    lists.remember_transform(node, out, len);
+                }
                 return Some((out, len));
             };
             current = next;
             continue;
         }
-        if !lists.charge(1) {
+        if !lists.charge(if retain { 2 } else { 1 }) {
             return None;
         }
-        let previous = (prior_len > 0).then(|| &ctx.e.items[prior as usize]);
+        let previous = (prior_len > 0).then(|| &previous_items[prior as usize]);
         current = (
             source + 1,
             target + 1,
@@ -513,7 +550,11 @@ pub(in crate::expr) fn map_list<const M: bool>(
             }
             Slot::list(dest, len)
         } else if matches!(slot.kind, Kind::Point | Kind::Vector)
-            || dilate && matches!(slot.kind, Kind::Segment | Kind::Line)
+            || dilate
+                && matches!(
+                    slot.kind,
+                    Kind::Segment | Kind::Line | Kind::Ray | Kind::Circle | Kind::Conic
+                )
         {
             last = Some(target);
             transformed(slot)

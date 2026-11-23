@@ -23,18 +23,19 @@ use crate::{Construction, Def, Id, Kind, Value};
 
 /// `AlgoDefined` uses an object's defined flag. For functions it also
 /// checks the value string, and for points and vectors it excludes infinity.
-pub(in crate::expr) fn defined_object(c: &Construction, id: Id) -> bool {
-    match c.kind(id) {
+pub(in crate::expr) fn defined_object<const M: bool>(ctx: &Ctx<'_, M>, id: Id) -> Option<bool> {
+    let c = ctx.c;
+    Some(match c.kind(id) {
         Kind::Point => c
             .stored_value(id)
             .point_coords()
             .is_some_and(|(x, y, z)| !crate::kernel::point_at_infinity(x, y, z)),
         Kind::Arc | Kind::Sector => c.stored_value(id).is_defined(),
-        Kind::Function => {
-            crate::expr::object_defined(c, id) && super::text::function_has_value(c, id)
+        Kind::Function if crate::expr::object_defined(c, id) => {
+            return super::text::function_has_value(ctx, id);
         }
         _ => crate::expr::object_defined(c, id),
-    }
+    })
 }
 
 /// The commands of this group (see `commands::is_command`).
@@ -121,22 +122,23 @@ pub(crate) fn define_geometry_if(
     Some(result)
 }
 
-pub(crate) fn conditional_branch(c: &Construction, ids: &[Id]) -> Option<Id> {
+pub(crate) fn conditional_branch(c: &Construction, ids: &[Id], end: u64) -> Option<Id> {
     if alternative_count(ids.len()) > MAX_IF_ALTERNATIVES {
         return None;
     }
     let (pairs, fallback) = ids.as_chunks::<2>();
-    pairs
-        .iter()
-        .find_map(|&[condition, branch]| {
-            crate::expr::charge(1);
-            (c.value(condition) == Value::Bool(true)).then_some(branch)
-        })
-        .or_else(|| {
-            let branch = *fallback.first()?;
-            crate::expr::charge(1);
-            Some(branch)
-        })
+    for &[condition, branch] in pairs {
+        if !crate::expr::charge_carrier(end) {
+            return None;
+        }
+        if c.value(condition) == Value::Bool(true) {
+            return Some(branch);
+        }
+    }
+    fallback
+        .first()
+        .copied()
+        .filter(|_| crate::expr::charge_carrier(end))
 }
 
 /// `If(...)`.

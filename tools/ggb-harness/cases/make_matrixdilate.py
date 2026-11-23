@@ -150,4 +150,20 @@ case("dilatesegment", [
     "A = (0, 0)", "B = (2, 0)", "s = Segment(A, B)", "l_{s} = {s}", "t = Dilate(l_{s}, 2)",
 ], [mv("B", 0, 3)])
 
+case("dilatereview", [
+    "A = (1, 1)", "n = 1", "l = If(n > 0, {A}, {3})",
+    "w = Length(Dilate(l, 2))",
+], [setn("n", -1), setn("n", 1),
+    {"action": "reject", "line": "q = If(false, Length(Dilate({1, A}, 2)), 7)"}])
+case("dilatereview", [
+    "A = (1, 1)", "k = Circle(A, 2)", "l = {k}", "t = Dilate(l, 2)",
+], [mv("A", -2, 3)])
+
+case("dilatereview", [
+    "A = (1, 1)", "B = (2, 1)", "F = (0, 2)", "g: y = 0",
+    "h = Ray(A, B)", "p = Parabola(F, g)", "k = Circle(A, 2)",
+    "l = {{k, 3}, h, g}", "t = Dilate(l, 2, A)",
+    "n = 2", "q = Dilate(p, n, A)", "w = Length(Dilate({p}, n, A))",
+], [mv("A", 1, -1)])
+
 cases.write()
