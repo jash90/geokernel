@@ -694,11 +694,11 @@ fn geogebra_reloads_exports_and_matches_the_kernel() {
                 .chain(actual.keys())
                 .collect::<BTreeSet<_>>()
             {
-                let expected = expected.get(property);
-                let actual = actual.get(property);
+                let expected = expected.get(property).map(Value::to_string);
+                let actual = actual.get(property).map(Value::to_string);
                 if expected != actual {
-                    let expected = expected.map_or_else(|| "<missing>".into(), Value::to_string);
-                    let actual = actual.map_or_else(|| "<missing>".into(), Value::to_string);
+                    let expected = expected.as_deref().unwrap_or("<missing>");
+                    let actual = actual.as_deref().unwrap_or("<missing>");
                     differences.push(format!(
                         "{kind}.{property}: recorded {expected}, computed {actual}"
                     ));
