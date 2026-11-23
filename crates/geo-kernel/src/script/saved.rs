@@ -2,7 +2,8 @@
 
 use super::{object, split_call};
 use crate::kernel::control::{
-    decode_bytes, decode_scripts, decode_text, encode_scripts, encode_text, ControlScript,
+    decode_bytes, decode_scripts, decode_text, encode_scripts, encode_text, CheckboxStyle,
+    ControlScript, SliderStyle,
 };
 use crate::kernel::image::{RasterAsset, MAX_ASSET_BYTES};
 use crate::kernel::DrawingStyle;
@@ -24,6 +25,14 @@ pub enum Property {
         label: String,
         bounds: [Option<String>; 2],
     },
+    SliderStyle {
+        label: String,
+        style: SliderStyle,
+    },
+    CheckboxStyle {
+        label: String,
+        style: CheckboxStyle,
+    },
     ObjectScripts {
         label: String,
         scripts: Vec<ControlScript>,
@@ -44,6 +53,8 @@ impl Property {
         match self {
             Self::DrawingStyle { label, .. }
             | Self::SliderBounds { label, .. }
+            | Self::SliderStyle { label, .. }
+            | Self::CheckboxStyle { label, .. }
             | Self::ObjectScripts { label, .. }
             | Self::SliderAnimation { label, .. } => Some(label),
             Self::ImageAsset { .. } => None,
@@ -61,6 +72,22 @@ impl Property {
                 let id = object(c, label)?;
                 let [min, max] = bounds;
                 c.restore_slider_bounds(id, [min.as_deref(), max.as_deref()])
+            }
+            Self::SliderStyle { label, style } => {
+                let id = object(c, label)?;
+                if !matches!(c.def(id), crate::Def::Number(_)) {
+                    return Err("slider style needs a free number".into());
+                }
+                c.set_slider_style(id, style.clone());
+                Ok(())
+            }
+            Self::CheckboxStyle { label, style } => {
+                let id = object(c, label)?;
+                if !matches!(c.def(id), crate::Def::Boolean(_)) {
+                    return Err("checkbox style needs a free boolean".into());
+                }
+                c.set_checkbox_style(id, *style);
+                Ok(())
             }
             Self::ObjectScripts { label, scripts } => {
                 c.object_scripts.insert(label.clone(), scripts.clone());
@@ -164,6 +191,38 @@ impl fmt::Display for Property {
                 encode_text(label),
                 step.map_or_else(|| "_".into(), |s| format!("{s:?}"))
             ),
+            Self::SliderStyle { label, style } => {
+                let field = |v: Option<f64>| v.map_or_else(|| "_".into(), |v| format!("{v:?}"));
+                let (x, y) = style.position.unzip();
+                write!(
+                    f,
+                    "$sliderStyle({}, {}, {}, {}, {:?}, {}, {}, {}, {})",
+                    encode_text(label),
+                    style.absolute,
+                    field(x),
+                    field(y),
+                    style.width,
+                    style.horizontal,
+                    style.fixed,
+                    field(style.knob_size),
+                    style
+                        .step_expression
+                        .as_deref()
+                        .map_or_else(|| field(style.step), encode_text),
+                )
+            }
+            Self::CheckboxStyle { label, style } => {
+                let field = |v: Option<i32>| v.map_or_else(|| "_".into(), |v| v.to_string());
+                let (x, y) = style.position.map(|[x, y]| (x, y)).unzip();
+                write!(
+                    f,
+                    "$checkboxStyle({}, {}, {}, {})",
+                    encode_text(label),
+                    field(x),
+                    field(y),
+                    style.fixed,
+                )
+            }
             Self::ObjectScripts { label, scripts } => {
                 write!(f, "$objectScripts({}", encode_text(label))?;
                 for field in encode_scripts(scripts) {
@@ -201,6 +260,8 @@ pub fn load_image_asset(
 pub fn parse(line: &str) -> Option<Result<Property, String>> {
     if !line.starts_with("$sliderBounds(")
         && !line.starts_with("$sliderAnimation(")
+        && !line.starts_with("$sliderStyle(")
+        && !line.starts_with("$checkboxStyle(")
         && !line.starts_with("$objectScripts(")
         && !line.starts_with("$drawingStyle(")
     {
@@ -225,6 +286,51 @@ pub fn parse(line: &str) -> Option<Result<Property, String>> {
                 Ok(Property::SliderBounds {
                     label: decode_text(label)?,
                     bounds: [bound(*min)?, bound(*max)?],
+                })
+            }
+            ("$sliderStyle", [label, absolute, x, y, width, horizontal, fixed, knob, step]) => {
+                let number = |field: &str| {
+                    field
+                        .parse::<f64>()
+                        .ok()
+                        .filter(|v| v.is_finite())
+                        .ok_or("invalid slider number")
+                };
+                let optional = |field: &str| (field != "_").then(|| number(field)).transpose();
+                let flag = |field: &str| field.parse::<bool>().map_err(|_| "invalid slider flag");
+                Ok(Property::SliderStyle {
+                    label: decode_text(label)?,
+                    style: SliderStyle {
+                        absolute: flag(absolute)?,
+                        position: optional(x)?.zip(optional(y)?),
+                        width: number(width)?,
+                        horizontal: flag(horizontal)?,
+                        fixed: flag(fixed)?,
+                        knob_size: optional(knob)?,
+                        step: if step.starts_with('_') {
+                            None
+                        } else {
+                            optional(step)?
+                        },
+                        step_expression: (step.starts_with('_') && *step != "_")
+                            .then(|| decode_text(step).map(Arc::from))
+                            .transpose()?,
+                    },
+                })
+            }
+            ("$checkboxStyle", [label, x, y, fixed]) => {
+                let coordinate = |field: &str| {
+                    (field != "_")
+                        .then(|| field.parse::<i32>())
+                        .transpose()
+                        .map_err(|_| "invalid checkbox coordinate")
+                };
+                Ok(Property::CheckboxStyle {
+                    label: decode_text(label)?,
+                    style: CheckboxStyle {
+                        position: coordinate(x)?.zip(coordinate(y)?).map(|(x, y)| [x, y]),
+                        fixed: fixed.parse().map_err(|_| "invalid checkbox flag")?,
+                    },
                 })
             }
             ("$sliderAnimation", [label, step, speed, mode, running]) => {

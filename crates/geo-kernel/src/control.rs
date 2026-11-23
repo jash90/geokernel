@@ -1,3 +1,10 @@
+// Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
+// commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoBoolean.java
+// Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
+// Licensed by GeoGebra GmbH under the EUPL 1.2.
+
 //! Controls carried by an imported construction. Script text is inert data.
 
 use crate::{Construction, Def, Id, Kind};
@@ -149,4 +156,244 @@ pub fn encode_scripts(scripts: &[ControlScript]) -> impl Iterator<Item = String>
     scripts.iter().flat_map(|script| {
         [&script.language, &script.event, &script.text].map(|field| encode_text(field))
     })
+}
+
+type Position = (f64, f64);
+
+/// The drawable properties of a numeric slider.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SliderStyle {
+    pub position: Option<Position>,
+    pub absolute: bool,
+    pub horizontal: bool,
+    pub width: f64,
+    pub fixed: bool,
+    pub knob_size: Option<f64>,
+    pub step: Option<f64>,
+    pub step_expression: Option<std::sync::Arc<str>>,
+}
+
+impl SliderStyle {
+    const DEFAULT: Self = Self {
+        position: None,
+        absolute: true,
+        horizontal: true,
+        width: 200.0,
+        fixed: false,
+        knob_size: None,
+        step: None,
+        step_expression: None,
+    };
+}
+
+static DEFAULT_SLIDER_STYLE: SliderStyle = SliderStyle::DEFAULT;
+
+impl Default for SliderStyle {
+    fn default() -> Self {
+        Self::DEFAULT
+    }
+}
+
+/// The drawable properties of a free checkbox.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CheckboxStyle {
+    pub position: Option<[i32; 2]>,
+    pub fixed: bool,
+}
+
+/// Slider geometry in canvas pixels, shared by picking, painting and SVG.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SliderGeometry {
+    pub start: Position,
+    pub end: Position,
+    pub knob: Position,
+    pub radius: f64,
+    pub horizontal: bool,
+}
+
+pub const CHECKBOX_SIZE: f64 = 26.0;
+pub const CHECKBOX_INSET: f64 = 5.0;
+
+impl SliderGeometry {
+    pub fn fraction(&self, at: Position) -> f64 {
+        if self.horizontal {
+            (at.0 - self.start.0) / (self.end.0 - self.start.0)
+        } else {
+            (at.1 - self.start.1) / (self.end.1 - self.start.1)
+        }
+    }
+
+    /// Label anchor at the knob, with room for the handle's outline.
+    pub fn label_anchor(&self) -> Position {
+        if self.horizontal {
+            (
+                (self.knob.0 - 9.0).max(0.0),
+                self.knob.1 - self.radius - 5.0,
+            )
+        } else {
+            (self.knob.0 + self.radius + 5.0, self.knob.1 + self.radius)
+        }
+    }
+}
+
+impl Construction {
+    pub fn set_slider_style(&mut self, id: Id, style: SliderStyle) {
+        self.slider_styles.insert(id, style);
+    }
+
+    pub fn slider_style(&self, id: Id) -> &SliderStyle {
+        self.slider_styles.get(&id).unwrap_or(&DEFAULT_SLIDER_STYLE)
+    }
+
+    /// The classic desktop placement in GeoNumeric.initScreenLocation.
+    pub fn slider_position(&self, id: Id, style: &SliderStyle) -> Position {
+        style.position.unwrap_or_else(|| {
+            let count = self
+                .sliders
+                .partition_point(|&(index, ..)| index < id.index());
+            if style.absolute {
+                let y = 50 + 40 * count;
+                (30.0, (y / 400 * 10 + y % 400) as f64)
+            } else {
+                (-5.0, 10.0 - count as f64)
+            }
+        })
+    }
+
+    pub fn slider_geometry(
+        &self,
+        id: Id,
+        scales: Position,
+        to_screen: impl FnOnce(Position) -> Position,
+    ) -> Option<SliderGeometry> {
+        let crate::Value::Number(value) = self.value(id) else {
+            return None;
+        };
+        let (min, max) = self.slider_interval(id)?;
+        let style = self.slider_style(id);
+        let position = self.slider_position(id, style);
+        let (start, width) = if style.absolute {
+            ((position.0.max(0.0), position.1.max(0.0)), style.width)
+        } else {
+            (
+                to_screen(position),
+                style.width * if style.horizontal { scales.0 } else { scales.1 },
+            )
+        };
+        let span = max - min;
+        let fraction = if span == 0.0 {
+            0.0
+        } else if span.is_finite() {
+            (value - min) / span
+        } else {
+            (0.5 * value - 0.5 * min) / (0.5 * max - 0.5 * min)
+        };
+        let along = |distance| {
+            if style.horizontal {
+                (start.0 + distance, start.1)
+            } else {
+                (start.0, start.1 - distance)
+            }
+        };
+        let end = along(width);
+        let knob = along(width * fraction.clamp(0.0, 1.0));
+        let finite = [start.0, start.1, end.0, end.1, knob.0, knob.1]
+            .into_iter()
+            .all(|x: f64| (x as f32).is_finite());
+        (finite && start != end && width > 0.0).then_some(SliderGeometry {
+            start,
+            end,
+            knob,
+            radius: (style.knob_size.unwrap_or(5.0) + 0.5).clamp(1.0, 64.0),
+            horizontal: style.horizontal,
+        })
+    }
+
+    /// Converts a position along the track into a min-relative increment.
+    pub fn slider_drag_value(&self, id: Id, fraction: f64) -> Option<f64> {
+        use super::animation::{check_decimal_fraction, next_pretty_number, AUTO_STEP_MUL};
+        let (min, max) = self.slider_interval(id).filter(|(min, max)| min <= max)?;
+        let fraction = fraction.clamp(0.0, 1.0);
+        let width = max - min;
+        if !width.is_finite() {
+            return Some(min * (1.0 - fraction) + max * fraction);
+        }
+        let animation = self.animation(id);
+        let style = self.slider_style(id);
+        let step = style
+            .step
+            .or_else(|| {
+                self.arithmetic_value(style.step_expression.as_deref()?)
+                    .filter(|step| step.is_finite())
+            })
+            .or_else(|| animation.filter(|a| !a.auto_step).map(|a| a.step))
+            .unwrap_or_else(|| {
+                let speed = animation.map_or(1.0, |a| a.speed);
+                next_pretty_number(width * speed * AUTO_STEP_MUL).max(0.1)
+            });
+        let distance = fraction * width;
+        let steps = distance / step;
+        let value = if step > 0.0 && steps.is_finite() {
+            min + steps.round() * step
+        } else {
+            min + distance
+        };
+        let value = if step > crate::tol::MIN_PRECISION {
+            check_decimal_fraction(value)
+        } else {
+            value
+        };
+        value.is_finite().then(|| value.clamp(min, max))
+    }
+
+    pub fn set_checkbox_style(&mut self, id: Id, style: CheckboxStyle) {
+        self.checkbox_styles.insert(id, style);
+    }
+
+    pub fn checkbox_style(&self, id: Id) -> CheckboxStyle {
+        self.checkbox_styles.get(&id).copied().unwrap_or_default()
+    }
+
+    /// The classic desktop placement in GeoBoolean.initScreenLocation.
+    pub fn checkbox_position(&self, id: Id) -> Option<Position> {
+        let index = self.free_booleans.binary_search(&id).ok()?;
+        let [x, y] = self.checkbox_style(id).position.unwrap_or_else(|| {
+            let y = 5 + 30 * index;
+            [5, (y / 400 * 10 + y % 400) as i32]
+        });
+        Some((f64::from(x), f64::from(y)))
+    }
+
+    pub fn checkbox_caption(&self, id: Id) -> &str {
+        self.control(id)
+            .map(|control| control.caption.as_str())
+            .filter(|caption| !caption.is_empty())
+            .unwrap_or_else(|| self.label(id))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn a_small_explicit_slider_step_is_not_rounded_away() {
+        let c = crate::script::load("a = Slider(0, 0.000000000001, 0.00000000000001)").unwrap();
+        let a = c.id("a").unwrap();
+        let value = c.slider_drag_value(a, 0.054).unwrap();
+        assert!((value - 5e-14).abs() < 1e-28, "{value}");
+    }
+
+    #[test]
+    fn a_saved_step_expression_reads_the_current_construction() {
+        // "_6e" is the encoded name of the number holding the step.
+        let mut c = crate::script::load(
+            "n = 2\na = Slider(0, 10)\n\
+             $sliderStyle(_61, true, 30, 50, 200, true, false, _, _6e)",
+        )
+        .unwrap();
+        let a = c.id("a").unwrap();
+        let n = c.id("n").unwrap();
+        assert_eq!(c.slider_drag_value(a, 0.54), Some(6.0));
+        c.set_number(n, 0.5).unwrap();
+        assert_eq!(c.slider_drag_value(a, 0.54), Some(5.5));
+    }
 }

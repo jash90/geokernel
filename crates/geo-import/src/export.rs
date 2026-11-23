@@ -325,7 +325,6 @@ pub fn ggb<'a>(
         presentation,
         xml: Xml::default(),
         images: BTreeMap::new(),
-        sliders: 0,
         expressions: crate::convert::StyleExpressions::default(),
     };
     writer.xml.buffer.push_str(
@@ -399,7 +398,6 @@ struct Writer<'a> {
     presentation: &'a Presentation<'a>,
     xml: Xml,
     images: BTreeMap<u64, (String, &'a RasterAsset)>,
-    sliders: usize,
     /// The budget of the style expressions written in this export.
     expressions: crate::convert::StyleExpressions,
 }

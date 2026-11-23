@@ -8,9 +8,9 @@ Circle,CONIC,Circle,yes,yes,yes,yes,yes,yes,yes,partial,a circle is a conic upst
 Conic,CONIC,Conic,yes,yes,yes,yes,yes,yes,yes,partial,the SVG view fits bounded conics; the importer refuses free conics but the image of a conic under a transformation imports. Export: its definition needs a saved form.
 Arc,CONICPART,Arc,yes,yes,yes,partial,yes,no,yes,partial,Export: its definition needs a saved form; the outlying-intersection and keep-type flags are not kept.
 Sector,CONICPART,Sector,yes,yes,yes,yes,yes,no,yes,partial,Export: its definition needs a saved form; the outlying-intersection and keep-type flags are not kept.
-Number,NUMERIC,Number,yes,no,no,no,yes,yes,yes,partial,saved slider values and bounds. Export: its definition needs a saved form; the symbolic mode and the slope triangle size are not kept.
+Number,NUMERIC,Number,yes,partial,yes,partial,yes,yes,yes,partial,bounded free numbers are sliders. Export: its definition needs a saved form; the symbolic mode and the slope triangle size are not kept.
 Angle,ANGLE,Angle,yes,partial,partial,partial,yes,yes,partial,partial,angles with drawable geometry have a sector or right-angle marker. Export: its definition needs a saved form.
-Boolean,BOOLEAN,Boolean,yes,no,no,no,no,partial,partial,partial,dependent booleans and saved checkboxes. Export: its definition needs a saved form; the position of the check box is not kept.
+Boolean,BOOLEAN,Boolean,yes,partial,yes,partial,yes,partial,partial,partial,free booleans are canvas checkboxes. Export: its definition needs a saved form.
 Function,FUNCTION,Function,yes,yes,yes,partial,no,yes,partial,partial,Single-variable saved functions with supported expressions. Export: its definition needs a saved form; the show-on-axis and simplify flags and the table column are not kept.
 Polygon,POLYGON,Polygon,yes,yes,yes,yes,yes,yes,yes,partial,Export: its definition needs a saved form; the mask flag is not kept.
 PolyLine,POLYLINE,PolyLine,yes,yes,yes,yes,yes,yes,yes,partial,Export: its definition needs a saved form.

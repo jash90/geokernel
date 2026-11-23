@@ -99,7 +99,7 @@ impl Animation {
 
 /// `MyMath.nextPrettyNumber(t, 0)`: 2, 5 or 10 times the power of ten
 /// below `t`.
-fn next_pretty_number(t: f64) -> f64 {
+pub(super) fn next_pretty_number(t: f64) -> f64 {
     if t < 0.0 {
         return 1.0;
     }
@@ -115,7 +115,7 @@ fn next_pretty_number(t: f64) -> f64 {
 }
 
 /// `GeoNumeric.AUTO_STEP_MUL`.
-const AUTO_STEP_MUL: f64 = 0.0009;
+pub(super) const AUTO_STEP_MUL: f64 = 0.0009;
 
 impl Animation {
     /// A saved animation: the increment is automatic without a step.
@@ -141,7 +141,7 @@ fn round_to_scale(x: f64, scale: f64) -> f64 {
 
 /// `DoubleUtil.checkDecimalFraction`: a value within `1e-13` of five
 /// decimals is those five decimals.
-fn check_decimal_fraction(v: f64) -> f64 {
+pub(super) fn check_decimal_fraction(v: f64) -> f64 {
     const INV_MIN_PRECISION: f64 = 1e5;
     let fraction = v * INV_MIN_PRECISION;
     let rounded = java_round(fraction) as f64;

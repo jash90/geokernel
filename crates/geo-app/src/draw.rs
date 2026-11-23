@@ -687,6 +687,76 @@ fn paint_layer<'c>(
             ));
         } else if value == Value::Text {
             has_text = true;
+        } else if let Value::Number(value) = value {
+            if let Some(slider) =
+                c.slider_geometry(id, (t.xscale(), t.yscale()), |(x, y)| screen(x, y))
+            {
+                let pos = |(x, y): (f64, f64)| origin + vec2(x as f32, y as f32);
+                let col = color(id);
+                let knob = pos(slider.knob);
+                let radius = slider.radius as f32;
+                painter.line_segment(
+                    [pos(slider.start), pos(slider.end)],
+                    Stroke::new(5.0, col.gamma_multiply(0.45)),
+                );
+                if scene.hovered == Some(id) || scene.selected == Some(id) {
+                    painter.circle_filled(knob, radius + 4.0, col.gamma_multiply(0.25));
+                }
+                // The outlined knob uses two filled discs so the tessellator
+                // can draw both from its atlas at normal slider sizes.
+                let rim = theme::POINT_RING.gamma_multiply(col.a() as f32 / 255.0);
+                painter.circle_filled(knob, radius + 0.5, rim);
+                painter.circle_filled(knob, radius - 0.5, col);
+                if c.drawing_style(id).show_label {
+                    labels.push(label(
+                        id,
+                        Cow::Owned(format!("{} = {value}", c.label(id))),
+                        slider.label_anchor(),
+                        col,
+                        Align2::LEFT_BOTTOM,
+                    ));
+                }
+            }
+        } else if let Value::Bool(checked) = value {
+            if let Some((x, y)) = c.checkbox_position(id) {
+                use geo_kernel::kernel::control::{CHECKBOX_INSET, CHECKBOX_SIZE};
+                let size = CHECKBOX_SIZE as f32;
+                let top = origin
+                    + vec2(
+                        x as f32 + CHECKBOX_INSET as f32,
+                        y as f32 + CHECKBOX_INSET as f32,
+                    );
+                let bounds = Rect::from_min_size(top, vec2(size, size));
+                let col = color(id);
+                let fill = if checked { theme::ACCENT } else { theme::WHITE };
+                painter.rect(
+                    bounds,
+                    0.0,
+                    fill,
+                    Stroke::new(1.0, col),
+                    eframe::egui::StrokeKind::Inside,
+                );
+                if checked {
+                    let stroke = Stroke::new(2.0, theme::WHITE);
+                    let elbow = top + vec2(11.0, 18.0);
+                    painter.line_segment([top + vec2(6.0, 13.0), elbow], stroke);
+                    painter.line_segment([elbow, top + vec2(21.0, 8.0)], stroke);
+                }
+                if c.drawing_style(id).show_label {
+                    let caption = painter.text(
+                        top + vec2(size + 9.0, size * 0.5),
+                        Align2::LEFT_CENTER,
+                        c.checkbox_caption(id),
+                        FontId::proportional(LABEL_FONT),
+                        col,
+                    );
+                    if let Some(rects) = scene.text_rects {
+                        rects
+                            .borrow_mut()
+                            .push((id, caption.translate(-origin.to_vec2()).core()));
+                    }
+                }
+            }
         }
     }
     if has_text {
@@ -705,7 +775,9 @@ fn paint_layer<'c>(
         if sx < -20.0 || sy < -20.0 || sx > wf + 20.0 || sy > hf + 20.0 {
             continue;
         }
-        let r = painter.text(origin + vec2(sx, sy), align, text, font.clone(), color);
+        let galley = painter.layout_no_wrap(text.into_owned(), font.clone(), color);
+        let r = align.anchor_size(origin + vec2(sx, sy), galley.size());
+        painter.galley(r.min, galley, color);
         if let Some(rects) = rects.as_mut() {
             rects.push((id, r.translate(-origin.to_vec2()).core()));
         }

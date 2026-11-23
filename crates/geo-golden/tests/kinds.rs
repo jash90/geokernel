@@ -872,6 +872,27 @@ fn samples() -> Samples {
             .map(|(id, _)| (imported.script.clone(), c.label(id).into()))
             .collect(),
     );
+    // Control kinds also have drawable instances in saved worksheets. Most
+    // numeric outputs and dependent booleans in the command corpus are
+    // algebra-only, so include one of each canvas control explicitly.
+    for (kind, source, label) in [
+        (
+            "Number",
+            include_bytes!("../../../golden/ggb/saved/saved-controls-001.xml").as_slice(),
+            "a",
+        ),
+        (
+            "Boolean",
+            include_bytes!("../../../golden/ggb/saved/saved-controls-001.xml").as_slice(),
+            "check",
+        ),
+    ] {
+        let imported = geo_import::import(source).unwrap();
+        s.any
+            .entry(kind.into())
+            .or_default()
+            .push((imported.script, label.into()));
+    }
     if regenerating() {
         println!(
             "SAMPLE_CASES ({} cases):\n{}",
@@ -1225,13 +1246,27 @@ fn checked_cells_agree_with_the_code() {
         );
         exact(
             "svg",
-            s.single.get(k).and_then(|v| {
-                grade(
-                    v.iter()
-                        .filter(|l| has_something_to_draw(l))
-                        .map(|l| svg_draws(l)),
-                )
-            }),
+            if matches!(k.as_str(), "Number" | "Boolean") {
+                grade(s.any.get(k).into_iter().flatten().map(|(lines, label)| {
+                    let (c, id) = object(lines, label);
+                    let frame = View::fit(&c);
+                    let without =
+                        svg::render_visible(&c, frame, 400, 300, |candidate| candidate != id);
+                    let with = svg::render(&c, frame, 400, 300);
+                    // A definition by itself contributes a description, which
+                    // is not a rendered SVG shape.
+                    let graphic = |s: String| s[s.find("<rect").unwrap()..].to_owned();
+                    graphic(with) != graphic(without)
+                }))
+            } else {
+                s.single.get(k).and_then(|v| {
+                    grade(
+                        v.iter()
+                            .filter(|l| has_something_to_draw(l))
+                            .map(|l| svg_draws(l)),
+                    )
+                })
+            },
         );
         let objects: Vec<(Construction, Id)> = s
             .any

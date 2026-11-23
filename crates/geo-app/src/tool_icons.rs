@@ -330,6 +330,15 @@ pub fn paint(painter: &Painter, tool: Tool, c: Pos2, half: f32) {
             ink.dot(0.0, 0.0, 3.2, POINT);
             red.line((-10.0, 9.0), (10.0, -9.0));
         }
+        Tool::Slider => {
+            ink.line((-9.0, 4.0), (9.0, 4.0));
+            ink.dot(3.0, 4.0, 3.1, RESULT);
+            ink.line((-9.0, -3.0), (-4.0, -3.0));
+        }
+        Tool::Checkbox => {
+            ink.poly(&[(-8.0, -8.0), (8.0, -8.0), (8.0, 8.0), (-8.0, 8.0)], true);
+            red.poly(&[(-4.0, 0.0), (-1.0, 3.0), (5.0, -4.0)], false);
+        }
         Tool::Delete => {
             ink.fill_poly(
                 &[(-9.0, 2.0), (1.0, -8.0), (9.0, 0.0), (-1.0, 10.0)],

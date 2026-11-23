@@ -117,6 +117,7 @@ pub enum HitType {
     Filling,
     /// A point, or the outline of a curve.
     Boundary,
+    SliderKnob,
 }
 
 /// Whether the closed square of half-width `t` around `p` meets the segment
@@ -253,6 +254,22 @@ pub fn hit(
                     (p.0 - center.0, center.1 - p.1),
                     angle.radius((tr.xscale() * tr.yscale()).sqrt()),
                 )
+                .then_some(HitType::Filling)
+        }
+        Value::Number(_) if c.kind(id) == Kind::Number => {
+            let slider =
+                c.slider_geometry(id, (tr.xscale(), tr.yscale()), |(x, y)| to_screen(x, y))?;
+            if knob_hit(slider, p, t) {
+                Some(HitType::SliderKnob)
+            } else {
+                boundary(segment_meets_square(slider.start, slider.end, p, t + 2.5))
+            }
+        }
+        Value::Bool(_) => {
+            use geo_kernel::kernel::control::{CHECKBOX_INSET, CHECKBOX_SIZE};
+            let (x, y) = c.checkbox_position(id)?;
+            let extent = CHECKBOX_SIZE + 2.0 * CHECKBOX_INSET;
+            ((x - t..=x + extent + t).contains(&p.0) && (y - t..=y + extent + t).contains(&p.1))
                 .then_some(HitType::Filling)
         }
         Value::Polygon { .. } => {
@@ -506,6 +523,16 @@ fn function_meets_square(
     false
 }
 
+pub(crate) fn knob_hit(
+    slider: geo_kernel::kernel::control::SliderGeometry,
+    at: (f64, f64),
+    threshold: f64,
+) -> bool {
+    let r = threshold + (2.0 * slider.radius).max(5.0);
+    let (dx, dy) = (at.0 - slider.knob.0, at.1 - slider.knob.1);
+    dx * dx + dy * dy <= r * r
+}
+
 /// The vertices of a polygon or polyline on the screen, `None` when one of
 /// them is undefined.
 pub fn screen_vertices(c: &Construction, id: Id, t: &ViewTransform) -> Option<Vec<(f64, f64)>> {
@@ -549,6 +576,7 @@ struct Choice {
     /// The segment made first.
     first_segment: Option<Id>,
     /// The object drawn on top among the others, and among the polygons.
+    top_knob: Option<(bool, Id)>,
     top_other: Option<((HitType, u8, usize), Id)>,
     top_polygon: Option<((HitType, u8, usize), Id)>,
     /// How the selected object was hit, if it was.
@@ -560,6 +588,9 @@ impl Choice {
         let kind = c.kind(id);
         if selected {
             self.selected = Some(kind);
+        }
+        if how == HitType::SliderKnob && self.top_knob.is_none_or(|old| (selected, id) > old) {
+            self.top_knob = Some((selected, id));
         }
         let key = (how, type_priority(kind), index);
         match kind {
@@ -600,6 +631,9 @@ impl Choice {
     /// it is among them; else `chooseGeo`. All objects are in one layer, so
     /// its layer rules choose nothing, and nothing is fixed or on a path.
     fn choose(&self, selected: Option<Id>) -> Option<Id> {
+        if let Some((_, knob)) = self.top_knob.filter(|_| self.points == 0) {
+            return Some(knob);
+        }
         let kept = |k: Kind| -> bool {
             if self.points > 0 {
                 k == Kind::Point
@@ -975,5 +1009,34 @@ mod tests {
         // Away from the line, the retry finds the point.
         let id = pick(&c, &t, (sx + 30.0, sy - 12.0), &touch(), None, near);
         assert_eq!(label(&c, id).as_deref(), Some("A"));
+    }
+}
+
+#[cfg(test)]
+mod control_tests {
+    use super::*;
+
+    #[test]
+    fn a_knob_wins_over_an_overlapping_track() {
+        let c = geo_kernel::script::load(
+            "a = Slider(0, 10)\na = 5\nb = Slider(0, 10)\n\
+             $sliderStyle(_62, true, 30, 50, 200, true, false, _, _)",
+        )
+        .unwrap();
+        let (a, b) = (c.id("a").unwrap(), c.id("b").unwrap());
+        let view = ViewTransform::new(geo_kernel::svg::View::fit(&c), 400.0, 300.0);
+        let reach = Reach::square(3.0);
+        assert_eq!(
+            hit(&c, a, &view, (130.0, 50.0), 3.0, &reach),
+            Some(HitType::SliderKnob)
+        );
+        assert_eq!(
+            hit(&c, b, &view, (130.0, 50.0), 3.0, &reach),
+            Some(HitType::Boundary)
+        );
+        assert_eq!(
+            pick(&c, &view, (130.0, 50.0), &reach, Some(b), |_| true),
+            Some(a)
+        );
     }
 }

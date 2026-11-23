@@ -205,9 +205,16 @@ pub enum Hold {
     /// The object's label: its offset in pixels is the one it had (`old`)
     /// plus the pointer's motion from the press (`start`, in pixels)
     /// (`MoveMode.LABEL`, `moveLabel`). No undo step, no selection.
-    Label { old: (f64, f64), start: (f64, f64) },
+    Label {
+        old: (f64, f64),
+        start: (f64, f64),
+    },
     /// The placement of a text before dragging, and the world or screen press.
-    Text { old: TextMove, start: (f64, f64) },
+    Text {
+        old: TextMove,
+        start: (f64, f64),
+    },
+    Slider,
 }
 
 /// A drag in progress: which object is held, and how.
@@ -221,13 +228,26 @@ pub struct Drag {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Step {
     /// Put the held free point at `(x, y)`.
-    Point { x: f64, y: f64 },
+    Point {
+        x: f64,
+        y: f64,
+    },
     /// Translate the free input points of the held object by `(dx, dy)`.
-    Translate { dx: f64, dy: f64 },
+    Translate {
+        dx: f64,
+        dy: f64,
+    },
     /// Set the held object's label offset to `(x, y)` pixels.
-    Label { x: f64, y: f64 },
+    Label {
+        x: f64,
+        y: f64,
+    },
     /// Move a text or update its offset from a named anchor.
     Text(TextMove),
+    Slider {
+        x: f64,
+        y: f64,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -294,6 +314,31 @@ impl Drag {
         }
     }
 
+    /// Starts dragging a slider only when the press reaches its knob.
+    pub fn slider(
+        c: &Construction,
+        id: Id,
+        t: &ViewTransform,
+        press: (f64, f64),
+        reach: &crate::hit::Reach,
+    ) -> Option<Drag> {
+        if c.slider_style(id).fixed {
+            return None;
+        }
+        let slider = c.slider_geometry(id, (t.xscale(), t.yscale()), |(x, y)| {
+            t.world_to_screen(x, y)
+        })?;
+        let direct = crate::hit::knob_hit(slider, press, reach.threshold);
+        let retry = reach.retry.is_some_and(|threshold| {
+            crate::hit::hit(c, id, t, press, reach.threshold, reach).is_none()
+                && crate::hit::knob_hit(slider, press, threshold)
+        });
+        (direct || retry).then_some(Drag {
+            id,
+            hold: Hold::Slider,
+        })
+    }
+
     /// Starts dragging a text using its placement's coordinate system.
     pub fn text(
         c: &Construction,
@@ -328,6 +373,7 @@ impl Drag {
     /// `transformCoords`, then moves what is held).
     pub fn step(&mut self, t: &ViewTransform, snap: &Snap, sx: f64, sy: f64) -> Step {
         match &mut self.hold {
+            Hold::Slider => Step::Slider { x: sx, y: sy },
             Hold::Point => {
                 let (x, y) = snap.apply(t.screen_to_world(sx, sy));
                 Step::Point { x, y }

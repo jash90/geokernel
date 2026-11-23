@@ -479,6 +479,25 @@ impl Workbench {
                 failure = Some(e);
                 break;
             }
+            if in_tool {
+                use geo_kernel::script::saved;
+                if let Some(property) = saved::parse(&line) {
+                    match property.and_then(|property| {
+                        property.apply(&mut self.construction)?;
+                        Ok(property)
+                    }) {
+                        Ok(property) => {
+                            self.log.record_saved_property(property);
+                            updated = true;
+                        }
+                        Err(error) => {
+                            failure = Some(error);
+                            break;
+                        }
+                    }
+                    continue;
+                }
+            }
             let before = self.construction.len();
             let step_before = self.construction.step();
             let target = geo_kernel::script::assignment_target(&self.construction, &line);

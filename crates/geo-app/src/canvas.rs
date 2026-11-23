@@ -15,7 +15,7 @@ use crate::view::{self, Camera};
 use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, Ui};
 use geo_app_core::camera;
 use geo_app_core::text::{self, Label};
-use geo_kernel::kernel::{Id, Kind};
+use geo_kernel::kernel::{Id, Kind, Value};
 
 /// The zoom of the buttons over the drawing (`EuclidianView
 /// .MODE_ZOOM_FACTOR`, 1.5, about the centre).
@@ -315,7 +315,14 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     // (spec E1); the delete and show/hide tools act on a click.
     let press_tool = !matches!(
         tool,
-        Tool::Move | Tool::MoveView | Tool::ZoomIn | Tool::ZoomOut | Tool::Delete | Tool::ShowHide
+        Tool::Move
+            | Tool::MoveView
+            | Tool::ZoomIn
+            | Tool::ZoomOut
+            | Tool::Delete
+            | Tool::ShowHide
+            | Tool::Slider
+            | Tool::Checkbox
     );
     // The show/hide tool shows hidden objects faintly and lets them be picked.
     let show_all = tool == Tool::ShowHide;
@@ -496,6 +503,8 @@ pub fn show(app: &mut App, ui: &mut Ui) {
                 .capture(pt.screen_to_world(sx, sy), (0.0, 0.0));
             grabbed = if c.kind(id) == Kind::Text {
                 Drag::text(c, id, (sx, sy), press)
+            } else if c.kind(id) == Kind::Number {
+                Drag::slider(c, id, &pt, (sx, sy), &press_reach)
             } else {
                 Drag::begin(c, id, press)
             };
@@ -579,6 +588,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             }
             Step::Label { x, y } => app.wb.set_label_offset(drag.id(), (x, y)),
             Step::Text(movement) => app.wb.move_text(drag.id(), movement),
+            Step::Slider { x, y } => {
+                let id = drag.id();
+                let c = app.wb.construction();
+                let value = c
+                    .slider_geometry(id, (now.xscale(), now.yscale()), |(x, y)| {
+                        now.world_to_screen(x, y)
+                    })
+                    .and_then(|slider| c.slider_drag_value(id, slider.fraction((x, y))));
+                if let Some(value) = value {
+                    app.wb.set_number(id, value);
+                }
+            }
         }
         app.drag = Some(drag);
     }
@@ -665,6 +686,16 @@ pub fn show(app: &mut App, ui: &mut Ui) {
             Tool::ZoomIn => zoom_click(app, &mut cam, ZOOM_TOOL, local, w, h),
             Tool::ZoomOut => zoom_click(app, &mut cam, 1.0 / ZOOM_TOOL, local, w, h),
             Tool::MoveView => {}
+            Tool::Slider | Tool::Checkbox => {
+                if app.tool.control_request().is_none() {
+                    app.control_fields = if tool == Tool::Slider {
+                        ["-5".into(), "5".into(), "0.1".into()]
+                    } else {
+                        Default::default()
+                    };
+                    app.tool.begin_control(local);
+                }
+            }
             // Its press picked already (spec E1).
             _ if press_tool => {}
             _ => {
@@ -761,10 +792,18 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         Tool::MoveView => Some(egui::CursorIcon::Grab),
         Tool::ZoomIn => Some(egui::CursorIcon::ZoomIn),
         Tool::ZoomOut => Some(egui::CursorIcon::ZoomOut),
-        Tool::Move => app
-            .hovered
-            .filter(|&id| interact::movable(app.wb.construction(), id))
-            .map(|_| egui::CursorIcon::Grab),
+        Tool::Move => app.hovered.and_then(|id| {
+            let c = app.wb.construction();
+            if c.checkbox_position(id).is_some() && !c.checkbox_style(id).fixed {
+                Some(egui::CursorIcon::PointingHand)
+            } else if interact::movable(c, id)
+                || (c.kind(id) == Kind::Number && !c.slider_style(id).fixed)
+            {
+                Some(egui::CursorIcon::Grab)
+            } else {
+                None
+            }
+        }),
         _ => response.hover_pos().map(|_| egui::CursorIcon::Crosshair),
     };
     if let (Some(c), true) = (cursor, response.hovered() || app.drag.is_some()) {
@@ -1105,6 +1144,14 @@ fn feed(gesture: &mut Gesture, events: &[egui::Event], owns: impl Fn(egui::Pos2)
 fn click(app: &mut App, t: &ViewTransform, pos: (f64, f64), hit: Option<Id>) {
     if app.tool.tool() == Tool::Move {
         app.wb.selected = hit;
+        if let Some(id) = hit {
+            let c = app.wb.construction();
+            if let Value::Bool(value) = c.value(id) {
+                if c.checkbox_position(id).is_some() && !c.checkbox_style(id).fixed {
+                    app.wb.set_boolean(id, !value);
+                }
+            }
+        }
         app.style_bar = false;
         return;
     }

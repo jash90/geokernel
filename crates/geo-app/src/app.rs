@@ -46,7 +46,7 @@ fn shortcuts(app: &mut App, ctx: &egui::Context) {
     if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
         app.gesture.stop();
     }
-    if app.tool.asking().is_some() {
+    if app.tool.asking().is_some() || app.tool.control_request().is_some() {
         return;
     }
     if typing {
@@ -169,6 +169,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
         toolbar::show(app, ui)
     });
     number_dialog(app, &ctx);
+    control_dialog(app, &ctx);
     save_dialog(app, &ctx);
 }
 
@@ -329,6 +330,65 @@ fn number_dialog(app: &mut App, ctx: &egui::Context) {
         }
         Some(None) => app.reset_tool(),
         None => {}
+    }
+}
+
+fn control_dialog(app: &mut App, ctx: &egui::Context) {
+    if app.tool.control_request().is_none() {
+        return;
+    }
+    let tool = app.tool.tool();
+    let slider = tool == crate::tools::Tool::Slider;
+    let mut confirm = false;
+    let mut cancel = false;
+    let mut numbers = None;
+    let modal = egui::Modal::new(egui::Id::unique("control_dialog")).show(ctx, |ui| {
+        ui.set_min_width(240.0);
+        ui.heading(tool.caption());
+        if slider {
+            egui::Grid::new("slider_fields").show(ui, |ui| {
+                for (label, field) in ["Minimum", "Maksimum", "Krok"]
+                    .into_iter()
+                    .zip(&mut app.control_fields)
+                {
+                    let label = ui.label(label);
+                    ui.text_edit_singleline(field).labelled_by(label.id);
+                    ui.end_row();
+                }
+            });
+            if let [Some(min), Some(max), Some(step)] =
+                app.control_fields.each_ref().map(|s| parse_number(s))
+            {
+                if min < max && step > 0.0 {
+                    numbers = Some((min, max, step));
+                }
+            }
+            if numbers.is_none() {
+                ui.colored_label(theme::ERROR, "Podaj rosnący zakres i dodatni krok.");
+            }
+        } else {
+            let caption = ui.label("Podpis");
+            ui.text_edit_singleline(&mut app.control_fields[0])
+                .labelled_by(caption.id);
+        }
+        ui.horizontal(|ui| {
+            cancel = ui.button("Anuluj").clicked();
+            let enabled = !slider || numbers.is_some();
+            confirm = ui.add_enabled(enabled, egui::Button::new("OK")).clicked()
+                || (enabled && ui.input(|i| i.key_pressed(egui::Key::Enter)));
+        });
+    });
+    if confirm {
+        let c = app.wb.construction();
+        let taken = |label: &str| c.id(label).is_some();
+        let outcome = if let Some((min, max, step)) = numbers {
+            app.tool.finish_slider(min, max, step, taken)
+        } else {
+            app.tool.finish_checkbox(&app.control_fields[0], taken)
+        };
+        app.apply_outcome(outcome);
+    } else if cancel || modal.should_close() {
+        app.reset_tool();
     }
 }
 

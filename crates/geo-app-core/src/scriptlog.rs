@@ -570,6 +570,10 @@ impl Log {
         })
     }
 
+    pub(crate) fn record_saved_property(&mut self, property: Property) {
+        self.ops.push(Op::SavedProperty(Box::new(property)));
+    }
+
     pub(crate) fn saved_properties(&self) -> impl Iterator<Item = &Property> {
         self.ops.items().into_iter().filter_map(|op| match op {
             Op::SavedProperty(property) => Some(property.as_ref()),
@@ -1588,7 +1592,7 @@ impl Log {
             }
             Directive::SavedProperty(property) => {
                 property.apply(c)?;
-                self.ops.push(Op::SavedProperty(Box::new(property)));
+                self.record_saved_property(property);
                 return Ok(Vec::new());
             }
             Directive::TextProperties(props) => {

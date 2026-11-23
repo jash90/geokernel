@@ -148,6 +148,7 @@ pub struct App {
     pub style_bar: bool,
     /// The text of the number dialog.
     pub number_text: String,
+    pub control_fields: [String; 3],
     /// Where the regions were in the last frame.
     pub regions: Regions,
     /// The widgets over the graphics view in the last frame.
@@ -236,6 +237,7 @@ impl App {
             keyboard: Keyboard::default(),
             style_bar: false,
             number_text: String::new(),
+            control_fields: Default::default(),
             regions: Regions::new(Rect::ZERO, false, &Metrics::desktop()),
             overlays: Overlays::new(),
             seen_rebuilds: 0,
@@ -370,7 +372,9 @@ impl App {
 
     /// The active tool holds picks or waits for its number.
     fn tool_in_use(&self) -> bool {
-        !self.tool.picks().is_empty() || self.tool.asking().is_some()
+        !self.tool.picks().is_empty()
+            || self.tool.asking().is_some()
+            || self.tool.control_request().is_some()
     }
 
     /// Leaves the active tool for the move tool, clears the selection and

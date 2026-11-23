@@ -1026,6 +1026,9 @@ pub struct Construction {
     hidden_requests: Vec<Id>,
     /// The frozen points of the pen strokes.
     pub(crate) strokes: std::collections::BTreeMap<Id, algo::stroke::StrokeData>,
+    slider_styles: std::collections::BTreeMap<Id, control::SliderStyle>,
+    checkbox_styles: std::collections::BTreeMap<Id, control::CheckboxStyle>,
+    free_booleans: Vec<Id>,
     drawing_styles: std::collections::BTreeMap<Id, DrawingStyle>,
     drawing_layers: u16,
     text_presentations: HashMap<Id, text::TextOverrides>,
@@ -1806,6 +1809,10 @@ impl Construction {
             self.animation_running = false;
         }
         self.hidden_requests.retain(|id| id.0 < at.len);
+        self.slider_styles.split_off(&Id(at.len));
+        self.checkbox_styles.split_off(&Id(at.len));
+        self.free_booleans
+            .truncate(self.free_booleans.partition_point(|id| id.0 < at.len));
         self.drawing_styles.split_off(&Id(at.len));
         self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
@@ -2125,6 +2132,16 @@ impl Construction {
         }
         if let Some(path) = path {
             self.paths.insert(slot, (id.0, path));
+        }
+        match (
+            self.free_booleans.binary_search(&id),
+            matches!(def, Def::Boolean(_)),
+        ) {
+            (Ok(index), false) => {
+                self.free_booleans.remove(index);
+            }
+            (Err(index), true) => self.free_booleans.insert(index, id),
+            _ => {}
         }
         // a redefined object is a new circle without a record
         self.forget_circle_record(id.0);
@@ -2606,6 +2623,9 @@ impl Construction {
             if let Some(children) = self.children.get_mut(parent.0) {
                 children.insert(id);
             }
+        }
+        if matches!(def, Def::Boolean(_)) {
+            self.free_booleans.push(id);
         }
         self.defs.push(def);
         self.values.push(value);

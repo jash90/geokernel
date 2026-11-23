@@ -663,3 +663,130 @@ fn a_saved_camera_with_every_point_offscreen_fits_the_construction() {
             .any(|(drawn, _)| *drawn == id));
     }
 }
+
+#[test]
+fn slider_tool_opens_on_click_and_places_the_default_slider() {
+    // SliderToolTest.sliderTool and sliderToolPreviewDoesNotShowDialog.
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::Slider);
+    let at = at(ALGEBRA_WIDTH + SPLITTER + 100.0, TOOLBAR_HEIGHT + 100.0);
+    moved(&mut h, at);
+    assert!(h.state().tool.control_request().is_none());
+    click(&mut h, at);
+    assert_eq!(h.state().tool.control_request(), Some((100.0, 100.0)));
+    assert!(labels(&h).is_empty());
+    h.get_by_label("OK").click();
+    h.run();
+    let c = h.state().wb.construction();
+    let id = c.ids().next().unwrap();
+    assert_eq!(c.value(id), Value::Number(1.0));
+    assert_eq!(c.slider_interval(id), Some((-5.0, 5.0)));
+    assert_eq!(c.slider_style(id).step, Some(0.1));
+    assert_eq!(c.slider_style(id).position, Some((100.0, 100.0)));
+    assert!(h.state_mut().undo());
+    assert!(labels(&h).is_empty());
+    assert!(h.state_mut().redo());
+    let c = h.state().wb.construction();
+    assert_eq!(
+        c.slider_style(c.ids().next().unwrap()).position,
+        Some((100.0, 100.0))
+    );
+}
+
+#[test]
+fn slider_drag_snaps_updates_dependents_and_is_one_undo_step() {
+    let mut h = harness("a = Slider(0, 8, 0.5)\nb = 2 a");
+    let from = at(ALGEBRA_WIDTH + SPLITTER + 30.0, TOOLBAR_HEIGHT + 50.0);
+    drag(&mut h, from, from + egui::vec2(94.0, 0.0));
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(4.0));
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Number(8.0));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+    assert!(h.state_mut().undo());
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(0.0));
+    assert!(h.state_mut().redo());
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(4.0));
+}
+
+#[test]
+fn checkbox_tool_creates_a_control_that_toggles_on_canvas() {
+    let mut h = harness("");
+    h.state_mut().select_tool(Tool::Checkbox);
+    let from = at(ALGEBRA_WIDTH + SPLITTER + 100.0, TOOLBAR_HEIGHT + 100.0);
+    click(&mut h, from);
+    h.get_by_label("OK").click();
+    h.run();
+    let value = |h: &Harness<'_, App>| {
+        let c = h.state().wb.construction();
+        c.value(c.id("a").unwrap())
+    };
+    assert_eq!(value(&h), Value::Bool(true));
+    h.state_mut().select_tool(Tool::Move);
+    click(&mut h, from + egui::vec2(15.0, 15.0));
+    assert_eq!(value(&h), Value::Bool(false));
+    assert_eq!(h.state().wb.undo_depth(), (2, 0));
+    assert!(h.state_mut().undo());
+    assert_eq!(value(&h), Value::Bool(true));
+}
+
+#[test]
+fn fixed_canvas_controls_keep_their_values() {
+    let mut h = harness(
+        "a = Slider(0, 10)\n\
+         $sliderStyle(_61, true, 80, 100, 100, true, true, _, _)\n\
+         b = $checkBox(true, _78)\n\
+         $checkboxStyle(_62, 80, 200, true)",
+    );
+    let canvas = |x, y| at(ALGEBRA_WIDTH + SPLITTER + x, TOOLBAR_HEIGHT + y);
+    drag(&mut h, canvas(80.0, 100.0), canvas(165.0, 100.0));
+    click(&mut h, canvas(95.0, 215.0));
+    let c = h.state().wb.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(0.0));
+    assert_eq!(c.value(c.id("b").unwrap()), Value::Bool(true));
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
+}
+
+#[test]
+fn an_imported_vertical_sliders_label_moves_separately_from_its_knob() {
+    let mut h = harness("");
+    h.state_mut()
+        .wb
+        .load_for_export(
+            br#"<geogebra format="5.0"><construction>
+             <element type="numeric" label="a">
+               <value val="2"/><show object="true" label="true"/>
+               <slider min="0" max="8" absoluteScreenLocation="true"
+                       x="140" y="200" width="120" horizontal="false"/>
+               <animation step="0.5" type="0" playing="false"/>
+               <labelOffset x="40" y="6"/>
+             </element>
+           </construction></geogebra>"#,
+            "vertical-slider",
+        )
+        .unwrap();
+    h.run();
+    let (canvas, _) = h.state().view.unwrap();
+    let canvas_at = |x, y| Pos2::new(canvas.min.x + x, canvas.min.y + y);
+    let id = h.state().wb.construction().id("a").unwrap();
+    let label = h
+        .state()
+        .label_rects
+        .borrow()
+        .iter()
+        .find(|(label, _)| *label == id)
+        .unwrap()
+        .1;
+    let from = canvas_at(
+        label.left() + label.width() / 2.0,
+        label.top() + label.height() / 2.0,
+    );
+    drag(&mut h, from, from + egui::vec2(22.0, 11.0));
+    assert_eq!(h.state().wb.label_offset(id), Some((62.0, 17.0)));
+    assert_eq!(h.state().wb.construction().value(id), Value::Number(2.0));
+    assert_eq!(h.state().wb.undo_depth(), (0, 0));
+    drag(&mut h, canvas_at(140.0, 170.0), canvas_at(140.0, 63.0));
+    assert_eq!(h.state().wb.construction().value(id), Value::Number(8.0));
+    assert_eq!(h.state().wb.undo_depth(), (1, 0));
+}

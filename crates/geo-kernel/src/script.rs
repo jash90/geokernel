@@ -1186,8 +1186,7 @@ fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
 }
 
 /// `Slider(min, max)` and `Slider(min, max, increment)` with constant number
-/// expressions (`CmdSlider`); the increment only matters for dragging, which
-/// the kernel does not do, so it is checked and dropped.
+/// expressions (`CmdSlider`). The increment is used when the knob is dragged.
 fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
     let number = |arg| {
         crate::expr::constant_number(c, arg)
@@ -1195,15 +1194,22 @@ fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String>
             .map(|(value, _)| value)
             .ok_or_else(|| format!("expected a constant number, got `{arg}`"))
     };
-    let (min, max) = match args {
-        [min, max] => (number(min)?, number(max)?),
-        [min, max, step] => {
-            number(step)?;
-            (number(min)?, number(max)?)
-        }
+    let (min, max, step) = match args {
+        [min, max] => (number(min)?, number(max)?, None),
+        [min, max, step] => (number(min)?, number(max)?, Some(number(step)?)),
         _ => return Err(format!("`Slider` does not take {} argument(s)", args.len())),
     };
-    c.add_slider(name, min, max).map_err(|e| e.to_string())
+    let id = c.add_slider(name, min, max).map_err(|e| e.to_string())?;
+    if step.is_some() {
+        c.set_slider_style(
+            id,
+            crate::kernel::control::SliderStyle {
+                step,
+                ..Default::default()
+            },
+        );
+    }
+    Ok(id)
 }
 
 /// `CmdPolyLine` reads its trailing flag at creation. A false flag leaves

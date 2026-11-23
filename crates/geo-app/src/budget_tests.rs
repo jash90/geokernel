@@ -1266,3 +1266,75 @@ fn a_thirty_kilobyte_formula_is_cached_like_any_other() {
         "{idle:?}"
     );
 }
+
+#[test]
+fn a_thousand_canvas_sliders_and_checkboxes_fit_the_frame_budget() {
+    use geo_kernel::kernel::control::{CheckboxStyle, SliderStyle};
+    use geo_kernel::script::saved::Property;
+    use std::fmt::Write;
+
+    for checkboxes in [false, true] {
+        let mut script = String::new();
+        let mut hidden = String::new();
+        for i in 0..1000 {
+            let label = format!("v{i}");
+            let x = 12 + 28 * (i % 32);
+            let y = 24 + 23 * (i / 32);
+            let property = if checkboxes {
+                writeln!(script, "{label} = $checkBox(true, _78)").unwrap();
+                Property::CheckboxStyle {
+                    label: label.clone(),
+                    style: CheckboxStyle {
+                        position: Some([x, y]),
+                        fixed: false,
+                    },
+                }
+            } else {
+                writeln!(script, "{label} = Slider(-1, 1)").unwrap();
+                Property::SliderStyle {
+                    label: label.clone(),
+                    style: SliderStyle {
+                        position: Some((f64::from(x), f64::from(y))),
+                        width: 25.0,
+                        ..SliderStyle::default()
+                    },
+                }
+            };
+            writeln!(script, "{property}").unwrap();
+            writeln!(hidden, "SetVisibleInView({label}, 1, false)").unwrap();
+        }
+        let mut visible = Window::with(&script, String::new());
+        assert_eq!(visible.app.wb.construction().len(), 1000);
+        let (rect, _) = visible.app.view.unwrap();
+        assert!(rect.width() > 960.0 && rect.height() > 775.0, "{rect:?}");
+        let shown = visible.settled(2);
+        script.push_str(&hidden);
+        let before = Window::with(&script, String::new()).settled(2);
+        let mut elapsed = [0.0_f64; 21];
+        for ms in &mut elapsed {
+            let start = std::time::Instant::now();
+            visible.step(Vec::new());
+            *ms = start.elapsed().as_secs_f64() * 1000.0;
+        }
+        elapsed.sort_by(f64::total_cmp);
+        let name = if checkboxes { "checkboxes" } else { "sliders" };
+        let median = elapsed[elapsed.len() / 2];
+        println!("{name}: {median:.3} ms, hidden {before:?}, visible {shown:?}");
+        assert_eq!(shown.texts - before.texts, 1000, "{shown:?}");
+        assert!(
+            shown.vertices > before.vertices && shown.vertices <= 60_000,
+            "{shown:?}"
+        );
+        assert!(
+            shown.shapes <= 4700 && shown.allocs <= 3500 && shown.bytes <= 1_500_000,
+            "{shown:?}"
+        );
+        assert_eq!(
+            (shown.rows_formatted, shown.rows_built, shown.colour_scans),
+            (0, 0, 0)
+        );
+        if !cfg!(debug_assertions) {
+            assert!(median <= 4.0, "{name}: median {median:.3} ms (budget 4 ms)");
+        }
+    }
+}

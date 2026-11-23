@@ -2759,7 +2759,7 @@
       ],
       "without": [
         30.0,
-        30.0
+        50.0
       ]
     },
     "slider.show_algebra": {
@@ -2772,7 +2772,7 @@
       "fixture": "saved-styles-003",
       "label": "a",
       "saved": 150.0,
-      "without": 100.0
+      "without": 200.0
     },
     "tooltip_mode": {
       "fixture": "saved-styles-003",
