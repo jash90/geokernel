@@ -301,6 +301,10 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     if let Some(&k) = labels.get(a) {
         return Some(k);
     }
+    // The axes are lines that no snapshot lists.
+    if a == "xAxis" || a == "yAxis" {
+        return Some(Kind::Line);
+    }
     if a.starts_with('"') && a.ends_with('"') {
         return Some(Kind::Text);
     }
@@ -975,6 +979,8 @@ mod tests {
         assert_eq!(arg_kind("2a + 1", &l), Some(Kind::Number));
         assert_eq!(arg_kind("a^2 - pi", &l), Some(Kind::Number));
         assert_eq!(arg_kind("k", &l), None);
+        assert_eq!(arg_kind("xAxis", &l), Some(Kind::Line));
+        assert_eq!(arg_kind(" yAxis ", &l), Some(Kind::Line));
         assert_eq!(arg_kind("a < 3", &l), Some(Kind::Boolean));
         assert_eq!(arg_kind("true", &l), Some(Kind::Boolean));
         assert_eq!(arg_kind("(1, a)", &l), Some(Kind::Point));
