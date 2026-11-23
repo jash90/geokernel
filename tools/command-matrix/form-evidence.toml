@@ -4454,7 +4454,7 @@ cases = ["calculus-sums-012"]
 [[form]]
 command = "Radius"
 form = "conic"
-cases = ["geomforms-area-001", "geomforms-area-003", "keptvalues-cartesian-001"]
+cases = ["geomforms-area-001", "geomforms-area-003"]
 
 [[form]]
 command = "Transpose"
