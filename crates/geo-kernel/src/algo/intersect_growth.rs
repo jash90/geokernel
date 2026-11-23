@@ -93,6 +93,8 @@ pub struct BoundaryOutputs {
     /// Slots (owner label, zero-based slot) that the script being replayed
     /// adds with its own `$boundarySlot` lines: growth stops before them.
     recorded: BTreeSet<(String, usize)>,
+    /// While set, no output loses its label (see [`Self::set_deferred`]).
+    deferred: bool,
 }
 
 impl BoundaryOutputs {
@@ -118,7 +120,24 @@ impl BoundaryOutputs {
             groups: Vec::new(),
             revision: 0,
             recorded,
+            deferred: false,
         }
+    }
+
+    /// Leaves the removal of outputs to a later update while `deferred`: a
+    /// replay of the part of a journal that a deletion rebuilt, whose
+    /// replay did not free them either (the reference frees an output only
+    /// when its command updates).
+    pub fn set_deferred(&mut self, deferred: bool) {
+        self.deferred = deferred;
+    }
+
+    /// Whether some command of the registry frees the labels of its outputs.
+    pub fn frees_labels(&self, c: &Construction) -> bool {
+        self.groups.iter().any(|group| {
+            group.first.index() < c.len()
+                && GrowthAnchor::from_def(c.def(group.first)).is_some_and(|a| a.default_labels())
+        })
     }
 
     /// Rebuilds the registry from a definition that has already executed.
@@ -217,13 +236,13 @@ impl BoundaryOutputs {
                 continue;
             };
             let frees = anchor.default_labels();
-            if !frees && record.is_none() {
+            if (!frees || self.deferred) && record.is_none() {
                 continue;
             }
             let Some(count) = anchor.size(c) else {
                 continue;
             };
-            if frees {
+            if frees && !self.deferred {
                 // With no root left, a point that another object reads keeps
                 // every other point from being reset: they are all removed,
                 // the first one too.

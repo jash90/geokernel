@@ -1887,6 +1887,36 @@ fn deleting_a_reader_keeps_an_interval_root_that_a_later_line_reads() {
     assert!((x - 2.0 * std::f64::consts::PI).abs() < 1e-6, "{x}");
     let e = c.id("e").expect("e survives");
     assert!(matches!(c.value(e), Value::Number(v) if (v - x - 1.0).abs() < 1e-9));
+    // Every replay of the journal the deletion left gives the same labels.
+    let after = labelled_values(&w);
+    assert!(w.undo());
+    assert!(w.construction().id("d").is_some());
+    assert!(w.redo());
+    assert_eq!(labelled_values(&w), after);
+    let b = w.construction().id("b").unwrap();
+    assert!(w.set_number(b, 7.0));
+    assert!(w.undo());
+    assert_eq!(labelled_values(&w), after);
+    let snapshot = w.snapshot_text();
+    let mut restored = Workbench::default();
+    assert!(restored.restore_text(&snapshot).unwrap().is_empty());
+    assert_eq!(labelled_values(&restored), after, "{snapshot}");
+    let script: String = snapshot.lines().skip(1).map(|l| format!("{l}\n")).collect();
+    restored.load_script(&script).unwrap();
+    assert_eq!(labelled_values(&restored), after, "{script}");
+    let bare: String = script
+        .lines()
+        .map(|l| format!("{}\n", geo_kernel::script::split_comment(l).0))
+        .collect();
+    assert!(restored.restore_text(&bare).unwrap().is_empty());
+    assert_eq!(labelled_values(&restored), after, "{bare}");
+    // Later edits free outputs again: with e gone, R_{2} loses its label
+    // when b leaves it without a root.
+    let e = w.construction().id("e").unwrap();
+    assert!(w.delete(e));
+    let b = w.construction().id("b").unwrap();
+    assert!(w.set_number(b, 4.0));
+    assert!(w.construction().id("R_{2}").is_none());
 }
 
 #[test]
