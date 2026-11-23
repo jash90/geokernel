@@ -54,6 +54,21 @@ impl LineConicDef {
         }
     }
 
+    pub(super) fn definition(self, c: &Construction) -> Def {
+        match self.output {
+            Output::Index(which @ 0..=1)
+                if c.kind(self.line) == Kind::Line && c.kind(self.conic) == Kind::Circle =>
+            {
+                Def::IntersectLineCircle {
+                    line: self.line,
+                    circle: self.conic,
+                    which: which as u8,
+                }
+            }
+            _ => Def::IntersectLineConic(self),
+        }
+    }
+
     pub(crate) fn from_indexed(def: Def) -> Option<Self> {
         match def {
             Def::IntersectLineCircle {

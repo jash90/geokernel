@@ -229,7 +229,7 @@ pub(crate) fn exec_selected(
                 };
                 d.single(c, id)?
             };
-            c.add(label, Def::IntersectLineConic(d))
+            c.add(label, d.definition(c))
                 .map(Some)
                 .map_err(|e| e.to_string())
         })();
