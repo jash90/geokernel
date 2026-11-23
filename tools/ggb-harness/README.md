@@ -66,6 +66,14 @@ automatically. The `odesymbolic` group's `nocas` topic uses the dummy backend
 to verify behavior without symbolic evaluation. `GGB_HARNESS_CAS=1` selects
 the native backend for other runs. The remaining historical cases default
 to the dummy backend.
+
+`GGB_HARNESS_JAVA_OPTS` adds options to every Java run. With
+`-DggbHarness.giacLog=<file>` the native backend appends one JSON line per
+Giac exchange to that file: `translate` lines carry the GeoGebra command text
+and the processed result, `raw` lines each string passed to Giac and what Giac
+printed, all tagged with the case id. `crates/geo-giac` replays these
+exchanges to check that the kernel's Giac binding gives the same output
+(see `docs/cas-giac.md`).
 The `prove` group also sets `-DggbHarness.prover`. The headless app's prover
 never decides a statement: its `Prover.compute` is empty, so every `Prove` is
 `false` and every `ProveDetails` is `{}`. `ProverOracle` installs a prover

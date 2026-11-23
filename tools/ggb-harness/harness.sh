@@ -43,7 +43,7 @@ shift || true
 
 : "${GEOGEBRA_SRC:?set GEOGEBRA_SRC to the root of a GeoGebra checkout}"
 ggb="$(cd "$GEOGEBRA_SRC" && pwd)"
-java_opts=(-Xms4g -Xmx4g -XX:+UseG1GC)
+java_opts=(-Xms4g -Xmx4g -XX:+UseG1GC ${GGB_HARNESS_JAVA_OPTS:-})
 
 giac_version=70507
 

@@ -72,6 +72,7 @@ public final class GoldenGenerator {
                 continue;
             }
             count++;
+            GiacOracle.currentCase = id;
             Map<String, Object> golden;
             try {
                 golden = runCase(input, stats);
