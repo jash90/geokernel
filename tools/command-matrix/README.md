@@ -54,7 +54,17 @@ The test reads each argument's kind from the case's first snapshot
 or the literal argument. A wildcard form requires
 a disposition, with the exception of transformation forms whose cases cover
 all supported core geometry kinds. Cases can document supported inputs
-alongside a disposition. To list candidate cases for new rows:
+alongside a disposition.
+
+A form is done only when every recorded case that may call it agrees: the
+same test fails when any case of `crates/geo-golden/known-gaps.toml` may call
+a form that has a row. Here a call reaches a form the way upstream's command
+processors would take it: a circle or a conic part reaches a `conic` token, a
+segment or a ray a `line` token, an angle a `number` token, and an argument
+whose kind cannot be told without the kernel (a nested call, a free
+variable, an equation typed in place) reaches every token its shape allows.
+A call that shows one form of the command exactly reaches only that form.
+To list candidate cases for new rows:
 
     cargo test -p geo-golden --test command_forms -- --ignored --nocapture
 

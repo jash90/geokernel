@@ -327,4 +327,30 @@ cases = Cases("funcrest")
 case("conditionalmixed",
      "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\ng = Line(A, C)\ns = If(n > 0, r, g)",
      [setn("n", -1), setn("n", 1)])
+# The segment output of a segment then a line keeps the endpoints it copied
+# last (at creation, those of the segment) and takes the line's coefficients;
+# readers of the coefficients follow the line, readers of the endpoints and
+# the length keep the copy.
+case("conditionalmixed",
+     "n = -1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (2, 2)\nr = Segment(A, B)\ng = Line(A, C)\n"
+     "s = If(n > 0, r, g)\nh = PerpendicularLine(D, s)\nm = Midpoint(s)\nd = Length(s)\nk = Distance(D, s)",
+     [mv("B", 5, 1), setn("n", 1), mv("C", 2, 3), setn("n", -1), mv("A", 1, 1), setn("n", 1)])
+# A line output copies the coefficients of a selected segment.
+case("conditionalmixed",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (2, 2)\nr = Segment(A, B)\ng = Line(A, C)\n"
+     "s = If(n > 0, g, r)\nh = PerpendicularLine(D, s)",
+     [setn("n", -1), mv("B", 3, 3), setn("n", 1), mv("B", 0, 0), setn("n", -1), mv("B", 4, 0)])
+# An undefined segment output stays undefined while a line is selected.
+case("conditionalmixed",
+     "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nE = (1, 2)\nr = Segment(A, B)\nq = Segment(A, E)\n"
+     "g = Line(A, C)\ns = If(n > 0, r, n > -5, q, n > -9, g)",
+     [setn("n", -2), setn("n", -6), setn("n", -10), setn("n", -6), setn("n", 1), setn("n", -6)])
+# A segment output copies the coefficients a selected conditional segment
+# carries (`GeoSegment.set` calls `GeoLine.set` first).
+case("conditionalmixed",
+     "n = -1\nm = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (2, 2)\nE = (1, 2)\nr = Segment(A, B)\n"
+     "q = Segment(A, E)\ng = Line(A, C)\ns = If(n > 0, r, g)\nt = If(m > 0, s, q)\n"
+     "h = PerpendicularLine(D, t)\nk = Distance(D, t)\nl = Length(t)",
+     [setn("m", -1), setn("m", 1), mv("C", 2, 3), setn("n", 1), setn("n", -1), mv("A", 1, 1),
+      setn("m", -1), setn("m", 1)])
 cases.write("reference")

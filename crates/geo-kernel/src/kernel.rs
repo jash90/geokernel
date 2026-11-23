@@ -938,6 +938,11 @@ pub struct Construction {
     images: image::Images,
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
     proofs: std::collections::BTreeMap<Id, algo::prover::ProofData>,
+    /// The line coefficients a conditional segment took from a selected
+    /// line (`GeoSegment.set(GeoLine)` copies the coefficients and keeps the
+    /// end points). Kept outside [`Value`] so that it stays 48 bytes; absent
+    /// while the coefficients are those of the end points.
+    segment_carriers: std::collections::BTreeMap<Id, (f64, f64, f64)>,
     /// The animations of the sliders, see [`Construction::animate`].
     animations: std::collections::BTreeMap<Id, animation::Animation>,
     /// Whether the animation timer runs (`AnimationManager.isRunning`); a
@@ -1711,6 +1716,7 @@ impl Construction {
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
         self.proofs.split_off(&Id(at.len));
+        self.segment_carriers.split_off(&Id(at.len));
         self.strokes.split_off(&Id(at.len));
         self.animations.split_off(&Id(at.len));
         if !self.animations.values().any(|a| a.playing) {
@@ -2362,6 +2368,15 @@ impl Construction {
                 self.proofs.insert(id, data);
                 value
             }
+            Def::Conditional {
+                args,
+                kind: Kind::Segment,
+            } => {
+                let initial = self.conditional_segment_copy(args);
+                let (value, carrier) = self.conditional_segment(args, initial);
+                self.set_segment_carrier(id, carrier);
+                value
+            }
             Def::Locus(d) => {
                 let data = locus::record(self, d, id);
                 self.store_locus(id, data)
@@ -2423,8 +2438,10 @@ impl Construction {
         }
         if matches!(
             def,
-            Def::Point(crate::algo::point::PointDef::ViewCorner { .. })
-                | Def::Measure(MeasureDef::AxisStep { .. })
+            Def::Point(
+                crate::algo::point::PointDef::ViewCorner { .. }
+                    | crate::algo::point::PointDef::DrawableCorner { .. }
+            ) | Def::Measure(MeasureDef::AxisStep { .. })
         ) {
             self.view_readers.push(id.0);
         }
@@ -2873,6 +2890,19 @@ impl Construction {
                     if !self.update_equation(i, d) {
                         continue;
                     }
+                }
+                Def::Conditional {
+                    args,
+                    kind: Kind::Segment,
+                } => {
+                    let id = Id(i);
+                    let previous = (self.values[i], self.segment_carriers.get(&id).copied());
+                    let (value, carrier) = self.conditional_segment(args, previous);
+                    if value.identical(&previous.0) && carrier == previous.1 {
+                        continue;
+                    }
+                    self.values[i] = value;
+                    self.set_segment_carrier(id, carrier);
                 }
                 // A redefinition can change the structure the proof reads
                 // (a free point put on a path): the reference rebuilds it.
@@ -3728,8 +3758,16 @@ impl Construction {
             Def::FreePoint { x, y } => Some(Value::Point { x, y }),
             Def::Number(v) | Def::Angle(v) => Some(Value::Number(v)),
             Def::Boolean(v) => Some(Value::Bool(v)),
-            Def::Conditional { args, .. } => {
-                Some(self.stored_value(expr::conditional_branch(self, self.list(args))?))
+            Def::Conditional { args, kind } => {
+                let branch = expr::conditional_branch(self, self.list(args))?;
+                match (kind, self.stored_value(branch)) {
+                    // `GeoLine.set` copies the coefficients of a segment.
+                    (Kind::Line, Value::Segment { .. }) => {
+                        let (x, y, z) = self.raw_carrier(branch)?;
+                        algo::line_value(x, y, z)
+                    }
+                    (_, value) => Some(value),
+                }
             }
             Def::Button => Some(Value::Button),
             Def::InputBox(_) => Some(Value::InputBox),
@@ -3834,6 +3872,10 @@ impl Construction {
     #[allow(dead_code)] // part of the accessor set; every rule here reads carriers raw
     pub(crate) fn carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
         match self.value(id) {
+            Value::Segment { .. } if self.segment_carriers.contains_key(&id) => {
+                let (a, b, c) = self.segment_carriers[&id];
+                Value::Line { a, b, c }.unit_line()
+            }
             Value::Segment { x1, y1, x2, y2 } => line_through((x1, y1), (x2, y2)),
             v => v.unit_line(),
         }
@@ -3846,9 +3888,86 @@ impl Construction {
     pub(crate) fn raw_carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
         match self.value(id) {
             Value::Line { a, b, c } | Value::Ray { a, b, c, .. } => Some((a, b, c)),
+            Value::Segment { .. } if self.segment_carriers.contains_key(&id) => {
+                Some(self.segment_carriers[&id])
+            }
             Value::Segment { x1, y1, x2, y2 } => Some(join((x1, y1), (x2, y2))),
             _ => None,
         }
+    }
+
+    /// The coefficients a conditional segment took from a selected line,
+    /// when they are not those of its end points.
+    pub(crate) fn segment_carrier(&self, id: Id) -> Option<(f64, f64, f64)> {
+        match self.value(id) {
+            Value::Segment { .. } => self.segment_carriers.get(&id).copied(),
+            _ => None,
+        }
+    }
+
+    fn set_segment_carrier(&mut self, id: Id, carrier: Option<(f64, f64, f64)>) {
+        match carrier {
+            Some(carrier) => self.segment_carriers.insert(id, carrier),
+            None => self.segment_carriers.remove(&id),
+        };
+    }
+
+    /// The state of a new conditional segment: `AlgoIf` starts from a copy
+    /// of `GeoList.getGenericElement(alternatives)`, the last alternative of
+    /// the leading run that a segment can be set from.
+    fn conditional_segment_copy(&self, args: IdList) -> (Value, Option<(f64, f64, f64)>) {
+        let ids = self.list(args);
+        let mut generic = None;
+        for (k, &id) in ids.iter().enumerate() {
+            let alternative = k % 2 == 1 || k + 1 == ids.len();
+            if !alternative {
+                continue;
+            }
+            if self.kind(id) != Kind::Segment {
+                break;
+            }
+            generic = Some(id);
+        }
+        let Some(id) = generic else {
+            return (Value::Undefined, None);
+        };
+        (self.stored_value(id), self.segment_carrier(id))
+    }
+
+    /// `AlgoIf.compute` for a segment output, from the state the output
+    /// holds. A selected segment brings the coefficients it carries. A false condition first applies the else
+    /// alternative, or makes the output undefined when there is none, before
+    /// the next condition is tested. `GeoSegment.set` copies a segment
+    /// whole; from a line it copies only the coefficients and keeps the end
+    /// points and the defined flag, so a segment made undefined stays so
+    /// until a segment is selected.
+    fn conditional_segment(
+        &self,
+        args: IdList,
+        mut state: (Value, Option<(f64, f64, f64)>),
+    ) -> (Value, Option<(f64, f64, f64)>) {
+        let ids = self.list(args);
+        let set = |state: &mut (Value, Option<(f64, f64, f64)>), id: Id| {
+            let value = self.stored_value(id);
+            *state = match (self.kind(id), value) {
+                (_, value) if !value.is_defined() => (Value::Undefined, None),
+                (Kind::Segment, value) => (value, self.segment_carrier(id)),
+                (_, Value::Line { a, b, c }) if state.0.is_defined() => (state.0, Some((a, b, c))),
+                _ => (Value::Undefined, None),
+            };
+        };
+        let (pairs, fallback) = ids.as_chunks::<2>();
+        for &[condition, branch] in pairs {
+            if self.value(condition) == Value::Bool(true) {
+                set(&mut state, branch);
+                return state;
+            }
+            match fallback.first() {
+                Some(&last) => set(&mut state, last),
+                None => state = (Value::Undefined, None),
+            }
+        }
+        state
     }
 
     pub(crate) fn circle(&self, id: Id) -> Option<(f64, f64, f64)> {
@@ -4335,6 +4454,70 @@ mod tests {
         assert_eq!(c.move_point(e, 5.0, 5.0).unwrap(), 1); // G
         assert_eq!(c.move_point(e, 5.0, 5.0).unwrap(), 0); // no change
         assert!(c.value(x).is_defined());
+    }
+
+    #[test]
+    fn a_conditional_segment_takes_the_coefficients_of_a_selected_line() {
+        let mut c = crate::script::load(
+            "n = -1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\n\
+             g = Line(A, C)\ns = If(n > 0, r, g)",
+        )
+        .unwrap();
+        let (n, b, s) = (c.id("n").unwrap(), c.id("B").unwrap(), c.id("s").unwrap());
+        // The copy of `r` made at creation keeps its end points.
+        let kept = Value::Segment {
+            x1: 0.0,
+            y1: 0.0,
+            x2: 4.0,
+            y2: 0.0,
+        };
+        assert_eq!(c.value(s), kept);
+        assert_eq!(c.raw_carrier(s), Some((-3.0, 0.0, 0.0)));
+        c.move_point(b, 5.0, 1.0).unwrap();
+        assert_eq!(c.value(s), kept);
+        c.set_number(n, 1.0).unwrap();
+        assert_eq!(
+            c.value(s),
+            Value::Segment {
+                x1: 0.0,
+                y1: 0.0,
+                x2: 5.0,
+                y2: 1.0
+            }
+        );
+        assert_eq!(c.raw_carrier(s), Some((-1.0, 5.0, 0.0)));
+        assert_eq!(c.segment_carrier(s), None);
+    }
+
+    #[test]
+    fn a_conditional_segment_without_an_else_stays_undefined_for_a_line() {
+        let mut c = crate::script::load(
+            "n = -2\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nr = Segment(A, B)\n\
+             g = Line(A, C)\ns = If(n > 0, r, n > -5, g)",
+        )
+        .unwrap();
+        let (n, s) = (c.id("n").unwrap(), c.id("s").unwrap());
+        // The false first condition made the copy undefined before `g` was set.
+        assert_eq!(c.value(s), Value::Undefined);
+        c.set_number(n, 1.0).unwrap();
+        assert!(c.value(s).is_defined());
+        c.set_number(n, -2.0).unwrap();
+        assert_eq!(c.value(s), Value::Undefined);
+    }
+
+    #[test]
+    fn a_hidden_checkbox_has_its_corners_at_the_view_origin() {
+        let c = crate::script::load(
+            "b = true\nP = Vertex(b, 3)\nQ = Vertex(b, 5)\nR = Vertex(1 > 0, 1)",
+        )
+        .unwrap();
+        let [xmin, _, _, ymax, _, _] = c.view();
+        assert_eq!(
+            c.value(c.id("P").unwrap()),
+            Value::Point { x: xmin, y: ymax }
+        );
+        assert_eq!(c.value(c.id("Q").unwrap()), Value::Undefined);
+        assert_eq!(c.value(c.id("R").unwrap()), Value::Undefined);
     }
 
     #[test]
