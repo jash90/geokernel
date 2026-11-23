@@ -1442,11 +1442,6 @@ pub(crate) fn operand(c: &Construction, expr: &Entry, index: u32) -> Operand {
     }
 }
 
-/// Whether node `index` of `expr` is an operand the prover replaced.
-pub(crate) fn is_segment_operand(expr: &Entry, index: u32) -> bool {
-    expr.segment_operands.iter().any(|(n, _)| *n == index)
-}
-
 /// The node tree of a Boolean expression, for the prover's translation of
 /// arithmetic statements.
 pub(crate) fn boolean_entry(c: &Construction, boolean: Id) -> Option<&Entry> {
@@ -1463,13 +1458,13 @@ pub(crate) fn boolean_entry(c: &Construction, boolean: Id) -> Option<&Entry> {
 /// whose length is never computed and stays 0. The change is permanent:
 /// later updates of the Boolean compare those segments. Its parents stay
 /// the same, so it is updated when the distances are.
-pub(crate) fn replace_distance_operands(c: &mut Construction, boolean: Id) {
+pub(crate) fn replace_distance_operands(c: &mut Construction, boolean: Id) -> bool {
     let Def::Expr(def) = c.def(boolean) else {
-        return;
+        return false;
     };
     let expr = entry(c, def);
     let Node::Bin(_, lhs, rhs) = expr.nodes[expr.root as usize] else {
-        return;
+        return false;
     };
     let mut replaced = Vec::new();
     for side in [lhs, rhs] {
@@ -1492,11 +1487,13 @@ pub(crate) fn replace_distance_operands(c: &mut Construction, boolean: Id) {
         let node = existing.map_or(Node::Num(0.0), Node::Obj);
         replaced.push((side, pair, node));
     }
+    let changed = !replaced.is_empty();
     let e = &mut c.exprs.entries[def.index as usize];
     for (side, pair, node) in replaced {
         e.nodes[side as usize] = node;
         e.segment_operands.push((side, pair));
     }
+    changed
 }
 
 /// A result of [`evaluate`]: the raw value and the exact decimal of a

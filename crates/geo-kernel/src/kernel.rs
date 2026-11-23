@@ -2867,6 +2867,13 @@ impl Construction {
                 // A redefinition can change the structure the proof reads
                 // (a free point put on a path): the reference rebuilds it.
                 Def::Prove(d) if refresh_definitions => {
+                    // A redefined statement is rewritten again, and the
+                    // reference's rebuild then reads the rewritten Boolean.
+                    if algo::prover::rewrite_statement(self, d.statement) {
+                        if let Def::Expr(e) = self.defs[d.statement.0] {
+                            self.update_expr(d.statement.0, e);
+                        }
+                    }
                     let data = d.record(self);
                     self.values[i] = data.value;
                     self.proofs.insert(Id(i), data);

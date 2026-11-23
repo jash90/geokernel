@@ -699,7 +699,7 @@ pub(crate) fn command(
             .map_err(|e| e.to_string())?;
         if let Source::LocusEquation(locus_equation::Definition::Condition { boolean, .. }) = source
         {
-            crate::expr::replace_distance_operands(c, boolean);
+            let _ = crate::expr::replace_distance_operands(c, boolean);
         }
         Ok(id)
     })();

@@ -821,6 +821,515 @@
           }
         }
       ]
+    },
+    {
+      "id": "prove-expression-017",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "M = Midpoint(A, B)",
+        "s = Segment(A, M)",
+        "b = Distance(A, B) == 2s",
+        "p = Prove(b)",
+        "p2 = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 },
+        { "action": "redefine", "line": "b = Distance(A, B) == 2s" },
+        { "action": "move", "label": "C", "x": 3.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "M": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.5, "y2": 0.5 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": false },
+          "p2": { "type": "boolean", "defined": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 3.0, "y2": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": false },
+          "p2": { "type": "boolean", "defined": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 3.0, "y2": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": false },
+          "p2": { "type": "boolean", "defined": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 3.0, "y": 3.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 3.0, "y2": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": false },
+          "p2": { "type": "boolean", "defined": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-018",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "D = (-1, 3)",
+        "b = Distance(A, B) == Distance(C, D)",
+        "s = Segment(A, B)",
+        "p = Prove(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "D", "x": 4.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 1.0, "x2": 5.0, "y2": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": -1.0, "y": 3.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "D": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-019",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "f = PerpendicularBisector(A, B)",
+        "P = Point(f)",
+        "s = Segment(P, A)",
+        "t = Segment(P, B)",
+        "b = s + t == 0",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "f": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 8.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "s = t" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-020",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "f = PerpendicularBisector(A, B)",
+        "P = Point(f)",
+        "s = Segment(P, A)",
+        "t = Segment(P, B)",
+        "b = s - t == 0",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "f": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 8.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-021",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "f = PerpendicularBisector(A, B)",
+        "P = Point(f)",
+        "s = Segment(P, A)",
+        "t = Segment(P, B)",
+        "b = s == -t",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "f": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 8.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 0.0, "y2": 0.0 },
+          "t": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "s = t" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-022",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "s = Segment(A, B)",
+        "t = Segment(B, C)",
+        "u = Segment(A, C)",
+        "b = s - t == u",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "t": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 2.0, "y2": 4.0 },
+          "u": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 4.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-023",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "s = Segment(A, B)",
+        "t = Segment(B, C)",
+        "u = Segment(A, C)",
+        "b = s + t == u",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "t": { "type": "segment", "defined": true, "x1": 5.0, "y1": 1.0, "x2": 2.0, "y2": 4.0 },
+          "u": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 4.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-024",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "f = Ray(A, B)",
+        "g = Ray(B, A)",
+        "b = f == g",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "f": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "g": { "type": "ray", "defined": true, "x": 5.0, "y": 1.0, "a": 1.0, "b": -5.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-025",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "f = Ray(A, B)",
+        "g = Line(A, B)",
+        "b = f == g",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "f": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-026",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "f = Segment(A, B)",
+        "g = Line(A, B)",
+        "b = f == g",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "f": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 5.0, "y2": 1.0 },
+          "g": { "type": "line", "defined": true, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-expression-027",
+      "group": "prove",
+      "script": [
+        "A = (0, 0)",
+        "B = (5, 1)",
+        "C = (2, 4)",
+        "M = Midpoint(A, B)",
+        "f = Ray(A, M)",
+        "g = Ray(A, B)",
+        "b = f == g",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "M": { "type": "point", "defined": true, "x": 2.5, "y": 0.5 },
+          "f": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -0.5, "b": 2.5, "c": 0.0 },
+          "g": { "type": "ray", "defined": true, "x": 0.0, "y": 0.0, "a": -1.0, "b": 5.0, "c": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[A,B]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }

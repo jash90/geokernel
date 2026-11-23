@@ -36,6 +36,7 @@ use crate::algo::conic::ConicDef;
 use crate::algo::lines::LineDef;
 use crate::algo::path::PathDef;
 use crate::algo::predicate::PredicateDef;
+use crate::algo::vector::VectorDef;
 use crate::expr::{Bin, Node, Operand};
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 
@@ -181,7 +182,9 @@ impl System {
                 self.point_vars.insert(id, [x, y]);
                 self.free_points.push(id);
             }
-            Def::Line(p, q) | Def::Segment(p, q) => {
+            Def::Line(p, q) | Def::Segment(p, q) | Def::Vector(VectorDef::RayPoints(p, q))
+                if c.kind(p) == Kind::Point && c.kind(q) == Kind::Point =>
+            {
                 let [a, b] = self.point(p)?;
                 let [d, e] = self.point(q)?;
                 self.line_vars.insert(id, [a, b, d, e]);
@@ -425,10 +428,27 @@ impl System {
             self.unknown = true;
             return None;
         }
+        let expr = crate::expr::boolean_entry(c, statement)?;
+        let objects = match expr.nodes[expr.root as usize] {
+            Node::Bin(_, l, r) => match (expr.nodes[l as usize], expr.nodes[r as usize]) {
+                (Node::Obj(a), Node::Obj(b)) => Some((a, b)),
+                _ => None,
+            },
+            _ => None,
+        };
         let alternatives = match (left, right) {
-            (Operand::Object(a), Operand::Object(b))
-                if !matches!(c.kind(a), Kind::Number) && !matches!(c.kind(b), Kind::Number) =>
+            // Two objects that are not numbers (`AlgoAreCongruent`).
+            // Two segments compare by length below, from their endpoints: a
+            // replaced operand need not be among the predecessors.
+            (Operand::Segment(_), Operand::Segment(_)) => {
+                let (k, l) = (self.segment_vars(c, left)?, self.segment_vars(c, right)?);
+                let length = |v: [usize; 4]| square_distance([v[0], v[1]], [v[2], v[3]], budget);
+                vec![vec![length(k)?.sub(&length(l)?, budget)?]]
+            }
+            _ if objects
+                .is_some_and(|(a, b)| c.kind(a) != Kind::Number && c.kind(b) != Kind::Number) =>
             {
+                let (a, b) = objects?;
                 self.congruent(c, a, b, budget)?
             }
             (
@@ -504,6 +524,19 @@ impl System {
         let Node::Bin(Bin::Equal, lhs, rhs) = expr.nodes[expr.root as usize] else {
             return None;
         };
+        // A distance operand of the root becomes a new segment, which the
+        // formula translation labels and then cannot read back: the
+        // reference answers unknown (`prove-expression-017`), whether or not
+        // an earlier proof already replaced it.
+        let replaced_distance = |side: u32| {
+            let segment_object = matches!(expr.nodes[side as usize],
+                Node::Obj(id) if matches!(c.def(id), Def::Segment(..)));
+            !segment_object && matches!(crate::expr::operand(c, expr, side), Operand::Segment(_))
+        };
+        if replaced_distance(lhs) || replaced_distance(rhs) {
+            self.unknown = true;
+            return None;
+        }
         let mut segments = Vec::new();
         let left = formula_poly(c, expr, lhs, &mut segments, 0, budget)?;
         let right = formula_poly(c, expr, rhs, &mut segments, 0, budget)?;
@@ -908,16 +941,27 @@ fn formula_poly(
                 Node::Obj(id) if matches!(c.def(id), Def::Segment(..)) => Some(id),
                 // A distance object inside a formula makes the reference
                 // fail: its formula substitution expects an arithmetic
-                // number. Only a replaced root operand stays.
-                _ if crate::expr::is_segment_operand(expr, index) => None,
+                // number. A root operand is handled by `formula`.
                 _ => return None,
             };
-            let found = object.and_then(|id| segments.iter().position(|s| s.object == Some(id)));
-            let i = found.unwrap_or_else(|| {
-                segments.push(FormulaSegment { object, ends });
-                segments.len() - 1
-            });
-            Some(Poly::var(i))
+            match object.and_then(|id| segments.iter().position(|s| s.object == Some(id))) {
+                Some(i) => Some(Poly::var(i)),
+                None => new_segment(segments, object, ends),
+            }
         }
     }
+}
+
+/// The variable of a new segment of a formula; none past the variable
+/// limit (each segment needs a second variable for its length).
+fn new_segment(
+    segments: &mut Vec<FormulaSegment>,
+    object: Option<Id>,
+    ends: [Id; 2],
+) -> Option<Poly> {
+    if 2 * (segments.len() + 1) > MAX_VARS {
+        return None;
+    }
+    segments.push(FormulaSegment { object, ends });
+    Some(Poly::var(segments.len() - 1))
 }

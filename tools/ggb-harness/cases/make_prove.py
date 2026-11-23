@@ -255,6 +255,32 @@ proof("expression", ["A = (0, 0)", "B = (5, 1)", "f = Line(A, B)",
 proof("expression", TRI + ["a = Segment(B, C)", "b1 = Segment(A, C)", "c1 = Segment(A, B)"],
       "a^2 == b1^2 + c1^2")
 proof("expression", TRI + ["s = Segment(A, B)"], "s == 3")
+# A distance operand of a formula; a second proof sees the rewritten
+# Boolean, and a redefinition makes a new one.
+cases.case("expression", TRI + ["M = Midpoint(A, B)", "s = Segment(A, M)",
+                                "b = Distance(A, B) == 2s", "p = Prove(b)", "p2 = Prove(b)",
+                                "q = ProveDetails(b)"],
+           [mv("A", 1, 1), {"action": "redefine", "line": "b = Distance(A, B) == 2s"},
+            mv("C", 3, 3)])
+# A segment made after the Boolean replaces its distance.
+cases.case("expression", TRI + ["D = (-1, 3)", "b = Distance(A, B) == Distance(C, D)",
+                                "s = Segment(A, B)", "p = Prove(b)"],
+           [mv("A", 1, 1), mv("A", 2, 0), mv("D", 4, 4)])
+# Formulas whose terms have mixed signs: the elimination squares each length.
+ISO = ["A = (0, 0)", "B = (4, 0)", "f = PerpendicularBisector(A, B)", "P = Point(f)",
+       "s = Segment(P, A)", "t = Segment(P, B)"]
+proof("expression", ISO, "s + t == 0")
+proof("expression", ISO, "s - t == 0")
+proof("expression", ISO, "s == -t")
+proof("expression", TRI + ["s = Segment(A, B)", "t = Segment(B, C)", "u = Segment(A, C)"],
+      "s - t == u")
+proof("expression", TRI + ["s = Segment(A, B)", "t = Segment(B, C)", "u = Segment(A, C)"],
+      "s + t == u")
+# Rays, lines and segments compared with ==.
+proof("expression", TRI + ["f = Ray(A, B)", "g = Ray(B, A)"], "f == g")
+proof("expression", TRI + ["f = Ray(A, B)", "g = Line(A, B)"], "f == g")
+proof("expression", TRI + ["f = Segment(A, B)", "g = Line(A, B)"], "f == g")
+proof("expression", TRI + ["M = Midpoint(A, B)", "f = Ray(A, M)", "g = Ray(A, B)"], "f == g")
 
 # Points on a circle that lie on a line through them, a list named like the
 # command, and circles of radius zero.

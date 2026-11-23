@@ -217,8 +217,13 @@ fn type_node(
         }
         Node::Un(op, a) => {
             let a = a as usize;
+            // A segment is a number, its length (see `Node::Bin` below).
+            let ta = match (nodes[a], state.tys[a]) {
+                (Node::Obj(id), Ty::Object) if c.kind(id) == Kind::Segment => Ty::Num(0),
+                (_, t) => t,
+            };
             (
-                unary_type(op, state.tys[a])?,
+                unary_type(op, ta)?,
                 1 + state.depth[a],
                 state.cost[a].saturating_add(1),
                 state.vars[a],
