@@ -540,21 +540,52 @@ fn cross_lists<const M: bool>(ctx: &Ctx<'_, M>, left: u32, right: u32) -> Option
         return None;
     }
     let product = |i, j| {
-        let x = slot_val(&lists.read(ctx.c, a + i));
-        let y = slot_val(&lists.read(ctx.c, b + j));
-        slot_val(&combine(Bin::Mul, x, y))
+        let x = lists.read(ctx.c, a + i);
+        let y = lists.read(ctx.c, b + j);
+        cross_arithmetic(ctx, Bin::Mul, x, y, 0)
     };
-    let component = |i, j| combine(Bin::Sub, product(i, j), product(j, i));
+    let component = |i, j| {
+        cross_arithmetic(ctx, Bin::Sub, product(i, j)?, product(j, i)?, 0)
+    };
     let start = lists.reserve(3)?;
     let (x, y) = if len == 3 {
-        (component(1, 2), component(2, 0))
+        (component(1, 2)?, component(2, 0)?)
     } else {
         (Slot::number(0.0), Slot::number(0.0))
     };
-    for (k, value) in [x, y, component(0, 1)].into_iter().enumerate() {
+    for (k, value) in [x, y, component(0, 1)?].into_iter().enumerate() {
         lists.set(start + k as u32, value);
     }
     Some((start, 3))
+}
+
+/// MyList.vectorProduct computes the component expressions with
+/// MyList.apply, so a row list can be a component of the result.
+fn cross_arithmetic<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    op: Bin,
+    left: Slot,
+    right: Slot,
+    depth: u32,
+) -> Option<Slot> {
+    let left_run = left.run();
+    let right_run = right.run();
+    let len = match (left_run, right_run) {
+        (None, None) => return Some(combine(op, slot_val(&left), slot_val(&right))),
+        (Some((_, a)), Some((_, b))) if a != b => 0,
+        (Some((_, len)), _) | (_, Some((_, len))) => len,
+    };
+    let lists = ctx.lists?;
+    if depth >= expr::MAX_DEPTH || !lists.charge(u64::from(len)) {
+        return None;
+    }
+    let start = lists.reserve(len)?;
+    for i in 0..len {
+        let x = left_run.map_or_else(|| left.clone(), |(run, _)| lists.read(ctx.c, run + i));
+        let y = right_run.map_or_else(|| right.clone(), |(run, _)| lists.read(ctx.c, run + i));
+        lists.set(start + i, cross_arithmetic(ctx, op, x, y, depth + 1)?);
+    }
+    Some(Slot::list(start, len))
 }
 
 fn matrix_number<const M: bool>(ctx: &Ctx<'_, M>, op: ListOp, matrix: u32) -> Option<f64> {
@@ -598,5 +629,31 @@ impl Construction {
         let entry = self.exprs.entries.get(index as usize)?;
         let lists = entry.lists.then(|| expr::eval::Lists::new(Vec::new()));
         Some(expr::eval::root(self, entry, lists.as_ref()).0)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::expr::Element;
+    use crate::script::load;
+
+    #[test]
+    fn cross_uses_nested_list_arithmetic_for_each_component() {
+        let c = load("a = Cross({{1, 2}, {3, 4}}, {{5, 6}, {7, 8}})\n                      b = Cross((0, 1), (2, 0))\nc = Cross((0, 1), (0, 2))")
+            .unwrap();
+        let a = c.elements(c.id("a").unwrap()).unwrap();
+        assert_eq!(a.len(), 3);
+        for i in 0..2 {
+            assert!(matches!(a.get(i), Some(Element::Value(_, Value::Number(0.0)))));
+        }
+        let Some(Element::List(z)) = a.get(2) else {
+            panic!("the third component must be a list");
+        };
+        assert_eq!(z.len(), 2);
+        assert!((0..2).all(|i| matches!(z.get(i), Some(Element::Value(_, Value::Number(-8.0))))));
+        assert_eq!(c.value(c.id("b").unwrap()), Value::Number(-2.0));
+        assert_eq!(c.value(c.id("c").unwrap()), Value::Number(0.0));
     }
 }

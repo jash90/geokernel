@@ -491,11 +491,6 @@ mismatches = ["1:S"]
 # intersectgrowth
 
 [[gap]]
-id = "vectorforms-nestedcross-001"
-reason = "GeoGebra multiplies and subtracts row lists inside the cross product, producing a list for the third component. The kernel's cross product computes scalar and coordinate entries, and its list arithmetic does not support nested operands."
-mismatches = ["0:a"]
-
-[[gap]]
 id = "geomextras-pointlist-007"
 reason = "GeoGebra appends point A as the list gains a row and retains it undefined when the list shrinks. The kernel only creates output slots for the initial rows."
 mismatches = ["1:A", "2:A"]
