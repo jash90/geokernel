@@ -4,7 +4,7 @@ mod functional;
 #[cfg(feature = "giac")]
 mod giac;
 #[cfg(feature = "giac")]
-pub(super) use giac::Function as GiacFunction;
+pub(super) use giac::{start_value_names, Function as GiacFunction};
 mod input;
 mod solutions;
 

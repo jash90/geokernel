@@ -66,7 +66,7 @@ pub(super) fn solve<const M: bool>(
         })?;
     let names = hint
         .as_deref()
-        .and_then(variable_names)
+        .and_then(|h| variable_names(h).or_else(|| start_value_names(h)))
         .unwrap_or_else(|| vec!["x".into(), "y".into(), "z".into()]);
     let printer = Printer {
         c: ctx.c,
@@ -169,11 +169,39 @@ fn variable_names(hint: &str) -> Option<Vec<String>> {
         .split(',')
         .map(|n| n.trim().to_string())
         .collect::<Vec<_>>();
-    let valid = |n: &String| {
-        n.chars().next().is_some_and(char::is_alphabetic)
-            && n.chars().all(|c| c.is_alphanumeric() || c == '_')
-    };
-    (names.len() <= 3 && names.iter().all(valid)).then_some(names)
+    (names.len() <= 3 && names.iter().all(|n| is_name(n))).then_some(names)
+}
+
+fn is_name(n: &str) -> bool {
+    n.chars().next().is_some_and(char::is_alphabetic)
+        && n.chars().all(|c| c.is_alphanumeric() || c == '_')
+}
+
+/// The solving variables of a second argument that is not a list of
+/// variables (`t = 1`, `{x = 1, y = 2}`): the names left of each `=`, then
+/// `x`, `y`, `z`. `None` when it names none.
+pub(crate) fn start_value_names(hint: &str) -> Option<Vec<String>> {
+    let inner = hint
+        .strip_prefix('{')
+        .and_then(|h| h.strip_suffix('}'))
+        .unwrap_or(hint);
+    let mut names: Vec<String> = Vec::new();
+    for item in inner.split(',') {
+        let (name, _) = item.split_once('=')?;
+        let name = name.trim();
+        if !is_name(name) {
+            return None;
+        }
+        if !names.iter().any(|n| n == name) {
+            names.push(name.to_string());
+        }
+    }
+    for name in ["x", "y", "z"] {
+        if !names.iter().any(|n| n == name) {
+            names.push(name.to_string());
+        }
+    }
+    Some(names)
 }
 
 /// Whether a printed equation names the variable.
@@ -187,61 +215,87 @@ fn has_variable(printed: &str, name: &str) -> bool {
     })
 }
 
-/// `AlgoSolve.printHint` and the Giac template for it: variables `x`, `y`,
-/// `z` as they are, a number object as its value, any other name as the
-/// CAS variable `ggbtmpvar<name>`, typed decimals as fractions.
+/// `AlgoSolve.printHint` and the Giac template for it: the second argument
+/// read as an expression and printed with bracketed operands; variables
+/// `x`, `y`, `z` as they are, a number object as its value, any other name
+/// as the CAS variable `ggbtmpvar<name>`, decimals as fractions (or as
+/// decimals in the numeric template).
 fn hint_argument(c: &Construction, text: &str, numeric: bool) -> Option<String> {
+    let e = parse(text)?;
     let mut out = String::new();
-    let mut chars = text.char_indices().peekable();
-    while let Some((k, ch)) = chars.next() {
-        match ch {
-            ' ' => {}
-            '{' | '}' | '=' | '-' => out.push(ch),
-            ',' => out.push_str(", "),
-            c0 if c0.is_ascii_digit() || c0 == '.' => {
-                let mut end = k + c0.len_utf8();
-                while let Some(&(j, d)) = chars.peek() {
-                    if d.is_ascii_digit() || d == '.' {
-                        end = j + d.len_utf8();
-                        chars.next();
-                    } else {
-                        break;
-                    }
-                }
-                if numeric {
-                    out.push_str(&canonical_number(&text[k..end]));
-                } else {
-                    out.push_str(&decimal_fraction(&text[k..end]));
-                }
-            }
-            c0 if c0.is_alphabetic() => {
-                let mut end = k + c0.len_utf8();
-                while let Some(&(j, d)) = chars.peek() {
-                    if d.is_alphanumeric() || d == '_' {
-                        end = j + d.len_utf8();
-                        chars.next();
-                    } else {
-                        break;
-                    }
-                }
-                let name = &text[k..end];
-                match name {
-                    "x" | "y" | "z" => out.push_str(name),
-                    _ => match c.id(name).map(|id| c.value(id)) {
-                        Some(Value::Number(v)) if numeric => numeric_number(v, &mut out),
-                        Some(Value::Number(v)) => number(v, &mut out),
-                        Some(_) => return None,
-                        None => {
-                            out.push_str("ggbtmpvar");
-                            out.push_str(name);
-                        }
-                    },
-                }
-            }
-            _ => return None,
-        }
-    }
+    print_hint(c, &e, numeric, true, &mut out)?;
     Some(out)
+}
+
+fn print_hint(
+    c: &Construction,
+    e: &Expr,
+    numeric: bool,
+    top: bool,
+    out: &mut String,
+) -> Option<()> {
+    let operand = |e: &Expr, out: &mut String| -> Option<()> {
+        out.push('(');
+        print_hint(c, e, numeric, false, out)?;
+        out.push(')');
+        Some(())
+    };
+    match e {
+        Expr::Num(v) => {
+            let text = format!("{v}");
+            if numeric {
+                out.push_str(&canonical_number(&text));
+            } else {
+                out.push_str(&decimal_fraction(&text));
+            }
+        }
+        Expr::Name(name) => match name.as_str() {
+            "x" | "y" | "z" => out.push_str(name),
+            _ => match c.id(name).map(|id| c.value(id)) {
+                Some(Value::Number(v)) if numeric => numeric_number(v, out),
+                Some(Value::Number(v)) => number(v, out),
+                Some(_) => return None,
+                None => {
+                    out.push_str("ggbtmpvar");
+                    out.push_str(name);
+                }
+            },
+        },
+        Expr::Neg(a) => match &**a {
+            // A typed literal is negated in place.
+            Expr::Num(_) => {
+                out.push('-');
+                print_hint(c, a, numeric, false, out)?;
+            }
+            _ => {
+                out.push_str("-(");
+                print_hint(c, a, numeric, false, out)?;
+                out.push(')');
+            }
+        },
+        Expr::Bin(op, a, b) => {
+            operand(a, out)?;
+            out.push(*op as char);
+            operand(b, out)?;
+        }
+        Expr::Eq(a, b) if top => {
+            print_hint(c, a, numeric, false, out)?;
+            out.push('=');
+            print_hint(c, b, numeric, false, out)?;
+        }
+        Expr::List(items) if top => {
+            out.push('{');
+            for (k, item) in items.iter().enumerate() {
+                if k > 0 {
+                    out.push_str(", ");
+                }
+                print_hint(c, item, numeric, true, out)?;
+            }
+            out.push('}');
+        }
+        _ => return None,
+    }
+    Some(())
 }
 
 /// `GeoGebraCAS.getCASCommand`'s substitution: `%n` and `%%n` (numeric) are
@@ -971,7 +1025,7 @@ fn value(e: &Expr, x: f64, y: f64) -> Option<f64> {
                 b'-' => a - b,
                 b'*' => a * b,
                 b'/' => a / b,
-                _ => a.powf(b),
+                _ => power(a, b),
             }
         }
         Expr::Call(name, args) if args.len() == 1 => {
@@ -1009,6 +1063,25 @@ fn known(e: &Expr) -> bool {
         }
         Expr::List(items) | Expr::Tuple(items) => items.iter().all(known),
     }
+}
+
+/// `a^b`, with the real root of a negative base for an exponent with an
+/// odd denominator, as the reference's power does (`(-8)^(1/3)` is -2).
+fn power(a: f64, b: f64) -> f64 {
+    if a < 0.0 && b.fract() != 0.0 {
+        for d in (3..100).step_by(2) {
+            let n = b * f64::from(d);
+            if (n - n.round()).abs() < 1e-12 {
+                let magnitude = (-a).powf(b);
+                return if (n.round() as i64) % 2 == 0 {
+                    magnitude
+                } else {
+                    -magnitude
+                };
+            }
+        }
+    }
+    a.powf(b)
 }
 
 fn has_name(e: &Expr, name: &str) -> bool {

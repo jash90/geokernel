@@ -74,7 +74,12 @@ impl Parser<'_> {
         let (names, width, axes) = if let [comma] = commas[..] {
             #[cfg(feature = "giac")]
             let variables = self.solution_variables(comma + 1).or_else(|_| {
-                Ok::<_, String>((vec!["x".into(), "y".into(), "z".into()], 0, [0, 1, 2]))
+                // A start value (`t = 1`) names its variable too.
+                let names = hint
+                    .as_deref()
+                    .and_then(crate::expr::cas::start_value_names)
+                    .unwrap_or_else(|| vec!["x".into(), "y".into(), "z".into()]);
+                Ok::<_, String>((names, 0, [0, 1, 2]))
             })?;
             #[cfg(not(feature = "giac"))]
             let variables = self.solution_variables(comma + 1)?;
@@ -101,9 +106,20 @@ impl Parser<'_> {
                 return Err("expected a list of solving variables".into());
             }
             // The suffix was parsed and validated when choosing the variable scope.
+            // The closing bracket of the call, past any brackets of the
+            // suffix (the Giac translation also takes `x = 10^(-17)`).
+            let mut depth = 0i32;
             self.pos = self.toks[comma + 1..]
                 .iter()
-                .position(|t| t.tok == Tok::RParen)
+                .position(|t| {
+                    match t.tok {
+                        Tok::LParen | Tok::LBrace => depth += 1,
+                        Tok::RParen if depth == 0 => return true,
+                        Tok::RParen | Tok::RBrace => depth -= 1,
+                        _ => {}
+                    }
+                    false
+                })
                 .map_or(self.toks.len(), |offset| comma + 1 + offset);
         }
         self.expect(&Tok::RParen, ")")?;

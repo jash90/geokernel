@@ -12,3 +12,1222 @@
 # id = "cas-hint-018"
 # reason = "why it still differs with Giac"
 # mismatches = ["0:r1"]  # replaces the entry of known-gaps.toml (or adds one)
+
+# Cases that agree exactly once the solving commands are evaluated by Giac.
+
+[[gap]]
+id = "cas-coefficient-001"
+agrees = true
+
+[[gap]]
+id = "cas-coefficient-003"
+agrees = true
+
+[[gap]]
+id = "cas-coefficient-004"
+agrees = true
+
+[[gap]]
+id = "cas-coefficient-005"
+agrees = true
+
+[[gap]]
+id = "cas-conic-009"
+agrees = true
+
+[[gap]]
+id = "cas-conic-010"
+agrees = true
+
+[[gap]]
+id = "cas-conic-012"
+agrees = true
+
+[[gap]]
+id = "cas-conic-014"
+agrees = true
+
+[[gap]]
+id = "cas-conic-015"
+agrees = true
+
+[[gap]]
+id = "cas-conic-016"
+agrees = true
+
+[[gap]]
+id = "cas-conic-017"
+agrees = true
+
+[[gap]]
+id = "cas-conic-018"
+agrees = true
+
+[[gap]]
+id = "cas-conic-019"
+agrees = true
+
+[[gap]]
+id = "cas-conic-020"
+agrees = true
+
+[[gap]]
+id = "cas-conic-021"
+agrees = true
+
+[[gap]]
+id = "cas-conic-022"
+agrees = true
+
+[[gap]]
+id = "cas-conic-023"
+agrees = true
+
+[[gap]]
+id = "cas-conic-024"
+agrees = true
+
+[[gap]]
+id = "cas-conic-025"
+agrees = true
+
+[[gap]]
+id = "cas-conic-026"
+agrees = true
+
+[[gap]]
+id = "cas-conic-027"
+agrees = true
+
+[[gap]]
+id = "cas-conic-028"
+agrees = true
+
+[[gap]]
+id = "cas-conic-029"
+agrees = true
+
+[[gap]]
+id = "cas-conic-030"
+agrees = true
+
+[[gap]]
+id = "cas-conic-031"
+agrees = true
+
+[[gap]]
+id = "cas-conic-032"
+agrees = true
+
+[[gap]]
+id = "cas-conic-033"
+agrees = true
+
+[[gap]]
+id = "cas-conic-034"
+agrees = true
+
+[[gap]]
+id = "cas-conic-035"
+agrees = true
+
+[[gap]]
+id = "cas-conic-036"
+agrees = true
+
+[[gap]]
+id = "cas-conic-037"
+agrees = true
+
+[[gap]]
+id = "cas-conic-038"
+agrees = true
+
+[[gap]]
+id = "cas-conic-039"
+agrees = true
+
+[[gap]]
+id = "cas-conic-040"
+agrees = true
+
+[[gap]]
+id = "cas-conic-041"
+agrees = true
+
+[[gap]]
+id = "cas-conic-042"
+agrees = true
+
+[[gap]]
+id = "cas-conic-043"
+agrees = true
+
+[[gap]]
+id = "cas-conic-044"
+agrees = true
+
+[[gap]]
+id = "cas-conic-045"
+agrees = true
+
+[[gap]]
+id = "cas-conic-046"
+agrees = true
+
+[[gap]]
+id = "cas-conic-047"
+agrees = true
+
+[[gap]]
+id = "cas-conic-048"
+agrees = true
+
+[[gap]]
+id = "cas-conic-049"
+agrees = true
+
+[[gap]]
+id = "cas-conic-050"
+agrees = true
+
+[[gap]]
+id = "cas-conic-051"
+agrees = true
+
+[[gap]]
+id = "cas-conic-052"
+agrees = true
+
+[[gap]]
+id = "cas-conic-054"
+agrees = true
+
+[[gap]]
+id = "cas-conic-056"
+agrees = true
+
+[[gap]]
+id = "cas-conic-058"
+agrees = true
+
+[[gap]]
+id = "cas-conic-059"
+agrees = true
+
+[[gap]]
+id = "cas-degree-002"
+agrees = true
+
+[[gap]]
+id = "cas-edge-001"
+agrees = true
+
+[[gap]]
+id = "cas-edge-002"
+agrees = true
+
+[[gap]]
+id = "cas-edge-003"
+agrees = true
+
+[[gap]]
+id = "cas-edge-004"
+agrees = true
+
+[[gap]]
+id = "cas-edge-006"
+agrees = true
+
+[[gap]]
+id = "cas-edge-007"
+agrees = true
+
+[[gap]]
+id = "cas-edge-008"
+agrees = true
+
+[[gap]]
+id = "cas-edge-011"
+agrees = true
+
+[[gap]]
+id = "cas-edge-012"
+agrees = true
+
+[[gap]]
+id = "cas-edge-014"
+agrees = true
+
+[[gap]]
+id = "cas-edge-015"
+agrees = true
+
+[[gap]]
+id = "cas-edge-019"
+agrees = true
+
+[[gap]]
+id = "cas-edge-020"
+agrees = true
+
+[[gap]]
+id = "cas-edge-021"
+agrees = true
+
+[[gap]]
+id = "cas-family-001"
+agrees = true
+
+[[gap]]
+id = "cas-family-002"
+agrees = true
+
+[[gap]]
+id = "cas-hint-005"
+agrees = true
+
+[[gap]]
+id = "cas-hint-006"
+agrees = true
+
+[[gap]]
+id = "cas-hint-009"
+agrees = true
+
+[[gap]]
+id = "cas-hint-010"
+agrees = true
+
+[[gap]]
+id = "cas-hint-013"
+agrees = true
+
+[[gap]]
+id = "cas-hint-014"
+agrees = true
+
+[[gap]]
+id = "cas-hint-015"
+agrees = true
+
+[[gap]]
+id = "cas-hint-016"
+agrees = true
+
+[[gap]]
+id = "cas-hint-017"
+agrees = true
+
+[[gap]]
+id = "cas-hint-018"
+agrees = true
+
+[[gap]]
+id = "cas-hint-019"
+agrees = true
+
+[[gap]]
+id = "cas-hint-020"
+agrees = true
+
+[[gap]]
+id = "cas-hint-021"
+agrees = true
+
+[[gap]]
+id = "cas-hint-022"
+agrees = true
+
+[[gap]]
+id = "cas-hint-023"
+agrees = true
+
+[[gap]]
+id = "cas-hint-024"
+agrees = true
+
+[[gap]]
+id = "cas-hint-025"
+agrees = true
+
+[[gap]]
+id = "cas-hint-026"
+agrees = true
+
+[[gap]]
+id = "cas-hint-027"
+agrees = true
+
+[[gap]]
+id = "cas-hint-028"
+agrees = true
+
+[[gap]]
+id = "cas-hint-029"
+agrees = true
+
+[[gap]]
+id = "cas-implicit-012"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-001"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-002"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-003"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-004"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-005"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-006"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-007"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-008"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-009"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-010"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-011"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-012"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-013"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-014"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-015"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-016"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-017"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-018"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-019"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-020"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-021"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-022"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-023"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-024"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-025"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-026"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-027"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-028"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-029"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-030"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-039"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-040"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-041"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-042"
+agrees = true
+
+[[gap]]
+id = "cas-magnitude-043"
+agrees = true
+
+[[gap]]
+id = "cas-name-001"
+agrees = true
+
+[[gap]]
+id = "cas-name-002"
+agrees = true
+
+[[gap]]
+id = "cas-name-005"
+agrees = true
+
+[[gap]]
+id = "cas-name-006"
+agrees = true
+
+[[gap]]
+id = "cas-name-007"
+agrees = true
+
+[[gap]]
+id = "cas-name-008"
+agrees = true
+
+[[gap]]
+id = "cas-name-009"
+agrees = true
+
+[[gap]]
+id = "cas-name-011"
+agrees = true
+
+[[gap]]
+id = "cas-name-013"
+agrees = true
+
+[[gap]]
+id = "cas-name-014"
+agrees = true
+
+[[gap]]
+id = "cas-order-001"
+agrees = true
+
+[[gap]]
+id = "cas-order-002"
+agrees = true
+
+[[gap]]
+id = "cas-order-003"
+agrees = true
+
+[[gap]]
+id = "cas-order-004"
+agrees = true
+
+[[gap]]
+id = "cas-order-005"
+agrees = true
+
+[[gap]]
+id = "cas-order-006"
+agrees = true
+
+[[gap]]
+id = "cas-order-007"
+agrees = true
+
+[[gap]]
+id = "cas-order-008"
+agrees = true
+
+[[gap]]
+id = "cas-order-009"
+agrees = true
+
+[[gap]]
+id = "cas-order-010"
+agrees = true
+
+[[gap]]
+id = "cas-order-011"
+agrees = true
+
+[[gap]]
+id = "cas-order-012"
+agrees = true
+
+[[gap]]
+id = "cas-order-013"
+agrees = true
+
+[[gap]]
+id = "cas-order-014"
+agrees = true
+
+[[gap]]
+id = "cas-order-015"
+agrees = true
+
+[[gap]]
+id = "cas-order-016"
+agrees = true
+
+[[gap]]
+id = "cas-order-017"
+agrees = true
+
+[[gap]]
+id = "cas-order-018"
+agrees = true
+
+[[gap]]
+id = "cas-order-019"
+agrees = true
+
+[[gap]]
+id = "cas-order-020"
+agrees = true
+
+[[gap]]
+id = "cas-order-021"
+agrees = true
+
+[[gap]]
+id = "cas-order-022"
+agrees = true
+
+[[gap]]
+id = "cas-order-023"
+agrees = true
+
+[[gap]]
+id = "cas-order-024"
+agrees = true
+
+[[gap]]
+id = "cas-order-025"
+agrees = true
+
+[[gap]]
+id = "cas-order-026"
+agrees = true
+
+[[gap]]
+id = "cas-order-027"
+agrees = true
+
+[[gap]]
+id = "cas-order-028"
+agrees = true
+
+[[gap]]
+id = "cas-order-029"
+agrees = true
+
+[[gap]]
+id = "cas-order-030"
+agrees = true
+
+[[gap]]
+id = "cas-order-031"
+agrees = true
+
+[[gap]]
+id = "cas-order-032"
+agrees = true
+
+[[gap]]
+id = "cas-order-033"
+agrees = true
+
+[[gap]]
+id = "cas-order-034"
+agrees = true
+
+[[gap]]
+id = "cas-order-035"
+agrees = true
+
+[[gap]]
+id = "cas-order-036"
+agrees = true
+
+[[gap]]
+id = "cas-order-037"
+agrees = true
+
+[[gap]]
+id = "cas-order-038"
+agrees = true
+
+[[gap]]
+id = "cas-order-039"
+agrees = true
+
+[[gap]]
+id = "cas-order-040"
+agrees = true
+
+[[gap]]
+id = "cas-order-041"
+agrees = true
+
+[[gap]]
+id = "cas-order-042"
+agrees = true
+
+[[gap]]
+id = "cas-order-043"
+agrees = true
+
+[[gap]]
+id = "cas-order-044"
+agrees = true
+
+[[gap]]
+id = "cas-order-045"
+agrees = true
+
+[[gap]]
+id = "cas-order-046"
+agrees = true
+
+[[gap]]
+id = "cas-order-047"
+agrees = true
+
+[[gap]]
+id = "cas-order-048"
+agrees = true
+
+[[gap]]
+id = "cas-order-049"
+agrees = true
+
+[[gap]]
+id = "cas-order-050"
+agrees = true
+
+[[gap]]
+id = "cas-order-051"
+agrees = true
+
+[[gap]]
+id = "cas-order-052"
+agrees = true
+
+[[gap]]
+id = "cas-order-053"
+agrees = true
+
+[[gap]]
+id = "cas-order-054"
+agrees = true
+
+[[gap]]
+id = "cas-order-055"
+agrees = true
+
+[[gap]]
+id = "cas-order-056"
+agrees = true
+
+[[gap]]
+id = "cas-order-057"
+agrees = true
+
+[[gap]]
+id = "cas-order-058"
+agrees = true
+
+[[gap]]
+id = "cas-order-059"
+agrees = true
+
+[[gap]]
+id = "cas-order-060"
+agrees = true
+
+[[gap]]
+id = "cas-order-061"
+agrees = true
+
+[[gap]]
+id = "cas-order-062"
+agrees = true
+
+[[gap]]
+id = "cas-order-063"
+agrees = true
+
+[[gap]]
+id = "cas-order-064"
+agrees = true
+
+[[gap]]
+id = "cas-order-065"
+agrees = true
+
+[[gap]]
+id = "cas-order-066"
+agrees = true
+
+[[gap]]
+id = "cas-order-067"
+agrees = true
+
+[[gap]]
+id = "cas-order-068"
+agrees = true
+
+[[gap]]
+id = "cas-order-069"
+agrees = true
+
+[[gap]]
+id = "cas-order-070"
+agrees = true
+
+[[gap]]
+id = "cas-order-071"
+agrees = true
+
+[[gap]]
+id = "cas-order-072"
+agrees = true
+
+[[gap]]
+id = "cas-order-073"
+agrees = true
+
+[[gap]]
+id = "cas-order-074"
+agrees = true
+
+[[gap]]
+id = "cas-order-075"
+agrees = true
+
+[[gap]]
+id = "cas-order-076"
+agrees = true
+
+[[gap]]
+id = "cas-order-077"
+agrees = true
+
+[[gap]]
+id = "cas-order-078"
+agrees = true
+
+[[gap]]
+id = "cas-order-079"
+agrees = true
+
+[[gap]]
+id = "cas-order-080"
+agrees = true
+
+[[gap]]
+id = "cas-order-081"
+agrees = true
+
+[[gap]]
+id = "cas-order-082"
+agrees = true
+
+[[gap]]
+id = "cas-order-083"
+agrees = true
+
+[[gap]]
+id = "cas-order-084"
+agrees = true
+
+[[gap]]
+id = "cas-order-085"
+agrees = true
+
+[[gap]]
+id = "cas-order-086"
+agrees = true
+
+[[gap]]
+id = "cas-order-087"
+agrees = true
+
+[[gap]]
+id = "cas-order-088"
+agrees = true
+
+[[gap]]
+id = "cas-order-089"
+agrees = true
+
+[[gap]]
+id = "cas-order-090"
+agrees = true
+
+[[gap]]
+id = "cas-order-092"
+agrees = true
+
+[[gap]]
+id = "cas-order-093"
+agrees = true
+
+[[gap]]
+id = "cas-order-095"
+agrees = true
+
+[[gap]]
+id = "cas-order-098"
+agrees = true
+
+[[gap]]
+id = "cas-order-099"
+agrees = true
+
+[[gap]]
+id = "cas-rows-001"
+agrees = true
+
+[[gap]]
+id = "cas-rows-002"
+agrees = true
+
+[[gap]]
+id = "cas-rows-003"
+agrees = true
+
+[[gap]]
+id = "cas-rows-004"
+agrees = true
+
+[[gap]]
+id = "cas-rows-005"
+agrees = true
+
+[[gap]]
+id = "cas-rows-006"
+agrees = true
+
+[[gap]]
+id = "cas-rows-007"
+agrees = true
+
+[[gap]]
+id = "cas-rows-009"
+agrees = true
+
+[[gap]]
+id = "cas-shape-001"
+agrees = true
+
+[[gap]]
+id = "cas-shape-002"
+agrees = true
+
+[[gap]]
+id = "cas-shape-003"
+agrees = true
+
+[[gap]]
+id = "cas-shape-004"
+agrees = true
+
+[[gap]]
+id = "cas-shape-005"
+agrees = true
+
+[[gap]]
+id = "cas-shape-006"
+agrees = true
+
+[[gap]]
+id = "cas-shape-008"
+agrees = true
+
+[[gap]]
+id = "cas-shape-010"
+agrees = true
+
+[[gap]]
+id = "cas-shape-011"
+agrees = true
+
+[[gap]]
+id = "cas-shape-012"
+agrees = true
+
+[[gap]]
+id = "cas-shape-014"
+agrees = true
+
+[[gap]]
+id = "cas-shape-015"
+agrees = true
+
+[[gap]]
+id = "cas-shape-016"
+agrees = true
+
+[[gap]]
+id = "cas-shape-017"
+agrees = true
+
+[[gap]]
+id = "cas-shape-018"
+agrees = true
+
+[[gap]]
+id = "cas-shape-019"
+agrees = true
+
+[[gap]]
+id = "cas-shape-021"
+agrees = true
+
+[[gap]]
+id = "cas-shape-023"
+agrees = true
+
+[[gap]]
+id = "cas-shape-024"
+agrees = true
+
+[[gap]]
+id = "cas-shape-025"
+agrees = true
+
+[[gap]]
+id = "cas-shape-026"
+agrees = true
+
+[[gap]]
+id = "cas-shape-028"
+agrees = true
+
+[[gap]]
+id = "cas-shape-029"
+agrees = true
+
+[[gap]]
+id = "cas-shape-030"
+agrees = true
+
+[[gap]]
+id = "cas-shape-031"
+agrees = true
+
+[[gap]]
+id = "cas-shape-032"
+agrees = true
+
+[[gap]]
+id = "cas-shape-033"
+agrees = true
+
+[[gap]]
+id = "cas-solve-013"
+agrees = true
+
+[[gap]]
+id = "cas-solve-040"
+agrees = true
+
+[[gap]]
+id = "cas-solve-041"
+agrees = true
+
+[[gap]]
+id = "cas-solve-045"
+agrees = true
+
+[[gap]]
+id = "cas-start-001"
+agrees = true
+
+[[gap]]
+id = "cas-start-002"
+agrees = true
+
+[[gap]]
+id = "cas-start-003"
+agrees = true
+
+[[gap]]
+id = "cas-start-004"
+agrees = true
+
+[[gap]]
+id = "cas-start-005"
+agrees = true
+
+[[gap]]
+id = "cas-start-006"
+agrees = true
+
+[[gap]]
+id = "cas-start-007"
+agrees = true
+
+[[gap]]
+id = "cas-start-008"
+agrees = true
+
+[[gap]]
+id = "cas-start-009"
+agrees = true
+
+[[gap]]
+id = "cas-start-010"
+agrees = true
+
+[[gap]]
+id = "cas-start-011"
+agrees = true
+
+[[gap]]
+id = "cas-start-012"
+agrees = true
+
+[[gap]]
+id = "cas-start-013"
+agrees = true
+
+[[gap]]
+id = "cas-start-014"
+agrees = true
+
+[[gap]]
+id = "cas-start-015"
+agrees = true
+
+[[gap]]
+id = "cas-start-016"
+agrees = true
+
+[[gap]]
+id = "cas-start-017"
+agrees = true
+
+[[gap]]
+id = "cas-start-018"
+agrees = true
+
+[[gap]]
+id = "cas-start-019"
+agrees = true
+
+[[gap]]
+id = "cas-start-020"
+agrees = true
+
+[[gap]]
+id = "cas-start-021"
+agrees = true
+
+[[gap]]
+id = "cas-start-022"
+agrees = true
+
+[[gap]]
+id = "cas-start-023"
+agrees = true
+
+[[gap]]
+id = "cas-start-024"
+agrees = true
+
+[[gap]]
+id = "cas-start-025"
+agrees = true
+
+[[gap]]
+id = "cas-start-026"
+agrees = true
+
+
+[[gap]]
+id = "cas-coefficient-002"
+agrees = true
+
+[[gap]]
+id = "cas-name-003"
+agrees = true
+
+# Cases that still differ with Giac, with the reason that remains.
+
+[[gap]]
+id = "cas-conic-060"
+reason = "With Giac the kernel sends the reference's exact input and gets the same output {y=x^2+x}. The reference reads the quadratic equation y = x^2 + x as a conic (a parabola); the kernel's reader of Giac output builds lines and functions but no conics, so it gives the function x^2 + x."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-freevariable-008"
+reason = "With Giac the system {x + y = 1, z = 0} in {x, y, z} still differs: the reference's two-dimensional parser reads the equation z = 0 as the number 0 and sends solve({(x)+(y)=1, 0},{x, y, z}), while the kernel sends z=0. Giac then answers {{-y+1,y,z}} for the reference; the elements in the free variables y and z are functions of z, and x = -y + 1 is an implicit curve in the reference's reading, which the kernel's reader of Giac output does not build."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-freevariable-009"
+reason = "With Giac the kernel sends the reference's exact input and gets the same output ({{-1/2*z+1/2,-1/2*z+1/2,z}} and {{x=(-1/2*z+1/2),y=(-1/2*z+1/2),z=z}}), but the solutions depend on the free variable z: the reference reads -1/2 z + 1/2 as a function of z and x = -1/2 z + 1/2 as an implicit curve; the kernel's reader of Giac output builds functions of x or y only and no implicit curves, so the lists are undefined."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-freevariable-010"
+reason = "With Giac the kernel sends the reference's exact input and gets the same output, but the solutions depend on the free variable z: the reference reads them as functions of z and the assignments as implicit curves; the kernel's reader of Giac output builds functions of x or y only and no implicit curves, so the lists are undefined."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-freevariable-011"
+reason = "With Giac the kernel sends the reference's exact input and gets the same output, but the solutions depend on the free variable z: the reference reads them as functions of z and the assignments as implicit curves; the kernel's reader of Giac output builds functions of x or y only and no implicit curves, so the lists are undefined."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-name-012"
+reason = "With Giac every result but r7 agrees. For Solve(f, z = 1) the reference's two-dimensional parser reads the second argument z = 1 as the number 1 and sends assume(1); the kernel sends the equation z=1, for which Giac answers {x=-3,x=3} instead of {}."
+mismatches = ["0:r7"]
