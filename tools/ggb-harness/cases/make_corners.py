@@ -259,4 +259,14 @@ for script in ("P = Vertex(x > sin(y) && (y^2 + 1000*y + 1000000)/1000000000 > 0
                "P = Vertex(y > sqrt(x) && x^2 < 4 && x^2 + y^2 < 16)"):
     cases.case("review", [script], [])
 
+# AlgoVertexIneq keeps the helper of each border pair from its first update:
+# a fresh nonpolynomial border, and a vertical border that tells which
+# function the kept polynomial helper evaluates.
+cases.case("review", ["n = 0.5", "P = Vertex(y > x^n && x > 1 && y > 0)"],
+           [setn("n", 2), setn("n", 0.5)])
+cases.cases[-1]["track_boundary_growth"] = True
+cases.case("review", ["n = 2", "P = Vertex(y > x^n && x > 4 && y > 0)"],
+           [setn("n", 0.5), setn("n", 3)])
+cases.cases[-1]["track_boundary_growth"] = True
+
 cases.write()

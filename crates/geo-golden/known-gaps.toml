@@ -38,8 +38,19 @@ mismatches = ["2:A", "2:B"]
 
 [[gap]]
 id = "corners-review-004"
-reason = "AlgoVertexIneq keeps the intersection helper it created on the first update. The helper for y > x^n and x > 1 was made while n = 2 made the border polynomial; after n becomes 0.5 that cached polynomial helper still evaluates the border on the vertical line and finds (1, 1). Which helper exists depends on the edit history, so the kernel leaves the variable exponent undefined instead"
+reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 1 got a polynomial helper at n = 2, so at n = 0.5 it still finds (1, 1), where a fresh Newton helper finds nothing (corners-review-016 shows the reverse order)."
 mismatches = ["1:P_{1}"]
+
+[[gap]]
+id = "corners-review-016"
+reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 1 got a Newton helper at n = 0.5, so at n = 2 it still finds nothing, where a fresh polynomial helper finds (1, 1) (corners-review-004 shows the reverse order)."
+mismatches = ["1:P_{1}"]
+
+[[gap]]
+id = "corners-review-017"
+reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 4 got a polynomial helper at n = 2, so at n = 0.5 it evaluates the live border on the vertical line and finds (4, 2), where a fresh Newton helper finds nothing; it reads the current exponent, not the one it was made with."
+mismatches = ["1:P_{1}"]
+undefined = true
 
 # conic
 
