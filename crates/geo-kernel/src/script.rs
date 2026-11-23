@@ -596,7 +596,27 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
         }
     };
     let resolved = call.as_deref().unwrap_or(rhs);
-    let result = define_resolved(c, name, resolved);
+    let result = match define_resolved(c, name, resolved) {
+        Err(error) => {
+            c.discard_since(start);
+            // The expression evaluator can use scalar and coordinate results
+            // directly. Other command outputs need a real hidden object.
+            if let Some((command @ ("Defined" | "IsDefined"), args)) = split_call(rhs) {
+                if let [arg] = args.as_slice() {
+                    if split_call(arg).is_some() {
+                        let call = format!("{command}($arg({arg}))");
+                        if let Some(Ok(output)) = with_saved_arguments(c, &call, |c, call| {
+                            define_after_label(c, name, call)
+                        }) {
+                            return Ok(output);
+                        }
+                    }
+                }
+            }
+            return Err(error);
+        }
+        result => result,
+    };
     if let Ok(Some(id)) = result.as_ref() {
         let numeric_expression = c.kind(*id).is_number()
             && crate::expr::plain_number(rhs).is_none()
@@ -615,7 +635,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             c.remember_construction_source(*id, rhs);
         }
     }
-    if result.is_err() || (matches!(result, Ok(None)) && implicit_multi_output(c, resolved)) {
+    if matches!(result, Ok(None)) && implicit_multi_output(c, resolved) {
         c.discard_since(start);
     }
     result
@@ -671,6 +691,14 @@ fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
             | "ConjugateDiameter"
             | "Diameter"
             | "Direction"
+            | "Defined"
+            | "IsDefined"
+            | "FirstAxis"
+            | "MajorAxis"
+            | "SecondAxis"
+            | "MinorAxis"
+            | "Excentricity"
+            | "LinearEccentricity"
             | "IsTangent"
             | "Point"
             | "Radius"

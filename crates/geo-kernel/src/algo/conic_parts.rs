@@ -198,7 +198,9 @@ impl Group for ConicPartDef {
             _ => {}
         }
         let conics = match self {
-            Self::Asymptote { .. } => CONIC_OBJECTS,
+            Self::Asymptote { .. } | Self::Axis { .. } | Self::LinearEccentricity(_) => {
+                CONIC_OBJECTS
+            }
             Self::Pole { .. } => CIRCLE_OR_CONIC,
             _ => CONIC,
         };
@@ -228,7 +230,7 @@ impl Group for ConicPartDef {
         if let ConicPartDef::Asymptote { conic, which } = *self {
             return asymptote(&super::conic_object(c, conic)?, which);
         }
-        let d = c.conic(self.conic())?;
+        let d = super::conic_object(c, self.conic())?;
         match *self {
             ConicPartDef::IntersectLine { .. } | ConicPartDef::Asymptote { .. } => None,
             ConicPartDef::TangentPoint {
@@ -335,7 +337,15 @@ impl Group for ConicPartDef {
             });
         }
         let [arg] = args else { return None };
-        let conic = c.id(arg).filter(|&k| c.kind(k) == Kind::Conic)?;
+        let conic = c.id(arg)?;
+        let kinds = match func {
+            "MajorAxis" | "FirstAxis" | "MinorAxis" | "SecondAxis" | "LinearEccentricity"
+            | "Excentricity" => CONIC_OBJECTS,
+            _ => CONIC,
+        };
+        if !kinds.contains(&c.kind(conic)) {
+            return None;
+        }
         let def = match func {
             "Center" | "Midpoint" => ConicPartDef::Center(conic),
             "MajorAxis" | "FirstAxis" => ConicPartDef::Axis { conic, which: 0 },

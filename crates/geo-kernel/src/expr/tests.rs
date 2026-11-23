@@ -721,6 +721,21 @@ fn histogram_respects_the_work_allowance_for_named_lists() {
 }
 
 #[test]
+fn dilate_bounds_the_search_for_the_first_leaf() {
+    let mut c = load("A = (1, 2)\nl = {Sequence({}, i, 1, 200), {1, A}}").unwrap();
+    let before = super::work_done();
+    let id = super::eval::with_work_limit(20, || {
+        crate::script::exec(&mut c, "p = Dilate(l, 2)")
+            .unwrap()
+            .unwrap()
+    });
+    assert_eq!(c.value(id), Value::Undefined);
+    assert!(super::work_done() - before <= 40);
+    assert!(crate::script::exec(&mut c, "q = Dilate(l, 2)").is_err());
+    assert!(c.id("q").is_none());
+}
+
+#[test]
 fn the_undefined_constant_alone_is_an_undefined_function() {
     // golden topic `tpairfixes-fnundef`
     let c = load(

@@ -521,6 +521,9 @@ fn call_fits(command: &str, form: &str, args: &[String], kinds: &[Option<Kind>])
     if matches!(form, "inequality" | "interval") {
         return matches!(args, [arg] if inline_inequality(arg));
     }
+    if command == "Defined" && form == "any" {
+        return args.len() == 1;
+    }
     // Length's conic overload measures the arc of a conic part.
     if command == "Length" && form == "conic" && matches!(kinds, [Some(Kind::Arc | Kind::Sector)]) {
         return true;

@@ -2,6 +2,8 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdIf.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIf.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdDefined.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDefined.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoNumeric.java
 // Copyright (c) GeoGebra GmbH, Altenbergerstr. 69, 4040 Linz, Austria.
@@ -18,6 +20,16 @@ use crate::expr::parse::Parser;
 use crate::expr::{children, IfMode, Node, Ty, NONE};
 use crate::script::split_call;
 use crate::{Construction, Def, Id, Kind, Value};
+
+/// `AlgoDefined` uses an object's defined flag. For functions it also
+/// checks the value string, and for points and vectors it excludes infinity.
+pub(in crate::expr) fn defined_object(c: &Construction, id: Id) -> bool {
+    if let Some(arc) = c.arc(id) {
+        return arc.defined;
+    }
+    crate::expr::object_defined(c, id)
+        && (c.kind(id) != Kind::Function || !super::text::function_displays_undefined(c, id))
+}
 
 /// The commands of this group (see `commands::is_command`).
 pub(super) const NAMES: &[&str] = &["If", "CountIf", "KeepIf", "Defined", "IsDefined"];

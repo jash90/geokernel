@@ -2668,6 +2668,15 @@ fn add_parsed(
     let vector_label = kind == Kind::Vector;
     let mut entry = Entry::new(c, parsed, function);
     entry.function_of_y = function_of_y;
+    if let (Kind::List, Node::Dilate(source, _, _)) = (kind, entry.nodes[entry.root as usize]) {
+        if let Some(found) = eval::invalid_dilation_element(c, &entry, source) {
+            return Err(Error::WrongKind {
+                label: "first leaf of the Dilate list".into(),
+                expected: &[Kind::Point, Kind::Vector],
+                found,
+            });
+        }
+    }
     if constant {
         // `AlgebraProcessor`: an expression without objects is free.
         let angle = entry.root_ty() == Ty::Num(1);

@@ -133,4 +133,9 @@ for topic, command, prefix in (
     case(topic, ["A = (1, 3)", *prefix, "l = {1, A}"],
          [{"action": "reject", "line": f"t = {command}"}])
 
+
+case("dilateorigin", ["A = (2, 3)", "v = (-1, 2)", "n = 2",
+                      "l = {A, {v, A}, 1}", "p = Dilate(l, n)"],
+     [setn("n", -2), setn("n", 0), mv("A", -1, 2), setn("n", 0.5)])
+
 cases.write()

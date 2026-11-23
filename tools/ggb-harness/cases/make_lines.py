@@ -374,4 +374,13 @@ case("polar", [pt("A", 1, 1), num("r", 2), "k = Circle(A, r)", num("f", 3), "c =
                pt("F", 4, 0), "l = Line(E, F)", "u = Tangent(l, c)", "d = Distance(p, l)"],
      [setn("f", 0.5), mv("P", 2.5, 1.5), setn("f", -2), mv("P", 9, 4), setn("f", 3)])
 
+
+# The internal names of PerpendicularBisector and PerpendicularLine.
+case("internalnames", [
+    "A = (1, 1)", "B = (2, 0.5)", "P = (1, 2)",
+    "l: x + y = 7", "m = OrthogonalLine(P, l)", "b = LineBisector(A, B)",
+], [mv("A", -1, 2), mv("B", -1, 2), mv("B", 2, 1),
+    {"action": "reject", "line": "g = OrthogonalLine(P, 1)"},
+    {"action": "reject", "line": "g = LineBisector(l)"}])
+
 cases.write()

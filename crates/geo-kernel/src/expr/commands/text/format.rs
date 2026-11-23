@@ -18,6 +18,26 @@ use crate::expr::eval::{Ctx, Val};
 use crate::expr::{self, Node, Ty};
 use crate::kernel::{Def, Id, Kind, Value};
 
+pub(in crate::expr::commands) fn function_displays_undefined(
+    c: &crate::Construction,
+    id: Id,
+) -> bool {
+    let Def::Expr(def) = c.def(id) else {
+        return false;
+    };
+    let entry = expr::entry(c, def);
+    let meter = expr::eval::Lists::new(Vec::new());
+    let ctx = Ctx::<true> {
+        meter: Some(&meter),
+        ..Ctx::new(c, entry, &expr::eval::Env::None)
+    };
+    let format = Format {
+        simplify_coefficients: true,
+        ..Format::new(false)
+    };
+    format.expression(&ctx, entry.root, true, 0).as_deref() == Some("?")
+}
+
 pub(super) fn evaluate<const M: bool>(
     ctx: &Ctx<'_, M>,
     op: TextOp,

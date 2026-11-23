@@ -171,14 +171,16 @@ impl Format {
                     node => node,
                 };
                 let variable = matches!(base, Node::Var | Node::VarY);
-                if let (true, Node::Obj(id)) = (
-                    substitute && self.simplify_coefficients && variable,
-                    ctx.node(a),
-                ) {
-                    match ctx.c.value(id) {
-                        crate::Value::Number(0.0) => return Some("0".into()),
-                        crate::Value::Number(1.0) => return term(b, outer),
-                        crate::Value::Number(-1.0) => return Some(format!("-{}", term(b, 6)?)),
+                if substitute && self.simplify_coefficients {
+                    match ctx.node(a) {
+                        Node::Num(1.0) => return term(b, outer),
+                        Node::Num(0.0) if variable => return Some("0".into()),
+                        Node::Obj(id) if variable => match ctx.c.value(id) {
+                            crate::Value::Number(0.0) => return Some("0".into()),
+                            crate::Value::Number(1.0) => return term(b, outer),
+                            crate::Value::Number(-1.0) => return Some(format!("-{}", term(b, 6)?)),
+                            _ => (),
+                        },
                         _ => (),
                     }
                 }

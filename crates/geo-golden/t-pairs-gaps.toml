@@ -1221,12 +1221,6 @@ reason = "the kernel refuses the input: unknown command `DataFunction`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1302"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `IsDefined`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1314"
 category = "unsupported-type"
 reason = "class `GeoLocus` has no schema object (unsupported-type); string `DelauneyTriangulation[{(1, 1), (2, 2), (3, 3), (4, 1 / 4), (5, 1 / 5)}]`"
@@ -1443,12 +1437,6 @@ reason = "the kernel refuses the input: unknown command `Ends`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:1594"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `LinearEccentricity`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:1599"
 category = "app-command"
 reason = "the kernel refuses the input: unknown command `Execute`"
@@ -1600,9 +1588,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1691"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `MajorAxis`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `y = 0`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:1696"
@@ -3868,9 +3856,9 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3848"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `MinorAxis`"
-mismatches = ["step"]
+category = "text-formatting"
+reason = "values agree but `GeoLine` of kind line has no the reference-style text yet; the reference prints `x = 0`"
+mismatches = ["f"]
 
 [[gap]]
 id = "commands/CommandsTest.java:3853"

@@ -345,4 +345,14 @@ case("tangent", HYP + [pt("U", 0, 0), pt("V", 1, 4), "s = Segment(U, V)", "t = T
                        "w = Tangent(r, k)"],
      [mv("V", 4, 1), mv("V", -1, 3)])
 
+
+case("internalnames", [
+    "O = (1, 2)", "k = Circle(O, 3)",
+    "a = FirstAxis(k)", "b = SecondAxis(k)", "e = Excentricity(k)",
+    "P = (4, 2)", "Q = (1, 5)", "r = CircularArc(O, P, Q)",
+    "g = FirstAxis(r)", "h = SecondAxis(r)", "d = Excentricity(r)",
+], [mv("O", 0, 0),
+    *[{"action": "reject", "line": f"j = {command}(O)"}
+      for command in ("FirstAxis", "SecondAxis", "Excentricity")]])
+
 cases.write()

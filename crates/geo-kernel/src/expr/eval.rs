@@ -17,6 +17,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentBoolean.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIf.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDilate.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoTransformation.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentList.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoSequence.java
@@ -682,6 +684,38 @@ pub(super) fn text_root(c: &Construction, e: &Entry, latex: Option<bool>) -> sup
     super::TextResult { text, presentation }
 }
 
+/// A list transform has no reusable output until it visits a point or vector.
+pub(super) fn invalid_dilation_element(c: &Construction, e: &Entry, source: u32) -> Option<Kind> {
+    let lists = Lists::new(Vec::new());
+    let ctx = Ctx::<true> {
+        lists: Some(&lists),
+        meter: Some(&lists),
+        ..Ctx::new(c, e, &Env::None)
+    };
+    let mut pending = vec![ctx.list(source)?];
+    while let Some((start, len)) = pending.pop() {
+        for offset in 0..len {
+            if !lists.charge(1) {
+                return None;
+            }
+            let slot = lists.read(c, start + offset);
+            if let Some(nested) = slot.run() {
+                pending.push((start + offset + 1, len - offset - 1));
+                pending.push(nested);
+                break;
+            }
+            match slot.kind {
+                Kind::List => (),
+                kind @ (Kind::Number | Kind::Angle | Kind::Boolean | Kind::Text) => {
+                    return Some(kind);
+                }
+                _ => return None,
+            }
+        }
+    }
+    None
+}
+
 /// Evaluates an entry whose result is a list: its elements go to `out`,
 /// compacted (the top level first); its length, `None` when undefined.
 pub(super) fn root_list(
@@ -948,7 +982,9 @@ impl<const M: bool> Ctx<'_, M> {
             Node::PolynomialPart(..) => Ex::plain(N(self.polynomial_value())),
             Node::Cas(op, a, b) => self.cas_scalar(i, op, a, b),
             Node::CasVariable(_) => Ex::plain(N(f64::NAN)),
-            Node::ObjectDefined(id) => Ex::plain(Val::B(super::object_defined(self.c, id), true)),
+            Node::ObjectDefined(id) => {
+                Ex::plain(Val::B(commands::defined_object(self.c, id), true))
+            }
             Node::Defined(a) => Ex::plain(Val::B(self.is_defined_argument(a), true)),
             Node::Filter {
                 keep: false,

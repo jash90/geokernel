@@ -176,4 +176,29 @@ case("iffn", nums(a=1) + ["f(x) = If(x < 0, -x, x)", "v = f(a)", "g(x) = f(x) + 
 case("iffn", nums(a=1) + ["f(x) = If(x < a, x^2, x)", "v = f(2)", "g(x) = If(x < 0, f(x), -f(x))"],
      [setn("a", 3), setn("a", -1), setn("a", 1)])
 
+
+# CommandsTest.cmdDefined uses a regular polygon.
+case("defined", [
+    "A = (1, 1)", "B = (2, 0.5)", "p = Polygon(A, B, 4)",
+    "b = Defined(p)", "c = Defined(Polygon(A, B, 4))", "d = Defined(Line(A, B))",
+], [mv("A", 0, 0)])
+case("defined", [
+    "a = 1", "n = 1 / a", "r = sqrt(a)", "A = (n, r)", "v = (n, r)",
+    "f(x) = x + r", "g(x) = sqrt(x)", "l = {r, A}",
+    "b = Defined(n)", "c = Defined(A)", "d = Defined(v)", "e = Defined(r)",
+    "h = Defined(f)", "i = Defined(g)", "j = Defined(l)",
+    "k = Defined(1 / a)", "m = Defined((n, r))",
+], [setn("a", 0), setn("a", -1), setn("a", 2)])
+case("defined", [
+    "A = (0, 0)", "B = (2, 0)", "C = (0, 1)", "D = (2, 2)",
+    "g = Line(A, B)", "h = Line(C, D)", "P = Intersect(g, h)",
+    "b = Defined(P)", "c = Defined(Intersect(g, h))",
+], [mv("D", 2, 1), mv("C", 0, 0), mv("D", 2, 2),
+    {"action": "reject", "line": "d = Defined(A, B)"}])
+
+case("defined", [
+    "A = (0, 0)", "B = (3, 0)", "C = (1, 1)",
+    "a = CircumcircularArc(A, B, C)", "b = Defined(a)",
+], [mv("C", 1, 0), mv("C", 4, 0), mv("C", 1, 1)])
+
 cases.write()
