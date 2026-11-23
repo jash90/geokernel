@@ -555,6 +555,12 @@ impl<'a> Geometry<'a> {
             Def::IntersectLines(first, second)
             | Def::Point(PointDef::LineIntersection { first, second }) => Some([first, second]),
             Def::IntersectLineCircle { line, circle, .. } => Some([line, circle]),
+            Def::IntersectLineConic(d)
+                if self.c.kind(d.line) == Kind::Line && self.c.kind(d.conic) == Kind::Circle =>
+            {
+                Some([d.line, d.conic])
+            }
+
             Def::IntersectCircles { c1, c2, .. } => Some([c1, c2]),
             _ => None,
         }

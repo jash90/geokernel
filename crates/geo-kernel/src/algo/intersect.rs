@@ -1,10 +1,8 @@
 //! Intersection points of lines, circles and general conics.
 //!
-//! Line–circle and circle–circle intersections follow GeoGebra with its
-//! continuity setting off: the two points keep the order in which they were
-//! computed when the intersection was created, a tangent point is only
-//! intersection 1, and a point that lies on both objects by construction is
-//! always intersection 1.
+//! Line/conic intersections share the permutation of the computed roots.
+//! A point that lies on both objects by construction starts in slot one.
+//! A labelled second slot survives when the roots coincide.
 
 // Parts of this file are translated from GeoGebra (https://github.com/geogebra/geogebra),
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
@@ -62,8 +60,12 @@ pub(super) mod function_roots;
 pub(crate) mod functions;
 #[path = "intersect_growth.rs"]
 pub(crate) mod growth;
+#[path = "intersect_line_conic.rs"]
+pub(crate) mod line_conic_state;
 #[path = "intersect_pair.rs"]
 pub(crate) mod pair;
+#[path = "intersect_tangent_state.rs"]
+pub(crate) mod tangent_state;
 
 /// `Kernel.INV_MAX_DOUBLE_PRECISION`.
 const INV_MAX_DOUBLE_PRECISION: f64 = 1e15;
@@ -119,97 +121,19 @@ pub(crate) fn parse_multi(c: &Construction, name: &str, args: &[&str]) -> Option
         return None;
     };
     let (first, second) = (c.id(first)?, c.id(second)?);
-    let (line, conic) = match (c.kind(first), c.kind(second)) {
-        (Kind::Line, Kind::Circle | Kind::Conic) => (first, second),
-        (Kind::Circle | Kind::Conic, Kind::Line) => (second, first),
-        _ => return None,
-    };
-    let defs = if c.kind(conic) == Kind::Circle {
-        let first = Def::IntersectLineCircle {
-            line,
-            circle: conic,
-            which: 0,
-        };
-        if defined_as_tangent(c.def(line), conic) {
-            vec![first]
-        } else {
-            vec![
-                first,
-                Def::IntersectLineCircle {
-                    line,
-                    circle: conic,
-                    which: 1,
-                },
-            ]
-        }
-    } else {
-        (0..2)
-            .map(|which| Def::ConicPart(ConicPartDef::IntersectLine { line, conic, which }))
-            .collect()
-    };
+    let d = line_conic_state::LineConicDef::pair(c, first, second)?;
+    let mut defs = vec![Def::IntersectLineConic(d)];
+    if d.tangent(c).is_none() {
+        defs.push(Def::IntersectLineConic(
+            line_conic_state::LineConicDef::new(d.line, d.conic, pair::Output::Slot(1)),
+        ));
+    }
     Some(defs)
 }
 
 /// Whether this line/circle output has coordinates at creation.
 pub(crate) fn probe_line_circle(c: &Construction, line: Id, circle: Id, which: u8) -> bool {
     line_circle(c, line, circle, which, Hint::Lookup).is_some()
-}
-
-/// Keeps a second labelled output at a tangent, where the indexed solver
-/// returns only one point.
-pub(crate) fn add_labelled_output(
-    c: &mut Construction,
-    name: &str,
-    def: Def,
-) -> Result<Id, String> {
-    add_output_of(c, name, def, None)
-}
-
-/// [`add_labelled_output`] as a further output of the construction element
-/// `owner` (see [`Construction::add_output`]).
-pub(crate) fn add_labelled_output_of(
-    c: &mut Construction,
-    name: &str,
-    def: Def,
-    owner: crate::kernel::Id,
-) -> Result<Id, String> {
-    add_output_of(c, name, def, Some(owner))
-}
-
-fn add_output_of(
-    c: &mut Construction,
-    name: &str,
-    def: Def,
-    owner: Option<crate::kernel::Id>,
-) -> Result<Id, String> {
-    let (line, conic) = match def {
-        Def::IntersectLineCircle {
-            line,
-            circle,
-            which: 1,
-        } => (line, circle),
-        Def::ConicPart(ConicPartDef::IntersectLine {
-            line,
-            conic,
-            which: 1,
-        }) => (line, conic),
-        _ => {
-            return match owner {
-                Some(owner) => c.add_output(name, def, owner),
-                None => c.add(name, def),
-            }
-            .map_err(|e| e.to_string())
-        }
-    };
-    let (line, conic) = (c.label(line), c.label(conic));
-    let p = format!("Intersect({line}, {conic}, 1)");
-    let q = format!("Intersect({line}, {conic}, 2)");
-    let expression = format!("If(x({q}) == x({q}), {q}, If(IsTangent({line}, {conic}), {p}))");
-    let id = crate::expr::define(c, name, &expression, false)?;
-    if let Some(owner) = owner {
-        c.adopt_output(id, owner);
-    }
-    Ok(id)
 }
 
 fn selector_kind(c: &mut Construction, text: &str) -> Result<Kind, String> {
@@ -232,12 +156,14 @@ pub(crate) fn parse_selected(
     if let Some(result) = pair::PairDef::parse(c, func, args) {
         return Some(result.map(Def::IntersectConics));
     }
+    if let Some(result) = line_conic_state::LineConicDef::parse(c, func, args) {
+        return Some(result.map(Def::IntersectLineConic));
+    }
     boundary::BoundaryDef::parse(c, func, args).map(|result| result.map(Def::IntersectBoundary))
 }
 
-/// Compose existing intersection points with a live selector, or test
-/// incidence by projecting onto a path. The expression keeps the object
-/// dependencies and reuses the intersection hints of the indexed calls.
+/// Attach a selector to a shared intersection, or test incidence by
+/// projecting onto a path.
 pub(crate) fn exec_selected(
     c: &mut Construction,
     label: &str,
@@ -282,6 +208,37 @@ pub(crate) fn exec_selected(
     }
     let (first_id, second_id) = (c.id(first)?, c.id(second)?);
     let (a, b) = (c.kind(first_id), c.kind(second_id));
+    if let ([selector], Some(d)) = (
+        tail,
+        line_conic_state::LineConicDef::pair(c, first_id, second_id),
+    ) {
+        let result = (|| {
+            let d = if let Some(n) = crate::expr::plain_number(selector) {
+                line_conic_state::LineConicDef::new(
+                    d.line,
+                    d.conic,
+                    pair::Output::Index(pair::index(n)),
+                )
+            } else {
+                let id = match c.id(selector) {
+                    Some(id) => id,
+                    None => {
+                        let aux = format!("\0intersect-selector-{}", c.len());
+                        crate::expr::define(c, &aux, selector, false)?
+                    }
+                };
+                d.single(c, id)?
+            };
+            c.add(label, Def::IntersectLineConic(d))
+                .map(Some)
+                .map_err(|e| e.to_string())
+        })();
+        if result.is_err() {
+            c.discard_since(checkpoint);
+        }
+        return Some(result);
+    }
+
     if let [selector] = tail {
         if let Some(def) = parse_lines(c, first_id, second_id, None) {
             return Some((|| {
@@ -308,10 +265,7 @@ pub(crate) fn exec_selected(
             format!("If({closest} == {point}, {closest})")
         }
         [selector]
-            if matches!(
-                (a, b),
-                (Kind::Line, Kind::Circle | Kind::Conic) | (Kind::Circle | Kind::Conic, Kind::Line)
-            ) || (a, b) == (Kind::Circle, Kind::Circle)
+            if (a, b) == (Kind::Circle, Kind::Circle)
                 && c.id(selector).is_none()
                 && crate::expr::plain_number(selector).is_none() =>
         {
@@ -438,6 +392,16 @@ impl Hint {
 /// Decides the [`Hint`] of a new object.
 pub(crate) fn hint(c: &Construction, def: &Def) -> Hint {
     let existing = match *def {
+        Def::IntersectLineConic(d) if c.kind(d.conic) == Kind::Circle => {
+            return hint(
+                c,
+                &Def::IntersectLineCircle {
+                    line: d.line,
+                    circle: d.conic,
+                    which: 0,
+                },
+            );
+        }
         Def::IntersectLineCircle { line, circle, .. } => {
             let line_def = c.def(line);
             if defined_as_tangent(line_def, circle) {
@@ -506,6 +470,7 @@ pub(crate) fn hidden_parents_with_hint(c: &Construction, def: &Def, hint: Option
     };
     match *def {
         Def::IntersectConics(d) => return d.common_points(c).collect(),
+        Def::IntersectLineConic(d) => return d.hidden_parents(c),
         Def::IntersectBoundary(d) => return d.hidden_parents(c),
         Def::IntersectLineCircle { line, circle, .. } => {
             let line_def = c.def(line);
@@ -646,7 +611,10 @@ pub(crate) fn line_circle(
             if let Def::Lines(d) = line_def {
                 // A tangent of this circle has one point, the tangent
                 // algorithm's own (`isDefinedAsTangent`).
-                if let Some(t) = lines::tangent_point_on(c, d, circle) {
+                if let Some(t) = c
+                    .tangent_contact(line, circle)
+                    .or_else(|| lines::tangent_point_on(c, d, circle))
+                {
                     return if which == 0 { to_value(t) } else { None };
                 }
             }
@@ -691,11 +659,11 @@ pub(crate) fn line_general_conic(
 ) -> Option<Value> {
     let line_def = c.def(line);
     // A tangent of this conic has one point, the tangent algorithm's own.
-    let tangent = match line_def {
+    let tangent = c.tangent_contact(line, conic).or_else(|| match line_def {
         Def::ConicPart(d) => super::conic_parts::tangent_point_on(c, d, conic),
         Def::Lines(d @ LineDef::CommonTangent(_)) => lines::tangent_point_on(c, d, conic),
         _ => None,
-    };
+    });
     if let Some(point) = tangent {
         return if which == 0 { to_value(point) } else { None };
     }
@@ -727,16 +695,21 @@ pub(crate) fn line_general_conic(
 /// `intersectLineConic`, the defined points first, a tangent point only
 /// once. Both are undefined when the line or the conic is.
 pub(crate) fn helper_line_conic_points(g: [f64; 3], conic: &ConicData) -> [Pt; 2] {
-    let defined_line = !(g.iter().any(|v| v.is_nan()) || (is_zero(g[0]) && is_zero(g[1])));
-    if !(conic.defined && defined_line) {
-        return [None, None];
-    }
-    let mut p = intersect_line_general_conic(g, conic);
+    let mut p = raw_helper_candidates(g, conic);
     if p[0].is_none() {
         p = [p[1], None];
     }
     avoid_double_tangent_point(&mut p);
     p
+}
+
+fn raw_helper_candidates(g: [f64; 3], conic: &ConicData) -> [Pt; 2] {
+    let defined_line = !(g.iter().any(|v| v.is_nan()) || (is_zero(g[0]) && is_zero(g[1])));
+    if conic.defined && defined_line {
+        intersect_line_general_conic(g, conic)
+    } else {
+        [None; 2]
+    }
 }
 
 /// Whether the point `s` lies on the general conic `conic` by construction
@@ -1231,7 +1204,10 @@ fn match_existing_intersections(c: &Construction, c1: Id, c2: Id, p: &mut [Pt; 2
 /// incidence).
 fn line_points(line_def: Def) -> (Option<Id>, Option<Id>) {
     match line_def {
-        Def::Line(p, q) => (Some(p), Some(q)),
+        Def::Line(p, q) | Def::Segment(p, q) => (Some(p), Some(q)),
+        Def::Vector(super::vector::VectorDef::RayPoints(start, through)) => {
+            (Some(start), Some(through))
+        }
         Def::Perpendicular { through, .. } | Def::Parallel { through, .. } => (Some(through), None),
         _ => (None, None),
     }
@@ -1242,6 +1218,7 @@ fn intersection_on_line(c: &Construction, s: Id, line: Id) -> bool {
     match c.def(s) {
         Def::IntersectLines(l, m) => l == line || m == line,
         Def::IntersectLineCircle { line: l, .. } => l == line,
+        Def::IntersectLineConic(d) => d.line == line,
         Def::ConicPart(ConicPartDef::IntersectLine { line: l, .. }) => l == line,
         _ => false,
     }
@@ -1251,6 +1228,7 @@ fn intersection_on_line(c: &Construction, s: Id, line: Id) -> bool {
 fn intersection_on_circle(c: &Construction, s: Id, circle: Id) -> bool {
     match c.def(s) {
         Def::IntersectLineCircle { circle: k, .. } => k == circle,
+        Def::IntersectLineConic(d) => d.conic == circle,
         Def::IntersectCircles { c1, c2, .. } => c1 == circle || c2 == circle,
         _ => false,
     }
@@ -1307,10 +1285,11 @@ fn existing_line_circle_point(c: &Construction, line: Id, line_def: Def, circle:
 /// Whether `s` is an intersection point of the general conic `conic` and
 /// another object.
 fn intersection_on_general_conic(c: &Construction, s: Id, conic: Id) -> bool {
-    matches!(
-        c.def(s),
-        Def::ConicPart(ConicPartDef::IntersectLine { conic: k, .. }) if k == conic
-    )
+    match c.def(s) {
+        Def::ConicPart(ConicPartDef::IntersectLine { conic: k, .. }) => k == conic,
+        Def::IntersectLineConic(d) => d.conic == conic,
+        _ => false,
+    }
 }
 
 /// The points a general conic was drawn through, in the order in which
@@ -1450,7 +1429,7 @@ fn shared_circles_point(
 
 #[cfg(test)]
 mod tests {
-    use super::first_point_on;
+    use super::{first_point_on, line_conic_state, pair};
     use crate::algo::measure::MeasureDef;
     use crate::kernel::{Construction, Value};
     use crate::script::load;
@@ -1489,6 +1468,78 @@ mod tests {
         )
         .unwrap();
         assert!(close(xy(&c, "R"), 100.0005, 0.0));
+    }
+
+    #[test]
+    fn bounded_carriers_compact_the_first_intersection() {
+        // The bounded segment in CommandsTest clips the negative root of
+        // its 3D sphere. Exercise the same construction in the 2D kernel.
+        for carrier in ["Segment", "Ray"] {
+            let c = load(&format!(
+                "O = (0, 0)\nA = (0, 0)\nB = (0, 5)\nk = Circle(O, 2)\n\
+                 g = {carrier}(A, B)\nR = Intersect(k, g)\nS = Intersect(g, k, 2)"
+            ))
+            .unwrap();
+            assert!(close(xy(&c, "R"), 0.0, 2.0));
+            assert_eq!(xy(&c, "S"), None);
+        }
+    }
+
+    #[test]
+    fn a_labelled_intersection_and_reversed_index_share_slots() {
+        let mut c = load(
+            "O = (0, 0)\nk = Circle(O, 5)\nn = 0\nA = (-6, n)\nB = (6, n)\n\
+             g = Segment(A, B)\nR = Intersect(g, k)\nS = Intersect(k, g, 2)",
+        )
+        .unwrap();
+        assert!(close(xy(&c, "S"), 5.0, 0.0));
+        c.set_number(c.id("n").unwrap(), 5.0).unwrap();
+        assert!(close(xy(&c, "R_{2}"), 0.0, 5.0));
+        assert_eq!(xy(&c, "S"), xy(&c, "R_{2}"));
+    }
+
+    #[test]
+    fn rolling_back_a_labelled_slot_restores_tangent_suppression() {
+        let mut c = load(
+            "O = (0, 0)\nk = Circle(O, 5)\nn = 0\nA = (-6, n)\nB = (6, n)\n\
+             g = Line(A, B)\nP = Intersect(g, k, 1)",
+        )
+        .unwrap();
+        let g = c.id("g").unwrap();
+        let k = c.id("k").unwrap();
+        let n = c.id("n").unwrap();
+        let before = c.checkpoint();
+        c.add(
+            "Q",
+            Def::IntersectLineConic(line_conic_state::LineConicDef::new(
+                g,
+                k,
+                pair::Output::Slot(1),
+            )),
+        )
+        .unwrap();
+        c.set_number(n, 5.0).unwrap();
+        assert_eq!(xy(&c, "Q"), xy(&c, "P"));
+        c.rollback(before).unwrap();
+        c.add(
+            "S",
+            Def::IntersectLineCircle {
+                line: g,
+                circle: k,
+                which: 1,
+            },
+        )
+        .unwrap();
+        assert_eq!(xy(&c, "S"), None);
+    }
+
+    #[test]
+    fn a_bounded_conic_call_rejects_a_fourth_argument() {
+        let mut c =
+            load("O = (0, 0)\nk = Circle(O, 5)\nA = (-6, 0)\nB = (6, 0)\ng = Segment(A, B)")
+                .unwrap();
+        assert!(crate::script::exec(&mut c, "R = Intersect(g, k, B, 1)").is_err());
+        assert!(c.id("R").is_none());
     }
 
     #[test]

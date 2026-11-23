@@ -37,7 +37,7 @@ pub(crate) enum Output {
     Nearest(Id),
 }
 
-fn index(n: f64) -> usize {
+pub(super) fn index(n: f64) -> usize {
     (n as i32).wrapping_sub(1).max(0) as usize
 }
 
@@ -240,13 +240,13 @@ impl Group for PairDef {
 }
 
 #[derive(Clone, Copy, Debug)]
-enum Operand {
+pub(super) enum Operand {
     Full(ConicData),
     Limited(ArcData),
 }
 
 impl Operand {
-    fn get(c: &Construction, id: Id) -> Option<Self> {
+    pub(super) fn get(c: &Construction, id: Id) -> Option<Self> {
         if let Some(part) = c.arc(id) {
             part.defined.then_some(Self::Limited(part))
         } else {
@@ -254,21 +254,21 @@ impl Operand {
         }
     }
 
-    fn conic(&self) -> &ConicData {
+    pub(super) fn conic(&self) -> &ConicData {
         match self {
             Self::Full(data) => data,
             Self::Limited(part) => &part.conic,
         }
     }
 
-    fn contains(&self, point: (f64, f64)) -> bool {
+    pub(super) fn contains(&self, point: (f64, f64)) -> bool {
         match self {
             Self::Full(_) => true,
             Self::Limited(part) => on_part(part, point),
         }
     }
 
-    fn same(a: Option<Self>, b: Option<Self>) -> bool {
+    pub(super) fn same(a: Option<Self>, b: Option<Self>) -> bool {
         match (a, b) {
             (None, None) => true,
             (Some(Self::Full(a)), Some(Self::Full(b))) => a.same(&b),
@@ -360,7 +360,7 @@ impl PairState {
     }
 }
 
-fn closest(points: [Pt; 4], (x, y): (f64, f64)) -> usize {
+pub(super) fn closest<const N: usize>(points: [Pt; N], (x, y): (f64, f64)) -> usize {
     let mut best = 0;
     let mut distance = f64::INFINITY;
     for (i, (u, v)) in points

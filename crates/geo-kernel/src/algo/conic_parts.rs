@@ -433,7 +433,7 @@ fn tangents_from_point(c: &Construction, point: Id, conic: Id) -> Vec<ConicPartD
 
 /// `GeoConicND.polarLine` for the point `(px, py, 1)`; NaN when the conic
 /// is undefined.
-fn polar(d: &ConicData, (px, py): (f64, f64)) -> [f64; 3] {
+pub(super) fn polar(d: &ConicData, (px, py): (f64, f64)) -> [f64; 3] {
     if !d.defined {
         return [f64::NAN; 3];
     }
@@ -482,7 +482,7 @@ fn pole(d: &ConicData, (a, b, c): (f64, f64, f64)) -> Option<Value> {
 
 /// `GeoConicND.diameterLine(vx, vy)`; it does not check whether the conic
 /// is defined.
-fn diameter(d: &ConicData, vx: f64, vy: f64) -> [f64; 3] {
+pub(super) fn diameter(d: &ConicData, vx: f64, vy: f64) -> [f64; 3] {
     let m = &d.matrix;
     [
         m[0] * vx + m[3] * vy,
