@@ -1048,10 +1048,6 @@ final class Session {
     private static final String FOLDED = "folded sum";
 
     /**
-     * Whether the expression of a four-argument `Sum` or `Product` is a
-     * point or a vector: it holds a coordinate pair or names such an object.
-     */
-    /**
      * What `Sum` of the list `expression` (a literal such as `{A, B}`, or the
      * list object `lead`) gives when the list holds points (a point) or
      * vectors (a vector); null for any other list.
@@ -1076,6 +1072,10 @@ final class Session {
                 ? "point" : null;
     }
 
+    /**
+     * Whether the expression of a four-argument `Sum` or `Product` is a
+     * point or a vector: it holds a coordinate pair or names such an object.
+     */
     private boolean foldsCoordinates(String expression) {
         int depth = 0;
         for (int i = 0; i < expression.length(); i++) {
