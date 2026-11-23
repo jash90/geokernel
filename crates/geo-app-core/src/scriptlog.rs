@@ -29,6 +29,11 @@
 //! A crossing revealed by a move is saved as a slot definition after that
 //! move. Its exact label and its origin survive further moves and replay.
 //! A simultaneous move is saved as one `$movePoints` directive.
+//!
+//! A deletion rebuild leaves the removal of interval roots to the next
+//! update of their command and closes the operations it replayed with a
+//! `$keptLabels()` line: every later replay of the journal frees no label
+//! before it, so it reproduces the labels the deletion kept.
 
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::control::{decode_text, encode_text, visibility_boolean};
@@ -38,7 +43,8 @@ use geo_kernel::script::equation::{parse_style, Style as EquationStyle};
 use geo_kernel::script::saved::{self, mark_inline_arguments, Property, INLINE_ARGUMENTS};
 use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
 use geo_kernel::script::{
-    boundary_slot_owner, find_unquoted, restore_boundary_labels, split_comment, BoundaryOutputs,
+    boundary_slot_owner, find_unquoted, first_slot_owner, free_label_for, growth_owner,
+    restore_boundary_labels, split_comment, BoundaryOutputs,
 };
 use shared::Chain;
 pub use shared::Labels;
@@ -55,6 +61,9 @@ const LABELS: &str = "# labels: ";
 const MOVE_POINTS: &str = "$movePoints";
 const ANGLE_STYLE: &str = "$angleStyle";
 const SHOW_OBJECT: &str = "$showObject";
+/// Marks the end of the part of the journal that a deletion replayed
+/// without freeing the labels of command outputs (see `Op::KeptLabels`).
+const KEPT_LABELS: &str = "$keptLabels";
 
 fn snapshot_labels(comment: &str) -> Option<&str> {
     if saved::inline_argument_positions(comment).is_some() {
@@ -134,6 +143,12 @@ enum Op {
         y: f64,
     },
     MovePoints(Vec<Position<String>>),
+    /// The end of the operations a deletion replayed: the outputs that the
+    /// live session kept labelled through them keep their labels in every
+    /// replay of them, and lose them only at a later update of their
+    /// command, as in the reference. A replay frees a label there only for
+    /// a line that takes it.
+    KeptLabels,
     TextProperties(Box<str>),
     SavedProperty(Box<Property>),
     EquationStyle {
@@ -184,6 +199,7 @@ enum Directive<'a> {
     TextProperties(TextProperties<'a>),
     SavedProperty(Property),
     EquationStyle(EquationStyle<'a>),
+    KeptLabels,
 }
 
 /// The directive on a normalised line, if it is one (a definition always has
@@ -203,7 +219,9 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
     }
     let (name, rest) = line.split_once('(')?;
     let name = name.trim();
-    if !matches!(name, MOVE_POINTS | ANGLE_STYLE | SHOW_OBJECT) && !DIRECTIVES.contains(&name) {
+    if !matches!(name, MOVE_POINTS | ANGLE_STYLE | SHOW_OBJECT | KEPT_LABELS)
+        && !DIRECTIVES.contains(&name)
+    {
         return None;
     }
     let parse = || -> Option<Directive<'_>> {
@@ -229,6 +247,7 @@ fn directive(line: &str) -> Option<Result<Directive<'_>, String>> {
                 },
             )),
             (SHOW_OBJECT, [target, boolean]) => Some(Directive::Condition(target, boolean)),
+            (KEPT_LABELS, [""]) => Some(Directive::KeptLabels),
             (ANGLE_STYLE, [l, style]) => Some(Directive::Set(
                 l,
                 Setting::AngleStyle(geo_kernel::kernel::angle::AngleStyle::from_xml(
@@ -319,6 +338,23 @@ pub struct Rejected {
 /// The labels a definition line names before its `:` or `=`: `A`, `f` of
 /// `f(x)`, or those of `{t_{1}, t_{2}}` (an empty slot names nothing).
 /// An equation line names its label before the `:` of `a: 2x + 3y = 6`.
+/// The index of the last `$keptLabels()` line of `src`, before which a
+/// replay frees no label of a command output (see `Op::KeptLabels`); 0 if
+/// there is none.
+fn kept_labels_end(src: &str) -> usize {
+    src.lines()
+        .enumerate()
+        .filter(|(_, raw)| {
+            split_comment(raw)
+                .0
+                .trim()
+                .strip_prefix(KEPT_LABELS)
+                .is_some_and(|rest| rest.trim() == "()")
+        })
+        .last()
+        .map_or(0, |(i, _)| i)
+}
+
 fn defined_labels(line: &str) -> impl Iterator<Item = &str> {
     let lhs = line
         .find([':', '='])
@@ -644,9 +680,26 @@ impl Log {
                 BoundaryOutputs::is_command(e.rhs()) || boundary_slot_owner(e.rhs()).is_some()
             })
             .collect();
+        // A first output whose label was freed and given again is named by
+        // the line that gave it.
+        let renamed: BTreeMap<&str, &str> = entries
+            .iter()
+            .filter_map(|e| Some((first_slot_owner(e.rhs())?, e.labels.first()?.as_str())))
+            .collect();
         let mut groups = BoundaryOutputs::default();
         for e in entries.into_iter().rev() {
-            if let Some(first) = e.labels.first().and_then(|label| c.id(label)) {
+            let Some(mut label) = e.labels.first().map(String::as_str) else {
+                continue;
+            };
+            if BoundaryOutputs::is_command(e.rhs()) {
+                for _ in 0..renamed.len() {
+                    match renamed.get(label) {
+                        Some(next) => label = next,
+                        None => break,
+                    }
+                }
+            }
+            if let Some(first) = growth_owner(c, label) {
                 groups.record(c, &e.line, first, e.labels.len());
             }
         }
@@ -658,8 +711,34 @@ impl Log {
         c: &mut Construction,
         groups: &mut BoundaryOutputs,
         changed: impl Iterator<Item = Id> + Clone,
-    ) {
-        groups.grow_after(c, changed, |c, id, line| self.record(c, id.index(), line));
+    ) -> bool {
+        let mut recorded = false;
+        let released = groups.grow_after(c, changed, |c, id, line| {
+            recorded = true;
+            // A freed slot labelled again is an older object.
+            self.record_definition(c, c.len(), Some(id), line);
+        });
+        if released {
+            // A later set must not replace the one that freed the labels.
+            self.keep_last_set();
+        }
+        released || recorded
+    }
+
+    fn keep_last_set(&mut self) {
+        if let Some(Op::Set {
+            label,
+            to,
+            ordered: false,
+        }) = self.ops.last()
+        {
+            let set = Op::Set {
+                label: label.clone(),
+                to: *to,
+                ordered: true,
+            };
+            self.ops.replace_last(set);
+        }
     }
 
     pub(crate) fn grown_groups(&self) -> Vec<GrownOutputs<'_>> {
@@ -667,10 +746,15 @@ impl Log {
         let mut groups = Vec::new();
         for e in self.entries_rev() {
             if let Some(owner) = boundary_slot_owner(e.rhs()) {
-                births
-                    .entry(owner)
-                    .or_default()
-                    .extend(e.labels.iter().rev().cloned());
+                // The slots born under the label a first output takes again
+                // belong to the label it had.
+                let later = first_slot_owner(e.rhs())
+                    .and(e.labels.first())
+                    .and_then(|label| births.remove(label.as_str()))
+                    .unwrap_or_default();
+                let born = births.entry(owner).or_default();
+                born.extend(later);
+                born.extend(e.labels.iter().rev().cloned());
             } else if let Some(born) = e
                 .labels
                 .first()
@@ -780,7 +864,7 @@ impl Log {
             Op::SavedProperty(property) => {
                 !property.label().is_some_and(|label| labels.contains(label))
             }
-            Op::Freeze { .. } | Op::MovePoints(_) | Op::TextProperties(_) => true,
+            Op::Freeze { .. } | Op::MovePoints(_) | Op::TextProperties(_) | Op::KeptLabels => true,
         });
         self.removed.extend(labels);
         true
@@ -934,6 +1018,22 @@ impl Log {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
+        // The journal gives every label a slot takes; the freed labels
+        // follow the edits again. A deletion leaves freeing to the next
+        // live update, as the reference frees an output only when its
+        // command updates: the replay frees a label only for a line that
+        // takes it, which the live session freed first.
+        let deleting = !gone.is_empty();
+        let defer_until = if deleting {
+            usize::MAX
+        } else {
+            self.ops
+                .items()
+                .iter()
+                .rposition(|op| matches!(op, Op::KeptLabels))
+                .unwrap_or(0)
+        };
+        let mut groups = BoundaryOutputs::default();
         // While nothing is dropped or merged, `kept` is the first `same`
         // ops of the journal and shares their storage (see `shared.rs`).
         let ops = self.ops.items();
@@ -944,8 +1044,19 @@ impl Log {
             }
         };
         for (i, op) in ops.iter().enumerate() {
+            let deferring = i < defer_until;
+            groups.set_deferred(deferring);
             match op {
+                Op::KeptLabels => match &mut same {
+                    Some(n) => *n = i + 1,
+                    None => kept.ops.push(Op::KeptLabels),
+                },
                 Op::Define(e) => {
+                    if deferring {
+                        for label in &e.labels {
+                            free_label_for(&mut c, label);
+                        }
+                    }
                     let before = c.len();
                     match e.replay(&mut c) {
                         Ok(first) => {
@@ -957,6 +1068,12 @@ impl Log {
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
+                            }
+                            if let Some(id) = first {
+                                groups.record(&c, &e.line, id, c.len() - before);
+                                if id.index() < before {
+                                    groups.release_after(&mut c, std::iter::once(id));
+                                }
                             }
                             // What `record` would make of it is `e` itself.
                             match &mut same {
@@ -993,6 +1110,7 @@ impl Log {
                         Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
+                    groups.release_after(&mut c, std::iter::once(id));
                     // A set right after a set of the same object is merged
                     // into it by `record_set` (after a `remove` they can
                     // meet): the journal and `kept` part there.
@@ -1015,6 +1133,7 @@ impl Log {
                 }
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;
+                    groups.release_after(&mut c, positions.iter().map(|&(id, _, _)| id));
                     match &mut same {
                         Some(n) if positions.len() == points.len() => *n = i + 1,
                         _ => {
@@ -1093,6 +1212,9 @@ impl Log {
         if let Some(n) = same {
             kept.ops = self.ops.prefix(n);
         }
+        if deleting && groups.frees_labels(&c) && !matches!(kept.ops.last(), Some(Op::KeptLabels)) {
+            kept.ops.push(Op::KeptLabels);
+        }
         kept.hidden = self.hidden.clone();
         // A replay keeps the visibility of the journal, whatever the
         // commands it runs asked for.
@@ -1144,9 +1266,33 @@ impl Log {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
-        for op in self.ops.items() {
+        // The journal gives every label a slot takes; the freed labels
+        // follow the edits again. A deletion leaves freeing to the next
+        // live update, as the reference frees an output only when its
+        // command updates: the replay frees a label only for a line that
+        // takes it, which the live session freed first.
+        let deleting = !gone.is_empty();
+        let defer_until = if deleting {
+            usize::MAX
+        } else {
+            self.ops
+                .items()
+                .iter()
+                .rposition(|op| matches!(op, Op::KeptLabels))
+                .unwrap_or(0)
+        };
+        let mut groups = BoundaryOutputs::default();
+        for (i, op) in self.ops.items().into_iter().enumerate() {
+            let deferring = i < defer_until;
+            groups.set_deferred(deferring);
             match op {
+                Op::KeptLabels => kept.ops.push(Op::KeptLabels),
                 Op::Define(e) => {
+                    if deferring {
+                        for label in &e.labels {
+                            free_label_for(&mut c, label);
+                        }
+                    }
                     let before = c.len();
                     match e.replay(&mut c) {
                         Ok(first) => {
@@ -1158,6 +1304,12 @@ impl Log {
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
+                            }
+                            if let Some(id) = first {
+                                groups.record(&c, &e.line, id, c.len() - before);
+                                if id.index() < before {
+                                    groups.release_after(&mut c, std::iter::once(id));
+                                }
                             }
                             kept.record_definition(&c, before, first, &e.line);
                         }
@@ -1188,6 +1340,7 @@ impl Log {
                         Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
+                    groups.release_after(&mut c, std::iter::once(id));
                     kept.push_set(
                         label,
                         *to,
@@ -1196,6 +1349,7 @@ impl Log {
                 }
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;
+                    groups.release_after(&mut c, positions.iter().map(|&(id, _, _)| id));
                     kept.record_move_points(&c, &positions);
                 }
                 Op::TextProperties(line) => {
@@ -1233,6 +1387,9 @@ impl Log {
                     }
                 }
             }
+        }
+        if deleting && groups.frees_labels(&c) && !matches!(kept.ops.last(), Some(Op::KeptLabels)) {
+            kept.ops.push(Op::KeptLabels);
         }
         kept.hidden = self.hidden.clone();
         self.replay_conditions(&mut c, &mut kept);
@@ -1367,6 +1524,7 @@ impl Log {
                     }
                     writeln!(out, ")")
                 }
+                Op::KeptLabels => writeln!(out, "{KEPT_LABELS}()"),
                 Op::TextProperties(line) => writeln!(out, "{line}"),
                 Op::SavedProperty(property) => writeln!(out, "{property}"),
                 Op::EquationStyle { label, form } => {
@@ -1438,6 +1596,10 @@ impl Log {
                 self.ops.push(Op::TextProperties(props.to_string().into()));
                 return Ok(Vec::new());
             }
+            Directive::KeptLabels => {
+                self.ops.push(Op::KeptLabels);
+                return Ok(Vec::new());
+            }
             Directive::EquationStyle(style) => {
                 let label = style.label.to_owned();
                 let form = style.form.clone();
@@ -1482,7 +1644,9 @@ impl Log {
         let grow = !checked;
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
+        let defer_until = kept_labels_end(src);
         for (i, raw) in src.lines().enumerate() {
+            groups.set_deferred(i < defer_until);
             if let Some(asset) = saved::load_image_asset(&mut c, raw) {
                 match asset {
                     Ok(asset) => log.record_asset(asset),
@@ -1528,19 +1692,32 @@ impl Log {
                         let changed = log.apply(&mut c, d)?;
                         if grow && !changed.is_empty() {
                             log.grow_boundary_outputs(&mut c, &mut groups, changed.into_iter());
+                        } else if !changed.is_empty() {
+                            groups.release_after(&mut c, changed.into_iter());
                         }
                         Ok(())
                     }),
                     None => check_names(&line).and_then(|()| {
+                        if i < defer_until {
+                            for label in &named {
+                                free_label_for(&mut c, label);
+                            }
+                        }
                         let expected = (checked || listed.is_some()).then_some(named.as_slice());
                         let before = c.len();
                         let slider = geo_kernel::script::slider_assignment_target(&c, &line);
                         let first = log.define_checked(&mut c, &line, expected)?;
-                        if let Some(id) = first.filter(|_| grow && c.len() > before) {
+                        if let Some(id) = first {
                             groups.record(&c, &line, id, c.len() - before);
                         }
-                        if let Some(id) = slider.filter(|_| grow) {
-                            log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
+                        match slider {
+                            Some(id) if grow => {
+                                log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
+                            }
+                            Some(id) => {
+                                groups.release_after(&mut c, std::iter::once(id));
+                            }
+                            None => {}
                         }
                         Ok(())
                     }),
@@ -1638,7 +1815,9 @@ impl Log {
         // Growth during replay stops before the slots that the script
         // records itself (`BoundaryOutputs::for_script`).
         let grow = true;
+        let defer_until = kept_labels_end(src);
         for (i, raw) in src.lines().enumerate() {
+            groups.set_deferred(i < defer_until);
             let at = |e: String| format!("line {}: {e}", i + 1);
             if let Some(asset) = saved::load_image_asset(&mut c, raw) {
                 log.record_asset(asset.map_err(at)?);
@@ -1662,6 +1841,15 @@ impl Log {
                 .and_then(snapshot_labels)
                 .map(|labels| labels.split(',').map(str::trim).collect::<Vec<_>>());
             let slider = geo_kernel::script::slider_assignment_target(&c, &line);
+            if i < defer_until {
+                let named: Vec<&str> = match &labels {
+                    Some(labels) => labels.clone(),
+                    None => defined_labels(&line).collect(),
+                };
+                for label in named {
+                    free_label_for(&mut c, label);
+                }
+            }
             let first = labels
                 .as_ref()
                 .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))
@@ -1669,7 +1857,7 @@ impl Log {
                 .map_err(at)?;
             log.record_definition(&c, before, first, &line);
             log.apply_hidden_requests(&mut c);
-            if let Some(id) = first.filter(|_| grow && c.len() > before) {
+            if let Some(id) = first.filter(|_| grow) {
                 groups.record(&c, &line, id, c.len() - before);
             }
             if let Some(id) = slider.filter(|_| grow) {

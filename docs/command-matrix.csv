@@ -35,7 +35,7 @@ Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
 Point,,geometry,P1,partial,4,1,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
 Midpoint,,geometry,P0,partial,4,2,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,partial,2,1,"LineBisector(point, point); LineBisector(segment)"
-Intersect,,geometry,P0,partial,79,65,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
+Intersect,,geometry,P0,partial,79,66,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
 IntersectPath,,geometry,P1,partial,9,6,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
 IntersectRegion,,english,P2,partial,9,8,
 Distance,,geometry,P0,partial,4,1,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
@@ -523,15 +523,15 @@ GroebnerDegRevLex,,cas,,out_of_scope,,,
 GroebnerLexDeg,,cas,,out_of_scope,,,
 NIntegral,,function,P2,done,6,6,
 NInvert,,function,P2,done,1,1,
-NSolve,,algebra,P2,todo,10,0,Bounded real polynomial equations and systems with optional variable binding.
-NSolutions,,algebra,P2,todo,10,0,Bounded real polynomial equations and systems with optional variable binding.
+NSolve,,algebra,P2,partial,10,1,Bounded real polynomial equations and systems with optional variable binding. Done only with the giac feature (docs/cas-giac.md): NSolve(list).
+NSolutions,,algebra,P2,partial,10,4,"Bounded real polynomial equations and systems with optional variable binding. Done only with the giac feature (docs/cas-giac.md): NSolutions(list), NSolutions(function, any), NSolutions(line, any), NSolutions(conic, any)."
 Numeric,,cas,,out_of_scope,,,
 Evaluate,,english,,out_of_scope,,,
 MixedNumber,,cas,,out_of_scope,,,
 Rationalize,,cas,,out_of_scope,,,
-Solutions,,algebra,P2,todo,10,0,Real polynomial equations and small systems are in scope for the 1.0 CAS.
-Solve,,algebra,P2,todo,10,0,Real polynomial equations and small systems are in scope for the 1.0 CAS.
-PlotSolve,,function,P2,todo,5,0,
+Solutions,,algebra,P2,partial,10,1,Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solutions(list).
+Solve,,algebra,P2,partial,10,1,Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solve(list).
+PlotSolve,,function,P2,partial,5,1,Done only with the giac feature (docs/cas-giac.md): PlotSolve(list).
 SolveCubic,,cas,,out_of_scope,,,
 SolveQuartic,,cas,,out_of_scope,,,
 JordanDiagonalization,,cas,,out_of_scope,,,

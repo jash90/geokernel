@@ -59,6 +59,7 @@ pub fn replay(case: &Case) -> CaseOutcome {
         c.set_locus_view(xmin, xmax, ymin, ymax, xscale, yscale);
     }
     let mut boundary_outputs = script::BoundaryOutputs::default();
+    let mut former = std::collections::HashMap::new();
     for (i, line) in case.script.iter().enumerate() {
         let before = c.len();
         match script::exec(&mut c, line) {
@@ -84,7 +85,9 @@ pub fn replay(case: &Case) -> CaseOutcome {
         .collect();
     for (i, (step, snapshot)) in case.steps.iter().zip(&case.snapshots).enumerate() {
         match apply(&mut c, step) {
-            Ok(Some(id)) => boundary_outputs.grow(&mut c, id, |_, _, _| {}),
+            Ok(Some(id)) => {
+                boundary_outputs.grow(&mut c, id, |_, _, _| {});
+            }
             Ok(None) => {}
             Err(e) => {
                 out.mismatches
@@ -108,7 +111,16 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 }
             }
         }
-        compare_snapshot(&mut out, &c, i, snapshot);
+        // The harness reads an output whose label its command freed under
+        // the label it had (`Session.recordGrowingPoints`), also after the
+        // command labels it again.
+        for id in c.ids() {
+            let label = c.label(id);
+            if !label.starts_with('\0') && former.get(label) != Some(&id) {
+                former.insert(label.to_owned(), id);
+            }
+        }
+        compare_snapshot(&mut out, &c, i, snapshot, &former);
     }
     out
 }
@@ -167,7 +179,7 @@ fn replay_document(case: &Case) -> CaseOutcome {
                     .push(failure(i, label, "no object", "object survives".into()));
             }
         }
-        compare_snapshot(&mut out, c, i, snapshot);
+        compare_snapshot(&mut out, c, i, snapshot, &Default::default());
     }
     out
 }
@@ -177,9 +189,10 @@ fn compare_snapshot(
     c: &Construction,
     i: usize,
     snapshot: &std::collections::BTreeMap<String, crate::model::Expected>,
+    former: &std::collections::HashMap<String, geo_kernel::Id>,
 ) {
     for (label, expected) in snapshot {
-        let Some(id) = c.id(label) else {
+        let Some(id) = c.id(label).or_else(|| former.get(label).copied()) else {
             out.mismatches.push(failure(
                 i,
                 label,

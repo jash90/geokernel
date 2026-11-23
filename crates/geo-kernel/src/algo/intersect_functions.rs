@@ -213,6 +213,11 @@ impl FunctionIntersection {
         matches!(self.method, Method::Interval { slot: 0, .. })
     }
 
+    /// A slot of `Intersect(f, g, a, b)` after the first.
+    pub(super) fn is_later_interval_slot(self) -> bool {
+        matches!(self.method, Method::Interval { slot, .. } if slot > 0)
+    }
+
     pub(super) fn root_count(self, c: &Construction) -> usize {
         self.with_points(c, |points| points.len())
     }
