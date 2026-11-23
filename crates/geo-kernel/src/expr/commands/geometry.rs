@@ -187,12 +187,10 @@ fn dimension(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node
 }
 
 fn length(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
-    if let (&[a], [false]) = (args, lists) {
-        if matches!(p.node(a), Node::Cmd(def, _) if def.kind() == Kind::Vector) {
-            return Ok(Some(Node::Un(Un::Abs, a)));
-        }
+    match (args, lists) {
+        (&[a], [false]) if p.is_point_or_vector(a) => Ok(Some(Node::Un(Un::Abs, a))),
+        _ => list_form("Length", ListOp::Length, false, args, lists),
     }
-    list_form("Length", ListOp::Length, false, args, lists)
 }
 
 /// `ExpressionNodeEvaluator.vectorProduct` for two 2D inputs.

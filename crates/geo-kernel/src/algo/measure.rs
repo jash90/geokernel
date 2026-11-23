@@ -2,6 +2,7 @@
 // commit 112919f2d450ec7430a5cd3b65dba226fdc43b74:
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/commands/CmdLength.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLengthSegment.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLengthVector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoLengthFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoLengthFunction2Points.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoSegment.java
@@ -554,7 +555,7 @@ impl Group for MeasureDef {
                 Value::Locus { len, .. } => number(f64::from(len)),
                 _ => {
                     let (x, y) = c.point(s)?;
-                    number((x * x + y * y).sqrt())
+                    number(my_length(x, y))
                 }
             },
             MeasureDef::LocusPerimeter(id) => {
@@ -841,6 +842,15 @@ mod tests {
 
     const BASE: &str = "A = (0, 0)\nB = (4, 0)\nP = (1, 3)\nC = (0, 3)\n\
                         s = Segment(A, B)\nl = Line(A, B)\nk = Circle(A, B)\n";
+
+    #[test]
+    fn point_length_measures_from_the_origin() {
+        let mut c = load("A = (3, 4)\nn = Length((3, 4))\nd = Length(A)").unwrap();
+        close(num(&c, "n"), 5.0);
+        close(num(&c, "d"), 5.0);
+        c.move_point(c.id("A").unwrap(), -5.0, 12.0).unwrap();
+        close(num(&c, "d"), 13.0);
+    }
 
     #[test]
     fn every_syntax_parses() {
