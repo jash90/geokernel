@@ -156,9 +156,12 @@ fn polynomial(ctx: &Ctx<'_, false>, i: u32) -> Option<Polynomial> {
                 Bin::Sub => Some(std::array::from_fn(|i| a[i] - b[i])),
                 Bin::Mul => product(a, b),
                 Bin::Div if b_is_scalar => Some(a.map(|x| x / b[0])),
-                Bin::Pow if b_is_scalar && (0.0..=4.0).contains(&b[0]) && b[0].fract() == 0.0 => (0
-                    ..b[0] as usize)
-                    .try_fold(scalar_polynomial(1.0), |power, _| product(power, a)),
+                Bin::Pow | Bin::RootPow
+                    if b_is_scalar && (0.0..=4.0).contains(&b[0]) && b[0].fract() == 0.0 =>
+                {
+                    (0..b[0] as usize)
+                        .try_fold(scalar_polynomial(1.0), |power, _| product(power, a))
+                }
                 _ => None,
             }
         }
@@ -202,8 +205,8 @@ fn derivative(ctx: &Ctx<'_, true>, i: u32, depth: u32) -> Option<f64> {
                     match op {
                         Bin::Mul => da * b + a * db,
                         Bin::Div => (da * b - a * db) / (b * b),
-                        Bin::Pow if db == 0.0 => b * a.powf(b - 1.0) * da,
-                        Bin::Pow => a.powf(b) * (db * a.ln() + b * da / a),
+                        Bin::Pow | Bin::RootPow if db == 0.0 => b * a.powf(b - 1.0) * da,
+                        Bin::Pow | Bin::RootPow => a.powf(b) * (db * a.ln() + b * da / a),
                         _ => return None,
                     }
                 }
@@ -424,7 +427,9 @@ fn analysis_polynomials(
             first.extend(analysis_polynomials(ctx, b, order, work, depth)?);
             return Some(first);
         }
-        Node::Bin(Bin::Pow, base, exponent) if order < 2 && !has_variable(ctx, exponent)? => {
+        Node::Bin(Bin::Pow | Bin::RootPow, base, exponent)
+            if order < 2 && !has_variable(ctx, exponent)? =>
+        {
             let exponent = ctx.full_number(exponent);
             if exponent > 0.0 && exponent.fract() == 0.0 {
                 let mut factors = analysis_polynomials(ctx, base, order, work, depth)?;
@@ -664,7 +669,7 @@ fn fraction(ctx: &Ctx<'_, true>, i: u32, expansion: Expansion<'_>, depth: u32) -
                 expansion,
             )
         }
-        Node::Bin(Bin::Pow, a, b) if !has_variable(ctx, b)? => {
+        Node::Bin(Bin::Pow | Bin::RootPow, a, b) if !has_variable(ctx, b)? => {
             let exponent = ctx.full_number(b);
             // The reference polynomial parser also bounds a single expanded power.
             if exponent.fract() != 0.0 || exponent.abs() > MAX_GRAPH_DEGREE as f64 {

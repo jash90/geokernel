@@ -184,6 +184,7 @@ pub(super) use geometry::{apply_matrix_coordinates, map_list};
 
 pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,
+    node: u32,
     op: ListOp,
     l: u32,
     n: u32,
@@ -191,7 +192,7 @@ pub(super) fn list_fn<const M: bool>(
     match op {
         ListOp::Normalize => function_analysis::normalize(ctx, l),
         ListOp::Svd => function_analysis::svd(ctx, l),
-        _ if geometry::makes_list(op) => geometry::list_fn(ctx, op, l, n),
+        _ if geometry::makes_list(op) => geometry::list_fn(ctx, node, op, l, n),
         _ => ctx.list_fn(op, l, n),
     }
 }

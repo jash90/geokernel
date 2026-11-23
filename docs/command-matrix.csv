@@ -32,15 +32,15 @@ Slope,,geometry,P1,partial,2,1,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
 Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
-Point,,geometry,P1,partial,4,1,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
+Point,,geometry,P1,partial,4,2,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
 Midpoint,,geometry,P0,partial,4,3,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
 LineBisector,,geometry,P1,partial,2,1,"LineBisector(point, point); LineBisector(segment)"
-Intersect,,geometry,P0,partial,79,70,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
+Intersect,,geometry,P0,partial,79,71,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
 IntersectPath,,geometry,P1,partial,9,6,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
 IntersectRegion,,english,P2,partial,9,8,
-Distance,,geometry,P0,partial,4,1,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
-Length,,geometry,P1,partial,11,10,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
-Radius,,geometry,P1,todo,1,0,Radius(conic or conic part); defined for circle and single-point types
+Distance,,geometry,P0,partial,4,2,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
+Length,,geometry,P1,done,11,11,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
+Radius,,geometry,P1,done,1,1,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
 CircleArc,,geometry,P1,todo,1,0,"CircularArc(centre, point, point)"
 Arc,,geometry,P1,done,2,2,Conic with point endpoints or numeric parameters
@@ -119,11 +119,11 @@ Derivative,,function,P2,partial,8,7,
 NDerivative,,function,P2,partial,9,8,
 Integral,,function,P2,done,7,7,
 IntegralBetween,,function,P2,done,7,7,
-LowerSum,,function,P2,todo,1,0,
-LeftSum,,function,P2,todo,1,0,
+LowerSum,,function,P2,done,1,1,
+LeftSum,,function,P2,done,1,1,
 RectangleSum,,function,P2,done,1,1,
 TaylorSeries,,function,,out_of_scope,,,A symbolic Taylor polynomial uses the CAS.
-UpperSum,,function,P2,todo,1,0,
+UpperSum,,function,P2,done,1,1,
 TrapezoidalSum,,function,P2,done,1,1,
 Limit,,function,,out_of_scope,,,"Symbolic limits, including variable and infinite endpoints, use the CAS."
 LimitBelow,,function,,out_of_scope,,,Symbolic one-sided limits use the CAS.
@@ -176,8 +176,8 @@ Axes,,conic,P1,done,1,1,Axes(conic)
 Sort,,list,P2,done,3,3,"Sort(list of numbers, booleans or points); Sort(value list, key list); Sort(point, point, ...)"
 First,,list,P2,partial,6,5,"Lists, text, loci and freehand functions (First(function, number))."
 Last,,list,P2,done,5,5,"Last(list); Last(list, number of elements)"
-Take,,list,P2,partial,4,3,"Take(list, from[, to])"
-RemoveUndefined,,list,P2,todo,1,0,RemoveUndefined(list)
+Take,,list,P2,done,4,4,"Take(list, from[, to])"
+RemoveUndefined,,list,P2,done,1,1,RemoveUndefined(list)
 Reverse,,list,P2,done,3,3,"Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)"
 Element,,list,P2,done,3,3,"Element(list, index); Element(list, index, index, ...)"
 IndexOf,,list,P2,done,4,4,"IndexOf(object, list[, start])"
@@ -333,7 +333,7 @@ Vector,,vector,P2,done,3,3,"Vector(point, point); Vector(point); a free (x, y) u
 UnitOrthogonalVector,,vector,P2,partial,3,2,"UnitOrthogonalVector(vector, line, segment or ray)"
 OrthogonalVector,,vector,P2,partial,3,1,"OrthogonalVector(vector, line, segment or ray)"
 Invert,,vector,P2,done,2,2,
-Transpose,,vector,P2,partial,3,2,
+Transpose,,vector,P2,done,3,3,
 ReducedRowEchelonForm,,vector,P2,done,3,3,
 Determinant,,vector,P2,done,1,1,
 Identity,,vector,P2,done,1,1,

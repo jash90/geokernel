@@ -66,7 +66,7 @@ use super::commands;
 use super::decimal::Dec;
 use super::list::{copy_tree, List, Slot};
 use super::math::{self, PI_180};
-use super::{Bin, CallOp, Elem, Entry, ListOp, Node, Raw, Ty, Un};
+use super::{Bin, CallOp, Elem, Entry, IfMode, ListOp, Node, Raw, Ty, Un};
 use crate::algo::intersect::Hint;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use crate::tol::STANDARD_PRECISION;
@@ -848,7 +848,7 @@ impl<const M: bool> Ctx<'_, M> {
                 Ex::plain(V(r * phi.cos(), r * phi.sin()))
             }
             Node::Un(op, a) => self.unary(op, a),
-            Node::Bin(Bin::Pow, a, b) => self.power(a, b),
+            Node::Bin(op @ (Bin::Pow | Bin::RootPow), a, b) => self.power(op, a, b),
             Node::Bin(Bin::Round2, a, b) => self.round2(a, b),
             // only a tree with lists has a list operand
             Node::Bin(Bin::Sub, a, b)
@@ -1223,12 +1223,21 @@ impl<const M: bool> Ctx<'_, M> {
 
     /// `ExpressionNodeEvaluator.handlePower` and `MyDouble.pow`: a whole
     /// exponent from 0 to below 10^6 is `DoubleOperation.INT_POWER`.
-    fn power(&self, a: u32, b: u32) -> Ex {
+    fn power(&self, op: Bin, a: u32, b: u32) -> Ex {
         self.charge(POWER);
         let (l, r) = (self.operand(a), self.operand(b));
         match (l.val, r.val) {
             (Val::N(base), Val::N(e)) => {
                 let (special, dec) = l.left();
+                if op == Bin::RootPow && base == f64::NEG_INFINITY {
+                    // Operation.NROOT delegates the even root to MyDouble.pow.
+                    if let Node::Bin(Bin::Div, _, degree) = self.node(b) {
+                        let n = self.fast(degree);
+                        if n != 0.0 && math::is_integer(n) && math::java_round(n) % 2 == 0 {
+                            return Ex::kept(special, math::java_pow(base, e));
+                        }
+                    }
+                }
                 if math::is_euler(base) {
                     // `exponent.getNumber().exp()`
                     return Ex::kept(r.left().0, e.exp());
@@ -1353,7 +1362,60 @@ impl<const M: bool> Ctx<'_, M> {
         if lists.over() {
             return None;
         }
-        match self.node(i) {
+        let node = self.node(i);
+        let run = self.list_node(i, node);
+        match node {
+            Node::Call(CallOp::Take, ..) => {
+                if let Some(run) = run {
+                    self.remember_list_shape(i, run);
+                }
+            }
+            Node::If(IfMode::Algo, ..) => {
+                let mark = lists.len();
+                let initial = run.is_none()
+                    && !lists.over()
+                    && !self.e.list_history.records().shapes.contains_key(&i);
+                if let Some(run) = run {
+                    self.remember_list_shape(i, run);
+                } else if initial {
+                    let template = self
+                        .if_list_template(i)
+                        .and_then(|branch| self.list(branch));
+                    self.remember_list_shape(i, template.unwrap_or((mark, 0)));
+                    lists.truncate(mark);
+                }
+            }
+            _ => {}
+        }
+        run
+    }
+
+    fn remember_list_shape(&self, node: u32, (start, len): (u32, u32)) {
+        let Some(lists) = self.lists else {
+            return;
+        };
+        let mut history = self.e.list_history.records();
+        let old = history.shapes.get(&node).map_or(0, |shape| shape.len());
+        let total = history.elements - old + len as usize;
+        if total <= MAX_ELEMENTS as usize && lists.charge(2 * u64::from(len)) {
+            let kinds = (start..start + len).map(|j| lists.read(self.c, j).kind);
+            if !history
+                .shapes
+                .get(&node)
+                .is_some_and(|s| s.iter().copied().eq(kinds.clone()))
+            {
+                history.shapes.insert(node, kinds.collect());
+            }
+            history.elements = total;
+        } else {
+            history.shapes.remove(&node);
+            history.elements -= old;
+        }
+    }
+
+    fn list_node(&self, i: u32, node: Node) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        match node {
             // `AlgoDependentList`: one element per item
             Node::List(first, len) => {
                 let start = lists.reserve(len)?;
@@ -1394,7 +1456,7 @@ impl<const M: bool> Ctx<'_, M> {
                 elem,
                 explicit,
             } => self.filter(list, condition, local, elem, explicit, true),
-            Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, op, l, n),
+            Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, i, op, l, n),
             // an element that is a list: its elements were built with the
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
@@ -1439,6 +1501,7 @@ impl<const M: bool> Ctx<'_, M> {
                 }
             }
         }
+        let literal_item = matches!(self.node(i), Node::Item(_));
         let i = match self.node(i) {
             Node::Item(a) => a,
             Node::ItemObject(id) => return Slot::object(self.c, id),
@@ -1502,7 +1565,15 @@ impl<const M: bool> Ctx<'_, M> {
                     }
                     _ => super::types::vec_kind(self.c, &self.e.nodes, &self.e.tys, i),
                 };
-                Slot::coords(kind, x, y)
+                if literal_item
+                    && kind == Kind::Point
+                    && (x.is_infinite() || y.is_infinite())
+                    && self.dependent_list_item(i)
+                {
+                    Slot::undefined(kind)
+                } else {
+                    Slot::coords(kind, x, y)
+                }
             }
             Val::B(false, false)
                 if matches!(self.node(i), Node::Algebra(super::AlgebraOp::IsPrime, ..)) =>
@@ -1511,6 +1582,20 @@ impl<const M: bool> Ctx<'_, M> {
             }
             Val::B(b, _) => Slot::boolean(b),
         }
+    }
+
+    // AlgebraProcessor creates the entries of a literal list individually.
+    // A point expression that reads objects is an AlgoDependentPoint.
+    fn dependent_list_item(&self, i: u32) -> bool {
+        self.stop(1)
+            || match self.node(i) {
+                Node::Obj(_)
+                | Node::Apply(..)
+                | Node::Apply2(..)
+                | Node::Local(..)
+                | Node::Cmd(..) => true,
+                node => super::children(&node).any(|child| self.dependent_list_item(child)),
+            }
     }
 
     /// The elements of a list object: read in place, as `AlgoDependentList`
@@ -1540,6 +1625,26 @@ impl<const M: bool> Ctx<'_, M> {
         Some((base, len))
     }
 
+    fn list_for_arithmetic(&self, i: u32) -> Option<(u32, u32)> {
+        if let Some(run) = self.list(i) {
+            return Some(run);
+        }
+        let lists = self.lists?;
+        let kept = match self.node(i) {
+            Node::Obj(id) => super::kept_list_shape(self.c, id),
+            _ => self.e.kept_list_shape(i),
+        }?;
+        if !lists.charge(kept.len() as u64) {
+            return None;
+        }
+        let len = kept.len() as u32;
+        let start = lists.reserve(len)?;
+        for (j, &kind) in (start..start + len).zip(kept.iter()) {
+            lists.set(j, Slot::undefined(kind));
+        }
+        Some((start, len))
+    }
+
     /// `MyList.apply` of a two-operand operation: element by element, or
     /// every element with the other operand. Lists of unequal length give
     /// an empty list; a point or vector result is a point.
@@ -1555,8 +1660,16 @@ impl<const M: bool> Ctx<'_, M> {
         let (la, lb) = (self.is_list(a), self.is_list(b));
         let left = (!la).then(|| scalar(a));
         let right = (!lb).then(|| scalar(b));
-        let ra = if la { Some(self.list(a)?) } else { None };
-        let rb = if lb { Some(self.list(b)?) } else { None };
+        let ra = if la {
+            Some(self.list_for_arithmetic(a)?)
+        } else {
+            None
+        };
+        let rb = if lb {
+            Some(self.list_for_arithmetic(b)?)
+        } else {
+            None
+        };
         let len = match (ra, rb) {
             (Some((_, n)), Some((_, m))) if n != m => return Some((lists.len(), 0)),
             (Some((_, n)), _) | (_, Some((_, n))) => n,
@@ -1627,7 +1740,7 @@ impl<const M: bool> Ctx<'_, M> {
     /// `MyList.apply` of a one-operand operation.
     fn list_unary(&self, op: Un, a: u32) -> Option<(u32, u32)> {
         let lists = self.lists?;
-        let (s, n) = self.list(a)?;
+        let (s, n) = self.list_for_arithmetic(a)?;
         let start = lists.reserve(n)?;
         if !lists.charge(u64::from(n)) {
             return None;
@@ -1748,8 +1861,8 @@ pub(super) fn combine(op: Bin, x: Val, y: Val) -> Slot {
     };
     let (x, y) = (number(x), number(y));
     let r = match (op, x, y) {
-        (Bin::Pow, Val::N(a), Val::N(e)) => Val::N(math::my_pow(a, e)),
-        (Bin::Pow, Val::V(a, b), Val::N(e)) => {
+        (Bin::Pow | Bin::RootPow, Val::N(a), Val::N(e)) => Val::N(math::my_pow(a, e)),
+        (Bin::Pow | Bin::RootPow, Val::V(a, b), Val::N(e)) => {
             Val::N(if e == 2.0 { a * a + b * b } else { f64::NAN })
         }
         _ => binary(op, x, y, false),

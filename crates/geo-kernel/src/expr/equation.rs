@@ -506,7 +506,7 @@ impl Builder {
                 p.apply_coefficients(self, |b, coeff| b.divide(coeff, divisor))?;
                 Ok(p)
             }
-            Node::Bin(Bin::Pow, base, exponent) => self.power(c, base, exponent),
+            Node::Bin(Bin::Pow | Bin::RootPow, base, exponent) => self.power(c, base, exponent),
             Node::Apply(f, arg) => {
                 // `makePolyTreeFromFunction`: a call whose argument reads
                 // `x` or `y` is the body of the function, its variable
@@ -737,7 +737,7 @@ impl Builder {
                     Bin::Sub => x - y,
                     Bin::Mul => x * y,
                     Bin::Div => x / y,
-                    Bin::Pow => math::my_pow(x, y),
+                    Bin::Pow | Bin::RootPow => math::my_pow(x, y),
                     _ => return None,
                 }
             }
@@ -764,7 +764,7 @@ impl Builder {
                     Bin::Sub => x - y,
                     Bin::Mul => x * y,
                     Bin::Div => x / y,
-                    Bin::Pow => math::my_pow(x, y),
+                    Bin::Pow | Bin::RootPow => math::my_pow(x, y),
                     _ => return None,
                 }
             }

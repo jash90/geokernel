@@ -2379,6 +2379,19 @@ fn exec_slots(c: &mut Construction, slots: &[&str], rhs: &str) -> Result<Option<
             return add_named_outputs(c, slots, PointDef::inequality_slots(source, slots.len()));
         }
     }
+    if let Some(("Point", args)) = split_call(rhs) {
+        if let [arg] = args.as_slice() {
+            if let Some(list) = c.id(arg).filter(|&id| c.kind(id) == Kind::List) {
+                if slots.len() > crate::expr::MAX_ELEMENTS as usize {
+                    return Err("too many output labels for the coordinate list".into());
+                }
+                let defs = (0..slots.len() as u32)
+                    .map(|slot| Def::Point(PointDef::Coordinates { list, slot }))
+                    .collect();
+                return add_named_outputs(c, slots, defs);
+            }
+        }
+    }
     if let Some((name @ "Intersect", args)) = split_call(rhs) {
         use intersect::curves::CurveIntersection;
         if let Some(curve) = CurveIntersection::unseeded_pair(c, name, &args) {

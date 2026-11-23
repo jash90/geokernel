@@ -513,7 +513,13 @@ fn sum_value(c: &Construction, d: &CalculusDef) -> Option<Value> {
         Sum::Lower | Sum::Upper => {
             let negated = sum == Sum::Upper;
             let fmin = |x: f64| if negated { -f(x) } else { f(x) };
-            lower_upper_area(c, &mut budget, &fmin, negated, (ad, bd, n, step))
+            if step.is_infinite() && source_entry(c, function).is_some_and(|e| e.vars == 0) {
+                // The extremum of a constant is its height even when
+                // the first bracket starts at a NaN (0 * STEP).
+                f(f64::NAN) * n as f64
+            } else {
+                lower_upper_area(c, &mut budget, &fmin, negated, (ad, bd, n, step))
+            }
         }
         Sum::Left | Sum::Rectangle | Sum::Trapezoid => {
             let upper = if sum == Sum::Trapezoid { n + 1 } else { n };

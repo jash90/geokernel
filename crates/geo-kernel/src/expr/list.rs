@@ -77,7 +77,7 @@ impl Slot {
 
     /// A point or vector element (`kind`).
     pub(crate) fn coords(kind: Kind, x: f64, y: f64) -> Slot {
-        if !(x.is_finite() && y.is_finite()) {
+        if x.is_nan() || y.is_nan() {
             return Slot::undefined(kind);
         }
         let value = if kind == Kind::Vector {

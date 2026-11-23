@@ -1749,6 +1749,29 @@ fn typed_slider_assignments_reveal_interval_roots() {
 }
 
 #[test]
+fn points_from_a_growing_list_keep_their_labels_after_reload() {
+    let src = "a = 1\nl = If(a > 0, {{a, 2}}, {{a, 2}, {3, 4}})\nP = Point(l)";
+    let mut w = Workbench::from_script(src).unwrap();
+    assert!(w.construction().id("A").is_none());
+    w.run_line("a = 0").unwrap();
+    let id = w.construction().id("A").unwrap();
+    assert_eq!(w.construction().value(id), Value::Point { x: 3.0, y: 4.0 });
+    w.run_line("a = 1").unwrap();
+    assert_eq!(w.construction().value(id), Value::Undefined);
+    let bytes = w.export_ggb(None).unwrap();
+    let mut restored = Workbench::default();
+    restored.load_for_export(&bytes, "coordinate list").unwrap();
+    let id = restored.construction().id("A").unwrap();
+    assert_eq!(restored.construction().value(id), Value::Undefined);
+    restored.run_line("a = 0").unwrap();
+    assert_eq!(
+        restored.construction().value(id),
+        Value::Point { x: 3.0, y: 4.0 }
+    );
+    assert!(restored.construction().id("B").is_none());
+}
+
+#[test]
 fn recorded_slots_do_not_stop_later_growth() {
     let src = concat!(
         "b = Slider(1, 13)\nb = 4\nf(x) = sin(x)\nh(x) = 0\nR = Intersect(f, h, 1, b)\n",

@@ -419,17 +419,17 @@ impl Value {
         self == other && parts(self).map(f64::to_bits) == parts(other).map(f64::to_bits)
     }
 
-    fn is_finite(&self) -> bool {
+    fn is_valid(&self) -> bool {
         match *self {
-            Value::Point { x, y } => x.is_finite() && y.is_finite(),
+            Value::Point { x, y } => !(x.is_nan() || y.is_nan()),
             Value::HomogeneousPoint { x, y, z } => !(x.is_nan() || y.is_nan() || z.is_nan()),
             Value::Line { a, b, c } => a.is_finite() && b.is_finite() && c.is_finite(),
             Value::Segment { x1, y1, x2, y2 } => {
                 x1.is_finite() && y1.is_finite() && x2.is_finite() && y2.is_finite()
             }
-            Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && r.is_finite(),
+            Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && !r.is_nan(),
             Value::Number(v) => !v.is_nan(),
-            Value::Vector { x, y } => x.is_finite() && y.is_finite(),
+            Value::Vector { x, y } => !(x.is_nan() || y.is_nan()),
             Value::Ray { x, y, a, b, c } => [x, y, a, b, c].iter().all(|v| v.is_finite()),
             Value::Bool(_) | Value::Button | Value::InputBox | Value::Image | Value::PieChart => {
                 true
@@ -1569,9 +1569,8 @@ impl Construction {
     }
 
     /// The coordinates of the expression vector `id` when one of them is
-    /// infinite and neither is NaN. [`Self::value`] reports such a vector
-    /// undefined, but GeoGebra counts it as defined, and expressions that
-    /// read it use the coordinates (`x(v)` is `∞`).
+    /// infinite and neither is NaN. These coordinates are also kept in
+    /// [`Self::value`], as they are defined in GeoGebra.
     pub fn infinite_vector(&self, id: Id) -> Option<(f64, f64)> {
         match self.defs.get(id.0)? {
             &Def::Expr(d) if d.kind() == Kind::Vector => match expr::raw(self, d) {
@@ -1616,7 +1615,7 @@ impl Construction {
     /// from `id` follows these to tell whether `id` can have changed.
     pub fn reads(&self, id: Id) -> Vec<Id> {
         match self.defs.get(id.0) {
-            Some(def) => self.read_ids_with_hint(def, Some(self.hints[id.0])),
+            Some(def) => self.read_ids(def),
             None => Vec::new(),
         }
     }
@@ -2348,14 +2347,10 @@ impl Construction {
     /// reads (for example the line an intersection was prepared with), and
     /// its list. An object may appear more than once.
     pub(crate) fn read_ids(&self, def: &Def) -> Vec<Id> {
-        self.read_ids_with_hint(def, None)
-    }
-
-    fn read_ids_with_hint(&self, def: &Def, hint: Option<algo::intersect::Hint>) -> Vec<Id> {
         if let Def::Locus(d) = *def {
             return locus::reads(self, d);
         }
-        let mut ids = algo::intersect::hidden_parents_with_hint(self, def, hint);
+        let mut ids = algo::intersect::hidden_parents(self, def);
         ids.extend(algo::path::hidden_parents(self, def));
         ids.extend(algo::vector::hidden_parents(self, def));
         ids.extend(algo::predicate::hidden_parents(self, def));
@@ -2599,7 +2594,7 @@ impl Construction {
             }
         }
         // An object that is read twice is still one child.
-        let mut parents = self.read_ids_with_hint(&def, self.hints.last().copied());
+        let mut parents = self.read_ids(&def);
         parents.sort_unstable();
         parents.dedup();
         for parent in parents {
@@ -4184,7 +4179,7 @@ impl Construction {
     /// for by intersections.
     fn compute_with(&self, def: Def, hint: impl Fn(&Self) -> algo::intersect::Hint) -> Value {
         match self.try_compute(def, hint) {
-            Some(v) if v.is_finite() => v,
+            Some(v) if v.is_valid() => v,
             _ => Value::Undefined,
         }
     }
@@ -4305,7 +4300,7 @@ impl Construction {
 
     pub(crate) fn point(&self, id: Id) -> Option<(f64, f64)> {
         match self.value(id) {
-            Value::Point { x, y } => Some((x, y)),
+            Value::Point { x, y } if x.is_finite() && y.is_finite() => Some((x, y)),
             _ => None,
         }
     }

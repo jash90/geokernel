@@ -40,6 +40,7 @@ enum GrowthAnchor {
     Intersection(BoundaryDef),
     Tangent(Tangent),
     Inequality(Id),
+    PointRows(Id),
 }
 
 impl GrowthAnchor {
@@ -50,6 +51,7 @@ impl GrowthAnchor {
             Def::Point(PointDef::InequalityVertex { source, slot: 0 }) => {
                 Some(Self::Inequality(source))
             }
+            Def::Point(PointDef::Coordinates { list, slot: 0 }) => Some(Self::PointRows(list)),
             _ => None,
         }
     }
@@ -59,6 +61,7 @@ impl GrowthAnchor {
             Self::Intersection(d) => d.grown_size(c),
             Self::Tangent(d) => d.grown_size(c),
             Self::Inequality(source) => Some(inequality::vertices(c, source).len()),
+            Self::PointRows(list) => Some(crate::expr::coordinate_rows(c, list)?.len()),
         }
     }
 
@@ -78,12 +81,18 @@ impl GrowthAnchor {
                     slot: slot as u16,
                 }))
             }
+            Self::PointRows(list) if slot < crate::expr::MAX_ELEMENTS as usize => {
+                Some(Def::Point(PointDef::Coordinates {
+                    list,
+                    slot: slot as u32,
+                }))
+            }
             _ => None,
         }
     }
 }
 
-/// Tracks unindexed intersections, implicit tangents and inequality vertices.
+/// Tracks intersections, implicit tangents, inequality vertices and points from lists.
 /// Callers keep the definitions returned by `grow` in the same journal as
 /// the edit that produced them.
 #[derive(Debug, Default)]
@@ -101,7 +110,10 @@ impl BoundaryOutputs {
     /// Whether a definition can start a group of growing outputs.
     pub fn is_command(rhs: &str) -> bool {
         rhs.split_once('(').is_some_and(|(name, _)| {
-            matches!(name.trim(), "Intersect" | "Tangent" | "Vertex" | "Corner")
+            matches!(
+                name.trim(),
+                "Intersect" | "Tangent" | "Vertex" | "Corner" | "Point"
+            )
         })
     }
 
@@ -142,11 +154,24 @@ impl BoundaryOutputs {
 
     /// Rebuilds the registry from a definition that has already executed.
     pub fn record(&mut self, c: &Construction, line: &str, first: Id, count: usize) {
-        if let Some((prefix, _)) = boundary_command(line) {
-            let name = line
-                .split_once(['=', ':'])
-                .map_or("", |(name, _)| name.trim());
-            if count > 0 && GrowthAnchor::from_def(c.def(first)).is_some() {
+        let anchor = GrowthAnchor::from_def(c.def(first));
+        let command = boundary_command(line).or_else(|| {
+            // An imported Point command may already label all the rows
+            // that existed before saving, including absent rows.
+            let (labels, rhs) = line.split_once('=')?;
+            (matches!(anchor, Some(GrowthAnchor::PointRows(_)))
+                && labels.trim().starts_with('{')
+                && matches!(script::split_call(rhs.trim()), Some(("Point", _))))
+            .then_some((c.label(first), rhs))
+        });
+        if let Some((prefix, _)) = command {
+            let name = if matches!(anchor, Some(GrowthAnchor::PointRows(_))) {
+                c.label(first)
+            } else {
+                line.split_once(['=', ':'])
+                    .map_or("", |(name, _)| name.trim())
+            };
+            if count > 0 && anchor.is_some() {
                 // Inline arguments are added before the first output.
                 let slots = count.min(c.len() - first.index());
                 self.groups.push(Outputs {
@@ -285,7 +310,7 @@ impl BoundaryOutputs {
                         continue;
                     }
                     group.name.clone()
-                } else if frees {
+                } else if frees || matches!(anchor, GrowthAnchor::PointRows(_)) {
                     crate::algo::polygon::default_point_label(c)
                 } else {
                     script::index_label(c, &group.prefix)

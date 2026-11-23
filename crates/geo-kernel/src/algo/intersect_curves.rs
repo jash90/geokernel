@@ -84,6 +84,34 @@ impl CurveIntersection {
         }
     }
 
+    pub(super) fn retains_output(self, c: &Construction) -> bool {
+        use crate::algo::analysis::AnalysisDef;
+        if !matches!(self.method, Method::Line(_)) || c.value(self.curve).is_defined() {
+            return false;
+        }
+        let Def::Analysis(AnalysisDef::Spline(input)) = c.def(self.curve) else {
+            return false;
+        };
+        // IntersectLineSpline leaves the previous roots when adjacent
+        // input points coincide and the spline cannot be rebuilt.
+        let Some(points) = c.elements(input.points) else {
+            return false;
+        };
+        let work = IntersectionWork::new();
+        let mut previous = None;
+        for i in 0..points.len() {
+            if !work.charge(1) {
+                break;
+            }
+            let current = points.raw_point(i).map(Value::cartesian);
+            if matches!(current, Some(Value::Point { .. })) && current == previous {
+                return true;
+            }
+            previous = current;
+        }
+        false
+    }
+
     pub(super) fn can_grow(self) -> bool {
         matches!(self.method, Method::Line(0) | Method::Pair(0))
     }

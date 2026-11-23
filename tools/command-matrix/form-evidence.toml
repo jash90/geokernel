@@ -3540,3 +3540,58 @@ cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
 command = "Vertex"
 form = "polygon,number"
 cases = ["polygon-regundef-002", "polygon-regular-015", "polygon-shrink-001"]
+
+[[form]]
+command = "Point"
+form = "list"
+cases = ["geomextras-pointlist-007"]
+
+[[form]]
+command = "Take"
+form = "list,number"
+cases = ["lists-take-001", "lists-take-016"]
+
+[[form]]
+command = "RemoveUndefined"
+form = "list"
+cases = ["lists-undef-003", "lists-undef-005"]
+
+[[form]]
+command = "Length"
+form = "vector"
+cases = ["infinity-inputs-034"]
+
+[[form]]
+command = "LowerSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-001", "infinity-outputs-039"]
+
+[[form]]
+command = "UpperSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-012", "infinity-outputs-040"]
+
+[[form]]
+command = "LeftSum"
+form = "function,number,number,number"
+cases = ["calculus-sums-012"]
+
+[[form]]
+command = "Radius"
+form = "conic"
+cases = ["geomforms-area-001", "geomforms-area-003"]
+
+[[form]]
+command = "Transpose"
+form = "list"
+cases = ["matrixdilate-elimination-009"]
+
+[[form]]
+command = "Intersect"
+form = "line,curve"
+cases = ["georestintersect-spline-001", "georestintersect-trig-001"]
+
+[[form]]
+command = "Distance"
+form = "point,point"
+cases = ["expr-cmd-001", "expr-fnundef-008"]

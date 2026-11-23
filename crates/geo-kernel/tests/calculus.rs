@@ -633,7 +633,7 @@ fn nintegral_of_a_polynomial_is_exact() {
 fn sums_read_an_infinite_subdivision_count_and_bound() {
     let c = load("f(x) = 1\nb = 1/0\nd = LeftSum(f, 0, b, 4)\nu = UpperSum(f, 0, b, 4)");
     assert_eq!(num(&c, "d"), f64::INFINITY);
-    assert!(!defined(&c, "u"));
+    assert_eq!(num(&c, "u"), f64::INFINITY);
     let c = load("f(x) = 1\nb = -1/0\nd = LeftSum(f, 0, b, 4)");
     assert_eq!(num(&c, "d"), f64::NEG_INFINITY);
     let c = load("f(x) = 1\nn = 1/0\nd = LeftSum(f, 0, 2, n)\ne = LeftSum(f, 2, 0, n)");

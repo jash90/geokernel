@@ -110,7 +110,11 @@ fn read_at(
             let input = [args(a, work)?, args(b, work)?, vars[2].clone()];
             function(id, &input, work)
         }
-        Node::Bin(op @ (Bin::Add | Bin::Sub | Bin::Mul | Bin::Div | Bin::Pow), a, b) => {
+        Node::Bin(
+            op @ (Bin::Add | Bin::Sub | Bin::Mul | Bin::Div | Bin::Pow | Bin::RootPow),
+            a,
+            b,
+        ) => {
             let lhs = args(a, work)?;
             let rhs = args(b, work)?;
             match op {
@@ -118,7 +122,7 @@ fn read_at(
                 Bin::Sub => lhs.sub(rhs, work),
                 Bin::Mul => lhs.mul(rhs, work),
                 Bin::Div => lhs.div(rhs, work),
-                Bin::Pow => {
+                Bin::Pow | Bin::RootPow => {
                     let exponent = rhs.scalar()?;
                     if exponent.den != 1 {
                         return None;
@@ -193,7 +197,7 @@ pub(super) fn is_factored(
                 parts.extend([a, b]);
                 continue;
             }
-            Node::Bin(Bin::Pow, base, exponent) => {
+            Node::Bin(Bin::Pow | Bin::RootPow, base, exponent) => {
                 let exponent = read(c, e, exponent, vars, work)?.scalar()?;
                 if exponent.den != 1 || exponent.num <= 0 {
                     return Some(false);

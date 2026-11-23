@@ -356,6 +356,7 @@ pub(super) fn makes_list(op: ListOp) -> bool {
 
 pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,
+    node: u32,
     op: ListOp,
     l: u32,
     n: u32,
@@ -377,31 +378,10 @@ pub(super) fn list_fn<const M: bool>(
         }
         return ctx.list(l);
     }
-    let (start, len) = ctx.list(l)?;
     if op == ListOp::Transpose {
-        if len == 0 {
-            return Some((lists.len(), 0));
-        }
-        let (_, cols) = lists.read(ctx.c, start).run()?;
-        if !lists.charge(u64::from(len) * (1 + u64::from(cols))) {
-            return None;
-        }
-        for k in 0..len {
-            if lists.read(ctx.c, start + k).run()?.1 != cols {
-                return None;
-            }
-        }
-        let out = lists.reserve(cols)?;
-        for col in 0..cols {
-            let column = lists.reserve(len)?;
-            for row in 0..len {
-                let (source, _) = lists.read(ctx.c, start + row).run()?;
-                lists.set(column + row, lists.read(ctx.c, source + col));
-            }
-            lists.set(out + col, Slot::list(column, len));
-        }
-        return Some((out, cols));
+        return transpose(ctx, node, l);
     }
+    let (start, len) = ctx.list(l)?;
     if op == ListOp::ApplyMatrix {
         let m = lists.with_list(ctx.c, start, len, |list| Some(matrix::Matrix::read(list)))?;
         let source = ctx.list(n)?;
@@ -625,6 +605,51 @@ impl Construction {
         let lists = entry.lists.then(|| expr::eval::Lists::new(Vec::new()));
         Some(expr::eval::root(self, entry, lists.as_ref()).0)
     }
+}
+
+/// AlgoTranspose clears an empty result without changing its defined flag.
+fn transpose<const M: bool>(ctx: &Ctx<'_, M>, node: u32, input: u32) -> Option<(u32, u32)> {
+    let lists = ctx.lists?;
+    let result = (|| {
+        let (start, len) = ctx.list(input)?;
+        if len == 0 {
+            return (!ctx
+                .e
+                .list_history
+                .records()
+                .invalid_transposes
+                .contains(&node))
+            .then(|| (lists.len(), 0));
+        }
+        let (_, cols) = lists.read(ctx.c, start).run()?;
+        if !lists.charge(u64::from(len) * (1 + u64::from(cols))) {
+            return None;
+        }
+        for k in 0..len {
+            if lists.read(ctx.c, start + k).run()?.1 != cols {
+                return None;
+            }
+        }
+        let out = lists.reserve(cols)?;
+        for col in 0..cols {
+            let column = lists.reserve(len)?;
+            for row in 0..len {
+                let (source, _) = lists.read(ctx.c, start + row).run()?;
+                lists.set(column + row, lists.read(ctx.c, source + col));
+            }
+            lists.set(out + col, Slot::list(column, len));
+        }
+        Some((out, cols))
+    })();
+    if !lists.over() {
+        let mut history = ctx.e.list_history.records();
+        if result.is_some() {
+            history.invalid_transposes.remove(&node);
+        } else {
+            history.invalid_transposes.insert(node);
+        }
+    }
+    result
 }
 
 #[cfg(test)]

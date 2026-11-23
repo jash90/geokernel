@@ -516,14 +516,18 @@ impl Saved {
 /// the live objects; the sampling puts the state back before
 /// [`Saved::restore`] recomputes the chain. An optimizer's trials update the live objects in the
 /// reference, so its search keeps what they stick.
-struct SavedStuck(Vec<(crate::expr::ExprDef, Vec<u32>)>);
+struct SavedExpressionState(Vec<(crate::expr::ExprDef, Vec<u32>, crate::expr::ListRecords)>);
 
-impl SavedStuck {
+impl SavedExpressionState {
     fn of(c: &Construction, ids: &[usize]) -> Self {
         Self(
             ids.iter()
                 .filter_map(|&i| match c.defs[i] {
-                    Def::Expr(d) => Some((d, crate::expr::stuck_nodes(c, d))),
+                    Def::Expr(d) => Some((
+                        d,
+                        crate::expr::stuck_nodes(c, d),
+                        crate::expr::list_records(c, d),
+                    )),
                     _ => None,
                 })
                 .collect(),
@@ -531,8 +535,9 @@ impl SavedStuck {
     }
 
     fn restore(self, c: &Construction) {
-        for (d, nodes) in self.0 {
+        for (d, nodes, records) in self.0 {
             crate::expr::restore_stuck_nodes(c, d, nodes);
+            crate::expr::restore_list_records(c, d, records);
         }
     }
 }
@@ -729,7 +734,7 @@ fn record_path(c: &mut Construction, q: Id, p: Id, owner: Id) -> LocusData {
     let mut ids = chain.clone();
     ids.push(p.0);
     let saved = Saved::of(c, &ids);
-    let stuck = SavedStuck::of(c, &ids);
+    let stuck = SavedExpressionState::of(c, &ids);
 
     // `resetMacroConstruction`: the copy of P takes P's coordinates
     // (`GeoPoint.set`, which puts them on the path again), and
@@ -766,7 +771,7 @@ fn record_slider(c: &mut Construction, q: Id, a: Id) -> LocusData {
     let mut ids = chain.clone();
     ids.push(a.0);
     let saved = Saved::of(c, &ids);
-    let stuck = SavedStuck::of(c, &ids);
+    let stuck = SavedExpressionState::of(c, &ids);
     let copy = SliderCopy {
         id: a,
         min,

@@ -290,6 +290,29 @@ impl<const M: bool> Ctx<'_, M> {
         }
     }
 
+    /// GeoList.getGenericElement supplies the copy AlgoIf starts with.
+    /// For a list output it walks the alternatives while they are lists.
+    pub(crate) fn if_list_template(&self, mut i: u32) -> Option<u32> {
+        let mut last = None;
+        for _ in 0..MAX_IF_ALTERNATIVES {
+            let Node::If(_, _, branch, rest) = self.node(i) else {
+                break;
+            };
+            if !self.is_list(branch) {
+                break;
+            }
+            last = Some(branch);
+            if rest == NONE {
+                break;
+            }
+            if !matches!(self.node(rest), Node::If(IfMode::AlgoNext, ..)) {
+                return if self.is_list(rest) { Some(rest) } else { last };
+            }
+            i = rest;
+        }
+        last
+    }
+
     /// `AlgoIf` of lists: the first branch whose condition is true (an
     /// undefined condition reads false), the else branch, or undefined
     /// without one. What the condition built is dropped.

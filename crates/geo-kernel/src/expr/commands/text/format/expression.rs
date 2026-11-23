@@ -153,7 +153,7 @@ impl Format {
             }
             Bin::Mul if matches!(ctx.node(a), Node::MinusOne) => (6, format!("-{}", term(b, 6)?)),
             Bin::Div if self.latex => (8, format!(r"\frac{{{}}}{{{}}}", term(a, 0)?, term(b, 0)?)),
-            Bin::Pow => {
+            Bin::Pow | Bin::RootPow => {
                 let x = term(a, 8)?;
                 let exponent = term(b, 0)?;
                 let power = if self.latex {
@@ -167,7 +167,7 @@ impl Format {
             }
             Bin::Mul => {
                 let base = match ctx.node(b) {
-                    Node::Bin(Bin::Pow, base, _) => ctx.node(base),
+                    Node::Bin(Bin::Pow | Bin::RootPow, base, _) => ctx.node(base),
                     node => node,
                 };
                 let variable = matches!(base, Node::Var | Node::VarY);

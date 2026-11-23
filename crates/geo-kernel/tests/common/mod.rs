@@ -146,14 +146,15 @@ pub fn numbers_in(v: &Value) -> Vec<f64> {
         .collect()
 }
 
-/// Whether a value holds only numbers it may hold: finite ones, and for a
-/// number object also an infinity, which the reference keeps as a defined
-/// value (golden group `infinity`). NaN is never a value.
+/// Whether a value holds only numbers it may hold. Numbers, point and
+/// vector coordinates and circle radii can be infinite. NaN is never a value.
 pub fn is_all_finite(v: &Value) -> bool {
-    if let Value::Number(n) = *v {
-        return !n.is_nan();
+    match *v {
+        Value::Number(n) => !n.is_nan(),
+        Value::Point { x, y } | Value::Vector { x, y } => !(x.is_nan() || y.is_nan()),
+        Value::Circle { cx, cy, r } => cx.is_finite() && cy.is_finite() && !r.is_nan(),
+        _ => numbers_in(v).iter().all(|n| n.is_finite()),
     }
-    numbers_in(v).iter().all(|n| n.is_finite())
 }
 
 /// The first object whose value holds a number it may not hold.

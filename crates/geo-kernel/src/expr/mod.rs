@@ -230,6 +230,7 @@ use decimal::Dec;
 pub struct ExprDef {
     kind: Kind,
     pub(crate) angle_style: AngleStyle,
+    independent: bool,
     index: u32,
 }
 
@@ -585,6 +586,7 @@ pub(crate) enum Bin {
     Mul,
     Div,
     Pow,
+    RootPow,
     Atan2,
     /// `log(b, x)`: the base comes first.
     LogB,
@@ -814,12 +816,13 @@ pub(crate) struct Entry {
     coordinate_layout: Option<list::CoordinateLayout>,
     depth: u32,
     cost: u64,
-    vars: u64,
+    pub(crate) vars: u64,
     /// The operands the symbolic prover replaced with segments, by node
     /// index, with the endpoints of each (see [`replace_distance_operands`]).
     segment_operands: Vec<(u32, [Id; 2])>,
     /// The command nodes of this tree that went undefined for good.
     stuck: Stuck,
+    list_history: ListHistory,
 }
 
 /// Nodes of algorithms that fill their result after an invalid input
@@ -861,7 +864,53 @@ impl Clone for Stuck {
     }
 }
 
+/// A list helper owns its copied elements even when its defined flag is
+/// cleared. Arithmetic needs the element kinds but never their old values.
+/// Transpose also keeps its prior flag when clearing an empty result.
+#[derive(Clone, Default)]
+pub(crate) struct ListRecords {
+    shapes: std::collections::HashMap<u32, std::sync::Arc<[Kind]>>,
+    elements: usize,
+    invalid_transposes: std::collections::HashSet<u32>,
+}
+
+#[derive(Default)]
+struct ListHistory(std::sync::Mutex<ListRecords>);
+
+impl ListHistory {
+    fn records(&self) -> std::sync::MutexGuard<'_, ListRecords> {
+        self.0.lock().unwrap_or_else(|e| e.into_inner())
+    }
+}
+
+impl Clone for ListHistory {
+    fn clone(&self) -> Self {
+        Self(std::sync::Mutex::new(self.records().clone()))
+    }
+}
+
+pub(crate) fn list_records(c: &Construction, d: ExprDef) -> ListRecords {
+    entry(c, d).list_history.records().clone()
+}
+
+pub(crate) fn restore_list_records(c: &Construction, d: ExprDef, records: ListRecords) {
+    *entry(c, d).list_history.records() = records;
+}
+
 impl Entry {
+    fn kept_list_shape(&self, node: u32) -> Option<std::sync::Arc<[Kind]>> {
+        self.list_history
+            .records()
+            .shapes
+            .get(&node)
+            .cloned()
+            .or_else(|| {
+                // AlgoTake starts with an empty GeoList before its first update.
+                matches!(self.nodes[node as usize], Node::Call(CallOp::Take, ..))
+                    .then(std::sync::Arc::default)
+            })
+    }
+
     fn evaluate_interval(&self, c: &Construction) -> Option<FunctionInterval> {
         let mut interval = self.interval?;
         let [min, max] = interval
@@ -897,6 +946,7 @@ impl Entry {
         let lists = reads_list(&p.nodes, &p.tys);
         Entry {
             stuck: Stuck::default(),
+            list_history: ListHistory::default(),
             checks_branches,
             inverts,
             lists,
@@ -1706,7 +1756,7 @@ fn inputs_defined(c: &Construction, e: &Entry) -> bool {
         };
         return defined_below(&ctx, e.root) && !meter.over();
     }
-    e.inputs.iter().all(|&id| object_defined(c, id))
+    e.inputs.iter().all(|&id| function_input_defined(c, id))
         && e.nodes.iter().all(|n| match *n {
             Node::Cmd(def, hint) => command_defined(c, def, hint),
             _ => true,
@@ -1720,6 +1770,14 @@ pub(crate) fn object_defined(c: &Construction, id: Id) -> bool {
         }
         _ => c.value(id).is_defined(),
     }
+}
+
+fn function_input_defined(c: &Construction, id: Id) -> bool {
+    // A projective point is defined in GeoGebra. Its Cartesian coordinates
+    // still evaluate to NaN, and commands that require them stay undefined.
+    object_defined(c, id)
+        || matches!(c.stored_value(id), Value::HomogeneousPoint { x, y, z }
+            if crate::kernel::point_at_infinity(x, y, z) && (x != 0.0 || y != 0.0))
 }
 
 fn command_defined(c: &Construction, def: Def, hint: crate::algo::intersect::Hint) -> bool {
@@ -1738,7 +1796,7 @@ fn defined_below(ctx: &eval::Ctx<'_, true>, i: u32) -> bool {
         return false;
     }
     match ctx.node(i) {
-        Node::Obj(id) => object_defined(ctx.c, id),
+        Node::Obj(id) => function_input_defined(ctx.c, id),
         Node::Apply(f, a) => object_defined(ctx.c, f) && defined_below(ctx, a),
         Node::Cmd(def, hint) => command_defined(ctx.c, def, hint),
         Node::Inverse(a) => defined_below(ctx, a) && inverse::sample(ctx, a, 1.0).is_some(),
@@ -1795,6 +1853,14 @@ pub(crate) fn current(c: &Construction, d: ExprDef) -> Value {
         evaluate(c, d).raw
     };
     value(d, raw)
+}
+
+fn kept_list_shape(c: &Construction, id: Id) -> Option<std::sync::Arc<[Kind]>> {
+    let Def::Expr(d) = c.def(id) else {
+        return None;
+    };
+    let e = entry(c, d);
+    e.kept_list_shape(e.root)
 }
 
 /// The elements of the list object `id`, when it is a defined list.
@@ -2086,9 +2152,16 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
     match (d.kind, raw) {
         (Kind::Number, Raw::Num(v)) if !v.is_nan() => Value::Number(v),
         (Kind::Angle, Raw::Num(v)) if v.is_finite() => Value::Number(d.angle_style.value(v)),
-        (Kind::Point, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Point { x, y },
+        // AlgoDependentPoint rejects infinite coordinates. A constant point,
+        // created directly by AlgebraProcessor, still owns both coordinates.
+        (Kind::Point, Raw::Vec(x, y))
+            if (x.is_finite() && y.is_finite())
+                || (d.independent && !(x.is_nan() || y.is_nan())) =>
+        {
+            Value::Point { x, y }
+        }
         (Kind::Point, Raw::Homogeneous([x, y, z])) => Value::homogeneous_point(x, y, z),
-        (Kind::Vector, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Vector { x, y },
+        (Kind::Vector, Raw::Vec(x, y)) if !(x.is_nan() || y.is_nan()) => Value::Vector { x, y },
         (Kind::Function, Raw::Num(v)) if !v.is_nan() => Value::Function,
         // `AlgoDependentBoolean`: a boolean is never undefined, a
         // comparison of an undefined number is false
@@ -2703,6 +2776,7 @@ fn add_entry(
     angle_style: AngleStyle,
 ) -> Result<Id, Error> {
     let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
+    let independent = entry.inputs.is_empty();
     c.exprs.entries.push(entry);
     c.exprs.pending = Some(index);
     let result = c.add(
@@ -2711,6 +2785,7 @@ fn add_entry(
             kind,
             index,
             angle_style,
+            independent,
         }),
     );
     c.exprs.pending = None;

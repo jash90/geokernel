@@ -646,7 +646,7 @@ impl Parser<'_> {
                     Bin::Sub => x - y,
                     Bin::Mul => x * y,
                     Bin::Div => x / y,
-                    Bin::Pow => math::my_pow(x, y),
+                    Bin::Pow | Bin::RootPow => math::my_pow(x, y),
                     _ => return None,
                 }
             }
