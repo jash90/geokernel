@@ -230,7 +230,7 @@ impl Group for ConicPartDef {
             .parents()
             .as_slice()
             .iter()
-            .any(|&p| !c.value(p).is_defined() && !(p == conic && reads_fields))
+            .any(|&p| !(c.value(p).is_defined() || p == conic && reads_fields))
         {
             return None;
         }
