@@ -230,8 +230,26 @@ fn type_node(
                 // GeoGebra rejects `Mod(x, 3)` in a function
                 return Err("a command cannot take `x`".into());
             }
+            // A segment is a number, its length (`GeoSegment` is a
+            // `NumberValue`); `==` and `!=` also compare geometric objects
+            // (`ExpressionNode.isEqual`).
+            let operand = |i: usize| match (nodes[i], state.tys[i]) {
+                (Node::Obj(id), Ty::Object) if c.kind(id) == Kind::Segment => Ty::Num(0),
+                (_, t) => t,
+            };
+            let (ta, tb) = (operand(a), operand(b));
+            let simple = |t: Ty| matches!(t, Ty::Num(_) | Ty::Vec | Ty::Bool | Ty::Object);
+            let ty = if matches!(op, Bin::Equal | Bin::NotEqual)
+                && (ta == Ty::Object || tb == Ty::Object)
+                && simple(ta)
+                && simple(tb)
+            {
+                Ty::Bool
+            } else {
+                binary_type(op, ta, tb)?
+            };
             (
-                binary_type(op, state.tys[a], state.tys[b])?,
+                ty,
                 1 + state.depth[a].max(state.depth[b]),
                 1u64.saturating_add(state.cost[a])
                     .saturating_add(state.cost[b]),
