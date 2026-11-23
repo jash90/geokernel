@@ -3281,3 +3281,23 @@ command = "Corner"
 form = "inequality"
 cases = ["corners-inequality-014", "corners-inequality-015"]
 difference = "geometry-command-arguments: `Corner(inequality)` and `Vertex(inequality)`"
+
+[[form]]
+command = "Intersect"
+form = "conic,line"
+cases = ["intersections-slotreview-001", "intersections-slotreview-005"]
+
+[[form]]
+command = "Intersect"
+form = "conic,line,number"
+cases = ["conics-intersection-012", "intersections-slotreview-006", "intersections-conicline-002"]
+
+[[form]]
+command = "Intersect"
+form = "line,conic,point"
+cases = ["intersections-selectorreview-010", "intersections-lineconicseed-001"]
+
+[[form]]
+command = "Intersect"
+form = "conic,line,point"
+cases = ["intersections-lineconicseed-002", "intersections-lineconicseed-006"]
