@@ -29,8 +29,11 @@ fn alternative_count(args: usize) -> usize {
 
 pub(crate) fn conditional_kind(kind: Kind) -> Option<&'static [Kind]> {
     Some(match kind {
-        Kind::Line => &[Kind::Line],
-        Kind::Segment => &[Kind::Segment],
+        // `GeoLine.set` takes the coefficients of a segment, and
+        // `GeoSegment.set` those of a line (`TestGeo.canSet` keeps the
+        // class of the first alternative of the two).
+        Kind::Line => &[Kind::Line, Kind::Segment],
+        Kind::Segment => &[Kind::Segment, Kind::Line],
         Kind::Ray => &[Kind::Ray],
         Kind::Circle => &[Kind::Circle],
         Kind::Conic => &[Kind::Conic],
@@ -62,14 +65,18 @@ pub(crate) fn define_geometry_if(
             .ok()
             .map(|def| def.kind())
     })?;
-    conditional_kind(kind)?;
+    let accepted = conditional_kind(kind)?;
     let checkpoint = c.checkpoint();
     let result = (|| {
         let mut parents = Vec::with_capacity(args.len());
         for (index, arg) in args.iter().enumerate() {
             let is_condition = index % 2 == 0 && index + 1 < args.len();
-            let expected = if is_condition { Kind::Boolean } else { kind };
-            let id = if let Some(id) = c.id(arg).filter(|&id| c.kind(id) == expected) {
+            let expected: &[Kind] = if is_condition {
+                &[Kind::Boolean]
+            } else {
+                accepted
+            };
+            let id = if let Some(id) = c.id(arg).filter(|&id| expected.contains(&c.kind(id))) {
                 id
             } else if is_condition {
                 let label = format!("\0arg{}", c.len());
@@ -80,7 +87,7 @@ pub(crate) fn define_geometry_if(
             } else {
                 let def = crate::script::parse_def(c, arg)
                     .ok()
-                    .filter(|def| def.kind() == kind)
+                    .filter(|def| accepted.contains(&def.kind()))
                     .ok_or_else(|| format!("`If` needs a {kind} alternative, got `{arg}`"))?;
                 let label = format!("\0arg{}", c.len());
                 c.add(&label, def).map_err(|e| e.to_string())?

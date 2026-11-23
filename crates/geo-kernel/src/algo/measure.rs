@@ -254,6 +254,44 @@ fn point_segment_distance(p: (f64, f64), x1: f64, y1: f64, x2: f64, y2: f64) -> 
     }
 }
 
+/// `AlgoDistancePointObject` for a segment whose line coefficients
+/// `(x, y, z)` were copied from another line: the distance to its
+/// `AlgoClosestPoint`. That algorithm sets the closest point to `p`, which
+/// already runs `GeoSegment.pointChanged` because the point is on the path,
+/// and then runs `pointChanged` again from the result. Each pass projects on
+/// the copied line, reads the parameter from the start point along
+/// `(y, -x)` (`GeoLine.projectCoordsAndComputePathParam`) and clamps it to an
+/// end point. With copied coefficients the second pass can move the point
+/// again; for a segment of length zero both passes give the start point.
+fn carried_segment_distance(
+    p: (f64, f64),
+    start: (f64, f64),
+    end: (f64, f64),
+    (x, y, z): (f64, f64, f64),
+) -> f64 {
+    let pass = |q: (f64, f64)| {
+        if start == end {
+            return start;
+        }
+        let t = -(z + x * q.0 + y * q.1) / (x * x + y * y);
+        let (px, py) = (q.0 + t * x, q.1 + t * y);
+        let parameter = if x.abs() <= y.abs() {
+            (px - start.0) / y
+        } else {
+            (start.1 - py) / x
+        };
+        if parameter < 0.0 {
+            start
+        } else if parameter > 1.0 {
+            end
+        } else {
+            (px, py)
+        }
+    };
+    let closest = pass(pass(p));
+    my_length(p.0 - closest.0, p.1 - closest.1)
+}
+
 /// `GeoLine.distance(GeoLine)` for `this` = `g` and the argument `h`:
 /// zero unless the lines are parallel.
 fn line_line_distance(g: (f64, f64, f64), h: (f64, f64, f64)) -> f64 {
@@ -621,9 +659,10 @@ impl Group for MeasureDef {
                     Value::Line { a, b, c: z } => {
                         number(((a * p.0 + b * p.1 + z) / my_length(a, b)).abs())
                     }
-                    Value::Segment { x1, y1, x2, y2 } => {
-                        number(point_segment_distance(p, x1, y1, x2, y2))
-                    }
+                    Value::Segment { x1, y1, x2, y2 } => match c.segment_carrier(path) {
+                        Some(line) => number(carried_segment_distance(p, (x1, y1), (x2, y2), line)),
+                        None => number(point_segment_distance(p, x1, y1, x2, y2)),
+                    },
                     _ => {
                         let q = closest_coords(c, path, p)?;
                         number(my_length(p.0 - q.0, p.1 - q.1))

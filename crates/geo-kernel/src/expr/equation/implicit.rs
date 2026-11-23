@@ -697,6 +697,10 @@ pub(crate) fn command(
         let id = add(c, label, record).map_err(|e| e.to_string())?;
         c.set_equation_form(id, crate::kernel::EquationForm::Implicit)
             .map_err(|e| e.to_string())?;
+        if let Source::LocusEquation(locus_equation::Definition::Condition { boolean, .. }) = source
+        {
+            let _ = crate::expr::replace_distance_operands(c, boolean);
+        }
         Ok(id)
     })();
     if result.is_err() {

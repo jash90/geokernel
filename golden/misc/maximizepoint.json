@@ -363,6 +363,697 @@
           "N": { "type": "point", "defined": true, "x": 3.9781780511706035, "y": 2.9107152392826245 }
         }
       ]
+    },
+    {
+      "id": "misc-maximizepoint-008",
+      "group": "misc",
+      "script": [
+        "r = 5",
+        "C = (1, 2)",
+        "c = Circle(C, r)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": 3.0 },
+        { "action": "set_number", "label": "r", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.535533905952088, "y": -1.5355339059133883 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 3.0 },
+          "M": { "type": "point", "defined": true, "x": 2.5811388947414686, "y": 6.7434164687001426 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 0.10557280900008414, "y": 0.2111456180001683 },
+          "k": { "type": "number", "defined": true, "value": 3.0 },
+          "M": { "type": "point", "defined": true, "x": 1.6324555578968751, "y": 3.897366587479961 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-009",
+      "group": "misc",
+      "script": [
+        "r = 5",
+        "C = (1, 2)",
+        "c = Circle(C, r)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "move", "label": "C", "x": -3.0, "y": 0.0 },
+        { "action": "set_number", "label": "k", "value": 2.0 },
+        { "action": "set_number", "label": "r", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 3.2360679775736387, "y": 6.4721359549626545 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "C": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": -3.0, "cy": 0.0, "r": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -3.447213595499958, "y": -0.8944271909999159 },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": -2.55278640448462, "y": 0.8944271909922047 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-010",
+      "group": "misc",
+      "script": [
+        "r = -1",
+        "C = (1, 2)",
+        "c = Circle(C, r)",
+        "P = Point(c)",
+        "M = Maximize(x(P) + y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -2.0 },
+        { "action": "set_number", "label": "r", "value": 2.0 },
+        { "action": "set_number", "label": "r", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "M": { "type": "point", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "M": { "type": "point", "defined": false }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 2.414213526661084, "y": 3.4142135980851056 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "M": { "type": "point", "defined": true, "x": 2.414213526661084, "y": 3.4142135980851056 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-011",
+      "group": "misc",
+      "script": [
+        "r = 5",
+        "C = (1, 2)",
+        "c = Circle(C, r)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 0.0 },
+        { "action": "set_number", "label": "k", "value": 2.0 },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": -2.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-012",
+      "group": "misc",
+      "script": [
+        "a = 1",
+        "C = (sqrt(a), 2)",
+        "r = 5",
+        "c = Circle(C, r)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": 2.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 3.2360679775736387, "y": 6.4721359549626545 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 2.0 },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": true, "cx": 2.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -0.2360679774997898, "y": -2.4721359549995796 },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 4.236067977573612, "y": 6.472135954962669 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 4.236067977573612, "y": 6.472135954962669 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 4.236067977573612, "y": 6.472135954962669 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-013",
+      "group": "misc",
+      "script": [
+        "a = 1",
+        "A = (0, 0)",
+        "B = (sqrt(a), 3)",
+        "c = Circle(A, B)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 3.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.1622776601683795 },
+          "P": { "type": "point", "defined": true, "x": 3.1622776601683795, "y": 0.0 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 2.236067977510349, "y": 2.2360679774892307 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": false },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 2.236067977510349, "y": 2.2360679774892307 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": false },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "M": { "type": "point", "defined": true, "x": 2.236067977599621, "y": -2.2360679773999586 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.6055512754639896 },
+          "P": { "type": "point", "defined": true, "x": 3.6055512754639896, "y": 0.0 },
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "M": { "type": "point", "defined": true, "x": 2.549509756733816, "y": -2.5495097568589693 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-014",
+      "group": "misc",
+      "script": [
+        "a = 1",
+        "A = (0, 0)",
+        "S = (sqrt(a), 0)",
+        "T = (4, 0)",
+        "s = Segment(S, T)",
+        "c = Circle(A, s)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "T": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 2.121320343642678, "y": 2.121320343476607 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "S": { "type": "point", "defined": false },
+          "T": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": false },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "S": { "type": "point", "defined": false },
+          "T": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": false },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "M": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "S": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "T": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 2.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "M": { "type": "point", "defined": true, "x": 1.4142135623539966, "y": -1.4142135623921934 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-015",
+      "group": "misc",
+      "script": [
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "D = (0, 4)",
+        "c = Circle(A, B, D)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "D", "x": 8.0, "y": 0.0 },
+        { "action": "set_number", "label": "k", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "c": { "type": "circle", "defined": true, "cx": 2.0, "cy": 2.0, "r": 2.8284271247461903 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": -4.440892098500626E-16 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.000000000051461, "y": 3.99999999994854 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 8.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 8.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": -1.0 },
+          "M": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-016",
+      "group": "misc",
+      "script": [
+        "a = 1",
+        "A = (sqrt(a), 0)",
+        "B = (6, 3)",
+        "s = Segment(A, B)",
+        "P = Point(s)",
+        "k = 1",
+        "M = Maximize(-(x(P) - k)^2, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 3.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 6.0, "y2": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0000001497665947, "y": 8.985995685164537E-8 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": false },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 3.0 },
+          "s": { "type": "segment", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "A": { "type": "point", "defined": false },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 3.0 },
+          "s": { "type": "segment", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 4.0 },
+          "M": { "type": "point", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 3.0 },
+          "s": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 6.0, "y2": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "k": { "type": "number", "defined": true, "value": 4.0 },
+          "M": { "type": "point", "defined": true, "x": 4.0, "y": 1.7999999999999998 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-017",
+      "group": "misc",
+      "script": [
+        "r = 5",
+        "C = (1, 2)",
+        "c = Circle(C, r)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "redefine", "line": "k = 2" },
+        { "action": "set_number", "label": "k", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 3.2360679775736387, "y": 6.4721359549626545 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 3.0 },
+          "M": { "type": "point", "defined": true, "x": 2.5811388947414686, "y": 6.7434164687001426 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-018",
+      "group": "misc",
+      "script": [
+        "r = 5",
+        "C = (1, 2)",
+        "c = Circle(C, r)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)",
+        "N = Minimize(x(P) + k y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "k", "value": 2.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 },
+        { "action": "move", "label": "C", "x": 0.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 },
+          "N": { "type": "point", "defined": true, "x": -2.53553390592338, "y": -1.535533905942096 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 3.2360679775736387, "y": 6.4721359549626545 },
+          "N": { "type": "point", "defined": true, "x": -1.2360680048032346, "y": -2.4721359413478563 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": -0.34164078649987384, "y": -0.6832815729997477 },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 2.3416407865494917, "y": 4.683281572974939 },
+          "N": { "type": "point", "defined": true, "x": -0.34164080288181675, "y": -0.6832815648087758 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": -1.3416407864998738, "y": -2.6832815729997477 },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 1.3416407865468232, "y": 2.683281572976273 },
+          "N": { "type": "point", "defined": true, "x": -1.3416408028818168, "y": -2.6832815648087758 }
+        }
+      ]
+    },
+    {
+      "id": "misc-maximizepoint-019",
+      "group": "misc",
+      "script": [
+        "r = 5",
+        "C = (1, 2)",
+        "c = Circle(C, r)",
+        "P = Point(c)",
+        "k = 1",
+        "M = Maximize(x(P) + k y(P), P)",
+        "N = Minimize(x(P) - y(P), P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "set_number", "label": "k", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "r": { "type": "number", "defined": true, "value": 5.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 5.0 },
+          "P": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 },
+          "N": { "type": "point", "defined": true, "x": -2.5355339059300417, "y": 5.535533905935434 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 1.0 },
+          "M": { "type": "point", "defined": true, "x": 4.53553390586265, "y": 5.535533906002826 },
+          "N": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 }
+        },
+        {
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": { "type": "circle", "defined": false },
+          "P": { "type": "point", "defined": false },
+          "k": { "type": "number", "defined": true, "value": 2.0 },
+          "M": { "type": "point", "defined": true, "x": -1.2360679774997898, "y": -2.4721359549995796 },
+          "N": { "type": "point", "defined": true, "x": -2.5355339059300417, "y": 5.535533905935434 }
+        }
+      ]
     }
   ]
 }

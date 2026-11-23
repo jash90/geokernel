@@ -1,0 +1,576 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "locusequation-classic-001",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "R = (3, 0)",
+        "k = Circle(O, R)",
+        "P = Point(k)",
+        "F = (1, 1)",
+        "b = PerpendicularBisector(P, F)",
+        "h = Line(O, P)",
+        "M = Intersect(b, h)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 2.0, "y": 0.0 },
+        { "action": "move", "label": "R", "x": 4.0, "y": 0.0 },
+        { "action": "move", "label": "F", "x": 5.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "b": { "type": "line", "defined": true, "a": 2.0, "b": -1.0, "c": -3.5 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 1.75, "y": -0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-49.0, -28.0, 32.0],
+              [-28.0, -8.0, 0.0],
+              [32.0, 0.0, 0.0]
+            ],
+            "equation": "32x² - 8x y - 28x + 32y² - 28y = 49",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "b": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -2.5 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 2.5, "y": -0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-25.0, 0.0, 36.0],
+              [-40.0, 0.0, 0.0],
+              [20.0, 0.0, 0.0]
+            ],
+            "equation": "20x² - 40x + 36y² = 25",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "b": { "type": "line", "defined": true, "a": 2.0, "b": 0.0, "c": -6.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": -0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-9.0, 0.0, 4.0],
+              [-6.0, 0.0, 0.0],
+              [3.0, 0.0, 0.0]
+            ],
+            "equation": "3x² - 6x + 4y² = 9",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "P": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "b": { "type": "line", "defined": true, "a": -1.0, "b": -1.0, "c": 5.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 5.0, "y": -0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-25.0, 10.0, 15.0],
+              [50.0, -10.0, 0.0],
+              [-9.0, 0.0, 0.0]
+            ],
+            "equation": "-9x² - 10x y + 50x + 15y² + 10y = 25",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-classic-002",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "R = (3, 0)",
+        "k = Circle(O, R)",
+        "P = Point(k)",
+        "F = (5, 1)",
+        "b = PerpendicularBisector(P, F)",
+        "h = Line(O, P)",
+        "M = Intersect(b, h)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 4.0, "y": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "b": { "type": "line", "defined": true, "a": -2.0, "b": -1.0, "c": 8.5 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 4.25, "y": -0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-289.0, 68.0, 32.0],
+              [340.0, -40.0, 0.0],
+              [-64.0, 0.0, 0.0]
+            ],
+            "equation": "-64x² - 40x y + 340x + 32y² + 68y = 289",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "F": { "type": "point", "defined": true, "x": 4.0, "y": -2.0 },
+          "b": { "type": "line", "defined": true, "a": -1.0, "b": 2.0, "c": 5.5 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 5.5, "y": -0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-121.0, -88.0, 20.0],
+              [176.0, 64.0, 0.0],
+              [-28.0, 0.0, 0.0]
+            ],
+            "equation": "-28x² + 64x y + 176x + 20y² - 88y = 121",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-classic-003",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "R = (3, 0)",
+        "k = Circle(O, R)",
+        "P = Point(k)",
+        "A = (5, 2)",
+        "M = Midpoint(A, P)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "A", "x": -1.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 2.0 },
+          "M": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [5.0, -2.0, 1.0],
+              [-5.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² - 5x + y² - 2y = -5",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -1.0, "y": 4.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [2.0, -4.0, 1.0],
+              [1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² + x + y² - 4y = -2",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-classic-004",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "R = (3, 0)",
+        "k = Circle(O, R)",
+        "P = Point(k)",
+        "A = (1, 2)",
+        "g = Line(A, P)",
+        "B = (4, 4)",
+        "n = PerpendicularLine(B, g)",
+        "M = Intersect(g, n)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 0.0 },
+        { "action": "move", "label": "A", "x": 3.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 2.0, "c": -6.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 4.0 },
+          "n": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 1.5, "y": 1.5 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [12.0, -6.0, 1.0],
+              [-5.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² - 5x + y² - 6y = -12",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 2.0, "b": 2.0, "c": -6.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "line", "defined": true, "a": -2.0, "b": 2.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 1.5, "y": 1.5 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, -2.0, 1.0],
+              [-1.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0]
+            ],
+            "equation": "x² - x + y² - 2y = 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "g": { "type": "line", "defined": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "n": { "type": "line", "defined": false },
+          "M": { "type": "point", "defined": false },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-classic-005",
+      "group": "locusequation",
+      "script": [
+        "A = (-2, 0)",
+        "B = (2, 1)",
+        "g = Segment(A, B)",
+        "P = Point(g)",
+        "C = (0, 4)",
+        "M = Midpoint(C, P)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": 1.0, "y": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "g": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -0.11764705882352941, "y": 0.47058823529411764 },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "M": { "type": "point", "defined": true, "x": -0.058823529411764705, "y": 2.235294117647059 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [-9.0, 4.0],
+              [-1.0, 0.0]
+            ],
+            "equation": "-x + 4y = 9",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 1.0 },
+          "g": { "type": "segment", "defined": true, "x1": -2.0, "y1": 0.0, "x2": 2.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -0.11764705882352941, "y": 0.47058823529411764 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": -3.0 },
+          "M": { "type": "point", "defined": true, "x": 0.4411764705882353, "y": -1.2647058823529411 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [11.0, 8.0],
+              [-2.0, 0.0]
+            ],
+            "equation": "-2x + 8y = -11",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-classic-006",
+      "group": "locusequation",
+      "script": [
+        "A = (0, -2)",
+        "B = (4, 0)",
+        "g = Line(A, B)",
+        "P = Point(g)",
+        "F = (0, 3)",
+        "h = Line(F, P)",
+        "n = PerpendicularLine(P, h)",
+        "O = (0, 0)",
+        "m = PerpendicularLine(O, n)",
+        "M = Intersect(n, m)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "F", "x": 1.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 4.0, "c": 8.0 },
+          "P": { "type": "point", "defined": true, "x": 0.8, "y": -1.6 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "h": { "type": "line", "defined": true, "a": 4.6, "b": 0.8, "c": -2.4000000000000004 },
+          "n": { "type": "line", "defined": true, "a": -0.8, "b": 4.6, "c": 8.0 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -4.6, "b": -0.8, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 0.2935779816513762, "y": -1.688073394495413 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 4.0, 2.0],
+              [0.0, 3.0, -1.0, 0.0],
+              [10.0, 2.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-x³ + 2x² y + 10x² - x y² + 3x y + 2y³ + 4y² = 0",
+            "input_form": false
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": -2.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": -2.0, "b": 4.0, "c": 8.0 },
+          "P": { "type": "point", "defined": true, "x": 0.8, "y": -1.6 },
+          "F": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "h": { "type": "line", "defined": true, "a": 3.6, "b": -0.19999999999999996, "c": -3.2 },
+          "n": { "type": "line", "defined": true, "a": 0.19999999999999996, "b": 3.6, "c": 5.6000000000000005 },
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "m": { "type": "line", "defined": true, "a": -3.6, "b": 0.19999999999999996, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": -0.08615384615384615, "y": -1.5507692307692311 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, 3.0, 2.0],
+              [0.0, 0.0, -1.0, 0.0],
+              [8.0, 2.0, 0.0, 0.0],
+              [-1.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "-x³ + 2x² y + 8x² - x y² + 2y³ + 3y² = 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-classic-007",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "R = (3, 0)",
+        "k = Circle(O, R)",
+        "P = Point(k)",
+        "A = (-3, 0)",
+        "B = (3, 0)",
+        "a = Line(A, P)",
+        "b = PerpendicularLine(B, a)",
+        "M = Intersect(a, b)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 1.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "a": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "b": { "type": "line", "defined": true, "a": -6.0, "b": 0.0, "c": 18.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -3.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "a": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": -0.0 },
+          "b": { "type": "line", "defined": true, "a": -6.0, "b": 0.0, "c": 6.0 },
+          "M": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0]
+            ],
+            "equation": "0= 0",
+            "input_form": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "locusequation-classic-008",
+      "group": "locusequation",
+      "script": [
+        "O = (0, 0)",
+        "R = (3, 0)",
+        "k = Circle(O, R)",
+        "P = Point(k)",
+        "Q = (6, 0)",
+        "j = Circle(Q, P)",
+        "h = Line(O, P)",
+        "M = Intersect(h, j, 1)",
+        "c = LocusEquation(M, P)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "Q", "x": 5.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 6.0, "y": 0.0 },
+          "j": { "type": "circle", "defined": true, "cx": 6.0, "cy": 0.0, "r": 3.0 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, -9.0, 0.0, 1.0],
+              [0.0, 0.0, -24.0, 0.0, 0.0],
+              [135.0, 0.0, 2.0, 0.0, 0.0],
+              [-24.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ - 24x³ + 2x² y² + 135x² - 24x y² + y⁴ - 9y² = 0",
+            "input_form": false
+          }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "R": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "P": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "j": { "type": "circle", "defined": true, "cx": 5.0, "cy": 1.0, "r": 2.23606797749979 },
+          "h": { "type": "line", "defined": true, "a": 0.0, "b": 3.0, "c": 0.0 },
+          "M": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "c": {
+            "type": "implicit",
+            "defined": true,
+            "coefficients": [
+              [0.0, 0.0, -5.0, -4.0, 1.0],
+              [0.0, 40.0, -20.0, 0.0, 0.0],
+              [91.0, -4.0, 2.0, 0.0, 0.0],
+              [-20.0, 0.0, 0.0, 0.0, 0.0],
+              [1.0, 0.0, 0.0, 0.0, 0.0]
+            ],
+            "equation": "x⁴ - 20x³ + 2x² y² - 4x² y + 91x² - 20x y² + 40x y + y⁴ - 4y³ - 5y² = 0",
+            "input_form": false
+          }
+        }
+      ]
+    }
+  ]
+}

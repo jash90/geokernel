@@ -877,6 +877,22 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
                 let count = crate::expr::inequality::vertices(c, source).len().max(1);
                 return add_outputs(c, name, PointDef::inequality_slots(source, count)).map(Some);
             }
+            // A boolean expression becomes an unlabeled helper, which has
+            // no checkbox drawable.
+            let helper;
+            let mut args = args;
+            if let [source, _] = args[..] {
+                if c.id(source).is_none() {
+                    let label = format!("\0arg{}", c.len());
+                    let checkpoint = c.checkpoint();
+                    if crate::expr::argument_object(c, source, &label, Kind::Boolean) {
+                        helper = label;
+                        args[0] = &helper;
+                    } else {
+                        c.discard_since(checkpoint);
+                    }
+                }
+            }
             let def = PointDef::parse_image_vertex(c, &args)
                 .or_else(|| PointDef::parse_segment_vertex(c, func, &args))
                 .or_else(|| PointDef::parse_drawable_corner(c, &args))

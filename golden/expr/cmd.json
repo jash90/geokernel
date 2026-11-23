@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -669,37 +669,37 @@
           "A": { "type": "point", "defined": true, "x": -1.4, "y": -1.33 },
           "B": { "type": "point", "defined": true, "x": -3.56, "y": 0.04 },
           "C": { "type": "point", "defined": true, "x": -0.39, "y": -6.01 },
-          "d": { "type": "number", "defined": true, "value": 1.8335463558214824 }
+          "d": { "type": "angle", "defined": true, "value": 1.8335463558214824 }
         },
         {
           "A": { "type": "point", "defined": true, "x": -5.04, "y": -4.82 },
           "B": { "type": "point", "defined": true, "x": -3.56, "y": 0.04 },
           "C": { "type": "point", "defined": true, "x": -0.39, "y": -6.01 },
-          "d": { "type": "number", "defined": true, "value": 0.24772193033421516 }
+          "d": { "type": "angle", "defined": true, "value": 0.24772193033421516 }
         },
         {
           "A": { "type": "point", "defined": true, "x": -5.04, "y": -4.82 },
           "B": { "type": "point", "defined": true, "x": -2.8, "y": -4.41 },
           "C": { "type": "point", "defined": true, "x": -0.39, "y": -6.01 },
-          "d": { "type": "number", "defined": true, "value": 0.7558191137038877 }
+          "d": { "type": "angle", "defined": true, "value": 0.7558191137038877 }
         },
         {
           "A": { "type": "point", "defined": true, "x": -5.04, "y": -4.82 },
           "B": { "type": "point", "defined": true, "x": -2.8, "y": -4.41 },
           "C": { "type": "point", "defined": true, "x": 2.65, "y": -5.68 },
-          "d": { "type": "number", "defined": true, "value": 0.8695013145736963 }
+          "d": { "type": "angle", "defined": true, "value": 0.8695013145736963 }
         },
         {
           "A": { "type": "point", "defined": true, "x": -5.04, "y": -4.82 },
           "B": { "type": "point", "defined": true, "x": -1.4, "y": -1.33 },
           "C": { "type": "point", "defined": true, "x": 2.65, "y": -5.68 },
-          "d": { "type": "number", "defined": true, "value": 0.4953321932409297 }
+          "d": { "type": "angle", "defined": true, "value": 0.4953321932409297 }
         },
         {
           "A": { "type": "point", "defined": true, "x": -1.4, "y": -1.33 },
           "B": { "type": "point", "defined": true, "x": -1.4, "y": -1.33 },
           "C": { "type": "point", "defined": true, "x": 2.65, "y": -5.68 },
-          "d": { "type": "number", "defined": false }
+          "d": { "type": "angle", "defined": false }
         }
       ]
     },

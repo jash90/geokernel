@@ -1,5 +1,5 @@
 command,alias_of,group,priority,status,forms_total,forms_done,notes
-Mod,,algebra,P2,done,2,2,"Mod(number, number)"
+Mod,,algebra,P2,partial,2,1,"Mod(number, number)"
 Div,,algebra,P2,done,2,2,"Div(number, number)"
 Min,,algebra,P2,done,5,5,"Min(number, number); Min(list)"
 Max,,algebra,P2,done,5,5,"Max(number, number); Max(list)"
@@ -7,7 +7,7 @@ LCM,,algebra,P2,done,2,2,"LCM(number, number)"
 GCD,,algebra,P2,done,2,2,"GCD(number, number)"
 Expand,,algebra,P2,partial,6,4,"Polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference."
 Factor,,algebra,P2,partial,6,4,"Exact polynomial and rational functions are in scope for the 1.0 CAS. A list, a line and a conic are refused as in the reference."
-Simplify,,algebra,P2,partial,8,4,"Polynomial and rational functions, number inputs and formula texts are in scope for the 1.0 CAS. A list is refused as in the reference."
+Simplify,,algebra,P2,partial,8,2,"Polynomial and rational functions, number inputs and formula texts are in scope for the 1.0 CAS. A list is refused as in the reference."
 PrimeFactors,,algebra,P2,done,1,1,
 CompleteSquare,,algebra,P2,done,1,1,"Quadratic polynomials, including quadratic polynomials in a power of x."
 ToBase,,algebra,P2,done,1,1,
@@ -22,75 +22,75 @@ NextPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of 
 RightSide,,algebra,P2,done,3,3,"Lines, conics and implicit polynomial equations."
 PreviousPrime,,algebra,P2,done,1,1,Integer inputs within the exact integer range of the numeric object.
 IsFactored,,algebra,P2,done,2,2,Number and univariate polynomial inputs with the reference degree limit.
-Line,,geometry,P0,done,5,5,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
-Ray,,geometry,P1,done,2,2,"Ray(point, point); Ray(point, vector)"
+Line,,geometry,P0,partial,5,3,"Line(point, point); Line(point, line, segment or ray); Line(point, vector)"
+Ray,,geometry,P1,partial,2,1,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
-OrthogonalLine,,geometry,P0,done,5,5,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
-Tangent,,geometry,P1,done,11,11,"Tangents to conics, functions, Cartesian curves and implicit polynomials."
-Segment,,geometry,P0,done,3,3,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
-Slope,,geometry,P1,done,2,2,"Slope(line, segment, ray or function)"
+OrthogonalLine,,geometry,P0,partial,5,4,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
+Tangent,,geometry,P1,partial,11,9,"Tangents to conics, functions, Cartesian curves and implicit polynomials."
+Segment,,geometry,P0,partial,3,1,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
+Slope,,geometry,P1,partial,2,1,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
-Direction,,geometry,P1,done,2,2,"Direction(line, segment or ray)"
-Point,,geometry,P1,done,4,4,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
-Midpoint,,geometry,P0,done,4,4,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
-LineBisector,,geometry,P1,done,2,2,"LineBisector(point, point); LineBisector(segment)"
-Intersect,,geometry,P0,partial,79,77,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
-IntersectPath,,geometry,P1,done,9,9,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
-IntersectRegion,,english,P2,done,9,9,
-Distance,,geometry,P0,done,4,4,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
-Length,,geometry,P1,done,11,11,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
-Radius,,geometry,P1,done,1,1,Radius(conic or conic part); defined for circle and single-point types
+Direction,,geometry,P1,partial,2,1,"Direction(line, segment or ray)"
+Point,,geometry,P1,partial,4,1,"Coordinate list, point and vector, or a line, segment, ray, circle, conic, polygon, polyline, arc, sector or Cartesian curve with an optional path parameter"
+Midpoint,,geometry,P0,partial,4,2,"Midpoint(point, point); Midpoint(segment); Midpoint(circle or conic)"
+LineBisector,,geometry,P1,partial,2,1,"LineBisector(point, point); LineBisector(segment)"
+Intersect,,geometry,P0,partial,79,66,"Carriers, conics, functions, polygonal boundaries and implicit polynomials. Includes line and Cartesian curve, polynomial and seeded Cartesian curve pairs, and path and point incidence."
+IntersectPath,,geometry,P1,partial,9,6,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
+IntersectRegion,,english,P2,partial,9,8,
+Distance,,geometry,P0,partial,4,1,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
+Length,,geometry,P1,partial,11,8,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
+Radius,,geometry,P1,todo,1,0,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
-CircleArc,,geometry,P1,done,1,1,"CircularArc(centre, point, point)"
-Arc,,geometry,P1,done,2,2,Conic with point endpoints or numeric parameters
-Sector,,geometry,P1,done,2,2,Conic with point endpoints or numeric parameters
+CircleArc,,geometry,P1,todo,1,0,"CircularArc(centre, point, point)"
+Arc,,geometry,P1,partial,2,1,Conic with point endpoints or numeric parameters
+Sector,,geometry,P1,partial,2,1,Conic with point endpoints or numeric parameters
 CircleSector,,geometry,P1,done,1,1,"CircularSector(centre, point, point)"
-CircumcircleSector,,geometry,P1,done,1,1,"CircumcircularSector(point, point, point)"
-CircumcircleArc,,geometry,P1,done,1,1,"CircumcircularArc(point, point, point)"
-Polygon,,geometry,P1,done,3,3,"Live list of points, separate points, or two points and a regular polygon vertex count"
+CircumcircleSector,,geometry,P1,todo,1,0,"CircumcircularSector(point, point, point)"
+CircumcircleArc,,geometry,P1,todo,1,0,"CircumcircularArc(point, point, point)"
+Polygon,,geometry,P1,todo,3,0,"Live list of points, separate points, or two points and a regular polygon vertex count"
 RigidPolygon,,geometry,P1,done,3,3,Copy of a polygon with optional offsets or rigid polygon from three or more points
-Area,,geometry,P1,done,3,3,"Area(conic, arc, sector or polygon); Area of three or more points"
+Area,,geometry,P1,partial,3,1,"Area(conic, arc, sector or polygon); Area of three or more points"
 Circumference,,geometry,P1,done,3,3,"Conic, conic part, polygon or locus"
-Perimeter,,geometry,P1,done,3,3,"Polygon, conic, conic part or locus"
-Locus,,geometry,P1,done,4,4,"Tracing point with a movable path point or slider, slope function with initial point, or slope field with initial point"
+Perimeter,,geometry,P1,partial,3,1,"Polygon, conic, conic part or locus"
+Locus,,geometry,P1,partial,4,2,"Tracing point with a movable path point or slider, slope function with initial point, or slope field with initial point"
 Centroid,,geometry,P1,done,1,1,Centroid(polygon)
 TriangleCenter,,geometry,P1,done,1,1,"TriangleCenter(point, point, point, index)"
 Barycenter,,geometry,P1,done,1,1,
 Trilinear,,geometry,P1,done,1,1,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,done,1,1,
 TriangleCurve,,geometry,P1,done,1,1,
-Vertex,,geometry,P1,partial,12,9,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment and raster image corners. Polynomial inequality borders."
-PolyLine,,geometry,P1,done,4,4,Live list with optional Boolean or separate points with an optional false flag
-PenStroke,,geometry,P1,done,2,2,Literal points smoothed into cubic pieces in the view and frozen; saved strokes restore their points.
+Vertex,,geometry,P1,partial,12,8,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment, raster image and hidden checkbox corners. Polynomial inequality borders."
+PolyLine,,geometry,P1,partial,4,2,Live list with optional Boolean or separate points with an optional false flag
+PenStroke,,geometry,P1,partial,2,1,Literal points smoothed into cubic pieces in the view and frozen; saved strokes restore their points.
 PenStrokeBezier,,english,,out_of_scope,,,"A pen stroke reads the pointing device and the tablet state, not the construction."
 PointIn,,geometry,P1,done,1,1,"PointIn(polygon, conic or conic part as a single region argument)"
 AffineRatio,,geometry,P1,done,1,1,"AffineRatio(point, point, point)"
 CrossRatio,,geometry,P1,done,1,1,"CrossRatio(point, point, point, point)"
-ClosestPoint,,geometry,P1,done,3,3,"Path and point in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers except line with segment"
+ClosestPoint,,geometry,P1,partial,3,1,"Path and point in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers except line with segment"
 ClosestPointRegion,,geometry,P1,todo,0,0,
-Prove,,geometry,P1,todo,1,0,"Predicate statements (AreCollinear, AreParallel, ArePerpendicular, AreConcurrent, AreConcyclic, AreEqual of points, lines or circles) over points, lines, segments, midpoints, perpendiculars, parallels, perpendicular bisectors, circles, points on paths and circle intersections without a shared point by construction; arithmetic statements are pending"
-ProveDetails,,geometry,P1,todo,2,0,"ProveDetails(boolean) for the statements Prove covers, with conditions read from a unique or variable-disjoint elimination basis; the relation-tool sentences are pending"
-AreCollinear,,geometry,P1,done,1,1,"AreCollinear(point, point, point)"
-AreParallel,,geometry,P1,done,1,1,"AreParallel of two lines, segments or rays"
-AreConcyclic,,geometry,P1,done,1,1,"AreConcyclic(point, point, point, point)"
-ArePerpendicular,,geometry,P1,done,1,1,"ArePerpendicular of two lines, segments or rays"
-AreEqual,,geometry,P1,done,1,1,"Numeric equality by object kind, including cyclic vertex equality and polynomial equality through degree four"
+Prove,,geometry,P1,todo,1,0,"Predicate statements (AreCollinear, AreParallel, ArePerpendicular, AreConcurrent, AreConcyclic, AreEqual of points, lines or circles) over points, lines, segments, midpoints, perpendiculars, parallels, perpendicular bisectors, circles, points on paths and circle intersections without a shared point by construction; == of points, lines, segments, circles and distances; formulas over segments with integer coefficients"
+ProveDetails,,geometry,P1,todo,2,0,"ProveDetails(boolean) for the statements Prove covers, with conditions read from a unique or variable-disjoint elimination basis; the conditions of a formula over segments and the relation-tool sentences are pending"
+AreCollinear,,geometry,P1,todo,1,0,"AreCollinear(point, point, point)"
+AreParallel,,geometry,P1,todo,1,0,"AreParallel of two lines, segments or rays"
+AreConcyclic,,geometry,P1,todo,1,0,"AreConcyclic(point, point, point, point)"
+ArePerpendicular,,geometry,P1,todo,1,0,"ArePerpendicular of two lines, segments or rays"
+AreEqual,,geometry,P1,todo,1,0,"Numeric equality by object kind, including cyclic vertex equality and polynomial equality through degree four"
 AreConcurrent,,geometry,P1,done,1,1,"AreConcurrent of three lines, segments or rays"
-AreCongruent,,geometry,P1,done,1,1,"Numeric congruence by object kind, including cyclic or reversed polygon congruence"
-IsTangent,,geometry,P1,done,1,1,"IsTangent(line, segment or ray, conic or conic part)"
-LocusEquation,,geometry,P1,partial,3,1,
+AreCongruent,,geometry,P1,todo,1,0,"Numeric congruence by object kind, including cyclic or reversed polygon congruence"
+IsTangent,,geometry,P1,todo,1,0,"IsTangent(line, segment or ray, conic or conic part)"
+LocusEquation,,geometry,P1,partial,3,2,
 Envelope,,geometry,P1,todo,1,0,
 Volume,,3d,,out_of_scope,,,
-Difference,,geometry,P1,done,2,2,"Difference(polygon, polygon); Difference(polygon, polygon, boolean)"
-Text,,text,P2,done,7,7,
+Difference,,geometry,P1,todo,2,0,"Difference(polygon, polygon); Difference(polygon, polygon, boolean)"
+Text,,text,P2,partial,7,6,
 LaTeX,,text,P2,done,3,3,
 LetterToUnicode,,text,P2,done,1,1,
 TextToUnicode,,text,P2,done,1,1,
 UnicodeToText,,text,P2,done,1,1,
 UnicodeToLetter,,text,P2,done,1,1,
 FractionText,,text,P2,done,3,3,
-SurdText,,text,P2,done,3,3,
+SurdText,,text,P2,partial,3,2,
 ScientificText,,text,P2,done,2,2,
 TableText,,text,P2,done,6,6,
 VerticalText,,text,P2,done,2,2,
@@ -99,37 +99,37 @@ Ordinal,,text,P2,done,1,1,
 ContinuedFraction,,text,P2,done,4,4,
 ReplaceAll,,text,P2,done,1,1,
 Split,,text,P2,done,1,1,
-If,,logical,P2,partial,2,1,"Scalar, coordinate, boolean, text, list and numeric-function branches, plus same-kind geometry alternatives with live shape records."
+If,,logical,P2,todo,2,0,"Scalar, coordinate, boolean, text, list and numeric-function branches, plus same-kind geometry alternatives with live shape records and mixed segment and line alternatives."
 CountIf,,logical,P2,done,2,2,
 IsInteger,,logical,P2,done,1,1,
 KeepIf,,logical,P2,done,2,2,
 Relation,,logical,P2,done,2,2,Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.
-Defined,,logical,P2,done,1,1,
-IsInRegion,,logical,P2,done,1,1,
+Defined,,logical,P2,todo,1,0,
+IsInRegion,,logical,P2,todo,1,0,
 Root,,function,P2,done,4,4,"Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending."
 Roots,,function,P2,done,2,2,Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.
 TurningPoint,,function,P2,done,1,1,
 Polynomial,,function,P2,done,3,3,
-Function,,function,P2,done,4,4,"Domain restrictions with an optional local variable, the empty data function and freehand functions of a list."
+Function,,function,P2,partial,4,2,"Domain restrictions with an optional local variable, the empty data function and freehand functions of a list."
 Extremum,,function,P2,done,2,2,Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.
-RemovableDiscontinuity,,function,P2,done,1,1,Rational holes have reference evidence. Other expressions use a bounded numerical estimate.
-CurveCartesian,,function,P2,done,3,3,
+RemovableDiscontinuity,,function,P2,todo,1,0,Rational holes have reference evidence. Other expressions use a bounded numerical estimate.
+CurveCartesian,,function,P2,partial,3,2,
 ParametricDerivative,,function,P2,done,1,1,
 Derivative,,function,P2,partial,8,7,
 NDerivative,,function,P2,partial,9,8,
 Integral,,function,P2,done,7,7,
 IntegralBetween,,function,P2,done,7,7,
-LowerSum,,function,P2,done,1,1,
-LeftSum,,function,P2,done,1,1,
+LowerSum,,function,P2,todo,1,0,
+LeftSum,,function,P2,todo,1,0,
 RectangleSum,,function,P2,done,1,1,
 TaylorSeries,,function,,out_of_scope,,,A symbolic Taylor polynomial uses the CAS.
-UpperSum,,function,P2,done,1,1,
+UpperSum,,function,P2,todo,1,0,
 TrapezoidalSum,,function,P2,done,1,1,
 Limit,,function,,out_of_scope,,,"Symbolic limits, including variable and infinite endpoints, use the CAS."
 LimitBelow,,function,,out_of_scope,,,Symbolic one-sided limits use the CAS.
 LimitAbove,,function,,out_of_scope,,,Symbolic one-sided limits use the CAS.
 Factors,,function,P2,done,2,2,"Polynomial factors or integer prime factors, each paired with its exponent."
-Degree,,function,P2,done,1,1,
+Degree,,function,P2,todo,1,0,
 Coefficients,,function,P2,done,2,2,
 PartialFractions,,function,,out_of_scope,,,Symbolic partial fraction decomposition uses the CAS.
 Numerator,,function,P2,done,2,2,
@@ -138,9 +138,9 @@ ComplexRoot,,function,P2,done,1,1,"Numeric polynomial roots, returned as points 
 SolveODE,,function,P2,partial,7,5,"Numeric first-order, parametric and second-order systems. The local symbolic solver handles polynomial slopes in x, with or without an initial point."
 SlopeField,,function,P2,done,4,4,
 Iteration,,function,P2,done,3,3,
-PathParameter,,function,P2,done,1,1,PathParameter(point on a path)
-Asymptote,,function,P2,done,3,3,"Conics, functions and implicit polynomials."
-CurvatureVector,,function,P2,done,3,3,
+PathParameter,,function,P2,todo,1,0,PathParameter(point on a path)
+Asymptote,,function,P2,partial,3,2,"Conics, functions and implicit polynomials."
+CurvatureVector,,function,P2,todo,3,0,
 Curvature,,function,P2,done,3,3,
 OsculatingCircle,,function,P2,done,3,3,
 IterationList,,function,P2,done,3,3,
@@ -148,36 +148,36 @@ RootList,,function,P2,done,3,3,
 ImplicitCurve,,function,P2,done,3,3,
 ImplicitDerivative,,function,,out_of_scope,,,The implicit derivative command uses the CAS.
 NSolveODE,,function,P2,done,1,1,
-Spline,,function,P2,partial,4,3,
+Spline,,function,P2,partial,4,2,
 BezierCurve,,function,P2,done,1,1,
 ImplicitSurface,,english,,out_of_scope,,,Implicit surfaces are 3D-only objects.
 Normalize,,function,P2,done,3,3,
-SVD,,function,P2,todo,1,0,
-Ellipse,,conic,P1,done,2,2,"Ellipse(focus, focus, point); Ellipse(focus, focus, semi-major axis length)"
+SVD,,function,P2,done,1,1,
+Ellipse,,conic,P1,todo,2,0,"Ellipse(focus, focus, point); Ellipse(focus, focus, semi-major axis length)"
 Hyperbola,,conic,P1,done,2,2,"Hyperbola(focus, focus, point); Hyperbola(focus, focus, semi-major axis length)"
-SecondAxisLength,,conic,P1,done,1,1,"SecondAxisLength(conic), as a number"
-SecondAxis,,conic,P1,done,1,1,SecondAxis(conic)
-Directrix,,conic,P1,done,1,1,Directrix(conic)
-Diameter,,conic,P1,done,2,2,"Diameter(line or segment, circle or conic)"
-Conic,,conic,P1,done,3,3,"Conic(point, point, point, point, point)"
-FirstAxis,,conic,P1,done,1,1,FirstAxis(conic)
-Circle,,conic,P0,done,3,3,"Circle(centre, point); Circle(centre, radius); Circle(centre, segment); Circle(point, point, point)"
+SecondAxisLength,,conic,P1,todo,1,0,"SecondAxisLength(conic), as a number"
+SecondAxis,,conic,P1,todo,1,0,SecondAxis(conic)
+Directrix,,conic,P1,todo,1,0,Directrix(conic)
+Diameter,,conic,P1,partial,2,1,"Diameter(line or segment, circle or conic)"
+Conic,,conic,P1,partial,3,2,"Conic(point, point, point, point, point)"
+FirstAxis,,conic,P1,todo,1,0,FirstAxis(conic)
+Circle,,conic,P0,todo,3,0,"Circle(centre, point); Circle(centre, radius); Circle(centre, segment); Circle(point, point, point)"
 Incircle,,conic,P1,done,1,1,"Incircle(point, point, point)"
 Semicircle,,conic,P1,done,1,1,"Semicircle(point, point)"
-FirstAxisLength,,conic,P1,done,1,1,"FirstAxisLength(conic), as a number"
-Parabola,,conic,P1,done,1,1,"Parabola(focus, directrix line)"
-Focus,,conic,P1,done,1,1,Focus(conic)
-Parameter,,conic,P1,done,1,1,Parameter(parabola)
-Center,,conic,P1,done,4,4,Center(circle or conic); Center(segment)
-Polar,,conic,P1,done,2,2,"Polar(point, circle or conic)"
-Excentricity,,conic,P1,done,1,1,Excentricity(conic)
-Eccentricity,,conic,P1,done,1,1,Eccentricity(conic)
-Axes,,conic,P1,done,1,1,Axes(conic)
+FirstAxisLength,,conic,P1,todo,1,0,"FirstAxisLength(conic), as a number"
+Parabola,,conic,P1,todo,1,0,"Parabola(focus, directrix line)"
+Focus,,conic,P1,todo,1,0,Focus(conic)
+Parameter,,conic,P1,todo,1,0,Parameter(parabola)
+Center,,conic,P1,partial,4,3,Center(circle or conic); Center(segment)
+Polar,,conic,P1,partial,2,1,"Polar(point, circle or conic)"
+Excentricity,,conic,P1,todo,1,0,Excentricity(conic)
+Eccentricity,,conic,P1,todo,1,0,Eccentricity(conic)
+Axes,,conic,P1,todo,1,0,Axes(conic)
 Sort,,list,P2,done,3,3,"Sort(list of numbers, booleans or points); Sort(value list, key list); Sort(point, point, ...)"
-First,,list,P2,done,6,6,"Lists, text, loci and freehand functions (First(function, number))."
+First,,list,P2,partial,6,5,"Lists, text, loci and freehand functions (First(function, number))."
 Last,,list,P2,done,5,5,"Last(list); Last(list, number of elements)"
-Take,,list,P2,done,4,4,"Take(list, from[, to])"
-RemoveUndefined,,list,P2,done,1,1,RemoveUndefined(list)
+Take,,list,P2,partial,4,3,"Take(list, from[, to])"
+RemoveUndefined,,list,P2,todo,1,0,RemoveUndefined(list)
 Reverse,,list,P2,done,3,3,"Reverse(list); Reverse(number, number, ...); Reverse(point, point, ...)"
 Element,,list,P2,done,3,3,"Element(list, index); Element(list, index, index, ...)"
 IndexOf,,list,P2,done,4,4,"IndexOf(object, list[, start])"
@@ -185,7 +185,7 @@ Append,,list,P2,done,2,2,"Append(list, object); Append(object, list)"
 Join,,list,P2,done,2,2,"Join(list, list, ...); Join(list of lists)"
 Flatten,,list,P2,done,1,1,Flatten(list)
 Insert,,list,P2,done,1,1,"Insert(object, list, position)"
-Sequence,,list,P2,done,5,5,"Sequence(end); Sequence(start, end); Sequence(start, end, step); Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)"
+Sequence,,list,P2,partial,5,3,"Sequence(end); Sequence(start, end); Sequence(start, end, step); Sequence(expression, variable, start, end); Sequence(expression, variable, start, end, step)"
 SelectedElement,,list,,out_of_scope,,,
 SelectedIndex,,list,,out_of_scope,,,
 RandomElement,,list,,out_of_scope,,,
@@ -327,20 +327,20 @@ InverseLogNormal,,probability,,out_of_scope,,,
 RandomPolynomial,,probability,,out_of_scope,,,
 RandomDiscrete,,probability,,out_of_scope,,,
 RandomPointIn,,probability,,out_of_scope,,,
-ApplyMatrix,,vector,P2,done,10,10,"2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph, raster image or list"
-UnitVector,,vector,P2,done,3,3,"UnitVector(vector, line, segment or ray)"
+ApplyMatrix,,vector,P2,partial,10,6,"2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph, raster image or list"
+UnitVector,,vector,P2,partial,3,1,"UnitVector(vector, line, segment or ray)"
 Vector,,vector,P2,done,3,3,"Vector(point, point); Vector(point); a free (x, y) under a lower-case label"
-UnitOrthogonalVector,,vector,P2,done,3,3,"UnitOrthogonalVector(vector, line, segment or ray)"
-OrthogonalVector,,vector,P2,done,3,3,"OrthogonalVector(vector, line, segment or ray)"
+UnitOrthogonalVector,,vector,P2,partial,3,2,"UnitOrthogonalVector(vector, line, segment or ray)"
+OrthogonalVector,,vector,P2,partial,3,1,"OrthogonalVector(vector, line, segment or ray)"
 Invert,,vector,P2,done,2,2,
-Transpose,,vector,P2,done,3,3,
+Transpose,,vector,P2,partial,3,2,
 ReducedRowEchelonForm,,vector,P2,done,3,3,
 Determinant,,vector,P2,done,1,1,
-Identity,,vector,P2,done,1,1,
-Dimension,,vector,P2,done,3,3,
+Identity,,vector,P2,todo,1,0,
+Dimension,,vector,P2,partial,3,2,
 MatrixRank,,vector,P2,done,1,1,
 Mirror,,transformation,P1,done,3,3,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector in a point or a line; point, line, segment, circle, arc or sector in a circle (inversion)"
-Dilate,,transformation,P1,done,19,19,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function, Cartesian curve, raster image or list by a factor, from the origin or a point"
+Dilate,,transformation,P1,partial,19,18,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function, Cartesian curve, raster image or list by a factor, from the origin or a point"
 Rotate,,transformation,P1,done,2,2,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by an angle, about the origin or a point"
 Translate,,transformation,P1,done,2,2,"point, line, segment, circle, conic, ray, vector, polygon, polyline, arc or sector by a vector"
 Shear,,transformation,P1,done,2,2,"point, line, segment, ray, vector, polygon, circle, conic, arc or sector with a line and a ratio"
@@ -418,10 +418,10 @@ SetImage,,scripting,,out_of_scope,,,
 Voronoi,,discrete,P2,done,3,3,
 Hull,,english,P2,done,1,1,
 ConvexHull,,discrete,P2,done,2,2,
-MinimumSpanningTree,,discrete,P2,done,3,3,
-DelauneyTriangulation,,discrete,P2,done,2,2,
+MinimumSpanningTree,,discrete,P2,partial,3,1,
+DelauneyTriangulation,,discrete,P2,partial,2,1,
 TravelingSalesman,,discrete,P2,done,3,3,
-ShortestDistance,,discrete,P2,done,1,1,
+ShortestDistance,,discrete,P2,todo,1,0,
 Corner,,geogebra,P2,partial,11,10,
 AxisStepX,,geogebra,P2,done,1,1,
 AxisStepY,,geogebra,P2,done,1,1,
@@ -432,38 +432,38 @@ SlowPlot,,geogebra,P2,done,4,4,"Functions and lines follow a slider that plays w
 ToolImage,,geogebra,,out_of_scope,,,"Draws a tool's icon image into the graphics view, not a construction object."
 DynamicCoordinates,,geogebra,P2,done,1,1,
 SetConstructionStep,,geogebra,P2,done,1,1,
-Maximize,,optimization,P2,partial,2,1,
+Maximize,,optimization,P2,todo,2,0,
 Minimize,,optimization,P2,todo,2,0,
 ExportImage,,scripting,,out_of_scope,,,
-Curve,CurveCartesian,function,P2,done,,,
+Curve,CurveCartesian,function,P2,partial,,,
 FormulaText,LaTeX,text,P2,done,,,
-IsDefined,Defined,logical,P2,done,,,
-ConjugateDiameter,Diameter,conic,P1,done,,,
-LinearEccentricity,Excentricity,conic,P1,done,,,
-MajorAxis,FirstAxis,conic,P1,done,,,
-SemiMajorAxisLength,FirstAxisLength,conic,P1,done,,,
-PerpendicularBisector,LineBisector,geometry,P1,done,,,
-PerpendicularLine,OrthogonalLine,geometry,P0,done,,,
-PerpendicularVector,OrthogonalVector,vector,P2,done,,,
-MinorAxis,SecondAxis,conic,P1,done,,,
-SemiMinorAxisLength,SecondAxisLength,conic,P1,done,,,
-UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,done,,,
+IsDefined,Defined,logical,P2,todo,,,
+ConjugateDiameter,Diameter,conic,P1,partial,,,
+LinearEccentricity,Excentricity,conic,P1,todo,,,
+MajorAxis,FirstAxis,conic,P1,todo,,,
+SemiMajorAxisLength,FirstAxisLength,conic,P1,todo,,,
+PerpendicularBisector,LineBisector,geometry,P1,partial,,,
+PerpendicularLine,OrthogonalLine,geometry,P0,partial,,,
+PerpendicularVector,OrthogonalVector,vector,P2,partial,,,
+MinorAxis,SecondAxis,conic,P1,todo,,,
+SemiMinorAxisLength,SecondAxisLength,conic,P1,todo,,,
+UnitPerpendicularVector,UnitOrthogonalVector,vector,P2,partial,,,
 CorrelationCoefficient,PMCC,statistics,,out_of_scope,,,
 FitLine,FitLineY,statistics,,out_of_scope,,,
 BinomialCoefficient,nCr,english,P2,done,,,
 RandomBetween,Random,probability,,out_of_scope,,,
 TaylorPolynomial,TaylorSeries,function,,out_of_scope,,,
 AngleBisector,AngularBisector,geometry,P1,done,,,
-CircumcircularSector,CircumcircleSector,geometry,P1,done,,,
-CircumcircularArc,CircumcircleArc,geometry,P1,done,,,
+CircumcircularSector,CircumcircleSector,geometry,P1,todo,,,
+CircumcircularArc,CircumcircleArc,geometry,P1,todo,,,
 CircularSector,CircleSector,geometry,P1,done,,,
-CircularArc,CircleArc,geometry,P1,done,,,
-Polyline,PolyLine,geometry,P1,done,,,
+CircularArc,CircleArc,geometry,P1,todo,,,
+Polyline,PolyLine,geometry,P1,partial,,,
 Sxx,SXX,statistics,,out_of_scope,,,
 Syy,SYY,statistics,,out_of_scope,,,
 Sxy,SXY,statistics,,out_of_scope,,,
 Side,QuadricSide,3d,,out_of_scope,,,
-DelaunayTriangulation,DelauneyTriangulation,discrete,P2,done,,,
+DelaunayTriangulation,DelauneyTriangulation,discrete,P2,partial,,,
 InflectionPoint,TurningPoint,function,P2,done,,,
 var,,english,,out_of_scope,,,
 cov,,english,,out_of_scope,,,
@@ -513,7 +513,7 @@ CIFactor,,cas,,out_of_scope,,,
 IFactor,,algebra,P2,partial,6,4,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms. A list, a line and a conic are refused as in the reference."
 IntegralSymbolic,,cas,,out_of_scope,,,
 CommonDenominator,,algebra,P2,done,2,2,Number pairs and rational-function pairs.
-Cross,,algebra,P2,done,5,5,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)
+Cross,,algebra,P2,partial,5,4,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)
 CSolutions,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
 CSolve,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
 Dot,,algebra,P2,done,1,1,
@@ -523,14 +523,14 @@ GroebnerDegRevLex,,cas,,out_of_scope,,,
 GroebnerLexDeg,,cas,,out_of_scope,,,
 NIntegral,,function,P2,done,6,6,
 NInvert,,function,P2,done,1,1,
-NSolve,,algebra,P2,partial,10,2,Bounded real polynomial equations and systems with optional variable binding.
-NSolutions,,algebra,P2,partial,10,2,Bounded real polynomial equations and systems with optional variable binding.
+NSolve,,algebra,P2,todo,10,0,Bounded real polynomial equations and systems with optional variable binding.
+NSolutions,,algebra,P2,todo,10,0,Bounded real polynomial equations and systems with optional variable binding.
 Numeric,,cas,,out_of_scope,,,
 Evaluate,,english,,out_of_scope,,,
 MixedNumber,,cas,,out_of_scope,,,
 Rationalize,,cas,,out_of_scope,,,
-Solutions,,algebra,P2,partial,10,1,Real polynomial equations and small systems are in scope for the 1.0 CAS.
-Solve,,algebra,P2,partial,10,1,Real polynomial equations and small systems are in scope for the 1.0 CAS.
+Solutions,,algebra,P2,todo,10,0,Real polynomial equations and small systems are in scope for the 1.0 CAS.
+Solve,,algebra,P2,todo,10,0,Real polynomial equations and small systems are in scope for the 1.0 CAS.
 PlotSolve,,function,P2,todo,5,0,
 SolveCubic,,cas,,out_of_scope,,,
 SolveQuartic,,cas,,out_of_scope,,,
