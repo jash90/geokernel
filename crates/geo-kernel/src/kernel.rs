@@ -914,6 +914,7 @@ pub struct Checkpoint {
     lists: usize,
     exprs: usize,
     frozen_line_starts: usize,
+    proof_intersections: usize,
     image_assets: usize,
     step: usize,
     /// How many rollbacks the construction had made when it was taken.
@@ -1022,6 +1023,7 @@ pub struct Construction {
     images: image::Images,
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
     proofs: std::collections::BTreeMap<Id, algo::prover::ProofData>,
+    proof_intersections: algo::prover::IntersectionTranslations,
     /// The line coefficients a conditional segment took from a selected
     /// line (`GeoSegment.set(GeoLine)` copies the coefficients and keeps the
     /// end points). Kept outside [`Value`] so that it stays 48 bytes; absent
@@ -1730,6 +1732,25 @@ impl Construction {
         Ok(self.compute_with(def, |_| hint).cartesian())
     }
 
+    fn record_proof(&mut self, id: Id, def: algo::prover::ProveDef) -> Value {
+        let mut intersections = std::mem::take(&mut self.proof_intersections);
+        let data = def.record(self, &mut intersections);
+        self.proof_intersections = intersections;
+        let value = data.value;
+        self.proofs.insert(id, data);
+        value
+    }
+
+    pub(crate) fn rewrite_proof_statement(&mut self, statement: Id) -> bool {
+        if !matches!(self.def(statement), Def::Expr(_)) {
+            return false;
+        }
+        let mut intersections = std::mem::take(&mut self.proof_intersections);
+        let can_rewrite = algo::prover::can_rewrite_statement(self, statement, &mut intersections);
+        self.proof_intersections = intersections;
+        can_rewrite && expr::replace_distance_operands(self, statement)
+    }
+
     /// The current length of the construction and of its lists, to return to
     /// with [`Construction::rollback`].
     ///
@@ -1746,6 +1767,7 @@ impl Construction {
             lists: self.lists.len(),
             exprs: self.exprs.len(),
             frozen_line_starts: self.frozen_line_starts.len(),
+            proof_intersections: self.proof_intersections.checkpoint(),
             image_assets: self.images.asset_count(),
             step: self.step,
             generation: self.generation,
@@ -1810,6 +1832,7 @@ impl Construction {
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
         self.proofs.split_off(&Id(at.len));
+        self.proof_intersections.truncate(at.proof_intersections);
         self.segment_carriers.split_off(&Id(at.len));
         self.strokes.split_off(&Id(at.len));
         self.animations.split_off(&Id(at.len));
@@ -2181,6 +2204,9 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
+        // Redefinition rebuilds the reference's symbolic helpers, including
+        // those for intersections that do not read the edited definition.
+        self.proof_intersections = Default::default();
         self.propagate_dirty(dirty, 0, true);
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;
@@ -2578,12 +2604,7 @@ impl Construction {
                 self.charts.insert(id, data);
                 value
             }
-            Def::Prove(d) => {
-                let data = d.record(self);
-                let value = data.value;
-                self.proofs.insert(id, data);
-                value
-            }
+            Def::Prove(d) => self.record_proof(id, d),
             Def::Conditional {
                 args,
                 kind: Kind::Segment,
@@ -3132,16 +3153,16 @@ impl Construction {
                 // A redefinition can change the structure the proof reads
                 // (a free point put on a path): the reference rebuilds it.
                 Def::Prove(d) if refresh_definitions => {
+                    self.proof_intersections.replay_rank = Some(rank);
                     // A redefined statement is rewritten again, and the
                     // reference's rebuild then reads the rewritten Boolean.
-                    if algo::prover::rewrite_statement(self, d.statement) {
+                    if self.rewrite_proof_statement(d.statement) {
                         if let Def::Expr(e) = self.defs[d.statement.0] {
                             self.update_expr(d.statement.0, e);
                         }
                     }
-                    let data = d.record(self);
-                    self.values[i] = data.value;
-                    self.proofs.insert(Id(i), data);
+                    self.values[i] = self.record_proof(Id(i), d);
+                    self.proof_intersections.replay_rank = None;
                 }
                 // The result does not depend on positions.
                 Def::Prove(_) => continue,
@@ -4265,7 +4286,7 @@ impl Construction {
             Def::Transform(d) => d.compute(self),
             Def::Vector(d) => d.compute(self),
             Def::Predicate(d) => d.compute(self),
-            Def::Prove(d) => Some(d.record(self).value),
+            Def::Prove(_) => None,
             Def::Point(d) => d.compute(self),
             Def::Expr(d) => Some(expr::current(self, d)),
             Def::Polygon(d) => d.compute(self),
