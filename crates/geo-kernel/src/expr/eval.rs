@@ -6,6 +6,7 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoDependentFunction.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyVecNode.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/geos/GeoVec2D.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/MyVecNode.java
 //   source/shared/common/src/main/java/org/geogebra/common/plugin/Operation.java
 //   source/shared/common/src/main/java/org/geogebra/common/util/MyMath.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/arithmetic/DoubleOperation.java
@@ -1433,6 +1434,7 @@ impl<const M: bool> Ctx<'_, M> {
                 }
                 Some((start, len))
             }
+            Node::Tuple(a, b) => self.list_coordinates(a, b),
             Node::Item(a) => self.list(a),
             Node::Local(depth, Elem::List) => self.local(depth)?.run,
             Node::Obj(id) => self.object_list(id),
@@ -1475,6 +1477,42 @@ impl<const M: bool> Ctx<'_, M> {
             }
             _ => None,
         }
+    }
+
+    /// MyVecNode.evaluate broadcasts a scalar coordinate and pairs two
+    /// lists only as far as their common length.
+    fn list_coordinates(&self, a: u32, b: u32) -> Option<(u32, u32)> {
+        let lists = self.lists?;
+        let mut runs = [None; 2];
+        let mut scalars = [0.0; 2];
+        for (index, node) in [a, b].into_iter().enumerate() {
+            if self.is_list(node) {
+                runs[index] = Some(self.list(node)?);
+            } else {
+                let mark = lists.len();
+                scalars[index] = self.fast(node);
+                lists.truncate(mark);
+            }
+        }
+        let len = runs.into_iter().flatten().map(|(_, len)| len).min()?;
+        if !lists.charge(u64::from(len)) {
+            return None;
+        }
+        let start = lists.reserve(len)?;
+        for i in 0..len {
+            let coordinate = |index: usize| match runs[index] {
+                Some((from, _)) => number_of(lists.read(self.c, from + i)).unwrap_or(f64::NAN),
+                None => scalars[index],
+            };
+            let (x, y) = (coordinate(0), coordinate(1));
+            let point = if x.is_finite() && y.is_finite() {
+                Slot::coords(Kind::Point, x, y)
+            } else {
+                Slot::undefined(Kind::Point)
+            };
+            lists.set(start + i, point);
+        }
+        Some((start, len))
     }
 
     /// One element of a list being built. A list element is built after

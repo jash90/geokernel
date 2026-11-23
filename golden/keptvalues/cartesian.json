@@ -27,6 +27,197 @@
           "P": { "type": "point", "defined": false }
         }
       ]
+    },
+    {
+      "id": "keptvalues-cartesian-002",
+      "group": "keptvalues",
+      "script": [
+        "B = (0, 0)",
+        "P = (If(true, 1/0, 0), 1)",
+        "d = Distance(P, B)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "P": { "type": "point", "defined": false },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-cartesian-003",
+      "group": "keptvalues",
+      "script": [
+        "B = (0, 0)",
+        "Q = (Mod(1/0, 2), 1)",
+        "d = Distance(Q, B)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": false },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-cartesian-004",
+      "group": "keptvalues",
+      "script": [
+        "B = (0, 0)",
+        "Q = (Mod(7, 3) / 0, 1)",
+        "d = Distance(Q, B)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "Q": { "type": "point", "defined": false },
+          "d": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-cartesian-005",
+      "group": "keptvalues",
+      "script": [
+        "R = ({1/0}, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "R": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-cartesian-006",
+      "group": "keptvalues",
+      "script": [
+        "m = 1",
+        "xs = {1/m, 2, 3}",
+        "ys = {4, 5}",
+        "R = (xs, ys)",
+        "P = (Element({1/m}, 1), 1)",
+        "B = (0, 0)",
+        "d = Distance(P, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 0.0 },
+        { "action": "set_number", "label": "m", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "xs": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "ys": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          },
+          "R": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 1.0, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 5.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.4142135623730951 }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "xs": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "ys": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          },
+          "R": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": false },
+              { "type": "point", "defined": true, "x": 2.0, "y": 5.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "d": { "type": "number", "defined": false }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "xs": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          },
+          "ys": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": 5.0 }
+            ]
+          },
+          "R": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "point", "defined": true, "x": 0.5, "y": 4.0 },
+              { "type": "point", "defined": true, "x": 2.0, "y": 5.0 }
+            ]
+          },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.118033988749895 }
+        }
+      ]
     }
   ]
 }

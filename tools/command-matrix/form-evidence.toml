@@ -226,7 +226,7 @@ cases = ["expr-syntax-013", "expr-twonum-002", "expr-twonum-007"]
 [[form]]
 command = "Element"
 form = "list,number"
-cases = ["lists-index-003", "lists-index-004", "lists-index-013"]
+cases = ["lists-index-003", "lists-index-004", "lists-index-013", "keptvalues-cartesian-006"]
 
 [[form]]
 command = "Element"
@@ -1440,7 +1440,7 @@ cases = ["calculus-fraction-001", "cas-projection-002", "cas-projection-006"]
 [[form]]
 command = "Derivative"
 form = "function"
-cases = ["calculus-derivative-001"]
+cases = ["calculus-derivative-001", "calculus-rootpower-001"]
 
 [[form]]
 command = "Derivative"
@@ -1507,7 +1507,7 @@ cases = ["calculus-curvederivative-015"]
 [[form]]
 command = "Integral"
 form = "function"
-cases = ["calculus-integral-001"]
+cases = ["calculus-integral-001", "calculus-rootpower-001"]
 
 [[form]]
 command = "Integral"
@@ -1552,7 +1552,7 @@ difference = "calculus-commands: The variable forms `Derivative(function, any)`,
 [[form]]
 command = "IntegralBetween"
 form = "function,number,number"
-cases = ["calculus-between-007"]
+cases = ["calculus-between-007", "calculus-rootpower-001"]
 
 [[form]]
 command = "IntegralBetween"
@@ -1577,7 +1577,7 @@ cases = ["calculus-between-002"]
 [[form]]
 command = "NDerivative"
 form = "function"
-cases = ["calculus-derivative-001"]
+cases = ["calculus-derivative-001", "calculus-rootpower-001"]
 
 [[form]]
 command = "NDerivative"
@@ -1587,7 +1587,7 @@ cases = ["calculus-derivative-003", "funcrest-derivative-001"]
 [[form]]
 command = "NIntegral"
 form = "function"
-cases = ["calculus-integral-001"]
+cases = ["calculus-integral-001", "calculus-rootpower-001"]
 
 [[form]]
 command = "NIntegral"
@@ -4468,4 +4468,4 @@ cases = ["georestintersect-spline-001", "georestintersect-trig-001", "keptvalues
 [[form]]
 command = "Distance"
 form = "point,point"
-cases = ["expr-cmd-001", "expr-fnundef-008", "keptvalues-cartesian-001"]
+cases = ["expr-cmd-001", "expr-fnundef-008", "keptvalues-cartesian-001", "keptvalues-cartesian-002", "keptvalues-cartesian-003", "keptvalues-cartesian-004", "keptvalues-cartesian-006"]

@@ -202,13 +202,25 @@ fn type_node(
         Node::FnName(_) => return Err("a function name needs an argument".into()),
         Node::Tuple(a, b) | Node::Polar(a, b) => {
             let (a, b) = (a as usize, b as usize);
-            if !matches!(state.tys[a], Ty::Num(_) | Ty::Bool)
-                || !matches!(state.tys[b], Ty::Num(_) | Ty::Bool)
+            let coords = [state.tys[a], state.tys[b]];
+            let scalar = |ty| matches!(ty, Ty::Num(_) | Ty::Bool);
+            let numeric_list = |ty| {
+                matches!(
+                    ty,
+                    Ty::List(Elem::Num | Elem::Bool | Elem::Empty | Elem::Any)
+                )
+            };
+            let ty = if coords.into_iter().all(scalar) {
+                Ty::Vec
+            } else if matches!(nodes[i], Node::Tuple(..))
+                && coords.into_iter().all(|ty| scalar(ty) || numeric_list(ty))
             {
+                Ty::List(Elem::Vec)
+            } else {
                 return Err("coordinates must be numbers".into());
-            }
+            };
             (
-                Ty::Vec,
+                ty,
                 1 + state.depth[a].max(state.depth[b]),
                 1u64.saturating_add(state.cost[a])
                     .saturating_add(state.cost[b]),

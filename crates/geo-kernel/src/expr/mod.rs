@@ -2644,7 +2644,7 @@ pub(crate) fn define_function_interval(
     });
     e.interval = e.evaluate_interval(c);
     e.curve_parameter = Some(parameter.into());
-    add_entry(c, label, e, Kind::Function, AngleStyle::Unbounded).map_err(|e| e.to_string())
+    add_entry(c, label, e, Kind::Function, AngleStyle::Unbounded, false).map_err(|e| e.to_string())
 }
 
 /// A legacy function exposes its saved graph interval even while undefined.
@@ -2791,7 +2791,7 @@ fn add_parsed(
             return Ok(id);
         }
     }
-    add_entry(c, name, entry, kind, angle_style)
+    add_entry(c, name, entry, kind, angle_style, constant)
 }
 
 fn add_entry(
@@ -2800,16 +2800,9 @@ fn add_entry(
     entry: Entry,
     kind: Kind,
     angle_style: AngleStyle,
+    independent: bool,
 ) -> Result<Id, Error> {
     let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
-    // A command in a point expression supplies an algorithm output even
-    // when all its own inputs are literals (for example If(true, 1/0, 0)).
-    let independent = entry.inputs.is_empty()
-        && (kind != Kind::Point
-            || !entry
-                .nodes
-                .iter()
-                .any(|node| matches!(node, Node::Cmd(..) | Node::If(IfMode::Algo, ..))));
     c.exprs.entries.push(entry);
     c.exprs.pending = Some(index);
     let result = c.add(

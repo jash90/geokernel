@@ -73,6 +73,20 @@ cases.case(
      "r = Radius(k)", "P = (If(true, 1/0, 0), 1)"],
     [],
 )
+cases.case("cartesian",
+           ["B = (0, 0)", "P = (If(true, 1/0, 0), 1)", "d = Distance(P, B)"], [])
+cases.case("cartesian",
+           ["B = (0, 0)", "Q = (Mod(1/0, 2), 1)", "d = Distance(Q, B)"], [])
+cases.case("cartesian",
+           ["B = (0, 0)", "Q = (Mod(7, 3) / 0, 1)", "d = Distance(Q, B)"], [])
+cases.case("cartesian",
+           ["R = ({1/0}, 1)"], [])
+cases.case(
+    "cartesian",
+    ["m = 1", "xs = {1/m, 2, 3}", "ys = {4, 5}", "R = (xs, ys)",
+     "P = (Element({1/m}, 1), 1)", "B = (0, 0)", "d = Distance(P, B)"],
+    [setn("m", 0), setn("m", 2)],
+)
 cases.case("root", ["u = nroot(-1/0, 10000000000)"], [])
 cases.case(
     "areasums",

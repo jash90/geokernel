@@ -2026,6 +2026,26 @@ fn integrate_binary(
                 nan(b)
             }
         }
+        Bin::RootPow => {
+            let Node::Bin(Bin::Div, _, degree) = b.node(d) else {
+                return nan(b);
+            };
+            let Some(n) = b.number_value(c, degree) else {
+                return nan(b);
+            };
+            let divisor = if let Some(coeff) = linear_coefficient(c, b, a) {
+                (n + 1.0) * coeff
+            } else if let Some(coeff) = linear_coefficient_div(c, b, a) {
+                (n + 1.0) / coeff
+            } else {
+                return nan(b);
+            };
+            // ExpressionNode.integral: u * nroot(u, n) * n / ((n + 1) * u').
+            let product = b.push(Node::Bin(Bin::Mul, i, a));
+            let scaled = b.push(Node::Bin(Bin::Mul, product, degree));
+            let divisor = b.push(Node::Num(divisor));
+            b.push(Node::Bin(Bin::Div, scaled, divisor))
+        }
         Bin::Pow => {
             // x^c
             if b.node(a) == Node::Var && !b.contains_var(d) {
@@ -2562,6 +2582,19 @@ fn differentiate_binary(
                 let (d_u, d_v) = (du(b), dv(b));
                 quotient(b, d_u, d_v, u, v)
             }
+        }
+        Bin::RootPow => {
+            if let Node::Bin(Bin::Div, _, degree) = b.node(v) {
+                if is_number(b, degree) {
+                    // Derivative.get: u' * nroot(u, n) / (u * n).
+                    let root = b.push(Node::Bin(Bin::RootPow, u, v));
+                    let d = du(b);
+                    let numerator = b.push(Node::Bin(Bin::Mul, d, root));
+                    let denominator = b.push(Node::Bin(Bin::Mul, u, degree));
+                    return b.push(Node::Bin(Bin::Div, numerator, denominator));
+                }
+            }
+            derivative_power(c, b, u, v, depth)
         }
         Bin::Pow => derivative_power(c, b, u, v, depth),
         Bin::Atan2 => {

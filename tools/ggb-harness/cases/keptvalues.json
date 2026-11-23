@@ -14,6 +14,11 @@
     {"id": "keptvalues-defined-001", "group": "keptvalues", "script": ["u = (1/0, 1/0)", "n = Length(u)", "d = IsDefined(u)"], "steps": [{"action": "initial"}]},
     {"id": "keptvalues-defined-002", "group": "keptvalues", "script": ["g: y = 0", "h: y = 1", "S = Intersect(g, h)", "f(x) = x(S)", "d = IsDefined(f)"], "steps": [{"action": "initial"}]},
     {"id": "keptvalues-cartesian-001", "group": "keptvalues", "script": ["A = (-1/0, 0)", "B = (0, 0)", "d = Distance(A, B)", "k = Circle(A, 1)", "r = Radius(k)", "P = (If(true, 1/0, 0), 1)"], "steps": [{"action": "initial"}]},
+    {"id": "keptvalues-cartesian-002", "group": "keptvalues", "script": ["B = (0, 0)", "P = (If(true, 1/0, 0), 1)", "d = Distance(P, B)"], "steps": [{"action": "initial"}]},
+    {"id": "keptvalues-cartesian-003", "group": "keptvalues", "script": ["B = (0, 0)", "Q = (Mod(1/0, 2), 1)", "d = Distance(Q, B)"], "steps": [{"action": "initial"}]},
+    {"id": "keptvalues-cartesian-004", "group": "keptvalues", "script": ["B = (0, 0)", "Q = (Mod(7, 3) / 0, 1)", "d = Distance(Q, B)"], "steps": [{"action": "initial"}]},
+    {"id": "keptvalues-cartesian-005", "group": "keptvalues", "script": ["R = ({1/0}, 1)"], "steps": [{"action": "initial"}]},
+    {"id": "keptvalues-cartesian-006", "group": "keptvalues", "script": ["m = 1", "xs = {1/m, 2, 3}", "ys = {4, 5}", "R = (xs, ys)", "P = (Element({1/m}, 1), 1)", "B = (0, 0)", "d = Distance(P, B)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "m", "value": 0.0}, {"action": "set_number", "label": "m", "value": 2.0}]},
     {"id": "keptvalues-root-001", "group": "keptvalues", "script": ["u = nroot(-1/0, 10000000000)"], "steps": [{"action": "initial"}]},
     {"id": "keptvalues-areasums-001", "group": "keptvalues", "script": ["f(x) = If(x == 0, 2, 1)", "a = LowerSum(f, 0, 1/0, 4)", "b = UpperSum(f, 0, 1/0, 4)", "c = LowerSum(f, 1/0, 0, 4)", "d = UpperSum(f, 1/0, 0, 4)"], "steps": [{"action": "initial"}]},
     {"id": "keptvalues-areasums-002", "group": "keptvalues", "script": ["f(x) = x", "g = Derivative(f)", "a = LowerSum(g, 0, 1/0, 4)", "b = UpperSum(g, 1/0, 0, 4)"], "steps": [{"action": "initial"}]}

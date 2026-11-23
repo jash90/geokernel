@@ -381,4 +381,12 @@ case("curvederivative",
      [setn("n", 0), setn("n", 0.5)])
 cases.cases[-1]["sample_curves"] = True
 
+case("rootpower",
+     ["f(x) = nroot(x, 3)", "g(x) = nroot(x, 2)", "h = NDerivative(f)",
+      "i = NDerivative(g)", "j = Integral(f)", "k = Derivative(f)", "a = IntegralBetween(f, 1, 8)",
+      "m = NIntegral(f)"], [])
+case("rootpower",
+     ["c = Curve(t, nroot(t, 3), t, 0, 1)", "d = Derivative(c)"], [])
+cases.cases[-1]["sample_curves"] = True
+
 cases.write()
