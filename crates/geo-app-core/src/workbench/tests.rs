@@ -1768,3 +1768,90 @@ fn recorded_slots_do_not_stop_later_growth() {
     }
     assert!(c.id("C").is_none());
 }
+
+/// The labelled objects with their values, by label.
+fn labelled_values(w: &Workbench) -> Vec<String> {
+    let c = w.construction();
+    let mut values: Vec<_> = c
+        .ids()
+        .filter(|&id| !c.label(id).starts_with('\0'))
+        .map(|id| format!("{} = {:?}", c.label(id), c.value(id)))
+        .collect();
+    values.sort();
+    values
+}
+
+#[test]
+fn interval_roots_free_labels_and_take_new_ones_through_every_replay() {
+    let cases: [(&str, &str, &[f64], &[&str], &[&str]); 2] = [
+        (
+            "f(x) = x^2 - 1\nh(x) = 0\na = 3\nb = -3\nR = Intersect(f, h, a, b)",
+            "a",
+            &[-3.0, 1.0, 0.5, -0.5],
+            &["R_{1}"],
+            &["R_{2}", "A"],
+        ),
+        (
+            concat!(
+                "b = 1.5\nf(x) = (x - 1) (x - 2)\ng(x) = (x - 3) (x - 4) (x - 5)\n",
+                "h(x) = 0\nR = Intersect(f, h, b, 3)\nS = Intersect(g, h, 0, b)"
+            ),
+            "b",
+            &[0.5, 5.5, 0.5, 1.5, 5.5],
+            &["R", "S", "A", "B"],
+            &["C"],
+        ),
+    ];
+    for (src, slider, values, present, absent) in cases {
+        let mut w = Workbench::from_script(src).unwrap();
+        let mut states = vec![labelled_values(&w)];
+        for &value in values {
+            let id = w.construction().id(slider).unwrap();
+            assert!(w.set_number(id, value));
+            states.push(labelled_values(&w));
+        }
+        let last = states.last().unwrap();
+        let c = w.construction();
+        for label in present {
+            assert!(c.id(label).is_some(), "{label} missing after {src:?}");
+        }
+        for label in absent {
+            assert!(c.id(label).is_none(), "{label} kept after {src:?}");
+        }
+        // The snapshot, its script without the header and the bare lines
+        // reproduce the labels.
+        let snapshot = w.snapshot_text();
+        let mut restored = Workbench::default();
+        assert!(restored.restore_text(&snapshot).unwrap().is_empty());
+        assert_eq!(labelled_values(&restored), *last, "{snapshot}");
+        let script: String = snapshot.lines().skip(1).map(|l| format!("{l}\n")).collect();
+        restored.load_script(&script).unwrap();
+        assert_eq!(labelled_values(&restored), *last, "{script}");
+        let bare: String = script
+            .lines()
+            .map(|l| format!("{}\n", geo_kernel::script::split_comment(l).0))
+            .collect();
+        assert!(restored.restore_text(&bare).unwrap().is_empty());
+        assert_eq!(labelled_values(&restored), *last, "{bare}");
+        // Undo and redo rebuild every state from the journal.
+        for back in 1..=values.len() {
+            assert!(w.undo());
+            assert_eq!(labelled_values(&w), states[values.len() - back]);
+        }
+        for forward in 1..=values.len() {
+            assert!(w.redo());
+            assert_eq!(labelled_values(&w), states[forward]);
+        }
+    }
+}
+
+#[test]
+fn export_refuses_interval_roots_with_a_freed_label() {
+    let src = "f(x) = x^2 - 1\nh(x) = 0\na = 3\nb = -3\nR = Intersect(f, h, a, b)";
+    let mut w = Workbench::from_script(src).unwrap();
+    assert!(w.export_ggb(None).is_ok());
+    let a = w.construction().id("a").unwrap();
+    assert!(w.set_number(a, -3.0));
+    let error = w.export_ggb(None).unwrap_err().to_string();
+    assert!(error.contains("freed"), "{error}");
+}

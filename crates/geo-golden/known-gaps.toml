@@ -17,23 +17,6 @@
 # `failure = "error text"` (the kernel refuses the line with exactly this
 # error). The test fails when the kernel answers anything else there.
 
-# intersectgrowth
-
-[[gap]]
-id = "intersectgrowth-interval-003"
-reason = "AlgoRoots.initPoints removes every output from slot max(number, 1) on that has no dependents and is undefined, which unsets its label; when the slot is defined again AlgoGeoPointsFunction.updateLabels gives it the next default point label (B, then D past the taken C). The harness still reads the same object under its old label R_{2} or R_{3}. The kernel keeps one fixed label per output, so the slots stay R_{2} and R_{3} and no B or D exists"
-mismatches = ["3:B", "3:D", "4:B", "4:D"]
-
-[[gap]]
-id = "intersectgrowth-interval-005"
-reason = "AlgoRoots.initPoints unlabels the undefined second slot when the interval collapses; when it is defined again it is labelled with the next default point label A, which the harness reads besides the old label R_{2}. The kernel keeps one fixed label per output, so the slot stays R_{2} and no A exists"
-mismatches = ["2:A", "3:A", "4:A"]
-
-[[gap]]
-id = "intersectgrowth-interval-007"
-reason = "When b moves to 5.5, R = Intersect(f, h, b, 3) loses its roots and AlgoRoots.initPoints removes its second output A, which frees the label before S = Intersect(g, h, 0, b) grows; S then names its roots 4 and 5 A and B. The kernel keeps A on R's undefined slot, so S's new outputs are B and C"
-mismatches = ["2:A", "2:B"]
-
 # corners
 
 [[gap]]

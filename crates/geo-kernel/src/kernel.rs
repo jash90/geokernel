@@ -451,6 +451,11 @@ impl Value {
 }
 
 /// `DoubleUtil.isEpsilon(z, x, y)` for non-NaN homogeneous coordinates.
+/// The hidden label of an output whose label was freed.
+fn freed_label(id: Id) -> String {
+    format!("\0freed{}", id.0)
+}
+
 pub(crate) fn point_at_infinity(x: f64, y: f64, z: f64) -> bool {
     let tol = crate::tol::STANDARD_PRECISION;
     z.abs() <= tol && z.abs() <= x.abs() * tol && z.abs() <= y.abs() * tol
@@ -2276,6 +2281,59 @@ impl Construction {
     /// construction element instead of opening one of its own.
     pub(crate) fn add_output(&mut self, label: &str, def: Def, owner: Id) -> Result<Id, Error> {
         self.add_with_path_state(label, def, None, Some(owner))
+    }
+
+    /// `GeoElement.remove` of an output that its command no longer shows
+    /// (`AlgoRoots.initPoints`): the object stays in the construction but
+    /// loses its label, which a later object can take. Refused for an
+    /// object that is already unlabelled or that other objects read.
+    pub(crate) fn free_output_label(&mut self, id: Id) -> bool {
+        let Some(label) = self.labels.get(id.0) else {
+            return false;
+        };
+        if label.starts_with('\0') || !self.children[id.0].is_empty() {
+            return false;
+        }
+        let freed = freed_label(id);
+        let old = std::mem::replace(&mut self.labels[id.0], freed.clone());
+        self.by_label.remove(&old);
+        self.object_scripts.remove(&old);
+        self.by_label.insert(freed, id);
+        // a freed label lies below the start of its family's search
+        self.label_hints
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
+        true
+    }
+
+    /// Gives the output `id` the free label `label`; the label it had is
+    /// freed. Refused if `label` is taken or if other objects read `id`
+    /// under a label it has.
+    pub(crate) fn relabel_output(&mut self, id: Id, label: &str) -> Result<(), Error> {
+        if label.is_empty() || label.starts_with('\0') {
+            return Err(Error::EmptyLabel);
+        }
+        let old = self.label(id).to_owned();
+        if old == label {
+            return Ok(());
+        }
+        if self.resolve_label(label).is_some() {
+            return Err(Error::DuplicateLabel(label.to_string()));
+        }
+        if !old.starts_with('\0') && !self.free_output_label(id) {
+            return Err(Error::DuplicateLabel(old));
+        }
+        self.by_label.remove(&freed_label(id));
+        self.labels[id.0] = label.to_string();
+        self.by_label.insert(label.to_string(), id);
+        Ok(())
+    }
+
+    /// Whether `id` is an output whose label [`Self::free_output_label`]
+    /// freed.
+    pub fn is_freed_output(&self, id: Id) -> bool {
+        self.labels.get(id.0).is_some_and(|label| *label == freed_label(id))
     }
 
     fn add_with_path_state(

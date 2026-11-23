@@ -310,6 +310,16 @@ pub fn ggb<'a>(
     definitions: impl IntoIterator<Item = Definition<'a>>,
     presentation: &Presentation<'_>,
 ) -> Result<Vec<u8>, ExportError> {
+    // `AlgoElement.getCmdOutputXML` saves such an output as an empty slot.
+    if construction
+        .ids()
+        .any(|id| construction.is_freed_output(id))
+    {
+        return Err(failure(
+            "an interval intersection has an output whose label it freed, \
+             which the export cannot save as an empty output slot",
+        ));
+    }
     let mut writer = Writer {
         c: construction,
         presentation,

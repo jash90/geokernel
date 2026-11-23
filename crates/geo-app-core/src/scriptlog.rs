@@ -658,8 +658,29 @@ impl Log {
         c: &mut Construction,
         groups: &mut BoundaryOutputs,
         changed: impl Iterator<Item = Id> + Clone,
-    ) {
-        groups.grow_after(c, changed, |c, id, line| self.record(c, id.index(), line));
+    ) -> bool {
+        let mut recorded = false;
+        let released = groups.grow_after(c, changed, |c, id, line| {
+            recorded = true;
+            // A freed slot labelled again is an older object.
+            self.record_definition(c, c.len(), Some(id), line);
+        });
+        if released {
+            // A later set must not replace the one that freed the labels.
+            self.keep_last_set();
+        }
+        released || recorded
+    }
+
+    fn keep_last_set(&mut self) {
+        if let Some(Op::Set { label, to, ordered: false }) = self.ops.last() {
+            let set = Op::Set {
+                label: label.clone(),
+                to: *to,
+                ordered: true,
+            };
+            self.ops.replace_last(set);
+        }
     }
 
     pub(crate) fn grown_groups(&self) -> Vec<GrownOutputs<'_>> {
@@ -934,6 +955,9 @@ impl Log {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
+        // The journal gives every label a slot takes; the freed labels
+        // follow the edits again.
+        let mut groups = BoundaryOutputs::default();
         // While nothing is dropped or merged, `kept` is the first `same`
         // ops of the journal and shares their storage (see `shared.rs`).
         let ops = self.ops.items();
@@ -957,6 +981,12 @@ impl Log {
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
+                            }
+                            if let Some(id) = first {
+                                groups.record(&c, &e.line, id, c.len() - before);
+                                if id.index() < before {
+                                    groups.release_after(&mut c, std::iter::once(id));
+                                }
                             }
                             // What `record` would make of it is `e` itself.
                             match &mut same {
@@ -993,6 +1023,7 @@ impl Log {
                         Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
+                    groups.release_after(&mut c, std::iter::once(id));
                     // A set right after a set of the same object is merged
                     // into it by `record_set` (after a `remove` they can
                     // meet): the journal and `kept` part there.
@@ -1015,6 +1046,7 @@ impl Log {
                 }
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;
+                    groups.release_after(&mut c, positions.iter().map(|&(id, _, _)| id));
                     match &mut same {
                         Some(n) if positions.len() == points.len() => *n = i + 1,
                         _ => {
@@ -1144,6 +1176,9 @@ impl Log {
         let mut c = Construction::new();
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
+        // The journal gives every label a slot takes; the freed labels
+        // follow the edits again.
+        let mut groups = BoundaryOutputs::default();
         for op in self.ops.items() {
             match op {
                 Op::Define(e) => {
@@ -1158,6 +1193,12 @@ impl Log {
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
+                            }
+                            if let Some(id) = first {
+                                groups.record(&c, &e.line, id, c.len() - before);
+                                if id.index() < before {
+                                    groups.release_after(&mut c, std::iter::once(id));
+                                }
                             }
                             kept.record_definition(&c, before, first, &e.line);
                         }
@@ -1188,6 +1229,7 @@ impl Log {
                         Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
+                    groups.release_after(&mut c, std::iter::once(id));
                     kept.push_set(
                         label,
                         *to,
@@ -1196,6 +1238,7 @@ impl Log {
                 }
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;
+                    groups.release_after(&mut c, positions.iter().map(|&(id, _, _)| id));
                     kept.record_move_points(&c, &positions);
                 }
                 Op::TextProperties(line) => {
@@ -1528,6 +1571,8 @@ impl Log {
                         let changed = log.apply(&mut c, d)?;
                         if grow && !changed.is_empty() {
                             log.grow_boundary_outputs(&mut c, &mut groups, changed.into_iter());
+                        } else if !changed.is_empty() {
+                            groups.release_after(&mut c, changed.into_iter());
                         }
                         Ok(())
                     }),
@@ -1536,11 +1581,17 @@ impl Log {
                         let before = c.len();
                         let slider = geo_kernel::script::slider_assignment_target(&c, &line);
                         let first = log.define_checked(&mut c, &line, expected)?;
-                        if let Some(id) = first.filter(|_| grow && c.len() > before) {
+                        if let Some(id) = first {
                             groups.record(&c, &line, id, c.len() - before);
                         }
-                        if let Some(id) = slider.filter(|_| grow) {
-                            log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
+                        match slider {
+                            Some(id) if grow => {
+                                log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
+                            }
+                            Some(id) => {
+                                groups.release_after(&mut c, std::iter::once(id));
+                            }
+                            None => {}
                         }
                         Ok(())
                     }),
@@ -1669,7 +1720,7 @@ impl Log {
                 .map_err(at)?;
             log.record_definition(&c, before, first, &line);
             log.apply_hidden_requests(&mut c);
-            if let Some(id) = first.filter(|_| grow && c.len() > before) {
+            if let Some(id) = first.filter(|_| grow) {
                 groups.record(&c, &line, id, c.len() - before);
             }
             if let Some(id) = slider.filter(|_| grow) {
