@@ -67,7 +67,7 @@ use super::polygon_clip::{ClipDef, ClipOutput};
 use super::transform::{parse_transform_for, source_of, Map};
 use super::vector::{matrix::Matrix, VectorDef};
 use super::{Group, Parents, NUMBER, POINT};
-use crate::expr::{Element, List};
+use crate::expr::{Element, IntersectionWork, List};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use crate::script::{object, split_call};
 use crate::tol::STANDARD_PRECISION;
@@ -1180,8 +1180,13 @@ impl<'a> IndexedLabels<'a> {
         }
     }
 
-    fn next(&mut self, c: &Construction, taken: &Taken) -> String {
-        loop {
+    fn next(
+        &mut self,
+        c: &Construction,
+        taken: &Taken,
+        work: &IntersectionWork,
+    ) -> Result<String, String> {
+        while work.charge(1) {
             let n = self.next;
             self.next += 1;
             let prefix = self.prefix;
@@ -1195,9 +1200,10 @@ impl<'a> IndexedLabels<'a> {
                 self.needs_hint = false;
             }
             if !taken.contains(&long) && short.as_ref().is_none_or(|s| !taken.contains(s)) {
-                return long;
+                return Ok(long);
             }
         }
+        Err("indexed labels exceed the evaluation budget".into())
     }
 }
 
@@ -1449,6 +1455,7 @@ pub(super) fn add_transform(
     let result = (|| {
         let poly = c.add(name, def).map_err(|e| e.to_string())?;
         let mut image = Vec::with_capacity(source.len());
+        let label_work = IntersectionWork::new();
         for source in source {
             let label = c.label(source);
             let label = if label.contains('_') || label.ends_with("'''") {
@@ -1458,7 +1465,7 @@ pub(super) fn add_transform(
                 if is_free(c, &plan.taken, &prime) {
                     prime
                 } else {
-                    IndexedLabels::new(c, &prime).next(c, &plan.taken)
+                    IndexedLabels::new(c, &prime).next(c, &plan.taken, &label_work)?
                 }
             };
             let vertex = Def::Polygon(PolygonDef::ImageVertex { poly, source });
@@ -1629,6 +1636,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
         .filter(|s| !s.is_empty())
         .unwrap_or("a");
     let mut labels = IndexedLabels::new(c, prefix);
+    let label_work = IntersectionWork::new();
     if def.kind() == Kind::Segment {
         let count = def.segments(c).len();
         if count == 0 {
@@ -1636,7 +1644,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
             return plan.commit(c);
         }
         for i in 0..count {
-            let label = labels.next(c, &plan.taken);
+            let label = labels.next(c, &plan.taken, &label_work)?;
             let index = if def.is_carrier() { count - 1 - i } else { i };
             plan.push(
                 label,
@@ -1649,7 +1657,7 @@ fn clip_line(c: &mut Construction, name: &str, func: &str, args: &[&str]) -> Res
         let rings = def.rings(c);
         let vertices: usize = rings.iter().map(Vec::len).sum();
         for i in 0..rings.len().max(1) {
-            let label = labels.next(c, &plan.taken);
+            let label = labels.next(c, &plan.taken, &label_work)?;
             plan.push(
                 label,
                 Planned::Def(Def::Polygon(PolygonDef::Clip(
@@ -1982,12 +1990,13 @@ fn outputs_line(c: &mut Construction, name: &str, arg: &str, what: Outputs) -> R
         _ => "a".to_string(),
     };
     let mut labels = IndexedLabels::new(c, &prefix);
+    let label_work = IntersectionWork::new();
     for k in 0..count as u32 {
         let def = match what {
             Outputs::Vertices => PolygonDef::VertexAt { poly, k },
             Outputs::Angles(internal) => PolygonDef::Angle { poly, k, internal },
         };
-        let label = labels.next(c, &plan.taken);
+        let label = labels.next(c, &plan.taken, &label_work)?;
         plan.push(label, Planned::Def(Def::Polygon(def)));
     }
     plan.commit(c)

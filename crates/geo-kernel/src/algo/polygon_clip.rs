@@ -781,6 +781,10 @@ mod tests {
                 Def::Polygon(PolygonDef::PolyLine(list))
             })
             .unwrap();
+        for j in 1..=100_000 {
+            c.add(&format!("q_{{{j}}}"), Def::Number(f64::from(j)))
+                .unwrap();
+        }
         let k = c.id("k").unwrap();
         let before = expr::work_done();
         let len = c.len();
@@ -788,9 +792,14 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(c.len() - len, 99_999);
-        assert!(expr::work_done() - before < expr::MAX_EVALUATION_WORK);
+        let work = expr::work_done() - before;
+        assert!(
+            (32 * 100_000 + 199_999..expr::MAX_EVALUATION_WORK).contains(&work),
+            "{work}"
+        );
         assert_eq!(c.reads(first), vec![p, k]);
-        let last = c.id("q_{99999}").unwrap();
+        assert_eq!(c.label(first), "q_{100001}");
+        let last = c.id("q_{199999}").unwrap();
         assert!(matches!(c.value(last), Value::Segment { .. }));
         let end = *points.last().unwrap();
         assert_eq!(c.direct_dependents(end).collect::<Vec<_>>(), vec![p]);

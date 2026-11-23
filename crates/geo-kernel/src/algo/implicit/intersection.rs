@@ -4,7 +4,7 @@ use super::polynomial::{evaluate, roots, substitute};
 use super::MAX_OUTPUTS;
 use crate::algo::intersect::boundary::BoundaryDef;
 use crate::algo::intersect::function_roots::interval_roots;
-use crate::algo::{polygon, Group, Parents};
+use crate::algo::{Group, Parents};
 use crate::expr::{IntersectionWork, Raw};
 use crate::kernel::locus::HEADLESS_VIEW;
 use crate::tol::STANDARD_PRECISION;
@@ -160,17 +160,15 @@ impl Intersection {
     }
 
     pub(in crate::algo) fn hidden_parents(self, c: &Construction) -> Vec<Id> {
-        let mut parents = if c.kind(self.pair[1]) == Kind::PolyLine {
-            polygon::inputs(c, self.pair[1])
-        } else {
-            Vec::new()
-        };
-        if let Method::Index(index) = self.method {
-            if let Some(ids) = c.intersection_argument_parents(index) {
-                parents.extend_from_slice(ids);
-            }
+        // AlgoIntersectImplicitpolyPolyLine registers the curve and path.
+        // The path itself forwards changes even when its length stays equal.
+        match self.method {
+            Method::Index(index) => c
+                .intersection_argument_parents(index)
+                .unwrap_or_default()
+                .to_vec(),
+            _ => Vec::new(),
         }
-        parents
     }
 
     fn with_points<T>(self, c: &Construction, read: impl FnOnce(&[Option<Point>]) -> T) -> T {
@@ -404,7 +402,8 @@ fn finite(x: f64, y: f64) -> Option<Point> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::script;
+    use crate::algo::polygon::PolygonDef;
+    use crate::{expr, script};
 
     #[test]
     fn an_implicit_graph_grows_to_all_sixty_six_reference_slots() {
@@ -456,5 +455,49 @@ mod tests {
         let c = script::load("c: x^8 - y = 0\nd: x - y^9 = 0\nP = Intersect(c, d)").unwrap();
         let p = c.id("P").or_else(|| c.id("P_{1}")).unwrap();
         assert_eq!(c.point(p), Some((0.0, 0.0)));
+    }
+
+    #[test]
+    fn named_polyline_intersections_register_only_the_two_inputs() {
+        let mut c = script::load("c: y^3 + y = 0").unwrap();
+        let curve = c.id("c").unwrap();
+        let points: Vec<_> = (0..100_000)
+            .map(|j| {
+                c.add(
+                    &format!("A{j}"),
+                    Def::FreePoint {
+                        x: f64::from(j),
+                        y: if j % 2 == 0 { 1.0 } else { -1.0 },
+                    },
+                )
+                .unwrap()
+            })
+            .collect();
+        let path = c
+            .add_with_list("path", &points, |list| {
+                Def::Polygon(PolygonDef::PolyLine(list))
+            })
+            .unwrap();
+        let before = expr::work_done();
+        let len = c.len();
+        let first = script::exec(&mut c, "P = Intersect(c, path)")
+            .unwrap()
+            .unwrap();
+        assert_eq!(c.len() - len, 99_999);
+        assert!(expr::work_done() - before < expr::MAX_EVALUATION_WORK);
+        assert_eq!(c.reads(first), [curve, path]);
+        let end = *points.last().unwrap();
+        assert_eq!(c.direct_dependents(end).collect::<Vec<_>>(), [path]);
+        let last = c.id("P_{99999}").unwrap();
+        let assert_last = |c: &Construction, expected_x: f64| {
+            let (x, y) = c.point(last).unwrap();
+            assert!((x - expected_x).abs() < 1e-9 && y.abs() < 1e-9, "{x}, {y}");
+        };
+        assert_last(&c, 99_998.5);
+        // Reflect the edge across the vertical through its start. Its length is unchanged.
+        let path_value = c.value(path);
+        c.move_point(end, 99_997.0, -1.0).unwrap();
+        assert_eq!(c.value(path), path_value);
+        assert_last(&c, 99_997.5);
     }
 }

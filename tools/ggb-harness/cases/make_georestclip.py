@@ -129,4 +129,10 @@ cases.case("longpath", [
 # Sample the ends without recording the full 100,000-vertex path twice.
 cases.cases[-1]["observe"] = ["q_{1}", "q_{99999}"]
 
+# The output prefix already has occupied indexed labels.
+cases.case("occupied", circle + [
+    "q_{1} = 1", "q_{2} = 2", pt("A", -1, 0), pt("B", 1, 0),
+    "s = Segment(A, B)", "q = IntersectPath(s, k)",
+], [mv("B", 1, 1)])
+
 cases.write()

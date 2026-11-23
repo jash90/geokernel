@@ -2747,7 +2747,7 @@ difference = "geometry-command-arguments: `Vertex(image, number)`"
 [[form]]
 command = "IntersectPath"
 form = "segment,conic"
-cases = ["georestclip-segment-003", "georestclip-conicpart-001", "georestclip-conicpart-004", "georestclip-conicpart-007", "georestclip-conicpart-010", "georestclip-segment-005", "georestclip-segment-006"]
+cases = ["georestclip-segment-003", "georestclip-conicpart-001", "georestclip-conicpart-004", "georestclip-conicpart-007", "georestclip-conicpart-010", "georestclip-segment-005", "georestclip-segment-006", "georestclip-occupied-001"]
 
 [[form]]
 command = "IntersectPath"
@@ -3088,7 +3088,7 @@ cases = ["implicit-conic-001"]
 [[form]]
 command = "Tangent"
 form = "line,implicit"
-cases = ["implicit-tangents-003", "implicit-tangents-007"]
+cases = ["implicit-tangents-003", "implicit-tangents-007", "implicit-tangents-008"]
 
 [[form]]
 command = "Tangent"
@@ -3406,7 +3406,7 @@ cases = ["implicit-graph-001", "implicit-graph-002", "implicit-graph-003"]
 [[form]]
 command = "Intersect"
 form = "implicit,polyline"
-cases = ["implicit-polyline-001", "implicit-polyline-003", "implicit-polyline-004"]
+cases = ["implicit-polyline-001", "implicit-polyline-003", "implicit-polyline-004", "implicit-polyline-005"]
 
 [[form]]
 command = "IntersectPath"

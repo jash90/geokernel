@@ -264,7 +264,15 @@ fn intersections(
     let coefficient_count = |matrix: &[Vec<f64>]| matrix.iter().map(Vec::len).sum::<usize>();
     let slice_work = (coefficient_count(f) + coefficient_count(g)) as u64;
     let mut points = Vec::new();
-    for y in roots(&projection, work) {
+    // AlgoTangentImplicitpoly delegates its contacts to the same resultant
+    // solver as implicit-curve intersections. Both use bounded deflation for
+    // large projections, while the lower-degree slices retain their solver.
+    let projection_roots = if projection.len() > super::polynomial::MAX_DEGREE + 1 {
+        pair_roots
+    } else {
+        roots
+    };
+    for y in projection_roots(&projection, work) {
         if !work.charge(slice_work) {
             return None;
         }

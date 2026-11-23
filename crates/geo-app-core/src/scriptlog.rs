@@ -441,7 +441,7 @@ pub(crate) fn object_ids(c: &Construction) -> impl Iterator<Item = Id> + '_ {
 }
 
 fn outputs(c: &Construction, from: usize) -> impl Iterator<Item = Id> + '_ {
-    c.ids().skip(from).filter(|&id| !is_internal(c, id))
+    c.ids_from(from).filter(|&id| !is_internal(c, id))
 }
 
 fn definition_outputs<'a>(
@@ -650,8 +650,8 @@ impl Log {
 
     /// A save or an undo checkpoint starts each vertex algorithm fresh.
     pub(crate) fn reset_inequality_helpers(&mut self, c: &mut Construction) {
-        if c.reset_inequality_vertex_helpers()
-            && !matches!(self.ops.last(), Some(Op::ResetInequalityHelpers))
+        if !matches!(self.ops.last(), Some(Op::ResetInequalityHelpers))
+            && c.reset_inequality_vertex_helpers()
         {
             self.ops.push(Op::ResetInequalityHelpers);
         }
@@ -1073,6 +1073,16 @@ impl Log {
                     None => kept.ops.push(Op::KeptLabels),
                 },
                 Op::ResetInequalityHelpers => {
+                    let previous = if same.is_some() {
+                        ops[..i].last().copied()
+                    } else {
+                        kept.ops.last()
+                    };
+                    if matches!(previous, Some(Op::ResetInequalityHelpers)) {
+                        // Deleting the intervening edit can make two resets adjacent.
+                        diverge(&mut kept, &mut same);
+                        continue;
+                    }
                     c.reset_inequality_vertex_helpers();
                     match &mut same {
                         Some(n) => *n = i + 1,

@@ -329,4 +329,32 @@ cases.case("textbounds", [pt("A", 0, 0), 't = "abc"'], [
     {"action": "append", "line": "Q = Corner(t, 3)"}, mv("A", 1, 1),
 ])
 
+# Removing a text with a saved start point leaves the point movable.
+cases.case("reviewtwo", [pt("A", 0, 0)], [
+    {"action": "append", "line": 't = "abc"'},
+    {"action": "anchor_text", "label": "t", "point": "A"},
+    {"action": "delete", "label": "t"}, mv("A", 1, 1),
+])
+# A complete construction rebuild also resets unrelated vertex algorithms.
+for setup in (["a = 5", "b = a + 1"], ["a = 5"]):
+    cases.case("reviewtwo", base + setup, [
+        setn("n", 0.5), {"action": "redefine", "line": "a = 3*n"},
+    ])
+# Reload markers represent fresh algorithms at the current input values.
+cases.case("reviewtwo", base, [
+    setn("n", 0.5), {"action": "reload"}, {"action": "reload"}, setn("n", 2),
+])
+
+# Assigning another free value, repeating the same dependent definition, and
+# changing a constant input of the same command all update in place.
+for setup, redefine in (
+    (["a = 5", "b = a + 1"], "a = 6"),
+    (["a = 3*n", "b = a + 1"], "a = 3*n"),
+    ([pt("A", 0, 0), pt("B", 2, 0), "s = Segment(A, B)",
+      "T = Point(s, 0.25)", "u = x(T)"], "T = Point(s, 0.75)"),
+):
+    cases.case("reviewtwo", base + setup, [
+        setn("n", 0.5), {"action": "redefine", "line": redefine},
+    ])
+
 cases.write()

@@ -10,7 +10,7 @@ use crate::expr::IntersectionWork;
 use crate::tol::{MIN_PRECISION, STANDARD_PRECISION};
 
 pub(super) type Polynomial = Vec<f64>;
-const MAX_DEGREE: usize = 64;
+pub(super) const MAX_DEGREE: usize = 64;
 
 pub(super) fn evaluate(poly: &[f64], x: f64) -> f64 {
     poly.iter().rev().fold(0.0_f64, |value, &c| value * x + c)

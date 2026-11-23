@@ -1210,6 +1210,12 @@ impl EvaluationOrder {
     }
 }
 
+enum DefinitionRefresh {
+    None,
+    All,
+    Selected(DirtySet),
+}
+
 /// The objects waiting to be recomputed during an update; empty between
 /// updates. `levels[0]` has one bit per object. Each further level has one
 /// bit per word of the level below, set whenever that word is not zero, and
@@ -1218,7 +1224,7 @@ impl EvaluationOrder {
 /// it. Finding the next dirty object then costs a few reads per level
 /// however far away it is, and a drag with few dirty objects touches little
 /// more than level 0.
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct DirtySet {
     levels: Vec<Vec<u64>>,
     /// How many objects are in the set.
@@ -1245,6 +1251,10 @@ impl DirtySet {
         } else {
             self.levels = sizes.into_iter().map(|size| vec![0; size]).collect();
         }
+    }
+
+    fn contains(&self, i: usize) -> bool {
+        self.levels[0][i / 64] & (1 << (i % 64)) != 0
     }
 
     fn insert(&mut self, i: usize) {
@@ -1346,7 +1356,12 @@ impl Construction {
 
     /// All objects in creation order, excluding the built-in axes.
     pub fn ids(&self) -> impl Iterator<Item = Id> {
-        (0..self.defs.len()).map(Id)
+        self.ids_from(0)
+    }
+
+    /// Objects appended from a storage index, in creation order.
+    pub fn ids_from(&self, from: usize) -> impl Iterator<Item = Id> {
+        (from..self.defs.len()).map(Id)
     }
 
     pub fn id(&self, label: &str) -> Option<Id> {
@@ -1812,19 +1827,22 @@ impl Construction {
         }
         self.hidden_requests.retain(|id| id.0 < at.len);
         self.drawing_styles.split_off(&Id(at.len));
-        self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
         self.construction_sources.retain(|id, _| id.0 < at.len);
         self.frozen_line_starts
             .retain(|_, &mut (_, _, order, _)| order < at.frozen_line_starts);
-        let mut first_removed = self.elements.len();
-        while self.defs.len() > at.len {
-            let id = self.defs.len() - 1;
-            for parent in self.reads(Id(id)) {
-                if let Some(children) = self.children.get_mut(parent.0) {
-                    children.remove(Id(id));
+        // A saved text start point is a dependency. Keep its presentation
+        // until its edge has been unregistered, as in GeoText.doRemove.
+        for id in (at.len..self.defs.len()).rev().map(Id) {
+            for parent in self.reads(id) {
+                if parent.0 < at.len {
+                    self.children[parent.0].remove(id);
                 }
             }
+        }
+        self.discard_text_presentations(at.len);
+        let mut first_removed = self.elements.len();
+        while self.defs.len() > at.len {
             self.defs.pop();
             self.values.pop();
             self.children.pop();
@@ -2101,6 +2119,9 @@ impl Construction {
             }
         };
 
+        let rebuilds = !self.inequality_helpers.outputs().is_empty()
+            && self.replacement_rebuilds_construction(id, def);
+
         let value = self.values[new.0];
         let hint = self.hints[new.0];
         let path = self.path_state(new);
@@ -2169,9 +2190,6 @@ impl Construction {
             dirty.insert(self.evaluation_rank(child));
         }
         for child in old_reads.keys().copied() {
-            if let Def::Point(PointDef::InequalityVertex { owner, .. }) = self.def(child) {
-                self.inequality_helpers.forget(owner);
-            }
             if matches!(
                 self.def(child),
                 Def::Locus(LocusDef::Path { .. } | LocusDef::Slider { .. })
@@ -2179,10 +2197,49 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
-        self.propagate_dirty(dirty, 0, true);
+        let refresh = if rebuilds {
+            // Restart independent vertex algorithms without refreshing the
+            // definitions of their descendants as if those definitions changed.
+            let refresh = DefinitionRefresh::Selected(dirty.clone());
+            self.restart_inequality_vertices(&mut dirty);
+            refresh
+        } else {
+            DefinitionRefresh::All
+        };
+        self.propagate_dirty(dirty, 0, refresh);
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;
         Ok(Some(id))
+    }
+
+    /// AlgebraProcessor updates independent values in place. Construction.replace
+    /// also skips the XML rebuild for identical definitions, compatible command
+    /// edits on constant inputs, and objects without dependents.
+    fn replacement_rebuilds_construction(&self, id: Id, replacement: Def) -> bool {
+        if self.children[id.0].is_empty() {
+            return false;
+        }
+        let old = self.def(id);
+        let independent = |def| expr::independent_definition(self, def);
+        if (old.kind() == replacement.kind() && independent(old) && independent(replacement))
+            || expr::same_definition(self, old, replacement)
+        {
+            return false;
+        }
+        if let (
+            Def::Path(PathDef::OnParam { path, param }),
+            Def::Path(PathDef::OnParam {
+                path: new_path,
+                param: new_param,
+            }),
+        ) = (old, replacement)
+        {
+            let constant = |id| self.label(id).starts_with('\0') && independent(self.def(id));
+            // AlgoPointOnPath supports an in-place parameter edit when the
+            // path stays the same and neither parameter is a dynamic object.
+            return path != new_path || !constant(param) || !constant(new_param);
+        }
+        true
     }
 
     fn refresh_circle_hints(&mut self, dirty: &mut DirtySet) {
@@ -2608,9 +2665,7 @@ impl Construction {
             }
         }
         if let Def::Point(PointDef::InequalityVertex { source, owner, .. }) = def {
-            if id == owner {
-                self.inequality_helpers.attach(source, owner);
-            }
+            self.inequality_helpers.attach(source, owner, id);
         }
         // An object that is read twice is still one child.
         let mut parents = self.read_ids_with_hint(&def, self.hints.last().copied());
@@ -2720,7 +2775,7 @@ impl Construction {
         for &i in &self.protocol {
             dirty.insert(self.evaluation_rank(Id(i)));
         }
-        self.propagate_dirty(dirty, 0, false);
+        self.propagate_dirty(dirty, 0, DefinitionRefresh::None);
     }
 
     /// Installs rigid constraints on existing free points after all outputs
@@ -2743,7 +2798,7 @@ impl Construction {
             }
             dirty.insert(self.evaluation_rank(id));
         }
-        self.propagate_dirty(dirty, 0, false);
+        self.propagate_dirty(dirty, 0, DefinitionRefresh::None);
     }
 
     /// The elements of the list object `id`; `None` when it is not a list
@@ -2909,7 +2964,7 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
-        Ok(self.propagate_dirty(dirty, first, false))
+        Ok(self.propagate_dirty(dirty, first, DefinitionRefresh::None))
     }
 
     /// [`Self::move_point`] for a point made by `Point(path)`:
@@ -3019,19 +3074,23 @@ impl Construction {
     /// Rebuilds inequality-vertex algorithms at the current input values,
     /// as when their definitions are read from a saved construction.
     pub fn reset_inequality_vertex_helpers(&mut self) -> bool {
-        if self.inequality_helpers.is_empty() {
+        if self.inequality_helpers.outputs().is_empty() {
             return false;
         }
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.len());
-        for (i, def) in self.defs.iter().enumerate() {
-            if matches!(def, Def::Point(PointDef::InequalityVertex { .. })) {
-                dirty.insert(self.evaluation_rank(Id(i)));
-            }
-        }
-        self.inequality_helpers.truncate(0);
-        self.propagate_dirty(dirty, 0, false);
+        self.restart_inequality_vertices(&mut dirty);
+        self.propagate_dirty(dirty, 0, DefinitionRefresh::None);
         true
+    }
+
+    fn restart_inequality_vertices(&mut self, dirty: &mut DirtySet) {
+        let outputs = self.inequality_helpers.outputs();
+        expr::charge(outputs.len() as u64);
+        for &id in outputs {
+            dirty.insert(self.evaluation_rank(id));
+        }
+        self.inequality_helpers.clear_history();
     }
 
     /// Recomputes the descendants of `start` in dependency order.
@@ -3050,14 +3109,14 @@ impl Construction {
         for child in self.children[start.0].iter() {
             dirty.insert(self.evaluation_rank(child));
         }
-        self.propagate_dirty(dirty, self.evaluation_rank(start), false)
+        self.propagate_dirty(dirty, self.evaluation_rank(start), DefinitionRefresh::None)
     }
 
     fn propagate_dirty(
         &mut self,
         mut dirty: DirtySet,
         mut from: usize,
-        refresh_definitions: bool,
+        mut refresh: DefinitionRefresh,
     ) -> usize {
         self.last_update_changed_automatic_root = false;
         self.inequality_helpers.begin_update();
@@ -3070,12 +3129,21 @@ impl Construction {
             from = rank + 1;
             let i = self.evaluation_id(rank);
             let mut def = self.defs[i];
+            let refresh_definitions = match &refresh {
+                DefinitionRefresh::None => false,
+                DefinitionRefresh::All => true,
+                DefinitionRefresh::Selected(definitions) => definitions.contains(rank),
+            };
             recomputed += 1;
             if refresh_definitions {
                 // A rule can use the structure of an ancestor even when
                 // intermediate objects have exactly the same value.
                 for child in self.children[i].iter() {
-                    dirty.insert(self.evaluation_rank(child));
+                    let rank = self.evaluation_rank(child);
+                    dirty.insert(rank);
+                    if let DefinitionRefresh::Selected(definitions) = &mut refresh {
+                        definitions.insert(rank);
+                    }
                 }
                 def = self.refresh_intersection_definition(i, def, &mut restored_pairs);
             }
@@ -5217,6 +5285,31 @@ mod tests {
             lists: c.lists.clone(),
             values: c.values.clone(),
         }
+    }
+
+    #[test]
+    fn rollback_unregisters_a_saved_text_anchor() {
+        use super::text::{TextOverrides, TextPosition};
+
+        let mut c = crate::script::load("A = (0, 0)").unwrap();
+        let a = c.id("A").unwrap();
+        let at = c.checkpoint();
+        let t = crate::script::exec(&mut c, r#"t = "abc""#)
+            .unwrap()
+            .unwrap();
+        c.apply_text_properties(
+            t,
+            TextOverrides {
+                position: Some(TextPosition::Point(a)),
+                ..TextOverrides::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(c.direct_dependents(a).collect::<Vec<_>>(), [t]);
+
+        c.rollback(at).unwrap();
+        assert_eq!(c.move_point(a, 1.0, 1.0), Ok(0));
+        assert!(c.id("t").is_none());
     }
 
     #[test]

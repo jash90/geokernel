@@ -713,7 +713,7 @@ impl Raw {
 /// What GeoGebra's number object of a constant node is: a `MySpecialDouble`
 /// (a literal or a named constant, with the decimal it was written as, see
 /// [`decimal`]) or, by default, a plain `MyDouble` that the parser made.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) enum Lit {
     #[default]
     Plain,
@@ -1234,6 +1234,28 @@ pub(crate) fn replace_free_decimal(c: &mut Construction, id: Id, decimal: Option
 /// (`GeoNumeric.setValue`); whether it had one.
 pub(crate) fn forget_decimal(c: &mut Construction, id: Id) -> bool {
     c.exprs.free.get_mut(id.0).and_then(Option::take).is_some()
+}
+
+pub(crate) fn independent_definition(c: &Construction, def: Def) -> bool {
+    match def {
+        Def::Expr(d) => entry(c, d).inputs.is_empty(),
+        _ => def.is_free(),
+    }
+}
+
+/// Equality of definitions materialized in different expression slots.
+pub(crate) fn same_definition(c: &Construction, a: Def, b: Def) -> bool {
+    match (a, b) {
+        (Def::Expr(a), Def::Expr(b)) if a.kind == b.kind && a.angle_style == b.angle_style => {
+            let a = entry(c, a);
+            let b = entry(c, b);
+            a.root == b.root
+                && a.nodes == b.nodes
+                && a.lits == b.lits
+                && a.function_of_y == b.function_of_y
+        }
+        _ => a == b,
+    }
 }
 
 /// The tree of the expression object `id`, or the decimal of an exact free

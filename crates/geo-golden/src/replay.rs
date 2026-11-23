@@ -156,7 +156,9 @@ fn replay_document(case: &Case) -> CaseOutcome {
         let result = match step {
             Step::Initial => Ok(()),
             Step::Redefine { line } | Step::Append { line } => document.run_line(line),
-            Step::AnchorText { .. } => Err("unexpected text placement in a document case".into()),
+            Step::AnchorText { label, point } => document.run_lines(&[format!(
+                "$textProperties({label}, -, -, -, -, -, point, {point})"
+            )]),
             Step::Undo => document
                 .undo()
                 .then_some(())

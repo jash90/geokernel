@@ -36,6 +36,7 @@ pub(crate) fn is_inequality(c: &Construction, id: Id) -> bool {
 #[derive(Default)]
 pub(crate) struct VertexHelpers {
     records: Mutex<HelperRecords>,
+    outputs: Vec<Id>,
     changed: AtomicBool,
 }
 
@@ -72,7 +73,11 @@ impl HelperRecords {
 }
 
 impl VertexHelpers {
-    pub(crate) fn attach(&mut self, source: Id, owner: Id) {
+    pub(crate) fn attach(&mut self, source: Id, owner: Id, output: Id) {
+        self.outputs.push(output);
+        if output != owner {
+            return;
+        }
         let records = self.records.get_mut().expect("inequality helpers");
         let helpers = match records.preview.take() {
             Some((id, preview)) if source == id => preview.helpers,
@@ -81,25 +86,21 @@ impl VertexHelpers {
         records.attached.insert(owner, helpers);
     }
 
-    pub(crate) fn is_empty(&mut self) -> bool {
-        self.records
-            .get_mut()
-            .expect("inequality helpers")
-            .attached
-            .is_empty()
+    pub(crate) fn outputs(&self) -> &[Id] {
+        &self.outputs
     }
 
-    pub(crate) fn forget(&mut self, owner: Id) {
-        self.records
-            .get_mut()
-            .expect("inequality helpers")
-            .attached
-            .remove(&owner);
+    pub(crate) fn clear_history(&mut self) {
+        let records = self.records.get_mut().expect("inequality helpers");
+        records.attached.clear();
+        records.preview = None;
     }
 
     pub(crate) fn truncate(&mut self, len: usize) {
+        self.outputs
+            .truncate(self.outputs.partition_point(|id| id.index() < len));
         let records = self.records.get_mut().expect("inequality helpers");
-        records.attached.retain(|owner, _| owner.index() < len);
+        records.attached.split_off(&Id(len));
         records.preview = None;
     }
 
@@ -1167,6 +1168,25 @@ mod tests {
         let p = script::exec(&mut c, "P = Vertex(q)").unwrap().unwrap();
         c.set_number(n, 2.0).unwrap();
         assert_eq!(c.value(p), Value::Undefined);
+    }
+
+    #[test]
+    fn redefining_an_unrelated_number_resets_helpers_only_on_a_rebuild() {
+        for (dependent, expected) in [
+            ("b = a + 1", Value::Undefined),
+            ("", Value::Point { x: 4.0, y: 2.0 }),
+        ] {
+            let mut c = script::load(&format!(
+                "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\na = 5\n{dependent}"
+            ))
+            .unwrap();
+            let p = c.id("P_{1}").unwrap();
+            c.set_number(c.id("n").unwrap(), 0.5).unwrap();
+            assert_eq!(c.value(p), Value::Point { x: 4.0, y: 2.0 });
+
+            script::exec(&mut c, "a = 3*n").unwrap();
+            assert_eq!(c.value(p), expected);
+        }
     }
 
     #[test]

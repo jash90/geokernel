@@ -53,7 +53,7 @@ use crate::algo::conic_nd::ConicType;
 use crate::algo::path::{self, inf_function, inverse_inf_function, Geom, PathDef, PathState};
 use crate::algo::{Group, Parents, NUMBER, POINT};
 use crate::expr::fraction::FunctionFraction;
-use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
+use crate::kernel::{Construction, Def, DefinitionRefresh, Error, Id, Kind, Value};
 use std::sync::Arc;
 
 /// `PathMover.MIN_STEPS`.
@@ -219,7 +219,7 @@ impl Construction {
                 dirty.insert(i);
             }
         }
-        self.propagate_dirty(dirty, 0, false);
+        self.propagate_dirty(dirty, 0, DefinitionRefresh::None);
     }
 
     /// The graphics window the view-dependent objects read.
@@ -259,7 +259,7 @@ impl Construction {
         for &i in &self.view_readers {
             dirty.insert(i);
         }
-        self.propagate_dirty(dirty, 0, false);
+        self.propagate_dirty(dirty, 0, DefinitionRefresh::None);
         true
     }
 

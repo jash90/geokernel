@@ -1941,6 +1941,66 @@ fn deleting_an_object_replays_labels_another_command_took() {
 }
 
 #[test]
+fn moving_a_workbench_point_after_rolling_back_its_anchored_text() {
+    let mut w = Workbench::from_script("A = (0, 0)").unwrap();
+    let a = w.construction.id("A").unwrap();
+    let at = w.construction.checkpoint();
+    geo_kernel::script::exec(&mut w.construction, r#"t = "abc""#).unwrap();
+    let t = w.construction.id("t").unwrap();
+    TextProperties {
+        label: "t",
+        overrides: TextOverrides {
+            position: Some(TextPosition::Point("A")),
+            ..TextOverrides::default()
+        },
+    }
+    .apply(&mut w.construction)
+    .unwrap();
+    assert_eq!(w.construction.direct_dependents(a).collect::<Vec<_>>(), [t]);
+
+    w.construction.rollback(at).unwrap();
+    assert!(w.move_point(a, 1.0, 1.0));
+    assert_eq!(w.construction.value(a), Value::Point { x: 1.0, y: 1.0 });
+}
+
+#[test]
+fn adjacent_reset_markers_cost_one_reset_in_a_snapshot() {
+    use std::fmt::Write;
+
+    let mut text = format!("# geokernel snapshot {}\n", SNAPSHOT_VERSION);
+    for i in 0..100_000 {
+        writeln!(text, "a{i} = 1").unwrap();
+    }
+    text.push_str(concat!(
+        "n = 2\n",
+        "q(x,y) = y > x^n && x > 4 && y > 0 # labels: q\n",
+        "P = Vertex(q) # labels: P_{1}\n",
+    ));
+    text.push_str("SetValue(n, 0.5)\n$resetInequalityHelpers()\n");
+    let restore = |text: &str| {
+        let mut w = Workbench::default();
+        let before = geo_kernel::expr::work_done();
+        assert!(w.restore_text(text).unwrap().is_empty());
+        let work = geo_kernel::expr::work_done() - before;
+        let c = w.construction();
+        assert_eq!(c.value(c.id("P_{1}").unwrap()), Value::Undefined);
+        assert_eq!(
+            w.snapshot_text()
+                .matches("$resetInequalityHelpers()")
+                .count(),
+            1
+        );
+        work
+    };
+    let single = restore(&text);
+    // Detect repeated resets before trying the full run of markers.
+    text.push_str("$resetInequalityHelpers()\n");
+    assert_eq!(restore(&text), single);
+    text.push_str(&"$resetInequalityHelpers()\n".repeat(99_998));
+    assert_eq!(restore(&text), single);
+}
+
+#[test]
 fn undo_redo_and_snapshot_reload_rebuild_inequality_vertex_helpers() {
     let mut w = Workbench::from_script(
         "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\nZ = (0, 0)",

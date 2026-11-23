@@ -296,4 +296,13 @@ cases.case("polyline", [
     "path = PolyLine(vertices)", "P = Intersect(c, path)",
 ], [])
 
+# Use individually named points so a vertex edit goes through the polyline.
+cases.case("polyline", [
+    "c: y^3 + y = 0", "A = (0, 1)", "B = (1, -1)", "C = (2, 1)",
+    "path = PolyLine(A, B, C)", "P = Intersect(c, path)",
+], [mv("C", 2, 3)])
+cases.case("tangents", [
+    "c: x^8 - y^10 = 0", "g: 5*y = 4*x", "t = Tangent(g, c)",
+], [])
+
 cases.write()
