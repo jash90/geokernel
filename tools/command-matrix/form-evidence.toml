@@ -4062,3 +4062,9 @@ form = "function,any"
 cases = ["cas-hint-001", "cas-hint-017", "cas-hint-021"]
 difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
 giac = true
+
+[[form]]
+command = "PlotSolve"
+form = "list"
+cases = ["cas-plot-004", "cas-plot-021"]
+giac = true

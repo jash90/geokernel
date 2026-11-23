@@ -122,8 +122,9 @@ keeps the default path.
 
 ### What is translated (`crates/geo-kernel/src/expr/cas/giac.rs`)
 
-`Solve`, `Solutions`, `NSolve` and `NSolutions` from the algebra input, as
-`AlgoSolve` sends them:
+`Solve`, `Solutions`, `NSolve`, `NSolutions` and `PlotSolve` from the
+algebra input, as `AlgoSolve` sends them (`PlotSolve` exists only with the
+feature; it takes one list, equation or function, as `CmdSolve` does):
 
 - arguments print as the reference's Giac template prints the definition it
   parsed back: every operand bracketed (`(L)+(R)`), `-(x)` for a negated
@@ -135,19 +136,22 @@ keeps the default path.
 - the second argument is printed from its text (variables, lists of them,
   start values `variable = value`, numbers, other names as
   `ggbtmpvar<name>`); a list of equations gets its sorted variables;
-- the one- and two-argument `Ggb2giac` templates of the four commands;
+- the one- and two-argument `Ggb2giac` templates of the four commands, and
+  `PointList.1` around `Solve.1` for `PlotSolve`;
 - Giac's printed list is read back as `evaluateToList` does for these
   results: lines from linear equations, numbers, points, functions of the one
   free variable (polynomials exactly, other expressions sampled from Giac's
-  printed form), nested lists, `AlgoSolve`'s extra list around the solutions
-  of a list of equations, and an undefined list for an unevaluated `fsolve`
-  or an unknown name.
+  printed form), an undefined implicit curve for an equation that is neither
+  linear, nor `y = f(x)`, nor a polynomial, nested lists, `AlgoSolve`'s extra
+  list around the solutions of a list of equations, and an undefined list for
+  an unevaluated `fsolve` or an unknown name.
 
-Not translated yet: `PlotSolve` (the kernel has no such command), `Simplify`,
+Not translated yet: `Simplify`,
 `Expand`, `Factor` and `IFactor` of lines, conics, curves and implicit curves,
 conics made by commands (`Circle`, `Conic`, `Parabola`, `Ellipse` print as
 `GeoConic`'s value text, which is not ported), results that the reference
-reads as conics or implicit curves, and solutions in a third free variable.
+reads as conics, defined implicit curves or parametric curves (and the points
+`(f(y), 0)` it reads as lines), and solutions in a third free variable.
 
 ## Results (Linux x86_64)
 
@@ -160,15 +164,18 @@ the reason for those that still differ.
 | | ggb-harness cases | agree | known gaps |
 | --- | --- | --- | --- |
 | default build | 7065 | 6455 | 611 |
-| `giac` feature | 7065 | 6751 | 315 |
+| `giac` feature | 7065 | 6768 | 298 |
 
-No case that agrees without the feature differs with it. Of the 1,394 Giac
+Only one case that agrees without the feature differs with it:
+`cas-plot-022` records the kernel's old refusal text for `PlotSolve`, a
+command it now has; the lines are still refused (see
+`known-gaps-giac.toml`). Of the 1,394 Giac
 inputs the kernel sends for the recorded cases, all but 11 (the second
 arguments `z = 1` and `z = 0`, which the reference's two-dimensional parser
 reads as numbers, and powers of ten that the reference prints from a
 different tree) are byte for byte the reference's.
 
-Seventeen solving forms agree in every recorded case only with the feature
+Eighteen solving forms agree in every recorded case only with the feature
 and are counted as done, marked `giac = true` in
 `tools/command-matrix/form-evidence.toml` and in the matrix notes:
 `Solve(line)`, `Solve(conic)`, `Solve(list)`, `Solve(function, any)`,
@@ -176,8 +183,9 @@ and are counted as done, marked `giac = true` in
 `NSolve(conic)`, `NSolve(list)`, `NSolve(function, any)`,
 `NSolve(line, any)`, `NSolve(conic, any)`, `NSolutions(conic)`,
 `NSolutions(list)`, `NSolutions(function, any)`, `NSolutions(line, any)`,
-`NSolutions(conic, any)`. The implicit-curve forms agree in every solving
-command but stay open because the same cases also call `PlotSolve`.
+`NSolutions(conic, any)`, `PlotSolve(list)`. The implicit-curve forms stay
+open because the same cases also call `PlotSolve` of an implicit curve,
+whose curves the kernel does not read back yet.
 
 CI runs the binding, the kernel and the golden data with the feature on Linux
 (`giac-linux` in `.github/workflows/ci.yml`).

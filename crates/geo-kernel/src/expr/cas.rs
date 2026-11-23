@@ -62,6 +62,9 @@ pub(crate) enum Op {
         width: u8,
         axes: [u8; 3],
         system: bool,
+        /// `PlotSolve`: the solutions as points (only with the `giac`
+        /// feature, which evaluates it).
+        plot: bool,
     },
 }
 
@@ -89,6 +92,16 @@ impl Op {
                 width: 0,
                 axes: [0; 3],
                 system: false,
+                plot: false,
+            },
+            #[cfg(feature = "giac")]
+            "PlotSolve" => Self::Solve {
+                assignments: false,
+                approximate: false,
+                width: 0,
+                axes: [0; 3],
+                system: false,
+                plot: true,
             },
             _ => return None,
         })
@@ -124,10 +137,11 @@ impl Op {
             Self::Solve {
                 system,
                 assignments,
+                plot,
                 ..
             } => Ty::List(if system {
                 Elem::List
-            } else if assignments {
+            } else if assignments || plot {
                 Elem::Any
             } else {
                 Elem::Num

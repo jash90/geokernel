@@ -531,7 +531,7 @@ MixedNumber,,cas,,out_of_scope,,,
 Rationalize,,cas,,out_of_scope,,,
 Solutions,,algebra,P2,partial,10,4,"Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solutions(line), Solutions(list), Solutions(function, any)."
 Solve,,algebra,P2,partial,10,5,"Real polynomial equations and small systems are in scope for the 1.0 CAS. Done only with the giac feature (docs/cas-giac.md): Solve(line), Solve(conic), Solve(list), Solve(function, any)."
-PlotSolve,,function,P2,todo,5,0,
+PlotSolve,,function,P2,partial,5,1,Done only with the giac feature (docs/cas-giac.md): PlotSolve(list).
 SolveCubic,,cas,,out_of_scope,,,
 SolveQuartic,,cas,,out_of_scope,,,
 JordanDiagonalization,,cas,,out_of_scope,,,

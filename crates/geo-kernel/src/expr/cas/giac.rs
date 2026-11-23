@@ -31,6 +31,13 @@ const SOLUTIONS_2: &str = "ggbsort(normal(solve(%0,%1,'!=')))";
 const NSOLVE_2: &str = "ggbsort([[ggbnsans:=(%%0)],[ggbnsans:=when(type(ggbnsans)==DOM_LIST,[[ggbvars:=seq(left(%%1[j]),j,0,dim(%%1)-1)],[ggbnsans:=fsolve(ggbnsans,%%1)],[ggbnsans:=when(type(ggbnsans)==DOM_LIST,when(type(ggbnsans[0])==DOM_LIST,ggbnsans[0],ggbnsans),[ggbnsans])],seq(ggbvars[irem(j,dim(ggbnsans))]=ggbnsans[j],j,0,dim(ggbnsans)-1)][3],[[ggbvars:=when(type(%%1)==DOM_LIST,left(%%1[0]),left(%%1))],[ggbnsans:=fsolve(ggbnsans,%%1)],[ggbnsans:=when(type(ggbnsans)==DOM_LIST,ggbnsans,[ggbnsans])],seq(ggbvars=ggbnsans[j],j,0,dim(ggbnsans)-1)][3])],ggbnsans][2])";
 const NSOLUTIONS_2: &str = "ggbsort([[ggbnsans:=fsolve((%%0),%%1)],when(type(ggbnsans)==DOM_LIST,ggbnsans,[ggbnsans])][1])";
 
+/// `PlotSolve.1`: the reference's `PointList.1` around `Solve.1`.
+const PLOTSOLVE_1: &str = "[[ggbplarg:=ggbsort(normal([op(solve(%0))]))],[when(size((ggbplarg)[0])==3, flatten1(coordinates(map(ggbplarg,t->when((flatten1(t))[0][0]==equal&&type((flatten1(t))[0][2])=='DOM_INT',point((flatten1(t))[0][2],(flatten1(t))[1][2],(flatten1(t))[2][2]),when(type(flatten1(t)[0])==DOM_INT,point(t[0],t[1],t[2]),point((flatten1(t))[0][2],(flatten1(t))[1][2],(flatten1(t))[2][2])))))),when(type((ggbplarg)[0])==DOM_COMPLEX||(type((ggbplarg)[0])==DOM_SYMBOLIC&&(ggbplarg)[0][0]=='*'&& (ggbplarg)[0][1]==i),ggbplarg,flatten1(coordinates(map(ggbplarg,t->when(t[0]==equal,point(re(t[2]),im(t[2])),t))))))]][-1][0]";
+
+/// A command without a template of its arity is passed to Giac as an unknown
+/// function (`GeoGebraCAS.getCASCommand`).
+const PLOTSOLVE_2: &str = "ggbtmpvarPlotSolve(%0,%1)";
+
 /// Evaluates a solving command through Giac. `None`: no translation, keep
 /// the kernel's solver. `Some(None)`: an undefined list.
 pub(super) fn solve<const M: bool>(
@@ -42,6 +49,7 @@ pub(super) fn solve<const M: bool>(
         assignments,
         approximate,
         system,
+        plot,
         ..
     } = op
     else {
@@ -128,6 +136,7 @@ pub(super) fn solve<const M: bool>(
     let input = match second {
         Some(second) => {
             let template = match (assignments, approximate) {
+                _ if plot => PLOTSOLVE_2,
                 (true, false) => SOLVE_2,
                 (false, false) => SOLUTIONS_2,
                 (true, true) => NSOLVE_2,
@@ -141,6 +150,7 @@ pub(super) fn solve<const M: bool>(
         }
         None => {
             let template = match (assignments, approximate) {
+                _ if plot => PLOTSOLVE_1,
                 (true, false) => SOLVE_1,
                 (false, false) => SOLUTIONS_1,
                 (true, true) => NSOLVE_1,
@@ -1124,7 +1134,16 @@ fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
             if has_name(e, "z") {
                 return None;
             }
-            line_slot(left, right)
+            match line_slot(left, right) {
+                Some(line) => Some(line),
+                // The reference reads any other equation as an implicit
+                // curve, which is undefined unless it is a polynomial; the
+                // kernel builds no curves from Giac output.
+                None if !is_polynomial(left) || !is_polynomial(right) => {
+                    Some(Slot::undefined(Kind::ImplicitCurve))
+                }
+                None => None,
+            }
         }
         Expr::Tuple(items) if items.len() == 2 => {
             let x = value(&items[0], 0.0, 0.0)?;
@@ -1182,6 +1201,28 @@ fn linear(e: &Expr) -> Option<[f64; 3]> {
         }
         _ => [0.0, 0.0, constant(e)?],
     })
+}
+
+/// Whether the expression is a polynomial in x and y: sums, differences
+/// and products of numbers and variables, divided by numbers only, raised to
+/// whole non-negative powers.
+fn is_polynomial(e: &Expr) -> bool {
+    let constant =
+        |e: &Expr| !has_name(e, "x") && !has_name(e, "y") && value(e, 0.0, 0.0).is_some();
+    match e {
+        Expr::Num(_) => true,
+        Expr::Name(n) => matches!(n.as_str(), "x" | "y" | "pi" | "e"),
+        Expr::Neg(a) => is_polynomial(a),
+        Expr::Bin(b'+' | b'-' | b'*', a, b) => is_polynomial(a) && is_polynomial(b),
+        Expr::Bin(b'/', a, b) => is_polynomial(a) && constant(b),
+        Expr::Bin(_, a, b) => {
+            is_polynomial(a)
+                && constant(b)
+                && value(b, 0.0, 0.0).is_some_and(|n| n >= 0.0 && n.fract() == 0.0)
+        }
+        Expr::Call(..) => constant(e),
+        _ => false,
+    }
 }
 
 /// `left = right` as a line, when it is linear in x and y.

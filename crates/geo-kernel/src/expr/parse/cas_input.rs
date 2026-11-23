@@ -64,6 +64,10 @@ impl Parser<'_> {
 
     fn parse_solve(&mut self, name: &str) -> Result<u32, String> {
         let commas = self.argument_commas();
+        if name == "PlotSolve" && !commas.is_empty() {
+            // `CmdSolve.process`: PlotSolve takes one argument.
+            return Err(format!("invalid arguments to `{name}`"));
+        }
         // The Giac translation prints the second argument from its text, and
         // takes forms the kernel's own solver refuses (`x = 1`, a number).
         #[cfg(feature = "giac")]
@@ -93,6 +97,7 @@ impl Parser<'_> {
         let old = std::mem::replace(&mut self.cas_variables, names);
         let old_split = std::mem::replace(&mut self.split_names, true);
         self.expect(&Tok::LParen, "(")?;
+        let first_node = self.nodes.len();
         let is_list = self.eat(&Tok::LBrace);
         let mut equations = vec![self.cas_equation()?];
         if is_list {
@@ -125,7 +130,19 @@ impl Parser<'_> {
         self.expect(&Tok::RParen, ")")?;
         self.cas_variables = old;
         self.split_names = old_split;
+        let reads_variable = self.nodes[first_node..]
+            .iter()
+            .any(|n| matches!(n, Node::Var | Node::VarY | Node::CasVariable(_)));
         (self.uses_var, self.uses_y) = (outer_x, outer_y);
+        if name == "PlotSolve" && !is_list {
+            // `CmdSolve.solve` takes a list, an equation or a function only.
+            let arg = equations[0];
+            let equation = matches!(&self.lits[arg as usize], super::Lit::Text(t) if &**t == "=");
+            let object = matches!(self.node(arg), Node::Obj(_) | Node::FunctionObject(_));
+            if !equation && !object && !reads_variable {
+                return Err(format!("invalid arguments to `{name}`"));
+            }
+        }
         if equations.len() > 8 {
             return Err("at most eight polynomial equations can be solved together".into());
         }
@@ -137,6 +154,7 @@ impl Parser<'_> {
             width,
             axes,
             system: is_list,
+            plot: name == "PlotSolve",
         };
         let node = self.push(Node::Cas(op, equations, NONE));
         #[cfg(feature = "giac")]
