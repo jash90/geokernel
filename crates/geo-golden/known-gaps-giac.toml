@@ -1400,3 +1400,8 @@ mismatches = ["0:result"]
 id = "cas-plot-022"
 reason = "Agrees without the feature. golden/cas/plot.json records the five rejected lines (PlotSolve with two arguments, and of a number) with the message the kernel gave before it had the command, unknown command `PlotSolve`. The reference refuses them as well (CmdSolve.process: PlotSolve takes one argument; CmdSolve.solve: a number is no list, equation or function). With the feature the kernel has PlotSolve and refuses them with invalid arguments to `PlotSolve`."
 mismatches = ["1:step"]
+
+# Typed decimals between -1 and 0 keep their sign in the Giac input.
+[[gap]]
+id = "cas-literal-001"
+agrees = true

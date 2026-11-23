@@ -369,7 +369,6 @@ fn matrix_counts_agree_with_forms_and_evidence() {
     );
 }
 
-/// Prints evidence candidates; see the module documentation.
 /// `cargo test -p geo-golden --test command_forms print_giac_form_status
 /// -- --ignored --nocapture` prints, for every form, how many recorded cases
 /// call it and how many of those are known gaps with and without Giac.
@@ -430,6 +429,7 @@ fn print_giac_form_status() {
     }
 }
 
+/// Prints evidence candidates; see the module documentation.
 #[test]
 #[ignore]
 fn print_form_candidates() {

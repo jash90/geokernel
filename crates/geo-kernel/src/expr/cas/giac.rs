@@ -728,15 +728,9 @@ fn literal(dec: &crate::expr::decimal::Dec, out: &mut String) {
             let value = coefficient * 10i128.pow(exp as u32);
             out.push_str(&value.to_string());
         }
-        Some((coefficient, exp)) if (-29..0).contains(&exp) => {
-            let scale = 10i128.pow((-exp) as u32);
-            let text = format!(
-                "{}.{:0width$}",
-                coefficient / scale,
-                (coefficient % scale).abs(),
-                width = (-exp) as usize
-            );
-            out.push_str(&decimal_fraction(&text));
+        // The sign stays with the text, also between -1 and 0 (`-0.5`).
+        Some((_, exp)) if (-29..0).contains(&exp) => {
+            out.push_str(&decimal_fraction(&decimal_text(dec)))
         }
         _ => number(dec.to_f64(), out),
     }
@@ -1380,6 +1374,21 @@ mod tests {
         assert_eq!(print(0.5), "(500000000000000/1000000000000000)");
         assert_eq!(print(-0.25), "(-0250000000000000/1000000000000000)");
         assert_eq!(print(-513.75), "(-513750000000000/1000000000000)");
+    }
+
+    #[test]
+    fn typed_decimals_keep_their_sign() {
+        let print = |text: &str| {
+            let mut s = String::new();
+            literal(&crate::expr::decimal::Dec::parse(text).unwrap(), &mut s);
+            s
+        };
+        assert_eq!(print("-0.5"), "(-05/10)");
+        assert_eq!(print("-0.25"), "(-025/100)");
+        assert_eq!(print("-1.5"), "(-15/10)");
+        assert_eq!(print("0.5"), "(5/10)");
+        assert_eq!(print("84.36"), "(8436/100)");
+        assert_eq!(print("-3"), "-3");
     }
 
     #[test]

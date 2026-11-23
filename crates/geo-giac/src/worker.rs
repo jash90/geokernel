@@ -14,8 +14,8 @@
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{channel, RecvTimeoutError, Sender};
-use std::sync::{Mutex, OnceLock};
+use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
 use crate::native::Native;
@@ -27,9 +27,6 @@ const STACK_BYTES: usize = 256 << 20;
 /// evaluation, and Giac checking its limit only every so often).
 const MARGIN_MS: u64 = 5000;
 
-/// Set while the worker runs a call whose caller stopped waiting.
-static STUCK: AtomicBool = AtomicBool::new(false);
-
 enum Job {
     Raw {
         input: String,
@@ -39,16 +36,63 @@ enum Job {
     Plain(String),
 }
 
-type Request = (Job, Sender<Result<String, Error>>);
+type Reply = Sender<Result<String, Error>>;
 
-static WORKER: OnceLock<Result<Mutex<Sender<Request>>, Error>> = OnceLock::new();
+/// The callers' side of the worker thread.
+struct Link<J> {
+    sender: Mutex<Sender<(J, Reply)>>,
+    /// Set while a call is in flight: by the caller before it sends the
+    /// call, cleared by the worker before it replies. A caller that stops
+    /// waiting leaves it as it is, so later calls see the worker busy until
+    /// the call returns, and never a busy flag left behind by an idle worker.
+    in_flight: Arc<AtomicBool>,
+}
 
-fn start() -> Result<Mutex<Sender<Request>>, Error> {
+impl<J> Link<J> {
+    fn call(&self, job: J, wait: Duration) -> Result<String, Error> {
+        // One call in flight at a time: the lock is held until the answer
+        // comes or the wait ends, and makes the check and the store one step.
+        let sender = self.sender.lock().map_err(|_| Error::Worker)?;
+        if self.in_flight.load(Ordering::SeqCst) {
+            return Err(Error::Busy);
+        }
+        let (reply_tx, reply_rx) = channel();
+        self.in_flight.store(true, Ordering::SeqCst);
+        if sender.send((job, reply_tx)).is_err() {
+            self.in_flight.store(false, Ordering::SeqCst);
+            return Err(Error::Worker);
+        }
+        match reply_rx.recv_timeout(wait) {
+            Ok(result) => result,
+            Err(RecvTimeoutError::Timeout) => Err(Error::Timeout),
+            Err(RecvTimeoutError::Disconnected) => Err(Error::Worker),
+        }
+    }
+}
+
+/// The worker's loop: runs each call and clears the flag before replying.
+fn serve<J>(
+    calls: Receiver<(J, Reply)>,
+    in_flight: &AtomicBool,
+    mut run: impl FnMut(J) -> Result<String, Error>,
+) {
+    for (job, reply) in calls {
+        let result = run(job);
+        in_flight.store(false, Ordering::SeqCst);
+        let _ = reply.send(result);
+    }
+}
+
+static WORKER: OnceLock<Result<Link<Job>, Error>> = OnceLock::new();
+
+fn start() -> Result<Link<Job>, Error> {
     let path = std::env::var_os(LIBRARY_VARIABLE)
         .map(PathBuf::from)
         .ok_or(Error::NoLibrary)?;
     let (ready_tx, ready_rx) = channel::<Result<(), Error>>();
-    let (tx, rx) = channel::<Request>();
+    let (tx, rx) = channel::<(Job, Reply)>();
+    let in_flight = Arc::new(AtomicBool::new(false));
+    let flag = Arc::clone(&in_flight);
     std::thread::Builder::new()
         .name("giac".into())
         .stack_size(STACK_BYTES)
@@ -68,46 +112,30 @@ fn start() -> Result<Mutex<Sender<Request>>, Error> {
                 }
             };
             let _ = ready_tx.send(Ok(()));
-            for (job, reply) in rx {
-                let result = match job {
-                    Job::Raw {
-                        input,
-                        timeout_ms,
-                        seed,
-                    } => session::eval_raw(&context, &input, timeout_ms, seed),
-                    Job::Plain(text) => context.eval(&text),
-                };
-                let _ = reply.send(result);
-                STUCK.store(false, Ordering::SeqCst);
-            }
+            serve(rx, &flag, |job| match job {
+                Job::Raw {
+                    input,
+                    timeout_ms,
+                    seed,
+                } => session::eval_raw(&context, &input, timeout_ms, seed),
+                Job::Plain(text) => context.eval(&text),
+            });
         })
         .map_err(|error| Error::Load(error.to_string()))?;
     ready_rx.recv().map_err(|_| Error::Worker)??;
-    Ok(Mutex::new(tx))
+    Ok(Link {
+        sender: Mutex::new(tx),
+        in_flight,
+    })
 }
 
 fn run(job: Job) -> Result<String, Error> {
-    let sender = WORKER.get_or_init(start).as_ref().map_err(Clone::clone)?;
+    let link = WORKER.get_or_init(start).as_ref().map_err(Clone::clone)?;
     let limit = match &job {
         Job::Raw { timeout_ms, .. } => *timeout_ms,
         Job::Plain(_) => session::DEFAULT_TIMEOUT_MS,
     };
-    // One call in flight at a time: the lock is held until the answer comes
-    // or the wait ends.
-    let sender = sender.lock().map_err(|_| Error::Worker)?;
-    if STUCK.load(Ordering::SeqCst) {
-        return Err(Error::Busy);
-    }
-    let (reply_tx, reply_rx) = channel();
-    sender.send((job, reply_tx)).map_err(|_| Error::Worker)?;
-    match reply_rx.recv_timeout(Duration::from_millis(limit.saturating_add(MARGIN_MS))) {
-        Ok(result) => result,
-        Err(RecvTimeoutError::Timeout) => {
-            STUCK.store(true, Ordering::SeqCst);
-            Err(Error::Timeout)
-        }
-        Err(RecvTimeoutError::Disconnected) => Err(Error::Worker),
-    }
+    link.call(job, Duration::from_millis(limit.saturating_add(MARGIN_MS)))
 }
 
 pub(crate) fn eval_raw(input: &str, timeout_ms: u64, seed: i32) -> Result<String, Error> {
@@ -120,4 +148,49 @@ pub(crate) fn eval_raw(input: &str, timeout_ms: u64, seed: i32) -> Result<String
 
 pub(crate) fn eval_plain(text: &str) -> Result<String, Error> {
     run(Job::Plain(text.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A worker that sleeps for the job's milliseconds and answers them.
+    fn sleeper() -> Link<u64> {
+        let (tx, rx) = channel::<(u64, Reply)>();
+        let in_flight = Arc::new(AtomicBool::new(false));
+        let flag = Arc::clone(&in_flight);
+        std::thread::spawn(move || {
+            serve(rx, &flag, |ms| {
+                std::thread::sleep(Duration::from_millis(ms));
+                Ok(ms.to_string())
+            })
+        });
+        Link {
+            sender: Mutex::new(tx),
+            in_flight,
+        }
+    }
+
+    #[test]
+    fn a_timed_out_call_makes_the_worker_busy_until_it_returns() {
+        let link = sleeper();
+        let wait = Duration::from_millis(100);
+        assert_eq!(link.call(5, wait), Ok("5".into()));
+        assert_eq!(link.call(400, wait), Err(Error::Timeout));
+        assert_eq!(link.call(5, wait), Err(Error::Busy));
+        std::thread::sleep(Duration::from_millis(500));
+        assert_eq!(link.call(5, wait), Ok("5".into()));
+    }
+
+    #[test]
+    fn a_call_that_finishes_right_after_the_wait_leaves_no_busy_flag() {
+        // Giac finishing just after the caller gave up used to latch the
+        // busy flag on an idle worker.
+        let link = sleeper();
+        for _ in 0..10 {
+            assert_eq!(link.call(30, Duration::from_millis(29)).ok(), None);
+            std::thread::sleep(Duration::from_millis(200));
+            assert_eq!(link.call(1, Duration::from_millis(1000)), Ok("1".into()));
+        }
+    }
 }

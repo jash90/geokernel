@@ -88,7 +88,9 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - name: Fetch Giac
-        run: echo "GEO_GIAC_LIBRARY=$(tools/giac/fetch.sh)" >> "$GITHUB_ENV"
+        run: |
+          path="$(tools/giac/fetch.sh)"
+          echo "GEO_GIAC_LIBRARY=$path" >> "$GITHUB_ENV"
       - name: Clippy with the feature
         run: cargo clippy -p geo-giac -p geo-kernel -p geo-golden --all-targets --features geo-golden/giac -- -D warnings
       - name: Binding tests
