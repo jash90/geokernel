@@ -3086,14 +3086,35 @@ impl Construction {
     /// Rebuilds inequality-vertex algorithms at the current input values,
     /// as when their definitions are read from a saved construction.
     pub fn reset_inequality_vertex_helpers(&mut self) -> bool {
-        if self.inequality_helpers.outputs().is_empty() {
-            return false;
+        let mut unlimited = u64::MAX;
+        self.reset_inequality_vertex_helpers_with_budget(&mut unlimited)
+            .expect("unlimited helper reset")
+    }
+
+    /// Rebuilds the helpers in a scratch construction during replay. Charges
+    /// the slots before scheduling them and checks the solver work between
+    /// recomputations. If the budget runs out, the caller must discard the
+    /// partially replayed construction.
+    pub fn reset_inequality_vertex_helpers_with_budget(
+        &mut self,
+        remaining: &mut u64,
+    ) -> Option<bool> {
+        let slots = self.inequality_helpers.outputs().len() as u64;
+        if slots == 0 {
+            return Some(false);
         }
+        if slots > *remaining {
+            return None;
+        }
+        let start = expr::work_done();
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.len());
         self.restart_inequality_vertices(&mut dirty);
-        self.propagate_dirty(dirty, 0, DefinitionRefresh::None);
-        true
+        self.propagate_dirty_while(dirty, 0, DefinitionRefresh::None, || {
+            expr::work_done().wrapping_sub(start) <= *remaining
+        })?;
+        *remaining = remaining.checked_sub(expr::work_done().wrapping_sub(start))?;
+        Some(true)
     }
 
     fn restart_inequality_vertices(&mut self, dirty: &mut DirtySet) {
@@ -3126,10 +3147,21 @@ impl Construction {
 
     fn propagate_dirty(
         &mut self,
+        dirty: DirtySet,
+        from: usize,
+        refresh: DefinitionRefresh,
+    ) -> usize {
+        self.propagate_dirty_while(dirty, from, refresh, || true)
+            .expect("unlimited propagation")
+    }
+
+    fn propagate_dirty_while(
+        &mut self,
         mut dirty: DirtySet,
         mut from: usize,
         mut refresh: DefinitionRefresh,
-    ) -> usize {
+        mut within_budget: impl FnMut() -> bool,
+    ) -> Option<usize> {
         self.last_update_changed_automatic_root = false;
         self.inequality_helpers.begin_update();
         self.function_roots.clear();
@@ -3138,6 +3170,9 @@ impl Construction {
         let mut recomputed = 0;
         let mut restored_pairs = BTreeSet::new();
         while let Some(rank) = dirty.pop_first(from) {
+            if !within_budget() {
+                return None;
+            }
             from = rank + 1;
             let i = self.evaluation_id(rank);
             let mut def = self.defs[i];
@@ -3332,7 +3367,7 @@ impl Construction {
         }
 
         self.dirty = dirty;
-        recomputed
+        Some(recomputed)
     }
 
     fn refresh_intersection_definition(

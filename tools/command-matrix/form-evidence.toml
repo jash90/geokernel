@@ -3395,7 +3395,7 @@ difference = "geometry-command-arguments: `Corner(text, number)`, `Vertex(text, 
 [[form]]
 command = "Vertex"
 form = "inequality"
-cases = ["corners-inequality-016", "corners-review-004", "corners-review-016", "corners-review-017", "corners-reviewthree-003"]
+cases = ["corners-inequality-016", "corners-review-004", "corners-review-016", "corners-review-017"]
 difference = "geometry-command-arguments: `Corner(inequality)` and `Vertex(inequality)`"
 
 [[form]]

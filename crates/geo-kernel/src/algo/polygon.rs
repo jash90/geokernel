@@ -1132,7 +1132,11 @@ impl<'a> DefaultLabels<'a> {
             let at = self.next;
             self.next += 1;
             let (q, r) = (at / self.chars.len(), at % self.chars.len());
-            let b = self.chars[r].to_string();
+            // LabelManager appends tatweel to Arabic heh before the index.
+            let b = match self.chars[r] {
+                '\u{647}' => "\u{647}\u{640}".into(),
+                ch => ch.to_string(),
+            };
             let (short, long) = if q == 0 {
                 (b, None)
             } else {

@@ -1253,7 +1253,11 @@ pub(crate) fn same_definition(c: &Construction, a: Def, b: Def) -> bool {
             let a = entry(c, a);
             let b = entry(c, b);
             a.root == b.root
-                && a.nodes == b.nodes
+                && a.nodes.len() == b.nodes.len()
+                && a.nodes.iter().zip(&b.nodes).all(|(a, b)| {
+                    // Both undefined literals print as '?' in the definition.
+                    a == b || matches!((a, b), (Node::Num(x), Node::Num(y)) if x.is_nan() && y.is_nan())
+                })
                 && a.lits == b.lits
                 && a.function_of_y == b.function_of_y
         }

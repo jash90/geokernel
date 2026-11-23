@@ -367,8 +367,22 @@ cases.case("reviewthree", base + [
     "T = Point(s, 2*m)", "u = x(T)",
 ], [setn("n", 0.5), {"action": "redefine", "line": "T = Point(s, 2*m)"}])
 # The XML reload observes the current value and fresh vertex helpers.
-cases.case("reviewthree", base + ["a = 1", "W = Vertex(y > x^n && x > 4 && y > 0)"], [
-    setn("n", 0.5), setn("a", 1), {"action": "reload"}, {"action": "reload"},
+cases.case("reviewthree", base + ["a = 1", "W = Vertex(q)"], [
+    setn("n", 0.5), setn("a", 1), {"action": "reload"}, setn("a", 1),
+    {"action": "reload"},
+])
+
+# A repeated undefined literal is still the same path parameter definition.
+conditional_point = "T = Point(s, If(m > 0, 2*m, ?))"
+cases.case("reviewthree", base + [
+    pt("A", 0, 0), pt("B", 2, 0), "s = Segment(A, B)", "m = 0.25",
+    conditional_point, "u = x(T)",
+], [setn("n", 0.5), {"action": "redefine", "line": conditional_point}])
+
+# Reload after alternating edits uses the current slider value.
+cases.case("reviewthree", base + ["a = 0"], [
+    setn("n", 0.5), setn("a", 1), {"action": "reload"},
+    setn("a", 0), {"action": "reload"}, setn("a", 1), {"action": "reload"},
 ])
 
 cases.write()

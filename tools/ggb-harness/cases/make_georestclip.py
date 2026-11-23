@@ -137,7 +137,7 @@ cases.case("occupied", circle + [
 
 # Overlay points and edges use the next free labels in their own families.
 cases.case("overlaylabels", [
-    pt("P0", -1, -1), pt("P1", 1, -1), pt("P2", 1, 1), pt("P3", -1, 1),
+    pt("P0", 1, 0), pt("P1", 0, 1), pt("P2", -1, 0), pt("P3", 0, -1),
     "p = Polygon(P0, P1, P2, P3)",
     pt("S0", -2, -2), pt("S1", 2, -2), pt("S2", 2, 2), pt("S3", -2, 2),
     "s = Polygon(S0, S1, S2, S3)",

@@ -1577,7 +1577,9 @@ impl PolygonNames {
             }
             for vertex in &args {
                 let lower = vertex.to_lowercase();
-                if lower.encode_utf16().count() == 1 {
+                if lower == "\u{647}" {
+                    names.indexed_segments.insert("\u{647}\u{640}".into());
+                } else if lower.encode_utf16().count() == 1 {
                     names.indexed_segments.insert(lower);
                 } else {
                     names.segments.insert(lower);

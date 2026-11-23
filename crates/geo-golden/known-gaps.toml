@@ -25,6 +25,13 @@ reason = "when the text anchor becomes undefined, GeoGebra keeps the drawable co
 mismatches = ["1:Q"]
 undefined = true
 
+# georestclip
+
+[[gap]]
+id = "georestclip-overlaylabels-001"
+reason = "For the same area-2 diamond, GeoGebra starts the contour at (1, 0) and the kernel starts at (0, 1). This rotates the labelled output vertices and edges by one position, as documented for IntersectPath(polygon, polygon) in DIFFERENCES.md."
+mismatches = ["0:A", "0:D", "0:E", "0:F", "0:f", "0:g", "0:h", "0:i", "0:r_{1}"]
+
 # conic
 
 [[gap]]

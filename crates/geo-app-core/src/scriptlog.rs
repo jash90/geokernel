@@ -68,6 +68,22 @@ const SHOW_OBJECT: &str = "$showObject";
 const KEPT_LABELS: &str = "$keptLabels";
 const RESET_INEQUALITY_HELPERS: &str = "$resetInequalityHelpers";
 
+/// GeoGebra restores the current state once. Journals also replay historical
+/// resets for intermediate definitions and edits, so all their resets share
+/// a work allowance. Each reset charges its scheduled slots and solver work.
+struct ResetBudget(u64);
+
+impl ResetBudget {
+    fn new() -> Self {
+        Self(1_000_000)
+    }
+
+    fn reset(&mut self, c: &mut Construction) -> Result<bool, String> {
+        c.reset_inequality_vertex_helpers_with_budget(&mut self.0)
+            .ok_or_else(|| "inequality helper resets exceed the replay work budget".into())
+    }
+}
+
 fn snapshot_labels(comment: &str) -> Option<&str> {
     if saved::inline_argument_positions(comment).is_some() {
         comment.split_once(LABELS).map(|(_, labels)| labels)
@@ -657,6 +673,17 @@ impl Log {
         }
     }
 
+    fn replay_inequality_reset(
+        &mut self,
+        c: &mut Construction,
+        budget: &mut ResetBudget,
+    ) -> Result<(), String> {
+        if !matches!(self.ops.last(), Some(Op::ResetInequalityHelpers)) && budget.reset(c)? {
+            self.ops.push(Op::ResetInequalityHelpers);
+        }
+        Ok(())
+    }
+
     pub(crate) fn record_move_points(&mut self, c: &Construction, points: &[Position<Id>]) {
         if !points.is_empty() {
             let points = points
@@ -1055,6 +1082,7 @@ impl Log {
                 .unwrap_or(0)
         };
         let mut groups = BoundaryOutputs::default();
+        let mut reset_budget = ResetBudget::new();
         // While nothing is dropped or merged, `kept` is the first `same`
         // ops of the journal and shares their storage (see `shared.rs`).
         let ops = self.ops.items();
@@ -1083,7 +1111,7 @@ impl Log {
                         diverge(&mut kept, &mut same);
                         continue;
                     }
-                    c.reset_inequality_vertex_helpers();
+                    reset_budget.reset(&mut c)?;
                     match &mut same {
                         Some(n) => *n = i + 1,
                         None => kept.ops.push(Op::ResetInequalityHelpers),
@@ -1320,12 +1348,15 @@ impl Log {
                 .unwrap_or(0)
         };
         let mut groups = BoundaryOutputs::default();
+        let mut reset_budget = ResetBudget::new();
         for (i, op) in self.ops.items().into_iter().enumerate() {
             let deferring = i < defer_until;
             groups.set_deferred(deferring);
             match op {
                 Op::KeptLabels => kept.ops.push(Op::KeptLabels),
-                Op::ResetInequalityHelpers => kept.reset_inequality_helpers(&mut c),
+                Op::ResetInequalityHelpers => {
+                    kept.replay_inequality_reset(&mut c, &mut reset_budget)?;
+                }
                 Op::Define(e) => {
                     if deferring {
                         for label in &e.labels {
@@ -1596,7 +1627,12 @@ impl Log {
     }
 
     /// Applies a directive line to `c` and records it.
-    fn apply(&mut self, c: &mut Construction, d: Directive) -> Result<Vec<Id>, String> {
+    fn apply(
+        &mut self,
+        c: &mut Construction,
+        d: Directive,
+        reset_budget: &mut ResetBudget,
+    ) -> Result<Vec<Id>, String> {
         let (id, label, to) = match d {
             Directive::Set(label, to) => {
                 let id = c.id(label).ok_or_else(|| format!("`{label}` is missing"))?;
@@ -1633,7 +1669,7 @@ impl Log {
                 return Ok(Vec::new());
             }
             Directive::ResetInequalityHelpers => {
-                self.reset_inequality_helpers(c);
+                self.replay_inequality_reset(c, reset_budget)?;
                 return Ok(Vec::new());
             }
             Directive::KeptLabels => {
@@ -1679,10 +1715,17 @@ impl Log {
     ///   (`dependent`): such a label stays reserved to the end, so neither a
     ///   later definition nor a directive can take it over;
     /// - a directive for a missing object.
-    pub fn load_tolerant(src: &str, checked: bool) -> (Construction, Log, Vec<Rejected>) {
+    ///
+    /// An exhausted helper reset budget aborts the restore. Later lines can
+    /// use the helpers' values, so leaving out just the reset is unsafe.
+    pub fn load_tolerant(
+        src: &str,
+        checked: bool,
+    ) -> Result<(Construction, Log, Vec<Rejected>), String> {
         let mut c = Construction::new();
         let mut log = Log::default();
         let mut groups = BoundaryOutputs::for_script(src);
+        let mut reset_budget = ResetBudget::new();
         let grow = !checked;
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
@@ -1730,8 +1773,13 @@ impl Log {
                 Err(format!("`{label}` was left out before"))
             } else {
                 match parsed {
+                    Some(Ok(Directive::ResetInequalityHelpers)) => {
+                        log.replay_inequality_reset(&mut c, &mut reset_budget)
+                            .map_err(|e| format!("line {}: {e}", i + 1))?;
+                        Ok(())
+                    }
                     Some(d) => d.and_then(|d| {
-                        let changed = log.apply(&mut c, d)?;
+                        let changed = log.apply(&mut c, d, &mut reset_budget)?;
                         if grow && !changed.is_empty() {
                             log.grow_boundary_outputs(&mut c, &mut groups, changed.into_iter());
                         } else if !changed.is_empty() {
@@ -1776,8 +1824,11 @@ impl Log {
                 });
             }
         }
+        if checked {
+            log.replay_inequality_reset(&mut c, &mut reset_budget)?;
+        }
         log.prune_image_assets(&mut c);
-        (c, log, rejected)
+        Ok((c, log, rejected))
     }
 
     /// Runs a definition line and records it. When `expected` is given the
@@ -1854,6 +1905,7 @@ impl Log {
             log.record_asset(Some(asset.clone()));
         }
         let mut groups = BoundaryOutputs::for_script(src);
+        let mut reset_budget = ResetBudget::new();
         // Growth during replay stops before the slots that the script
         // records itself (`BoundaryOutputs::for_script`).
         let grow = true;
@@ -1871,7 +1923,9 @@ impl Log {
                 continue;
             }
             if let Some(d) = directive(&line) {
-                let changed = log.apply(&mut c, d.map_err(at)?).map_err(at)?;
+                let changed = log
+                    .apply(&mut c, d.map_err(at)?, &mut reset_budget)
+                    .map_err(at)?;
                 if grow && !changed.is_empty() {
                     log.grow_boundary_outputs(&mut c, &mut groups, changed.into_iter());
                 }
@@ -2072,7 +2126,7 @@ mod tests {
     fn a_tolerant_load_keeps_what_loads_and_reports_the_rest() {
         let src = "A = (0, 0)\nQ = Nope(A)\nR = Midpoint(Q, A)\nSetCoords(Q, 1, 2)\n\
                    SetCoords(A, 3, 4)\n{T, U} = Nope(A)\nW = Segment(T, A)\nB = (1, 1)\n";
-        let (c, log, rejected) = Log::load_tolerant(src, false);
+        let (c, log, rejected) = Log::load_tolerant(src, false).unwrap();
         let labels: Vec<&str> = c.ids().map(|id| c.label(id)).collect();
         assert_eq!(labels, ["A", "B"]);
         assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 3.0, y: 4.0 });
@@ -2086,7 +2140,7 @@ mod tests {
         let (_, strict) = Log::load(&log.to_script()).unwrap();
         assert_eq!(strict, log);
         // A text without errors gives the same as a strict load.
-        let (_, all, none) = Log::load_tolerant("A = (0, 0)\nB = (1, 1)\n", true);
+        let (_, all, none) = Log::load_tolerant("A = (0, 0)\nB = (1, 1)\n", true).unwrap();
         assert!(none.is_empty());
         assert_eq!(all, Log::load("A = (0, 0)\nB = (1, 1)\n").unwrap().1);
     }

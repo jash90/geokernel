@@ -6,7 +6,7 @@ use crate::compare::{
 };
 use crate::model::{implicit_output, indexed_prefix, label_prefix, Case, Step};
 use geo_app_core::workbench::Workbench;
-use geo_kernel::{script, Construction, Kind};
+use geo_kernel::{script, Construction, Def, Kind};
 
 /// One disagreement between GeoGebra and the kernel.
 #[derive(Debug, Clone, PartialEq)]
@@ -195,7 +195,13 @@ fn replay_document(case: &Case) -> CaseOutcome {
                 .then_some(())
                 .ok_or_else(|| format!("cannot move `{label}`")),
             Step::SetNumber { label, value } => id(label)
-                .is_some_and(|id| document.set_number(id, *value))
+                .is_some_and(|id| {
+                    // The workbench reports whether an edit changed the document.
+                    // A same-value set of a free number can also succeed.
+                    document.set_number(id, *value)
+                        || matches!(document.construction().def(id), Def::Number(old)
+                            if old.to_bits() == value.to_bits())
+                })
                 .then_some(())
                 .ok_or_else(|| format!("cannot set `{label}`")),
             Step::SetSliderBounds { .. } => {

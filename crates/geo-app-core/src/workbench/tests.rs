@@ -2046,6 +2046,35 @@ fn same_value_edits_do_not_repeat_snapshot_helper_resets() {
 }
 
 #[test]
+fn alternating_snapshot_edits_share_one_helper_reset_budget() {
+    use std::fmt::Write;
+
+    let mut text = format!("# geokernel snapshot {}\n", SNAPSHOT_VERSION);
+    text.push_str(concat!(
+        "a = 1\nn = 2\n",
+        "q(x,y) = y > x^n && x > 4 && y > 0 # labels: q\n",
+    ));
+    for i in 0..1000 {
+        writeln!(text, "P{i} = Vertex(q) # labels: P{i}_{{1}}").unwrap();
+    }
+    text.push_str("SetValue(n, 0.5)\n");
+    let alternating =
+        "SetValue(a, 0)\n$resetInequalityHelpers()\nSetValue(a, 1)\n$resetInequalityHelpers()\n";
+    let mut w = Workbench::from_script("existing = 7").unwrap();
+    for pairs in [501, 50_000] {
+        let input = text.clone() + &alternating.repeat(pairs);
+        let before = geo_kernel::expr::work_done();
+        let error = w.restore_text(&input).unwrap_err();
+        let work = geo_kernel::expr::work_done() - before;
+        assert!(error.contains("inequality helper resets exceed"), "{error}");
+        assert!(work < geo_kernel::expr::MAX_EVALUATION_WORK, "{work}");
+        let c = w.construction();
+        assert_eq!(c.value(c.id("existing").unwrap()), Value::Number(7.0));
+        assert_eq!(c.len(), 1);
+    }
+}
+
+#[test]
 fn undo_redo_and_snapshot_reload_rebuild_inequality_vertex_helpers() {
     let mut w = Workbench::from_script(
         "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\nZ = (0, 0)",

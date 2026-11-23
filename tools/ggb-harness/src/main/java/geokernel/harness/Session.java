@@ -97,17 +97,17 @@ final class Session {
     private final Map<String, BufferedImage> fixtureImages = new LinkedHashMap<>();
 
     private static final Pattern LINE =
-            Pattern.compile("^([A-Za-z][A-Za-z0-9']*(?:_(?:\\{[A-Za-z0-9]+\\}|[A-Za-z0-9]))?)"
-                    + "(\\([A-Za-z][A-Za-z0-9]*(?:, *[A-Za-z][A-Za-z0-9]*)*\\))? = (.+)$");
+            Pattern.compile("^(\\p{L}[\\p{L}0-9']*(?:_(?:\\{[A-Za-z0-9]+\\}|[A-Za-z0-9]))?)"
+                    + "(\\(\\p{L}[A-Za-z0-9]*(?:, *\\p{L}[A-Za-z0-9]*)*\\))? = (.+)$");
     /** `label: definition`, where a comparison or equation belongs to the definition. */
     private static final Pattern EQUATION =
-            Pattern.compile("^([A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
+            Pattern.compile("^(\\p{L}+(?:_\\{[A-Za-z0-9]+\\})?): (.+)$");
     /** A scripting command line, which assigns nothing. */
     private static final Pattern SCRIPTING =
             Pattern.compile("^(SetConstructionStep|ZoomIn|ZoomOut|SetActiveView)"
                     + "(?:\\([A-Za-z0-9_{}',.^/ ()+*-]*\\))?$");
     /** A label as the script lines write it, to find the objects an expression reads. */
-    private static final Pattern LABEL = Pattern.compile("[A-Za-z]+(?:_\\{[A-Za-z0-9]+\\})?");
+    private static final Pattern LABEL = Pattern.compile("\\p{L}+(?:_\\{[A-Za-z0-9]+\\})?");
     /** Where a function is sampled, in this order (see golden/SCHEMA.md). */
     static final double[] SAMPLES = {-8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8};
     /**
