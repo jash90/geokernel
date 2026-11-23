@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -52,7 +52,7 @@
             "start": 0.0,
             "end": 0.982793723247329,
             "arc_length": 1.965587446494658,
-            "area": 0.3014868578189709,
+            "area": 0.30148685781897067,
             "midpoint": [1.0, 1.0],
             "half_axes": [2.0, 2.0],
             "eigenvectors": [
@@ -76,7 +76,7 @@
             "start": 0.0,
             "end": 0.982793723247329,
             "arc_length": 1.965587446494658,
-            "area": 0.3014868578189709,
+            "area": 0.30148685781897067,
             "midpoint": [1.0, 1.0],
             "half_axes": [2.0, 2.0],
             "eigenvectors": [

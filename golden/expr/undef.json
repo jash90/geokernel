@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -26,8 +26,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 3.0 },
@@ -36,8 +36,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 2.0 },
@@ -117,8 +117,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 3.0 },
-          "c": { "type": "number", "defined": true, "value": 1.0986122886681096 },
-          "d": { "type": "number", "defined": true, "value": 2.0986122886681096 }
+          "c": { "type": "number", "defined": true, "value": 1.0986122886681098 },
+          "d": { "type": "number", "defined": true, "value": 2.09861228866811 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -2.0 },
@@ -155,18 +155,18 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 3.0 },
-          "c": { "type": "number", "defined": true, "value": 0.4771212547196623 },
+          "c": { "type": "number", "defined": true, "value": 0.47712125471966244 },
           "d": { "type": "number", "defined": true, "value": 1.4771212547196624 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 2.0 },
@@ -289,8 +289,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 3.0 },
-          "c": { "type": "number", "defined": true, "value": 1.7627471740390859 },
-          "d": { "type": "number", "defined": true, "value": 2.762747174039086 }
+          "c": { "type": "number", "defined": true, "value": 1.762747174039086 },
+          "d": { "type": "number", "defined": true, "value": 2.7627471740390863 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.5 },
@@ -327,8 +327,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 1.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 3.0 },
@@ -337,8 +337,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 1.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 2.0 },
@@ -499,8 +499,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 3.0 },
@@ -509,8 +509,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 2.0 },
@@ -677,7 +677,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
           "d": { "type": "number", "defined": true, "value": 0.0 },
           "f": { "type": "number", "defined": true, "value": 1.5707963267948966 },
           "g": { "type": "number", "defined": false },
@@ -693,7 +693,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
           "d": { "type": "number", "defined": true, "value": 0.0 },
           "f": { "type": "number", "defined": true, "value": 1.5707963267948966 },
           "g": { "type": "number", "defined": false },
@@ -705,7 +705,7 @@
           "d": { "type": "number", "defined": true, "value": -1.0 },
           "f": { "type": "number", "defined": true, "value": -0.7853981633974483 },
           "g": { "type": "number", "defined": true, "value": 0.0 },
-          "h": { "type": "number", "defined": true, "value": 2.7182818284590455 }
+          "h": { "type": "number", "defined": true, "value": 2.718281828459045 }
         }
       ]
     },
@@ -742,14 +742,14 @@
           "d": { "type": "number", "defined": true, "value": 3.9999999999999996 },
           "f": { "type": "number", "defined": true, "value": 0.5 },
           "g": { "type": "number", "defined": true, "value": 0.5 },
-          "h": { "type": "number", "defined": true, "value": 1.6817928305074292 }
+          "h": { "type": "number", "defined": true, "value": 1.681792830507429 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
           "c": { "type": "number", "defined": true, "value": 0.0 },
           "d": { "type": "number", "defined": true, "value": 0.0 },
-          "f": { "type": "number", "defined": false },
-          "g": { "type": "number", "defined": false },
+          "f": { "type": "number", "defined": true, "infinity": 1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 },
           "h": { "type": "number", "defined": true, "value": 0.0 }
         },
         {
@@ -789,8 +789,8 @@
         {
           "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
           "B": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
@@ -801,8 +801,8 @@
         {
           "A": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
           "B": { "type": "point", "defined": true, "x": 4.0, "y": 6.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },

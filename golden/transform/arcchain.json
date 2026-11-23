@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -2565,12 +2565,12 @@
           "b": {
             "type": "arc",
             "defined": true,
-            "value": 31.9638406251003,
+            "value": 31.963840625100303,
             "conic_type": "ellipse",
             "orientation": "positive",
             "start": 2.196208296457103,
             "end": 0.520180273627789,
-            "arc_length": 31.9638406251003,
+            "arc_length": 31.963840625100303,
             "area": 74.0176674989146,
             "midpoint": [-1.1131073497696131, -0.3258650963686214],
             "half_axes": [11.336948443033512, 2.8342371107583784],
@@ -2583,12 +2583,12 @@
           "c": {
             "type": "arc",
             "defined": true,
-            "value": 31.9638406251003,
+            "value": 31.963840625100303,
             "conic_type": "ellipse",
             "orientation": "positive",
             "start": 2.196208296457103,
             "end": 0.520180273627789,
-            "arc_length": 31.9638406251003,
+            "arc_length": 31.963840625100303,
             "area": 74.0176674989146,
             "midpoint": [5.846892650230387, 2.5741349036313785],
             "half_axes": [11.336948443033512, 2.8342371107583784],

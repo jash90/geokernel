@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -14,8 +14,8 @@
       ],
       "snapshots": [
         {
-          "R_{1}": { "type": "point", "defined": true, "x": 1.5707963267977083, "y": 1.0 },
-          "R_{2}": { "type": "point", "defined": true, "x": 4.71238898038949, "y": -1.0 }
+          "R_{1}": { "type": "point", "defined": true, "x": 1.5707963267977079, "y": 1.0 },
+          "R_{2}": { "type": "point", "defined": true, "x": 4.712388980389496, "y": -1.0 }
         }
       ]
     },

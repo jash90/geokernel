@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -178,7 +178,7 @@
       ],
       "snapshots": [
         {
-          "f": { "type": "number", "defined": false },
+          "f": { "type": "number", "defined": true, "infinity": -1 },
           "d": { "type": "boolean", "defined": true, "value": true },
           "r": { "type": "number", "defined": true, "value": -0.0 },
           "s": { "type": "number", "defined": true, "value": -1.0 }
@@ -198,7 +198,7 @@
       ],
       "snapshots": [
         {
-          "f": { "type": "number", "defined": false },
+          "f": { "type": "number", "defined": true, "infinity": -1 },
           "d": { "type": "boolean", "defined": true, "value": true },
           "r": { "type": "number", "defined": true, "value": -0.0 }
         }
@@ -218,7 +218,7 @@
       ],
       "snapshots": [
         {
-          "a": { "type": "number", "defined": false },
+          "a": { "type": "number", "defined": true, "infinity": -1 },
           "b": { "type": "number", "defined": true, "value": -1.0 },
           "c": { "type": "number", "defined": false },
           "d": { "type": "boolean", "defined": true, "value": false }

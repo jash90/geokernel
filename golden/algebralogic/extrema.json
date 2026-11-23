@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -373,7 +373,7 @@
           },
           "a": { "type": "number", "defined": true, "value": 0.0 },
           "b": { "type": "number", "defined": true, "value": 3.0 },
-          "P": { "type": "point", "defined": true, "x": 1.5707963268523815, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.5707963268525105, "y": 1.0 },
           "Q": { "type": "point", "defined": true, "x": 1.7656782247068308E-8, "y": 1.7656782247068308E-8 },
           "v": {
             "type": "function",
@@ -415,7 +415,7 @@
           },
           "a": { "type": "number", "defined": true, "value": 0.0 },
           "b": { "type": "number", "defined": true, "value": 8.0 },
-          "P": { "type": "point", "defined": true, "x": 1.5707963279521506, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.5707963279521509, "y": 1.0 },
           "Q": { "type": "point", "defined": true, "x": 4.712388978644304, "y": -1.0 },
           "v": {
             "type": "function",

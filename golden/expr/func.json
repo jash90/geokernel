@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -26,8 +26,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": -3.65 },
-          "c": { "type": "number", "defined": true, "value": 0.4867866486556994 },
-          "d": { "type": "number", "defined": true, "value": 1.9735732973113989 }
+          "c": { "type": "number", "defined": true, "value": 0.48678664865569937 },
+          "d": { "type": "number", "defined": true, "value": 1.9735732973113986 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -1.25 },
@@ -64,8 +64,8 @@
       "snapshots": [
         {
           "a": { "type": "number", "defined": true, "value": 3.92 },
-          "c": { "type": "number", "defined": true, "value": -0.7120327163983102 },
-          "d": { "type": "number", "defined": true, "value": -0.42406543279662046 }
+          "c": { "type": "number", "defined": true, "value": -0.7120327163983101 },
+          "d": { "type": "number", "defined": true, "value": -0.42406543279662023 }
         },
         {
           "a": { "type": "number", "defined": true, "value": -2.39 },
@@ -84,8 +84,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 3.92 },
-          "c": { "type": "number", "defined": true, "value": -0.7120327163983102 },
-          "d": { "type": "number", "defined": true, "value": -0.42406543279662046 }
+          "c": { "type": "number", "defined": true, "value": -0.7120327163983101 },
+          "d": { "type": "number", "defined": true, "value": -0.42406543279662023 }
         }
       ]
     },
@@ -709,8 +709,8 @@
       "snapshots": [
         {
           "a": { "type": "number", "defined": true, "value": -0.7 },
-          "c": { "type": "number", "defined": true, "value": -0.8879040017426008 },
-          "d": { "type": "number", "defined": true, "value": -0.7758080034852015 }
+          "c": { "type": "number", "defined": true, "value": -0.8879040017426006 },
+          "d": { "type": "number", "defined": true, "value": -0.7758080034852013 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 8.62 },
@@ -729,8 +729,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": -0.7 },
-          "c": { "type": "number", "defined": true, "value": -0.8879040017426008 },
-          "d": { "type": "number", "defined": true, "value": -0.7758080034852015 }
+          "c": { "type": "number", "defined": true, "value": -0.8879040017426006 },
+          "d": { "type": "number", "defined": true, "value": -0.7758080034852013 }
         }
       ]
     },
@@ -1015,7 +1015,7 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 2.28 },
-          "c": { "type": "number", "defined": true, "value": 0.8241754429663493 },
+          "c": { "type": "number", "defined": true, "value": 0.8241754429663494 },
           "d": { "type": "number", "defined": true, "value": 2.6483508859326985 }
         },
         {
@@ -1025,8 +1025,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.32 },
@@ -1068,8 +1068,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.79 },
@@ -1111,8 +1111,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.0 },
-          "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "c": { "type": "number", "defined": true, "infinity": -1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 2.24 },
@@ -1139,8 +1139,8 @@
       "snapshots": [
         {
           "a": { "type": "number", "defined": true, "value": 0.27 },
-          "c": { "type": "number", "defined": true, "value": 3.3426039424648373 },
-          "d": { "type": "number", "defined": true, "value": 7.6852078849296745 }
+          "c": { "type": "number", "defined": true, "value": 3.3426039424648377 },
+          "d": { "type": "number", "defined": true, "value": 7.685207884929675 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 3.99 },
@@ -1159,8 +1159,8 @@
         },
         {
           "a": { "type": "number", "defined": true, "value": 0.27 },
-          "c": { "type": "number", "defined": true, "value": 3.3426039424648373 },
-          "d": { "type": "number", "defined": true, "value": 7.6852078849296745 }
+          "c": { "type": "number", "defined": true, "value": 3.3426039424648377 },
+          "d": { "type": "number", "defined": true, "value": 7.685207884929675 }
         }
       ]
     },
@@ -1787,7 +1787,7 @@
         {
           "a": { "type": "number", "defined": true, "value": 171.0 },
           "c": { "type": "number", "defined": false },
-          "d": { "type": "number", "defined": false }
+          "d": { "type": "number", "defined": true, "infinity": 1 }
         },
         {
           "a": { "type": "number", "defined": true, "value": 5.0 },

@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -156,7 +156,7 @@
             "start": 1.4963922479016014,
             "end": 2.832498851185783,
             "arc_length": 11.123975164535304,
-            "area": 12.59900330362933,
+            "area": 12.599003303629326,
             "midpoint": [5.271108006716723, -1.4326297153254741],
             "half_axes": [8.325664387251969, 8.325664387251969],
             "eigenvectors": [
@@ -165,8 +165,8 @@
             ]
           },
           "len": { "type": "number", "defined": true, "value": 11.123975164535304 },
-          "ar": { "type": "number", "defined": true, "value": 12.59900330362933 },
-          "per": { "type": "number", "defined": true, "value": 21.438789753271255 }
+          "ar": { "type": "number", "defined": true, "value": 12.599003303629326 },
+          "per": { "type": "number", "defined": true, "value": 21.43878975327125 }
         },
         {
           "M": { "type": "point", "defined": true, "x": -2.66, "y": 1.1 },

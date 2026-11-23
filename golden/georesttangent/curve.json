@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -65,7 +65,7 @@
         {
           "c": { "type": "curve", "defined": true, "start": 0.0, "end": 3.141592653589793 },
           "P": { "type": "point", "defined": true, "x": -1.0, "y": 2.0 },
-          "g": { "type": "line", "defined": true, "a": 0.4472136255108515, "b": -0.8944271759944684, "c": 0.9999999999999999 }
+          "g": { "type": "line", "defined": true, "a": 0.4472136255108515, "b": -0.8944271759944685, "c": 1.0 }
         }
       ]
     },
@@ -96,7 +96,7 @@
           },
           "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 },
           "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
-          "g": { "type": "line", "defined": true, "a": 11.227959868888746, "b": -0.5011916649066421, "c": -33.18268794175962 }
+          "g": { "type": "line", "defined": true, "a": 11.227959868888739, "b": -0.5011916649066386, "c": -33.18268794175959 }
         },
         {
           "l": {
@@ -111,7 +111,7 @@
           },
           "c": { "type": "curve", "defined": true, "start": 0.0, "end": 1.0 },
           "P": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
-          "g": { "type": "line", "defined": true, "a": -4.653527568849012, "b": -6.717639323258545, "c": 29.25013320183925 }
+          "g": { "type": "line", "defined": true, "a": -4.6535275688543845, "b": -6.717639323221589, "c": 29.25013320172534 }
         }
       ]
     },
