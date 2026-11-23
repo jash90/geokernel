@@ -334,6 +334,11 @@ impl Printer<'_> {
                     self.number(v, out);
                     Some(())
                 }
+                // `GeoLine.toValueString` of an undefined line.
+                Value::Undefined if self.c.kind(id) == Kind::Line => {
+                    out.push('?');
+                    Some(())
+                }
                 Value::Line { a, b, c }
                     if self.c.kind(id) == Kind::Line
                         && matches!(
@@ -515,6 +520,22 @@ fn implicit_line(a: f64, b: f64, c: f64, numeric: bool, out: &mut String) -> Opt
             number(v, out);
         }
     };
+    let is_zero = |v: f64| v.abs() < 1e-8;
+    if is_zero(a) && is_zero(b) {
+        out.push('?');
+        return Some(());
+    }
+    // `Kernel.buildExplicitEquation` for a line parallel to an axis.
+    if is_zero(b) {
+        out.push_str("x=");
+        number(-c / a + 0.0, out);
+        return Some(());
+    }
+    if is_zero(a) {
+        out.push_str("y=");
+        number(-c / b + 0.0, out);
+        return Some(());
+    }
     let mut numbers = [a, b, c];
     if numbers.iter().all(|v| v.is_finite()) && numbers.iter().all(|v| (v - v.round()).abs() < 1e-8)
     {
@@ -585,6 +606,25 @@ fn decimal_text(dec: &crate::expr::decimal::Dec) -> String {
     }
 }
 
+/// A computed number with 15 significant digits, rounded half up on its
+/// exact value, with trailing zeros (`StringTemplate.prefixedDefaultSF`).
+fn significant_text(v: f64) -> Option<String> {
+    let digits = 14 - v.abs().log10().floor() as i64;
+    if !(0..=40).contains(&digits) {
+        return None;
+    }
+    let rounded = crate::expr::decimal::Dec::from_f64(v)?.set_scale_half_up(digits)?;
+    let mut text = decimal_text(&rounded);
+    let decimals = text.find('.').map_or(0, |dot| text.len() - dot - 1) as i64;
+    if decimals == 0 && digits > 0 {
+        text.push('.');
+    }
+    for _ in decimals..digits {
+        text.push('0');
+    }
+    Some(text)
+}
+
 /// `StringUtil.canonicalNumber`: decimals that are all zeros are dropped.
 fn canonical_number(text: &str) -> String {
     match text.find('.') {
@@ -610,12 +650,10 @@ fn numeric_number(v: f64, out: &mut String) {
         out.push_str(&format!("{}", v as i64));
         return;
     }
-    let digits = 14 - v.abs().log10().floor() as i32;
-    if !(0..=40).contains(&digits) {
-        out.push_str(&format!("{v}"));
-        return;
+    match significant_text(v) {
+        Some(text) => out.push_str(&canonical_number(&text)),
+        None => out.push_str(&format!("{v}")),
     }
-    out.push_str(&canonical_number(&format!("{:.*}", digits as usize, v)));
 }
 
 /// A typed decimal (`MySpecialDouble`): an integer as written, otherwise
@@ -663,13 +701,10 @@ fn number(v: f64, out: &mut String) {
     // The definition is printed with 15 significant digits
     // (`StringTemplate.prefixedDefaultSF`), read back as a typed decimal and
     // printed by `convertScientificNotationGiac` after `canonicalNumber`.
-    let digits = 14 - v.abs().log10().floor() as i32;
-    if !(0..=40).contains(&digits) {
-        out.push_str(&format!("{v}"));
-        return;
+    match significant_text(v) {
+        Some(text) => out.push_str(&decimal_fraction(&text)),
+        None => out.push_str(&format!("{v}")),
     }
-    let text = format!("{:.*}", digits as usize, v);
-    out.push_str(&decimal_fraction(&text));
 }
 
 /// `convertScientificNotationGiac(canonicalNumber(text))` for a plain
@@ -956,6 +991,26 @@ fn value(e: &Expr, x: f64, y: f64) -> Option<f64> {
     })
 }
 
+/// Whether every name and function of the expression is one the
+/// reference's parser reads as a number or a variable.
+fn known(e: &Expr) -> bool {
+    match e {
+        Expr::Num(_) => true,
+        Expr::Name(n) => matches!(n.as_str(), "x" | "y" | "pi" | "e"),
+        Expr::Neg(a) => known(a),
+        Expr::Bin(_, a, b) | Expr::Eq(a, b) => known(a) && known(b),
+        Expr::Call(name, args) => {
+            args.len() == 1
+                && matches!(
+                    name.as_str(),
+                    "sqrt" | "sin" | "cos" | "tan" | "exp" | "ln" | "log" | "abs"
+                )
+                && known(&args[0])
+        }
+        Expr::List(items) | Expr::Tuple(items) => items.iter().all(known),
+    }
+}
+
 fn has_name(e: &Expr, name: &str) -> bool {
     match e {
         Expr::Name(n) => n == name,
@@ -970,6 +1025,11 @@ fn has_name(e: &Expr, name: &str) -> bool {
 
 /// One element of the list `AlgebraProcessor.evaluateToList` builds.
 fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
+    if !known(e) {
+        // `fsolve(...)` left unevaluated, an unknown variable: the reference
+        // reads an undefined object, which makes the list undefined.
+        return None;
+    }
     match e {
         Expr::List(items) => {
             let slots = items
@@ -1019,21 +1079,44 @@ fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
     }
 }
 
+/// The coefficients of x, y and 1 of an expression linear in x and y.
+fn linear(e: &Expr) -> Option<[f64; 3]> {
+    let constant = |e: &Expr| {
+        (!has_name(e, "x") && !has_name(e, "y"))
+            .then(|| value(e, 0.0, 0.0))
+            .flatten()
+    };
+    Some(match e {
+        Expr::Name(n) if n == "x" => [1.0, 0.0, 0.0],
+        Expr::Name(n) if n == "y" => [0.0, 1.0, 0.0],
+        Expr::Neg(a) => linear(a)?.map(|v| -v),
+        Expr::Bin(b'+', a, b) => {
+            let (a, b) = (linear(a)?, linear(b)?);
+            [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+        }
+        Expr::Bin(b'-', a, b) => {
+            let (a, b) = (linear(a)?, linear(b)?);
+            [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+        }
+        Expr::Bin(b'*', a, b) => match (constant(a), constant(b)) {
+            (Some(k), _) => linear(b)?.map(|v| k * v),
+            (_, Some(k)) => linear(a)?.map(|v| v * k),
+            _ => return None,
+        },
+        Expr::Bin(b'/', a, b) => {
+            let k = constant(b)?;
+            linear(a)?.map(|v| v / k)
+        }
+        _ => [0.0, 0.0, constant(e)?],
+    })
+}
+
 /// `left = right` as a line, when it is linear in x and y.
 fn line_slot(left: &Expr, right: &Expr) -> Option<Slot> {
-    let f = |x, y| Some(value(left, x, y)? - value(right, x, y)?);
-    let c = f(0.0, 0.0)?;
-    let a = f(1.0, 0.0)? - c;
-    let b = f(0.0, 1.0)? - c;
+    let (l, r) = (linear(left)?, linear(right)?);
+    let [a, b, c] = [l[0] - r[0], l[1] - r[1], l[2] - r[2]];
     if !(a.is_finite() && b.is_finite() && c.is_finite()) {
         return None;
-    }
-    let scale = 1.0 + a.abs() + b.abs() + c.abs();
-    for (x, y) in [(2.0, 3.0), (-1.5, 0.5), (0.25, -4.0)] {
-        let d = f(x, y)? - (a * x + b * y + c);
-        if !d.is_finite() || d.abs() > 1e-9 * scale {
-            return None;
-        }
     }
     if a == 0.0 && b == 0.0 {
         // `x = x`: a line without coefficients, which is undefined.

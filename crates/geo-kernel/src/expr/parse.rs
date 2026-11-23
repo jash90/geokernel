@@ -273,9 +273,17 @@ impl Parser<'_> {
         self.lits[i as usize] = Lit::Text("=".into());
     }
 
-    /// Keeps the text of a solving command's second argument on its node.
+    /// Keeps the text of a solving command's second argument on its node;
+    /// the objects it names become parents, so the command follows them.
     #[cfg(feature = "giac")]
     pub(super) fn mark_hint(&mut self, i: u32, hint: String) {
+        for name in hint.split(|c: char| !(c.is_alphanumeric() || c == '_')) {
+            if name.chars().next().is_some_and(char::is_alphabetic) {
+                if let Some(id) = self.lookup(name) {
+                    self.read(id, false);
+                }
+            }
+        }
         self.lits[i as usize] = Lit::Text(hint.into());
     }
 
