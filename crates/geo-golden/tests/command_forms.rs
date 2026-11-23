@@ -83,9 +83,10 @@ fn kinds_of(case: &Case) -> BTreeMap<String, Kind> {
         .collect()
 }
 
-/// Which lines of a case show a form: its script and its `reject` steps; a
-/// refused form only its `reject` steps; a solving form only its script, as
-/// a refusal shows no solving variable.
+/// Which lines of a case show a form: its script, its `redefine` steps and
+/// its `reject` steps; a refused form only its `reject` steps; a solving
+/// form only its script and redefinitions, as a refusal shows no solving
+/// variable.
 #[derive(Clone, Copy, PartialEq)]
 enum Lines {
     All,
@@ -112,6 +113,7 @@ fn case_lines(case: &Case, which: Lines) -> impl Iterator<Item = &String> {
         .filter(move |_| which != Lines::Rejected)
         .chain(case.steps.iter().filter_map(move |step| match step {
             Step::Reject { line, .. } if which != Lines::Script => Some(line),
+            Step::Redefine { line } if which != Lines::Rejected => Some(line),
             _ => None,
         }))
 }
@@ -431,4 +433,48 @@ fn no_done_form_is_called_by_a_known_gap() {
         errors.len(),
         errors.join("\n")
     );
+}
+
+#[test]
+fn redefinitions_and_rejections_count_as_calls() {
+    let text = r#"{"schema":4,"generator":"format-sample","upstream_commit":null,
+      "cases":[{"id":"x","group":"g",
+      "script":["A = (0, 0)", "k = Circle(A, 1)", "d = 1"],
+      "steps":[{"action":"initial"},
+               {"action":"redefine","line":"d = Radius(k)"},
+               {"action":"reject","line":"e = Transpose(A)"}],
+      "snapshots":[
+        {"A":{"type":"point","defined":true,"x":0.0,"y":0.0},
+         "k":{"type":"circle","defined":true,"cx":0.0,"cy":0.0,"r":1.0},
+         "d":{"type":"number","defined":true,"value":1.0}},
+        {"A":{"type":"point","defined":true,"x":0.0,"y":0.0},
+         "k":{"type":"circle","defined":true,"cx":0.0,"cy":0.0,"r":1.0},
+         "d":{"type":"number","defined":true,"value":1.0}},
+        {"A":{"type":"point","defined":true,"x":0.0,"y":0.0},
+         "k":{"type":"circle","defined":true,"cx":0.0,"cy":0.0,"r":1.0},
+         "d":{"type":"number","defined":true,"value":1.0}}]}]}"#;
+    let file = model::parse_file(text, "sample").unwrap_or_else(|e| panic!("{e}"));
+    let case = &file.cases[0];
+    let names = names(&matrix());
+    let lines = |which| case_lines(case, which).cloned().collect::<Vec<_>>();
+    assert!(lines(Lines::All).contains(&"d = Radius(k)".to_string()));
+    assert!(lines(Lines::Script).contains(&"d = Radius(k)".to_string()));
+    assert!(!lines(Lines::Rejected).contains(&"d = Radius(k)".to_string()));
+    assert!(lines(Lines::Rejected).contains(&"e = Transpose(A)".to_string()));
+    let kinds = kinds_of(case);
+    let reaches = |which, command: &str, form: &str| {
+        case_lines(case, which).any(|line| {
+            forms::script_may_use_form(
+                std::slice::from_ref(line),
+                &kinds,
+                &names,
+                command,
+                &forms()[command].forms,
+                form,
+            )
+        })
+    };
+    assert!(reaches(Lines::All, "Radius", "conic"));
+    assert!(reaches(Lines::Script, "Radius", "conic"));
+    assert!(!reaches(Lines::Rejected, "Radius", "conic"));
 }

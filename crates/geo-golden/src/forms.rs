@@ -350,12 +350,65 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     None
 }
 
+/// Whether `lhs` names what a line defines: a label (`a_{1}`, `A'`), a
+/// function label with its variables (`f(x)`, `g(x, y)`) or a list of
+/// labels in braces (`{A, B}`).
+fn is_label_side(lhs: &str) -> bool {
+    fn label(s: &str) -> bool {
+        let s = s.trim();
+        s.chars().next().is_some_and(char::is_alphabetic)
+            && s.chars().all(|c| is_ident_char(c) || "{}'".contains(c))
+    }
+    let lhs = lhs.trim();
+    if let Some(list) = lhs.strip_prefix('{').and_then(|l| l.strip_suffix('}')) {
+        return !list.trim().is_empty() && list.split(',').all(label);
+    }
+    match lhs.find('(') {
+        Some(open) if lhs.ends_with(')') => {
+            label(&lhs[..open]) && lhs[open + 1..lhs.len() - 1].split(',').all(label)
+        }
+        _ => label(lhs),
+    }
+}
+
+/// What a script line defines or runs, without its comment: the text after
+/// `label =`, `label :` or `label :=` when the text before the first `=` or
+/// `:` outside brackets and string literals names a label
+/// ([`is_label_side`]), otherwise the whole line, so a standalone command
+/// keeps an argument that holds an equation (`Solve(x^2 = 4, x)`).
+fn definition(line: &str) -> &str {
+    let line = geo_kernel::script::split_comment(line).0;
+    let mut depth = 0i32;
+    let mut prev: Option<char> = None;
+    for (i, c) in unquoted(line) {
+        match c {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth -= 1,
+            '=' | ':' if depth == 0 => {
+                let rest = &line[i + 1..];
+                // a comparison is no definition
+                if c == '=' && (rest.starts_with('=') || prev.is_some_and(|p| "<>!".contains(p))) {
+                    return line;
+                }
+                if !is_label_side(&line[..i]) {
+                    return line;
+                }
+                return if c == ':' {
+                    rest.strip_prefix('=').unwrap_or(rest)
+                } else {
+                    rest
+                };
+            }
+            _ => {}
+        }
+        prev = Some(c);
+    }
+    line
+}
+
 /// The right-hand sides and standalone commands of a script, without comments.
 fn definitions(script: &[String]) -> impl Iterator<Item = &str> {
-    script.iter().map(|l| {
-        let line = geo_kernel::script::split_comment(l).0;
-        line.split_once('=').map_or(line, |(_, rhs)| rhs)
-    })
+    script.iter().map(|l| definition(l))
 }
 
 /// Whether a script calls `command` (through any of its names in
@@ -992,5 +1045,37 @@ mod tests {
         );
         assert!(check_difference("general-conics-plot: Nothing", "Conic", "list", &rows).is_err());
         assert!(check_difference("no separator", "Conic", "list", &rows).is_err());
+    }
+
+    #[test]
+    fn a_definition_is_split_only_after_a_label() {
+        assert_eq!(definition("a = Mod(7, 3)"), " Mod(7, 3)");
+        assert_eq!(definition("f(x) = x^2"), " x^2");
+        assert_eq!(definition("{A, B} = Intersect(c, d)"), " Intersect(c, d)");
+        assert_eq!(definition("a_{1} = 2"), " 2");
+        assert_eq!(definition("c: x^2 + y^2 = 4"), " x^2 + y^2 = 4");
+        assert_eq!(definition("b := 3"), " 3");
+        // a standalone command keeps the equation of its argument
+        assert_eq!(definition("Solve(x^2 = 4, x)"), "Solve(x^2 = 4, x)");
+        assert_eq!(definition("Tangent(A, y = x^2)"), "Tangent(A, y = x^2)");
+        assert_eq!(definition("Text(\"a = b\")"), "Text(\"a = b\")");
+        assert_eq!(definition("x^2 = 4"), "x^2 = 4");
+        assert_eq!(definition("a == b"), "a == b");
+        assert_eq!(definition("r = 1 # r = 2"), " 1 ");
+        let names: BTreeMap<String, String> = [("Solve".to_string(), "Solve".to_string())].into();
+        let line = ["Solve(x^2 = 4, x)".to_string()];
+        assert!(script_calls(&line, &names, "Solve"));
+        let tangent: BTreeMap<String, String> =
+            [("Tangent".to_string(), "Tangent".to_string())].into();
+        let line = ["Tangent(A, y = x^2)".to_string()];
+        assert!(script_calls(&line, &tangent, "Tangent"));
+        assert!(script_may_use_form(
+            &line,
+            &[("A".to_string(), Kind::Point)].into(),
+            &tangent,
+            "Tangent",
+            &["point,conic".to_string(), "point,function".to_string()],
+            "point,conic",
+        ));
     }
 }
