@@ -112,7 +112,7 @@ TurningPoint,,function,P2,done,1,1,
 Polynomial,,function,P2,done,3,3,
 Function,,function,P2,partial,4,2,"Domain restrictions with an optional local variable, the empty data function and freehand functions of a list."
 Extremum,,function,P2,done,2,2,Polynomial extrema or a bounded numerical search. Growing additional output labels after creation is pending.
-RemovableDiscontinuity,,function,P2,todo,1,0,Rational holes have reference evidence. Other expressions use a bounded numerical estimate.
+RemovableDiscontinuity,,function,P2,done,1,1,Rational holes have reference evidence. Other expressions use a bounded numerical estimate.
 CurveCartesian,,function,P2,partial,3,2,
 ParametricDerivative,,function,P2,done,1,1,
 Derivative,,function,P2,partial,8,7,
@@ -139,8 +139,8 @@ SolveODE,,function,P2,partial,7,5,"Numeric first-order, parametric and second-or
 SlopeField,,function,P2,done,4,4,
 Iteration,,function,P2,done,3,3,
 PathParameter,,function,P2,todo,1,0,PathParameter(point on a path)
-Asymptote,,function,P2,partial,3,2,"Conics, functions and implicit polynomials."
-CurvatureVector,,function,P2,todo,3,0,
+Asymptote,,function,P2,done,3,3,"Conics, functions and implicit polynomials."
+CurvatureVector,,function,P2,done,3,3,
 Curvature,,function,P2,done,3,3,
 OsculatingCircle,,function,P2,done,3,3,
 IterationList,,function,P2,done,3,3,
