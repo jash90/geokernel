@@ -3945,6 +3945,17 @@ cases = [
 ]
 
 [[form]]
+command = "LocusEquation"
+form = "boolean,point"
+cases = [
+  "locusequation-boolean-001", "locusequation-boolean-002", "locusequation-boolean-003",
+  "locusequation-boolean-004", "locusequation-boolean-005", "locusequation-boolean-006",
+  "locusequation-boolean-007", "locusequation-boolean-008", "locusequation-boolean-009",
+  "locusequation-boolean-010", "locusequation-boolean-011", "locusequation-boolean-012",
+  "locusequation-boolean-013", "locusequation-rejections-001",
+]
+
+[[form]]
 command = "Corner"
 form = "inequality"
 cases = ["corners-inequality-014", "corners-inequality-015"]

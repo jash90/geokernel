@@ -659,6 +659,40 @@ mod tests {
     }
 
     #[test]
+    fn proves_formulas_over_segments_without_their_conditions() {
+        let tri = "A = (0, 0)\nB = (5, 1)\nC = (2, 4)\nM = Midpoint(A, B)\n\
+            s = Segment(A, M)\nt = Segment(A, B)";
+        assert_eq!(
+            outcome(&format!("{tri}\nb = 2s == t"), Question::Prove),
+            Outcome::True(Vec::new())
+        );
+        assert_eq!(
+            outcome(&format!("{tri}\nb = s == 2t"), Question::Prove),
+            Outcome::False
+        );
+        assert_eq!(
+            outcome(&format!("{tri}\nb = 2s == t"), Question::Details),
+            Outcome::Undecided
+        );
+    }
+
+    #[test]
+    fn a_proof_rewrites_the_distances_of_its_statement() {
+        let mut c = crate::script::load(
+            "A = (0, 0)\nB = (5, 1)\nC = (2, 4)\nd = Distance(A, B)\nr = Distance(A, C)\n\
+             b = d == r\np = Prove(b)",
+        )
+        .unwrap();
+        let (b, p, c_id) = (c.id("b").unwrap(), c.id("p").unwrap(), c.id("C").unwrap());
+        assert_eq!(c.value(p), Value::Bool(false));
+        assert_eq!(c.value(b), Value::Bool(false));
+        // Both distances now read segments of length 0.
+        c.move_point(c_id, 1.0, 5.0).unwrap();
+        assert_eq!(c.value(b), Value::Bool(true));
+        assert_eq!(c.value(p), Value::Bool(false));
+    }
+
+    #[test]
     fn conditions_sort_like_texts() {
         use std::cmp::Ordering::Less;
         assert_eq!(condition_order("AreEqual[\u{c9},F]", "AreEqual[f,G]"), Less);
