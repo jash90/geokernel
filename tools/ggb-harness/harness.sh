@@ -140,6 +140,12 @@ case "$cmd" in
               run_golden degree
               exit
               ;;
+            funcanalysis.json)
+              run_golden '!asymptote,discontinuity,curvatureupstream'
+              enable_giac
+              run_golden 'asymptote,discontinuity,curvatureupstream'
+              exit
+              ;;
             odesymbolic.json)
               run_golden nocas
               enable_giac

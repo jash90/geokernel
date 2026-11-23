@@ -61,11 +61,14 @@ tools/ggb-harness/harness.sh golden cas
 
 `cas-smoke` checks a prime command through the headless app's algebra processor.
 The `cas`, `locusequation`, `envelope`, `curvepairs` and `odesymbolic` golden
-groups and the `calculus` group's `degree` topic select the native backend
-automatically. The `odesymbolic` group's `nocas` topic uses the dummy backend
-to verify behavior without symbolic evaluation. `GGB_HARNESS_CAS=1` selects
+groups, the `calculus` group's `degree` topic and the `funcanalysis` group's
+`asymptote`, `discontinuity` and `curvatureupstream` topics select the native
+backend automatically. The `odesymbolic` group's `nocas` topic uses the dummy
+backend to verify behavior without symbolic evaluation. `GGB_HARNESS_CAS=1` selects
 the native backend for other runs. The remaining historical cases default
-to the dummy backend.
+to the dummy backend. `GoldenGenerator` takes a comma-separated list of topics
+to record, or with a leading `!` to leave out, so one group can be recorded
+with both backends.
 
 `GGB_HARNESS_JAVA_OPTS` adds options to every Java run. With
 `-DggbHarness.giacLog=<file>` the native backend appends one JSON line per

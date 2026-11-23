@@ -176,8 +176,8 @@ the reason for those that still differ.
 
 | | ggb-harness cases | agree | known gaps |
 | --- | --- | --- | --- |
-| default build | 7003 | 6410 | 594 |
-| `giac` feature | 7003 | 6723 | 281 |
+| default build | 7003 | 6422 | 582 |
+| `giac` feature | 7003 | 6735 | 269 |
 
 Only one case that agrees without the feature differs with it:
 `cas-plot-022` records the kernel's old refusal text for `PlotSolve`, a

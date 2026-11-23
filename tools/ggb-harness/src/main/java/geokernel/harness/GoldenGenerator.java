@@ -18,7 +18,9 @@ import java.util.TreeMap;
  * Reads case inputs (id, group, script, steps), replays each case in a fresh
  * headless GeoGebra and writes golden files per `golden/SCHEMA.md`.
  *
- * <p>Usage: {@code GoldenGenerator <cases.json> <golden dir> <upstream commit>}.
+ * <p>Usage: {@code GoldenGenerator <cases.json> <golden dir> <upstream commit> [topics]}.
+ * {@code topics} is a comma-separated list of topics to record, or, with a
+ * leading {@code !}, of topics to leave out; without it every case is recorded.
  * A case id has the form {@code <group>-<topic>-<number>}; all cases of one
  * topic go to {@code <golden dir>/<group>/<topic>.json}.
  * A case may set {@code track_boundary_growth} to record indexed outputs
@@ -34,7 +36,7 @@ public final class GoldenGenerator {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 3 || args.length > 4) {
-            System.err.println("usage: GoldenGenerator <cases.json> <golden dir> <upstream commit> [topic or !topic]");
+            System.err.println("usage: GoldenGenerator <cases.json> <golden dir> <upstream commit> [topics or !topics]");
             System.exit(2);
         }
         Session.recordInfinity = true;
@@ -51,6 +53,13 @@ public final class GoldenGenerator {
         Set<String> ids = new HashSet<>();
         Stats stats = new Stats();
         String selector = args.length == 4 ? args[3] : "";
+        boolean excluded = selector.startsWith("!");
+        Set<String> selected = new HashSet<>();
+        for (String topic : (excluded ? selector.substring(1) : selector).split(",")) {
+            if (!topic.isEmpty()) {
+                selected.add(topic);
+            }
+        }
         int count = 0;
         for (Object c : cases) {
             Map<?, ?> input = (Map<?, ?>) c;
@@ -67,8 +76,7 @@ public final class GoldenGenerator {
                 throw new IllegalArgumentException("bad case id " + id);
             }
             String topic = id.substring(prefix.length(), id.lastIndexOf('-'));
-            if (!selector.isEmpty() && (selector.startsWith("!")
-                    ? selector.substring(1).equals(topic) : !selector.equals(topic))) {
+            if (!selector.isEmpty() && (excluded ? selected.contains(topic) : !selected.contains(topic))) {
                 continue;
             }
             count++;
