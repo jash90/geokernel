@@ -450,7 +450,6 @@ impl Value {
     }
 }
 
-/// `DoubleUtil.isEpsilon(z, x, y)` for non-NaN homogeneous coordinates.
 /// The hidden label of an output whose label was freed.
 fn freed_label(id: Id) -> String {
     format!("\0freed{}", id.0)
@@ -463,6 +462,7 @@ fn freed_owner_label(label: &str) -> String {
     format!("{FREED_OWNER}{label}")
 }
 
+/// `DoubleUtil.isEpsilon(z, x, y)` for non-NaN homogeneous coordinates.
 pub(crate) fn point_at_infinity(x: f64, y: f64, z: f64) -> bool {
     let tol = crate::tol::STANDARD_PRECISION;
     z.abs() <= tol && z.abs() <= x.abs() * tol && z.abs() <= y.abs() * tol
