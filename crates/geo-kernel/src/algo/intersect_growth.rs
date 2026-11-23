@@ -369,6 +369,18 @@ fn owner_name(c: &Construction, first: Id) -> &str {
         .unwrap_or_else(|| c.label(first))
 }
 
+/// Frees `label` if an undefined interval root after the first slot that
+/// no object reads holds it: a replay that leaves freeing to the next live
+/// update (a deletion) still meets the journal lines that took such labels.
+pub fn free_label_for(c: &mut Construction, label: &str) -> bool {
+    let Some(id) = c.id(label) else {
+        return false;
+    };
+    matches!(c.def(id), Def::IntersectBoundary(d) if d.is_later_interval_slot())
+        && c.value(id) == crate::Value::Undefined
+        && c.free_output_label(id)
+}
+
 /// For a slot line that labels a freed first output again, the label that
 /// output had.
 pub fn first_slot_owner(rhs: &str) -> Option<&str> {

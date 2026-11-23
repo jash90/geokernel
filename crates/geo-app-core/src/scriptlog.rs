@@ -38,8 +38,8 @@ use geo_kernel::script::equation::{parse_style, Style as EquationStyle};
 use geo_kernel::script::saved::{self, mark_inline_arguments, Property, INLINE_ARGUMENTS};
 use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
 use geo_kernel::script::{
-    boundary_slot_owner, find_unquoted, first_slot_owner, growth_owner, restore_boundary_labels,
-    split_comment, BoundaryOutputs,
+    boundary_slot_owner, find_unquoted, first_slot_owner, free_label_for, growth_owner,
+    restore_boundary_labels, split_comment, BoundaryOutputs,
 };
 use shared::Chain;
 pub use shared::Labels;
@@ -984,7 +984,11 @@ impl Log {
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
         // The journal gives every label a slot takes; the freed labels
-        // follow the edits again.
+        // follow the edits again. A deletion leaves freeing to the next
+        // live update, as the reference frees an output only when its
+        // command updates: the replay frees a label only for a line that
+        // takes it, which the live session freed first.
+        let deleting = !gone.is_empty();
         let mut groups = BoundaryOutputs::default();
         // While nothing is dropped or merged, `kept` is the first `same`
         // ops of the journal and shares their storage (see `shared.rs`).
@@ -998,6 +1002,11 @@ impl Log {
         for (i, op) in ops.iter().enumerate() {
             match op {
                 Op::Define(e) => {
+                    if deleting {
+                        for label in &e.labels {
+                            free_label_for(&mut c, label);
+                        }
+                    }
                     let before = c.len();
                     match e.replay(&mut c) {
                         Ok(first) => {
@@ -1012,7 +1021,7 @@ impl Log {
                             }
                             if let Some(id) = first {
                                 groups.record(&c, &e.line, id, c.len() - before);
-                                if id.index() < before {
+                                if id.index() < before && !deleting {
                                     groups.release_after(&mut c, std::iter::once(id));
                                 }
                             }
@@ -1051,7 +1060,9 @@ impl Log {
                         Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
-                    groups.release_after(&mut c, std::iter::once(id));
+                    if !deleting {
+                        groups.release_after(&mut c, std::iter::once(id));
+                    }
                     // A set right after a set of the same object is merged
                     // into it by `record_set` (after a `remove` they can
                     // meet): the journal and `kept` part there.
@@ -1074,7 +1085,9 @@ impl Log {
                 }
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;
-                    groups.release_after(&mut c, positions.iter().map(|&(id, _, _)| id));
+                    if !deleting {
+                        groups.release_after(&mut c, positions.iter().map(|&(id, _, _)| id));
+                    }
                     match &mut same {
                         Some(n) if positions.len() == points.len() => *n = i + 1,
                         _ => {
@@ -1205,11 +1218,20 @@ impl Log {
         let mut kept = Log::default();
         let mut gone = self.removed.clone();
         // The journal gives every label a slot takes; the freed labels
-        // follow the edits again.
+        // follow the edits again. A deletion leaves freeing to the next
+        // live update, as the reference frees an output only when its
+        // command updates: the replay frees a label only for a line that
+        // takes it, which the live session freed first.
+        let deleting = !gone.is_empty();
         let mut groups = BoundaryOutputs::default();
         for op in self.ops.items() {
             match op {
                 Op::Define(e) => {
+                    if deleting {
+                        for label in &e.labels {
+                            free_label_for(&mut c, label);
+                        }
+                    }
                     let before = c.len();
                     match e.replay(&mut c) {
                         Ok(first) => {
@@ -1224,7 +1246,7 @@ impl Log {
                             }
                             if let Some(id) = first {
                                 groups.record(&c, &e.line, id, c.len() - before);
-                                if id.index() < before {
+                                if id.index() < before && !deleting {
                                     groups.release_after(&mut c, std::iter::once(id));
                                 }
                             }
@@ -1257,7 +1279,9 @@ impl Log {
                         Setting::AngleStyle(style) => c.set_angle_style(id, style),
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
-                    groups.release_after(&mut c, std::iter::once(id));
+                    if !deleting {
+                        groups.release_after(&mut c, std::iter::once(id));
+                    }
                     kept.push_set(
                         label,
                         *to,
@@ -1266,7 +1290,9 @@ impl Log {
                 }
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;
-                    groups.release_after(&mut c, positions.iter().map(|&(id, _, _)| id));
+                    if !deleting {
+                        groups.release_after(&mut c, positions.iter().map(|&(id, _, _)| id));
+                    }
                     kept.record_move_points(&c, &positions);
                 }
                 Op::TextProperties(line) => {
