@@ -4242,6 +4242,7 @@ cases = [
     "paths-polygon-005",
     "polygon-keptsides-001",
     "polygon-keptsides-002",
+    "polygon-keptvertices-001",
     "polygon-labels-005",
     "polygon-regsmall-001",
     "polygon-regsmall-002",

@@ -3233,8 +3233,8 @@ impl Construction {
         Ok(self.propagate(id))
     }
 
-    /// True when the last coordinate or value update changed a geometric
-    /// record or a hidden intersection start that a later edit can retain.
+    /// True when the last coordinate or value update must replay in order
+    /// to preserve retained geometry or a hidden intersection start.
     pub fn last_update_requires_replay(&self) -> bool {
         self.last_update_requires_replay
     }
@@ -3462,6 +3462,13 @@ impl Construction {
                             }
                         )
                     {
+                        // An undefined endpoint leaves this vertex at its
+                        // previous coordinates, so replay the edit that set them.
+                        if matches!(def, Def::Polygon(PolygonDef::RegularVertex { a, b, .. })
+                            if new.is_defined() && (self.point(a).is_none() || self.point(b).is_none()))
+                        {
+                            self.last_update_requires_replay = true;
+                        }
                         // Direct placement can define Point(circle) using
                         // retained geometry. The next path algorithm update
                         // clears it even if the circle's record stayed equal.
