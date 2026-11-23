@@ -3071,8 +3071,8 @@ undefined = true
 
 [[gap]]
 id = "prove-expression-019"
-reason = "`ProveDetails` of an arithmetic statement: the reference words the conditions from its CAS's factorization of the rewritten polynomial divided by the user's formula, read back through `NDGDetector`'s formula parser. The kernel decides `Prove` (the truth does not depend on the CAS's normalization) but answers an undefined list here."
-mismatches = ["0:q"]
+reason = "The reference uses the CAS factorization and NDGDetector's formula parser to report the symbolic condition s = t in both forms of ProveDetails. The kernel returns an undefined list for each form."
+mismatches = ["0:q", "0:r"]
 undefined = true
 
 [[gap]]

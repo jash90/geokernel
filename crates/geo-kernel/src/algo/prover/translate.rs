@@ -49,6 +49,39 @@ use crate::kernel::{Construction, Def, Id, Kind, Value};
 /// The largest number of objects a proof translates.
 const MAX_OBJECTS: usize = 64;
 
+#[derive(Clone, Copy)]
+enum IntersectionConstraint {
+    None,
+    DistinctOutput(Id),
+    ExcludedPoint(Id),
+    MissingEquation,
+}
+
+/// The intersection adapter caches one translation per output. Object IDs
+/// stand for symbolic points across proofs, whose variable indices are local.
+#[derive(Default)]
+pub(crate) struct IntersectionTranslations {
+    constraints: BTreeMap<Id, IntersectionConstraint>,
+    order: Vec<Id>,
+}
+
+impl IntersectionTranslations {
+    pub(crate) fn len(&self) -> usize {
+        self.order.len()
+    }
+
+    pub(crate) fn truncate(&mut self, len: usize) {
+        for id in self.order.drain(len..) {
+            self.constraints.remove(&id);
+        }
+    }
+
+    fn insert(&mut self, id: Id, constraint: IntersectionConstraint) {
+        self.order.push(id);
+        self.constraints.insert(id, constraint);
+    }
+}
+
 pub(crate) struct System {
     /// The hypotheses, each in canonical order, without repetitions.
     pub(super) hypotheses: Vec<Poly>,
@@ -64,6 +97,7 @@ pub(crate) struct System {
     line_vars: BTreeMap<Id, [usize; 4]>,
     circle_vars: BTreeMap<Id, [usize; 4]>,
     radius_vars: BTreeMap<Id, usize>,
+    pending_distinct_outputs: Vec<(Id, [usize; 2])>,
     /// How many coordinates of the first two free points are fixed.
     fixed_coordinates: usize,
     budget_vars: usize,
@@ -77,8 +111,13 @@ pub(crate) struct System {
 type Built = Result<System, Outcome>;
 
 impl System {
-    pub(super) fn build(c: &Construction, statement: Id, budget: &Budget) -> Built {
-        let mut system = Self::hypotheses(c, statement, budget)?;
+    pub(super) fn build(
+        c: &Construction,
+        statement: Id,
+        budget: &Budget,
+        intersections: &mut IntersectionTranslations,
+    ) -> Built {
+        let mut system = Self::hypotheses(c, statement, budget, intersections)?;
         let done = match c.def(statement) {
             Def::Predicate(predicate) => system.statement(c, predicate, budget),
             _ => system.expression(c, statement, budget),
@@ -95,7 +134,12 @@ impl System {
 
     /// The translation of the construction the statement depends on
     /// (`AlgebraicStatement.setHypotheses`).
-    pub(super) fn hypotheses(c: &Construction, statement: Id, budget: &Budget) -> Built {
+    pub(super) fn hypotheses(
+        c: &Construction,
+        statement: Id,
+        budget: &Budget,
+        intersections: &mut IntersectionTranslations,
+    ) -> Built {
         if c.kind(statement) != Kind::Boolean {
             return Err(Outcome::Undecided);
         }
@@ -121,6 +165,7 @@ impl System {
             line_vars: BTreeMap::new(),
             circle_vars: BTreeMap::new(),
             radius_vars: BTreeMap::new(),
+            pending_distinct_outputs: Vec::new(),
             fixed_coordinates: 4,
             budget_vars: MAX_VARS,
             unknown: false,
@@ -135,7 +180,18 @@ impl System {
             return Err(Outcome::Unknown);
         }
         for &id in &predecessors {
-            system.object(c, id, budget).ok_or(Outcome::Undecided)?;
+            system
+                .object(c, id, budget, intersections)
+                .ok_or(Outcome::Undecided)?;
+        }
+        for (other, p) in std::mem::take(&mut system.pending_distinct_outputs) {
+            // Without hypotheses for the other output, its unconstrained
+            // coordinates can always satisfy the distinctness equation.
+            if let Some(q) = system.point(other) {
+                system
+                    .add_distinct(p, q, budget)
+                    .ok_or(Outcome::Undecided)?;
+            }
         }
         Ok(system)
     }
@@ -169,7 +225,13 @@ impl System {
     }
 
     /// Adds the variables and equations of one predecessor.
-    fn object(&mut self, c: &Construction, id: Id, budget: &Budget) -> Option<()> {
+    fn object(
+        &mut self,
+        c: &Construction,
+        id: Id,
+        budget: &Budget,
+        intersections: &mut IntersectionTranslations,
+    ) -> Option<()> {
         let def = c.def(id);
         match def {
             // Numbers without a parent algorithm or with an arithmetic
@@ -219,7 +281,7 @@ impl System {
             | Def::IntersectLineCircle { .. }
             | Def::IntersectConics(_)
             | Def::IntersectCircles { .. } => {
-                self.circle_intersection(c, id, budget)?;
+                self.circle_intersection(c, id, budget, intersections)?;
             }
             Def::Perpendicular { through, to } => {
                 // The second point of the line is the through point moved
@@ -314,10 +376,19 @@ impl System {
         Some(())
     }
 
-    fn circle_intersection(&mut self, c: &Construction, id: Id, budget: &Budget) -> Option<()> {
+    fn circle_intersection(
+        &mut self,
+        c: &Construction,
+        id: Id,
+        budget: &Budget,
+        intersections: &mut IntersectionTranslations,
+    ) -> Option<()> {
         let ([first, second], indexed) = symbolic_intersection(c, id)?;
         let two_circles = c.kind(first) == Kind::Circle;
-        if !proper_circle(c, second) || (two_circles && !proper_circle(c, first)) {
+        let cached = intersections.constraints.get(&id).copied();
+        if cached.is_none()
+            && (!proper_circle(c, second) || (two_circles && !proper_circle(c, first)))
+        {
             return None;
         }
         let p = [self.new_var(false)?, self.new_var(false)?];
@@ -331,41 +402,34 @@ impl System {
         let [a, b, x, y] = self.circle(second)?;
         self.add(equidistant([x, y], [a, b], p, budget)?);
 
-        // The reference excludes an existing common point when the indexed
-        // output uses a hidden intersection algorithm. The unindexed
-        // command and saved slots put that algorithm in the construction.
-        budget.charge(c.child_count(first) + 1)?;
-        let mut labelled = false;
-        let mut earlier = None;
-        for other in c.children(first).filter(|&other| other != id) {
-            if let Some((pair, other_indexed)) = symbolic_intersection(c, other) {
-                if pair == [first, second] || pair == [second, first] {
-                    labelled |= !other_indexed;
-                    if let Some(q) = self.point(other) {
-                        // The adapter has equations for a pair of distinct
-                        // outputs. Several earlier variables are ambiguous.
-                        if earlier.replace(q).is_some() {
-                            return None;
-                        }
-                    }
+        let constraint = match cached {
+            Some(constraint) => constraint,
+            None => {
+                let constraint = intersection_constraint(
+                    c,
+                    id,
+                    [first, second],
+                    indexed,
+                    budget,
+                    intersections,
+                )?;
+                intersections.insert(id, constraint);
+                constraint
+            }
+        };
+        match constraint {
+            IntersectionConstraint::None => {}
+            IntersectionConstraint::DistinctOutput(other) => {
+                if let Some(q) = self.point(other) {
+                    self.add_distinct(p, q, budget)?;
+                } else {
+                    self.pending_distinct_outputs.push((other, p));
                 }
             }
-        }
-        let shared = if indexed && !labelled {
-            shared_point(c, id, first, second, two_circles, budget)?
-        } else {
-            None
-        };
-        match (earlier, shared) {
-            (Some(_), Some(_)) => {
-                // The reference adapters overwrite the distinct-output
-                // equation with the common-point exclusion and leave a null
-                // equation. Decline that proof before solving it.
-                return None;
+            IntersectionConstraint::ExcludedPoint(other) => {
+                self.add_distinct(p, self.point(other)?, budget)?;
             }
-            (Some(q), None) => self.add_distinct(p, q, budget)?,
-            (None, Some(shared)) => self.add_distinct(p, self.point(shared)?, budget)?,
-            (None, None) => {}
+            IntersectionConstraint::MissingEquation => return None,
         }
         self.point_vars.insert(id, p);
         Some(())
@@ -769,7 +833,9 @@ fn distinct(p: [usize; 2], q: [usize; 2], t: usize, budget: &Budget) -> Option<P
 /// The points an object was drawn through, which lie on it by construction.
 fn drawn_through(c: &Construction, object: Id) -> Vec<Id> {
     match c.def(object) {
-        Def::Line(p, q) | Def::Segment(p, q) => vec![p, q],
+        Def::Line(p, q) | Def::Segment(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
+            vec![p, q]
+        }
         Def::Perpendicular { through, .. } | Def::Parallel { through, .. } => vec![through],
         Def::CircleThrough { through, .. } => vec![through],
         Def::Conic(ConicDef::ThroughThree(p, q, r)) => vec![p, q, r],
@@ -801,7 +867,8 @@ fn symbolic_intersection(c: &Construction, id: Id) -> Option<([Id; 2], bool)> {
         Def::IntersectLineCircle { line, circle, .. } => return Some(([line, circle], true)),
         Def::IntersectCircles { c1, c2, .. } => return Some(([c1, c2], true)),
         Def::IntersectLineConic(d)
-            if c.kind(d.line) == Kind::Line && c.kind(d.conic) == Kind::Circle =>
+            if matches!(c.kind(d.line), Kind::Line | Kind::Segment | Kind::Ray)
+                && c.kind(d.conic) == Kind::Circle =>
         {
             ([d.line, d.conic], d.output)
         }
@@ -817,6 +884,43 @@ fn symbolic_intersection(c: &Construction, id: Id) -> Option<([Id; 2], bool)> {
         Output::Index(0 | 1) => Some((pair, true)),
         _ => None,
     }
+}
+
+/// The shared adapter keeps one distinctness equation if any output was
+/// translated before. A hidden helper's common-point exclusion overwrites
+/// that equation and leaves a null entry in its place.
+fn intersection_constraint(
+    c: &Construction,
+    id: Id,
+    [first, second]: [Id; 2],
+    indexed: bool,
+    budget: &Budget,
+    intersections: &IntersectionTranslations,
+) -> Option<IntersectionConstraint> {
+    budget.charge(c.child_count(first) + 1)?;
+    let mut labelled = false;
+    let mut earlier = None;
+    for other in c.children(first).filter(|&other| other != id) {
+        if let Some((pair, other_indexed)) = symbolic_intersection(c, other) {
+            if pair == [first, second] || pair == [second, first] {
+                labelled |= !other_indexed;
+                if intersections.constraints.contains_key(&other) {
+                    earlier = Some(other);
+                }
+            }
+        }
+    }
+    let shared = if indexed && !labelled {
+        shared_point(c, id, first, second, c.kind(first) == Kind::Circle, budget)?
+    } else {
+        None
+    };
+    Some(match (earlier, shared) {
+        (Some(_), Some(_)) => IntersectionConstraint::MissingEquation,
+        (Some(other), None) => IntersectionConstraint::DistinctOutput(other),
+        (None, Some(shared)) => IntersectionConstraint::ExcludedPoint(shared),
+        (None, None) => IntersectionConstraint::None,
+    })
 }
 
 /// The common point excluded by a hidden intersection algorithm. The

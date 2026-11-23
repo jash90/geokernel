@@ -269,7 +269,7 @@ cases.case("expression", TRI + ["D = (-1, 3)", "b = Distance(A, B) == Distance(C
 # Formulas whose terms have mixed signs: the elimination squares each length.
 ISO = ["A = (0, 0)", "B = (4, 0)", "f = PerpendicularBisector(A, B)", "P = Point(f)",
        "s = Segment(P, A)", "t = Segment(P, B)"]
-proof("expression", ISO, "s + t == 0")
+proof("expression", ISO, "s + t == 0", relation=True)
 proof("expression", ISO, "s - t == 0")
 proof("expression", ISO, "s == -t")
 proof("expression", TRI + ["s = Segment(A, B)", "t = Segment(B, C)", "u = Segment(A, C)"],
@@ -324,8 +324,21 @@ proof("incidence", ["A = (0, 0)", "B = (4, 0)", "C = (2, 4)", "D = (2, 3)",
 proof("incidence", ["A = (0, 0)", "r = 2", "k = Circle(A, r)", "B = (2, 0)",
                     "l = Line(A, B)", "P = Intersect(l, k)", "M = Midpoint(P_{1}, P_{2})"],
       "AreEqual(M, A)")
-cases.case("incidence", ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)", "g = Line(O, A)",
-                         "Q = Intersect(g, c, 1)", "M = Midpoint(A, Q)", "b = AreEqual(M, O)",
-                         "p = Prove(b)", "q = ProveDetails(b)", "P = Intersect(g, c)"], [])
+DIAMETER = ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)", "g = Line(O, A)"]
+INDEXED_DIAMETER = DIAMETER + ["Q = Intersect(g, c, 1)"]
+MIDPOINT_PROOF = ["M = Midpoint(A, Q)", "b = AreEqual(M, O)",
+                  "p = Prove(b)", "q = ProveDetails(b)"]
+cases.case("incidence", INDEXED_DIAMETER + MIDPOINT_PROOF
+           + ["P = Intersect(g, c)", "q_{2} = ProveDetails(b)"], [])
+cases.case("incidence", INDEXED_DIAMETER + ["b = AreEqual(A, Q)", "p = Prove(b)",
+                                           "P = Intersect(g, c)", "p_{2} = Prove(b)"], [])
+proof("incidence", DIAMETER + ["P = Intersect(g, c)", "R = Intersect(g, c, 1)"],
+      "AreCollinear(P_{1}, P_{2}, R)")
+
+for carrier in ("Segment", "Ray"):
+    proof("incidence", ["A = (-4, 0)", "B = (4, 0)", "O = Midpoint(A, B)", "C = (0, 2)",
+                        "k = Circle(O, C)", f"s = {carrier}(A, B)",
+                        "P = Intersect(s, k, 1)", "Q = Intersect(s, k, 2)",
+                        "M = Midpoint(P, Q)"], "AreEqual(M, O)")
 
 cases.write()
