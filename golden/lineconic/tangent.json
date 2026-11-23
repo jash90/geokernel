@@ -20,7 +20,8 @@
         { "action": "set_number", "label": "n", "value": 0.0 },
         { "action": "set_number", "label": "n", "value": 1.0 },
         { "action": "set_number", "label": "n", "value": 5.0 },
-        { "action": "set_number", "label": "n", "value": 6.0 }
+        { "action": "set_number", "label": "n", "value": 6.0 },
+        { "action": "reject", "line": "S = Intersect(g, k, A, 1)" }
       ],
       "snapshots": [
         {
@@ -58,6 +59,15 @@
           "B": { "type": "point", "defined": true, "x": 6.0, "y": 5.0 },
           "g": { "type": "segment", "defined": true, "x1": -6.0, "y1": 5.0, "x2": 6.0, "y2": 5.0 },
           "R": { "type": "point", "defined": true, "x": 0.0, "y": 5.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 5.0 },
+          "n": { "type": "number", "defined": true, "value": 6.0 },
+          "A": { "type": "point", "defined": true, "x": -6.0, "y": 6.0 },
+          "B": { "type": "point", "defined": true, "x": 6.0, "y": 6.0 },
+          "g": { "type": "segment", "defined": true, "x1": -6.0, "y1": 6.0, "x2": 6.0, "y2": 6.0 },
+          "R": { "type": "point", "defined": false }
         },
         {
           "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
