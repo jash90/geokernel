@@ -2416,8 +2416,8 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(Id(i)));
             }
         }
-        // Redefinition rebuilds symbolic helpers even for intersections
-        // that do not read the edited definition.
+        // Redefinition rebuilds the reference's symbolic helpers, including
+        // those for intersections that do not read the edited definition.
         self.proof_intersections = Default::default();
         self.rebuild_self_circle_updates();
         self.propagate_dirty_with(dirty, 0, Propagation::Redefinition { rebuild_records });
