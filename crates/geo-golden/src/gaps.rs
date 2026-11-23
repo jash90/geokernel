@@ -102,6 +102,19 @@ pub fn load() -> Result<Gaps, String> {
     Ok(gaps)
 }
 
+/// The known gaps with the Giac backend, whatever this build's features.
+pub fn load_giac() -> Result<Gaps, String> {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let read = |name: &str| {
+        let path = dir.join(name);
+        std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))
+    };
+    overlay(
+        parse(&read("known-gaps.toml")?)?,
+        &read("known-gaps-giac.toml")?,
+    )
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct OverlayFile {

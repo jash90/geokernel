@@ -362,11 +362,13 @@ def classify(group, command, alias_of):
     return "P2", "todo", ""
 
 
-def build_rows(commands_java, constants_java, forms=None, done=None):
+def build_rows(commands_java, constants_java, forms=None, done=None, giac=None):
     """Rows of the matrix. `forms` maps an in-scope command to (group, list of
-    its 2D forms) and `done` maps a command to its number of done forms."""
+    its 2D forms), `done` maps a command to its number of done forms and
+    `giac` to the done forms that need the kernel's `giac` feature."""
     forms = forms or {}
     done = done or {}
+    giac = giac or {}
     tables = parse_table_constants(constants_java)
     entries = split_enum_entries(commands_java)
     names = {name for name, _ in entries}
@@ -397,7 +399,12 @@ def build_rows(commands_java, constants_java, forms=None, done=None):
             else:
                 status = "todo"
             total, got = str(n_forms), str(n_done)
-        rows[name] = (group, priority, status, total, got, FORM_NOTES.get(name, notes))
+        notes = FORM_NOTES.get(name, notes)
+        if giac.get(name):
+            listed = ", ".join("%s(%s)" % (name, f.replace(",", ", ")) for f in giac[name])
+            notes = (notes + " " if notes else "") + (
+                "Done only with the giac feature (docs/cas-giac.md): %s." % listed)
+        rows[name] = (group, priority, status, total, got, notes)
     out = []
     for name, _ in entries:
         target = aliases.get(name, "")
@@ -447,6 +454,16 @@ def read_evidence(text, forms):
         seen.add((command, form))
         done[command] = done.get(command, 0) + 1
     return done
+
+
+def read_giac_forms(text):
+    """form-evidence.toml -> {command: [form, ...]} for the rows marked
+    `giac = true`, in file order."""
+    out = {}
+    for row in tomllib.loads(text).get("form", []):
+        if row.get("giac"):
+            out.setdefault(row["command"], []).append(row["form"])
+    return out
 
 
 def check_scope(rows, forms):
@@ -518,8 +535,10 @@ def main(argv=None):
     commands_java = (base / "Commands.java").read_text(encoding="utf-8")
     constants_java = (base / "CommandsConstants.java").read_text(encoding="utf-8")
     forms = read_forms(Path(args.forms).read_text(encoding="utf-8"))
-    done = read_evidence(Path(args.evidence).read_text(encoding="utf-8"), forms)
-    rows, unclassified, declared = build_rows(commands_java, constants_java, forms, done)
+    evidence = Path(args.evidence).read_text(encoding="utf-8")
+    done = read_evidence(evidence, forms)
+    giac = read_giac_forms(evidence)
+    rows, unclassified, declared = build_rows(commands_java, constants_java, forms, done, giac)
     errors = check_scope(rows, forms)
     if errors:
         print("\n".join(errors), file=sys.stderr)

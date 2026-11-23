@@ -3949,3 +3949,116 @@ command = "Corner"
 form = "inequality"
 cases = ["corners-inequality-014", "corners-inequality-015"]
 difference = "geometry-command-arguments: `Corner(inequality)` and `Vertex(inequality)`"
+
+# Forms that agree only with the kernel's `giac` feature (docs/cas-giac.md):
+# every recorded case that calls them agrees with known-gaps-giac.toml.
+
+[[form]]
+command = "NSolutions"
+form = "conic"
+cases = ["cas-conic-004", "cas-conic-010", "cas-conic-011"]
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "list"
+cases = ["cas-edge-011", "cas-edge-017", "cas-edge-019"]
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "function,any"
+cases = ["cas-edge-001", "cas-edge-002", "cas-edge-004"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "line,any"
+cases = ["cas-edge-015", "cas-hint-008", "cas-hint-012"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "conic,any"
+cases = ["cas-coefficient-001", "cas-conic-008", "cas-conic-009"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "conic"
+cases = ["cas-conic-003", "cas-conic-010", "cas-conic-011"]
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "list"
+cases = ["cas-edge-019", "cas-solve-027"]
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "function,any"
+cases = ["cas-hint-003", "cas-hint-017", "cas-hint-020"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "line,any"
+cases = ["cas-hint-007", "cas-hint-011", "cas-hint-014"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "conic,any"
+cases = ["cas-conic-007", "cas-conic-009", "cas-conic-010"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "line"
+cases = ["cas-edge-003", "cas-edge-006", "cas-solve-022"]
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "list"
+cases = ["cas-edge-011", "cas-rows-001", "cas-rows-002"]
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "function,any"
+cases = ["cas-edge-004", "cas-edge-009", "cas-hint-002"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "Solve"
+form = "line"
+cases = ["cas-edge-003", "cas-edge-006", "cas-solve-018"]
+giac = true
+
+[[form]]
+command = "Solve"
+form = "conic"
+cases = ["cas-conic-001", "cas-conic-010", "cas-conic-011"]
+giac = true
+
+[[form]]
+command = "Solve"
+form = "list"
+cases = ["cas-rows-001", "cas-rows-002", "cas-rows-003"]
+giac = true
+
+[[form]]
+command = "Solve"
+form = "function,any"
+cases = ["cas-hint-001", "cas-hint-017", "cas-hint-021"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
