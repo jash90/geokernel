@@ -1656,9 +1656,10 @@ final class Session {
             case "IsVertexForm":
                 return "boolean";
             case "Sum":
-                // folding points or vectors sums to a point (`CmdSum` wraps
-                // them in a list of points), functions to a function, texts
-                // to a text; the four-argument fold over the function
+                // folding point arguments sums to a point (`CmdSum` wraps
+                // them in a list of points), a list of points to a point and
+                // a list of vectors to a vector, functions to a function,
+                // texts to a text; the four-argument fold over the function
                 // variable itself stays a function
                 List<String> folded = arguments(definition);
                 GeoElement lead = folded.isEmpty() ? null
