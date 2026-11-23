@@ -281,6 +281,60 @@
           "P_{2}": { "type": "point", "defined": true, "x": 2.0, "y": 3.4641016151377544 }
         }
       ]
+    },
+    {
+      "id": "corners-review-016",
+      "group": "corners",
+      "script": [
+        "n = 0.5",
+        "P = Vertex(y > x^n && x > 1 && y > 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 2.0 },
+        { "action": "set_number", "label": "n", "value": 0.5 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "P_{1}": { "type": "point", "defined": false }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "P_{1}": { "type": "point", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "corners-review-017",
+      "group": "corners",
+      "script": [
+        "n = 2",
+        "P = Vertex(y > x^n && x > 4 && y > 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.5 },
+        { "action": "set_number", "label": "n", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 16.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.5 },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 2.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 3.0 },
+          "P_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 64.0 }
+        }
+      ]
     }
   ]
 }

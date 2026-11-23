@@ -38,8 +38,19 @@ mismatches = ["2:A", "2:B"]
 
 [[gap]]
 id = "corners-review-004"
-reason = "AlgoVertexIneq keeps the intersection helper it created on the first update. The helper for y > x^n and x > 1 was made while n = 2 made the border polynomial; after n becomes 0.5 that cached polynomial helper still evaluates the border on the vertical line and finds (1, 1). Which helper exists depends on the edit history, so the kernel leaves the variable exponent undefined instead"
+reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 1 got a polynomial helper at n = 2, so at n = 0.5 it still finds (1, 1), where a fresh Newton helper finds nothing (corners-review-016 shows the reverse order)."
 mismatches = ["1:P_{1}"]
+
+[[gap]]
+id = "corners-review-016"
+reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 1 got a Newton helper at n = 0.5, so at n = 2 it still finds nothing, where a fresh polynomial helper finds (1, 1) (corners-review-004 shows the reverse order)."
+mismatches = ["1:P_{1}"]
+
+[[gap]]
+id = "corners-review-017"
+reason = "AlgoVertexIneq keeps one intersection helper per border pair from the first update that needs it (`helpers[i][j]`, reset only when the number of borders changes), and the helper's class follows whether the function border was polynomial then (`intParamYLinear`, `intParamXLinear`, `intParamOneVar`, `intParamParam`, `intParamXParamY`). A polynomial helper later evaluates the live border on a vertical line (`AlgoRootsPolynomial.computePolyLineIntersection`) and finds no roots on other lines; a Newton helper starts from an undefined point and never yields a vertex, even when the border becomes polynomial. The kernel computes the vertices of an inequality without that per-command history, as a fresh helper would. Here the pair y > x^n and x > 4 got a polynomial helper at n = 2, so at n = 0.5 it evaluates the live border on the vertical line and finds (4, 2), where a fresh Newton helper finds nothing; it reads the current exponent, not the one it was made with."
+mismatches = ["1:P_{1}"]
+undefined = true
 
 # conic
 
@@ -3100,11 +3111,6 @@ reason = "A text corner reads the drawable's font metrics and anchor bounds. The
 mismatches = ["0:P", "3:P"]
 
 [[gap]]
-id = "corners-checkbox-001"
-reason = "A Boolean corner reads the checkbox drawable. This headless drawable reports a zero-size rectangle at the pixel origin, and the kernel has no checkbox bounds."
-mismatches = ["0:P", "1:P", "3:P"]
-
-[[gap]]
 id = "curvepairs-growth-001"
 reason = "The reference orders the positive integer root first when the height reaches one. The kernel orders the real solutions by ascending first parameter."
 mismatches = ["1:P_{1}", "1:P_{2}"]
@@ -3347,11 +3353,6 @@ reason = "The kernel lacks the reference sign convention for the initial rank-on
 mismatches = ["0:s", "2:s", "3:s"]
 
 [[gap]]
-id = "funcrest-conditionalmixed-001"
-reason = "The kernel lacks a segment record with a separately assignable supporting line and retained endpoints. It therefore rejects a segment followed by a plain line."
-mismatches = ["0:script line 7"]
-
-[[gap]]
 id = "misc-maximizepoint-006"
 reason = "While the circle is undefined (negative radius) the reference's search stops at its first undefined sample and the optimizer keeps its previous point, still defined; the kernel reports the optimum undefined. The recorded runs show the retained value, but the readable sources do not settle how the point copy keeps it (the moving point returns to its last coordinates after a NaN path parameter), so the kernel does not guess it. The steps before and after agree."
 mismatches = ["1:M"]
@@ -3373,12 +3374,12 @@ mismatches = ["0:g", "0:h", "3:g", "3:h"]
 
 [[gap]]
 id = "funcrest-derivative-004"
-reason = "The 260-point spline system is solved with the reference elimination and agrees bit for bit on the x coordinates. Seven of its y inputs sin(k) (k = 18, 64, 89, 131, 202, 224, 233) differ by one ulp: the kernel evaluates sin with the portable fdlibm algorithm, the recording JVM with its Math.sin intrinsic. The ill-conditioned 260-piece monomial system amplifies the ulp to a relative 1.5e-9 in y(0.875). Both derivatives agree."
+reason = "The 260-point spline system is solved with the reference elimination. Its y inputs come from MyDouble.sin, which calls Math.sin; on the recording JVM (HotSpot x86_64, OpenJDK 17) that call runs the libm intrinsic stub, which differs by one ulp from StrictMath (fdlibm, the kernel's algorithm) for k = 18, 24, 26, 62, 89, 131, 202 and 233 in 1..260. The ill-conditioned 260-piece monomial system amplifies these ulps to a relative 1.5e-9 in y(0.875). Black-box check: substituting the intrinsic's Math.sin values for those inputs makes the case agree, and with -XX:-UseLibmIntrinsic the JVM's Math.sin equals StrictMath.sin. The stub is HotSpot assembly under GPLv2 with no EUPL or published description, so the kernel does not port it."
 mismatches = ["1:s"]
 
 [[gap]]
 id = "funcrest-splinelong-003"
-reason = "Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM's Math.pow intrinsic is off by one ulp when the exact power lies within about 0.003 ulp of a rounding midpoint, which happens for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. The later steps, including the stale point-count check, agree."
+reason = "Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM (HotSpot x86_64, OpenJDK 17) runs Math.pow as its libm intrinsic stub, which is off by one ulp from that for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. Black-box check: substituting the intrinsic's Math.pow values for all 3963 powers the kernel's spline code asks for makes the case agree. The stub is HotSpot assembly under GPLv2 with no EUPL or published description, so the kernel does not port it. The later steps, including the stale point-count check, agree."
 mismatches = ["1:d", "1:s"]
 
 [[gap]]

@@ -60,7 +60,7 @@ Barycenter,,geometry,P1,done,1,1,
 Trilinear,,geometry,P1,done,1,1,"Trilinear(point, point, point, number, number, number)"
 Cubic,,geometry,P1,done,1,1,
 TriangleCurve,,geometry,P1,done,1,1,
-Vertex,,geometry,P1,partial,12,7,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment and raster image corners. Polynomial inequality borders."
+Vertex,,geometry,P1,partial,12,8,"Conic, polygon, polyline and graphics view corners. Indexed polygon, polyline, segment, raster image and hidden checkbox corners. Polynomial inequality borders."
 PolyLine,,geometry,P1,partial,4,2,Live list with optional Boolean or separate points with an optional false flag
 PenStroke,,geometry,P1,partial,2,1,Literal points smoothed into cubic pieces in the view and frozen; saved strokes restore their points.
 PenStrokeBezier,,english,,out_of_scope,,,"A pen stroke reads the pointing device and the tablet state, not the construction."
@@ -99,7 +99,7 @@ Ordinal,,text,P2,done,1,1,
 ContinuedFraction,,text,P2,done,4,4,
 ReplaceAll,,text,P2,done,1,1,
 Split,,text,P2,done,1,1,
-If,,logical,P2,todo,2,0,"Scalar, coordinate, boolean, text, list and numeric-function branches, plus same-kind geometry alternatives with live shape records."
+If,,logical,P2,todo,2,0,"Scalar, coordinate, boolean, text, list and numeric-function branches, plus same-kind geometry alternatives with live shape records and mixed segment and line alternatives."
 CountIf,,logical,P2,done,2,2,
 IsInteger,,logical,P2,done,1,1,
 KeepIf,,logical,P2,done,2,2,
