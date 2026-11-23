@@ -70,6 +70,12 @@ fn allocations<T>(f: impl FnOnce() -> T) -> (T, u64) {
 
 const BOUND: Duration = Duration::from_secs(30);
 
+/// The wall-clock bound of the 50,000-item import. A debug build takes about
+/// 17 s on a developer machine and 34 to 47 s on loaded hosted macOS and
+/// Windows runners (CI runs of 2026-11-23); an importer whose work grew
+/// quadratically would take minutes at this size.
+const IMPORT_BOUND: Duration = Duration::from_secs(120);
+
 const SMALL: &str = "<geogebra><construction><element type=\"point\" label=\"A\">\
                      <coords x=\"1\" y=\"2\" z=\"1\"/></element></construction></geogebra>";
 
@@ -250,7 +256,7 @@ fn tens_of_thousands_of_items_are_imported_in_bounded_time() {
     let xml = points(50_000);
     let (r, took) = timed(|| import(xml.as_bytes()));
     assert_eq!(r.unwrap().script.len(), 50_000);
-    assert!(took < BOUND, "{took:?}");
+    assert!(took < IMPORT_BOUND, "{took:?}");
 }
 
 /// The bytes of text an import result holds.
