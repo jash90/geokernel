@@ -12,7 +12,7 @@ use crate::algo::intersect::helper_line_conic_points;
 use crate::algo::plane_polynomial::{self, PlanePolynomial};
 use crate::tol::STANDARD_PRECISION;
 use crate::{Construction, Def, Id};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -38,6 +38,8 @@ pub(crate) struct VertexHelpers {
     records: Mutex<HelperRecords>,
     outputs: Vec<Id>,
     changed: AtomicBool,
+    pub(crate) pending: BTreeSet<Id>,
+    pub(crate) refreshing: bool,
 }
 
 #[derive(Default)]
@@ -76,6 +78,9 @@ impl VertexHelpers {
     pub(crate) fn attach(&mut self, source: Id, owner: Id, output: Id) {
         self.outputs.push(output);
         if output != owner {
+            if self.pending.contains(&owner) {
+                self.pending.insert(output);
+            }
             return;
         }
         let records = self.records.get_mut().expect("inequality helpers");
@@ -94,11 +99,13 @@ impl VertexHelpers {
         let records = self.records.get_mut().expect("inequality helpers");
         records.attached.clear();
         records.preview = None;
+        self.pending.clear();
     }
 
     pub(crate) fn truncate(&mut self, len: usize) {
         self.outputs
             .truncate(self.outputs.partition_point(|id| id.index() < len));
+        self.pending.split_off(&Id(len));
         let records = self.records.get_mut().expect("inequality helpers");
         records.attached.split_off(&Id(len));
         records.preview = None;
@@ -168,6 +175,9 @@ pub(crate) fn vertices(c: &Construction, source: Id, owner: Id) -> Arc<[(f64, f6
             .lock()
             .expect("inequality helpers");
         let helpers = records.attached.entry(owner).or_default();
+        if c.inequality_helpers.refreshing {
+            *helpers = Helpers::default();
+        }
         helpers.changed = false;
         let result = points(compute(c, source, helpers));
         if helpers.changed {

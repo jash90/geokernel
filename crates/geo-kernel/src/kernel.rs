@@ -2233,6 +2233,9 @@ impl Construction {
             DefinitionRefresh::All
         };
         self.propagate_dirty(dirty, 0, refresh);
+        if rebuilds {
+            self.inequality_helpers.pending.clear();
+        }
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;
         Ok(Some(id))
@@ -3112,6 +3115,26 @@ impl Construction {
             .expect("unlimited helper reset")
     }
 
+    /// Starts fresh only for vertex slots evaluated since the last reset.
+    /// A checkpoint can therefore repeat at most the slot work its edits
+    /// scheduled. Descendants update as usual when a vertex changes.
+    pub fn refresh_inequality_vertex_helpers(&mut self) -> bool {
+        if self.inequality_helpers.pending.is_empty() {
+            return false;
+        }
+        let pending = std::mem::take(&mut self.inequality_helpers.pending);
+        let mut dirty = std::mem::take(&mut self.dirty);
+        dirty.fit(self.len());
+        expr::charge(pending.len() as u64);
+        for id in pending {
+            dirty.insert(self.evaluation_rank(id));
+        }
+        self.inequality_helpers.refreshing = true;
+        self.propagate_dirty(dirty, 0, DefinitionRefresh::None);
+        self.inequality_helpers.refreshing = false;
+        true
+    }
+
     /// Rebuilds the helpers in a scratch construction during replay. Charges
     /// the slots before scheduling them and checks the solver work between
     /// recomputations. If the budget runs out, the caller must discard the
@@ -3134,6 +3157,7 @@ impl Construction {
         self.propagate_dirty_while(dirty, 0, DefinitionRefresh::None, || {
             expr::work_done().wrapping_sub(start) <= *remaining
         })?;
+        self.inequality_helpers.pending.clear();
         *remaining = remaining.checked_sub(expr::work_done().wrapping_sub(start))?;
         Some(true)
     }
@@ -3347,6 +3371,11 @@ impl Construction {
                 _ => {
                     if matches!(def, Def::IntersectBoundary(d) if d.retains_output(self)) {
                         continue;
+                    }
+                    if matches!(def, Def::Point(PointDef::InequalityVertex { .. }))
+                        && !self.inequality_helpers.refreshing
+                    {
+                        self.inequality_helpers.pending.insert(Id(i));
                     }
                     let new = self.compute(def, i);
                     self.keep_circle_record(i, def, new);

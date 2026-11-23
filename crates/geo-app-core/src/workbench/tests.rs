@@ -2075,6 +2075,84 @@ fn alternating_snapshot_edits_share_one_helper_reset_budget() {
 }
 
 #[test]
+fn unrelated_snapshot_edits_do_no_vertex_refresh_work() {
+    let mut text = format!("# geokernel snapshot {}\n", SNAPSHOT_VERSION);
+    text.push_str(concat!(
+        "a = 1\nn = 2\n",
+        "q(x,y) = y > x^n && x > 4 && y > 0 # labels: q\n",
+        "P = Vertex(q) # labels: P_{1}\n",
+        "SetValue(n, 0.5)\n$refreshInequalityHelpers()\n",
+    ));
+    let restore = |text: &str| {
+        let mut w = Workbench::default();
+        let before = geo_kernel::expr::work_done();
+        assert!(w.restore_text(text).unwrap().is_empty());
+        let work = geo_kernel::expr::work_done() - before;
+        let c = w.construction();
+        assert_eq!(c.value(c.id("P_{1}").unwrap()), Value::Undefined);
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Number(1.0));
+        assert_eq!(
+            w.snapshot_text()
+                .matches("$refreshInequalityHelpers()")
+                .count(),
+            1
+        );
+        work
+    };
+    let edits = "SetValue(a, 0)\nSetValue(a, 1)\n";
+    let alternating =
+        "SetValue(a, 0)\n$refreshInequalityHelpers()\nSetValue(a, 1)\n$refreshInequalityHelpers()\n";
+    assert_eq!(
+        restore(&(text.clone() + &alternating.repeat(50_000))),
+        restore(&(text + &edits.repeat(50_000)))
+    );
+}
+
+#[test]
+fn repeated_edit_and_undo_keeps_inequality_vertex_history() {
+    let mut w = Workbench::from_script(concat!(
+        "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\n",
+        "s = Sequence(If(IsDefined(P_{1}), x(P_{1}), 0) + k, k, 1, 256)\n",
+        "a = 0\nZ = (0, 0)",
+    ))
+    .unwrap();
+    let vertex = |w: &Workbench| {
+        let c = w.construction();
+        c.value(c.id("P_{1}").unwrap())
+    };
+    for edit in 0..500 {
+        let polynomial = edit % 2 != 0;
+        let n = w.construction().id("n").unwrap();
+        assert!(w.set_number(n, if polynomial { 2.0 } else { 0.5 }));
+        let a = w.construction().id("a").unwrap();
+        assert!(w.set_number(a, 1.0));
+        assert!(w.undo(), "undo after retained edit {edit}");
+        let expected = if polynomial {
+            Value::Point { x: 4.0, y: 16.0 }
+        } else {
+            Value::Undefined
+        };
+        assert_eq!(vertex(&w), expected, "retained edit {edit}");
+    }
+
+    assert!(w.undo());
+    assert_eq!(vertex(&w), Value::Undefined);
+    assert!(w.redo());
+    assert_eq!(vertex(&w), Value::Point { x: 4.0, y: 16.0 });
+    let z = w.construction().id("Z").unwrap();
+    assert!(w.delete(z));
+    let mut reopened = Workbench::default();
+    assert!(reopened
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_eq!(labelled_values(&reopened), labelled_values(&w));
+    let n = reopened.construction().id("n").unwrap();
+    assert!(reopened.set_number(n, 0.5));
+    assert_eq!(vertex(&reopened), Value::Point { x: 4.0, y: 2.0 });
+}
+
+#[test]
 fn undo_redo_and_snapshot_reload_rebuild_inequality_vertex_helpers() {
     let mut w = Workbench::from_script(
         "n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)\nZ = (0, 0)",
