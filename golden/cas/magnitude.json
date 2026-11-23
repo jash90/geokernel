@@ -1,0 +1,2094 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-magnitude-001",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-10^(-36)",
+        "r1 = NSolutions(f, x=1)",
+        "r2 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, -1.0E-36],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -7.660138154215E-13 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -7.660138154215E-13 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-002",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-10^(-27)",
+        "r1 = NSolutions(f, x=1)",
+        "r2 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, -1.0E-27],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-9 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-9 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-003",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-10^(-18)",
+        "r1 = NSolutions(f, x=1)",
+        "r2 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.0],
+              [-4.0, -64.0],
+              [-2.0, -8.0],
+              [-1.0, -1.0],
+              [-0.5, -0.125],
+              [0.0, -1.0E-18],
+              [0.5, 0.125],
+              [1.0, 1.0],
+              [2.0, 8.0],
+              [4.0, 64.0],
+              [8.0, 512.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-6 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-6 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-004",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-10^(-9)",
+        "r1 = NSolutions(f, x=1)",
+        "r2 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -512.000000001],
+              [-4.0, -64.000000001],
+              [-2.0, -8.000000001],
+              [-1.0, -1.000000001],
+              [-0.5, -0.125000001],
+              [0.0, -1.0E-9],
+              [0.5, 0.124999999],
+              [1.0, 0.999999999],
+              [2.0, 7.999999999],
+              [4.0, 63.999999999],
+              [8.0, 511.999999999]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.001 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.001 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-005",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-10^(0)",
+        "r1 = NSolutions(f, x=1)",
+        "r2 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -513.0],
+              [-4.0, -65.0],
+              [-2.0, -9.0],
+              [-1.0, -2.0],
+              [-0.5, -1.125],
+              [0.0, -1.0],
+              [0.5, -0.875],
+              [1.0, 0.0],
+              [2.0, 7.0],
+              [4.0, 63.0],
+              [8.0, 511.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-006",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-10^(9)",
+        "r1 = NSolutions(f, x=1)",
+        "r2 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.000000512E9],
+              [-4.0, -1.000000064E9],
+              [-2.0, -1.000000008E9],
+              [-1.0, -1.000000001E9],
+              [-0.5, -1.000000000125E9],
+              [0.0, -1.0E9],
+              [0.5, -9.99999999875E8],
+              [1.0, -9.99999999E8],
+              [2.0, -9.99999992E8],
+              [4.0, -9.99999936E8],
+              [8.0, -9.99999488E8]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1000.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1000.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-007",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-10^(18)",
+        "r1 = NSolutions(f, x=1)",
+        "r2 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0000000000000005E18],
+              [-4.0, -1.0E18],
+              [-2.0, -1.0E18],
+              [-1.0, -1.0E18],
+              [-0.5, -1.0E18],
+              [0.0, -1.0E18],
+              [0.5, -1.0E18],
+              [1.0, -1.0E18],
+              [2.0, -1.0E18],
+              [4.0, -1.0E18],
+              [8.0, -9.999999999999995E17]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-008",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-10^(27)",
+        "r1 = NSolutions(f, x=1)",
+        "r2 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0E27],
+              [-4.0, -1.0E27],
+              [-2.0, -1.0E27],
+              [-1.0, -1.0E27],
+              [-0.5, -1.0E27],
+              [0.0, -1.0E27],
+              [0.5, -1.0E27],
+              [1.0, -1.0E27],
+              [2.0, -1.0E27],
+              [4.0, -1.0E27],
+              [8.0, -1.0E27]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-009",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3-10^(36)",
+        "r1 = NSolutions(f, x=1)",
+        "r2 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0E36],
+              [-4.0, -1.0E36],
+              [-2.0, -1.0E36],
+              [-1.0, -1.0E36],
+              [-0.5, -1.0E36],
+              [0.0, -1.0E36],
+              [0.5, -1.0E36],
+              [1.0, -1.0E36],
+              [2.0, -1.0E36],
+              [4.0, -1.0E36],
+              [8.0, -1.0E36]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-010",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-40)*(x^3+x+1)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.19E-38],
+              [-4.0, -6.699999999999999E-39],
+              [-2.0, -9.0E-40],
+              [-1.0, -1.0E-40],
+              [-0.5, 3.7499999999999997E-41],
+              [0.0, 1.0E-40],
+              [0.5, 1.625E-40],
+              [1.0, 2.9999999999999998E-40],
+              [2.0, 1.0999999999999998E-39],
+              [4.0, 6.899999999999999E-39],
+              [8.0, 5.209999999999999E-38]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.682327803828 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-011",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-30)*(x^3+x+1)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.19E-28],
+              [-4.0, -6.700000000000001E-29],
+              [-2.0, -9.000000000000001E-30],
+              [-1.0, -1.0E-30],
+              [-0.5, 3.7500000000000003E-31],
+              [0.0, 1.0E-30],
+              [0.5, 1.625E-30],
+              [1.0, 3.0000000000000003E-30],
+              [2.0, 1.1000000000000001E-29],
+              [4.0, 6.9E-29],
+              [8.0, 5.210000000000001E-28]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.682327803828 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-012",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-20)*(x^3+x+1)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.189999999999999E-18],
+              [-4.0, -6.7E-19],
+              [-2.0, -8.999999999999999E-20],
+              [-1.0, -1.0E-20],
+              [-0.5, 3.7499999999999996E-21],
+              [0.0, 1.0E-20],
+              [0.5, 1.6249999999999998E-20],
+              [1.0, 2.9999999999999997E-20],
+              [2.0, 1.1E-19],
+              [4.0, 6.9E-19],
+              [8.0, 5.21E-18]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.682327803828 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-013",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-10)*(x^3+x+1)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.19E-8],
+              [-4.0, -6.7000000000000004E-9],
+              [-2.0, -9.0E-10],
+              [-1.0, -1.0E-10],
+              [-0.5, 3.75E-11],
+              [0.0, 1.0E-10],
+              [0.5, 1.625E-10],
+              [1.0, 3.0E-10],
+              [2.0, 1.1000000000000001E-9],
+              [4.0, 6.9000000000000006E-9],
+              [8.0, 5.21E-8]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.682327803828 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-014",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(10)*(x^3+x+1)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.19E12],
+              [-4.0, -6.7E11],
+              [-2.0, -9.0E10],
+              [-1.0, -1.0E10],
+              [-0.5, 3.75E9],
+              [0.0, 1.0E10],
+              [0.5, 1.625E10],
+              [1.0, 3.0E10],
+              [2.0, 1.1E11],
+              [4.0, 6.9E11],
+              [8.0, 5.21E12]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.682327803828 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-015",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(20)*(x^3+x+1)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.19E22],
+              [-4.0, -6.7E21],
+              [-2.0, -9.0E20],
+              [-1.0, -1.0E20],
+              [-0.5, 3.75E19],
+              [0.0, 1.0E20],
+              [0.5, 1.625E20],
+              [1.0, 3.0E20],
+              [2.0, 1.1E21],
+              [4.0, 6.9E21],
+              [8.0, 5.21E22]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.682327803828 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-016",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(30)*(x^3+x+1)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.19E32],
+              [-4.0, -6.7E31],
+              [-2.0, -9.0E30],
+              [-1.0, -1.0E30],
+              [-0.5, 3.7500000000000004E29],
+              [0.0, 1.0E30],
+              [0.5, 1.625E30],
+              [1.0, 3.0000000000000003E30],
+              [2.0, 1.1E31],
+              [4.0, 6.9E31],
+              [8.0, 5.21E32]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.682327803828 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-017",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(40)*(x^3+x+1)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -5.19E42],
+              [-4.0, -6.7000000000000004E41],
+              [-2.0, -9.0E40],
+              [-1.0, -1.0E40],
+              [-0.5, 3.75E39],
+              [0.0, 1.0E40],
+              [0.5, 1.625E40],
+              [1.0, 3.0E40],
+              [2.0, 1.1E41],
+              [4.0, 6.9E41],
+              [8.0, 5.21E42]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.682327803828 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-018",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3+x-10^(-30)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -520.0],
+              [-4.0, -68.0],
+              [-2.0, -10.0],
+              [-1.0, -2.0],
+              [-0.5, -0.625],
+              [0.0, -1.0E-30],
+              [0.5, 0.625],
+              [1.0, 2.0],
+              [2.0, 10.0],
+              [4.0, 68.0],
+              [8.0, 520.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-30 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-019",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3+x-10^(-20)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -520.0],
+              [-4.0, -68.0],
+              [-2.0, -10.0],
+              [-1.0, -2.0],
+              [-0.5, -0.625],
+              [0.0, -1.0E-20],
+              [0.5, 0.625],
+              [1.0, 2.0],
+              [2.0, 10.0],
+              [4.0, 68.0],
+              [8.0, 520.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-20 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-020",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3+x-10^(-10)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -520.0000000001],
+              [-4.0, -68.0000000001],
+              [-2.0, -10.0000000001],
+              [-1.0, -2.0000000001],
+              [-0.5, -0.6250000001],
+              [0.0, -1.0E-10],
+              [0.5, 0.6249999999],
+              [1.0, 1.9999999999],
+              [2.0, 9.9999999999],
+              [4.0, 67.9999999999],
+              [8.0, 519.9999999999]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-10 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-021",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3+x-10^(10)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.000000052E10],
+              [-4.0, -1.0000000068E10],
+              [-2.0, -1.000000001E10],
+              [-1.0, -1.0000000002E10],
+              [-0.5, -1.0000000000625E10],
+              [0.0, -1.0E10],
+              [0.5, -9.999999999375E9],
+              [1.0, -9.999999998E9],
+              [2.0, -9.99999999E9],
+              [4.0, -9.999999932E9],
+              [8.0, -9.99999948E9]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2154.434535312 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-022",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3+x-10^(20)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0E20],
+              [-4.0, -1.0E20],
+              [-2.0, -1.0E20],
+              [-1.0, -1.0E20],
+              [-0.5, -1.0E20],
+              [0.0, -1.0E20],
+              [0.5, -1.0E20],
+              [1.0, -1.0E20],
+              [2.0, -1.0E20],
+              [4.0, -1.0E20],
+              [8.0, -1.0E20]
+            ]
+          },
+          "r1": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-023",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3+x-10^(30)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0E30],
+              [-4.0, -1.0E30],
+              [-2.0, -1.0E30],
+              [-1.0, -1.0E30],
+              [-0.5, -1.0E30],
+              [0.0, -1.0E30],
+              [0.5, -1.0E30],
+              [1.0, -1.0E30],
+              [2.0, -1.0E30],
+              [4.0, -1.0E30],
+              [8.0, -1.0E30]
+            ]
+          },
+          "r1": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-024",
+      "group": "cas",
+      "script": [
+        "f(x) = x^3+x-10^(40)",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0E40],
+              [-4.0, -1.0E40],
+              [-2.0, -1.0E40],
+              [-1.0, -1.0E40],
+              [-0.5, -1.0E40],
+              [0.0, -1.0E40],
+              [0.5, -1.0E40],
+              [1.0, -1.0E40],
+              [2.0, -1.0E40],
+              [4.0, -1.0E40],
+              [8.0, -1.0E40]
+            ]
+          },
+          "r1": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-025",
+      "group": "cas",
+      "script": [
+        "f(x) = (x-10^2)^3+(10^6-10^(-5))",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -259712.00000999996],
+              [-4.0, -124864.00000999996],
+              [-2.0, -61208.00000999996],
+              [-1.0, -30301.00000999996],
+              [-0.5, -15075.12500999996],
+              [0.0, -9.999959729611874E-6],
+              [0.5, 14925.12499000004],
+              [1.0, 29700.99999000004],
+              [2.0, 58807.99999000004],
+              [4.0, 115263.99999000004],
+              [8.0, 221311.99999000004]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 3.3317303657530005E-10 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-026",
+      "group": "cas",
+      "script": [
+        "f(x) = (x-10^4)^3+(10^12-10^(1))",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -2.401920522E9],
+              [-4.0, -1.200480074E9],
+              [-2.0, -6.00120018E8],
+              [-1.0, -3.00030011E8],
+              [-0.5, -1.50007510125E8],
+              [0.0, -10.0],
+              [0.5, 1.49992490125E8],
+              [1.0, 2.99969991E8],
+              [2.0, 5.99879998E8],
+              [4.0, 1.199520054E9],
+              [8.0, 2.398080502E9]
+            ]
+          },
+          "r1": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-027",
+      "group": "cas",
+      "script": [
+        "f(x) = (x-10^6)^3+(10^18-10^(7))",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -2.4000202000512E13],
+              [-4.0, -1.2000058E13],
+              [-2.0, -6.000022E12],
+              [-1.0, -3.000013000064E12],
+              [-0.5, -1.500010749952E12],
+              [0.0, -1.0E7],
+              [0.5, 1.499989250048E12],
+              [1.0, 2.999987000064E12],
+              [2.0, 5.999978E12],
+              [4.0, 1.1999942000128E13],
+              [8.0, 2.3999798000512E13]
+            ]
+          },
+          "r1": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-028",
+      "group": "cas",
+      "script": [
+        "f(x) = (x-10^8)^3+(10^24-10^(13))",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -2.4001001918405018E17],
+              [-4.0, -1.200100049074258E17],
+              [-2.0, -6.001000125877453E16],
+              [-1.0, -3.001000030686413E16],
+              [-0.5, -1.5010000166453248E16],
+              [0.0, -1.0000026042368E13],
+              [0.5, 1.4989999845933056E16],
+              [1.0, 2.998999971790848E16],
+              [2.0, 5.998999879077069E16],
+              [4.0, 1.1998999519166464E17],
+              [8.0, 2.3998998074569523E17]
+            ]
+          },
+          "r1": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-029",
+      "group": "cas",
+      "script": [
+        "f(x) = (x-10^12)^3+(10^36-10^(25))",
+        "r1 = NSolutions(f, x=0)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -3.4000005658993318E25],
+              [-4.0, -2.200002970416378E25],
+              [-2.0, -1.5999967939772717E25],
+              [-1.0, -1.3000084631529775E25],
+              [-0.5, -1.1499995403455714E25],
+              [0.0, -1.0000053749334243E25],
+              [0.5, -8.499964521260182E24],
+              [1.0, -7.000022867138711E24],
+              [2.0, -3.999991984943179E24],
+              [4.0, 1.9999222054952947E24],
+              [8.0, 1.4000045734277422E25]
+            ]
+          },
+          "r1": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-030",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-40)*x-1",
+        "g(x) = x-10^(-40)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0],
+              [-4.0, -1.0],
+              [-2.0, -1.0],
+              [-1.0, -1.0],
+              [-0.5, -1.0],
+              [0.0, -1.0],
+              [0.5, -1.0],
+              [1.0, -1.0],
+              [2.0, -1.0],
+              [4.0, -1.0],
+              [8.0, -1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, -1.0E-40],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E40 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-40 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0E40 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-031",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-35)*x-1",
+        "g(x) = x-10^(-35)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0],
+              [-4.0, -1.0],
+              [-2.0, -1.0],
+              [-1.0, -1.0],
+              [-0.5, -1.0],
+              [0.0, -1.0],
+              [0.5, -1.0],
+              [1.0, -1.0],
+              [2.0, -1.0],
+              [4.0, -1.0],
+              [8.0, -1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, -1.0E-35],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E35 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-35 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0E35 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-032",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-30)*x-1",
+        "g(x) = x-10^(-30)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0],
+              [-4.0, -1.0],
+              [-2.0, -1.0],
+              [-1.0, -1.0],
+              [-0.5, -1.0],
+              [0.0, -1.0],
+              [0.5, -1.0],
+              [1.0, -1.0],
+              [2.0, -1.0],
+              [4.0, -1.0],
+              [8.0, -1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, -1.0E-30],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E30 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-30 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0E30 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-033",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-20)*x-1",
+        "g(x) = x-10^(-20)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0],
+              [-4.0, -1.0],
+              [-2.0, -1.0],
+              [-1.0, -1.0],
+              [-0.5, -1.0],
+              [0.0, -1.0],
+              [0.5, -1.0],
+              [1.0, -1.0],
+              [2.0, -1.0],
+              [4.0, -1.0],
+              [8.0, -1.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0],
+              [-4.0, -4.0],
+              [-2.0, -2.0],
+              [-1.0, -1.0],
+              [-0.5, -0.5],
+              [0.0, -1.0E-20],
+              [0.5, 0.5],
+              [1.0, 1.0],
+              [2.0, 2.0],
+              [4.0, 4.0],
+              [8.0, 8.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E20 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-20 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0E20 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-034",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-15)*x-1",
+        "g(x) = x-10^(-15)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.000000000000008],
+              [-4.0, -1.000000000000004],
+              [-2.0, -1.000000000000002],
+              [-1.0, -1.000000000000001],
+              [-0.5, -1.0000000000000004],
+              [0.0, -1.0],
+              [0.5, -0.9999999999999994],
+              [1.0, -0.999999999999999],
+              [2.0, -0.999999999999998],
+              [4.0, -0.999999999999996],
+              [8.0, -0.999999999999992]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.000000000000002],
+              [-4.0, -4.000000000000001],
+              [-2.0, -2.000000000000001],
+              [-1.0, -1.000000000000001],
+              [-0.5, -0.500000000000001],
+              [0.0, -1.0E-15],
+              [0.5, 0.499999999999999],
+              [1.0, 0.999999999999999],
+              [2.0, 1.999999999999999],
+              [4.0, 3.999999999999999],
+              [8.0, 7.999999999999999]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E15 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-15 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0E15 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-035",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-10)*x-1",
+        "g(x) = x-10^(-10)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0000000008],
+              [-4.0, -1.0000000004],
+              [-2.0, -1.0000000002],
+              [-1.0, -1.0000000001],
+              [-0.5, -1.00000000005],
+              [0.0, -1.0],
+              [0.5, -0.99999999995],
+              [1.0, -0.9999999999],
+              [2.0, -0.9999999998],
+              [4.0, -0.9999999996],
+              [8.0, -0.9999999992]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0000000001],
+              [-4.0, -4.0000000001],
+              [-2.0, -2.0000000001],
+              [-1.0, -1.0000000001],
+              [-0.5, -0.5000000001],
+              [0.0, -1.0E-10],
+              [0.5, 0.4999999999],
+              [1.0, 0.9999999999],
+              [2.0, 1.9999999999],
+              [4.0, 3.9999999999],
+              [8.0, 7.9999999999]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E10 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-10 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0E10 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-036",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(-5)*x-1",
+        "g(x) = x-10^(-5)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.00008],
+              [-4.0, -1.00004],
+              [-2.0, -1.00002],
+              [-1.0, -1.00001],
+              [-0.5, -1.000005],
+              [0.0, -1.0],
+              [0.5, -0.999995],
+              [1.0, -0.99999],
+              [2.0, -0.99998],
+              [4.0, -0.99996],
+              [8.0, -0.99992]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.00001],
+              [-4.0, -4.00001],
+              [-2.0, -2.00001],
+              [-1.0, -1.00001],
+              [-0.5, -0.50001],
+              [0.0, -1.0E-5],
+              [0.5, 0.49999],
+              [1.0, 0.99999],
+              [2.0, 1.99999],
+              [4.0, 3.99999],
+              [8.0, 7.99999]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 100000.0 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-5 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -100000.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-037",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(5)*x-1",
+        "g(x) = x-10^(5)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -800001.0],
+              [-4.0, -400001.0],
+              [-2.0, -200001.0],
+              [-1.0, -100001.0],
+              [-0.5, -50001.0],
+              [0.0, -1.0],
+              [0.5, 49999.0],
+              [1.0, 99999.0],
+              [2.0, 199999.0],
+              [4.0, 399999.0],
+              [8.0, 799999.0]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -100008.0],
+              [-4.0, -100004.0],
+              [-2.0, -100002.0],
+              [-1.0, -100001.0],
+              [-0.5, -100000.5],
+              [0.0, -100000.0],
+              [0.5, -99999.5],
+              [1.0, -99999.0],
+              [2.0, -99998.0],
+              [4.0, -99996.0],
+              [8.0, -99992.0]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-5 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 100000.0 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0E-5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-038",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(10)*x-1",
+        "g(x) = x-10^(10)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0000000001E10],
+              [-4.0, -4.0000000001E10],
+              [-2.0, -2.0000000001E10],
+              [-1.0, -1.0000000001E10],
+              [-0.5, -5.000000001E9],
+              [0.0, -1.0],
+              [0.5, 4.999999999E9],
+              [1.0, 9.999999999E9],
+              [2.0, 1.9999999999E10],
+              [4.0, 3.9999999999E10],
+              [8.0, 7.9999999999E10]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0000000008E10],
+              [-4.0, -1.0000000004E10],
+              [-2.0, -1.0000000002E10],
+              [-1.0, -1.0000000001E10],
+              [-0.5, -1.00000000005E10],
+              [0.0, -1.0E10],
+              [0.5, -9.9999999995E9],
+              [1.0, -9.999999999E9],
+              [2.0, -9.999999998E9],
+              [4.0, -9.999999996E9],
+              [8.0, -9.999999992E9]
+            ]
+          },
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E-10 }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E10 }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0E-10 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-039",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(15)*x-1",
+        "g(x) = x-10^(15)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.000000000000001E15],
+              [-4.0, -4.000000000000001E15],
+              [-2.0, -2.000000000000001E15],
+              [-1.0, -1.000000000000001E15],
+              [-0.5, -5.00000000000001E14],
+              [0.0, -1.0],
+              [0.5, 4.99999999999999E14],
+              [1.0, 9.99999999999999E14],
+              [2.0, 1.999999999999999E15],
+              [4.0, 3.999999999999999E15],
+              [8.0, 7.999999999999999E15]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.000000000000008E15],
+              [-4.0, -1.000000000000004E15],
+              [-2.0, -1.000000000000002E15],
+              [-1.0, -1.000000000000001E15],
+              [-0.5, -1.0000000000000005E15],
+              [0.0, -1.0E15],
+              [0.5, -9.999999999999995E14],
+              [1.0, -9.99999999999999E14],
+              [2.0, -9.99999999999998E14],
+              [4.0, -9.99999999999996E14],
+              [8.0, -9.99999999999992E14]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E15 }
+            ]
+          },
+          "r3": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-040",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(20)*x-1",
+        "g(x) = x-10^(20)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0E20],
+              [-4.0, -4.0E20],
+              [-2.0, -2.0E20],
+              [-1.0, -1.0E20],
+              [-0.5, -5.0E19],
+              [0.0, -1.0],
+              [0.5, 5.0E19],
+              [1.0, 1.0E20],
+              [2.0, 2.0E20],
+              [4.0, 4.0E20],
+              [8.0, 8.0E20]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0E20],
+              [-4.0, -1.0E20],
+              [-2.0, -1.0E20],
+              [-1.0, -1.0E20],
+              [-0.5, -1.0E20],
+              [0.0, -1.0E20],
+              [0.5, -1.0E20],
+              [1.0, -1.0E20],
+              [2.0, -1.0E20],
+              [4.0, -1.0E20],
+              [8.0, -1.0E20]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E20 }
+            ]
+          },
+          "r3": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-041",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(30)*x-1",
+        "g(x) = x-10^(30)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0E30],
+              [-4.0, -4.0E30],
+              [-2.0, -2.0E30],
+              [-1.0, -1.0E30],
+              [-0.5, -5.0E29],
+              [0.0, -1.0],
+              [0.5, 5.0E29],
+              [1.0, 1.0E30],
+              [2.0, 2.0E30],
+              [4.0, 4.0E30],
+              [8.0, 8.0E30]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0E30],
+              [-4.0, -1.0E30],
+              [-2.0, -1.0E30],
+              [-1.0, -1.0E30],
+              [-0.5, -1.0E30],
+              [0.0, -1.0E30],
+              [0.5, -1.0E30],
+              [1.0, -1.0E30],
+              [2.0, -1.0E30],
+              [4.0, -1.0E30],
+              [8.0, -1.0E30]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E30 }
+            ]
+          },
+          "r3": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-042",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(35)*x-1",
+        "g(x) = x-10^(35)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0E35],
+              [-4.0, -4.0E35],
+              [-2.0, -2.0E35],
+              [-1.0, -1.0E35],
+              [-0.5, -5.0E34],
+              [0.0, -1.0],
+              [0.5, 5.0E34],
+              [1.0, 1.0E35],
+              [2.0, 2.0E35],
+              [4.0, 4.0E35],
+              [8.0, 8.0E35]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0E35],
+              [-4.0, -1.0E35],
+              [-2.0, -1.0E35],
+              [-1.0, -1.0E35],
+              [-0.5, -1.0E35],
+              [0.0, -1.0E35],
+              [0.5, -1.0E35],
+              [1.0, -1.0E35],
+              [2.0, -1.0E35],
+              [4.0, -1.0E35],
+              [8.0, -1.0E35]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E35 }
+            ]
+          },
+          "r3": { "type": "list", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "cas-magnitude-043",
+      "group": "cas",
+      "script": [
+        "f(x) = 10^(40)*x-1",
+        "g(x) = x-10^(40)",
+        "r1 = NSolutions(f, {x})",
+        "r2 = NSolutions(g, {x})",
+        "r3 = NSolve(f, {x})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -8.0E40],
+              [-4.0, -4.0E40],
+              [-2.0, -2.0E40],
+              [-1.0, -1.0E40],
+              [-0.5, -5.0E39],
+              [0.0, -1.0],
+              [0.5, 5.0E39],
+              [1.0, 1.0E40],
+              [2.0, 2.0E40],
+              [4.0, 4.0E40],
+              [8.0, 8.0E40]
+            ]
+          },
+          "g": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -1.0E40],
+              [-4.0, -1.0E40],
+              [-2.0, -1.0E40],
+              [-1.0, -1.0E40],
+              [-0.5, -1.0E40],
+              [0.0, -1.0E40],
+              [0.5, -1.0E40],
+              [1.0, -1.0E40],
+              [2.0, -1.0E40],
+              [4.0, -1.0E40],
+              [8.0, -1.0E40]
+            ]
+          },
+          "r1": { "type": "list", "defined": false },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0E40 }
+            ]
+          },
+          "r3": { "type": "list", "defined": false }
+        }
+      ]
+    }
+  ]
+}

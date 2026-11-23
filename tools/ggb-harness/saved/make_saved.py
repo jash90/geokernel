@@ -635,6 +635,35 @@ style_case([
     [{"action": "set_number", "label": "a", "value": -1}, mv("C", 2, 5)],
 ], hidden=["a"])
 
+# Pen strokes with presentation properties. The second stroke is hidden.
+style_case([
+    "s = PenStroke((0, 0), (1, 2), (3, 1), (4, 3))", "s2 = PenStroke((1, 1), (2, 2))",
+], [
+    styled("s", "common line trace", draw_arrows=True),
+    [st("s2", line=[20, 9], line_opacity=60)],
+], hidden=["s2"])
+
+# Pen strokes: the file keeps the smoothed points with their segment codes,
+# each number in five significant digits; a stroke without points is saved
+# without them.
+topic("strokes")
+case("strokes", [
+    "s = PenStroke((-3, 3), (4, 3), (2, 5))",
+    "t = PenStroke((0, 0), (1, 1), (?, ?), (2, 0), (3, 1), (4, 0))",
+    "u = PenStroke((1, 3))",
+    "v = PenStroke()",
+    "w = PenStroke((?, ?))",
+    "q = PenStroke(" + ", ".join(f"({fmt(0.03 * i)}, {fmt(0.02 * i * i % 1.7)})" for i in range(14)) + ")",
+], [])
+
+# SlowPlot hides the source graph and plays a new slider from 0 to 1, again
+# and again or once; the file keeps that state.
+topic("slowplot")
+case("slowplot", [
+    "f(x) = sin(x)", "g = SlowPlot(f)", "A = (0, 0)", "B = (2, 1)", "l = Line(A, B)",
+    "h = SlowPlot(l, false)", "k = SlowPlot(x^2, 0)",
+], [])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

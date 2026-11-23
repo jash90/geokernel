@@ -52,6 +52,9 @@ pub(crate) enum TextOp {
     Last,
     /// `Element(text, n)`: one character of a text (`AlgoTextElement`).
     TextElement,
+    /// `Simplify(text)`: tidies the signs of a formula text
+    /// (`AlgoSimplifyText`).
+    Simplify,
 }
 
 pub(super) const NAMES: &[&str] = &[
@@ -172,7 +175,7 @@ fn parse_name(p: &mut Parser<'_>) -> Result<Option<u32>, String> {
     }
 }
 
-fn call_node(p: &mut Parser<'_>, op: TextOp, args: &[u32]) -> Node {
+pub(in crate::expr) fn call_node(p: &mut Parser<'_>, op: TextOp, args: &[u32]) -> Node {
     let first = p.nodes.len() as u32;
     for &arg in args {
         p.push(Node::Item(arg));
@@ -212,7 +215,7 @@ pub(in crate::expr) fn result_type(
         (Continued, [x, Bool]) => number(*x),
         (Continued, [x, y] | [x, y, Bool]) => number(*x) && number(*y),
         (Table, args) => table::valid_types(args),
-        (Length | LetterToUnicode | TextToUnicode, [Text]) => true,
+        (Length | LetterToUnicode | TextToUnicode | Simplify, [Text]) => true,
         (UnicodeToText, [a]) | (Split, [Text, a]) => list(*a),
         (ReplaceAll, [Text, Text, Text]) => true,
         (Sum, [Text, ..]) => true,
@@ -319,6 +322,15 @@ impl<const M: bool> Ctx<'_, M> {
             Table => table::evaluate(self, &args),
             UnicodeToLetter | UnicodeToText | ReplaceAll | Take | Sum | First | Last
             | TextElement => strings::evaluate(self, op, &args),
+            Simplify => {
+                // The passes work on characters, four bytes each.
+                let charge = |characters: usize| {
+                    (characters <= MAX_TEXT_BYTES
+                        && self.meter.is_none_or(|m| m.charge(characters as u64 * 4)))
+                    .then_some(())
+                };
+                strings::simplify(&self.text(a)?, &charge)
+            }
             _ => None,
         }?;
         self.bounded_text(result.len())?;
@@ -521,4 +533,23 @@ pub(in crate::expr) fn is_independent(c: &Construction, id: crate::Id) -> bool {
                     | Node::ListOp(..)
             )
         })
+}
+
+/// `Simplify(text)` of an empty or undefined text fails when the command is
+/// created: `AlgoSimplifyText.compute` reads the first character. `None`,
+/// with nothing checked, for every other input.
+pub(crate) fn refuse_empty_simplify(c: &crate::Construction, input: &str) -> Option<String> {
+    if !input.starts_with("Simplify") {
+        return None;
+    }
+    let (name, args) = crate::script::split_call(input)?;
+    let (true, &[argument]) = (name == "Simplify", args.as_slice()) else {
+        return None;
+    };
+    let argument = argument.trim();
+    let empty = argument == "\"\""
+        || c.id(argument).is_some_and(|id| {
+            c.kind(id) == crate::Kind::Text && c.text(id).is_none_or(str::is_empty)
+        });
+    empty.then(|| "`Simplify` needs a text that is not empty".to_owned())
 }

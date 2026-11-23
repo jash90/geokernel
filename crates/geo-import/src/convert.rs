@@ -135,6 +135,7 @@ pub(crate) fn convert_with_assets(
     }
     for el in elements.values() {
         c.restore_slider(el);
+        c.restore_animation(el, doc.settings.start_animation);
         c.retain_scripts(el);
     }
     for (&label, element) in &elements {
@@ -1053,6 +1054,51 @@ impl Converter {
         }
     }
 
+    /// A slider saved as playing plays again, and moves when the file
+    /// started the timer. A step or speed that is no plain number is not
+    /// kept for the animation.
+    fn restore_animation(&mut self, el: &Element, running: bool) {
+        let Some(animation) = el.slider_animation.as_ref().filter(|a| a.playing) else {
+            return;
+        };
+        if el.slider.is_none() || self.kernel.id(&el.label).is_none() {
+            return;
+        }
+        let plain = |source: &Option<String>| -> Result<Option<f64>, ()> {
+            source
+                .as_deref()
+                .map(|s| {
+                    s.trim()
+                        .parse::<f64>()
+                        .ok()
+                        .filter(|v| v.is_finite())
+                        .ok_or(())
+                })
+                .transpose()
+        };
+        let label = quote(&el.label);
+        let (Ok(step), Ok(speed)) = (plain(&animation.step), plain(&animation.speed)) else {
+            self.out.notes.push(format!(
+                "slider `{label}` does not play: its saved step or speed is an expression, kept for the file only"
+            ));
+            return;
+        };
+        let property = Property::SliderAnimation {
+            label: el.label.clone(),
+            step,
+            speed: speed.unwrap_or(1.0),
+            mode: animation.mode,
+            running,
+        };
+        match property.apply(&mut self.kernel) {
+            Ok(()) => self.out.script.push(property.to_string()),
+            Err(reason) => self
+                .out
+                .notes
+                .push(format!("animation of `{label}`: {}", quote(&reason))),
+        }
+    }
+
     fn restore_slider(&mut self, el: &Element) {
         let Some(saved) = &el.slider else { return };
         if literal_slider_bounds(el).is_some_and(|[min, max]| {
@@ -1353,6 +1399,43 @@ impl Converter {
                     Err("the value is not finite".into())
                 }
             }
+            "penstroke" => {
+                use geo_kernel::algo::stroke::{
+                    parse_saved_coords, saved_definition, smooth_saved_vertices, StrokeData,
+                };
+                // Bezier points replace whatever the vertices made; the
+                // vertices apply to a stroke without points
+                let bezier = el
+                    .stroke_coords
+                    .as_deref()
+                    .map(parse_saved_coords)
+                    .transpose()
+                    .map(|numbers| numbers.map(|n| StrokeData::from_triplets(&n)));
+                match bezier {
+                    Err(reason) => Err(reason),
+                    Ok(Some(data)) if !data.points.is_empty() => {
+                        Ok(format!("{label} = {}", saved_definition(&data)))
+                    }
+                    Ok(_) => match &el.legacy_stroke {
+                        None => Ok(format!("{label} = PenStroke()")),
+                        Some(coords) => match parse_saved_coords(coords) {
+                            Err(reason) => Err(reason),
+                            // The reference smooths the vertices in the view
+                            // its application has while it reads, which the
+                            // file does not determine: only pieces of fewer
+                            // than three points, which no view changes, are
+                            // restored.
+                            Ok(numbers) => smooth_saved_vertices(&numbers, None)
+                                .map(|data| format!("{label} = {}", saved_definition(&data)))
+                                .ok_or_else(|| {
+                                    "the stroke vertices are smoothed in the view the reader \
+                                     has, which the file does not determine"
+                                        .into()
+                                }),
+                        },
+                    },
+                }
+            }
             "implicitpoly" => Ok(format!(
                 "$implicitCoefficients({label}, {})",
                 el.implicit_coefficients.as_deref().unwrap_or("[]")
@@ -1407,7 +1490,7 @@ fn unsupported_element(kind: &str) -> String {
     let reason = match kind {
         "audio" | "video" | "embed" => "out of scope: media playback and embedded applications",
         "implicitpoly" => "there is no implicit curve kind",
-        "penstroke" | "turtle" => "there is no corresponding stroke or turtle kind",
+        "turtle" => "there is no corresponding turtle kind",
         _ => return format!("the element type `{}` is not supported", quote(kind)),
     };
     format!("element type `{kind}`: {reason}")
@@ -1442,6 +1525,11 @@ fn expression_kind(saved_type: &str) -> Result<Kind, String> {
 
 /// Literal objects use the full precision of the saved value.
 fn has_saved_literal(el: &Element, exp: &str) -> bool {
+    if el.kind == "penstroke" {
+        // `AlgoLocusStroke` saves `PenStroke[]`; the points are in the
+        // element
+        return matches!(exp.trim(), "PenStroke[]" | "PenStroke()");
+    }
     if el.kind == "boolean" && el.value.is_some() {
         return matches!(exp.trim(), "true" | "false" | "True" | "False");
     }
@@ -1680,6 +1768,15 @@ fn num(text: &str) -> Option<f64> {
     text.trim().parse::<f64>().ok().filter(|v| v.is_finite())
 }
 
+/// The infinity a saved number holds, as Java writes it.
+fn saved_infinity(text: &str) -> Option<f64> {
+    match text.trim() {
+        "Infinity" => Some(f64::INFINITY),
+        "-Infinity" => Some(f64::NEG_INFINITY),
+        _ => None,
+    }
+}
+
 /// Three numbers of `<coords>`, all finite.
 fn coords3(el: &Element) -> Option<[f64; 3]> {
     let [x, y, z] = el.coords.as_ref()?;
@@ -1807,7 +1904,12 @@ fn saved_defined(el: &Element) -> Option<bool> {
                 .collect::<Option<Vec<f64>>>()
                 .is_some_and(|v| v.iter().all(|x| x.is_finite()) && v.iter().any(|x| *x != 0.0))
         }),
-        "numeric" | "angle" => el.value.as_ref().map(|v| num(v).is_some()),
+        // an infinite number is a defined value, an infinite angle is not
+        "numeric" => el
+            .value
+            .as_ref()
+            .map(|v| num(v).is_some() || saved_infinity(v).is_some()),
+        "angle" => el.value.as_ref().map(|v| num(v).is_some()),
         "boolean" => el
             .value
             .as_deref()
@@ -1946,6 +2048,10 @@ fn cross_check(
         Value::Conic { .. } => matrix6(el)
             .zip(c.conic(id))
             .map(|(saved, computed)| same_matrix(saved, computed.matrix)),
+        Value::Number(n) if n.is_infinite() => el
+            .value
+            .as_deref()
+            .map(|saved| saved_infinity(saved) == Some(n)),
         Value::Number(n) => el.value.as_deref().and_then(num).map(|s| {
             let s = if kind == Kind::Angle {
                 el.angle_style
@@ -1997,6 +2103,7 @@ fn kind_agrees(saved: &str, actual: Kind) -> bool {
         "polyline" => Kind::PolyLine,
         "text" => Kind::Text,
         "locus" => Kind::Locus,
+        "penstroke" => Kind::PenStroke,
         "curvecartesian" => Kind::Curve,
         "implicitpoly" => Kind::ImplicitCurve,
         _ => return true,

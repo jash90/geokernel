@@ -32,6 +32,7 @@ pub(super) fn kind(kind: Kind) -> &'static str {
         Kind::InputBox => "textfield",
         Kind::Image => "image",
         Kind::PieChart => "piechart",
+        Kind::PenStroke => "penstroke",
         _ => "",
     }
 }
@@ -54,6 +55,7 @@ fn traceable(kind: Kind) -> bool {
             | Kind::PolyLine
             | Kind::List
             | Kind::Locus
+            | Kind::PenStroke
             | Kind::Curve
             | Kind::ImplicitCurve
     )
@@ -75,6 +77,11 @@ impl Writer<'_> {
 
         if c.image(id).is_some() {
             self.image(id)?;
+        }
+        // Every number exactly: the reader parses each field as a double.
+        if let Some(stroke) = c.stroke(id).filter(|s| s.defined && !s.points.is_empty()) {
+            let coords = geo_kernel::algo::stroke::saved_coords(stroke);
+            self.xml.tag("strokeBezierCoords", &[("val", &coords)])?;
         }
         let style = c.drawing_style(id);
         // An object from a file writes the tags its file had. A tag the file
@@ -207,7 +214,10 @@ impl Writer<'_> {
                     if let Some(opacity) = line.opacity {
                         attrs.push(("opacity", opacity.to_string()));
                     }
-                    if let Some(arrows) = line.draw_arrow.filter(|_| object_kind == Kind::Locus) {
+                    if let Some(arrows) = line
+                        .draw_arrow
+                        .filter(|_| matches!(object_kind, Kind::Locus | Kind::PenStroke))
+                    {
                         attrs.push(("drawArrow", flag(arrows).to_owned()));
                     }
                     let attrs: Vec<_> = attrs.iter().map(|(k, v)| (*k, v.as_str())).collect();
@@ -360,9 +370,34 @@ impl Writer<'_> {
                     _ => None,
                 });
             match animation {
+                // the construction knows whether the slider still plays
+                Some(animation) if c.animation(id).is_some() => {
+                    let playing = c.animation(id).is_some_and(|a| a.playing);
+                    self.animation(&SliderAnimation {
+                        playing,
+                        ..animation.clone()
+                    })?
+                }
                 Some(animation) => self.animation(animation)?,
                 // The file of the slider had no such tag.
                 None if saved.is_some() => {}
+                // An animation the construction runs (`SlowPlot`).
+                None if c.animation(id).is_some() => {
+                    // As the reference writes it: an automatic increment has
+                    // no step, the default speed is left out.
+                    let a = c.animation(id).expect("checked above");
+                    let (step, speed, mode) =
+                        (number(a.step), number(a.speed), a.mode.code().to_string());
+                    let mut attrs = Vec::new();
+                    if !a.auto_step {
+                        attrs.push(("step", step.as_str()));
+                    }
+                    if a.speed != 1.0 {
+                        attrs.push(("speed", speed.as_str()));
+                    }
+                    attrs.extend([("type", mode.as_str()), ("playing", flag(a.playing))]);
+                    self.xml.tag("animation", &attrs)?;
+                }
                 None => self.xml.tag(
                     "animation",
                     &[

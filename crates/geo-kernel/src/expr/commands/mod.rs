@@ -29,6 +29,7 @@ use super::parse::Parser;
 use super::{Bin, Elem, ListOp, Node, Ty};
 
 pub(in crate::expr) use list::{call_type, call_value, second_list};
+pub(in crate::expr) use text::call_node as text_call;
 
 /// Whether `name` is a command that expressions compute themselves (the
 /// two-number commands are built-in names instead, see

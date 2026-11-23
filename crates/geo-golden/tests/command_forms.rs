@@ -80,23 +80,48 @@ fn kinds_of(case: &Case) -> BTreeMap<String, Kind> {
         .collect()
 }
 
-fn case_lines(case: &Case) -> impl Iterator<Item = &String> {
+/// Which lines of a case show a form: its script and its `reject` steps; a
+/// refused form only its `reject` steps; a solving form only its script, as
+/// a refusal shows no solving variable.
+#[derive(Clone, Copy, PartialEq)]
+enum Lines {
+    All,
+    Script,
+    Rejected,
+}
+
+fn lines_of(e: &Evidence) -> Lines {
+    if e.refusal {
+        Lines::Rejected
+    } else if matches!(
+        e.command.as_str(),
+        "Solve" | "Solutions" | "NSolve" | "NSolutions"
+    ) {
+        Lines::Script
+    } else {
+        Lines::All
+    }
+}
+
+fn case_lines(case: &Case, which: Lines) -> impl Iterator<Item = &String> {
     case.script
         .iter()
-        .chain(case.steps.iter().filter_map(|step| match step {
-            Step::Reject { line } => Some(line),
+        .filter(move |_| which != Lines::Rejected)
+        .chain(case.steps.iter().filter_map(move |step| match step {
+            Step::Reject { line, .. } if which != Lines::Script => Some(line),
             _ => None,
         }))
 }
 
 fn case_uses_form(
     case: &Case,
+    which: Lines,
     names: &BTreeMap<String, String>,
     command: &str,
     form: &str,
 ) -> bool {
     let kinds = kinds_of(case);
-    case_lines(case).any(|line| {
+    case_lines(case, which).any(|line| {
         forms::script_uses_form(std::slice::from_ref(line), &kinds, names, command, form)
     })
 }
@@ -210,6 +235,12 @@ fn every_evidence_row_is_backed() {
             errors.push(format!("{what}: forms.csv has no such form"));
             continue;
         }
+        if e.refusal && e.cases.is_empty() {
+            errors.push(format!(
+                "{what}: a refused form needs a case that refuses it"
+            ));
+            continue;
+        }
         if let Some(d) = &e.difference {
             if let Err(msg) = forms::check_difference(d, &e.command, &e.form, &differences) {
                 errors.push(format!("{what}: DIFFERENCES.md: {msg}"));
@@ -237,7 +268,7 @@ fn every_evidence_row_is_backed() {
             };
             if gaps.contains_key(id) {
                 errors.push(format!("{what}: `{id}` is a known gap"));
-            } else if !case_lines(case)
+            } else if !case_lines(case, lines_of(&e))
                 .any(|line| forms::script_calls(std::slice::from_ref(line), &names, &e.command))
             {
                 errors.push(format!("{what}: `{id}` does not use the command"));
@@ -251,7 +282,7 @@ fn every_evidence_row_is_backed() {
                     errors.push(format!("{what}: `{id}` has no defined image in this form"));
                 }
                 covered.extend(kinds);
-            } else if !case_uses_form(case, &names, &e.command, &e.form) {
+            } else if !case_uses_form(case, lines_of(&e), &names, &e.command, &e.form) {
                 errors.push(format!("{what}: `{id}` does not call it in this form"));
             }
         }
@@ -331,7 +362,7 @@ fn print_form_candidates() {
             let ids: Vec<&String> = cases
                 .values()
                 .filter(|c| !gaps.contains_key(&c.id))
-                .filter(|c| case_uses_form(c, &names, command, form))
+                .filter(|c| case_uses_form(c, Lines::All, &names, command, form))
                 .map(|c| &c.id)
                 .take(3)
                 .collect();

@@ -313,11 +313,9 @@ impl System {
         };
         // The other outputs read both objects, so the children of the first
         // one hold them.
-        let children = c.children(first);
-        budget.charge(children.len() + 1)?;
-        let mut others: Vec<Id> = children
-            .iter()
-            .copied()
+        budget.charge(c.child_count(first) + 1)?;
+        let mut others: Vec<Id> = c
+            .children(first)
             .filter(|&other| other != id && same_pair(other))
             .collect();
         others.sort_unstable();
@@ -599,9 +597,9 @@ fn shared_point(c: &Construction, id: Id, a: Id, b: Id, budget: &Budget) -> Opti
     };
     let mut candidates = drawn_through(c, a);
     candidates.extend(drawn_through(c, b));
-    candidates.extend_from_slice(c.children(a));
-    candidates.extend_from_slice(c.children(b));
-    budget.charge(candidates.len() * 4 + 1)?;
+    budget.charge((candidates.len() + c.child_count(a) + c.child_count(b)) * 4 + 1)?;
+    candidates.extend(c.children(a));
+    candidates.extend(c.children(b));
     Some(candidates.into_iter().any(|p| {
         p != id
             && c.kind(p) == Kind::Point

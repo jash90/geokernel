@@ -211,7 +211,52 @@ fn saved_style_fixtures_import_every_object_with_a_style() {
             "{name}"
         );
     }
-    assert_eq!(fixtures, 12);
+    assert_eq!(fixtures, 13);
+}
+
+/// A file of pen strokes holds every number in five significant digits
+/// (`GeoLocusStroke.appendBezierCoords`): the importer restores exactly
+/// those numbers, which are the values GeoGebra computed when saving,
+/// rounded so, with the same segment codes and breaks.
+#[test]
+fn saved_strokes_restore_the_rounded_points_of_the_file() {
+    let (snap, imported) = fixture("saved-strokes-001");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    let rounded = |v: f64| -> f64 {
+        geo_kernel::algo::stroke::reference_number(v)
+            .parse()
+            .unwrap()
+    };
+    let mut strokes = 0;
+    for (label, expected) in &snap.objects {
+        let id = c.id(label).unwrap();
+        assert_eq!(c.kind(id), Kind::PenStroke, "{label}");
+        let stroke = c.stroke(id).unwrap();
+        match &expected.data {
+            Some(ExpectedData::Stroke(points)) if !points.is_empty() => {
+                assert!(stroke.defined, "{label}");
+                assert_eq!(points.len(), stroke.points.len(), "{label}");
+                for (i, (&(x, y, code), p)) in points.iter().zip(stroke.points.iter()).enumerate() {
+                    match x {
+                        Some(x) => {
+                            assert_eq!(p.x, rounded(x), "{label} point {i}");
+                            assert_eq!(p.y, rounded(y.unwrap()), "{label} point {i}");
+                            assert_eq!(p.segment.code(), code, "{label} point {i}");
+                        }
+                        None => assert!(!p.is_defined(), "{label} point {i}"),
+                    }
+                }
+                strokes += 1;
+            }
+            // The file has an empty value for a stroke without points, and
+            // the reader leaves an empty value unapplied: undefined, as
+            // `PenStroke()` itself.
+            _ => assert!(!c.value(id).is_defined(), "{label}"),
+        }
+    }
+    assert_eq!(strokes, 4);
 }
 
 #[test]
@@ -574,6 +619,11 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     "saved-vertex-image-003",
                     // Its values are deliberately stale. The replay test checks the clamped values.
                     "saved-slider-bounds-001",
+                    // Its numbers are rounded in the file; checked above.
+                    "saved-strokes-001",
+                    // `tests/export.rs` compares the visibility and the
+                    // slider animations SlowPlot set with the export.
+                    "saved-slowplot-001",
                 ])
                 .chain(&TEXT_FIXTURES)
                 .chain(&TEXT_EQUATION_FIXTURES)
@@ -680,4 +730,29 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
     println!("saved files: {}, objects compared: {compared}", names.len());
     assert!(failures.is_empty(), "{}", failures.join("\n"));
     assert!(compared >= 300, "only {compared} objects compared");
+}
+
+/// Older stroke vertices of three or more points are smoothed in whatever
+/// view the reference reader has, which the file does not fix: the stroke
+/// is skipped with that reason instead of a guess. The saved stroke limit
+/// of the kernel is the attribute limit of the importer.
+#[test]
+fn older_stroke_vertices_that_need_a_view_are_skipped() {
+    let xml = br#"<geogebra format="5.0"><construction>
+<expression label="t" exp="PenStroke[]"/>
+<element type="penstroke" label="t"><strokeCoords val="-3,3,4,3,2,5"/></element>
+<expression label="s" exp="PenStroke[]"/>
+<element type="penstroke" label="s"><strokeCoords val="0,0,1,1"/></element>
+</construction></geogebra>"#;
+    let imported = import(xml).unwrap();
+    assert_eq!(imported.skipped.len(), 1, "{:?}", imported.skipped);
+    assert_eq!(imported.skipped[0].label, "t");
+    assert!(imported.skipped[0].reason.contains("view"));
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    let s = c.stroke(c.id("s").unwrap()).unwrap();
+    assert_eq!(s.points.len(), 3);
+    assert_eq!(
+        geo_kernel::algo::stroke::MAX_SAVED_COORDS_BYTES,
+        geo_import::xml::MAX_ATTRIBUTE_BYTES
+    );
 }

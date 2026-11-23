@@ -2,9 +2,10 @@
 
 use crate::compare::{
     compare_arc, compare_conic, compare_extra, compare_list, compare_locus, compare_sampled,
-    line_scale_agrees, Sign,
+    compare_stroke, line_scale_agrees, Sign,
 };
 use crate::model::{implicit_output, indexed_prefix, label_prefix, Case, Step};
+use geo_app_core::workbench::Workbench;
 use geo_kernel::{script, Construction, Kind};
 
 /// One disagreement between GeoGebra and the kernel.
@@ -45,6 +46,13 @@ fn failure(step: usize, label: &str, expected: &str, actual: String) -> Mismatch
 }
 
 pub fn replay(case: &Case) -> CaseOutcome {
+    if case
+        .steps
+        .iter()
+        .any(|step| matches!(step, Step::Delete { .. }))
+    {
+        return replay_document(case);
+    }
     let mut out = CaseOutcome::default();
     let mut c = Construction::new();
     if let Some([xmin, xmax, ymin, ymax, xscale, yscale]) = case.view {
@@ -100,97 +108,177 @@ pub fn replay(case: &Case) -> CaseOutcome {
                 }
             }
         }
-        for (label, expected) in snapshot {
-            let Some(id) = c.id(label) else {
+        compare_snapshot(&mut out, &c, i, snapshot);
+    }
+    out
+}
+
+fn replay_document(case: &Case) -> CaseOutcome {
+    let mut out = CaseOutcome::default();
+    let mut document = Workbench::default();
+    if let Err(error) = document.load_script(&case.script.join("\n")) {
+        out.mismatches
+            .push(failure(0, "script", "the document loads", error));
+        return out;
+    }
+    for (i, (step, snapshot)) in case.steps.iter().zip(&case.snapshots).enumerate() {
+        let id = |label: &str| document.construction().id(label);
+        let result = match step {
+            Step::Initial => Ok(()),
+            Step::Redefine { line } => document.run_line(line),
+            Step::Reject { line, error } => match document.run_line(line) {
+                Ok(()) => Err("the document accepted the line".into()),
+                Err(e) => match error {
+                    Some(want) if *want != e => Err(format!(
+                        "expected the rejection `{want}` of `{line}`, got `{e}`"
+                    )),
+                    _ => Ok(()),
+                },
+            },
+            Step::Delete { label } => id(label)
+                .is_some_and(|id| document.delete(id))
+                .then_some(())
+                .ok_or_else(|| format!("cannot delete `{label}`")),
+            Step::Move { label, x, y } => id(label)
+                .is_some_and(|id| document.move_point(id, *x, *y))
+                .then_some(())
+                .ok_or_else(|| format!("cannot move `{label}`")),
+            Step::SetNumber { label, value } => id(label)
+                .is_some_and(|id| document.set_number(id, *value))
+                .then_some(())
+                .ok_or_else(|| format!("cannot set `{label}`")),
+            Step::SetSliderBounds { .. } => {
+                Err("unexpected slider bounds edit in a deletion case".into())
+            }
+            Step::Animate { .. } => Err("unexpected animation in a deletion case".into()),
+        };
+        if let Err(error) = result {
+            out.mismatches
+                .push(failure(i, "step", "the document applies the step", error));
+            break;
+        }
+        let c = document.construction();
+        for label in case.snapshots[..i]
+            .iter()
+            .flat_map(|previous| previous.keys())
+        {
+            if !snapshot.contains_key(label) && c.id(label).is_some() {
+                out.mismatches
+                    .push(failure(i, label, "no object", "object survives".into()));
+            }
+        }
+        compare_snapshot(&mut out, c, i, snapshot);
+    }
+    out
+}
+
+fn compare_snapshot(
+    out: &mut CaseOutcome,
+    c: &Construction,
+    i: usize,
+    snapshot: &std::collections::BTreeMap<String, crate::model::Expected>,
+) {
+    for (label, expected) in snapshot {
+        let Some(id) = c.id(label) else {
+            out.mismatches.push(failure(
+                i,
+                label,
+                &format!("{expected:?}"),
+                "no such object".into(),
+            ));
+            continue;
+        };
+        let actual = c.value(id);
+        if matches!(c.kind(id), geo_kernel::Kind::Arc | geo_kernel::Kind::Sector) {
+            let data = c.arc(id);
+            if let Err(why) = compare_arc(expected, c.kind(id), &actual, data.as_ref()) {
                 out.mismatches.push(failure(
                     i,
                     label,
                     &format!("{expected:?}"),
-                    "no such object".into(),
+                    format!("{actual:?} ({why})"),
                 ));
-                continue;
-            };
-            let actual = c.value(id);
-            if matches!(c.kind(id), geo_kernel::Kind::Arc | geo_kernel::Kind::Sector) {
-                let data = c.arc(id);
-                if let Err(why) = compare_arc(expected, c.kind(id), &actual, data.as_ref()) {
-                    out.mismatches.push(failure(
-                        i,
-                        label,
-                        &format!("{expected:?}"),
-                        format!("{actual:?} ({why})"),
-                    ));
-                }
-                continue;
             }
-            if c.kind(id) == Kind::Locus {
-                if let Err(why) = compare_locus(expected, Kind::Locus, &actual, c.locus(id)) {
-                    out.mismatches.push(failure(
-                        i,
-                        label,
-                        &format!("{expected:?}"),
-                        format!("{actual:?} ({why})"),
-                    ));
-                }
-                continue;
-            }
-            if c.kind(id) == geo_kernel::Kind::Conic {
-                let data = c.conic(id);
-                let (result, agreement) =
-                    compare_conic(expected, c.kind(id), &actual, data.as_ref());
-                if let Some(a) = agreement {
-                    out.conic_compared += 1;
-                    out.conic_raw_agree += usize::from(a.raw);
-                    out.conic_scaled_agree += usize::from(a.up_to_scale);
-                }
-                if let Err(why) = result {
-                    out.mismatches.push(failure(
-                        i,
-                        label,
-                        &format!("{expected:?}"),
-                        format!("{actual:?} ({why})"),
-                    ));
-                }
-                continue;
-            }
-            match line_scale_agrees(expected, &actual) {
-                Some(true) => out.scale_agree += 1,
-                Some(false) => out.scale_disagree.push(label.clone()),
-                None => {}
-            }
-            let vertices: Vec<_> = c.vertices(id).collect();
-            let sample = |x| c.function_value(id, x);
-            let outcome = if c.kind(id) == Kind::List {
-                compare_list(&c, expected, Kind::List, c.elements(id))
-            } else if c.kind(id) == Kind::PieChart {
-                crate::compare::compare_pie(expected, c.chart(id).and_then(|d| d.pie.as_ref()))
-            } else if matches!(
-                c.kind(id),
-                Kind::Text | Kind::FunctionNVar | Kind::Curve | Kind::ImplicitCurve
-            ) {
-                compare_extra(&c, id, expected)
-            } else {
-                compare_sampled(expected, c.kind(id), &actual, &vertices, Some(&sample))
-            };
-            match outcome {
-                Ok(Sign::Agrees) => out.sign_agree += 1,
-                Ok(Sign::Flipped) => out.sign_disagree += 1,
-                Ok(Sign::NotApplicable) => {}
-                Err(why) => out.mismatches.push(failure(
+            continue;
+        }
+        if c.kind(id) == Kind::Locus {
+            if let Err(why) = compare_locus(expected, Kind::Locus, &actual, c.locus(id)) {
+                out.mismatches.push(failure(
                     i,
                     label,
                     &format!("{expected:?}"),
                     format!("{actual:?} ({why})"),
-                )),
+                ));
             }
+            continue;
+        }
+        if c.kind(id) == Kind::PenStroke {
+            let data = c.stroke(id);
+            if let Err(why) = compare_stroke(expected, Kind::PenStroke, &actual, data) {
+                out.mismatches.push(failure(
+                    i,
+                    label,
+                    &format!("{expected:?}"),
+                    format!("{actual:?} ({why})"),
+                ));
+            }
+            continue;
+        }
+        if c.kind(id) == geo_kernel::Kind::Conic {
+            let data = c.conic(id);
+            let (result, agreement) = compare_conic(expected, c.kind(id), &actual, data.as_ref());
+            if let Some(a) = agreement {
+                out.conic_compared += 1;
+                out.conic_raw_agree += usize::from(a.raw);
+                out.conic_scaled_agree += usize::from(a.up_to_scale);
+            }
+            if let Err(why) = result {
+                out.mismatches.push(failure(
+                    i,
+                    label,
+                    &format!("{expected:?}"),
+                    format!("{actual:?} ({why})"),
+                ));
+            }
+            continue;
+        }
+        match line_scale_agrees(expected, &actual) {
+            Some(true) => out.scale_agree += 1,
+            Some(false) => out.scale_disagree.push(label.clone()),
+            None => {}
+        }
+        let vertices: Vec<_> = c.vertices(id).collect();
+        let sample = |x| c.function_value(id, x);
+        let outcome = if c.kind(id) == Kind::List {
+            compare_list(c, expected, Kind::List, c.elements(id))
+        } else if c.kind(id) == Kind::PieChart {
+            crate::compare::compare_pie(expected, c.chart(id).and_then(|d| d.pie.as_ref()))
+        } else if matches!(
+            c.kind(id),
+            Kind::Text | Kind::FunctionNVar | Kind::Curve | Kind::ImplicitCurve
+        ) {
+            compare_extra(c, id, expected)
+        } else {
+            compare_sampled(expected, c.kind(id), &actual, &vertices, Some(&sample))
+        };
+        match outcome {
+            Ok(Sign::Agrees) => out.sign_agree += 1,
+            Ok(Sign::Flipped) => out.sign_disagree += 1,
+            Ok(Sign::NotApplicable) => {}
+            Err(why) => out.mismatches.push(failure(
+                i,
+                label,
+                &format!("{expected:?}"),
+                format!("{actual:?} ({why})"),
+            )),
         }
     }
-    out
 }
 
 fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, String> {
     match step {
         Step::Initial => Ok(None),
+        Step::Delete { .. } => unreachable!("deletions replay on the document"),
         Step::Move { label, x, y } => {
             let id = c.id(label).ok_or(format!("unknown object `{label}`"))?;
             c.move_point(id, *x, *y)
@@ -203,6 +291,14 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
                 .map(|recomputed| (recomputed > 0).then_some(id))
                 .map_err(|e| format!("set `{label}`: {e}"))
         }
+        Step::Redefine { line } => {
+            let id = script::assignment_target(c, line)
+                .ok_or_else(|| format!("expected an assignment to an existing label: {line}"))?;
+            match script::exec(c, line)? {
+                Some(replaced) if replaced == id => Ok(Some(id)),
+                _ => Err(format!("expected one replacement: {line}")),
+            }
+        }
         Step::SetSliderBounds { label, min, max } => {
             script::saved::Property::SliderBounds {
                 label: label.clone(),
@@ -211,12 +307,22 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
             .apply(c)?;
             Ok(None)
         }
-        Step::Reject { line } => {
+        Step::Animate { frames } => {
+            for _ in 0..*frames {
+                c.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);
+            }
+            Ok(None)
+        }
+        Step::Reject { line, error } => {
             let len = c.len();
-            if script::exec(c, line).is_err() && c.len() == len {
-                Ok(None)
-            } else {
-                Err(format!("expected rejection without new objects: {line}"))
+            match script::exec(c, line) {
+                Err(e) if c.len() == len => match error {
+                    Some(want) if *want != e => Err(format!(
+                        "expected the rejection `{want}` of `{line}`, got `{e}`"
+                    )),
+                    _ => Ok(None),
+                },
+                _ => Err(format!("expected rejection without new objects: {line}")),
             }
         }
     }
@@ -226,6 +332,31 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
 mod tests {
     use super::*;
     use crate::model::parse_file;
+
+    #[test]
+    fn a_rejection_with_a_stated_error_checks_it() {
+        let fixture = |error: &str| {
+            format!(
+                r#"{{"schema":1,"generator":"ggb-harness","upstream_commit":"c",
+                "cases":[{{"id":"r","group":"g","script":["a = 1"],
+                "steps":[{{"action":"initial"}},{{"action":"reject","line":"b = Foo(1)","error":"{error}"}}],
+                "snapshots":[{{"a":{{"type":"number","defined":true,"value":1.0}}}},
+                {{"a":{{"type":"number","defined":true,"value":1.0}}}}]}}]}}"#
+            )
+        };
+        let wrong = parse_file(&fixture("no such error"), "t").unwrap();
+        let outcome = replay(&wrong.cases[0]);
+        assert_eq!(outcome.mismatches.len(), 1);
+        let actual = outcome.mismatches[0].actual.clone();
+        let error = actual
+            .split(", got `")
+            .nth(1)
+            .and_then(|rest| rest.strip_suffix('`'))
+            .unwrap()
+            .replace('`', "\\u0060");
+        let right = parse_file(&fixture(&error), "t").unwrap();
+        assert!(replay(&right.cases[0]).mismatches.is_empty());
+    }
 
     #[test]
     fn only_legacy_files_accept_an_angle_as_a_number() {

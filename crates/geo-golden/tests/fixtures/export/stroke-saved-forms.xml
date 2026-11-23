@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0">
+<euclidianView>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="10" yscale="10"/>
+</euclidianView>
+<construction title="" author="" date="">
+<expression label="s" exp="PenStroke[]"/>
+<element type="penstroke" label="s">
+	<strokeCoords val="0,0,1,1"/>
+	<show object="true" label="false"/>
+</element>
+<expression label="t" exp="PenStroke[]"/>
+<element type="penstroke" label="t">
+	<strokeCoords val="1,1,2,2,NaN,NaN,3,4"/>
+	<show object="true" label="false"/>
+</element>
+<expression label="q" exp="PenStroke[]"/>
+<element type="penstroke" label="q">
+	<strokeBezierCoords val="0,0,1,1,2,4,2,0,3"/>
+	<show object="true" label="false"/>
+</element>
+<expression label="w" exp="PenStroke[]"/>
+<element type="penstroke" label="w">
+	<strokeCoords val="5,5,6,6"/>
+	<strokeBezierCoords val="0,0,1,2,2,0"/>
+	<show object="true" label="false"/>
+</element>
+</construction>
+</geogebra>

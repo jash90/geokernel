@@ -1,0 +1,2470 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "infinity-dynamic-001",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-002",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = -1 / a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-003",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = ln(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.6931471805599453 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": -0.6931471805599453 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.6931471805599453 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-004",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.25 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-005",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = a / 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-006",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = -a / 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-007",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-008",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 3 - 1 / a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 3.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-009",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 2 / a * a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-010",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a - 1 / a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-011",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = (1 / a)^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.25 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-012",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = (1 / a)^a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 1.4142135623730951 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.25 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-013",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / (1 / a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-014",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = exp(1 / a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.6065306597126334 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 7.38905609893065 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-015",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = abs(-1 / a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-016",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = sqrt(1 / a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.7071067811865476 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 1.4142135623730951 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.7071067811865476 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-017",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = floor(1 / a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-018",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = round(-1 / a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-019",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = sgn(1 / a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-020",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = atan(1 / a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.4636476090008061 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.5707963267948966 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.4636476090008061 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 1.5707963267948966 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 1.1071487177940904 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.4636476090008061 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-021",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = If(a < 1, 1 / 0, a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-022",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = If(a > 1, a, -1 / 0)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-023",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a > 5"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-024",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a == 1 / 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-025",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = Max(1 / a, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-026",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = Min(1 / a, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-027",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = c + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-028",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = -c"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -0.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-029",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = 1 / c"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-030",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = c - c"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-031",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = 0 c"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": -0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-032",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = c^2"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.25 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.25 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-033",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = c > 0"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-034",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = c == c"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-035",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = If(c > 0, 1, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-036",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = c < 1E300"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-037",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = 2^c"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.4142135623730951 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.7071067811865476 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.4142135623730951 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-038",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = exp(-c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.6065306597126334 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.6487212707001282 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 0.1353352832366127 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.6065306597126334 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-039",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = c / c"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-040",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = abs(c) + a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 2.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": -1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 2.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 2.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-041",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = sgn(c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-042",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = c + d"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": -4.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-043",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = c d"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": -0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": -12.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -0.75 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-044",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = d - c"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": -8.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-045",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = Max(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": 1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-046",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "g = Min(c, d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "g": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "g": { "type": "number", "defined": true, "value": -6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "g": { "type": "number", "defined": true, "value": -1.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-047",
+      "group": "infinity",
+      "script": [
+        "q = -5",
+        "A = (2, 4)",
+        "C = (1, 0)",
+        "P = C + (q, 1)",
+        "o = AffineRatio(A, P, A)",
+        "g = 1 / o",
+        "l = {o, 2 o, 1 / o}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "q", "value": 7.0 },
+        { "action": "set_number", "label": "q", "value": -5.0 },
+        { "action": "move", "label": "A", "x": -9.0, "y": 4.0 },
+        { "action": "set_number", "label": "q", "value": 7.0 },
+        { "action": "move", "label": "A", "x": 2.0, "y": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "q": { "type": "number", "defined": true, "value": -5.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "o": { "type": "number", "defined": true, "value": -0.0 },
+          "g": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.0 },
+              { "type": "number", "defined": true, "value": -0.0 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": 7.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 8.0, "y": 1.0 },
+          "o": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": 1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -5.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "o": { "type": "number", "defined": true, "value": -0.0 },
+          "g": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.0 },
+              { "type": "number", "defined": true, "value": -0.0 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -5.0 },
+          "A": { "type": "point", "defined": true, "x": -9.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "o": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": 1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": 7.0 },
+          "A": { "type": "point", "defined": true, "x": -9.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 8.0, "y": 1.0 },
+          "o": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": 1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": 7.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 4.0 },
+          "C": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 8.0, "y": 1.0 },
+          "o": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": 1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-048",
+      "group": "infinity",
+      "script": [
+        "q = 3",
+        "A = (0, 0)",
+        "B = (4, 0)",
+        "d = Distance(A, B) - 4",
+        "g = 1 / (q d)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "q", "value": -3.0 },
+        { "action": "move", "label": "B", "x": 5.0, "y": 0.0 },
+        { "action": "move", "label": "B", "x": 4.0, "y": 0.0 },
+        { "action": "set_number", "label": "q", "value": 3.0 },
+        { "action": "move", "label": "B", "x": -4.0, "y": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 5.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 1.0 },
+          "g": { "type": "number", "defined": true, "value": -0.3333333333333333 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-dynamic-049",
+      "group": "infinity",
+      "script": [
+        "q = 3",
+        "A = (0, 2)",
+        "m = x(A) q",
+        "g = 1 / m",
+        "h = -1 / m"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "q", "value": -3.0 },
+        { "action": "move", "label": "A", "x": 1.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": 0.0, "y": 2.0 },
+        { "action": "move", "label": "A", "x": -0.0, "y": 2.0 },
+        { "action": "set_number", "label": "q", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": 1 },
+          "h": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "g": { "type": "number", "defined": true, "infinity": -1 },
+          "h": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "m": { "type": "number", "defined": true, "value": -3.0 },
+          "g": { "type": "number", "defined": true, "value": -0.3333333333333333 },
+          "h": { "type": "number", "defined": true, "value": 0.3333333333333333 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "g": { "type": "number", "defined": true, "infinity": -1 },
+          "h": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": -3.0 },
+          "A": { "type": "point", "defined": true, "x": -0.0, "y": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 0.0 },
+          "g": { "type": "number", "defined": true, "infinity": 1 },
+          "h": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "q": { "type": "number", "defined": true, "value": 3.0 },
+          "A": { "type": "point", "defined": true, "x": -0.0, "y": 2.0 },
+          "m": { "type": "number", "defined": true, "value": -0.0 },
+          "g": { "type": "number", "defined": true, "infinity": -1 },
+          "h": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    }
+  ]
+}

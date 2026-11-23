@@ -44,6 +44,7 @@ pub mod polygon;
 pub mod polygon_clip;
 pub mod predicate;
 pub mod prover;
+pub mod stroke;
 pub mod transform;
 pub mod vector;
 

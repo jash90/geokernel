@@ -48,13 +48,20 @@ fn alphabet(kind: Kind) -> &'static str {
 /// The first label that `is_taken` does not report as used: points `A`, `B`,
 /// ...; lines `f`, `g`, ...; conics `c`, `d`, ...; vectors `u`, `v`, ...;
 /// functions `f`, `g`, `h`, `p`, ...; numbers `a`, `b`, ...; lists `l1`,
-/// `l2`, .... After the alphabet is used up, the sequence continues with
+/// `l2`, ...; pen strokes `stroke1`, `stroke2`, .... After the alphabet is used up, the sequence continues with
 /// `A_1`, `B_1`, ... and from the tenth round `A_{10}`.
 pub fn next_label(kind: Kind, is_taken: impl Fn(&str) -> bool) -> String {
-    if kind == Kind::List {
-        // `GeoList.getDefaultLabel`: `getNextNumberedLabel("l")`.
+    // `GeoList.getDefaultLabel`: `getNextNumberedLabel("l")`; a pen stroke
+    // is numbered after its English name, `stroke1` in the recorded
+    // upstream test of `PenStroke()`.
+    let numbered = match kind {
+        Kind::List => Some("l"),
+        Kind::PenStroke => Some("stroke"),
+        _ => None,
+    };
+    if let Some(prefix) = numbered {
         return (1..)
-            .map(|i| format!("l{i}"))
+            .map(|i| format!("{prefix}{i}"))
             .find(|l| !is_taken(l))
             .unwrap_or_default();
     }
@@ -134,6 +141,8 @@ mod tests {
         assert_eq!(next_label(Kind::Segment, |_| false), "f");
         assert_eq!(next_label(Kind::Ray, |_| false), "f");
         assert_eq!(next_label(Kind::Circle, |_| false), "c");
+        assert_eq!(next_label(Kind::PenStroke, |_| false), "stroke1");
+        assert_eq!(next_label(Kind::PenStroke, |l| l == "stroke1"), "stroke2");
     }
 
     #[test]

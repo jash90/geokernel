@@ -91,14 +91,18 @@ fn degrees_make_floor_work_in_whole_degrees() {
 }
 
 #[test]
-fn infinity_is_kept_behind_an_undefined_number() {
-    let mut c = load("a = 2\nc = 1/a\nd = 1/c\nf = atan(c)\n").unwrap();
+fn an_infinite_number_is_a_defined_value() {
+    // `GeoNumeric.isDefined` only refuses NaN (golden group `infinity`)
+    let mut c = load("a = 2\nc = 1/a\nd = 1/c\nf = atan(c)\ng = c - c\n").unwrap();
     let a = c.id("a").unwrap();
     c.set_number(a, 0.0).unwrap();
-    assert_eq!(c.value(c.id("c").unwrap()), Value::Undefined);
+    assert_eq!(num(&c, "c"), f64::INFINITY);
+    assert_eq!(c.infinite_number(c.id("c").unwrap()), Some(f64::INFINITY));
+    assert_eq!(c.value(c.id("g").unwrap()), Value::Undefined);
     assert_eq!(num(&c, "d"), 0.0);
     assert_eq!(num(&c, "f"), std::f64::consts::FRAC_PI_2);
     c.set_number(a, -0.0).unwrap();
+    assert_eq!(num(&c, "c"), f64::NEG_INFINITY);
     assert_eq!(num(&c, "f"), -std::f64::consts::FRAC_PI_2);
     assert!(num(&c, "d").is_sign_negative());
     // the same through a point that moves from 0 to -0
@@ -168,7 +172,7 @@ fn errors_leave_the_construction_unchanged() {
         "b = 1 / Line(A, A)",
         "b = Distance(A, Midpoint(A, A))",
         "b = sin",
-        "a = 2 + 2",
+        "a = a + 2",
     ] {
         let before = (c.len(), c.exprs.len());
         assert!(exec(&mut c, bad).is_err(), "{bad}");
@@ -288,7 +292,7 @@ fn bad_function_lines_are_rejected() {
         "g(x) = (x, 1)",
         "g(x) = Line(A, B)",
         "1(x) = x",
-        "f(x) = x",
+        "f(x) = f(x)",
         "g(x) = Mod(x, 3)",
         "b = Max(a, f)",
         "b = GCD((1, 2), a)",
@@ -383,7 +387,7 @@ fn literals_names_and_commands_follow_the_input_bar() {
             assert_eq!(c.def(c.id(label).unwrap()), def, "{line}");
         }
     }
-    assert_eq!(c.value(c.id("u").unwrap()), Value::Undefined);
+    assert_eq!(c.value(c.id("u").unwrap()), Value::Number(f64::INFINITY));
     // `e` and `Mod` are labels; `e` then wins over Euler's number
     exec(&mut c, "e = 5").unwrap();
     exec(&mut c, "b = 2e").unwrap();
@@ -714,6 +718,26 @@ fn histogram_respects_the_work_allowance_for_named_lists() {
     });
     assert_eq!(c.value(id), crate::Value::Undefined);
     assert!(super::work_done() - before <= 600);
+}
+
+#[test]
+fn the_undefined_constant_alone_is_an_undefined_function() {
+    // golden topic `tpairfixes-fnundef`
+    let c = load(
+        "f(x) = ?\ng(x) = f(x) + 1\nh(x) = 0 / 0\nk(x) = ? + x\nm(x) = (?)\nr = f(1)\n\
+         b = IsDefined(f)\nd = IsDefined(h)\n",
+    )
+    .unwrap();
+    let value = |label: &str| c.value(c.id(label).unwrap());
+    assert_eq!(value("f"), Value::Undefined);
+    assert_eq!(value("g"), Value::Undefined);
+    assert_eq!(value("m"), Value::Undefined);
+    // every other function without a value is defined
+    assert_eq!(value("h"), Value::Function);
+    assert_eq!(value("k"), Value::Function);
+    assert_eq!(value("r"), Value::Undefined);
+    assert_eq!(value("b"), Value::Bool(false));
+    assert_eq!(value("d"), Value::Bool(true));
 }
 
 #[test]

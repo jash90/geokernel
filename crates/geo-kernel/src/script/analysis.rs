@@ -436,7 +436,7 @@ fn curvature(
                 | "BezierCurve"
         )
     }) {
-        let hidden = format!("\0arg{}", c.len());
+        let hidden = format!("\0curve{}", c.len());
         super::define_after_label(c, &hidden, source)?.ok_or("missing curve")?
     } else {
         function(c, source)?

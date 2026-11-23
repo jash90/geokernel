@@ -1,0 +1,142 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "stroke-frozen-001",
+      "group": "stroke",
+      "script": [
+        "a = 1",
+        "s = PenStroke((1, 2), (3, 4))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "s": {
+            "type": "stroke",
+            "defined": true,
+            "points": [
+              [1.0, 2.0, 1],
+              [3.0, 4.0, 0],
+              [
+                null,
+                null,
+                0
+              ]
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "s": {
+            "type": "stroke",
+            "defined": true,
+            "points": [
+              [1.0, 2.0, 1],
+              [3.0, 4.0, 0],
+              [
+                null,
+                null,
+                0
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "stroke-frozen-002",
+      "group": "stroke",
+      "script": [
+        "A = (1, 2)",
+        "B = (3, 4)",
+        "n = 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "s = PenStroke(A, B)" },
+        { "action": "reject", "line": "t = PenStroke(n, 2)" },
+        { "action": "reject", "line": "u = PenStroke(1 + 1, 2)" },
+        { "action": "reject", "line": "v = PenStroke(\"a\", 2)" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "stroke-frozen-003",
+      "group": "stroke",
+      "script": [
+        "a = 1",
+        "s = PenStroke((a, 2), (3, 4), (5, 1))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "s": {
+            "type": "stroke",
+            "defined": true,
+            "points": [
+              [3.0, 4.0, 1],
+              [5.0, 1.0, 0],
+              [
+                null,
+                null,
+                0
+              ]
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "s": {
+            "type": "stroke",
+            "defined": true,
+            "points": [
+              [3.0, 4.0, 1],
+              [5.0, 1.0, 0],
+              [
+                null,
+                null,
+                0
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

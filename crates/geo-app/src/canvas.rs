@@ -774,6 +774,7 @@ pub fn show(app: &mut App, ui: &mut Ui) {
     app.camera = Some(cam);
     let t = cam.transform(w, h);
     sample_loci(app, ui, t);
+    animate_sliders(app, ui);
     // Whoever got the press (this area, a button over it, a dialog), it
     // ends with the release.
     if fed.released {
@@ -892,6 +893,32 @@ fn zoom_click(app: &mut App, cam: &mut Camera, factor: f64, at: (f64, f64), w: f
     cam.zoom_at(factor, at.0, at.1, w, h, app.rules.scale_limits);
     app.wb.set_camera(*cam);
     app.wb.record_view_step(before);
+}
+
+/// Plays the animated sliders: a frame every thirtieth of a second, with
+/// the frame rate the time since the last frame gives
+/// (`AnimationManager.sliderStep`; the first frame runs at the highest rate).
+fn animate_sliders(app: &mut App, ui: &Ui) {
+    use geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE;
+    if !app.wb.is_animating() {
+        app.animation_time = None;
+        return;
+    }
+    let now = ui.input(|i| i.time);
+    let delay = 1.0 / MAX_ANIMATION_FRAME_RATE;
+    let rate = match app.animation_time {
+        Some(last) if now - last < delay => {
+            ui.ctx()
+                .request_repaint_after(std::time::Duration::from_secs_f64(delay - (now - last)));
+            return;
+        }
+        Some(last) => 1.0 / (now - last),
+        None => MAX_ANIMATION_FRAME_RATE,
+    };
+    app.wb.animate(rate);
+    app.animation_time = Some(now);
+    ui.ctx()
+        .request_repaint_after(std::time::Duration::from_secs_f64(delay));
 }
 
 fn sample_loci(app: &mut App, ui: &Ui, t: ViewTransform) {
@@ -1204,6 +1231,22 @@ fn overlay(app: &mut App, ui: &mut Ui, rect: Rect, w: f64, h: f64, cam: &mut Cam
         (Icon::ZoomOut, text::label(Label::ZoomOut)),
         (Icon::Fullscreen, text::label(Label::Fullscreen)),
     ]);
+    // The play button of the reference sits in the lower left corner while
+    // a slider animates (`needToShowAnimationButton`): it pauses and plays.
+    if app.wb.has_animation() {
+        let running = app.wb.is_animating();
+        let (icon, tip) = if running {
+            (Icon::Pause, text::label(Label::PauseAnimation))
+        } else {
+            (Icon::Play, text::label(Label::PlayAnimation))
+        };
+        let center = pos2(rect.left() + 35.0, bottom);
+        if floating::round_button(ui, &mut app.overlays, "animation", center, icon, true, tip)
+            .clicked()
+        {
+            app.wb.set_animation_running(!running);
+        }
+    }
     let n = buttons.len();
     for (i, (icon, tip)) in buttons.into_iter().enumerate() {
         let center = pos2(right, bottom - 44.0 * (n - 1 - i) as f32);

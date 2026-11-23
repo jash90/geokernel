@@ -57,7 +57,6 @@ pub struct Pair {
     #[allow(dead_code)]
     pub call: String,
     pub input: String,
-    #[allow(dead_code)]
     pub template: String,
     pub context_complete: bool,
     #[serde(default)]
@@ -132,37 +131,124 @@ pub fn load(text: &str) -> Result<Vec<Method>, String> {
     Ok(methods)
 }
 
-/// The GeoGebra-style text of a double: the shortest string that reads back
-/// as the same number, no trailing `.0`, `-0` folded to `0`, `NaN` and
-/// `Infinity` by name. `None` when the value would need the exponent form,
-/// which this formatter does not cover yet.
-pub fn ggb_double(v: f64) -> Option<String> {
-    if v.is_nan() {
-        return Some("NaN".into());
+/// Formats a scalar as the XML template writes it.
+fn ggb_double(value: f64) -> String {
+    if value.is_nan() {
+        return "NaN".into();
     }
-    if v.is_infinite() {
-        return Some(if v > 0.0 { "Infinity" } else { "-Infinity" }.into());
+    if value.is_infinite() {
+        return if value.is_sign_positive() {
+            "Infinity"
+        } else {
+            "-Infinity"
+        }
+        .into();
     }
-    let s = format!("{}", v + 0.0);
-    if s.contains(['e', 'E']) {
-        return None;
+    const LONG_LIMIT: f64 = 9_223_372_036_854_775_808.0;
+    if value.fract() == 0.0 && (-LONG_LIMIT..LONG_LIMIT).contains(&value) {
+        return (value as i64).to_string();
     }
-    let s = s.strip_suffix(".0").unwrap_or(&s);
-    Some(if s == "-0" {
-        "0".to_string()
-    } else {
-        s.to_string()
-    })
+    if (0.001..1e7).contains(&value.abs()) {
+        return value.to_string();
+    }
+    let scientific = format!("{value:E}");
+    let (mantissa, exponent) = scientific.split_once('E').expect("an exponent");
+    let point = if mantissa.contains('.') { "" } else { ".0" };
+    format!("{mantissa}{point}E{exponent}")
 }
 
-/// The GeoGebra-style value string of an object, `None` where this crate
-/// has no GeoGebra-compatible formatting yet (expressions, equations).
-/// Undefined numbers print `NaN`, undefined points and vectors `(NaN, NaN)`
-/// and undefined booleans `?`, as GeoGebra's templates do.
-pub fn value_string(c: &Construction, id: Id) -> Option<String> {
+fn display_number(value: f64, template: &str) -> String {
+    if template == "xml" {
+        return ggb_double(value);
+    }
+    if value.is_nan() {
+        return "?".into();
+    }
+    if value.is_infinite() {
+        return if value.is_sign_positive() {
+            "\u{221e}"
+        } else {
+            "-\u{221e}"
+        }
+        .into();
+    }
+    if value.abs() >= (1u64 << 53) as f64 {
+        let scientific = format!("{value:.14e}");
+        let (mantissa, exponent) = scientific.split_once('e').expect("an exponent");
+        let digits = [
+            '\u{2070}', '\u{00b9}', '\u{00b2}', '\u{00b3}', '\u{2074}', '\u{2075}', '\u{2076}',
+            '\u{2077}', '\u{2078}', '\u{2079}',
+        ];
+        let exponent: String = exponent
+            .bytes()
+            .map(|digit| digits[(digit - b'0') as usize])
+            .collect();
+        let mantissa = mantissa.trim_end_matches('0').trim_end_matches('.');
+        return format!("{mantissa} \u{22c5} 10{exponent}");
+    }
+    let decimals = if template == "edit" { 5 } else { 2 };
+    let fixed = format!("{value:.decimals$}");
+    let rounded = fixed.trim_end_matches('0').trim_end_matches('.');
+    if rounded == "-0" { "0" } else { rounded }.into()
+}
+
+fn object_template(c: &Construction, id: Id, template: &str) -> Option<String> {
+    use geo_kernel::algo::charts::ChartMark;
+    if matches!(c.def(id), geo_kernel::Def::Analysis(_)) && c.kind(id) == Kind::Circle {
+        return Some(geo_kernel::equation::conic_equation(
+            &c.conic(id)?,
+            &|value| display_number(value, template),
+        ));
+    }
+    if template == "xml" && c.kind(id) == Kind::Function {
+        let marks = &c.chart(id)?.marks;
+        if marks.len() >= 16_384 {
+            return None;
+        }
+        let ChartMark::Segment([start, _]) = *marks.first()? else {
+            return None;
+        };
+        let mut vertices = vec![start];
+        for mark in marks {
+            let ChartMark::Segment([_, end]) = *mark else {
+                return None;
+            };
+            vertices.push(end);
+        }
+        let values = |abscissa| {
+            vertices
+                .iter()
+                .map(|&(x, y)| ggb_double(if abscissa { x } else { y }))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        return Some(format!(
+            "DataFunction[{{{}}}, {{{}}},x]",
+            values(true),
+            values(false)
+        ));
+    }
+    None
+}
+
+fn display_angle(value: f64, template: &str) -> Option<String> {
+    let degrees = value.to_degrees();
+    let nearest = (degrees * 1e8).round() / 1e8;
+    let degrees = if (nearest - degrees).abs() < 1e-12 {
+        nearest
+    } else {
+        degrees
+    };
+    let unit = if template == "xml" { "*°" } else { "°" };
+    Some(format!("{}{unit}", display_number(degrees, template)))
+}
+
+/// Renders a supported value in the template used to record the pair.
+pub fn value_string(c: &Construction, id: Id, template: &str) -> Option<String> {
     let value = c.value(id);
+    let number = |v| display_number(v, template);
     let text = |x: f64, y: f64| {
-        let (x, y) = (ggb_double(x)?, ggb_double(y)?);
+        let (x, y) = (number(x), number(y));
         Some(format!("({x}, {y})"))
     };
     // `ToComplex` and `ToPolar` only change how the point prints
@@ -175,23 +261,49 @@ pub fn value_string(c: &Construction, id: Id) -> Option<String> {
             return styled_point(*x, *y, mode);
         }
     }
+    if c.kind(id) == Kind::PenStroke {
+        return Some(stroke_string(c.stroke(id)));
+    }
     match (&value, c.kind(id)) {
         (Value::Undefined, kind) => match kind {
+            Kind::Number if template != "xml" => Some("?".into()),
             Kind::Number => Some("NaN".into()),
+            Kind::Point | Kind::Vector if template == "edit" => Some("(?, ?)".into()),
             Kind::Point | Kind::Vector => Some("(NaN, NaN)".into()),
-            Kind::Boolean | Kind::List => Some("?".into()),
+            // an undefined function or line prints the undefined sign too
+            Kind::Boolean | Kind::List | Kind::Function | Kind::Line => Some("?".into()),
             Kind::Text => Some(String::new()),
             _ => None,
         },
-        (Value::Number(n), _) => ggb_double(*n),
+        (Value::Number(n), Kind::Angle) => display_angle(*n, template),
+        (Value::Number(n), _) => Some(number(*n)),
         (Value::Point { x, y }, _) => text(*x, *y),
         (Value::Vector { x, y }, _) => text(*x, *y),
         (Value::Bool(b), _) => Some(b.to_string()),
         (Value::Text, _) => c.text(id).map(str::to_owned),
-        (Value::Segment { x1, y1, x2, y2 }, _) => ggb_double((x2 - x1).hypot(y2 - y1)),
-        (_, Kind::List) => list_string(c.elements(id)?),
-        _ => None,
+        (Value::Segment { x1, y1, x2, y2 }, _) => Some(number((x2 - x1).hypot(y2 - y1))),
+        (Value::Polygon { area }, _) | (Value::Sector { area }, _) => Some(number(area.abs())),
+        (Value::PolyLine { length }, _) | (Value::Arc { length }, _) => Some(number(*length)),
+        (_, Kind::List) => list_string(c, c.elements(id)?, template, &mut 16_384),
+        _ => object_template(c, id, template),
     }
+}
+
+/// The value of a pen stroke, `PenStrokeBezier[x,y,code,...]`, every number
+/// in five significant digits (`GeoLocusStroke.getPointString`); a break
+/// prints `NaN,NaN,0`.
+fn stroke_string(stroke: Option<&geo_kernel::algo::stroke::StrokeData>) -> String {
+    let mut fields = Vec::new();
+    for p in stroke.map_or(&[][..], |s| &s.points[..]) {
+        if p.is_defined() {
+            fields.push(geo_kernel::algo::stroke::reference_number(p.x));
+            fields.push(geo_kernel::algo::stroke::reference_number(p.y));
+            fields.push(p.segment.code().to_string());
+        } else {
+            fields.extend(["NaN".into(), "NaN".into(), "0".into()]);
+        }
+    }
+    format!("PenStrokeBezier[{}]", fields.join(","))
 }
 
 /// A point in the coordinate style `ToComplex` or `ToPolar` set
@@ -208,23 +320,23 @@ fn styled_point(x: f64, y: f64, mode: geo_kernel::algo::point::CoordMode) -> Opt
                 } else if y == 1.0 {
                     "+ ".to_string()
                 } else if y < 0.0 {
-                    format!("- {}", ggb_double(-y)?)
+                    format!("- {}", ggb_double(-y))
                 } else {
-                    format!("+ {}", ggb_double(y)?)
+                    format!("+ {}", ggb_double(y))
                 };
-                Some(format!("{} {coefficient}{imaginary}", ggb_double(x)?))
+                Some(format!("{} {coefficient}{imaginary}", ggb_double(x)))
             } else if y == -1.0 {
                 Some(format!("-{imaginary}"))
             } else if y == 1.0 {
                 Some(format!("{imaginary}"))
             } else {
-                Some(format!("{}{imaginary}", ggb_double(y)?))
+                Some(format!("{}{imaginary}", ggb_double(y)))
             }
         }
         geo_kernel::algo::point::CoordMode::Polar => Some(format!(
             "({}; {}*\u{00b0})",
-            ggb_double(x.hypot(y))?,
-            ggb_double(y.atan2(x).to_degrees())?
+            ggb_double(x.hypot(y)),
+            ggb_double(y.atan2(x).to_degrees())
         )),
         geo_kernel::algo::point::CoordMode::Cartesian => None,
     }
@@ -232,12 +344,21 @@ fn styled_point(x: f64, y: f64, mode: geo_kernel::algo::point::CoordMode) -> Opt
 
 /// A list of numbers (or of such lists) prints `{a, b, c}` in GeoGebra;
 /// any other element needs the expression printer.
-fn list_string(list: geo_kernel::expr::List<'_>) -> Option<String> {
+fn list_string(
+    c: &Construction,
+    list: geo_kernel::expr::List<'_>,
+    template: &str,
+    remaining: &mut usize,
+) -> Option<String> {
     use geo_kernel::expr::Element;
+    *remaining = remaining.checked_sub(list.len())?;
     let mut parts = Vec::new();
-    for element in list.iter() {
+    for (index, element) in list.iter().enumerate() {
         match element {
-            Element::Value(Kind::Number, Value::Number(n)) => parts.push(ggb_double(n)?),
+            Element::Value(Kind::Number, Value::Number(n)) => parts.push(ggb_double(n)),
+            Element::Value(Kind::Segment, Value::Segment { x1, y1, x2, y2 }) => {
+                parts.push(ggb_double((x2 - x1).hypot(y2 - y1)));
+            }
             Element::Value(Kind::Number, Value::Undefined) => parts.push("NaN".into()),
             Element::Value(Kind::Point | Kind::Vector, Value::Undefined) => {
                 parts.push("(NaN, NaN)".into())
@@ -246,9 +367,12 @@ fn list_string(list: geo_kernel::expr::List<'_>) -> Option<String> {
             Element::Value(
                 Kind::Point | Kind::Vector,
                 Value::Point { x, y } | Value::Vector { x, y },
-            ) => parts.push(format!("({}, {})", ggb_double(x)?, ggb_double(y)?)),
+            ) => parts.push(format!("({}, {})", ggb_double(x), ggb_double(y))),
             Element::Value(Kind::Boolean, Value::Bool(b)) => parts.push(b.to_string()),
-            Element::List(inner) => parts.push(list_string(inner)?),
+            Element::List(inner) => parts.push(list_string(c, inner, template, remaining)?),
+            Element::Value(Kind::Function, _) if template == "xml" => {
+                parts.push(value_string(c, list.function_at(index)?, template)?);
+            }
             Element::Text(s) => parts.push(format!("\"{s}\"")),
             _ => return None,
         }
@@ -307,7 +431,7 @@ fn top_level_equals(input: &str) -> Option<usize> {
                     let next = chars.get(i + 1) == Some(&'=');
                     let prev = i > 0 && matches!(chars[i - 1], '<' | '>' | '!' | '=');
                     if depth == 0 && !next && !prev {
-                        return Some(i);
+                        return input.char_indices().nth(i).map(|(offset, _)| offset);
                     }
                     if next {
                         i += 1;
@@ -397,7 +521,9 @@ fn normalize_syntax(input: &str) -> String {
                 let label = !out.is_empty()
                     && out.chars().any(is_name)
                     && out.chars().all(|c| is_name(c) || c.is_whitespace());
-                out.push(if label { '=' } else { ch });
+                if !label || chars.get(i + 1) != Some(&'=') {
+                    out.push(if label { '=' } else { ch });
+                }
             }
             c => out.push(c),
         }
@@ -478,6 +604,13 @@ fn exec_step(c: &mut Construction, pair: &Pair) -> Exec {
     if top_level_equals(&input).is_some() {
         return Exec::Script(script::exec(c, &input));
     }
+    // CommandsTest.java:4052 and :4056 submit bare point labels to the
+    // algebra processor and compare the returned objects.
+    if let Some(id) = c.id(input.trim()) {
+        if matches!(pair.outputs.as_slice(), [out] if out.label.as_deref() == Some(c.label(id))) {
+            return Exec::Script(script::exec(c, &input));
+        }
+    }
     let line = pair.id.rsplit(':').next().unwrap_or("0");
     if pair.outputs.is_empty() {
         return Exec::Probed {
@@ -490,7 +623,7 @@ fn exec_step(c: &mut Construction, pair: &Pair) -> Exec {
     for (i, out) in pair.outputs.iter().enumerate() {
         match out.label.as_deref() {
             Some(label) => labels.push(label.to_string()),
-            None => {
+            _ => {
                 let probe = format!("{PROBE}_{line}_{i}");
                 probes.push((i, probe.clone()));
                 labels.push(probe);
@@ -502,13 +635,11 @@ fn exec_step(c: &mut Construction, pair: &Pair) -> Exec {
     } else {
         format!("{{{}}} = {}", labels.join(", "), input)
     };
+    let result = script::exec(c, &rewritten);
     if probes.is_empty() {
-        Exec::Script(script::exec(c, &rewritten))
+        Exec::Script(result)
     } else {
-        Exec::Probed {
-            result: script::exec(c, &rewritten),
-            probes,
-        }
+        Exec::Probed { result, probes }
     }
 }
 
@@ -654,9 +785,25 @@ pub struct StepOutcome {
     pub pass: Option<PassKind>,
 }
 
+impl StepOutcome {
+    /// A display mismatch leaves the computed objects available to later steps.
+    pub fn blocks_later_steps(&self) -> bool {
+        self.disagreements.iter().any(|d| !text_disagreement(d))
+    }
+}
+
+fn text_disagreement(disagreement: &Disagreement) -> bool {
+    disagreement.why.starts_with("string `") || disagreement.why.contains("no GeoGebra-style text")
+}
+
 /// Compares one output of a step against its recorded object and string,
 /// by the label GeoGebra gave it.
-fn compare_output(c: &Construction, out: &Output, values_only: bool) -> Vec<Disagreement> {
+fn compare_output(
+    c: &Construction,
+    out: &Output,
+    values_only: bool,
+    pair: &Pair,
+) -> Vec<Disagreement> {
     let mut bad = Vec::new();
     let Some(label) = out.label.as_deref() else {
         bad.push(Disagreement {
@@ -675,7 +822,7 @@ fn compare_output(c: &Construction, out: &Output, values_only: bool) -> Vec<Disa
         });
         return bad;
     };
-    compare_at(c, out, label, id, values_only)
+    compare_at(c, out, label, id, values_only, pair)
 }
 
 /// [`compare_output`], against a result the runner ran under a probe label.
@@ -684,9 +831,10 @@ fn compare_probed(
     out: &Output,
     probe: &str,
     values_only: bool,
+    pair: &Pair,
 ) -> Vec<Disagreement> {
     match c.id(probe) {
-        Some(id) => compare_at(c, out, probe, id, values_only),
+        Some(id) => compare_at(c, out, probe, id, values_only, pair),
         None => vec![Disagreement {
             label: probe.into(),
             why: format!(
@@ -726,6 +874,7 @@ fn compare_at(
     label: &str,
     id: Id,
     values_only: bool,
+    pair: &Pair,
 ) -> Vec<Disagreement> {
     let mut bad = Vec::new();
     let Some(raw) = out.object.as_ref() else {
@@ -787,6 +936,8 @@ fn compare_at(
             compare_conic(&expected, kind, &actual, c.conic(id).as_ref())
                 .0
                 .err()
+        } else if kind == Kind::PenStroke {
+            crate::compare::compare_stroke(&expected, kind, &actual, c.stroke(id)).err()
         } else if kind == Kind::List {
             compare_list(c, &expected, kind, c.elements(id)).err()
         } else if matches!(
@@ -811,7 +962,8 @@ fn compare_at(
         return bad;
     }
     // The string, where a GeoGebra-compatible formatter exists.
-    match value_string(c, id) {
+    let shown = value_string(c, id, &pair.template);
+    match shown {
         Some(text) if text != out.string => bad.push(Disagreement {
             label: label.into(),
             why: format!("string `{text}`, GeoGebra prints `{}`", out.string),
@@ -837,8 +989,8 @@ fn recorded_infinity(out: &Output, expected: &Expected) -> Option<f64> {
         return None;
     }
     match out.string.trim() {
-        "Infinity" => Some(f64::INFINITY),
-        "-Infinity" => Some(f64::NEG_INFINITY),
+        "Infinity" | "\u{221e}" => Some(f64::INFINITY),
+        "-Infinity" | "-\u{221e}" => Some(f64::NEG_INFINITY),
         _ => None,
     }
 }
@@ -1087,10 +1239,7 @@ fn classify(
             Category::KernelMismatch
         };
     }
-    if bad
-        .iter()
-        .any(|d| d.why.starts_with("string `") || d.why.contains("no GeoGebra-style text"))
-    {
+    if bad.iter().any(text_disagreement) {
         return Category::TextFormatting;
     }
     Category::KernelMismatch
@@ -1182,9 +1331,11 @@ pub fn run_pair(c: &mut Construction, pair: &Pair, prior_failure: Option<&str>) 
                     for (i, out) in pair.outputs.iter().enumerate() {
                         match (&out.label, exec.probe_label(i)) {
                             (_, Some(probe)) => {
-                                bad.extend(compare_probed(c, out, probe, values_only))
+                                bad.extend(compare_probed(c, out, probe, values_only, pair))
                             }
-                            (Some(_), None) => bad.extend(compare_output(c, out, values_only)),
+                            (Some(_), None) => {
+                                bad.extend(compare_output(c, out, values_only, pair))
+                            }
                             (None, None) => bad.push(Disagreement {
                                 label: "step".into(),
                                 why: format!(
@@ -1324,17 +1475,41 @@ mod tests {
     use super::*;
 
     #[test]
-    fn doubles_print_like_geogebra() {
-        assert_eq!(ggb_double(4.0).unwrap(), "4");
-        assert_eq!(ggb_double(0.5).unwrap(), "0.5");
-        assert_eq!(ggb_double(67403403358.94).unwrap(), "67403403358.94");
-        assert_eq!(ggb_double(-0.0).unwrap(), "0");
-        assert_eq!(ggb_double(f64::NAN).unwrap(), "NaN");
-        assert_eq!(ggb_double(f64::INFINITY).unwrap(), "Infinity");
-        assert_eq!(ggb_double(-f64::INFINITY).unwrap(), "-Infinity");
-        // Rust's Display never switches to the exponent form; whether
-        // GeoGebra does for such values has to be learned from new data.
-        assert_eq!(ggb_double(1e-7).unwrap(), "0.0000001");
+    fn stroke_numbers_round_half_up_in_five_digits() {
+        assert_eq!(geo_kernel::algo::stroke::reference_number(1.0), "1.0000E0");
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(-0.8533333333333334),
+            "-8.5333E-1"
+        );
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(1.03125),
+            "1.0313E0"
+        );
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(99999.5),
+            "1.0000E5"
+        );
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(-0.0),
+            "-0.0000E0"
+        );
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(2.5e-10),
+            "2.5000E-10"
+        );
+    }
+
+    #[test]
+    fn xml_doubles_use_exponents_outside_the_plain_range() {
+        assert_eq!(ggb_double(4.0), "4");
+        assert_eq!(ggb_double(0.5), "0.5");
+        assert_eq!(ggb_double(67403403358.94), "6.740340335894E10");
+        assert_eq!(ggb_double(-0.0), "0");
+        assert_eq!(ggb_double(f64::NAN), "NaN");
+        assert_eq!(ggb_double(f64::INFINITY), "Infinity");
+        assert_eq!(ggb_double(-f64::INFINITY), "-Infinity");
+        assert_eq!(ggb_double(1e-7), "1.0E-7");
+        assert_eq!(ggb_double(1e100), "1.0E100");
     }
 
     #[test]

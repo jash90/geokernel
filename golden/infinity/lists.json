@@ -1,0 +1,3787 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "infinity-lists-001",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Sum(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-002",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Max(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-003",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Min(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -1.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-004",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Mean(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.6666666666666666 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-005",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Product(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -0.75 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -12.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -0.75 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-006",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Element(l, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-007",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Length(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-008",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Sort(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -6.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-009",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Reverse(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.5 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -6.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-010",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = 2 l"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -3.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -1.0 },
+              { "type": "number", "defined": true, "value": 3.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 4.0 },
+              { "type": "number", "defined": true, "value": -12.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -3.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-011",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = l + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.5 },
+              { "type": "number", "defined": true, "value": -0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 2.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": -5.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.5 },
+              { "type": "number", "defined": true, "value": -0.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-012",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = First(l, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-013",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Last(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-014",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Sum(l, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-015",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = IndexOf(c, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-016",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Element(Sort(l), 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -0.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": -1.5 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-017",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Element(Sort(l), 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.5 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-018",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Unique(l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -6.0 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-019",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Zip(k + 1, k, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.5 },
+              { "type": "number", "defined": true, "value": -0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": 2.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 3.0 },
+              { "type": "number", "defined": true, "value": -5.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": 1.5 },
+              { "type": "number", "defined": true, "value": -0.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-020",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Sequence(c k, k, -1, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -0.0 },
+              { "type": "number", "defined": true, "value": -0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -2.0 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 0.0 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-021",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = CountIf(x > 5, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-022",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = KeepIf(x > 5, l)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-023",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Join(l, {c})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 },
+              { "type": "number", "defined": true, "value": -0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-024",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Take(l, 2, 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-025",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Flatten({l, {c}})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 },
+              { "type": "number", "defined": true, "value": -0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-026",
+      "group": "infinity",
+      "script": [
+        "a = 2",
+        "c = 1 / a",
+        "d = -3 / a",
+        "l = {1, c, d}",
+        "g = Append(l, c)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 0.5 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -0.5 },
+          "d": { "type": "number", "defined": true, "value": 1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": -0.5 },
+              { "type": "number", "defined": true, "value": 1.5 },
+              { "type": "number", "defined": true, "value": -0.5 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "c": { "type": "number", "defined": true, "infinity": 1 },
+          "d": { "type": "number", "defined": true, "infinity": -1 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "c": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": -6.0 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 },
+              { "type": "number", "defined": true, "value": -6.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.5 },
+          "d": { "type": "number", "defined": true, "value": -1.5 },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 }
+            ]
+          },
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 0.5 },
+              { "type": "number", "defined": true, "value": -1.5 },
+              { "type": "number", "defined": true, "value": 0.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-027",
+      "group": "infinity",
+      "script": [
+        "g = {inf, -inf, 1}"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "value": 1.0 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-028",
+      "group": "infinity",
+      "script": [
+        "g = {1 / 0, 0 / 0}"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": 1 },
+              { "type": "number", "defined": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-029",
+      "group": "infinity",
+      "script": [
+        "g = Sum({inf, 1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-030",
+      "group": "infinity",
+      "script": [
+        "g = Sum({inf, -inf})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-031",
+      "group": "infinity",
+      "script": [
+        "g = Max({inf, 1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-032",
+      "group": "infinity",
+      "script": [
+        "g = Min({-inf, 1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-033",
+      "group": "infinity",
+      "script": [
+        "g = Product({inf, -1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-034",
+      "group": "infinity",
+      "script": [
+        "g = Product({inf, 0})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": false }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-035",
+      "group": "infinity",
+      "script": [
+        "g = Mean({inf, 1})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-036",
+      "group": "infinity",
+      "script": [
+        "g = Sort({inf, 1, -inf})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "infinity": -1 },
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "infinity": 1 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-037",
+      "group": "infinity",
+      "script": [
+        "g = Element({1, inf}, 2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-038",
+      "group": "infinity",
+      "script": [
+        "g = Max(inf, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-039",
+      "group": "infinity",
+      "script": [
+        "g = Min(-inf, 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": -1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-040",
+      "group": "infinity",
+      "script": [
+        "g = Max(-inf, inf)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    },
+    {
+      "id": "infinity-lists-041",
+      "group": "infinity",
+      "script": [
+        "g = Sum({1 / 0})"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "number", "defined": true, "infinity": 1 }
+        }
+      ]
+    }
+  ]
+}
