@@ -806,6 +806,9 @@ pub(crate) struct Entry {
     depth: u32,
     cost: u64,
     vars: u64,
+    /// The operands the symbolic prover replaced with segments, by node
+    /// index, with the endpoints of each (see [`replace_distance_operands`]).
+    segment_operands: Vec<(u32, [Id; 2])>,
 }
 
 impl Entry {
@@ -863,6 +866,7 @@ impl Entry {
             depth: p.depth,
             cost: p.cost,
             vars: p.vars,
+            segment_operands: Vec::new(),
         }
     }
 
@@ -1395,26 +1399,104 @@ pub(crate) fn parents(c: &Construction, def: &Def) -> Vec<Id> {
     }
 }
 
-pub(crate) fn distance_equality(c: &Construction, boolean: Id) -> Option<[[Id; 2]; 2]> {
+/// An operand of a comparison as the symbolic prover reads it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Operand {
+    /// A named object.
+    Object(Id),
+    /// A segment between two points: a distance of two points, a segment
+    /// object, or the segment the prover put in place of a distance.
+    Segment([Id; 2]),
+    /// A constant integer.
+    Integer(i64),
+    /// Anything else.
+    Other,
+}
+
+/// The comparison at the root of a Boolean expression and its operands.
+pub(crate) fn comparison(c: &Construction, boolean: Id) -> Option<(Bin, [Operand; 2])> {
     let Def::Expr(def) = c.def(boolean) else {
         return None;
     };
     let expr = entry(c, def);
-    let Node::Bin(Bin::Equal, lhs, rhs) = expr.nodes[expr.root as usize] else {
+    let Node::Bin(op, lhs, rhs) = expr.nodes[expr.root as usize] else {
         return None;
     };
-    let distance = |index: u32| {
-        let def = match expr.nodes[index as usize] {
-            Node::Obj(id) => c.def(id),
-            Node::Cmd(def, _) => def,
-            _ => return None,
-        };
-        match def {
-            Def::Distance(a, b) => Some([a, b]),
-            _ => None,
-        }
+    Some((op, [lhs, rhs].map(|side| operand(c, expr, side))))
+}
+
+/// The operand at node `index` of `expr`.
+pub(crate) fn operand(c: &Construction, expr: &Entry, index: u32) -> Operand {
+    if let Some(&(_, pair)) = expr.segment_operands.iter().find(|(n, _)| *n == index) {
+        return Operand::Segment(pair);
+    }
+    let points = |a: Id, b: Id| c.kind(a) == Kind::Point && c.kind(b) == Kind::Point;
+    match expr.nodes[index as usize] {
+        Node::Obj(id) => match c.def(id) {
+            Def::Distance(a, b) | Def::Segment(a, b) if points(a, b) => Operand::Segment([a, b]),
+            _ => Operand::Object(id),
+        },
+        Node::Cmd(Def::Distance(a, b), _) if points(a, b) => Operand::Segment([a, b]),
+        Node::Num(v) if v.fract() == 0.0 && v.abs() < 1e15 => Operand::Integer(v as i64),
+        _ => Operand::Other,
+    }
+}
+
+/// Whether node `index` of `expr` is an operand the prover replaced.
+pub(crate) fn is_segment_operand(expr: &Entry, index: u32) -> bool {
+    expr.segment_operands.iter().any(|(n, _)| *n == index)
+}
+
+/// The node tree of a Boolean expression, for the prover's translation of
+/// arithmetic statements.
+pub(crate) fn boolean_entry(c: &Construction, boolean: Id) -> Option<&Entry> {
+    match c.def(boolean) {
+        Def::Expr(def) => Some(entry(c, def)),
+        _ => None,
+    }
+}
+
+/// What the symbolic prover does to a Boolean it translates
+/// (`DependentBooleanAdapter.getBotanaPolynomials`): each operand of the
+/// root that is a distance of two points becomes a segment, an existing one
+/// between the same points if the construction has one, otherwise a new one
+/// whose length is never computed and stays 0. The change is permanent:
+/// later updates of the Boolean compare those segments. Its parents stay
+/// the same, so it is updated when the distances are.
+pub(crate) fn replace_distance_operands(c: &mut Construction, boolean: Id) {
+    let Def::Expr(def) = c.def(boolean) else {
+        return;
     };
-    Some([distance(lhs)?, distance(rhs)?])
+    let expr = entry(c, def);
+    let Node::Bin(_, lhs, rhs) = expr.nodes[expr.root as usize] else {
+        return;
+    };
+    let mut replaced = Vec::new();
+    for side in [lhs, rhs] {
+        let pair = match expr.nodes[side as usize] {
+            Node::Obj(id) => match c.def(id) {
+                Def::Distance(a, b) => [a, b],
+                _ => continue,
+            },
+            Node::Cmd(Def::Distance(a, b), _) => [a, b],
+            _ => continue,
+        };
+        if pair.iter().any(|&p| c.kind(p) != Kind::Point) {
+            continue;
+        }
+        let existing = (0..c.len()).map(Id).find(|&id| {
+            c.exists(id)
+                && matches!(c.def(id), Def::Segment(a, b)
+                    if [a, b] == pair || [b, a] == pair)
+        });
+        let node = existing.map_or(Node::Num(0.0), Node::Obj);
+        replaced.push((side, pair, node));
+    }
+    let e = &mut c.exprs.entries[def.index as usize];
+    for (side, pair, node) in replaced {
+        e.nodes[side as usize] = node;
+        e.segment_operands.push((side, pair));
+    }
 }
 
 /// A result of [`evaluate`]: the raw value and the exact decimal of a

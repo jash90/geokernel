@@ -3440,36 +3440,6 @@ id = "funcrest-svd-011"
 reason = "The cyclic rotation sweep exceeds the kernel work budget on the dense 200 by 200 matrix. The enclosing IsDefined becomes undefined, while the reference finishes and returns true."
 mismatches = ["0:d"]
 
-[[gap]]
-id = "locusequation-boolean-001"
-reason = "The reference prover replaces the distance operands of the input Boolean with temporary segments. After an edit the Boolean reads those segment values. The kernel compares the current distances, and the implicit equation agrees."
-mismatches = ["2:b", "3:b"]
-
-[[gap]]
-id = "locusequation-boolean-003"
-reason = "After the prover substitutes temporary segments for the distances, the reference condition becomes true on edits of the fixed decimal point. The kernel compares the current distances, and the rounded implicit equation agrees."
-mismatches = ["1:b", "2:b", "3:b"]
-
-[[gap]]
-id = "locusequation-boolean-004"
-reason = "The reference condition reads temporary segment lengths after the edit of the fractional point. The kernel compares the current distances, and the implicit equation agrees."
-mismatches = ["1:b"]
-
-[[gap]]
-id = "locusequation-boolean-006"
-reason = "The reference condition reads temporary segment lengths after editing the circle intersection. The kernel compares the current distances, and the symbolic implicit equation agrees."
-mismatches = ["1:b"]
-
-[[gap]]
-id = "locusequation-boolean-007"
-reason = "The reference condition reads temporary segment lengths after rotating or resizing the carrier circle. The kernel compares the current distances, and the product representing the two solutions agrees."
-mismatches = ["1:b", "2:b"]
-
-[[gap]]
-id = "locusequation-boolean-008"
-reason = "Editing the fixed point changes the standalone distance comparison to false. The reference condition passed to the prover reads temporary segment lengths and stays true. Both kernel comparisons use the current distances."
-mismatches = ["2:b"]
-
 # stroke
 
 [[gap]]
@@ -3477,12 +3447,51 @@ id = "stroke-limits-001"
 reason = "intended difference, recorded in DIFFERENCES.md: the smoothed stroke has 32,489 points whose exact coordinates are longer than the 1 MiB an imported XML attribute may hold; the kernel makes a stroke that could not be saved, journaled and read back undefined at creation, while the reference keeps it"
 mismatches = ["0:s"]
 
-# prove
+# locusequation, envelope and prove expressions
+[[gap]]
+id = "locusequation-classic-001"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["3:c"]
 
 [[gap]]
-id = "prove-expression-001"
-reason = "The statement is an arithmetic Boolean (`D == E`). The reference has the CAS rewrite the expression into a polynomial with extra distance variables before the elimination; the kernel translates only the predicate commands and answers undefined."
-mismatches = ["0:p", "0:q"]
+id = "locusequation-classic-002"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["0:c", "1:c"]
+
+[[gap]]
+id = "locusequation-classic-005"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["0:c", "1:c"]
+
+[[gap]]
+id = "locusequation-classic-006"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["0:c", "1:c"]
+
+[[gap]]
+id = "locusequation-classic-008"
+reason = "The traced point is an intersection of a line and a circle that are both drawn through the mover. The reference excludes the mover from that intersection with an extra equation (its recorded system has t*|MP|^2 = 1), but only for the indexed `Intersect(a, b, n)`; the unindexed command and saved files make the same kernel definition, and the kernel does not record which command made it. Its translation has no exclusion and the curve is undefined."
+mismatches = ["0:c", "1:c"]
+undefined = true
+
+[[gap]]
+id = "envelope-classic-001"
+reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
+mismatches = ["2:c"]
+
+[[gap]]
+id = "prove-expression-012"
+reason = "`ProveDetails` of an arithmetic statement: the reference words the conditions from its CAS's factorization of the rewritten polynomial divided by the user's formula, read back through `NDGDetector`'s formula parser. The kernel decides `Prove` (the truth does not depend on the CAS's normalization) but answers an undefined list here."
+mismatches = ["0:q"]
+undefined = true
+
+[[gap]]
+id = "prove-expression-014"
+reason = "`ProveDetails` of an arithmetic statement: the reference words the conditions from its CAS's factorization of the rewritten polynomial divided by the user's formula, read back through `NDGDetector`'s formula parser. The kernel decides `Prove` (the truth does not depend on the CAS's normalization) but answers an undefined list here."
+mismatches = ["0:q"]
+undefined = true
+
+# prove
 
 [[gap]]
 id = "prove-relation-001"

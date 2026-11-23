@@ -131,6 +131,11 @@ impl translate::System {
         if !details {
             return Some(Outcome::True(Vec::new()));
         }
+        // The reference words the conditions of a formula from its CAS's
+        // factorization of the rewritten polynomial.
+        if self.arithmetic {
+            return None;
+        }
         let mut texts = Vec::new();
         if fixed_two {
             texts.push(conditions::equal_text(
@@ -556,15 +561,24 @@ pub(crate) fn define(c: &mut Construction, label: &str, input: &str) -> Option<R
                 c.value(flag) == Value::Bool(true)
             }
         };
-        c.add(
-            label,
-            crate::kernel::Def::Prove(ProveDef {
-                statement,
-                details,
-                relation,
-            }),
-        )
-        .map_err(|e| e.to_string())
+        let id = c
+            .add(
+                label,
+                crate::kernel::Def::Prove(ProveDef {
+                    statement,
+                    details,
+                    relation,
+                }),
+            )
+            .map_err(|e| e.to_string())?;
+        // The translation of the thesis rewrites a Boolean expression once
+        // the construction has been translated.
+        if matches!(c.def(statement), crate::kernel::Def::Expr(_))
+            && translate::System::hypotheses(c, statement, &Budget::new(PROOF_WORK)).is_ok()
+        {
+            crate::expr::replace_distance_operands(c, statement);
+        }
+        Ok(id)
     })();
     if result.is_err() {
         c.discard_since(start);
