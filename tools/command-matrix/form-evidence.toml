@@ -3001,6 +3001,31 @@ form = "implicit"
 cases = ["implicit-asymptotes-001", "implicit-asymptotes-002", "implicit-asymptotes-003", "implicit-asymptotes-004", "implicit-asymptotes-005"]
 
 [[form]]
+command = "Asymptote"
+form = "function"
+cases = ["funcanalysis-asymptote-001", "funcanalysis-asymptote-002", "funcanalysis-asymptote-003", "funcanalysis-asymptote-004", "funcanalysis-asymptote-005", "funcanalysis-asymptote-006", "funcanalysis-asymptote-007", "cas-delegated-001", "cas-delegated-004"]
+
+[[form]]
+command = "RemovableDiscontinuity"
+form = "function"
+cases = ["funcanalysis-discontinuity-001", "funcanalysis-discontinuity-003", "funcanalysis-discontinuity-004", "funcanalysis-discontinuity-005", "funcanalysis-discontinuity-006", "funcanalysis-discontinuity-007", "funcanalysis-discontinuity-008", "cas-delegated-002"]
+
+[[form]]
+command = "CurvatureVector"
+form = "point,function"
+cases = ["funcanalysis-forms-011"]
+
+[[form]]
+command = "CurvatureVector"
+form = "point,curve"
+cases = ["funcanalysis-forms-012"]
+
+[[form]]
+command = "CurvatureVector"
+form = "point,conic"
+cases = ["funcanalysis-forms-013"]
+
+[[form]]
 command = "Intersect"
 form = "implicit,line"
 cases = ["implicit-line-001", "implicit-line-002", "implicit-line-003", "implicit-line-004", "implicit-line-005"]
