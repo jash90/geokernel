@@ -1849,9 +1849,9 @@ fn interval_roots_free_labels_and_take_new_ones_through_every_replay() {
             assert!(w.undo());
             assert_eq!(labelled_values(&w), states[values.len() - back]);
         }
-        for forward in 1..=values.len() {
+        for state in &states[1..=values.len()] {
             assert!(w.redo());
-            assert_eq!(labelled_values(&w), states[forward]);
+            assert_eq!(labelled_values(&w), *state);
         }
     }
 }
