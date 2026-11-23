@@ -101,9 +101,12 @@ pub fn evaluate(cases: &[Case], gaps: &Gaps) -> Report {
                     .iter()
                     .map(|m| format!("{}:{}", m.step, m.label))
                     .collect();
+                // The statement covers the listed mismatches only; an unlisted
+                // one is reported by the set comparison below.
                 let wrong_answer = gap.kernel.as_ref().and_then(|kernel| {
                     out.mismatches
                         .iter()
+                        .filter(|m| gap.mismatches.contains(&format!("{}:{}", m.step, m.label)))
                         .find(|m| !kernel.matches(&m.actual))
                         .map(|m| (kernel, m))
                 });
@@ -228,6 +231,14 @@ mod tests {
             assert_eq!(r.known_gaps, 0, "{extra}");
             assert!(r.failures[0].contains("states"), "{extra}");
         }
+        // An unlisted mismatch is reported as a changed list, not as a
+        // wrong stated answer.
+        let mut unlisted = stated("undefined = true");
+        unlisted.get_mut("c1").unwrap().mismatches = ["0:Q".to_owned()].into();
+        let r = evaluate(&case(SCRIPT, 2.0), &unlisted);
+        assert_eq!(r.known_gaps, 0);
+        assert!(r.failures[0].contains("changed") && r.failures[0].contains("0:M"));
+        assert!(!r.failures[0].contains("states"));
         // A refused line with the stated error passes, another error fails.
         let refused = case(r#""M = Foo(1)""#, 1.0);
         let error = |e: &str| stated(&format!("failure = \"{e}\""));
