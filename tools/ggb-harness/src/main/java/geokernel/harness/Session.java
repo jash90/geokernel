@@ -1644,6 +1644,14 @@ final class Session {
             case "IntersectRegion":
             case "IntersectionPaths":
                 return "polygon";
+            case "Expand":
+            case "Factor":
+            case "IFactor":
+            case "Simplify":
+                // The CAS commands rewrite the coordinates of a curve and
+                // the polynomial of an implicit curve.
+                return first instanceof GeoCurveCartesian ? "curve"
+                        : first instanceof GeoImplicitCurve ? "implicit" : null;
             case "Product":
                 // like `Sum`: the fold of points or vectors is one of them;
                 // every other product is typed like an expression
@@ -1657,7 +1665,9 @@ final class Session {
     }
 
     private static Map<String, Object> describeSolutions(GeoList list) {
-        Map<String, Object> result = describe(list, "list");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "list");
+        result.put("defined", list.isDefined());
         if (!list.isDefined()) {
             return result;
         }
@@ -1670,6 +1680,9 @@ final class Session {
             // GeoGebra answers, which `Element(Solutions(...), k)` reads.
             if (e instanceof GeoList row && sameCoordinateAssignments(row)) {
                 elements.add(describeSolutions(row));
+            } else if (e instanceof GeoConic && !(e instanceof GeoConicPart)) {
+                // An assignment of degree two, such as `y = x^2 + x`.
+                elements.add(describe(e, "conic"));
             } else {
                 elements.add(describe(e, typeOf(e)));
             }

@@ -33,12 +33,31 @@ pub struct Case {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Step {
     Initial,
-    Move { label: String, x: f64, y: f64 },
-    SetNumber { label: String, value: f64 },
-    Delete { label: String },
-    SetSliderBounds { label: String, min: f64, max: f64 },
-    Reject { line: String },
-    Redefine { line: String },
+    Move {
+        label: String,
+        x: f64,
+        y: f64,
+    },
+    SetNumber {
+        label: String,
+        value: f64,
+    },
+    Delete {
+        label: String,
+    },
+    SetSliderBounds {
+        label: String,
+        min: f64,
+        max: f64,
+    },
+    /// `error`: the kernel's exact failure, when the case asserts it.
+    Reject {
+        line: String,
+        error: Option<String>,
+    },
+    Redefine {
+        line: String,
+    },
 }
 
 #[derive(Deserialize)]
@@ -53,6 +72,7 @@ struct RawStep {
     min: Option<f64>,
     max: Option<f64>,
     line: Option<String>,
+    error: Option<String>,
     reference_parse_error: Option<bool>,
 }
 
@@ -63,6 +83,9 @@ impl<'de> Deserialize<'de> for Step {
         let need = |name: &str| D::Error::custom(format!("step `{}` needs `{name}`", raw.action));
         if !matches!(raw.action.as_str(), "reject" | "redefine") && raw.line.is_some() {
             return Err(D::Error::custom("only `reject` and `redefine` take `line`"));
+        }
+        if raw.action != "reject" && raw.error.is_some() {
+            return Err(D::Error::custom("only step `reject` takes `error`"));
         }
         if raw.action != "set_number" && raw.infinity.is_some() {
             return Err(D::Error::custom("only `set_number` takes `infinity`"));
@@ -140,7 +163,10 @@ impl<'de> Deserialize<'de> for Step {
                 }
                 let line = raw.line.ok_or_else(|| need("line"))?;
                 if raw.action == "reject" {
-                    Ok(Step::Reject { line })
+                    Ok(Step::Reject {
+                        line,
+                        error: raw.error,
+                    })
                 } else {
                     Ok(Step::Redefine { line })
                 }

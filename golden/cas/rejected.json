@@ -1,0 +1,967 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-rejected-001",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "k: x^2+y^2=4",
+        "l = {1, 2}",
+        "A = (0, 1)",
+        "B = (1, 0)",
+        "s = Segment(A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = Expand(g)", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand(k)", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand(l)", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand(s)", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand(x+y=1)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = Expand(x^2+y^2=4)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = Expand({1, 2})", "error": "invalid arguments to `Expand`" },
+        { "action": "reject", "line": "r = Expand({x^2-1, (x+1)^2})", "error": "invalid arguments to `Expand`" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-rejected-002",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "k: x^2+y^2=4",
+        "l = {1, 2}",
+        "A = (0, 1)",
+        "B = (1, 0)",
+        "s = Segment(A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = Factor(g)", "error": "`Factor` needs a function" },
+        { "action": "reject", "line": "r = Factor(k)", "error": "`Factor` needs a function" },
+        { "action": "reject", "line": "r = Factor(l)", "error": "`Factor` needs a function" },
+        { "action": "reject", "line": "r = Factor(s)", "error": "`Factor` needs a function" },
+        { "action": "reject", "line": "r = Factor(x+y=1)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = Factor(x^2+y^2=4)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = Factor({1, 2})", "error": "`Factor` needs a function" },
+        { "action": "reject", "line": "r = Factor({x^2-1, (x+1)^2})", "error": "invalid arguments to `Factor`" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-rejected-003",
+      "group": "cas",
+      "script": [
+        "g: x+y=1",
+        "k: x^2+y^2=4",
+        "l = {1, 2}",
+        "A = (0, 1)",
+        "B = (1, 0)",
+        "s = Segment(A, B)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = IFactor(g)", "error": "`IFactor` needs a function" },
+        { "action": "reject", "line": "r = IFactor(k)", "error": "`IFactor` needs a function" },
+        { "action": "reject", "line": "r = IFactor(l)", "error": "`IFactor` needs a function" },
+        { "action": "reject", "line": "r = IFactor(s)", "error": "`IFactor` needs a function" },
+        { "action": "reject", "line": "r = IFactor(x+y=1)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = IFactor(x^2+y^2=4)", "error": "`y` needs arguments" },
+        { "action": "reject", "line": "r = IFactor({1, 2})", "error": "`IFactor` needs a function" },
+        { "action": "reject", "line": "r = IFactor({x^2-1, (x+1)^2})", "error": "invalid arguments to `IFactor`" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        },
+        {
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "circle",
+            "matrix": [1.0, 1.0, -4.0, 0.0, 0.0, 0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.0, 2.0],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "cas-rejected-004",
+      "group": "cas",
+      "script": [
+        "l = {1, 2}",
+        "A = (0, 1)",
+        "B = (1, 0)",
+        "C = (2, 3)",
+        "p = Polygon(A, B, C)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = Simplify(l)", "error": "invalid arguments to `Simplify`" },
+        { "action": "reject", "line": "r = Simplify({1, 2})", "error": "invalid arguments to `Simplify`" },
+        { "action": "reject", "line": "r = Simplify({x^2-1, (x+1)^2})", "error": "invalid arguments to `Simplify`" },
+        { "action": "reject", "line": "r = Simplify(A)", "error": "invalid arguments to `Simplify`" },
+        { "action": "reject", "line": "r = Simplify(p)", "error": "invalid arguments to `Simplify`" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [1.0, 0.0],
+              [2.0, 3.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 1.0 }
+        },
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [1.0, 0.0],
+              [2.0, 3.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 1.0 }
+        },
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [1.0, 0.0],
+              [2.0, 3.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 1.0 }
+        },
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [1.0, 0.0],
+              [2.0, 3.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 1.0 }
+        },
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [1.0, 0.0],
+              [2.0, 3.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 1.0 }
+        },
+        {
+          "l": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 1.0, "y": 0.0 },
+          "C": { "type": "point", "defined": true, "x": 2.0, "y": 3.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 1.0],
+              [1.0, 0.0],
+              [2.0, 3.0]
+            ],
+            "area": 2.0,
+            "signed_area": 2.0
+          },
+          "c": { "type": "segment", "defined": true, "x1": 0.0, "y1": 1.0, "x2": 1.0, "y2": 0.0 },
+          "a": { "type": "segment", "defined": true, "x1": 1.0, "y1": 0.0, "x2": 2.0, "y2": 3.0 },
+          "b": { "type": "segment", "defined": true, "x1": 2.0, "y1": 3.0, "x2": 0.0, "y2": 1.0 }
+        }
+      ]
+    }
+  ]
+}

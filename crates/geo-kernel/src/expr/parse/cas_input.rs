@@ -30,6 +30,10 @@ impl Parser<'_> {
                     Node::Cas(op, a, b)
                 }
             }
+            [a] if op == Op::Simplify && !x && !y && self.is_text(a) => {
+                // `CmdSimplify`: a text is tidied as a text.
+                crate::expr::commands::text_call(self, crate::expr::TextOp::Simplify, &[a])
+            }
             [a] if op != Op::CommonDenominator => {
                 if op.is_function() {
                     if matches!(

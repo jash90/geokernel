@@ -3305,41 +3305,9 @@ form = "function"
 cases = ["cas-solve-017"]
 
 [[form]]
-command = "Solve"
-form = "line"
-cases = ["cas-solve-018"]
-
-[[form]]
-command = "Solve"
-form = "list"
-cases = ["cas-solve-019"]
-
-[[form]]
-command = "Solve"
-form = "list,any"
-cases = ["cas-solve-020"]
-difference = "polynomial-cas: `Solve(list, any)`"
-
-[[form]]
 command = "Solutions"
 form = "function"
 cases = ["cas-solve-021"]
-
-[[form]]
-command = "Solutions"
-form = "line"
-cases = ["cas-solve-022"]
-
-[[form]]
-command = "Solutions"
-form = "list"
-cases = ["cas-solve-023"]
-
-[[form]]
-command = "Solutions"
-form = "list,any"
-cases = ["cas-solve-024"]
-difference = "polynomial-cas: `Solutions(list, any)`"
 
 [[form]]
 command = "NSolve"
@@ -3352,17 +3320,6 @@ form = "line"
 cases = ["cas-solve-026"]
 
 [[form]]
-command = "NSolve"
-form = "list"
-cases = ["cas-solve-027"]
-
-[[form]]
-command = "NSolve"
-form = "list,any"
-cases = ["cas-solve-028"]
-difference = "polynomial-cas: `NSolve(list, any)`"
-
-[[form]]
 command = "NSolutions"
 form = "function"
 cases = ["cas-solve-029"]
@@ -3371,17 +3328,6 @@ cases = ["cas-solve-029"]
 command = "NSolutions"
 form = "line"
 cases = ["cas-solve-030"]
-
-[[form]]
-command = "NSolutions"
-form = "list"
-cases = ["cas-solve-031"]
-
-[[form]]
-command = "NSolutions"
-form = "list,any"
-cases = ["cas-solve-032"]
-difference = "polynomial-cas: `NSolutions(list, any)`"
 
 [[form]]
 command = "Tangent"
@@ -3455,6 +3401,82 @@ difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyM
 command = "SurdText"
 form = "point"
 cases = ["georestsmall-surdpoint-001", "georestsmall-surdpoint-002"]
+
+[[form]]
+command = "Expand"
+form = "list"
+cases = ["cas-rejected-001"]
+refusal = true
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Expand"
+form = "line"
+cases = ["cas-rejected-001"]
+refusal = true
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Expand"
+form = "conic"
+cases = ["cas-rejected-001"]
+refusal = true
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Factor"
+form = "list"
+cases = ["cas-rejected-002"]
+refusal = true
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Factor"
+form = "line"
+cases = ["cas-rejected-002"]
+refusal = true
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Factor"
+form = "conic"
+cases = ["cas-rejected-002"]
+refusal = true
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "IFactor"
+form = "list"
+cases = ["cas-rejected-003"]
+refusal = true
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "IFactor"
+form = "line"
+cases = ["cas-rejected-003"]
+refusal = true
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "IFactor"
+form = "conic"
+cases = ["cas-rejected-003"]
+refusal = true
+difference = "polynomial-cas: `Expand(list)`, `Expand(line)`, `Expand(conic)`, `Factor(list)`, `Factor(line)`, `Factor(conic)`, `IFactor(list)`, `IFactor(line)`, `IFactor(conic)`"
+
+[[form]]
+command = "Simplify"
+form = "text"
+cases = ["cas-text-001", "cas-text-003"]
+difference = "polynomial-cas: `Simplify(text)`"
+
+[[form]]
+command = "Simplify"
+form = "list"
+cases = ["cas-rejected-004"]
+refusal = true
+difference = "polynomial-cas: `Simplify(list)`"
 
 [[form]]
 command = "IntersectPath"

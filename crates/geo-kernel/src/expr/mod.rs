@@ -201,7 +201,7 @@ fn system_value(c: &Construction, id: Id, t: f64, state: &[f64], meter: &eval::L
 pub(crate) mod lex;
 pub(crate) use lex::{is_name_char, plain_number};
 mod list;
-use commands::text::TextOp;
+pub(in crate::expr) use commands::text::TextOp;
 pub(crate) use list::{same_slots, Slot};
 pub use list::{Element, List};
 pub(crate) mod math;
@@ -1771,6 +1771,7 @@ pub(crate) fn accepts_text_argument(c: &Construction, source: &str) -> bool {
 }
 
 pub(crate) use cas::displayed as symbolic_value;
+pub(crate) use commands::text::refuse_empty_simplify;
 
 pub(crate) fn text_value(c: &Construction, id: Id) -> Option<&str> {
     let Def::Expr(d) = c.def(id) else {

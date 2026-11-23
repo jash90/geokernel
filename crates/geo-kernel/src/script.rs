@@ -868,6 +868,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(result) = crate::expr::division_list(c, name, rhs) {
         return result.map(Some);
     }
+    if let Some(error) = crate::expr::refuse_empty_simplify(c, rhs) {
+        return Err(error);
+    }
     if let Some(result) = crate::algo::discrete::exec(c, name, rhs) {
         return result.map(Some);
     }
