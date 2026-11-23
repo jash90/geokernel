@@ -751,11 +751,6 @@ cases = ["transform-stretch-001", "transform-stretch-002", "transform-stretch-00
 
 [[form]]
 command = "Sum"
-form = "list"
-cases = ["lists-objects-029", "lists-objects-031", "lists-stats-015"]
-
-[[form]]
-command = "Sum"
 form = "list,number"
 cases = ["lists-objects-030", "lists-stats-018", "lists-sum-005"]
 
@@ -1241,12 +1236,12 @@ cases = ["matrixdilate-dilatefunction-001", "matrixdilate-dilatefunction-002", "
 [[form]]
 command = "ApplyMatrix"
 form = "list,list"
-cases = ["matrixdilate-applylist-001", "matrixdilate-applylist-004", "matrixdilate-applylist-005", "matrixdilate-applylist-006", "optimizerreview-transform-002", "optimizerreview-transform-004"]
+cases = ["matrixdilate-applylist-001", "matrixdilate-applylist-004", "matrixdilate-applylist-005", "matrixdilate-applylist-006", "optimizerreview-transform-002", "optimizerreview-transform-004", "optimizerreview-transform-007", "optimizerreview-transform-008"]
 
 [[form]]
 command = "Dilate"
 form = "list,number"
-cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-002", "matrixdilate-dilatelist-004", "matrixdilate-dilatelist-005", "matrixdilate-dilatelist-006", "optimizerreview-transform-001", "optimizerreview-transform-003"]
+cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-002", "matrixdilate-dilatelist-004", "matrixdilate-dilatelist-005", "matrixdilate-dilatelist-006", "optimizerreview-transform-001", "optimizerreview-transform-003", "optimizerreview-transform-005", "optimizerreview-transform-006"]
 
 [[form]]
 command = "Dilate"
@@ -1940,36 +1935,9 @@ form = "number,point"
 cases = ["misc-maximizepoint-001"]
 
 [[form]]
-command = "Minimize"
-form = "number,point"
-cases = ["misc-minimizepoint-001", "optimizerreview-mixedmover-001"]
-
-[[form]]
 command = "Sum"
 form = "list,list"
 cases = ["misc-sum-001", "misc-sum-002", "misc-sum-003"]
-
-[[form]]
-command = "Sum"
-form = "number,..."
-cases = ["misc-sum-004"]
-
-[[form]]
-command = "Sum"
-form = "point,..."
-cases = ["misc-sum-004"]
-
-[[form]]
-command = "Sum"
-form = "function,..."
-cases = ["misc-sum-006"]
-
-[[form]]
-command = "Sum"
-form = "text,..."
-cases = ["misc-sum-004"]
-
-# english
 
 [[form]]
 command = "BarChart"
@@ -3254,11 +3222,6 @@ cases = ["funcrest-vertexform-008"]
 command = "IsVertexForm"
 form = "sector"
 cases = ["funcrest-vertexform-008"]
-
-[[form]]
-command = "Sum"
-form = "vector,..."
-cases = ["misc-sum-010"]
 
 [[form]]
 command = "SetConstructionStep"

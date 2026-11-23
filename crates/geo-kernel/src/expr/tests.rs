@@ -765,3 +765,17 @@ fn arithmetic_is_told_from_trees_the_evaluation_does_not_run() {
     // The value is the one `numeric_value` gives.
     assert_eq!(c.numeric_value("x(A) / 2 + 1"), Some(2.0));
 }
+
+#[test]
+fn shared_deadline_counts_plain_scalar_expression_visits() {
+    let c = crate::script::load("a = 2").unwrap();
+    let before = super::work_done();
+    super::with_work_deadline(before, || {
+        assert!(c.arithmetic_value("sqrt(a) + sqrt(a)").unwrap().is_nan());
+    });
+    assert!(super::work_done() > before);
+    assert_eq!(
+        c.arithmetic_value("sqrt(a) + sqrt(a)"),
+        Some(2.0_f64.sqrt() * 2.0)
+    );
+}

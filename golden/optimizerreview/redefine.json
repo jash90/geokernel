@@ -168,6 +168,71 @@
           "d": { "type": "number", "defined": true, "value": 2.0 }
         }
       ]
+    },
+    {
+      "id": "optimizerreview-redefine-007",
+      "group": "optimizerreview",
+      "script": [
+        "a = Slider(-2, -1)",
+        "b = 2a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "a = Slider(0, If(IsDefined(b), 6, 0.5))" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": true, "value": -2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 },
+          "b": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    },
+    {
+      "id": "optimizerreview-redefine-008",
+      "group": "optimizerreview",
+      "script": [
+        "a = 3",
+        "d = 2a",
+        "b = 6"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "a = Slider(0, If(d > 0, b, 6))" },
+        { "action": "set_number", "label": "b", "value": 2.0 },
+        { "action": "reload_ggb" },
+        { "action": "set_number", "label": "b", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 3.0 },
+          "d": { "type": "number", "defined": true, "value": 6.0 },
+          "b": { "type": "number", "defined": true, "value": 6.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "d": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
     }
   ]
 }

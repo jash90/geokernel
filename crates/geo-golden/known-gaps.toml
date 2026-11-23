@@ -3126,3 +3126,26 @@ mismatches = ["0:p", "0:q"]
 id = "cas-literal-001"
 reason = "Without the giac feature the kernel's own solver reads Solve(x+y=-0.75, y) with the free x in the place of the solving variable y and answers the line y = -0.375; the reference's CAS answers y = -x - 3/4 (recorded with Giac). The case was added to check typed decimals between -1 and 0 in the Giac input, and agrees with the feature (known-gaps-giac.toml)."
 mismatches = ["0:r4"]
+
+# Slider and optimizer update order
+
+[[gap]]
+id = "optimizerreview-budget-002"
+reason = "intended difference, recorded in DIFFERENCES.md: the second optimizer exceeds the shared work budget while running the first optimizer and visiting 20 dependent readers on each trial. Rollback restores the mover and the readers without evaluating their sequences again."
+mismatches = ["2:n"]
+undefined = true
+
+[[gap]]
+id = "optimizerreview-locus-004"
+reason = "GeoGebra samples L as soon as the lower endpoint of s clamps it, while t's upper endpoint is still 4. The kernel resolves the slider values as each endpoint changes, then visits Q and L once in dependency order, after t's endpoint has reached 6. Both resample to the new endpoint when t moves."
+mismatches = ["1:L"]
+
+[[gap]]
+id = "optimizerreview-mixedmover-002"
+reason = "A nested optimizer final update refreshes q in GeoGebra before the point search reads its objective. The kernel refreshes optimizers on other movers after the outer search, so the trials still use q = 3."
+mismatches = ["2:N"]
+
+[[gap]]
+id = "optimizerreview-redefine-008"
+reason = "The upper endpoint reads its own slider through d. GeoGebra installs the circular listener and clamps a when b lowers that endpoint, including after reload. The kernel has no cyclic listener edge and retains a = 3 and d = 6."
+mismatches = ["2:a", "2:d", "3:a", "3:d", "4:a", "4:d"]

@@ -1119,6 +1119,7 @@ pub struct Construction {
     /// each number, in creation order.
     sliders: Vec<(usize, f64, f64)>,
     saved_slider_bounds: HashMap<Id, [Option<slider::Bound>; 2]>,
+    slider_updates: Vec<Id>,
     slider_animation_options: HashMap<Id, [Option<String>; 2]>,
     controls: Vec<(Id, control::Control)>,
     pub(crate) object_scripts: HashMap<String, Vec<control::ControlScript>>,
@@ -2179,15 +2180,26 @@ impl Construction {
         self.defs[id.0] = def;
         self.values[id.0] = value;
         self.hints[id.0] = hint;
-        if let Some(bounds) = bounds {
+        let changed_root = if let Some(bounds) = bounds {
             let old_max = self.slider_upper_bound(id);
-            self.install_redefined_slider_bounds(id, bounds, old_max);
-        }
-        if let Some(slider_options) = slider_options {
-            let options = self.slider_animation_options.entry(id).or_default();
-            for (option, replacement) in options.iter_mut().zip(slider_options) {
-                if replacement.is_some() {
-                    *option = replacement;
+            self.install_redefined_slider_bounds(id, bounds, old_max)
+        } else {
+            false
+        };
+        if bounds.is_some() {
+            let [step, speed] = slider_options.unwrap_or_default();
+            // Copying the old visual style preserves the step as a number.
+            let previous_step = self.slider_animation_options(id)[0];
+            let step = step.or_else(|| {
+                let source = previous_step?;
+                let value = self.numeric_value(source).filter(|value| value.is_finite());
+                Some(value.map_or_else(|| source.to_owned(), |value| value.to_string()))
+            });
+            if step.is_some() || speed.is_some() {
+                let options = self.slider_animation_options.entry(id).or_default();
+                options[0] = step;
+                if speed.is_some() {
+                    options[1] = speed;
                 }
             }
         }
@@ -2231,6 +2243,7 @@ impl Construction {
             }
         }
         self.propagate_dirty(dirty, 0, true);
+        self.last_update_changed_automatic_root |= changed_root;
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;
         Ok(Some(id))
@@ -3082,10 +3095,36 @@ impl Construction {
         // the set is lost, and `fit` gives a clean one on the next update.
         let mut dirty = std::mem::take(&mut self.dirty);
         dirty.fit(self.defs.len());
-        for child in self.children[start.0].iter() {
-            dirty.insert(self.evaluation_rank(child));
-        }
+        self.enqueue_updated_children(start, &mut dirty);
         self.propagate_dirty(dirty, self.evaluation_rank(start), false)
+    }
+
+    fn enqueue_updated_children(&mut self, parent: Id, dirty: &mut DirtySet) {
+        if self.saved_slider_bounds.is_empty() {
+            for child in self.children[parent.0].iter() {
+                dirty.insert(self.evaluation_rank(child));
+            }
+            return;
+        }
+        // Endpoint listeners resolve the interval while the other bounds
+        // still have their current values. Their downstream objects retain
+        // the normal dependency order.
+        let mut sliders = std::mem::take(&mut self.slider_updates);
+        for child in self.children[parent.0].iter() {
+            if matches!(self.defs[child.0], Def::Number(_))
+                && self.saved_slider_bounds.contains_key(&child)
+            {
+                sliders.push(child);
+            } else {
+                dirty.insert(self.evaluation_rank(child));
+            }
+        }
+        for child in sliders.drain(..) {
+            if self.update_slider_bounds(child) {
+                dirty.insert(self.evaluation_rank(child));
+            }
+        }
+        self.slider_updates = sliders;
     }
 
     /// After restoring its mover, AlgoOptimize updates the construction
@@ -3275,7 +3314,7 @@ impl Construction {
                     }
                 }
                 Def::Number(_) if self.slider_bound_parents(Id(i)).next().is_some() => {
-                    if !self.update_slider_bounds(Id(i)) {
+                    if refresh_definitions && !self.update_slider_bounds(Id(i)) {
                         continue;
                     }
                 }
@@ -3336,9 +3375,7 @@ impl Construction {
                 }
             }
             if !refresh_definitions {
-                for child in self.children[i].iter() {
-                    dirty.insert(self.evaluation_rank(child));
-                }
+                self.enqueue_updated_children(Id(i), &mut dirty);
             }
         }
 

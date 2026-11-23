@@ -156,9 +156,22 @@ pub(crate) fn with_work_deadline<T>(end: u64, f: impl FnOnce() -> T) -> T {
     f()
 }
 
+pub(crate) fn work_deadline() -> u64 {
+    WORK_DEADLINE.get()
+}
+
+/// Reserves shared work for an operation that must finish even on rollback.
+pub(crate) fn reserve_work(units: u64) -> bool {
+    if work_done().saturating_add(units) > work_deadline() {
+        return false;
+    }
+    work(units);
+    true
+}
+
 /// The evaluation work done on this thread so far, in units of about 3.5
 /// ns of a release build: a node of an expression tree visited in an
-/// evaluation with lists (functions sampled or expanded included, only the
+/// metered evaluation (functions sampled or expanded included, only the
 /// branch of an `If` that is taken), a loop step of the list code (an
 /// element built, copied or read, a step of counting a range), and every
 /// exact decimal operation by its measured cost. Only the difference
@@ -630,8 +643,9 @@ impl<'a, const M: bool> Ctx<'a, M> {
 /// a number result (`toDecimal`).
 #[inline]
 pub(super) fn root(c: &Construction, e: &Entry, lists: Option<&Lists>) -> (Raw, Option<Exact>) {
-    let inverse_meter = (lists.is_none() && e.inverts).then(|| Lists::new(Vec::new()));
-    let x = match lists.or(inverse_meter.as_ref()) {
+    let scalar_meter = (lists.is_none() && (e.inverts || work_deadline() != u64::MAX))
+        .then(|| Lists::new(Vec::new()));
+    let x = match lists.or(scalar_meter.as_ref()) {
         None => Ctx::<false>::new(c, e, &Env::None).full(e.root),
         Some(meter) => {
             let ctx = Ctx::<true> {
@@ -725,15 +739,19 @@ pub(super) fn root_list(
 /// `Function.value`: a function entry at `x`, using the `y = 0` slice
 /// for a two-variable slope.
 pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
-    if !e.inverts {
-        return Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).fast(e.root);
+    sample_at(c, e, e.root, x, e.inverts)
+}
+
+fn sample_at(c: &Construction, e: &Entry, node: u32, x: f64, metered: bool) -> f64 {
+    if !metered && work_deadline() == u64::MAX {
+        return Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).fast(node);
     }
     let meter = Lists::new(Vec::new());
     let y = Ctx::<true> {
         meter: Some(&meter),
         ..Ctx::new(c, e, &Env::Pair(x, 0.0))
     }
-    .fast(e.root);
+    .fast(node);
     if meter.over() {
         f64::NAN
     } else {
@@ -746,13 +764,28 @@ pub(super) fn sample(c: &Construction, e: &Entry, x: f64) -> f64 {
 /// conditional integral integrates
 /// (`AlgoIntegralDefinite.computeConditional`).
 pub(super) fn sample_subtree(c: &Construction, e: &Entry, i: u32, x: f64) -> f64 {
-    Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).fast(i)
+    sample_at(c, e, i, x, false)
 }
 
 /// The full-evaluator value of the subtree `i` of a function's tree at
 /// `x`: the condition of a branch bound (`Bounds.addRestriction`).
 pub(super) fn subtree(c: &Construction, e: &Entry, i: u32, x: f64) -> Val {
-    Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).full(i).val
+    if work_deadline() == u64::MAX {
+        return Ctx::<false>::new(c, e, &Env::Pair(x, 0.0)).full(i).val;
+    }
+    let env = Env::Pair(x, 0.0);
+    let meter = Lists::new(Vec::new());
+    let value = Ctx::<true> {
+        meter: Some(&meter),
+        ..Ctx::new(c, e, &env)
+    }
+    .full(i)
+    .val;
+    if meter.over() {
+        Val::N(f64::NAN)
+    } else {
+        value
+    }
 }
 
 pub(super) fn system_locals(ctx: &Ctx<'_, true>, root: u32, depth: u32, values: &[f64]) -> Val {

@@ -525,7 +525,7 @@ pub(crate) struct OptimizerCascade {
     descendants: BTreeMap<Id, Vec<usize>>,
     running: Vec<(Id, Id)>,
     remaining: [usize; Self::MAX_DEPTH],
-    start: u64,
+    end: u64,
     exhausted: bool,
 }
 
@@ -581,7 +581,9 @@ impl OptimizerCascade {
             descendants,
             running: Vec::new(),
             remaining: [Self::MAX_VISITS_PER_DEPTH; Self::MAX_DEPTH],
-            start: crate::expr::work_done(),
+            end: crate::expr::work_done()
+                .saturating_add(crate::expr::MAX_EVALUATION_WORK)
+                .min(crate::expr::work_deadline()),
             exhausted,
         })
     }
@@ -599,15 +601,32 @@ impl OptimizerCascade {
         ids.extend(self.descendants.keys().map(|mover| mover.0));
         ids.sort_unstable_by_key(|&i| c.evaluation_rank(Id(i)));
         ids.dedup();
-        let saved = Saved::of(c, &ids);
-        self.running.push((owner, def.independent));
-        let result = crate::algo::optimize::search(c, def, Some(self));
-        self.running.pop();
-        if self.exhausted {
-            saved.restore(c, &ids);
-            return Value::Undefined;
-        }
-        result
+        crate::expr::with_work_deadline(self.end, || {
+            if !crate::expr::reserve_work(2 * ids.len() as u64) {
+                return Value::Undefined;
+            }
+            let mut expressions = Vec::new();
+            for &i in &ids {
+                if let Def::Expr(d) = c.defs[i] {
+                    let Some(state) = crate::expr::SavedResult::of(c, d) else {
+                        return Value::Undefined;
+                    };
+                    expressions.push((d, state));
+                }
+            }
+            let saved = Saved::of(c, &ids);
+            self.running.push((owner, def.independent));
+            let result = crate::algo::optimize::search(c, def, Some(self));
+            self.running.pop();
+            if self.exhausted {
+                saved.restore(c, &[]);
+                for (def, state) in expressions {
+                    state.restore(c, def);
+                }
+                return Value::Undefined;
+            }
+            result
+        })
     }
 
     pub(crate) fn set_result(&self, c: &mut Construction, value: Value) {
@@ -618,7 +637,8 @@ impl OptimizerCascade {
     }
 
     pub(crate) fn update(&mut self, c: &mut Construction, restore: bool) -> bool {
-        if self.exhausted {
+        if self.exhausted || crate::expr::work_done() >= self.end {
+            self.exhausted = true;
             return false;
         }
         let depth = self.running.len() - 1;
@@ -641,10 +661,11 @@ impl OptimizerCascade {
                 break;
             };
             self.remaining[depth] = left;
-            if crate::expr::work_done() - self.start > crate::expr::MAX_EVALUATION_WORK {
+            if crate::expr::work_done() >= self.end {
                 self.exhausted = true;
                 break;
             }
+            crate::expr::charge(1);
             if let Def::Optimize(def) = def {
                 if self.running.len() == Self::MAX_DEPTH {
                     self.exhausted = true;
@@ -660,6 +681,7 @@ impl OptimizerCascade {
                 recompute(c, i);
             }
         }
+        self.exhausted |= crate::expr::work_done() >= self.end;
         !self.exhausted
     }
 }

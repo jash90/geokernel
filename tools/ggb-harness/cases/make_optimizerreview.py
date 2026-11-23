@@ -90,4 +90,43 @@ cases.case("animationoptions", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
     redefine("a = Slider(0, 9, 0.4)"),
     {"action": "slider_animation", "label": "a"},
 ])
+cases.case("redefine", ["a = Slider(-2, -1)", "b = 2a"], [
+    redefine("a = Slider(0, If(IsDefined(b), 6, 0.5))"),
+])
+cases.case("boundsorder", ["u = -4", "lo = u + 0", "hi = u + 3", "a = Slider(lo, hi)"], [
+    setn("u", -0.5),
+])
+for command in ["Dilate(L, 2)", "ApplyMatrix({{2, 0}, {0, 2}}, L)"]:
+    cases.case("transform", [
+        "t = 1", "A = (1, 2)", "v = Vector((3, 4))",
+        "L = If(t > 0, {v}, {A})", f"M = {command}",
+    ], [setn("t", 0), setn("t", 1)])
+    cases.case("transform", [
+        "t = 1", "A = (1, 2)", "L = If(t > 0, {{A}}, {3})", f"M = {command}",
+    ], [setn("t", 0), setn("t", 1)])
+# The multiplier starts a new point search without shifting the minimum.
+cases.case("mixedmover", [
+    "A = (0, 0)", "B = (4, 0)", "g = Segment(A, B)", "P = Point(g)",
+    "a = Slider(0, 6)", "m = Minimize((a - (x(P) + 1))^2, a)",
+    "b = 6", "s = Slider(0, b)", "q = Minimize((s - 3)^2, s)",
+    "k = 1", "N = Minimize(k (m - q)^2, P)",
+], [setn("b", 2), setn("k", 2)])
+cases.case("redefine", ["a = 3", "d = 2a", "b = 6"], [
+    redefine("a = Slider(0, If(d > 0, b, 6))"), setn("b", 2),
+    {"action": "reload_ggb"}, setn("b", 1),
+])
+cases.case("locus", [
+    "b = 4", "lo = b - 4", "hi = b + 0", "s = Slider(lo, 10)",
+    "t = Slider(0, hi)", "Q = (t, s)", "L = Locus(Q, t)",
+], [setn("b", 6), setn("t", 1)])
+cases.case("animationoptions", ["h = 0.2", "a = Slider(0, 6, h, 2)"], [
+    redefine("a = Slider(0, 8)"), setn("h", 0.4),
+    {"action": "slider_animation", "label": "a"},
+])
+# Increase the range in replay so script mutations start from small inputs.
+cases.case("budget", [
+    "a = Slider(0, 6)", "h = 1", "k = 1",
+    *(f"d_{{{i}}} = Sum(Sequence(sqrt(j + a), j, 1, h))" for i in range(1, 21)),
+    "m = Minimize((a - 3)^2, a)", "n = Minimize(k * (a - 2)^2, a)",
+], [setn("h", 100000), setn("k", 2)])
 cases.write()

@@ -88,7 +88,7 @@ pub(crate) mod fraction;
 pub(crate) mod inequality;
 mod inverse;
 #[doc(hidden)]
-pub(crate) use eval::with_work_deadline;
+pub(crate) use eval::{reserve_work, with_work_deadline, work_deadline};
 pub use eval::{work_done, MAX_ELEMENTS, MAX_EVALUATION_WORK, MAX_OVERRUN};
 
 /// Shared expression-work allowance for one intersection solve.
@@ -745,7 +745,7 @@ enum StoredExtra {
     Decimal(Dec),
     Text(Box<TextResult>),
     Polynomial(Vec<f64>),
-    Cas(Box<cas::FunctionResult>),
+    Cas(std::sync::Arc<cas::FunctionResult>),
 }
 
 impl StoredExtra {
@@ -1606,6 +1606,49 @@ pub(crate) fn initialize(c: &mut Construction, id: Id, d: ExprDef) -> Result<Val
     Ok(value)
 }
 
+/// The stored result is needed for rollback after the work deadline has
+/// passed, when evaluating the expression again would have no allowance.
+pub(crate) struct SavedResult {
+    raw: Raw,
+    extra: StoredExtra,
+    interval: Option<FunctionInterval>,
+    items: Vec<Slot>,
+    coordinate_layout: Option<list::CoordinateLayout>,
+    stuck: Vec<u32>,
+}
+
+impl SavedResult {
+    pub(crate) fn of(c: &Construction, d: ExprDef) -> Option<Self> {
+        let e = entry(c, d);
+        let extra_work = match &e.extra {
+            StoredExtra::Text(text) => text.text.as_ref().map_or(0, String::len),
+            StoredExtra::Polynomial(coefficients) => coefficients.len(),
+            _ => 0,
+        };
+        let stuck = e.stuck.nodes();
+        // Pay for saving, and for dropping or restoring the saved slots.
+        let work = 2 * (1 + e.items.len() + extra_work + stuck.len()) as u64;
+        reserve_work(work).then(|| Self {
+            raw: e.raw,
+            extra: e.extra.clone(),
+            interval: e.interval,
+            items: e.items.clone(),
+            coordinate_layout: e.coordinate_layout,
+            stuck: stuck.clone(),
+        })
+    }
+
+    pub(crate) fn restore(self, c: &mut Construction, d: ExprDef) {
+        let e = &mut c.exprs.entries[d.index as usize];
+        e.raw = self.raw;
+        e.extra = self.extra;
+        e.interval = self.interval;
+        e.items = self.items;
+        e.coordinate_layout = self.coordinate_layout;
+        *e.stuck.nodes() = self.stuck;
+    }
+}
+
 /// Recomputes the expression object `d` and keeps its result; its value,
 /// and whether it changed (see [`store`]).
 pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) {
@@ -1622,7 +1665,9 @@ pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) 
         let result = cas::function(c, e, op, a, b);
         let e = &mut c.exprs.entries[d.index as usize];
         e.raw = Raw::Num(if result.is_some() { 0.0 } else { f64::NAN });
-        e.extra = result.map_or(StoredExtra::None, |form| StoredExtra::Cas(Box::new(form)));
+        e.extra = result.map_or(StoredExtra::None, |form| {
+            StoredExtra::Cas(std::sync::Arc::new(form))
+        });
         let value = if d.kind == Kind::FunctionNVar && matches!(e.extra, StoredExtra::Cas(_)) {
             Value::FunctionNVar
         } else {

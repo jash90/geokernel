@@ -177,15 +177,20 @@ impl Construction {
         id: Id,
         bounds: [Option<Bound>; 2],
         old_max: Option<Bound>,
-    ) {
+    ) -> bool {
+        let mut changed_root = false;
         // CmdSlider sets the lower endpoint first. That can make the
         // slider undefined before the upper endpoint brings it back.
         if old_max.is_some() {
             self.saved_slider_bounds.insert(id, [bounds[0], old_max]);
-            self.update_slider_bounds(id);
+            if self.update_slider_bounds(id) {
+                self.propagate(id);
+                changed_root = self.last_update_changed_automatic_root;
+            }
         }
         self.saved_slider_bounds.insert(id, bounds);
         self.update_slider_bounds(id);
+        changed_root
     }
 
     /// Explicit step and speed expressions from the slider command.

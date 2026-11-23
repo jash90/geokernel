@@ -599,6 +599,35 @@ mod cascade_tests {
     }
 
     #[test]
+    fn cascade_exhaustion_restores_expensive_readers_within_the_shared_budget() {
+        let mut c = script::load("a = Slider(0, 6)").unwrap();
+        for i in 1..=20 {
+            script::exec(
+                &mut c,
+                &format!("d_{{{i}}} = Sum(Sequence(sqrt(j + a), j, 1, 100000))"),
+            )
+            .unwrap();
+        }
+        script::exec(&mut c, "m = Minimize((a - 3)^2, a)").unwrap();
+        let reader = c.id("d_{1}").unwrap();
+        let old = c.value(reader);
+        let before = crate::expr::work_done();
+        let n = script::exec(&mut c, "n = Minimize((a - 2)^2, a)")
+            .unwrap()
+            .unwrap();
+        let work = crate::expr::work_done() - before;
+        assert_eq!(c.value(n), Value::Undefined);
+        assert_eq!(c.value(c.id("a").unwrap()), Value::Number(0.0));
+        assert_eq!(c.value(reader), old);
+        let check = script::exec(&mut c, "check = d_{1}").unwrap().unwrap();
+        assert_eq!(c.value(check), old);
+        assert!(
+            work <= crate::expr::MAX_EVALUATION_WORK + crate::expr::MAX_OVERRUN + 4096,
+            "exhausted search and rollback visited {work} work units",
+        );
+    }
+
+    #[test]
     fn two_optimizers_on_a_circle_with_a_kept_record() {
         let mut c = script::load(
             "r = 5\nC = (1, 2)\nc = Circle(C, r)\nP = Point(c)\nk = 1\n\
