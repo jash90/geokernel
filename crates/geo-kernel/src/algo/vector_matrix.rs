@@ -578,3 +578,29 @@ pub(crate) fn exec(
     }
     Some(result.map(Some))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::script::load;
+
+    #[test]
+    fn identity_stays_undefined_after_a_nonpositive_size() {
+        let mut c = load("n = 3\nm = Identity(n)").unwrap();
+        let m = c.id("m").unwrap();
+        let n = c.id("n").unwrap();
+        let expected = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+        let matrix = c.elements(m).unwrap();
+        assert_eq!(matrix.len(), expected.len());
+        for (item, expected) in matrix.iter().zip(expected) {
+            let row = row(item).unwrap();
+            assert_eq!(row.len(), expected.len());
+            assert!(row.iter().map(numeric).eq(expected.map(Some)));
+        }
+
+        c.set_number(n, 0.0).unwrap();
+        assert_eq!(c.value(m), Value::Undefined);
+        c.set_number(n, 2.0).unwrap();
+        assert_eq!(c.value(m), Value::Undefined);
+    }
+}

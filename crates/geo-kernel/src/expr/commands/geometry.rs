@@ -233,17 +233,16 @@ fn dot(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, Str
 fn identity(p: &mut Parser, n: u32) -> u32 {
     let one = p.push(Node::Num(1.0));
     let zero = p.push(Node::Num(0.0));
-    let n = p.push(Node::Bin(Bin::Add, n, zero));
-    let floor = p.push(Node::Un(Un::Floor, n));
+    let number = p.push(Node::Bin(Bin::Add, n, zero));
+    let floor = p.push(Node::Un(Un::Floor, number));
     // Floor can snap up within the standard precision. Scale the distance
     // from its result so a representable value just below it still truncates.
-    let delta = p.push(Node::Bin(Bin::Sub, n, floor));
+    let delta = p.push(Node::Bin(Bin::Sub, number, floor));
     let scale = p.push(Node::Num(2.0_f64.powi(32)));
     let delta = p.push(Node::Bin(Bin::Mul, delta, scale));
     let rounded_up = p.push(Node::Bin(Bin::Less, delta, zero));
     let below = p.push(Node::Bin(Bin::Sub, floor, one));
     let size = p.push(Node::If(IfMode::Algo, rounded_up, below, floor));
-    let nonempty = p.push(Node::Bin(Bin::GreaterEqual, size, one));
     let depth = p.locals.len() as u32;
     let i = p.push(Node::Local(depth, Elem::Num));
     let j = p.push(Node::Local(depth + 1, Elem::Num));
@@ -251,7 +250,7 @@ fn identity(p: &mut Parser, n: u32) -> u32 {
     let entry = p.push(Node::If(IfMode::Algo, on_diagonal, one, zero));
     let row = p.push(Node::Seq(entry, one, size, NONE, depth + 1));
     let matrix = p.push(Node::Seq(row, one, size, NONE, depth));
-    p.push(Node::If(IfMode::Algo, nonempty, matrix, NONE))
+    p.push(Node::ListOp(ListOp::Identity, matrix, n))
 }
 
 /// The type of a list command of this group (see `commands::list_type`).
@@ -271,7 +270,9 @@ pub(super) fn list_type(
         | ListOp::Dot
         | ListOp::Dimension => Some(Ty::Num(0)),
         ListOp::MatrixDimension => Some(Ty::List(Elem::Num)),
-        ListOp::Transpose | ListOp::Rref | ListOp::Invert => Some(Ty::List(Elem::List)),
+        ListOp::Transpose | ListOp::Rref | ListOp::Invert | ListOp::Identity => {
+            Some(Ty::List(Elem::List))
+        }
         ListOp::ApplyMatrix => match tys[n as usize] {
             ty @ Ty::List(_) => Some(ty),
             _ => return Err("`ApplyMatrix` needs a list to transform".into()),
@@ -334,6 +335,7 @@ pub(super) fn makes_list(op: ListOp) -> bool {
             | ListOp::Rref
             | ListOp::Invert
             | ListOp::MatrixDimension
+            | ListOp::Identity
             | ListOp::ApplyMatrix
     )
 }
@@ -348,6 +350,19 @@ pub(super) fn list_fn<const M: bool>(
         return cross_lists(ctx, l, n);
     }
     let lists = ctx.lists?;
+    if op == ListOp::Identity {
+        if ctx.e.stuck.contains(l) {
+            return None;
+        }
+        let size = ctx.full_number(n) as i32;
+        if size <= 0 {
+            if !lists.over() {
+                ctx.e.stuck.insert(l);
+            }
+            return None;
+        }
+        return ctx.list(l);
+    }
     let (start, len) = ctx.list(l)?;
     if op == ListOp::Transpose {
         if len == 0 {

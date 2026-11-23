@@ -485,6 +485,7 @@ pub(crate) enum ListOp {
     Invert,
     Dimension,
     MatrixDimension,
+    Identity,
     ApplyMatrix,
 }
 
@@ -813,12 +814,9 @@ pub(crate) struct Entry {
     stuck: Stuck,
 }
 
-/// The argument nodes of the `SVD` commands in a tree whose result became
-/// undefined for good: `AlgoSVD.compute` marks its output list undefined
-/// when the input is undefined or not a matrix, and a later decomposition
-/// fills the list without marking it defined again. A new definition
-/// starts a new tree, which forgets the state, as rebuilding the algorithm
-/// does.
+/// Nodes of algorithms that fill their result after an invalid input
+/// without marking it defined again (`AlgoSVD` and `AlgoIdentity`).
+/// A replacement definition starts with a fresh tree.
 #[derive(Default)]
 pub(crate) struct Stuck(std::sync::Mutex<Vec<u32>>);
 
