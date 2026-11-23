@@ -49,16 +49,18 @@ ggb="$(cd "$GEOGEBRA_SRC" && pwd)"
 java_opts=(-Xms4g -Xmx4g -XX:+UseG1GC)
 # Further options of every JVM the script starts, separated by spaces.
 read -r -a java_opts_extra <<< "${GGB_HARNESS_JAVA_OPTS:-}"
-java_opts+=(${java_opts_extra+"${java_opts_extra[@]}"})
+java_opts+=(${java_opts_extra[@]+"${java_opts_extra[@]}"})
 
 # The class path `build` wrote, on one line. GGB_HARNESS_CP_SED is a sed
 # script for a run on another system than the one that built the harness,
 # where the GeoGebra checkout and Gradle's directory have other paths
 # (linux-x86_64.sh sets it).
 classpath() {
-  local rewrite=()
-  [ -n "${GGB_HARNESS_CP_SED:-}" ] && rewrite=(-e "$GGB_HARNESS_CP_SED")
-  sed ${rewrite+"${rewrite[@]}"} "$build/classpath.txt"
+  if [ -n "${GGB_HARNESS_CP_SED:-}" ]; then
+    sed -e "$GGB_HARNESS_CP_SED" "$build/classpath.txt"
+  else
+    cat "$build/classpath.txt"
+  fi
 }
 
 giac_version=70507
