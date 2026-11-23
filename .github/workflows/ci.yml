@@ -74,7 +74,33 @@ jobs:
           rustup target add aarch64-linux-android
           cargo check --target aarch64-linux-android -p geo-kernel -p geo-import -p geo-app-core
 
-  # The desktop release targets macOS, Windows and Linux; the job above covers
+  # The optional Giac backend (docs/cas-giac.md): the binding replays the
+  # recorded Giac exchanges and the golden data runs with the feature on
+  # against known-gaps-giac.toml. Giac 70507 comes from the reference's own
+  # release repository; its SHA-256 is pinned in tools/giac/fetch.sh.
+  giac-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Fetch Giac
+        run: echo "GEO_GIAC_LIBRARY=$(tools/giac/fetch.sh)" >> "$GITHUB_ENV"
+      - name: Clippy with the feature
+        run: cargo clippy -p geo-giac -p geo-kernel -p geo-golden --all-targets --features geo-golden/giac -- -D warnings
+      - name: Binding tests
+        run: cargo test -p geo-giac --features giac
+      - name: Kernel tests with the feature
+        run: cargo test -p geo-kernel --features giac --lib
+      - name: Golden data with the feature
+        run: cargo test -p geo-golden --features giac --test golden -- --nocapture
+      - name: Command forms with the feature
+        run: cargo test -p geo-golden --features giac --test command_forms
+
+  # The desktop release targets macOS, Windows and Linux; the check job covers
   # macOS, this one builds and tests the workspace on the other two systems.
   desktop:
     strategy:
