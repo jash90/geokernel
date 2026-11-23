@@ -1741,6 +1741,20 @@ fn exported_xml(wb: &Workbench) -> String {
         .into_owned()
 }
 
+#[test]
+fn export_keeps_live_slider_endpoints_with_a_colon_label() {
+    let mut wb = Workbench::default();
+    wb.run_line("b = 36").unwrap();
+    wb.run_line("a: Slider(0, If(b == 36, 6, 2))").unwrap();
+    let xml = exported_xml(&wb);
+    assert!(xml.contains("max=\"If(b == 36, 6, 2)\""), "{xml}");
+
+    let mut reloaded = Workbench::default();
+    reloaded.load_for_export(xml.as_bytes(), "slider").unwrap();
+    let c = reloaded.construction();
+    assert_eq!(c.slider_interval(c.id("a").unwrap()), Some((0.0, 6.0)));
+}
+
 fn hostile_export() -> (Workbench, String) {
     let mut wb = Workbench::default();
     wb.load_for_export(HOSTILE_FILE, "hostile").unwrap();

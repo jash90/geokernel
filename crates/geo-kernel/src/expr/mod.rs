@@ -1593,6 +1593,18 @@ fn evaluate_lists(
     Outcome { raw, dec: None }
 }
 
+/// The first evaluation can reject an invalid list transform argument.
+pub(crate) fn initialize(c: &mut Construction, id: Id, d: ExprDef) -> Result<Value, Error> {
+    if !entry(c, d).lists || matches!(d.kind, Kind::Text | Kind::Function | Kind::FunctionNVar) {
+        return Ok(update(c, id, d).0);
+    }
+    let ((value, _), invalid_transform_list) = update_lists(c, d);
+    if invalid_transform_list {
+        return Err(Error::InvalidTransformList);
+    }
+    Ok(value)
+}
+
 /// Recomputes the expression object `d` and keeps its result; its value,
 /// and whether it changed (see [`store`]).
 pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) {
@@ -1642,7 +1654,7 @@ pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) 
         );
     }
     if entry(c, d).lists {
-        return update_lists(c, d);
+        return update_lists(c, d).0;
     }
     if let Some(interval) = entry(c, d).evaluate_interval(c) {
         c.exprs.entries[d.index as usize].interval = Some(interval);
@@ -1667,11 +1679,12 @@ pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) 
 /// table and given back, so a recompute allocates nothing once they have
 /// grown.
 #[inline(never)]
-pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
+fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     let lists = eval::Lists::new(std::mem::take(&mut c.exprs.arena));
     let mut items = std::mem::take(&mut c.exprs.out);
     items.clear();
     let out = evaluate_lists(c, d, &lists, &mut items);
+    let invalid_transform_list = lists.invalid_transform_list.get();
     c.exprs.arena = lists.into_arena();
     let e = &mut c.exprs.entries[d.index as usize];
     let items_changed = !list::same_slots(&e.items, &items);
@@ -1688,7 +1701,7 @@ pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
     c.exprs.out = items;
     let v = value(d, out.raw);
     let changed = store(c, d, out);
-    (v, changed || items_changed)
+    ((v, changed || items_changed), invalid_transform_list)
 }
 
 /// `AlgoDependentFunction.inputDefined`: a function is defined when every

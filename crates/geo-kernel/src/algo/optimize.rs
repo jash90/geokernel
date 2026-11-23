@@ -18,6 +18,7 @@
 //! runs out.
 
 use crate::algo::{Group, Parents, NUMBER};
+use crate::kernel::locus::{self, OptimizerCascade};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use std::collections::HashSet;
 
@@ -80,7 +81,14 @@ impl OptimizeDef {
             if !seen.insert(id) {
                 continue;
             }
-            let parents = c.reads(id);
+            // Interval listeners cascade through a slider only when the
+            // slider value changes. Watching their endpoints directly would
+            // rerun an optimizer even when the slider stays put.
+            let parents = if matches!(c.def(id), Def::Number(_)) {
+                Vec::new()
+            } else {
+                c.reads(id)
+            };
             let Some(left) = remaining.checked_sub(parents.len()) else {
                 self.watch = Watch::OverBudget;
                 return Ok(self);
@@ -165,7 +173,19 @@ pub(crate) fn disabled(c: &Construction, d: OptimizeDef) -> Option<OptimizeDef> 
 /// Runs the search and returns the value of the result: the independent
 /// number at the optimum, or undefined when it has no bounds or the search
 /// fails (`AlgoOptimize.compute`).
-pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
+pub(crate) fn record(c: &mut Construction, owner: Id, d: OptimizeDef) -> Value {
+    let mut cascade = OptimizerCascade::new(c, owner, d.independent);
+    if let Some(cascade) = &mut cascade {
+        return cascade.run(c, owner, d);
+    }
+    search(c, d, None)
+}
+
+pub(crate) fn search(
+    c: &mut Construction,
+    d: OptimizeDef,
+    mut cascade: Option<&mut OptimizerCascade>,
+) -> Value {
     let OptimizeDef {
         dependent,
         independent,
@@ -217,7 +237,11 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
     }
     // what one sample recomputes: everything between the number and the
     // dependent value (`updateCascade` from the number)
-    let chain = crate::kernel::locus::chain(c, dependent, independent);
+    let chain = if cascade.is_none() {
+        locus::chain(c, dependent, independent)
+    } else {
+        Vec::new()
+    };
     if chain.len() as u64 > crate::expr::MAX_EVALUATION_WORK / 106 {
         return Value::Undefined;
     }
@@ -227,9 +251,28 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         // not read it.
         crate::expr::forget_decimal(c, independent);
     }
-    let mut ids = chain.clone();
-    ids.push(independent.0);
-    let saved = crate::kernel::locus::Saved::of(c, &ids);
+    let saved = cascade.is_none().then(|| {
+        let mut ids = chain.clone();
+        ids.push(independent.0);
+        locus::Saved::of(c, &ids)
+    });
+    let set_parameter = |c: &mut Construction, x| {
+        if let Some((path, state)) = on_path {
+            let mut state = c.path_state(independent).unwrap_or(state);
+            state.set_t(x);
+            match record {
+                Some(d) => locus::sample_path_point_on(c, independent, d, state, state.parameter()),
+                None => locus::sample_path_point(c, independent, path, state, state.parameter()),
+            }
+        } else {
+            c.set_free_number(independent, x);
+            c.value(independent)
+        }
+    };
+    let old = on_path
+        .map(|(_, state)| state.parameter())
+        .or_else(|| c.number(independent))
+        .unwrap_or(f64::NAN);
     let sign = if maximize { -1.0 } else { 1.0 };
     let mut undefined_trial = None;
     let start = crate::expr::work_done();
@@ -240,12 +283,11 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         }
         // `Optimizer.value`: set the number, cascade its update, read the
         // dependent value
-        if let (Some((_, state)), Some(d)) = (on_path, record) {
-            crate::kernel::locus::sample_path_point_on(c, independent, d, state, x);
-        } else if let Some((path, state)) = on_path {
-            crate::kernel::locus::sample_path_point(c, independent, path, state, x);
-        } else {
-            c.set_free_number(independent, x);
+        set_parameter(c, x);
+        if let Some(cascade) = cascade.as_deref_mut() {
+            if !cascade.update(c, false) {
+                return f64::NAN;
+            }
         }
         for &i in &chain {
             crate::kernel::locus::recompute(c, i);
@@ -265,22 +307,22 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
         }
         objective
     });
+    if let Some(cascade) = cascade {
+        let result = set_parameter(c, optimum.unwrap_or(f64::NAN));
+        cascade.set_result(c, result);
+        set_parameter(c, old);
+        cascade.update(c, true);
+        return result;
+    }
     let result = match (exhausted, on_path) {
         (true, _) => Value::Undefined,
-        (false, Some((path, state))) => {
-            // An undefined search parameter leaves a path point at the
-            // trial that encountered the undefined objective.
-            let optimum = optimum.or(undefined_trial);
-            optimum.map_or(Value::Undefined, |x| match record {
-                Some(d) => crate::kernel::locus::sample_path_point_on(c, independent, d, state, x),
-                None => crate::kernel::locus::sample_path_point(c, independent, path, state, x),
-            })
-        }
+        (false, Some(_)) => optimum
+            .or(undefined_trial)
+            .map_or(Value::Undefined, |x| set_parameter(c, x)),
         (false, None) => optimum.map_or(Value::Undefined, Value::Number),
     };
-    // the number and the chain are restored with it, and the result keeps
-    // the optimum alone (`result.set`, `setValue(old)`)
-    saved.restore(c, &chain);
+    // Restore the chain along with the mover after an isolated search.
+    saved.expect("saved isolated search").restore(c, &chain);
     result
 }
 
@@ -445,22 +487,33 @@ mod bound_tests {
     /// their values, and rollback leaves no stale edge.
     #[test]
     fn expression_bounds_do_not_disable_and_rollback_is_clean() {
+        check_expression_bounds("a = Slider(0, sqrt(b))", false);
+        // Also preserve the saved-file path with a free number whose exact
+        // decimal must be dropped before the optimizer samples it.
+        check_expression_bounds("a = 0", true);
+    }
+
+    fn check_expression_bounds(slider: &str, restored: bool) {
         let mut c = Construction::new();
-        for line in ["b = 36", "a = 0", "w = 2", "g = w + 1", "f = (a - g)^2"] {
+        for line in ["b = 36", slider, "w = 2", "g = w + 1", "f = (a - g)^2"] {
             script::exec(&mut c, line).unwrap();
         }
-        let (a, b, w) = (c.id("a").unwrap(), c.id("b").unwrap(), c.id("w").unwrap());
-        c.restore_slider_bounds(a, [Some("0"), Some("sqrt(b)")])
-            .unwrap();
+        if restored {
+            let a = c.id("a").unwrap();
+            c.restore_slider_bounds(a, [Some("0"), Some("sqrt(b)")])
+                .unwrap();
+        }
+        let (b, w) = (c.id("b").unwrap(), c.id("w").unwrap());
         let checkpoint = c.checkpoint();
         script::exec(&mut c, "m = Minimize(f, a)").unwrap();
         let near = |v: Option<f64>| v.is_some_and(|v| (v - 3.0).abs() < 1e-6);
-        // the trials do not read the exact decimal of `a = 0`
         assert!(near(m(&c)), "{:?}", m(&c));
         c.set_number(b, -1.0).unwrap();
+        assert!(near(m(&c)), "{:?}", m(&c));
         c.set_number(w, 3.0).unwrap();
         assert_eq!(m(&c), None);
         c.set_number(b, 36.0).unwrap();
+        assert_eq!(m(&c), None);
         c.set_number(w, 2.0).unwrap();
         assert!(near(m(&c)), "{:?}", m(&c));
         // the same after the optimizer is rolled back
@@ -469,5 +522,50 @@ mod bound_tests {
         c.rollback(checkpoint).unwrap();
         c.set_number(w, 4.0).unwrap();
         assert!(c.id("m").is_none());
+    }
+}
+
+#[cfg(test)]
+mod cascade_tests {
+    use crate::{script, Value};
+
+    #[test]
+    fn nested_searches_stop_at_the_work_budget_and_restore_the_mover() {
+        let mut c = script::load("a = Slider(0, 6)\nf = (a - 3)^2").unwrap();
+        let a = c.id("a").unwrap();
+        let f = c.id("f").unwrap();
+        c.set_number(a, 4.0).unwrap();
+        for i in 0..9 {
+            script::exec(&mut c, &format!("m_{{{i}}} = Minimize(f, a)")).unwrap();
+        }
+        let last = c.id("m_{8}").unwrap();
+        assert_eq!(c.value(last), Value::Undefined);
+        assert_eq!(c.value(a), Value::Number(4.0));
+        assert_eq!(c.value(f), Value::Number(1.0));
+        c.set_number(a, 1.0).unwrap();
+        assert_eq!(c.value(last), Value::Undefined);
+        assert_eq!(c.value(a), Value::Number(1.0));
+        assert_eq!(c.value(f), Value::Number(4.0));
+    }
+
+    #[test]
+    fn two_optimizers_on_a_circle_with_a_kept_record() {
+        let mut c = script::load(
+            "r = 5\nC = (1, 2)\nc = Circle(C, r)\nP = Point(c)\nk = 1\n\
+             M = Maximize(x(P) + k y(P), P)\nN = Minimize(x(P) - y(P), P)",
+        )
+        .unwrap();
+        let [r, p, k, m, n] = ["r", "P", "k", "M", "N"].map(|label| c.id(label).unwrap());
+        let start = c.value(p);
+        let maximum = c.value(m);
+        let minimum = c.value(n);
+        c.set_number(r, -1.0).unwrap();
+        assert_eq!(c.value(p), Value::Undefined);
+        assert_eq!(c.value(m), maximum);
+        assert_eq!(c.value(n), start);
+        c.set_number(k, 2.0).unwrap();
+        assert_eq!(c.value(p), Value::Undefined);
+        assert_eq!(c.value(m), start);
+        assert_eq!(c.value(n), minimum);
     }
 }

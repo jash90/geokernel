@@ -510,6 +510,123 @@ impl Saved {
     }
 }
 
+/// The live cascade shared by optimizers with the same mover. A sample
+/// updates the mover's dependents; after copying the result and restoring
+/// the parameter, the construction update also recomputes the mover itself.
+pub(crate) struct OptimizerCascade {
+    mover: Id,
+    descendants: Vec<usize>,
+    running: Vec<Id>,
+    remaining: usize,
+    start: u64,
+    exhausted: bool,
+}
+
+impl OptimizerCascade {
+    pub(crate) fn new(c: &Construction, owner: Id, mover: Id) -> Option<Self> {
+        const MAX_EDGES: usize = 16_384;
+        if !c.children(mover).take(MAX_EDGES).any(|id| {
+            id != owner && matches!(c.def(id), Def::Optimize(d) if d.independent == mover)
+        }) {
+            return None;
+        }
+
+        let mut seen = std::collections::HashSet::new();
+        let mut pending = vec![mover];
+        let mut remaining = MAX_EDGES;
+        let mut exhausted = false;
+        while let Some(id) = pending.pop() {
+            let Some(left) = remaining.checked_sub(c.child_count(id)) else {
+                exhausted = true;
+                break;
+            };
+            remaining = left;
+            pending.extend(c.children(id).filter(|&child| seen.insert(child.0)));
+        }
+        let mut descendants: Vec<_> = seen.into_iter().collect();
+        descendants.sort_unstable_by_key(|&i| c.evaluation_rank(Id(i)));
+        Some(Self {
+            mover,
+            descendants,
+            running: Vec::new(),
+            remaining: 250_000,
+            start: crate::expr::work_done(),
+            exhausted,
+        })
+    }
+
+    pub(crate) fn run(
+        &mut self,
+        c: &mut Construction,
+        owner: Id,
+        def: crate::algo::optimize::OptimizeDef,
+    ) -> Value {
+        if self.exhausted {
+            return Value::Undefined;
+        }
+        let mut ids = self.descendants.clone();
+        ids.push(self.mover.0);
+        let saved = Saved::of(c, &ids);
+        self.running.push(owner);
+        let result = crate::algo::optimize::search(c, def, Some(self));
+        self.running.pop();
+        if self.exhausted {
+            saved.restore(c, &self.descendants);
+            return Value::Undefined;
+        }
+        result
+    }
+
+    pub(crate) fn set_result(&self, c: &mut Construction, value: Value) {
+        if let Some(slot) = c
+            .values
+            .get_mut(self.running.last().expect("active optimizer").0)
+        {
+            *slot = value;
+        }
+    }
+
+    pub(crate) fn update(&mut self, c: &mut Construction, restore: bool) -> bool {
+        if self.exhausted {
+            return false;
+        }
+        if restore {
+            recompute(c, self.mover.0);
+        }
+        for index in 0..self.descendants.len() {
+            let Some(left) = self.remaining.checked_sub(1) else {
+                self.exhausted = true;
+                break;
+            };
+            self.remaining = left;
+            if crate::expr::work_done() - self.start > crate::expr::MAX_EVALUATION_WORK {
+                self.exhausted = true;
+                break;
+            }
+            let i = self.descendants[index];
+            if let Def::Optimize(def) = c.defs[i] {
+                let owner = Id(i);
+                if def.independent != self.mover || self.running.contains(&owner) {
+                    continue;
+                }
+                if self.running.len() == 8 {
+                    self.exhausted = true;
+                    break;
+                }
+                self.running.push(owner);
+                c.values[i] = crate::algo::optimize::search(c, def, Some(self));
+                self.running.pop();
+                if self.exhausted {
+                    break;
+                }
+            } else if !matches!(c.defs[i], Def::Prove(_) | Def::ImplicitCurve(_)) {
+                recompute(c, i);
+            }
+        }
+        !self.exhausted
+    }
+}
+
 /// The undefined-for-good state of the expressions in a locus chain
 /// (`SVD`, see `expr::Stuck`). The reference samples a copy of the
 /// construction (its macro construction), so nothing a sample does reaches
@@ -544,6 +661,9 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
         Def::Expr(d) => {
             c.update_expr(i, d);
         }
+        Def::Number(_) if c.slider_bound_parents(Id(i)).next().is_some() => {
+            c.update_slider_bounds(Id(i));
+        }
         Def::GeneralConic(d) => {
             c.update_conic(i, d);
         }
@@ -555,9 +675,8 @@ pub(crate) fn recompute(c: &mut Construction, i: usize) {
         }
         // a locus is never between a moving object and the point of a locus
         Def::Locus(_) => {}
-        // Locus and optimizer sampling keep the existing optimum. A live
-        // optimizer would cascade from its own slider into the construction
-        // being sampled. The general construction update still reruns it.
+        // The locus copy and an isolated optimizer keep existing optima.
+        // A shared optimizer cascade handles this definition separately.
         Def::Optimize(_) => {}
         Def::Discrete(d) => {
             c.update_locus(i, |c| d.record(c, c.locus(Id(i))));

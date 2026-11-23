@@ -1239,6 +1239,16 @@ form = "function,number,point"
 cases = ["matrixdilate-dilatefunction-001", "matrixdilate-dilatefunction-002", "matrixdilate-dilatefunction-003"]
 
 [[form]]
+command = "ApplyMatrix"
+form = "list,list"
+cases = ["matrixdilate-applylist-001", "matrixdilate-applylist-004", "matrixdilate-applylist-005", "matrixdilate-applylist-006"]
+
+[[form]]
+command = "Dilate"
+form = "list,number"
+cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-002", "matrixdilate-dilatelist-004", "matrixdilate-dilatelist-005", "matrixdilate-dilatelist-006"]
+
+[[form]]
 command = "Dilate"
 form = "list,number,point"
 cases = ["matrixdilate-dilatelist-001", "matrixdilate-dilatelist-003"]
@@ -1923,6 +1933,16 @@ form = "number,number"
 cases = ["financial-npr-001", "financial-npr-002", "financial-npr-003"]
 
 # optimization
+
+[[form]]
+command = "Maximize"
+form = "number,point"
+cases = ["misc-maximizepoint-001"]
+
+[[form]]
+command = "Minimize"
+form = "number,point"
+cases = ["misc-minimizepoint-001"]
 
 [[form]]
 command = "Sum"

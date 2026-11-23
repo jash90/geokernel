@@ -1,4 +1,4 @@
-//! Bounds of free numeric sliders, including expressions loaded after the construction.
+//! Bounds of free numeric sliders, including expressions.
 
 use super::{Construction, Def, Error, Id, Value};
 use crate::Kind;
@@ -8,13 +8,15 @@ use std::collections::HashSet;
 pub(super) enum Bound {
     Literal(f64),
     Object(Id),
+    /// A live endpoint of the Slider command, created before its slider.
+    CommandObject(Id),
 }
 
 impl Bound {
     fn read(self, c: &Construction) -> Option<f64> {
         match self {
             Self::Literal(v) => Some(v),
-            Self::Object(id) => match c.value(id) {
+            Self::Object(id) | Self::CommandObject(id) => match c.value(id) {
                 Value::Number(v) if v.is_finite() => Some(v),
                 _ => None,
             },
@@ -23,7 +25,9 @@ impl Bound {
 
     pub(super) fn exists_before(self, len: usize) -> bool {
         match self {
-            Self::Object(id) => id.index() < len || super::axis::get(id).is_some(),
+            Self::Object(id) | Self::CommandObject(id) => {
+                id.index() < len || super::axis::get(id).is_some()
+            }
             Self::Literal(_) => true,
         }
     }
@@ -65,7 +69,11 @@ impl Construction {
     /// sample does (`GeoNumeric.setValue`).
     pub(crate) fn set_free_number(&mut self, id: Id, value: f64) {
         self.defs[id.0] = Def::Number(value);
-        self.values[id.0] = Value::Number(value);
+        self.values[id.0] = if value.is_nan() {
+            Value::Undefined
+        } else {
+            Value::Number(value)
+        };
     }
 
     pub(super) fn clamp_slider(&self, id: Id, value: f64) -> f64 {
@@ -84,7 +92,7 @@ impl Construction {
         let mut restored = [None; 2];
         for (slot, source) in restored.iter_mut().zip(bounds) {
             if let Some(source) = source {
-                match self.slider_bound(id, source) {
+                match self.slider_bound(Some(id), source) {
                     Ok(bound) => *slot = Some(bound),
                     Err(error) => {
                         self.discard_since(checkpoint);
@@ -101,6 +109,11 @@ impl Construction {
             Value::Number(v) => v,
             _ => f64::NAN,
         };
+        for parent in self.slider_bound_parents(id) {
+            if let Some(children) = self.children.get_mut(parent.0) {
+                children.remove(id);
+            }
+        }
         self.saved_slider_bounds.insert(id, restored);
         let [min, max] = self.slider_bounds(id);
         // An animation goes on from the value the bounds set last: the
@@ -134,7 +147,7 @@ impl Construction {
         Ok(())
     }
 
-    fn slider_bound(&mut self, owner: Id, source: &str) -> Result<Bound, String> {
+    fn slider_bound(&mut self, owner: Option<Id>, source: &str) -> Result<Bound, String> {
         if let Some(v) = crate::expr::plain_number(source).filter(|v| v.is_finite()) {
             return Ok(Bound::Literal(v));
         }
@@ -150,6 +163,9 @@ impl Construction {
         if self.kind(id) != Kind::Number {
             return Err("endpoint is not a number".into());
         }
+        let Some(owner) = owner else {
+            return Ok(Bound::CommandObject(id));
+        };
         let mut seen = HashSet::new();
         let mut parents = vec![id];
         while let Some(id) = parents.pop() {
@@ -160,13 +176,68 @@ impl Construction {
                 parents.extend(self.reads(id));
                 if let Some(bounds) = self.saved_slider_bounds.get(&id) {
                     parents.extend(bounds.iter().filter_map(|bound| match bound {
-                        Some(Bound::Object(id)) => Some(*id),
+                        Some(Bound::Object(id) | Bound::CommandObject(id)) => Some(*id),
                         _ => None,
                     }));
                 }
             }
         }
         Ok(Bound::Object(id))
+    }
+
+    /// Adds a numeric slider with live endpoint expressions (`CmdSlider`).
+    /// The command transaction rolls back hidden endpoint objects on error.
+    pub(crate) fn add_expression_slider(
+        &mut self,
+        label: &str,
+        [min, max]: [&str; 2],
+    ) -> Result<Id, String> {
+        let bounds = [self.slider_bound(None, min)?, self.slider_bound(None, max)?];
+        let id = self
+            .add(label, Def::Number(0.0))
+            .map_err(|e| e.to_string())?;
+        self.saved_slider_bounds.insert(id, bounds.map(Some));
+        for parent in self.slider_bound_parents(id) {
+            if let Some(children) = self.children.get_mut(parent.0) {
+                children.insert(id);
+            }
+        }
+        self.update_slider_bounds(id);
+        Ok(id)
+    }
+
+    pub(super) fn slider_bound_parents(&self, id: Id) -> impl Iterator<Item = Id> + use<> {
+        self.saved_slider_bounds
+            .get(&id)
+            .copied()
+            .into_iter()
+            .flatten()
+            .filter_map(|bound| match bound {
+                Some(Bound::CommandObject(id)) => Some(id),
+                _ => None,
+            })
+    }
+
+    /// `GeoNumeric.resolveMinMax` cascades only when the slider value changes.
+    pub(super) fn update_slider_bounds(&mut self, id: Id) -> bool {
+        let [Some(min), Some(max)] = self.slider_bounds(id) else {
+            return false;
+        };
+        let old = self.values[id.0];
+        let value = if min <= max {
+            Value::Number(self.number(id).unwrap_or(1.0).clamp(min, max))
+        } else {
+            Value::Undefined
+        };
+        if old.identical(&value) {
+            return false;
+        }
+        self.values[id.0] = value;
+        if let Value::Number(value) = value {
+            self.defs[id.0] = Def::Number(value);
+            self.set_animation_position(id, value);
+        }
+        true
     }
 
     /// Adds a slider, `Slider(min, max)` (`CmdSlider`): a free number with an

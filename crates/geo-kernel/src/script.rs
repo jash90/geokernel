@@ -1185,8 +1185,8 @@ fn define(c: &mut Construction, name: &str, rhs: &str) -> Result<Id, String> {
     c.add(name, def).map_err(|e| e.to_string())
 }
 
-/// `Slider(min, max)` and `Slider(min, max, increment)` with constant number
-/// expressions (`CmdSlider`); the increment only matters for dragging, which
+/// `Slider(min, max)` and `Slider(min, max, increment)` with numeric endpoints
+/// (`CmdSlider`); the increment only matters for dragging, which
 /// the kernel does not do, so it is checked and dropped.
 fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String> {
     let number = |arg| {
@@ -1196,14 +1196,17 @@ fn slider(c: &mut Construction, name: &str, args: &[&str]) -> Result<Id, String>
             .ok_or_else(|| format!("expected a constant number, got `{arg}`"))
     };
     let (min, max) = match args {
-        [min, max] => (number(min)?, number(max)?),
+        [min, max] => (*min, *max),
         [min, max, step] => {
             number(step)?;
-            (number(min)?, number(max)?)
+            (*min, *max)
         }
         _ => return Err(format!("`Slider` does not take {} argument(s)", args.len())),
     };
-    c.add_slider(name, min, max).map_err(|e| e.to_string())
+    if let (Ok(min), Ok(max)) = (number(min), number(max)) {
+        return c.add_slider(name, min, max).map_err(|e| e.to_string());
+    }
+    c.add_expression_slider(name, [min, max])
 }
 
 /// `CmdPolyLine` reads its trailing flag at creation. A false flag leaves

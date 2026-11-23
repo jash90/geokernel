@@ -178,6 +178,7 @@ pub(super) struct Lists {
     /// nothing for them.
     objects: RefCell<([Id; MAX_OBJECTS], usize)>,
     built: Cell<u64>,
+    pub(super) invalid_transform_list: Cell<bool>,
     /// The reading of [`work_done`] past which the evaluation is over.
     end: u64,
 }
@@ -189,6 +190,7 @@ impl Lists {
             arena: RefCell::new(arena),
             objects: RefCell::new(([Id(0); MAX_OBJECTS], 0)),
             built: Cell::new(0),
+            invalid_transform_list: Cell::new(false),
             end: work_done().saturating_add(limit()),
         }
     }

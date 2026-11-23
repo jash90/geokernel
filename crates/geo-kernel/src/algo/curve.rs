@@ -128,22 +128,63 @@ pub(crate) fn closest(c: &Construction, id: Id, (px, py): (f64, f64)) -> Option<
         };
     } else if distance > 0.0 {
         let radius = distance.sqrt();
-        let intervals = (20.0 * radius).clamp(200.0, 10_000.0) as u32;
-        let derivative = |x| x - px + (f(x) - py) * slope(f, x);
-        let mut left = px - radius;
-        let mut dl = derivative(left);
-        for i in 1..=intervals {
-            let right = px + radius * (2.0 * f64::from(i) / f64::from(intervals) - 1.0);
-            let dr = derivative(right);
-            if dl <= 0.0 && dr >= 0.0 {
-                let root = bisect(left, right, derivative);
+        let steps = (20.0 * radius).clamp(200.0, 10_000.0) as usize;
+        let left = px - radius;
+        let right = px + radius;
+        let work = IntersectionWork::new();
+        let polynomial = work
+            .fraction(c, id)
+            .is_some_and(|(_, denominator)| denominator.len() == 1);
+        let start = crate::expr::work_done();
+        let exhausted = || crate::expr::work_done() - start > crate::expr::MAX_EVALUATION_WORK;
+        if polynomial {
+            let derivative = |x| x - px + (f(x) - py) * slope(f, x);
+            let mut lo = left;
+            let mut before = derivative(lo);
+            for i in 1..=steps {
+                if exhausted() {
+                    return None;
+                }
+                let hi = px + radius * (2.0 * i as f64 / steps as f64 - 1.0);
+                let after = derivative(hi);
+                if before <= 0.0 && after >= 0.0 {
+                    let root = bisect(lo, hi, derivative);
+                    let value = squared(root);
+                    if value < distance {
+                        best = root;
+                        distance = value;
+                    }
+                }
+                (lo, before) = (hi, after);
+            }
+        } else {
+            // AlgoDistancePointObject builds the derivative of squared distance
+            // and passes its roots through AlgoRoots' residual and hole checks.
+            let analytic = FunctionDerivative::new(c, id);
+            let derivative = |x| {
+                let dy = analytic
+                    .as_ref()
+                    .map(|function| function.slope(x))
+                    .filter(|slope| slope.is_finite())
+                    .unwrap_or_else(|| slope(f, x));
+                2.0 * (x - px) + 2.0 * ((f(x) - py) * dy)
+            };
+            for root in super::intersect::function_roots::fixed_steps_roots(
+                &derivative,
+                left,
+                right,
+                steps,
+                exhausted,
+            ) {
                 let value = squared(root);
-                if value < distance {
+                if distance > value + STANDARD_PRECISION {
                     best = root;
                     distance = value;
                 }
             }
-            (left, dl) = (right, dr);
+        }
+        if exhausted() {
+            return None;
         }
     }
     let y = f(best);

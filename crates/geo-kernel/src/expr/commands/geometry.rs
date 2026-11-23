@@ -492,7 +492,16 @@ pub(in crate::expr) fn map_list<const M: bool>(
             transformed(slot)
         } else {
             if slot.kind != Kind::List {
-                let previous = last?;
+                let Some(previous) = last else {
+                    // AlgoApplyMatrix and AlgoDilate reuse the most recent
+                    // transformable template across nested lists. Before
+                    // any such template exists, a numeric item raises an
+                    // error when the command is constructed.
+                    if slot.kind.is_number() {
+                        lists.invalid_transform_list.set(true);
+                    }
+                    return None;
+                };
                 lists.set(previous, transformed(lists.read(ctx.c, previous)));
             }
             slot

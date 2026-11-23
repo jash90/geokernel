@@ -5,7 +5,7 @@ use super::{
 use geo_kernel::algo::path::PathDef;
 use geo_kernel::kernel::image::{ImageCorner, ImagePlacement};
 use geo_kernel::kernel::text::TextPosition;
-use geo_kernel::{Def, Id, Kind, Value};
+use geo_kernel::{script, Def, Id, Kind, Value};
 
 pub(super) fn kind(kind: Kind) -> &'static str {
     match kind {
@@ -92,12 +92,23 @@ impl Writer<'_> {
         // A free number is a slider when it has a bound, or when its file
         // placed one for it.
         let numeric = c.slider_bounds(id).map(|n| n.map(|n| n.to_string()));
+        let command_bounds = match script::split_comment(line)
+            .0
+            .split_once([':', '='])
+            .and_then(|(_, rhs)| script::split_call(rhs.trim_start_matches('=').trim()))
+        {
+            Some(("Slider", args)) if args.len() >= 2 && !c.reads(id).is_empty() => {
+                Some([Some(args[0]), Some(args[1])])
+            }
+            _ => None,
+        };
         let bounds = match c.def(id) {
             Def::Number(_) => self
                 .presentation
                 .slider_bounds
                 .get(label)
                 .copied()
+                .or(command_bounds)
                 .unwrap_or_else(|| numeric.each_ref().map(|n| n.as_deref())),
             _ => [None; 2],
         };

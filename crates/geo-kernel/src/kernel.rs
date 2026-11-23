@@ -863,6 +863,7 @@ pub enum Error {
     },
     NotFree(String),
     BadIndex(u8),
+    InvalidTransformList,
     NotFinite,
 }
 
@@ -889,6 +890,9 @@ impl fmt::Display for Error {
                 "`{l}` is a dependent object and cannot be changed directly"
             ),
             Error::BadIndex(i) => write!(f, "intersection index {i} is out of range"),
+            Error::InvalidTransformList => {
+                write!(f, "a number precedes any transformable list element")
+            }
             Error::NotFinite => write!(f, "coordinates must be finite numbers"),
         }
     }
@@ -1616,7 +1620,13 @@ impl Construction {
     /// from `id` follows these to tell whether `id` can have changed.
     pub fn reads(&self, id: Id) -> Vec<Id> {
         match self.defs.get(id.0) {
-            Some(def) => self.read_ids_with_hint(def, Some(self.hints[id.0])),
+            Some(def) => {
+                let mut parents = self.read_ids_with_hint(def, Some(self.hints[id.0]));
+                if matches!(def, Def::Number(_)) {
+                    parents.extend(self.slider_bound_parents(id));
+                }
+                parents
+            }
             None => Vec::new(),
         }
     }
@@ -1789,13 +1799,6 @@ impl Construction {
         debug_assert_eq!(at.generation, self.generation, "a checkpoint of this call");
         self.controls
             .truncate(self.controls.partition_point(|(id, _)| id.0 < at.len));
-        self.saved_slider_bounds.retain(|id, bounds| {
-            id.0 < at.len
-                && bounds
-                    .iter()
-                    .flatten()
-                    .all(|bound| bound.exists_before(at.len))
-        });
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
         self.proofs.split_off(&Id(at.len));
@@ -1832,6 +1835,13 @@ impl Construction {
                 self.object_scripts.remove(&label);
             }
         }
+        self.saved_slider_bounds.retain(|id, bounds| {
+            id.0 < at.len
+                && bounds
+                    .iter()
+                    .flatten()
+                    .all(|bound| bound.exists_before(at.len))
+        });
         self.evaluation_order.discard_since(at.len);
         // A removed object may have opened an element before a surviving
         // one if it was created after navigating back. Normally only the
@@ -2513,7 +2523,13 @@ impl Construction {
             ) => {
                 self.add_tangent_output(id, TangentDef::of(def).expect("tangent definition"), owner)
             }
-            Def::Expr(d) => expr::update(self, id, d).0,
+            Def::Expr(d) => match expr::initialize(self, id, d) {
+                Ok(value) => value,
+                Err(error) => {
+                    self.hints.pop();
+                    return Err(error);
+                }
+            },
             Def::IntersectConics(d) => {
                 let mut state = self.create_conic_intersection(d);
                 let value = state.value(d, self).unwrap_or(Value::Undefined);
@@ -2583,7 +2599,7 @@ impl Construction {
             Def::Optimize(d) => {
                 let d = algo::optimize::disabled(self, d).unwrap_or(d);
                 def = Def::Optimize(d);
-                algo::optimize::record(self, d)
+                algo::optimize::record(self, id, d)
             }
             Def::Calculus(d) if d.has_record() => {
                 let (value, record) = algo::calculus::initialize(self, &d);
@@ -3153,6 +3169,11 @@ impl Construction {
                         continue;
                     }
                 }
+                Def::Number(_) if self.slider_bound_parents(Id(i)).next().is_some() => {
+                    if !self.update_slider_bounds(Id(i)) {
+                        continue;
+                    }
+                }
                 Def::Optimize(d) => {
                     let d = match algo::optimize::disabled(self, d) {
                         Some(disabled) => {
@@ -3161,10 +3182,9 @@ impl Construction {
                         }
                         None => d,
                     };
-                    let new = algo::optimize::record(self, d);
-                    if new.identical(&self.values[i]) {
-                        // Nothing downstream can change because of this
-                        // object.
+                    let old = self.values[i];
+                    let new = algo::optimize::record(self, Id(i), d);
+                    if new.identical(&old) {
                         continue;
                     }
                     self.values[i] = new;
