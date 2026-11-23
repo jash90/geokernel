@@ -2644,9 +2644,9 @@ impl Construction {
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
         if let Def::Path(
             d @ (PathDef::On { .. }
-                | PathDef::InRegion { .. }
-                | PathDef::RigidEndpoint { .. }
-                | PathDef::FixedEndpoint { .. }),
+            | PathDef::InRegion { .. }
+            | PathDef::RigidEndpoint { .. }
+            | PathDef::FixedEndpoint { .. }),
         ) = *def
         {
             return self.move_on_path(id, d, x, y);
@@ -4011,7 +4011,12 @@ mod tests {
         let t = c.id("t").unwrap();
         assert_eq!(
             c.value(t),
-            Value::Segment { x1: 1.0, y1: 1.0, x2: 5.0, y2: 1.0 }
+            Value::Segment {
+                x1: 1.0,
+                y1: 1.0,
+                x2: 5.0,
+                y2: 1.0
+            }
         );
         assert_eq!(c.point(b), Some((2.0, 0.0)));
         assert!(c.is_movable(b));
@@ -4019,14 +4024,30 @@ mod tests {
         let (x, y) = c.point(b).unwrap();
         assert!(x.abs() < 1e-12);
         assert_eq!(y, 2.0);
-        assert_eq!(c.value(s), Value::Segment { x1: 0.0, y1: 0.0, x2: x, y2: y });
+        assert_eq!(
+            c.value(s),
+            Value::Segment {
+                x1: 0.0,
+                y1: 0.0,
+                x2: x,
+                y2: y
+            }
+        );
 
         c.set_number(n, 3.0).unwrap();
         c.move_point(a, -2.0, 0.0).unwrap();
         let (x, y) = c.point(b).unwrap();
         assert!((x + 2.0).abs() < 1e-12);
         assert_eq!(y, 3.0);
-        assert_eq!(c.value(s), Value::Segment { x1: -2.0, y1: 0.0, x2: x, y2: y });
+        assert_eq!(
+            c.value(s),
+            Value::Segment {
+                x1: -2.0,
+                y1: 0.0,
+                x2: x,
+                y2: y
+            }
+        );
     }
 
     #[test]

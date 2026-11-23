@@ -2355,18 +2355,6 @@ reason = "the kernel refuses the input: `Length( CircleArc((0,0),(1/pi,0),(0,1))
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:2585"
-category = "unsupported-form"
-reason = "the kernel refuses the input: `Length(Vector((3,4)))`: a command inside a command is not supported"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:2586"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `Length` does not take 2 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:2588"
 category = "text-formatting"
 reason = "values agree but `GeoFunction` of kind function has no the reference-style text yet; the reference prints `freehand(x)`"

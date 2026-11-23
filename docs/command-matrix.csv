@@ -27,7 +27,7 @@ Ray,,geometry,P1,partial,2,1,"Ray(point, point); Ray(point, vector)"
 AngularBisector,,geometry,P1,done,2,2,"AngularBisector(point, point, point); AngularBisector(line, line)"
 OrthogonalLine,,geometry,P0,partial,5,4,"OrthogonalLine(point, line, segment or ray); OrthogonalLine(point, vector); OrthogonalLine(point, conic or conic part)"
 Tangent,,geometry,P1,partial,11,9,"Tangents to conics, functions, Cartesian curves and implicit polynomials."
-Segment,,geometry,P0,partial,3,1,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
+Segment,,geometry,P0,partial,3,2,"Segment(point, point); Segment(point, length); Segment(point, point, polygon) creates no output"
 Slope,,geometry,P1,partial,2,1,"Slope(line, segment, ray or function)"
 Angle,,geometry,P1,done,13,13,"Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); Angle(point, point); Angle(point, vector); Angle(vector, point); Angle(vector, vector); Angle(line, line); Angle(point, point, point); Angle(point, point, number)"
 InteriorAngles,,geometry,P1,done,1,1,InteriorAngles(polygon)
@@ -39,7 +39,7 @@ Intersect,,geometry,P0,partial,79,65,"Carriers, conics, functions, polygonal bou
 IntersectPath,,geometry,P1,partial,9,6,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
 IntersectRegion,,english,P2,partial,9,8,
 Distance,,geometry,P0,partial,4,1,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
-Length,,geometry,P1,partial,11,8,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
+Length,,geometry,P1,partial,11,9,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
 Radius,,geometry,P1,todo,1,0,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
 CircleArc,,geometry,P1,todo,1,0,"CircularArc(centre, point, point)"
@@ -327,7 +327,7 @@ InverseLogNormal,,probability,,out_of_scope,,,
 RandomPolynomial,,probability,,out_of_scope,,,
 RandomDiscrete,,probability,,out_of_scope,,,
 RandomPointIn,,probability,,out_of_scope,,,
-ApplyMatrix,,vector,P2,partial,10,6,"2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph, raster image or list"
+ApplyMatrix,,vector,P2,partial,10,7,"2 x 2 or 3 x 3 matrix on a point, vector, line, conic, polygon, polyline, Cartesian curve, function graph, raster image or list"
 UnitVector,,vector,P2,partial,3,1,"UnitVector(vector, line, segment or ray)"
 Vector,,vector,P2,done,3,3,"Vector(point, point); Vector(point); a free (x, y) under a lower-case label"
 UnitOrthogonalVector,,vector,P2,partial,3,2,"UnitOrthogonalVector(vector, line, segment or ray)"
@@ -336,7 +336,7 @@ Invert,,vector,P2,done,2,2,
 Transpose,,vector,P2,partial,3,2,
 ReducedRowEchelonForm,,vector,P2,done,3,3,
 Determinant,,vector,P2,done,1,1,
-Identity,,vector,P2,todo,1,0,
+Identity,,vector,P2,done,1,1,
 Dimension,,vector,P2,partial,3,2,
 MatrixRank,,vector,P2,done,1,1,
 Mirror,,transformation,P1,done,3,3,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector in a point or a line; point, line, segment, circle, arc or sector in a circle (inversion)"
@@ -513,7 +513,7 @@ CIFactor,,cas,,out_of_scope,,,
 IFactor,,algebra,P2,partial,6,4,"Polynomial and rational functions are in scope for the 1.0 CAS, with bounded radical forms. A list, a line and a conic are refused as in the reference."
 IntegralSymbolic,,cas,,out_of_scope,,,
 CommonDenominator,,algebra,P2,done,2,2,Number pairs and rational-function pairs.
-Cross,,algebra,P2,partial,5,4,point or vector pairs and flat list pairs of equal length 2 or 3 (vectorforms-listcross-001 and vectorforms-listcross-002)
+Cross,,algebra,P2,done,5,5,"point or vector pairs and list pairs of equal length 2 or 3, including row lists (vectorforms-listcross-001 and vectorforms-nestedcross-001)"
 CSolutions,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
 CSolve,,algebra,,out_of_scope,,,All algebra-input forms delegate to the CAS.
 Dot,,algebra,P2,done,1,1,
