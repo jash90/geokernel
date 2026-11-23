@@ -37,6 +37,7 @@ mod translate;
 
 use std::cell::Cell;
 
+use crate::algo::{predicate::PredicateDef, Group};
 use crate::expr::Slot;
 use crate::kernel::{Construction, Id, Kind, Value};
 use poly::{Order, Poly};
@@ -610,6 +611,15 @@ fn boolean_argument(c: &mut Construction, text: &str) -> Result<Id, String> {
         return Ok(id);
     }
     let hidden = format!("\0arg{}", c.len());
+    if let Some((name, args)) = crate::script::split_call(text) {
+        if c.id(name).is_none() {
+            if let Some(predicate) = PredicateDef::parse(c, name, &args) {
+                return c
+                    .add(&hidden, crate::kernel::Def::Predicate(predicate?))
+                    .map_err(|error| error.to_string());
+            }
+        }
+    }
     if crate::expr::argument_object(c, text, &hidden, Kind::Boolean) {
         return Ok(c.id(&hidden).expect("argument object was just added"));
     }

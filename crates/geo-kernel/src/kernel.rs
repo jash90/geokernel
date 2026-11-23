@@ -2193,10 +2193,9 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
-        // Rebuilding an intersection also replaces its symbolic helper.
-        // Drop all affected outputs before any surviving proof translates them.
-        self.proof_intersections
-            .forget_rebuilt(old_reads.keys().copied());
+        // Redefinition rebuilds the reference's symbolic helpers, including
+        // those for intersections that do not read the edited definition.
+        self.proof_intersections = Default::default();
         self.propagate_dirty(dirty, 0, true);
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
         self.generation += 1;
@@ -3137,6 +3136,7 @@ impl Construction {
                 // A redefinition can change the structure the proof reads
                 // (a free point put on a path): the reference rebuilds it.
                 Def::Prove(d) if refresh_definitions => {
+                    self.proof_intersections.replay_rank = Some(rank);
                     // A redefined statement is rewritten again, and the
                     // reference's rebuild then reads the rewritten Boolean.
                     if self.rewrite_proof_statement(d.statement) {
@@ -3145,6 +3145,7 @@ impl Construction {
                         }
                     }
                     self.values[i] = self.record_proof(Id(i), d);
+                    self.proof_intersections.replay_rank = None;
                 }
                 // The result does not depend on positions.
                 Def::Prove(_) => continue,

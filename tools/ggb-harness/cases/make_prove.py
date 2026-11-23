@@ -362,4 +362,44 @@ proof("parabola", PARABOLA + ["s = Line(A, B)", "P = Intersect(s, k, 1)",
                               "u = Segment(P, F)", "v = Segment(P, H)"],
       "u == v", details=False)
 
+def add(line):
+    return {"action": "add", "line": line}
+
+
+def redefine(line):
+    return {"action": "redefine", "line": line}
+
+
+cases.case("replay", INDEXED_DIAMETER + ["b = A == Q", "p = Prove(b)"], [
+    redefine("b = false"), add("S = Intersect(g, c)"), add("p_2 = Prove(AreEqual(A, Q))"),
+    add("q_2 = ProveDetails(AreEqual(A, Q))"),
+])
+cases.case("replay", [
+    "O = (0, 0)", "B = (4, 0)", "g = Line(O, B)", "A = Point(g, 0.25)",
+    "c = Circle(O, A)", "Q = Intersect(g, c, 1)", "p = Prove(AreEqual(A, Q))",
+    "S = Intersect(g, c)", "U = (0, 4)", "h = Line(O, U)",
+], [redefine("B = Point(h, 0.5)"), add("p_2 = Prove(AreEqual(A, Q))")])
+
+# An unaffected proof also runs before the pair is labelled in a full replay.
+cases.case("replay", INDEXED_DIAMETER + [
+    "b = A == Q", "p = Prove(b)", "r = Prove(AreEqual(A, Q))",
+], [
+    redefine("b = false"), add("S = Intersect(g, c)"), add("p_2 = Prove(AreEqual(A, Q))"),
+])
+
+proof("selector", PARABOLA + ["s = Line(A, B)", "P = Intersect(s, k, A)"],
+      "AreCollinear(A, B, P)")
+proof("selector", PARABOLA + ["s = Line(A, B)", "n = 1", "P = Intersect(s, k, n)"],
+      "AreCollinear(A, B, P)")
+proof("paraboladrag", PARABOLA + ["s = Line(A, B)", "P = Intersect(s, k, 1)"],
+      "AreCollinear(A, B, P)", [
+          mv("F", 0, -1), add("p_2 = Prove(b)"), add("q_2 = ProveDetails(b)"),
+      ])
+
+for conic, point in (("Ellipse", "(0, 2)"), ("Hyperbola", "(1.5, 0)")):
+    proof("focalconic", ["F = (-2, 0)", "G = (2, 0)", f"T = {point}",
+                         f"k = {conic}(F, G, T)", "A = (-4, 1)", "B = (4, 1)",
+                         "s = Line(A, B)", "P = Intersect(s, k, 1)"],
+          "AreCollinear(A, B, P)")
+
 cases.write()

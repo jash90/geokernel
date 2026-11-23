@@ -3090,6 +3090,23 @@ undefined = true
 # prove
 
 [[gap]]
+id = "prove-focalconic-001"
+reason = "The focus-and-point ellipse adapter uses four auxiliary focal distances, four squared-distance equations and one equation equating the sums of the distances. The prover has no translation for that adapter or its substitution at the intersection, so Prove and ProveDetails are undefined."
+mismatches = ["0:p", "0:q"]
+undefined = true
+
+[[gap]]
+id = "prove-focalconic-002"
+reason = "The focus-and-point hyperbola adapter uses four auxiliary focal distances, four squared-distance equations and one equation equating the differences of the distances. The prover has no translation for that adapter or its substitution at the intersection, so Prove and ProveDetails are undefined."
+mismatches = ["0:p", "0:q"]
+undefined = true
+
+[[gap]]
+id = "prove-replay-003"
+reason = "GeoGebra replays the unaffected surviving proof before the pair is labelled and caches the indexed output's common-point exclusion. The kernel clears the cache and only recomputes proofs in the edited object's dependency graph. Replaying independent proofs in order to reseed their shared helpers requires construction-wide proof history and a replay budget."
+mismatches = ["3:p_2"]
+
+[[gap]]
 id = "prove-peer-001"
 reason = "The reference's peer choice depends on identity-hash iteration order. This recording returns false and {false}; the kernel reports true on components."
 mismatches = ["0:p_{3}", "0:q_{3}"]

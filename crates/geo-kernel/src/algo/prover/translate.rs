@@ -66,6 +66,8 @@ enum IntersectionConstraint {
 pub(crate) struct IntersectionTranslations {
     constraints: BTreeMap<Id, (usize, IntersectionConstraint)>,
     order: BTreeMap<usize, Id>,
+    /// Outputs created after the proof are still unlabelled during replay.
+    pub(crate) replay_rank: Option<usize>,
 }
 
 impl IntersectionTranslations {
@@ -79,17 +81,6 @@ impl IntersectionTranslations {
         if checkpoint < self.checkpoint() {
             for id in self.order.split_off(&checkpoint).into_values() {
                 self.constraints.remove(&id);
-            }
-        }
-    }
-
-    pub(crate) fn forget_rebuilt(&mut self, outputs: impl IntoIterator<Item = Id>) {
-        if self.constraints.is_empty() {
-            return;
-        }
-        for id in outputs {
-            if let Some((index, _)) = self.constraints.remove(&id) {
-                self.order.remove(&index);
             }
         }
     }
@@ -302,14 +293,25 @@ impl System {
                 self.add(collinear([h[0], h[1]], [h[2], h[3]], [x, y], budget)?);
                 self.point_vars.insert(id, [x, y]);
             }
-            Def::IntersectLineConic(d)
-                if self.parabola_feet.contains_key(&d.conic)
-                    && matches!(d.output, Output::Slot(0 | 1) | Output::Index(0 | 1)) =>
-            {
+            Def::IntersectLineConic(d) if self.parabola_feet.contains_key(&d.conic) => {
+                // AlgoIntersectSingle delegates to the same algebraic
+                // adapter for either selector. Its cache is read before
+                // checking the conic's current type.
+                let cached = intersections.constraints.contains_key(&id);
+                if !cached
+                    && !c
+                        .conic(d.conic)
+                        .is_some_and(|conic| conic.ty == ConicType::Parabola)
+                {
+                    return None;
+                }
                 let p = [self.new_var(false)?, self.new_var(false)?];
                 let [a, b, x, y] = self.line(d.line)?;
                 self.add_parabola_equations(c, d.conic, p, budget)?;
                 self.add(collinear(p, [a, b], [x, y], budget)?);
+                if !cached {
+                    intersections.insert(id, IntersectionConstraint::None);
+                }
                 self.point_vars.insert(id, p);
             }
             Def::IntersectLineConic(_)
@@ -388,10 +390,7 @@ impl System {
                 self.add(equidistant(a, [o1, o2], d, budget)?);
                 self.circle_vars.insert(id, [o1, o2, a[0], a[1]]);
             }
-            Def::GeneralConic(GeneralConicDef::Parabola { .. })
-                if c.conic(id)
-                    .is_some_and(|conic| conic.ty == ConicType::Parabola) =>
-            {
+            Def::GeneralConic(GeneralConicDef::Parabola { .. }) => {
                 let p = [self.new_var(false)?, self.new_var(false)?];
                 let foot = [self.new_var(false)?, self.new_var(false)?];
                 self.parabola_feet.insert(id, foot);
@@ -455,9 +454,13 @@ impl System {
             .constraints
             .get(&id)
             .map(|&(_, constraint)| constraint);
-        if cached.is_none()
-            && (!proper_circle(c, second) || (two_circles && !proper_circle(c, first)))
-        {
+        // GeoConicND.isCircle reads the retained type even when undefined.
+        let is_circle = |id| {
+            proper_circle(c, id)
+                || c.circle_record(id)
+                    .is_some_and(|conic| conic.ty == ConicType::Circle)
+        };
+        if cached.is_none() && (!is_circle(second) || (two_circles && !is_circle(first))) {
             return None;
         }
         let p = [self.new_var(false)?, self.new_var(false)?];
@@ -979,7 +982,10 @@ fn intersection_constraint(
     for other in c.children(first).filter(|&other| other != id) {
         if let Some((pair, other_indexed)) = symbolic_intersection(c, other) {
             if pair == [first, second] || pair == [second, first] {
-                labelled |= !other_indexed;
+                labelled |= !other_indexed
+                    && intersections
+                        .replay_rank
+                        .is_none_or(|rank| c.evaluation_rank(other) < rank);
                 if intersections.constraints.contains_key(&other) {
                     earlier = Some(other);
                 }
