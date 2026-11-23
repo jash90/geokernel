@@ -1,6 +1,4 @@
-//! Conics after moves, undefined phases and rollbacks: every value and every
-//! conic record must equal those of a construction built fresh at the final
-//! positions (compared by `common::Snap`, the conic records bit for bit).
+//! Conic records and their readers after moves, rebuilds and rollbacks.
 
 mod common;
 
@@ -43,12 +41,15 @@ fn a_parabola_whose_directrix_is_undefined_for_a_while() {
     };
     let mut c = build(&script((1.0, -1.0)));
     assert!(defined(&c, "p") && defined(&c, "V"));
-    // B on A: the directrix and everything after it are undefined
+    let vertex = c.value(c.id("V").unwrap());
+    // With no directrix the parabola remains undefined, but Vertex reads its record.
     move_to(&mut c, "B", 0.0, -1.0);
-    for label in ["g", "p", "V"] {
+    for label in ["g", "p"] {
         assert!(!defined(&c, label), "`{label}` is defined with B on A");
     }
-    assert_same_as_fresh(&c, &script((0.0, -1.0)), "B on A");
+    assert_eq!(c.value(c.id("V").unwrap()), vertex);
+    let fresh = build(&script((0.0, -1.0)));
+    assert!(!defined(&fresh, "V"), "a rebuild has no previous vertex");
     // back: defined again, as if built there
     move_to(&mut c, "B", 1.0, -1.0);
     assert!(defined(&c, "p") && defined(&c, "V"));

@@ -609,6 +609,14 @@ impl Writer<'_> {
             }
             Value::Number(n) => self.xml.val("value", &number(n))?,
             Value::Bool(b) => self.xml.val("value", flag(b))?,
+            Value::Undefined
+                if matches!(
+                    c.def(id),
+                    Def::Polygon(geo_kernel::algo::polygon::PolygonDef::RegularVertex { .. })
+                ) =>
+            {
+                self.xml.coords("coords", [f64::NAN; 3])?;
+            }
             Value::Undefined if c.kind(id).is_number() => {
                 self.xml
                     .val("value", &number(c.infinite_number(id).unwrap_or(f64::NAN)))?;

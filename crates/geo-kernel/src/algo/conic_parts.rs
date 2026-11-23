@@ -216,7 +216,7 @@ impl Group for ConicPartDef {
             Self::Asymptote { .. } | Self::Axis { .. } | Self::LinearEccentricity(_) => {
                 CONIC_OBJECTS
             }
-            Self::Pole { .. } => CIRCLE_OR_CONIC,
+            Self::Pole { .. } | Self::Diameter { .. } => CIRCLE_OR_CONIC,
             _ => CONIC,
         };
         c.expect(self.conic(), conics)?;
@@ -228,18 +228,27 @@ impl Group for ConicPartDef {
     }
 
     fn compute(&self, c: &Construction) -> Option<Value> {
-        // An undefined parent makes the object undefined, also where
-        // GeoGebra would still read the stale record of an undefined conic
-        // or take a point on both objects by construction.
-        if self.parents().as_slice().iter().any(|&p| {
-            let reads_carrier = matches!(self, Self::Axis { .. } | Self::LinearEccentricity(_))
-                && matches!(c.kind(p), Kind::Arc | Kind::Sector);
-            if reads_carrier {
-                !c.stored_value(p).is_defined()
-            } else {
-                !c.value(p).is_defined()
-            }
-        }) {
+        // AlgoVertexConic.java, AlgoAxes.java, AlgoAxis.java,
+        // AlgoAxisLength.java, AlgoEccentricity.java, AlgoExcentricity.java,
+        // AlgoParabolaParameter.java and GeoConicND.java (diameterLine)
+        // read the stored fields even if the conic is undefined.
+        let reads_fields = matches!(
+            self,
+            Self::Vertex { .. }
+                | Self::Axis { .. }
+                | Self::AxisLength { .. }
+                | Self::Eccentricity(_)
+                | Self::LinearEccentricity(_)
+                | Self::Parameter(_)
+                | Self::Diameter { .. }
+        );
+        let conic = self.conic();
+        if self
+            .parents()
+            .as_slice()
+            .iter()
+            .any(|&p| !(c.value(p).is_defined() || p == conic && reads_fields))
+        {
             return None;
         }
         if let ConicPartDef::IntersectLine { line, conic, which } = *self {
@@ -248,7 +257,11 @@ impl Group for ConicPartDef {
         if let ConicPartDef::Asymptote { conic, which } = *self {
             return asymptote(&super::conic_object(c, conic)?, which);
         }
-        let d = super::conic_object(c, self.conic())?;
+        let d = if reads_fields {
+            conic_reader_fields(c, conic)?
+        } else {
+            super::conic_object(c, conic)?
+        };
         match *self {
             ConicPartDef::IntersectLine { .. } | ConicPartDef::Asymptote { .. } => None,
             ConicPartDef::TangentPoint {
@@ -337,7 +350,11 @@ impl Group for ConicPartDef {
             {
                 return Some(Ok(Self::Pole { line: first, conic }));
             }
-            if c.kind(conic) != Kind::Conic {
+            if c.kind(conic) != Kind::Conic
+                && !(c.kind(conic) == Kind::Circle
+                    && c.kind(first) == Kind::Vector
+                    && func != "Polar")
+            {
                 return None;
             }
             return Some(match (func, c.kind(first)) {
@@ -410,7 +427,7 @@ impl Group for ConicPartDef {
             };
         }
         let [arg] = args else { return None };
-        let kinds = if func == "Asymptote" {
+        let kinds = if matches!(func, "Asymptote" | "Axes") {
             CONIC_OBJECTS
         } else {
             CONIC
@@ -425,6 +442,14 @@ impl Group for ConicPartDef {
             _ => return None,
         };
         Some(Ok((0..n).map(|which| make(conic, which)).collect()))
+    }
+}
+
+/// Field-based readers of a part use its carrier, which survives undefined updates.
+pub(super) fn conic_reader_fields(c: &Construction, conic: Id) -> Option<ConicData> {
+    match c.kind(conic) {
+        Kind::Arc | Kind::Sector => super::conic_object(c, conic),
+        _ => c.conic_fields(conic),
     }
 }
 

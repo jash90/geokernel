@@ -384,4 +384,9 @@ case("axisreview", [
     "g = FirstAxis(r64)", "P = Point(g, 0.5)",
 ], [mv("O", 2, 3)])
 
+topic("keptcircle")
+case("keptcircle", [pt("O", 0, 0), pt("B", 4, 0), "g = Line(O, B)", num("n", 1),
+                    "r = If(n > 0, 2, If(n < 0, -2))", "k = Circle(O, r)", "d = Diameter(g, k)"],
+     [setn("n", -1), setn("n", 0), mv("O", 1, 0)])
+
 cases.write()

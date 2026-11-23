@@ -606,6 +606,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
             c.discard_since(start);
             // The expression evaluator can use scalar and coordinate results
             // directly. Other command outputs need a real hidden object.
+            let retry = c.checkpoint();
             if let Some(call) = resolve_defined_arguments(c, rhs) {
                 if let Ok(output) = define_resolved(c, name, &call) {
                     if let Some(id) = output {
@@ -614,7 +615,7 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
                     return Ok(output);
                 }
             }
-            c.discard_since(start);
+            c.discard_since(retry);
             return Err(error);
         }
         result => result,
