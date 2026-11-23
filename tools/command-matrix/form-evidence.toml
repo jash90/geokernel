@@ -161,7 +161,7 @@ cases = ["polygon-derived-001", "polygon-derived-002", "polygon-derived-003"]
 [[form]]
 command = "Circle"
 form = "point,number"
-cases = ["arcs-conicparams-001", "arcs-conicparams-002", "arcs-conicparams-003"]
+cases = ["arcs-conicparams-001", "arcs-conicparams-002", "arcs-conicparams-003", "inlineargs-points-001"]
 
 [[form]]
 command = "Circle"
@@ -196,7 +196,7 @@ cases = ["arcs-circum-003", "arcs-circum-004", "arcs-circum-007"]
 [[form]]
 command = "Classes"
 form = "list,number"
-cases = ["lists-classes-001", "lists-classes-002", "lists-classes-003"]
+cases = ["lists-classes-001", "lists-classes-002", "lists-classes-003", "infinity-legacy-001"]
 
 [[form]]
 command = "Classes"
@@ -546,7 +546,7 @@ cases = ["intersections-boundary-002", "intersectconics-lineboundary-002"]
 [[form]]
 command = "Intersect"
 form = "line,polygon"
-cases = ["intersections-boundary-003", "intersectconics-lineboundary-003", "intersectreview-growth-001", "intersectgrowth-slider-001"]
+cases = ["intersections-boundary-003", "intersectconics-lineboundary-003", "intersectreview-growth-001", "intersectgrowth-slider-001", "intersectgrowth-redefinition-001"]
 
 [[form]]
 command = "Intersect"
@@ -726,7 +726,7 @@ cases = ["intersect-groups-001", "intersect-startpoint-005", "lines-bisector-001
 [[form]]
 command = "Locus"
 form = "point,point"
-cases = ["locus-circle-001", "locus-segment-001", "locus-line-001", "locus-arc-001", "locus-polygon-001", "locus-undefined-001"]
+cases = ["locus-circle-001", "locus-segment-001", "locus-line-001", "locus-arc-001", "locus-polygon-001", "locus-undefined-001", "redefine-locus-001"]
 
 [[form]]
 command = "Locus"
@@ -886,7 +886,7 @@ cases = ["paths-polyline-001", "paths-polyline-002", "paths-polyline-003"]
 [[form]]
 command = "Polygon"
 form = "point,point,number"
-cases = ["paths-polygon-005", "polygon-labels-005", "polygon-regsmall-001"]
+cases = ["paths-polygon-005", "polygon-labels-005", "polygon-regsmall-001", "inlineargs-points-002"]
 
 [[form]]
 command = "Polygon"
@@ -931,7 +931,7 @@ cases = ["lists-setops-012", "lists-setops-013", "lists-setops-014"]
 [[form]]
 command = "RemoveUndefined"
 form = "list"
-cases = ["lists-undef-002", "lists-undef-006", "lists-undef-007"]
+cases = ["lists-undef-002", "lists-undef-006", "lists-undef-007", "infinity-legacy-002", "infinity-legacy-003", "infinity-legacy-005"]
 
 [[form]]
 command = "Reverse"
@@ -1206,7 +1206,7 @@ cases = ["geomclip-carrier-001", "geomclip-carrier-002", "geomclip-carrier-005"]
 [[form]]
 command = "IntersectPath"
 form = "polygon,line"
-cases = ["geomclip-carrier-001", "geomclip-carrier-002", "georestclip-longcarrier-001"]
+cases = ["geomclip-carrier-001", "geomclip-carrier-002", "georestclip-longcarrier-001", "georestclip-homogeneous-001"]
 
 [[form]]
 command = "IntersectPath"
@@ -1622,7 +1622,7 @@ cases = ["geomextras-polygonlist-001", "geomclosure-shapelist-001"]
 [[form]]
 command = "RigidPolygon"
 form = "point,point,..."
-cases = ["geomclosure-rigid-001", "geomextras-rigidpoints-001"]
+cases = ["geomclosure-rigid-001", "geomextras-rigidpoints-001", "geomforms-rigidpolygon-004"]
 
 [[form]]
 command = "Sector"
@@ -2159,7 +2159,7 @@ cases = ["calculus-sums-001"]
 [[form]]
 command = "Text"
 form = "any"
-cases = ["textformat-signatures-001"]
+cases = ["textformat-signatures-001", "tpairfixes-numbertext-001", "tpairfixes-numbertext-002"]
 difference = "text-objects-and-commands: `Text(any)`, `Text(any, boolean)`, `Text(any, point)`, `Text(any, point, boolean)`, `Text(any, point, boolean, boolean)`, `Text(any, point, boolean, boolean, number)`, `Text(any, point, boolean, boolean, number, number)`"
 
 [[form]]
@@ -2754,7 +2754,7 @@ cases = ["charts-stepgraph-013"]
 [[form]]
 command = "LineGraph"
 form = "list,list"
-cases = ["charts-linegraph-009"]
+cases = ["charts-linegraph-009", "charts-linegraph-010"]
 
 [[form]]
 command = "PieChart"
@@ -3092,7 +3092,7 @@ cases = ["funcanalysis-curveedge-006", "funcanalysis-splineupstream-005"]
 [[form]]
 command = "NInvert"
 form = "function"
-cases = ["funcanalysis-inverted-001"]
+cases = ["funcanalysis-inverted-001", "funcanalysis-inverted-004"]
 
 [[form]]
 command = "SolveODE"
@@ -3272,7 +3272,7 @@ cases = ["cas-prime-002"]
 [[form]]
 command = "CommonDenominator"
 form = "function,function"
-cases = ["cas-denominator-001", "cas-denominator-002"]
+cases = ["cas-denominator-001", "cas-denominator-002", "cas-denominator-003"]
 
 [[form]]
 command = "Coefficients"
@@ -3292,7 +3292,7 @@ cases = ["cas-factors-002"]
 [[form]]
 command = "Asymptote"
 form = "function"
-cases = ["cas-delegated-001"]
+cases = ["cas-delegated-001", "cas-delegated-004"]
 
 [[form]]
 command = "RemovableDiscontinuity"
@@ -3448,7 +3448,7 @@ cases = ["georestsmall-matrixcurve-001", "georestsmall-matrixcurve-002", "geores
 [[form]]
 command = "ApplyMatrix"
 form = "list,function"
-cases = ["georestsmall-matrixfunction-001", "georestsmall-matrixfunction-002", "georestsmall-matrixfunction-003", "georestsmall-matrixfunction-004"]
+cases = ["georestsmall-matrixfunction-001", "georestsmall-matrixfunction-003", "georestsmall-matrixfunction-004"]
 difference = "remaining-transformations-equation-sides-and-conditionals: `ApplyMatrix(list, function)`"
 
 [[form]]

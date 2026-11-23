@@ -62,7 +62,7 @@ fn kernel_agrees_with_the_verified_t_pairs() {
         let mut root: Option<String> = None;
         for pair in &method.steps {
             let out = tpairs::run_pair(&mut c, pair, root.as_deref());
-            if out.category.is_some() && root.is_none() {
+            if root.is_none() && out.blocks_later_steps() {
                 root = Some(out.id.clone());
             }
             let labels: BTreeMap<String, ()> = out
@@ -263,14 +263,21 @@ fn preserved_reason(gaps: &geo_golden::tpairs::Gaps, out: &tpairs::StepOutcome) 
         Some((category, reason, ls))
             if *category == out.category.unwrap()
                 && *ls == labels
-                && !STALE_RUNNER_REASONS.iter().any(|s| reason.contains(s)) =>
+                && !STALE_RUNNER_REASONS.iter().any(|s| reason.contains(s))
+                && !(*category == tpairs::Category::Redefine
+                    && reason.ends_with("already exists")
+                    && out.disagreements.first().is_some_and(|d| d.why != *reason)) =>
         {
             reason.clone()
         }
         _ => out
             .disagreements
             .first()
-            .map(|d| d.why.replace('\n', " "))
+            .map(|d| {
+                d.why
+                    .replace('\n', " ")
+                    .replace("GeoGebra", "the reference")
+            })
             .unwrap_or_default(),
     }
 }

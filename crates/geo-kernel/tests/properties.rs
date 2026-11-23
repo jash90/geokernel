@@ -162,10 +162,15 @@ fn check_contagion(case: &Case) -> Result<(), String> {
             continue;
         }
         let parents = &case.deps[id.index()];
-        // An expression reads an infinite expression number as a value, as
-        // GeoGebra does, which counts it as defined (`1 / (r - a)` with
-        // `a = ∞` is `-0`): for expressions such a parent is not undefined.
-        let read_as_value = |p: Id| case.expr[id.index()] && case.c.infinite_number(p).is_some();
+        // An expression reads an infinite angle, or a vector with an
+        // infinite coordinate, as a value, as GeoGebra does, which counts
+        // it as defined (`x(v)` is `∞`): for expressions such a parent,
+        // which shows as undefined, is not undefined. An infinite number
+        // is a defined value in the first place.
+        let read_as_value = |p: Id| {
+            case.expr[id.index()]
+                && (case.c.infinite_number(p).is_some() || case.c.infinite_vector(p).is_some())
+        };
         // A point at a parameter keeps the parameter it had when the number
         // becomes undefined (`PathParameter.setT` ignores NaN).
         let kept_parameter = |p: Id| matches!(case.c.def(id), Def::Path(PathDef::OnParam { param, .. }) if param == p);
@@ -1767,8 +1772,8 @@ fn misuse_of_the_api_is_an_error_and_changes_nothing() {
         assert_eq!(c.add("X", Def::Number(bad)), Err(Error::NotFinite));
         assert_eq!(c.move_point(a, bad, 1.0), Err(Error::NotFinite));
         assert_eq!(c.move_point(a, 1.0, bad), Err(Error::NotFinite));
-        assert_eq!(c.set_number(r, bad), Err(Error::NotFinite));
     }
+    assert_eq!(c.set_number(r, f64::NAN), Err(Error::NotFinite));
     assert_unchanged(&c, &before, "non-finite input");
 
     // moving a dependent object, or the wrong kind of free object

@@ -252,6 +252,7 @@ impl<'a> FunctionFraction<'a> {
             value: Val::N(x),
             run: None,
             vector: false,
+            text: None,
             up: None,
         };
         let second = Local {
@@ -259,6 +260,7 @@ impl<'a> FunctionFraction<'a> {
             value: Val::N(y),
             run: None,
             vector: false,
+            text: None,
             up: Some(&first),
         };
         let ctx = Ctx::<true> {

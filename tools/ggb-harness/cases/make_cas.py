@@ -193,4 +193,7 @@ for expression in [
     "NextPrime(-2.5)", "PreviousPrime(-2.5)", "NextPrime(1)", "PreviousPrime(1)",
 ]:
     c.case("prime", [f"result = {expression}"], [])
+c.case("denominator", ["f(x) = 1/(x - 0.25)", "g(x) = 1/(x + 0.25)",
+                       "result = CommonDenominator(f, g)"], [])
+c.case("delegated", ["f(x) = 1/(x - 0.25)", "result = Asymptote(f)"], [])
 c.write()

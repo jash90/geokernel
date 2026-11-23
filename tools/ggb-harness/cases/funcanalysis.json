@@ -127,6 +127,7 @@
     {"id": "funcanalysis-inverted-001", "group": "funcanalysis", "script": ["a = 2", "f(x) = a*x+1", "g = NInvert(f)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": -3.0}, {"action": "set_number", "label": "a", "value": 0.0}]},
     {"id": "funcanalysis-inverted-002", "group": "funcanalysis", "script": ["g = NInvert(x^2)"], "steps": [{"action": "initial"}]},
     {"id": "funcanalysis-inverted-003", "group": "funcanalysis", "script": ["g = NInvert(x^2+x)"], "steps": [{"action": "initial"}]},
+    {"id": "funcanalysis-inverted-004", "group": "funcanalysis", "script": ["a = 2", "f(x) = a*x+1", "g = NInvert(f)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": -3.0}, {"action": "set_number", "label": "a", "value": -1.0}, {"action": "set_number", "label": "a", "value": 4.0}]},
     {"id": "funcanalysis-odeedge-001", "group": "funcanalysis", "script": ["s = SolveODE(y,0,1,1,0.25)"], "steps": [{"action": "initial"}]},
     {"id": "funcanalysis-odeedge-002", "group": "funcanalysis", "script": ["s = SolveODE(-100*y,0,1,1,0.01)"], "steps": [{"action": "initial"}]},
     {"id": "funcanalysis-odeedge-003", "group": "funcanalysis", "script": ["s = SolveODE(y,0,1,1,0)"], "steps": [{"action": "initial"}]},

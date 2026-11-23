@@ -160,7 +160,9 @@ For every case `GoldenGenerator`:
    `move` calls `GeoPoint.setCoords(x, y, 1)` (for a free vector
    `GeoVector.setCoords(x, y, 0)`) and `updateCascade()`;
    `set_number` calls `GeoNumeric.setValue` (it fails if GeoGebra clamps the
-   value) and `updateCascade()`.
+   value) and `updateCascade()`. Use `infinity: 1` or `infinity: -1` in place
+   of `value` to set an infinity. The `delete` step calls the object's removal
+   operation and records the surviving labels.
 
 Snapshot encoding:
 
@@ -170,16 +172,21 @@ Snapshot encoding:
 | `GeoLine` | `line` with the raw fields `x`, `y`, `z` as `a`, `b`, `c` |
 | `GeoSegment` | `segment` with its start point and end point |
 | `GeoConic` from `Circle` | `circle` with the midpoint and the first half-axis |
-| `GeoNumeric` | `number` |
+| `GeoNumeric` | `number`; one that holds `Infinity` or `-Infinity` is defined and carries `infinity` (1 or -1) in place of `value` |
 | `GeoAngle` | `angle` with a radian `value` |
 | `GeoVector` | `vector` with `x`, `y` |
 | `GeoRay` | `ray` with the inhomogeneous start point `x`, `y` and the raw fields `x`, `y`, `z` as `a`, `b`, `c`; a start point at infinity is undefined |
-| `GeoFunction` | `function` with `samples`, the values of `GeoFunction.value` at the sample points (`null` where not finite) |
+| `GeoFunction` | `function` with `samples`, the values of `GeoFunction.value` at the sample points (`null` for NaN, `{ "infinity": 1 }` or `-1` for an infinity) |
 | `GeoPolygon` | `polygon` with `getPoints()` as `vertices`, `getArea()` as `area` and `getAreaWithSign()` as `signed_area`; a vertex that is undefined or at infinity makes it undefined |
 | `GeoPolyLine` | `polyline` with `getPointsND()` as `vertices` (`null` for an undefined point or a point at infinity) and `getLength()` as `length` |
-| `GeoLocus` | `locus` with `getPoints()` as `points`, each `[x, y, getLineTo()]` (`x` and `y` `null` when not finite) |
+| `GeoLocus` | `locus` with `getPoints()` as `points`, each `[x, y, getLineTo()]` (a coordinate is `null` for NaN and `{ "infinity": 1 }` or `-1` for an infinity) |
 
-New files use schema 2, which records angles separately in every group.
+New files use schema 4, which records angles separately in every group, an
+infinite number as such and the sign of every infinite sample, pie fraction,
+curve or locus coordinate, so that `null` there means NaN only
+(`golden/SCHEMA.md`). The snapshots of the export oracle and the verified
+t-pairs keep the schema 2 encoding, where an infinite number is written as
+undefined and every value that is not finite as `null`.
 Schema 1 files use the legacy numeric encoding for angles.
 
 `defined` is GeoGebra's `isDefined()` and, in addition, every recorded field

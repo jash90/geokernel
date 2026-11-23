@@ -1,0 +1,56 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "infinity-setnumber-001",
+      "group": "infinity",
+      "script": [
+        "a = 1",
+        "b = 1 / a",
+        "P = (b, 1)",
+        "c = IsDefined(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "infinity": 1 },
+        { "action": "set_number", "label": "a", "infinity": -1 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "infinity": 1 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "P": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "infinity": -1 },
+          "b": { "type": "number", "defined": true, "value": -0.0 },
+          "P": { "type": "point", "defined": true, "x": -0.0, "y": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "P": { "type": "point", "defined": false },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 0.5 },
+          "P": { "type": "point", "defined": true, "x": 0.5, "y": 1.0 },
+          "c": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    }
+  ]
+}

@@ -71,6 +71,7 @@ use crate::expr::{Element, List};
 use crate::kernel::{Construction, Def, Error, Id, IdList, Kind, Value};
 use crate::script::{object, split_call};
 use crate::tol::STANDARD_PRECISION;
+use std::borrow::Cow;
 use std::collections::BTreeSet;
 use std::f64::consts::PI;
 
@@ -323,13 +324,15 @@ impl Regular {
     }
 }
 
-fn image_vertices(c: &Construction, poly: Id) -> &[Id] {
+fn image_vertices(c: &Construction, poly: Id) -> Cow<'_, [Id]> {
     // The image command adds its vertices as the polygon's first children.
-    let children = c.children(poly);
-    let count = children.iter().take_while(|&&id| {
-        matches!(c.def(id), Def::Polygon(PolygonDef::ImageVertex { poly: owner, .. }) if owner == poly)
-    }).count();
-    &children[..count]
+    let is_vertex = |&id: &Id| matches!(c.def(id), Def::Polygon(PolygonDef::ImageVertex { poly: owner, .. }) if owner == poly);
+    if let Some(children) = c.children_slice(poly) {
+        let count = children.iter().copied().take_while(is_vertex).count();
+        Cow::Borrowed(&children[..count])
+    } else {
+        Cow::Owned(c.children(poly).take_while(is_vertex).collect())
+    }
 }
 
 /// Whether the command rebuilds an image from its named vertices.
@@ -345,7 +348,7 @@ pub(super) fn has_fixed_vertices(c: &Construction, poly: Id) -> bool {
 /// Where the vertices of a polygon or polyline come from.
 #[derive(Clone, Debug)]
 enum Shape<'a> {
-    Points(&'a [Id]),
+    Points(Cow<'a, [Id]>),
     List(List<'a>),
     Chart(&'a [(f64, f64)]),
     Regular(Regular),
@@ -375,7 +378,7 @@ impl<'a> Shape<'a> {
                 .chart(id)
                 .map_or(Shape::Empty, |data| Shape::Chart(&data.vertices)),
             Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
-                Shape::Points(c.list(list))
+                Shape::Points(Cow::Borrowed(c.list(list)))
             }
             Def::Polygon(PolygonDef::PolygonFromList(id) | PolygonDef::PolyLineFromList(id)) => {
                 point_list(c, id).map_or(Shape::Empty, Shape::List)
@@ -541,7 +544,7 @@ fn poly_defined(c: &Construction, poly: Id) -> bool {
 pub(crate) fn inputs(c: &Construction, poly: Id) -> Vec<Id> {
     let image = image_vertices(c, poly);
     if !image.is_empty() {
-        return image.to_vec();
+        return image.into_owned();
     }
     match c.def(poly) {
         Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
@@ -1424,7 +1427,7 @@ pub(super) fn add_transform(
         Def::Polygon(PolygonDef::Polygon(list) | PolygonDef::PolyLine(list)) => {
             c.list(list).to_vec()
         }
-        _ => image_vertices(c, src).to_vec(),
+        _ => image_vertices(c, src).into_owned(),
     };
     let checkpoint = c.checkpoint();
     let result = (|| {
@@ -1753,8 +1756,10 @@ fn rigid_point_definitions(
     let &[anchor, pivot, ref rest @ ..] = points else {
         return None;
     };
-    if anchor >= pivot
-        || rest.iter().any(|&id| id <= pivot)
+    if c.evaluation_rank(anchor) >= c.evaluation_rank(pivot)
+        || rest
+            .iter()
+            .any(|&id| c.evaluation_rank(id) <= c.evaluation_rank(pivot))
         || points[1..]
             .iter()
             .any(|&id| !matches!(c.def(id), Def::FreePoint { .. }))
@@ -1794,7 +1799,7 @@ fn rigid_point_definitions(
             }),
         ));
     }
-    defs.sort_unstable_by_key(|&(id, _)| id);
+    defs.sort_unstable_by_key(|&(id, _)| c.evaluation_rank(id));
     defs.dedup_by_key(|item| item.0);
     Some(defs)
 }
@@ -2101,7 +2106,9 @@ mod tests {
     fn structure(c: &Construction) -> (Vec<String>, Vec<Vec<Id>>, usize) {
         (
             labels(c, 0),
-            c.ids().map(|id| c.children(id).to_vec()).collect(),
+            c.ids()
+                .map(|id| c.children(id).collect::<Vec<_>>())
+                .collect(),
             c.stored_ids(),
         )
     }
@@ -2251,7 +2258,7 @@ mod tests {
     fn outputs_need_a_free_name() {
         let mut c = load("A = (0, 0)\nB = (4, 0)\nC = (4, 3)\np = Polygon(A, B, C)\n").unwrap();
         let n = c.len();
-        for line in ["A = Vertex(p)", "B = InteriorAngles(p)", "p = Angle(p)"] {
+        for line in ["A = Vertex(p)", "B = InteriorAngles(p)", "A = Angle(p)"] {
             let e = run(&mut c, line).unwrap_err();
             assert!(e.contains("already exists"), "{line}: {e}");
             assert_eq!(c.len(), n, "{line}");

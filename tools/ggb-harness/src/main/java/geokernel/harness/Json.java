@@ -299,16 +299,17 @@ final class Json {
             return;
         }
         // A list of numbers (a vertex `[x, y]`, or a function sample `[x, y]`
-        // whose `y` may be null, or a locus point `[x, y, lineTo]`) stays on
-        // one line.
-        if (list.stream().allMatch(v -> v == null || v instanceof Double || v instanceof Boolean)
-                && list.stream().anyMatch(v -> v instanceof Double)) {
+        // whose `y` may be null or a recorded infinity, or a locus point
+        // `[x, y, lineTo]`) stays on one line.
+        if (list.stream().allMatch(v -> v == null || v instanceof Double || v instanceof Boolean
+                        || infinity(v))
+                && list.stream().anyMatch(v -> v instanceof Double || infinity(v))) {
             sb.append('[');
             for (int i = 0; i < list.size(); i++) {
                 if (i > 0) {
                     sb.append(", ");
                 }
-                writeScalar(sb, list.get(i));
+                writeValue(sb, list.get(i), indent + 1);
             }
             sb.append(']');
             return;
@@ -321,6 +322,12 @@ final class Json {
         }
         pad(sb, indent);
         sb.append(']');
+    }
+
+    /** Whether a value is a recorded infinity, `{ "infinity": 1 }` or `-1`. */
+    private static boolean infinity(Object value) {
+        return value instanceof Map<?, ?> map && map.size() == 1
+                && map.get("infinity") instanceof Long;
     }
 
     private static void writeScalar(StringBuilder sb, Object value) {

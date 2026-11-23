@@ -97,6 +97,8 @@ impl<const M: bool> Ctx<'_, M> {
                 self.text(chosen)
             }
             Node::Item(a) => self.text(a),
+            // the text element a `Zip` bound to its variable
+            Node::Local(depth, _) => self.local(depth)?.text.map(Cow::Borrowed),
             _ => None,
         }
     }

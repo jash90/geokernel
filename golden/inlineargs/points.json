@@ -1,0 +1,117 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "inlineargs-points-001",
+      "group": "inlineargs",
+      "script": [
+        "c = Circle((1, 1), 42)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "c": { "type": "circle", "defined": true, "cx": 1.0, "cy": 1.0, "r": 42.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-points-002",
+      "group": "inlineargs",
+      "script": [
+        "p = Polygon((1, 1), (2, 1 / 2), 4)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [2.0, 0.5],
+              [2.5, 1.5],
+              [1.5000000000000002, 2.0]
+            ],
+            "area": 1.25,
+            "signed_area": 1.25
+          }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-points-003",
+      "group": "inlineargs",
+      "script": [
+        "P = Centroid(Polygon((1, 1), (2, 1 / 2), (3, 1 / 3)))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 2.0, "y": 0.6111111111111113 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-points-004",
+      "group": "inlineargs",
+      "script": [
+        "k = Curvature((1, 1), Curve(sin(t), cos(t), t, 0, 3))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "number", "defined": true, "value": -1.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-points-005",
+      "group": "inlineargs",
+      "script": [
+        "u = CurvatureVector((1, 1), Curve(sin(t), cos(t), t, 0, 3))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "u": { "type": "vector", "defined": true, "x": -0.7071067733113356, "y": -0.7071067890617593 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-points-006",
+      "group": "inlineargs",
+      "script": [
+        "l = PolyLine((1, 1), (3, 1 / 3), (5, 1 / 5))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "l": {
+            "type": "polyline",
+            "defined": true,
+            "vertices": [
+              [1.0, 1.0],
+              [3.0, 0.3333333333333333],
+              [5.0, 0.2]
+            ],
+            "length": 4.112624623895307
+          }
+        }
+      ]
+    }
+  ]
+}
