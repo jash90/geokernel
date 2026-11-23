@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -2758,9 +2758,9 @@
           "ar": { "type": "number", "defined": true, "value": 16.75192319072808 },
           "pe": { "type": "number", "defined": true, "value": 24.665872814745516 },
           "M": { "type": "point", "defined": true, "x": -1.7732307631611695, "y": 0.0034102609624565156 },
-          "w_{1}": { "type": "number", "defined": true, "value": 1.1071487177940904 },
-          "w_{2}": { "type": "number", "defined": true, "value": 1.7342855009935463 },
-          "w_{3}": { "type": "number", "defined": true, "value": 0.30015843480215665 }
+          "w_{1}": { "type": "angle", "defined": true, "value": 1.1071487177940904 },
+          "w_{2}": { "type": "angle", "defined": true, "value": 1.7342855009935463 },
+          "w_{3}": { "type": "angle", "defined": true, "value": 0.30015843480215665 }
         },
         {
           "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
@@ -2782,9 +2782,9 @@
           "ar": { "type": "number", "defined": false },
           "pe": { "type": "number", "defined": false },
           "M": { "type": "point", "defined": false },
-          "w_{1}": { "type": "number", "defined": false },
-          "w_{2}": { "type": "number", "defined": false },
-          "w_{3}": { "type": "number", "defined": false }
+          "w_{1}": { "type": "angle", "defined": false },
+          "w_{2}": { "type": "angle", "defined": false },
+          "w_{3}": { "type": "angle", "defined": false }
         },
         {
           "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
@@ -2816,9 +2816,9 @@
           "ar": { "type": "number", "defined": true, "value": 16.75192319072808 },
           "pe": { "type": "number", "defined": true, "value": 24.665872814745516 },
           "M": { "type": "point", "defined": true, "x": -1.7732307631611695, "y": 0.0034102609624565156 },
-          "w_{1}": { "type": "number", "defined": true, "value": 1.1071487177940904 },
-          "w_{2}": { "type": "number", "defined": true, "value": 1.7342855009935463 },
-          "w_{3}": { "type": "number", "defined": true, "value": 0.30015843480215665 }
+          "w_{1}": { "type": "angle", "defined": true, "value": 1.1071487177940904 },
+          "w_{2}": { "type": "angle", "defined": true, "value": 1.7342855009935463 },
+          "w_{3}": { "type": "angle", "defined": true, "value": 0.30015843480215665 }
         },
         {
           "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
@@ -2850,9 +2850,9 @@
           "ar": { "type": "number", "defined": true, "value": 5.179491924311227 },
           "pe": { "type": "number", "defined": true, "value": 22.62531149078709 },
           "M": { "type": "point", "defined": true, "x": -1.9760677434251697, "y": -0.6666666666666666 },
-          "w_{1}": { "type": "number", "defined": true, "value": 0.4636476090008061 },
-          "w_{2}": { "type": "number", "defined": true, "value": 2.5789336341385134 },
-          "w_{3}": { "type": "number", "defined": true, "value": 0.09901141045047354 }
+          "w_{1}": { "type": "angle", "defined": true, "value": 0.4636476090008061 },
+          "w_{2}": { "type": "angle", "defined": true, "value": 2.5789336341385134 },
+          "w_{3}": { "type": "angle", "defined": true, "value": 0.09901141045047354 }
         },
         {
           "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
@@ -2884,9 +2884,9 @@
           "ar": { "type": "number", "defined": true, "value": 72.67949192431124 },
           "pe": { "type": "number", "defined": true, "value": 59.968460656023865 },
           "M": { "type": "point", "defined": true, "x": 7.02393225657483, "y": -0.6666666666666665 },
-          "w_{1}": { "type": "number", "defined": true, "value": 0.4636476090008061 },
-          "w_{2}": { "type": "number", "defined": true, "value": 0.2563969803819566 },
-          "w_{3}": { "type": "number", "defined": true, "value": 2.4215480642070304 }
+          "w_{1}": { "type": "angle", "defined": true, "value": 0.4636476090008061 },
+          "w_{2}": { "type": "angle", "defined": true, "value": 0.2563969803819566 },
+          "w_{3}": { "type": "angle", "defined": true, "value": 2.4215480642070304 }
         },
         {
           "A": { "type": "point", "defined": true, "x": -6.0, "y": 1.0 },
@@ -2918,9 +2918,9 @@
           "ar": { "type": "number", "defined": true, "value": 5.179491924311227 },
           "pe": { "type": "number", "defined": true, "value": 22.62531149078709 },
           "M": { "type": "point", "defined": true, "x": -1.9760677434251697, "y": -0.6666666666666666 },
-          "w_{1}": { "type": "number", "defined": true, "value": 0.4636476090008061 },
-          "w_{2}": { "type": "number", "defined": true, "value": 2.5789336341385134 },
-          "w_{3}": { "type": "number", "defined": true, "value": 0.09901141045047354 }
+          "w_{1}": { "type": "angle", "defined": true, "value": 0.4636476090008061 },
+          "w_{2}": { "type": "angle", "defined": true, "value": 2.5789336341385134 },
+          "w_{3}": { "type": "angle", "defined": true, "value": 0.09901141045047354 }
         }
       ]
     }

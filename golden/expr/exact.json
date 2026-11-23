@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -389,7 +389,7 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": true, "value": 0.0 }
+          "c": { "type": "angle", "defined": true, "value": 0.0 }
         }
       ]
     },
@@ -583,14 +583,14 @@
       ],
       "snapshots": [
         {
-          "c": { "type": "number", "defined": true, "value": 0.5235987755982989 },
-          "d": { "type": "number", "defined": true, "value": 22204.46049250313 },
-          "g": { "type": "number", "defined": true, "value": 0.0 }
+          "c": { "type": "angle", "defined": true, "value": 0.5235987755982989 },
+          "d": { "type": "angle", "defined": true, "value": 22204.46049250313 },
+          "g": { "type": "angle", "defined": true, "value": 0.0 }
         },
         {
-          "c": { "type": "number", "defined": true, "value": 0.5 },
-          "d": { "type": "number", "defined": true, "value": -7.0796326794896558E18 },
-          "g": { "type": "number", "defined": true, "value": -7.0796326794896558E18 }
+          "c": { "type": "angle", "defined": true, "value": 0.5 },
+          "d": { "type": "angle", "defined": true, "value": -7.0796326794896558E18 },
+          "g": { "type": "angle", "defined": true, "value": -7.0796326794896558E18 }
         }
       ]
     },

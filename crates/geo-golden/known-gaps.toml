@@ -3280,48 +3280,8 @@ mismatches = ["0:c", "3:c"]
 
 [[gap]]
 id = "georestsmall-ifgeometry-003"
-reason = "The selected circle has an infinite radius, which Radius returns as positive infinity in the reference: infinity-legacy-075 records d as `infinity: 1` at step 1, where this schema 2 file writes an undefined number. The kernel represents that circle as undefined and Radius is undefined."
+reason = "The selected circle has an infinite radius, which Radius returns as positive infinity in the reference: the recording has d as `infinity: 1` at step 1. The kernel represents that circle as undefined and Radius is undefined."
 mismatches = ["1:d"]
-
-[[gap]]
-id = "infinity-legacy-010"
-reason = "Same script as calculus-sums-012: UpperSum of a constant function over an infinite interval is positive infinity in the reference. Its first rectangle starts at the NaN 0 + 0 * Infinity, and the kernel's minimum search requires a finite bracket. LeftSum agrees."
-mismatches = ["0:u"]
-
-[[gap]]
-id = "infinity-legacy-075"
-reason = "Radius of the selected circle with an infinite radius is positive infinity in the reference. The kernel represents the circle as undefined."
-mismatches = ["1:d"]
-
-[[gap]]
-id = "infinity-legacy-113"
-reason = "RemoveUndefined in the reference retains projective points with infinite coordinates. The kernel drops those points from the list."
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
-
-[[gap]]
-id = "infinity-legacy-114"
-reason = "RemoveUndefined in the reference retains projective points with infinite coordinates. The kernel drops those points from the list."
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
-
-[[gap]]
-id = "infinity-legacy-152"
-reason = "Same script as funcanalysis-asymptote-001: the headless harness uses CASFactoryDummy and returns an empty list for 1/x. The numeric result has the horizontal line y=0 and the pole x=0."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "infinity-legacy-153"
-reason = "Same script as funcanalysis-asymptote-002: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the oblique line y=x+1 and the pole x=1."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "infinity-legacy-154"
-reason = "Same script as funcanalysis-asymptote-004: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has y=x+1 and discards the removable pole."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "infinity-legacy-155"
-reason = "Same script as funcanalysis-asymptote-007: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the logarithmic pole x=0."
-mismatches = ["0:r"]
 
 [[gap]]
 id = "infinity-outputs-039"
@@ -3332,6 +3292,7 @@ mismatches = ["1:s", "2:s", "4:s"]
 id = "infinity-outputs-040"
 reason = "UpperSum of a constant function up to an infinite bound is positive or negative infinity in the reference, with the sign of the step. The first rectangle starts at 1 + 0 * Infinity, which is NaN, and the kernel's minimum search requires a finite bracket, as in calculus-sums-012."
 mismatches = ["1:s", "2:s", "4:s"]
+
 # odesymbolic
 
 [[gap]]
