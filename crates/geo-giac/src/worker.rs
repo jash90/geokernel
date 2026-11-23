@@ -238,7 +238,9 @@ mod tests {
         // busy flag on an idle worker.
         let link = sleeper();
         for _ in 0..10 {
-            assert_eq!(link.call(30, Duration::from_millis(29)).ok(), None);
+            // Either outcome of this call is fine (a late wake-up can still
+            // collect the answer); the next call must succeed.
+            let _ = link.call(30, Duration::from_millis(29));
             std::thread::sleep(Duration::from_millis(200));
             assert_eq!(link.call(1, Duration::from_millis(1000)), Ok("1".into()));
         }

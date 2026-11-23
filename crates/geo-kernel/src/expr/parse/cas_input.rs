@@ -196,7 +196,9 @@ impl Parser<'_> {
         {
             return false;
         }
-        // Every name in the value is a number object or a known function name.
+        // Every token of the value that starts with a letter is the label of
+        // a number object. Built-in function and constant names (`sqrt`,
+        // `pi`) are not labels, so a start value with such a token is refused.
         value
             .split(|c: char| !(c.is_alphanumeric() || c == '_'))
             .filter(|t| t.chars().next().is_some_and(char::is_alphabetic))
