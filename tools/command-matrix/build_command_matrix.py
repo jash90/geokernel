@@ -142,8 +142,8 @@ PARTIAL = {
     "AffineRatio": "AffineRatio(point, point, point)",
     "CrossRatio": "CrossRatio(point, point, point, point)",
     "Cross": (
-        "point or vector pairs and flat list pairs of equal length 2 or 3 "
-        "(vectorforms-listcross-001 and vectorforms-listcross-002)"
+        "point or vector pairs and list pairs of equal length 2 or 3, including row lists "
+        "(vectorforms-listcross-001 and vectorforms-nestedcross-001)"
     ),
     "Angle": (
         "Angle(angle); Angle(number); Angle(point); Angle(vector); Angle(conic); Angle(polygon); "
@@ -362,11 +362,13 @@ def classify(group, command, alias_of):
     return "P2", "todo", ""
 
 
-def build_rows(commands_java, constants_java, forms=None, done=None):
+def build_rows(commands_java, constants_java, forms=None, done=None, giac=None):
     """Rows of the matrix. `forms` maps an in-scope command to (group, list of
-    its 2D forms) and `done` maps a command to its number of done forms."""
+    its 2D forms), `done` maps a command to its number of done forms and
+    `giac` to the done forms that need the kernel's `giac` feature."""
     forms = forms or {}
     done = done or {}
+    giac = giac or {}
     tables = parse_table_constants(constants_java)
     entries = split_enum_entries(commands_java)
     names = {name for name, _ in entries}
@@ -397,7 +399,12 @@ def build_rows(commands_java, constants_java, forms=None, done=None):
             else:
                 status = "todo"
             total, got = str(n_forms), str(n_done)
-        rows[name] = (group, priority, status, total, got, FORM_NOTES.get(name, notes))
+        notes = FORM_NOTES.get(name, notes)
+        if giac.get(name):
+            listed = ", ".join("%s(%s)" % (name, f.replace(",", ", ")) for f in giac[name])
+            notes = (notes + " " if notes else "") + (
+                "Done only with the giac feature (docs/cas-giac.md): %s." % listed)
+        rows[name] = (group, priority, status, total, got, notes)
     out = []
     for name, _ in entries:
         target = aliases.get(name, "")
@@ -449,6 +456,16 @@ def read_evidence(text, forms):
     return done
 
 
+def read_giac_forms(text):
+    """form-evidence.toml -> {command: [form, ...]} for the rows marked
+    `giac = true`, in file order."""
+    out = {}
+    for row in tomllib.loads(text).get("form", []):
+        if row.get("giac"):
+            out.setdefault(row["command"], []).append(row["form"])
+    return out
+
+
 def check_scope(rows, forms):
     """forms.csv must list exactly the in-scope commands, with their groups."""
     errors = []
@@ -472,13 +489,16 @@ def render_csv(rows):
     return buf.getvalue()
 
 
-def summary(rows, unclassified, declared):
+def summary(rows, unclassified, declared, giac=None):
     lines = ["total entries: %d" % len(rows),
              "aliases: %d" % sum(1 for r in rows if r[1])]
     real = [r for r in rows if not r[1]]
     counted = [r for r in real if r[5]]
     lines.append("in-scope commands: %d, forms_total: %d, forms_done: %d" % (
         len(counted), sum(int(r[5]) for r in counted), sum(int(r[6]) for r in counted)))
+    giac_done = sum(len(v) for v in (giac or {}).values())
+    lines.append("forms_done includes %d forms done only with the giac feature "
+                 "(form-evidence.toml rows with giac = true, docs/cas-giac.md)" % giac_done)
     status = {}
     for r in real:
         status[r[4]] = status.get(r[4], 0) + 1
@@ -518,14 +538,16 @@ def main(argv=None):
     commands_java = (base / "Commands.java").read_text(encoding="utf-8")
     constants_java = (base / "CommandsConstants.java").read_text(encoding="utf-8")
     forms = read_forms(Path(args.forms).read_text(encoding="utf-8"))
-    done = read_evidence(Path(args.evidence).read_text(encoding="utf-8"), forms)
-    rows, unclassified, declared = build_rows(commands_java, constants_java, forms, done)
+    evidence = Path(args.evidence).read_text(encoding="utf-8")
+    done = read_evidence(evidence, forms)
+    giac = read_giac_forms(evidence)
+    rows, unclassified, declared = build_rows(commands_java, constants_java, forms, done, giac)
     errors = check_scope(rows, forms)
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
     text = render_csv(rows)
-    print(summary(rows, unclassified, declared))
+    print(summary(rows, unclassified, declared, giac))
     out = Path(args.out)
     if args.check:
         current = out.read_text(encoding="utf-8") if out.exists() else None

@@ -578,3 +578,47 @@ pub(crate) fn exec(
     }
     Some(result.map(Some))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::script::load;
+
+    #[test]
+    fn apply_matrix_accepts_inline_coordinates_without_helpers() {
+        let mut c = load("n = 1\nP = ApplyMatrix({{1, 2}, {3, 4}}, (n, 1))").unwrap();
+        let p = c.id("P").unwrap();
+        assert_eq!(p, Id(1));
+        assert_eq!(c.value(p), Value::Point { x: 3.0, y: 7.0 });
+        c.set_number(c.id("n").unwrap(), 2.0).unwrap();
+        assert_eq!(c.value(p), Value::Point { x: 4.0, y: 10.0 });
+    }
+
+    #[test]
+    fn inline_projective_images_keep_their_homogeneous_scale() {
+        let c = load("P = ApplyMatrix({{1, 2, 3}, {3, 4, -1}, {1, 2, 1}}, (1, 1))").unwrap();
+        let p = c.id("P").unwrap();
+        assert_eq!(c.value(p), Value::Point { x: 1.5, y: 1.5 });
+        assert_eq!(c.stored_value(p).point_coords(), Some((6.0, 6.0, 4.0)));
+    }
+
+    #[test]
+    fn identity_stays_undefined_after_a_nonpositive_size() {
+        let mut c = load("n = 3\nm = Identity(n)").unwrap();
+        let m = c.id("m").unwrap();
+        let n = c.id("n").unwrap();
+        let expected = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+        let matrix = c.elements(m).unwrap();
+        assert_eq!(matrix.len(), expected.len());
+        for (item, expected) in matrix.iter().zip(expected) {
+            let row = row(item).unwrap();
+            assert_eq!(row.len(), expected.len());
+            assert!(row.iter().map(numeric).eq(expected.map(Some)));
+        }
+
+        c.set_number(n, 0.0).unwrap();
+        assert_eq!(c.value(m), Value::Undefined);
+        c.set_number(n, 2.0).unwrap();
+        assert_eq!(c.value(m), Value::Undefined);
+    }
+}

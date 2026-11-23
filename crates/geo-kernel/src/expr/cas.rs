@@ -1,6 +1,19 @@
 //! Adapter between expression trees and the exact polynomial engine.
 
 mod functional;
+#[cfg(feature = "giac")]
+mod giac;
+#[cfg(feature = "giac")]
+pub(super) use giac::{start_value_names, Function as GiacFunction};
+
+/// Whether the parser takes the forms only the Giac backend evaluates
+/// (`PlotSolve`, start values and other second arguments): not when the
+/// process has no Giac library configured, which then behaves exactly like
+/// the default build.
+#[cfg(feature = "giac")]
+pub(crate) fn giac_admits() -> bool {
+    geo_giac::backend() != geo_giac::Backend::KernelOnly
+}
 mod input;
 mod solutions;
 
@@ -58,6 +71,9 @@ pub(crate) enum Op {
         width: u8,
         axes: [u8; 3],
         system: bool,
+        /// `PlotSolve`: the solutions as points (only with the `giac`
+        /// feature, which evaluates it).
+        plot: bool,
     },
 }
 
@@ -85,6 +101,16 @@ impl Op {
                 width: 0,
                 axes: [0; 3],
                 system: false,
+                plot: false,
+            },
+            #[cfg(feature = "giac")]
+            "PlotSolve" if giac_admits() => Self::Solve {
+                assignments: false,
+                approximate: false,
+                width: 0,
+                axes: [0; 3],
+                system: false,
+                plot: true,
             },
             _ => return None,
         })
@@ -120,10 +146,11 @@ impl Op {
             Self::Solve {
                 system,
                 assignments,
+                plot,
                 ..
             } => Ty::List(if system {
                 Elem::List
-            } else if assignments {
+            } else if assignments || plot {
                 Elem::Any
             } else {
                 Elem::Num
@@ -206,7 +233,13 @@ impl<const M: bool> Ctx<'_, M> {
                 self.cas_slots(coefficients.into_iter().map(Slot::number))
             }
             Op::Factors => functional::factor_list(self, a, work),
-            Op::Solve { .. } => solutions::list(self, a, op, work),
+            Op::Solve { .. } => {
+                #[cfg(feature = "giac")]
+                if let Some(result) = giac::solve(self, a, op) {
+                    return result;
+                }
+                solutions::list(self, a, op, work)
+            }
             _ => None,
         }
     }

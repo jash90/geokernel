@@ -64,8 +64,37 @@ impl Parser<'_> {
 
     fn parse_solve(&mut self, name: &str) -> Result<u32, String> {
         let commas = self.argument_commas();
+        if name == "PlotSolve" && !commas.is_empty() {
+            // `CmdSolve.process`: PlotSolve takes one argument.
+            return Err(format!("invalid arguments to `{name}`"));
+        }
+        // The Giac translation prints the second argument from its text, and
+        // takes forms the kernel's own solver refuses (`x = 1`, a number).
+        #[cfg(feature = "giac")]
+        let hint = match commas[..] {
+            [comma] => self.hint_text(comma + 1),
+            _ => None,
+        };
         let (names, width, axes) = if let [comma] = commas[..] {
-            self.solution_variables(comma + 1)?
+            #[cfg(feature = "giac")]
+            let variables = self.solution_variables(comma + 1).or_else(|error| {
+                // Without a Giac library the default build's refusal stands,
+                // and so does the reference's for shapes it refuses too.
+                if !crate::expr::cas::giac_admits()
+                    || !hint.as_deref().is_some_and(|h| self.giac_hint(h))
+                {
+                    return Err(error);
+                }
+                // A start value (`t = 1`) names its variable too.
+                let names = hint
+                    .as_deref()
+                    .and_then(crate::expr::cas::start_value_names)
+                    .unwrap_or_else(|| vec!["x".into(), "y".into(), "z".into()]);
+                Ok::<_, String>((names, 0, [0, 1, 2]))
+            })?;
+            #[cfg(not(feature = "giac"))]
+            let variables = self.solution_variables(comma + 1)?;
+            variables
         } else if commas.is_empty() {
             (vec!["x".into(), "y".into(), "z".into()], 0, [0, 1, 2])
         } else {
@@ -75,6 +104,7 @@ impl Parser<'_> {
         let old = std::mem::replace(&mut self.cas_variables, names);
         let old_split = std::mem::replace(&mut self.split_names, true);
         self.expect(&Tok::LParen, "(")?;
+        let first_node = self.nodes.len();
         let is_list = self.eat(&Tok::LBrace);
         let mut equations = vec![self.cas_equation()?];
         if is_list {
@@ -88,15 +118,38 @@ impl Parser<'_> {
                 return Err("expected a list of solving variables".into());
             }
             // The suffix was parsed and validated when choosing the variable scope.
+            // The closing bracket of the call, past any brackets of the
+            // suffix (the Giac translation also takes `x = 10^(-17)`).
+            let mut depth = 0i32;
             self.pos = self.toks[comma + 1..]
                 .iter()
-                .position(|t| t.tok == Tok::RParen)
+                .position(|t| {
+                    match t.tok {
+                        Tok::LParen | Tok::LBrace => depth += 1,
+                        Tok::RParen if depth == 0 => return true,
+                        Tok::RParen | Tok::RBrace => depth -= 1,
+                        _ => {}
+                    }
+                    false
+                })
                 .map_or(self.toks.len(), |offset| comma + 1 + offset);
         }
         self.expect(&Tok::RParen, ")")?;
         self.cas_variables = old;
         self.split_names = old_split;
+        let reads_variable = self.nodes[first_node..]
+            .iter()
+            .any(|n| matches!(n, Node::Var | Node::VarY | Node::CasVariable(_)));
         (self.uses_var, self.uses_y) = (outer_x, outer_y);
+        if name == "PlotSolve" && !is_list {
+            // `CmdSolve.solve` takes a list, an equation or a function only.
+            let arg = equations[0];
+            let equation = matches!(&self.lits[arg as usize], super::Lit::Text(t) if &**t == "=");
+            let object = matches!(self.node(arg), Node::Obj(_) | Node::FunctionObject(_));
+            if !equation && !object && !reads_variable {
+                return Err(format!("invalid arguments to `{name}`"));
+            }
+        }
         if equations.len() > 8 {
             return Err("at most eight polynomial equations can be solved together".into());
         }
@@ -108,15 +161,62 @@ impl Parser<'_> {
             width,
             axes,
             system: is_list,
+            plot: name == "PlotSolve",
         };
-        Ok(self.push(Node::Cas(op, equations, NONE)))
+        let node = self.push(Node::Cas(op, equations, NONE));
+        #[cfg(feature = "giac")]
+        if let Some(hint) = hint.filter(|_| crate::expr::cas::giac_admits()) {
+            self.mark_hint(node, hint);
+        }
+        Ok(node)
+    }
+
+    /// The second arguments the reference takes beyond lists of solving
+    /// variables (recorded in golden/cas): one name, whatever it names, or a
+    /// start value `name = number`, where the number names no other kind of
+    /// object. It refuses inequalities, plain literals, start values in a
+    /// list and anything else (tests/cas_forms.rs).
+    #[cfg(feature = "giac")]
+    fn giac_hint(&self, hint: &str) -> bool {
+        let is_name = |t: &str| {
+            t.chars().next().is_some_and(char::is_alphabetic)
+                && t.chars().all(|c| c.is_alphanumeric() || c == '_')
+        };
+        let hint = hint.trim();
+        if is_name(hint) {
+            return true;
+        }
+        let Some((name, value)) = hint.split_once('=') else {
+            return false;
+        };
+        let value = value.trim();
+        if !is_name(name.trim())
+            || value.is_empty()
+            || value.contains(['=', '{', '}', '<', '>', ','])
+        {
+            return false;
+        }
+        // Every token of the value that starts with a letter is the label of
+        // a number object. Built-in function and constant names (`sqrt`,
+        // `pi`) are not labels, so a start value with such a token is refused.
+        value
+            .split(|c: char| !(c.is_alphanumeric() || c == '_'))
+            .filter(|t| t.chars().next().is_some_and(char::is_alphabetic))
+            .all(|t| match self.lookup(t) {
+                Some(id) => matches!(self.c.value(id), crate::Value::Number(_)),
+                None => false,
+            })
     }
 
     fn cas_equation(&mut self) -> Result<u32, String> {
         let left = self.argument(false)?;
         if self.eat(&Tok::Assign) {
             let right = self.argument(false)?;
-            Ok(self.push(Node::Bin(Bin::Sub, left, right)))
+            let node = self.push(Node::Bin(Bin::Sub, left, right));
+            // The Giac translation prints `left=right`, as the reference does.
+            #[cfg(feature = "giac")]
+            self.mark_equation(node);
+            Ok(node)
         } else {
             Ok(left)
         }

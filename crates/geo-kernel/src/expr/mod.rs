@@ -485,7 +485,11 @@ pub(crate) enum ListOp {
     Invert,
     Dimension,
     MatrixDimension,
+    Identity,
     ApplyMatrix,
+    ApplyMatrixCoordinates {
+        vector: bool,
+    },
 }
 
 impl ListOp {
@@ -682,6 +686,8 @@ pub(crate) enum Elem {
 pub(crate) enum Raw {
     Num(f64),
     Vec(f64, f64),
+    /// Homogeneous coordinates from a projective point transform.
+    Homogeneous([f64; 3]),
     /// A defined list of this many elements, kept in the entry.
     List(u32),
 }
@@ -694,6 +700,9 @@ impl Raw {
             (Raw::Num(a), Raw::Num(b)) => a.to_bits() == b.to_bits(),
             (Raw::Vec(a, b), Raw::Vec(c, d)) => {
                 a.to_bits() == c.to_bits() && b.to_bits() == d.to_bits()
+            }
+            (Raw::Homogeneous(a), Raw::Homogeneous(b)) => {
+                a.map(f64::to_bits) == b.map(f64::to_bits)
             }
             (Raw::List(a), Raw::List(b)) => a == b,
             _ => false,
@@ -813,12 +822,9 @@ pub(crate) struct Entry {
     stuck: Stuck,
 }
 
-/// The argument nodes of the `SVD` commands in a tree whose result became
-/// undefined for good: `AlgoSVD.compute` marks its output list undefined
-/// when the input is undefined or not a matrix, and a later decomposition
-/// fills the list without marking it defined again. A new definition
-/// starts a new tree, which forgets the state, as rebuilding the algorithm
-/// does.
+/// Nodes of algorithms that fill their result after an invalid input
+/// without marking it defined again (`AlgoSVD` and `AlgoIdentity`).
+/// A replacement definition starts with a fresh tree.
 #[derive(Default)]
 pub(crate) struct Stuck(std::sync::Mutex<Vec<u32>>);
 
@@ -2081,6 +2087,7 @@ pub(crate) fn value(d: ExprDef, raw: Raw) -> Value {
         (Kind::Number, Raw::Num(v)) if !v.is_nan() => Value::Number(v),
         (Kind::Angle, Raw::Num(v)) if v.is_finite() => Value::Number(d.angle_style.value(v)),
         (Kind::Point, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Point { x, y },
+        (Kind::Point, Raw::Homogeneous([x, y, z])) => Value::homogeneous_point(x, y, z),
         (Kind::Vector, Raw::Vec(x, y)) if x.is_finite() && y.is_finite() => Value::Vector { x, y },
         (Kind::Function, Raw::Num(v)) if !v.is_nan() => Value::Function,
         // `AlgoDependentBoolean`: a boolean is never undefined, a
@@ -2276,6 +2283,7 @@ fn define_with_coordinates(
     // (`AlgoFoldExpression`): the result has the class of the expression,
     // whatever the label is.
     let vector_label = match parsed.nodes[parsed.root as usize] {
+        Node::ListOp(ListOp::ApplyMatrixCoordinates { vector }, ..) => Some(vector),
         Node::Call(CallOp::Fold | CallOp::SumFold, first, _) => {
             Some(folds_to_vector(c, &parsed, first))
         }
@@ -2316,24 +2324,27 @@ pub(crate) fn define_plane_inequality(
 
 /// ExpressionNode.evaluatesToVectorNotPoint, for an unlabelled 2D input.
 fn argument_is_vector(c: &Construction, parsed: &parse::Parsed) -> bool {
-    let mut vectors = Vec::with_capacity(parsed.nodes.len());
-    for (node, ty) in parsed.nodes.iter().zip(&parsed.tys) {
+    argument_is_vector_at(c, &parsed.nodes, &parsed.tys, parsed.root)
+}
+
+fn argument_is_vector_at(c: &Construction, nodes: &[Node], types: &[Ty], root: u32) -> bool {
+    let mut vectors = Vec::with_capacity(root as usize + 1);
+    for (node, ty) in nodes.iter().zip(types).take(root as usize + 1) {
         let read = |index: u32| vectors[index as usize];
         let vector = matches!(ty, Ty::Vec)
             && match *node {
                 Node::Obj(id) => c.kind(id) == Kind::Vector,
                 Node::Cmd(def, _) => def.kind() == Kind::Vector,
                 Node::Vector(_) => true,
-                Node::Bin(Bin::Add, a, b) if parsed.tys[a as usize] == Ty::Vec => {
-                    read(a) && read(b)
-                }
+                Node::ListOp(ListOp::ApplyMatrixCoordinates { vector }, ..) => vector,
+                Node::Bin(Bin::Add, a, b) if types[a as usize] == Ty::Vec => read(a) && read(b),
                 Node::Bin(Bin::Add | Bin::Sub | Bin::Mul | Bin::Div, a, b) => read(a) || read(b),
                 Node::If(_, _, value, _) => read(value),
                 _ => false,
             };
         vectors.push(vector);
     }
-    vectors[parsed.root as usize]
+    vectors[root as usize]
 }
 
 /// `ExpressionNode.shouldEvaluateToGeoVector` for the expression at `at`
@@ -2669,7 +2680,7 @@ fn add_parsed(
             } else {
                 Def::FreePoint { x, y }
             }),
-            Raw::List(_) | Raw::Num(_) | Raw::Vec(..) => None,
+            Raw::List(_) | Raw::Num(_) | Raw::Vec(..) | Raw::Homogeneous(_) => None,
         };
         if let Some(def) = free {
             let id = c.add(name, def)?;

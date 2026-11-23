@@ -84,6 +84,11 @@ pub struct Evidence {
     /// `reject` step, which the replay checks against the kernel.
     #[serde(default)]
     pub refusal: bool,
+    /// The form agrees only with the kernel's `giac` feature: its cases are
+    /// checked against `known-gaps-giac.toml`, and every recorded case that
+    /// calls the form must agree there (docs/cas-giac.md).
+    #[serde(default)]
+    pub giac: bool,
 }
 
 #[derive(Deserialize)]

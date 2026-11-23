@@ -13,8 +13,27 @@ const SLOT_COMMAND: &str = "$boundarySlot";
 struct Outputs {
     first: Id,
     prefix: String,
-    slots: usize,
+    /// The label typed before `=`, which the first output takes again
+    /// after it was freed (`AlgoGeoPointsFunction.updateLabels`).
+    name: String,
+    /// The object of each slot, where known.
+    ids: Vec<Option<Id>>,
     dependencies: BTreeSet<Id>,
+}
+
+impl Outputs {
+    /// The object of `slot`, found again if a rebuilt registry lost it.
+    fn slot_id(&mut self, c: &Construction, anchor: &GrowthAnchor, slot: usize) -> Option<Id> {
+        if let Some(Some(id)) = self.ids.get(slot) {
+            return Some(*id);
+        }
+        let def = anchor.slot(slot)?;
+        let id = (self.first.index() + 1..c.len())
+            .map(Id)
+            .find(|&id| c.def(id) == def)?;
+        self.ids[slot] = Some(id);
+        Some(id)
+    }
 }
 
 enum GrowthAnchor {
@@ -74,6 +93,8 @@ pub struct BoundaryOutputs {
     /// Slots (owner label, zero-based slot) that the script being replayed
     /// adds with its own `$boundarySlot` lines: growth stops before them.
     recorded: BTreeSet<(String, usize)>,
+    /// While set, no output loses its label (see [`Self::set_deferred`]).
+    deferred: bool,
 }
 
 impl BoundaryOutputs {
@@ -99,18 +120,42 @@ impl BoundaryOutputs {
             groups: Vec::new(),
             revision: 0,
             recorded,
+            deferred: false,
         }
+    }
+
+    /// Leaves the removal of outputs to a later update while `deferred`: a
+    /// replay of the part of a journal that a deletion rebuilt, whose
+    /// replay did not free them either (the reference frees an output only
+    /// when its command updates).
+    pub fn set_deferred(&mut self, deferred: bool) {
+        self.deferred = deferred;
+    }
+
+    /// Whether some command of the registry frees the labels of its outputs.
+    pub fn frees_labels(&self, c: &Construction) -> bool {
+        self.groups.iter().any(|group| {
+            group.first.index() < c.len()
+                && GrowthAnchor::from_def(c.def(group.first)).is_some_and(|a| a.default_labels())
+        })
     }
 
     /// Rebuilds the registry from a definition that has already executed.
     pub fn record(&mut self, c: &Construction, line: &str, first: Id, count: usize) {
         if let Some((prefix, _)) = boundary_command(line) {
-            if GrowthAnchor::from_def(c.def(first)).is_some() {
+            let name = line
+                .split_once(['=', ':'])
+                .map_or("", |(name, _)| name.trim());
+            if count > 0 && GrowthAnchor::from_def(c.def(first)).is_some() {
+                // Inline arguments are added before the first output.
+                let slots = count.min(c.len() - first.index());
                 self.groups.push(Outputs {
                     first,
                     prefix: prefix.to_owned(),
-                    // Inline arguments are added before the first output.
-                    slots: count.min(c.len() - first.index()),
+                    name: name.to_owned(),
+                    ids: (first.index()..first.index() + slots)
+                        .map(|index| Some(Id(index)))
+                        .collect(),
                     dependencies: dependencies(c, first),
                 });
             }
@@ -118,9 +163,14 @@ impl BoundaryOutputs {
             .split_once('=')
             .and_then(|(_, rhs)| slot_args(rhs.trim()))
         {
-            if let Some(id) = c.id(anchor) {
-                if let Some(group) = self.groups.iter_mut().find(|group| group.first == id) {
-                    group.slots = group.slots.max(slot + 1);
+            if let Some(owner) = slot_owner(c, anchor, slot) {
+                if let Some(group) = self.groups.iter_mut().find(|group| group.first == owner) {
+                    if group.ids.len() <= slot {
+                        group.ids.resize(slot + 1, None);
+                    }
+                    // A later object may have taken the label of a freed slot.
+                    let def = GrowthAnchor::from_def(c.def(owner)).and_then(|a| a.slot(slot));
+                    group.ids[slot] = (def == Some(c.def(first))).then_some(first);
                 }
             }
         }
@@ -133,17 +183,42 @@ impl BoundaryOutputs {
         c: &mut Construction,
         changed: Id,
         record: impl FnMut(&Construction, Id, &str),
-    ) {
-        self.grow_after(c, std::iter::once(changed), record);
+    ) -> bool {
+        self.grow_after(c, std::iter::once(changed), record)
     }
 
     /// Visits each affected group once after an edit of one or more inputs.
+    /// Returns whether a label was freed (see [`Self::release_after`]).
     pub fn grow_after(
         &mut self,
         c: &mut Construction,
         changed: impl Iterator<Item = Id> + Clone,
-        mut record: impl FnMut(&Construction, Id, &str),
-    ) {
+        record: impl FnMut(&Construction, Id, &str),
+    ) -> bool {
+        self.update(c, changed, Some(record))
+    }
+
+    /// Only the removals of [`Self::grow_after`], for a replay whose
+    /// journal gives every label a slot takes: `AlgoRoots.initPoints`
+    /// removes each output from slot `max(n, 1)` on that no object reads
+    /// once `n` roots remain, which frees its label. The object stays in
+    /// the construction without a label; `AlgoGeoPointsFunction.updateLabels`
+    /// labels it again when its slot has a root. Returns whether a label
+    /// was freed.
+    pub fn release_after(
+        &mut self,
+        c: &mut Construction,
+        changed: impl Iterator<Item = Id> + Clone,
+    ) -> bool {
+        self.update(c, changed, None::<fn(&Construction, Id, &str)>)
+    }
+
+    fn update(
+        &mut self,
+        c: &mut Construction,
+        changed: impl Iterator<Item = Id> + Clone,
+        mut record: Option<impl FnMut(&Construction, Id, &str)>,
+    ) -> bool {
         let revision = c.definition_revision();
         if self.revision != revision {
             self.groups.retain(|group| group.first.index() < c.len());
@@ -152,42 +227,106 @@ impl BoundaryOutputs {
             }
             self.revision = revision;
         }
+        let mut released = false;
         for group in &mut self.groups {
-            let owner = c.label(group.first).to_owned();
             if !changed.clone().any(|id| group.dependencies.contains(&id)) {
                 continue;
             }
             let Some(anchor) = GrowthAnchor::from_def(c.def(group.first)) else {
                 continue;
             };
+            let frees = anchor.default_labels();
+            if (!frees || self.deferred) && record.is_none() {
+                continue;
+            }
             let Some(count) = anchor.size(c) else {
                 continue;
             };
-            for slot in group.slots..count {
+            if frees && !self.deferred {
+                // With no root left, a point that another object reads keeps
+                // every other point from being reset: they are all removed,
+                // the first one too.
+                if count == 0
+                    && (0..group.ids.len()).any(|slot| {
+                        group
+                            .slot_id(c, &anchor, slot)
+                            .is_some_and(|id| c.has_dependents(id))
+                    })
+                {
+                    released |= c.free_owner_label(group.first);
+                }
+                for slot in count.max(1)..group.ids.len() {
+                    if let Some(id) = group.slot_id(c, &anchor, slot) {
+                        released |= c.free_output_label(id);
+                    }
+                }
+            }
+            let Some(record) = record.as_mut() else {
+                continue;
+            };
+            let start = if frees { 0 } else { group.ids.len() };
+            for slot in start..count {
+                let owner = owner_name(c, group.first).to_owned();
+                let existing = if slot < group.ids.len() {
+                    match group.slot_id(c, &anchor, slot) {
+                        Some(id) if c.is_freed_output(id) => Some(id),
+                        _ => continue,
+                    }
+                } else {
+                    None
+                };
                 if self.recorded.contains(&(owner.clone(), slot)) {
                     break;
                 }
-                let Some(output) = anchor.slot(slot) else {
-                    break;
-                };
-                let label = if anchor.default_labels() {
+                let label = if slot == 0 {
+                    // `labels[0]`; a reference that renames the object
+                    // holding it is not reproduced
+                    if c.resolve_label(&group.name).is_some() {
+                        continue;
+                    }
+                    group.name.clone()
+                } else if frees {
                     crate::algo::polygon::default_point_label(c)
                 } else {
                     script::index_label(c, &group.prefix)
                 };
-                let Ok(id) = c.add_output(&label, output, group.first) else {
-                    break;
+                let id = match existing {
+                    Some(id) => {
+                        if c.relabel_output(id, &label).is_err() {
+                            break;
+                        }
+                        id
+                    }
+                    None => {
+                        let Some(output) = anchor.slot(slot) else {
+                            break;
+                        };
+                        let Ok(id) = c.add_output(&label, output, group.first) else {
+                            break;
+                        };
+                        group.ids.push(Some(id));
+                        id
+                    }
                 };
-                group.slots = slot + 1;
-                let line = format!(
-                    "{label} = {SLOT_COMMAND}({}, {})",
-                    c.label(group.first),
-                    slot + 1
-                );
+                let line = format!("{label} = {SLOT_COMMAND}({owner}, {})", slot + 1);
                 record(c, id, &line);
             }
         }
+        released
     }
+}
+
+/// For a recorded slot line of a command whose outputs free their labels,
+/// the object of that slot if the construction has it already: the line
+/// gives it its label again.
+pub(crate) fn existing_slot(c: &Construction, owner: Id, def: Def) -> Option<Id> {
+    GrowthAnchor::from_def(c.def(owner))
+        .filter(GrowthAnchor::default_labels)
+        .and_then(|_| {
+            (owner.index()..c.len())
+                .map(Id)
+                .find(|&id| c.def(id) == def)
+        })
 }
 
 fn dependencies(c: &Construction, first: Id) -> BTreeSet<Id> {
@@ -230,7 +369,47 @@ fn slot_args(rhs: &str) -> Option<(&str, usize)> {
         .strip_suffix(')')?
         .split_once(',')?;
     let slot = slot.trim().parse::<usize>().ok()?.checked_sub(1)?;
-    (slot > 0).then_some((anchor.trim(), slot))
+    Some((anchor.trim(), slot))
+}
+
+/// The first output a slot line names: the first slot names a first output
+/// whose label was freed by the label it had.
+fn slot_owner(c: &Construction, anchor: &str, slot: usize) -> Option<Id> {
+    if slot == 0 {
+        c.freed_owner(anchor)
+    } else {
+        c.id(anchor)
+    }
+}
+
+/// The label slot lines give the first output `first`.
+fn owner_name(c: &Construction, first: Id) -> &str {
+    c.former_owner_label(first)
+        .unwrap_or_else(|| c.label(first))
+}
+
+/// Frees `label` if an undefined interval root after the first slot that
+/// no object reads holds it: a replay that leaves freeing to the next live
+/// update (a deletion) still meets the journal lines that took such labels.
+pub fn free_label_for(c: &mut Construction, label: &str) -> bool {
+    let Some(id) = c.id(label) else {
+        return false;
+    };
+    matches!(c.def(id), Def::IntersectBoundary(d) if d.is_later_interval_slot())
+        && c.value(id) == crate::Value::Undefined
+        && c.free_output_label(id)
+}
+
+/// For a slot line that labels a freed first output again, the label that
+/// output had.
+pub fn first_slot_owner(rhs: &str) -> Option<&str> {
+    slot_args(rhs).and_then(|(owner, slot)| (slot == 0).then_some(owner))
+}
+
+/// The first output of a command recorded under `label`, also when its
+/// label was freed.
+pub fn growth_owner(c: &Construction, label: &str) -> Option<Id> {
+    c.freed_owner(label).or_else(|| c.id(label))
 }
 
 /// For a recorded slot definition, identifies the first output of its command.
@@ -244,9 +423,13 @@ pub(crate) fn parse_slot(c: &Construction, rhs: &str) -> Option<Result<(Def, Id)
     }
     Some((|| {
         let (anchor, slot) = slot_args(rhs).ok_or("invalid boundary slot")?;
-        let id = c
-            .id(anchor)
-            .ok_or_else(|| format!("unknown object `{anchor}`"))?;
+        let id = slot_owner(c, anchor, slot).ok_or_else(|| {
+            if slot == 0 && c.id(anchor).is_some() {
+                format!("`{anchor}` has no growing output at slot 1")
+            } else {
+                format!("unknown object `{anchor}`")
+            }
+        })?;
         GrowthAnchor::from_def(c.def(id))
             .and_then(|def| def.slot(slot))
             .map(|def| (def, id))

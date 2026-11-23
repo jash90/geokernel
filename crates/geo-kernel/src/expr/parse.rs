@@ -266,6 +266,45 @@ impl Parser<'_> {
         (self.nodes.len() - 1) as u32
     }
 
+    /// Marks `left - right` as the equation `left = right` it was read from,
+    /// for the Giac translation of the solving commands.
+    #[cfg(feature = "giac")]
+    pub(super) fn mark_equation(&mut self, i: u32) {
+        self.lits[i as usize] = Lit::Text("=".into());
+    }
+
+    /// Keeps the text of a solving command's second argument on its node;
+    /// the objects it names become parents, so the command follows them.
+    #[cfg(feature = "giac")]
+    pub(super) fn mark_hint(&mut self, i: u32, hint: String) {
+        for name in hint.split(|c: char| !(c.is_alphanumeric() || c == '_')) {
+            if name.chars().next().is_some_and(char::is_alphabetic) {
+                if let Some(id) = self.lookup(name) {
+                    self.read(id, false);
+                }
+            }
+        }
+        self.lits[i as usize] = Lit::Text(hint.into());
+    }
+
+    /// The source text from token `from` to the closing bracket of the call.
+    #[cfg(feature = "giac")]
+    pub(super) fn hint_text(&self, from: usize) -> Option<String> {
+        let start = self.toks.get(from)?.start;
+        let mut depth = 0i32;
+        for token in &self.toks[from..] {
+            match token.tok {
+                Tok::LParen | Tok::LBrace => depth += 1,
+                Tok::RParen if depth == 0 => {
+                    return Some(self.src[start..token.start].trim().to_string());
+                }
+                Tok::RParen | Tok::RBrace => depth -= 1,
+                _ => {}
+            }
+        }
+        None
+    }
+
     /// A constant that is a `MySpecialDouble` in GeoGebra, with its decimal.
     fn push_special(&mut self, v: f64, dec: Option<Dec>) -> u32 {
         let i = self.push(Node::Num(v));
@@ -1285,6 +1324,11 @@ impl Parser<'_> {
         let (types, ..) = check(self.c, &self.nodes, i).ok()?;
         (types[i as usize] == Ty::Vec)
             .then(|| super::types::vec_kind(self.c, &self.nodes, &types, i))
+    }
+
+    pub(super) fn is_vector_argument(&self, i: u32) -> bool {
+        check(self.c, &self.nodes, i)
+            .is_ok_and(|(tys, ..)| super::argument_is_vector_at(self.c, &self.nodes, &tys, i))
     }
 
     pub(super) fn checked_type(&self, i: u32) -> Result<Ty, String> {

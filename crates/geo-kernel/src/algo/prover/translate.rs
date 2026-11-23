@@ -812,7 +812,7 @@ fn symbolic_line_circle(
     d: crate::algo::intersect::line_conic_state::LineConicDef,
 ) -> Option<(Id, Id)> {
     use crate::algo::intersect::pair::Output;
-    (matches!(d.output, Output::Index(0 | 1) | Output::Slot(0))
+    (matches!(d.output, Output::Index(0 | 1) | Output::Slot(0 | 1))
         && c.kind(d.line) == Kind::Line
         && c.kind(d.conic) == Kind::Circle)
         .then_some(d.key())

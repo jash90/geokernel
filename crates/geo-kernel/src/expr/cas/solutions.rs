@@ -16,10 +16,15 @@ pub(super) fn list<const M: bool>(
         width,
         axes,
         system,
+        plot,
     } = op
     else {
         return None;
     };
+    if plot {
+        // `PlotSolve` exists only with the Giac backend.
+        return None;
+    }
     let Node::List(start, length) = ctx.node(equations) else {
         return None;
     };

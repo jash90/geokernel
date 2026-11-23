@@ -452,6 +452,18 @@ impl Value {
     }
 }
 
+/// The hidden label of an output whose label was freed.
+fn freed_label(id: Id) -> String {
+    format!("\0freed{}", id.0)
+}
+
+/// Starts the hidden label of a first output whose label was freed.
+const FREED_OWNER: &str = "\0freed owner ";
+
+fn freed_owner_label(label: &str) -> String {
+    format!("{FREED_OWNER}{label}")
+}
+
 /// `DoubleUtil.isEpsilon(z, x, y)` for non-NaN homogeneous coordinates.
 pub(crate) fn point_at_infinity(x: f64, y: f64, z: f64) -> bool {
     let tol = crate::tol::STANDARD_PRECISION;
@@ -2384,6 +2396,91 @@ impl Construction {
         self.add_with_path_state(label, def, None, Some(owner))
     }
 
+    /// `GeoElement.remove` of an output that its command no longer shows
+    /// (`AlgoRoots.initPoints`): the object stays in the construction but
+    /// loses its label, which a later object can take. Refused for an
+    /// object that is already unlabelled or that other objects read.
+    pub(crate) fn free_output_label(&mut self, id: Id) -> bool {
+        self.free_label_as(id, freed_label(id))
+    }
+
+    /// [`Self::free_output_label`] for the first output of a command, which
+    /// the slot lines of the journal name: it keeps the label it had in its
+    /// hidden label (see [`Self::freed_owner`]). Refused while another freed
+    /// first output keeps the same label.
+    pub(crate) fn free_owner_label(&mut self, id: Id) -> bool {
+        let Some(label) = self.labels.get(id.0) else {
+            return false;
+        };
+        let freed = freed_owner_label(label);
+        !self.by_label.contains_key(&freed) && self.free_label_as(id, freed)
+    }
+
+    fn free_label_as(&mut self, id: Id, freed: String) -> bool {
+        let Some(label) = self.labels.get(id.0) else {
+            return false;
+        };
+        if label.starts_with('\0') || !self.children[id.0].is_empty() {
+            return false;
+        }
+        let old = std::mem::replace(&mut self.labels[id.0], freed.clone());
+        self.by_label.remove(&old);
+        self.object_scripts.remove(&old);
+        self.by_label.insert(freed, id);
+        // a freed label lies below the start of its family's search
+        self.label_hints
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
+        true
+    }
+
+    /// The first output that [`Self::free_owner_label`] freed from `label`.
+    pub(crate) fn freed_owner(&self, label: &str) -> Option<Id> {
+        self.by_label.get(&freed_owner_label(label)).copied()
+    }
+
+    /// The label a first output had before [`Self::free_owner_label`].
+    pub(crate) fn former_owner_label(&self, id: Id) -> Option<&str> {
+        self.labels.get(id.0)?.strip_prefix(FREED_OWNER)
+    }
+
+    /// Whether other objects read `id`.
+    pub(crate) fn has_dependents(&self, id: Id) -> bool {
+        self.children.get(id.0).is_some_and(|c| !c.is_empty())
+    }
+
+    /// Gives the output `id` the free label `label`; the label it had is
+    /// freed. Refused if `label` is taken or if other objects read `id`
+    /// under a label it has.
+    pub(crate) fn relabel_output(&mut self, id: Id, label: &str) -> Result<(), Error> {
+        if label.is_empty() || label.starts_with('\0') {
+            return Err(Error::EmptyLabel);
+        }
+        let old = self.label(id).to_owned();
+        if old == label {
+            return Ok(());
+        }
+        if self.resolve_label(label).is_some() {
+            return Err(Error::DuplicateLabel(label.to_string()));
+        }
+        if !old.starts_with('\0') && !self.free_output_label(id) {
+            return Err(Error::DuplicateLabel(old));
+        }
+        let hidden = std::mem::replace(&mut self.labels[id.0], label.to_string());
+        self.by_label.remove(&hidden);
+        self.by_label.insert(label.to_string(), id);
+        Ok(())
+    }
+
+    /// Whether `id` is an output whose label [`Self::free_output_label`] or
+    /// [`Self::free_owner_label`] freed.
+    pub fn is_freed_output(&self, id: Id) -> bool {
+        self.labels
+            .get(id.0)
+            .is_some_and(|label| *label == freed_label(id) || label.starts_with(FREED_OWNER))
+    }
+
     fn add_with_path_state(
         &mut self,
         label: &str,
@@ -2731,7 +2828,10 @@ impl Construction {
         }
         let def = self.defs.get(id.0).ok_or(Error::UnknownObject)?;
         if let Def::Path(
-            d @ (PathDef::On { .. } | PathDef::InRegion { .. } | PathDef::RigidEndpoint { .. }),
+            d @ (PathDef::On { .. }
+            | PathDef::InRegion { .. }
+            | PathDef::RigidEndpoint { .. }
+            | PathDef::FixedEndpoint { .. }),
         ) = *def
         {
             return self.move_on_path(id, d, x, y);
@@ -3785,6 +3885,7 @@ impl Construction {
                         PathDef::On { .. }
                             | PathDef::InRegion { .. }
                             | PathDef::RigidEndpoint { .. }
+                            | PathDef::FixedEndpoint { .. }
                     )
             )
         )
@@ -4302,6 +4403,58 @@ impl Construction {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_fixed_length_segment_endpoint_moves_on_its_circle() {
+        let mut c = crate::script::load(
+            "A = (0, 0)\nn = 2\ns = Segment(A, n)\nC = (1, 1)\nt = Segment(C, 4)",
+        )
+        .unwrap();
+        let a = c.id("A").unwrap();
+        let b = c.id("B").unwrap();
+        let n = c.id("n").unwrap();
+        let s = c.id("s").unwrap();
+        let t = c.id("t").unwrap();
+        assert_eq!(
+            c.value(t),
+            Value::Segment {
+                x1: 1.0,
+                y1: 1.0,
+                x2: 5.0,
+                y2: 1.0
+            }
+        );
+        assert_eq!(c.point(b), Some((2.0, 0.0)));
+        assert!(c.is_movable(b));
+        c.move_point(b, 0.0, 4.0).unwrap();
+        let (x, y) = c.point(b).unwrap();
+        assert!(x.abs() < 1e-12);
+        assert_eq!(y, 2.0);
+        assert_eq!(
+            c.value(s),
+            Value::Segment {
+                x1: 0.0,
+                y1: 0.0,
+                x2: x,
+                y2: y
+            }
+        );
+
+        c.set_number(n, 3.0).unwrap();
+        c.move_point(a, -2.0, 0.0).unwrap();
+        let (x, y) = c.point(b).unwrap();
+        assert!((x + 2.0).abs() < 1e-12);
+        assert_eq!(y, 3.0);
+        assert_eq!(
+            c.value(s),
+            Value::Segment {
+                x1: -2.0,
+                y1: 0.0,
+                x2: x,
+                y2: y
+            }
+        );
+    }
+
     #[test]
     fn edits_after_redefinitions_match_a_rebuild_in_rank_order() {
         use crate::script::{exec, load};

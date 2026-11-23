@@ -46,6 +46,19 @@ pub(super) fn is_command(name: &str) -> bool {
     ]
     .iter()
     .any(|names| names.contains(&name))
+        // Evaluated only by the Giac backend (docs/cas-giac.md).
+        || (name == "PlotSolve" && plot_solve_admitted())
+}
+
+fn plot_solve_admitted() -> bool {
+    #[cfg(feature = "giac")]
+    {
+        super::cas::giac_admits()
+    }
+    #[cfg(not(feature = "giac"))]
+    {
+        false
+    }
 }
 
 /// The call `text(...)` of a command that a group parses itself: its node,
@@ -109,7 +122,12 @@ pub(super) fn makes_list(op: ListOp) -> bool {
 pub(super) fn takes_object(op: ListOp) -> bool {
     matches!(
         op,
-        ListOp::Dot | ListOp::Cross | ListOp::ApplyMatrix | ListOp::Min | ListOp::Max
+        ListOp::Dot
+            | ListOp::Cross
+            | ListOp::ApplyMatrix
+            | ListOp::ApplyMatrixCoordinates { .. }
+            | ListOp::Min
+            | ListOp::Max
     ) || list::takes_object(op)
 }
 
@@ -162,7 +180,7 @@ pub(super) fn list_value<const M: bool>(
 
 /// The list that the list command `op` whose result is a list builds (see
 /// [`makes_list`]).
-pub(super) use geometry::map_list;
+pub(super) use geometry::{apply_matrix_coordinates, map_list};
 
 pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,

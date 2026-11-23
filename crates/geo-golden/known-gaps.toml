@@ -17,23 +17,6 @@
 # `failure = "error text"` (the kernel refuses the line with exactly this
 # error). The test fails when the kernel answers anything else there.
 
-# intersectgrowth
-
-[[gap]]
-id = "intersectgrowth-interval-003"
-reason = "AlgoRoots.initPoints removes every output from slot max(number, 1) on that has no dependents and is undefined, which unsets its label; when the slot is defined again AlgoGeoPointsFunction.updateLabels gives it the next default point label (B, then D past the taken C). The harness still reads the same object under its old label R_{2} or R_{3}. The kernel keeps one fixed label per output, so the slots stay R_{2} and R_{3} and no B or D exists"
-mismatches = ["3:B", "3:D", "4:B", "4:D"]
-
-[[gap]]
-id = "intersectgrowth-interval-005"
-reason = "AlgoRoots.initPoints unlabels the undefined second slot when the interval collapses; when it is defined again it is labelled with the next default point label A, which the harness reads besides the old label R_{2}. The kernel keeps one fixed label per output, so the slot stays R_{2} and no A exists"
-mismatches = ["2:A", "3:A", "4:A"]
-
-[[gap]]
-id = "intersectgrowth-interval-007"
-reason = "When b moves to 5.5, R = Intersect(f, h, b, 3) loses its roots and AlgoRoots.initPoints removes its second output A, which frees the label before S = Intersect(g, h, 0, b) grows; S then names its roots 4 and 5 A and B. The kernel keeps A on R's undefined slot, so S's new outputs are B and C"
-mismatches = ["2:A", "2:B"]
-
 # corners
 
 [[gap]]
@@ -210,13 +193,6 @@ mismatches = [
 ]
 
 [[gap]]
-id = "geomforms-segment-006"
-reason = "The fixed-length endpoint's internal circle falls outside the construction move dispatcher."
-mismatches = [
-  "1:step",
-]
-
-[[gap]]
 id = "geomclip-difference-001"
 reason = "The contours agree geometrically. GeoGebra's sweep selects a different first vertex, which rotates the polygon vertices and the emitted point and segment slots."
 mismatches = [
@@ -261,34 +237,7 @@ mismatches = [
   "3:s_{1}",
 ]
 
-[[gap]]
-id = "conicforms-namedinterval-001"
-reason = "Center accepts the bounds of an inline inequality. Reading interval bounds from a named boolean function is unsupported."
-mismatches = ["0:script line 4"]
-
-# intersections
-
 # intersectgrowth
-
-[[gap]]
-id = "vectorforms-identity-002"
-reason = "AlgoIdentity marks its list undefined at size zero and never marks it defined again. After the size returns to two, the kernel's list expression recomputes a defined identity matrix."
-mismatches = ["2:m"]
-
-[[gap]]
-id = "vectorforms-point-002"
-reason = "GeoGebra measures the length of a point from the origin. The kernel still rejects Length(point), as required by the measurement group regression test."
-mismatches = ["0:script line 4"]
-
-[[gap]]
-id = "vectorforms-images-004"
-reason = "ApplyMatrix resolves labelled objects. An inline matrix and point need expression-backed operands that can be evaluated without creating helper objects before the command output."
-mismatches = ["0:script line 1"]
-
-[[gap]]
-id = "vectorforms-nestedcross-001"
-reason = "GeoGebra multiplies and subtracts row lists inside the cross product, producing a list for the third component. The kernel's cross product computes scalar and coordinate entries, and its list arithmetic does not support nested operands."
-mismatches = ["0:a"]
 
 [[gap]]
 id = "geomextras-pointlist-007"
@@ -3043,17 +2992,12 @@ id = "odesymbolic-cas-006"
 reason = "The polynomial solver cannot integrate a slope with a noninteger power during slider edits. The reference returns a defined symbolic function for those powers."
 mismatches = ["1:g", "2:g"]
 
-# funcrest
-
-[[gap]]
-id = "funcrest-freehandreaders-010"
-reason = "Bounded intersection of two functions in the kernel requires two expression trees. It lacks an intersection search over freehand samples, so the recorded point stays undefined."
-mismatches = ["0:S"]
-
 [[gap]]
 id = "misc-maximizepoint-019"
 reason = "Two optimizers over the same point while its circle keeps its last record. Each sample of one search updates the point's dependents, which runs the other optimizer's whole search and its construction update inside it (AlgoOptimize guards only its own recursion). In the recording the optimizer computed second in an update returns the point's coordinates before the search, (-1.236, -2.472) on the kept circle, instead of its optimum on that circle: N at the radius step and M at the step of k. The readable sources do not show which part of the nested searches gives up, so the kernel runs each search alone and returns both optima on the kept circle. One optimizer over the point agrees in misc-maximizepoint-008 to -017 and misc-minimizepoint-008 to -010, and two optimizers over a defined circle agree in misc-maximizepoint-018."
 mismatches = ["1:N", "2:M"]
+
+# funcrest
 
 [[gap]]
 id = "misc-optimizebounds-001"
@@ -3082,7 +3026,6 @@ id = "stroke-limits-001"
 reason = "intended difference, recorded in DIFFERENCES.md: the smoothed stroke has 32,489 points whose exact coordinates are longer than the 1 MiB an imported XML attribute may hold; the kernel makes a stroke that could not be saved, journaled and read back undefined at creation, while the reference keeps it"
 mismatches = ["0:s"]
 
-# locusequation, envelope and prove expressions
 [[gap]]
 id = "locusequation-classic-001"
 reason = "The kernel's curve is the reference's up to the overall sign. The reference takes the sign from its CAS's elimination of the Botana system (`locusEqu`), whose polynomial and variable lists come in hash-set order: the recorded inputs of `locusequation-midpoint-001` step 2 and `locusequation-classic-005` both have the curve variables v9 and v10, yet every coefficient sign is opposite, so no fixed variable order decides it. The kernel keeps its own normalization, a positive coefficient on the largest power of x (then of y)."
@@ -3205,3 +3148,8 @@ mismatches = ["0:p", "0:q"]
 id = "prove-review-008"
 reason = "A point on the first circle as its path is a point the second circle was drawn through, so it lies on both by construction. The reference excludes it only for the indexed `Intersect(a, b, n)`; the kernel does not record which command made the intersection, and the prover answers undefined. The kernel's intersection finds the path point by incidence and agrees on Q and the Boolean."
 mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "cas-literal-001"
+reason = "Without the giac feature the kernel's own solver reads Solve(x+y=-0.75, y) with the free x in the place of the solving variable y and answers the line y = -0.375; the reference's CAS answers y = -x - 3/4 (recorded with Giac). The case was added to check typed decimals between -1 and 0 in the Giac input, and agrees with the feature (known-gaps-giac.toml)."
+mismatches = ["0:r4"]

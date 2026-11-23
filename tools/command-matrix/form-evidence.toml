@@ -1038,7 +1038,7 @@ cases = ["intersections-functionconic-002", "intersectfunctions-conic-002"]
 [[form]]
 command = "Intersect"
 form = "function,line"
-cases = ["intersections-functionline-001", "intersections-functionline-009", "intersectfunctions-line-003"]
+cases = ["intersections-functionline-001", "intersections-functionline-009", "intersectfunctions-line-003", "funcrest-freehandintersections-001"]
 
 [[form]]
 command = "Intersect"
@@ -1064,6 +1064,11 @@ cases = ["intersections-functionline-004", "intersectfunctions-line-007"]
 command = "Intersect"
 form = "function,function,number"
 cases = ["intersections-functions-002", "intersectfunctions-pair-004"]
+
+[[form]]
+command = "Intersect"
+form = "function,function,number,number"
+cases = ["intersectfunctions-interval-001", "intersectgrowth-interval-003", "intersectgrowth-reuse-002", "funcrest-freehandreaders-010"]
 
 [[form]]
 command = "Intersect"
@@ -3301,3 +3306,82 @@ cases = ["intersections-selectorreview-010", "intersections-lineconicseed-001"]
 command = "Intersect"
 form = "conic,line,point"
 cases = ["intersections-lineconicseed-002", "intersections-lineconicseed-006"]
+
+[[form]]
+command = "Length"
+form = "point"
+cases = ["geomclosure-pointlength-001", "vectorforms-point-001", "vectorforms-point-002"]
+
+[[form]]
+command = "Identity"
+form = "number"
+cases = ["vectorforms-identity-001", "vectorforms-identity-002"]
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,point"
+cases = ["vectorforms-images-003", "vectorforms-images-004", "vectorforms-inlineimages-001", "vectorforms-inlineimages-002"]
+
+[[form]]
+command = "Cross"
+form = "list,list"
+cases = ["vectorforms-listcross-001", "vectorforms-listcross-002", "vectorforms-nestedcross-001", "vectorforms-crossrows-001"]
+
+[[form]]
+command = "Segment"
+form = "point,number"
+cases = ["geomforms-segment-006"]
+
+# Forms that agree only with the kernel's `giac` feature (docs/cas-giac.md):
+# every recorded case that calls them agrees with known-gaps-giac.toml.
+
+[[form]]
+command = "NSolutions"
+form = "list"
+cases = ["cas-edge-011", "cas-edge-017", "cas-edge-019"]
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "function,any"
+cases = ["cas-edge-001", "cas-edge-002", "cas-edge-004"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "line,any"
+cases = ["cas-edge-015", "cas-hint-008", "cas-hint-012"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolutions"
+form = "conic,any"
+cases = ["cas-coefficient-001", "cas-conic-008", "cas-conic-009"]
+difference = "polynomial-cas: `Solve(function, any)`, `Solutions(function, any)`, `NSolve(function, any)`, `NSolutions(function, any)`, `NSolve(line, any)`, `NSolutions(line, any)`, `NSolve(conic, any)`, `NSolutions(conic, any)` with the `giac` feature"
+giac = true
+
+[[form]]
+command = "NSolve"
+form = "list"
+cases = ["cas-edge-019", "cas-solve-027"]
+giac = true
+
+[[form]]
+command = "Solutions"
+form = "list"
+cases = ["cas-edge-011", "cas-rows-001", "cas-rows-002"]
+giac = true
+
+[[form]]
+command = "Solve"
+form = "list"
+cases = ["cas-rows-001", "cas-rows-002", "cas-rows-003"]
+giac = true
+
+[[form]]
+command = "PlotSolve"
+form = "list"
+cases = ["cas-plot-004", "cas-plot-021"]
+giac = true

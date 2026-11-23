@@ -982,9 +982,12 @@ impl Workbench {
 
     fn grow_boundary_outputs(&mut self, changed: impl Iterator<Item = Id> + Clone) {
         let before = self.construction.len();
-        self.log
-            .grow_boundary_outputs(&mut self.construction, &mut self.boundary_outputs, changed);
-        if self.construction.len() != before {
+        let relabelled = self.log.grow_boundary_outputs(
+            &mut self.construction,
+            &mut self.boundary_outputs,
+            changed,
+        );
+        if relabelled || self.construction.len() != before {
             self.objects_changed();
             // Existing outputs acquire new siblings for the same command.
             self.rows_at = None;

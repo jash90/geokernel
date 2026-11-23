@@ -111,6 +111,12 @@ impl BoundaryDef {
         matches!(self.0, Intersection::Function(d) if d.is_interval_anchor())
     }
 
+    /// An output of interval roots after the first, whose label
+    /// `AlgoRoots.initPoints` frees while it is undefined.
+    pub(super) fn is_later_interval_slot(self) -> bool {
+        matches!(self.0, Intersection::Function(d) if d.is_later_interval_slot())
+    }
+
     pub(super) fn can_grow(self) -> bool {
         self.growth_anchor().is_some()
             || self.grows_with_default_labels()
