@@ -845,9 +845,21 @@ enum Expr {
     Eq(Box<Expr>, Box<Expr>),
 }
 
+/// How deeply the reader may recurse (nested brackets, signs, powers).
+const MAX_NESTING: u32 = 64;
+
+/// How deep a read expression may be, chains of `+` and `*` included, so
+/// that every walk over it stays far from the end of the stack.
+const MAX_DEPTH: usize = 256;
+
+/// Work units (term operations of the exact polynomial arithmetic) one
+/// conversion of a result into a polynomial may spend.
+const POLYNOMIAL_BUDGET: u64 = 1 << 20;
+
 struct Reader<'a> {
     s: &'a [u8],
     i: usize,
+    nesting: u32,
 }
 
 impl Reader<'_> {
@@ -905,6 +917,17 @@ impl Reader<'_> {
     }
 
     fn unary(&mut self) -> Option<Expr> {
+        // Every nested bracket, sign or exponent passes through here.
+        if self.nesting >= MAX_NESTING {
+            return None;
+        }
+        self.nesting += 1;
+        let e = self.signed();
+        self.nesting -= 1;
+        e
+    }
+
+    fn signed(&mut self) -> Option<Expr> {
         if self.eat(b'-') {
             return Some(Expr::Neg(Box::new(self.unary()?)));
         }
@@ -1010,9 +1033,33 @@ fn parse(s: &str) -> Option<Expr> {
     let mut reader = Reader {
         s: s.as_bytes(),
         i: 0,
+        nesting: 0,
     };
     let e = reader.equation()?;
-    (reader.peek().is_none()).then_some(e)
+    (reader.peek().is_none() && shallow(&e)).then_some(e)
+}
+
+/// Whether the expression is at most [`MAX_DEPTH`] deep, measured without
+/// recursion.
+fn shallow(e: &Expr) -> bool {
+    let mut stack = vec![(e, 1usize)];
+    while let Some((e, depth)) = stack.pop() {
+        if depth > MAX_DEPTH {
+            return false;
+        }
+        match e {
+            Expr::Num(_) | Expr::Name(_) => {}
+            Expr::Neg(a) => stack.push((a, depth + 1)),
+            Expr::Bin(_, a, b) | Expr::Eq(a, b) => {
+                stack.push((a, depth + 1));
+                stack.push((b, depth + 1));
+            }
+            Expr::Call(_, items) | Expr::List(items) | Expr::Tuple(items) => {
+                stack.extend(items.iter().map(|item| (item, depth + 1)));
+            }
+        }
+    }
+    true
 }
 
 /// The value of a printed expression at `(x, y)`; `None` for anything the
@@ -1131,9 +1178,6 @@ fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
             Some(function_slot(right, "x"))
         }
         Expr::Eq(left, right) => {
-            if has_name(e, "z") {
-                return None;
-            }
             match line_slot(left, right) {
                 Some(line) => Some(line),
                 // The reference reads any other equation as an implicit
@@ -1146,11 +1190,11 @@ fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
             }
         }
         Expr::Tuple(items) if items.len() == 2 => {
-            let x = value(&items[0], 0.0, 0.0)?;
-            let y = value(&items[1], 0.0, 0.0)?;
             if has_name(e, "x") || has_name(e, "y") {
                 return None;
             }
+            let x = finite_number(&items[0])?;
+            let y = finite_number(&items[1])?;
             Some(Slot::point(Value::Point { x, y }))
         }
         // `{x}`: every number solves the equation; the reference reads the
@@ -1166,9 +1210,15 @@ fn element<const M: bool>(ctx: &Ctx<'_, M>, e: &Expr) -> Option<Slot> {
                 let variable = if x { "x" } else { "y" };
                 return Some(function_slot(e, variable));
             }
-            Some(Slot::number(value(e, 0.0, 0.0)?))
+            Some(Slot::number(finite_number(e)?))
         }
     }
+}
+
+/// The value of a constant result; an infinite or undefined value makes the
+/// element undefined, as no recorded case has the reference read one.
+fn finite_number(e: &Expr) -> Option<f64> {
+    value(e, 0.0, 0.0).filter(|v| v.is_finite())
 }
 
 /// The coefficients of x, y and 1 of an expression linear in x and y.
@@ -1242,9 +1292,13 @@ fn line_slot(left: &Expr, right: &Expr) -> Option<Slot> {
 /// A function of `variable`: a polynomial when the expression is one, as
 /// the kernel's own solver gives it, any other expression as printed.
 fn function_slot(e: &Expr, variable: &'static str) -> Slot {
-    if let Some(q) = quotient(e, variable) {
-        let charge = |_| true;
-        let work = &mut super::Work::new(&charge);
+    let used = std::cell::Cell::new(0u64);
+    let charge = |units| {
+        used.set(used.get().saturating_add(units as u64));
+        used.get() <= POLYNOMIAL_BUDGET
+    };
+    let work = &mut super::Work::new(&charge);
+    if let Some(q) = quotient(e, variable, work) {
         if let Some(polynomial) = q
             .denominator
             .scalar()
@@ -1262,19 +1316,17 @@ fn function_slot(e: &Expr, variable: &'static str) -> Slot {
 }
 
 /// An exact rational function of `variable` (the function's input).
-fn quotient(e: &Expr, variable: &str) -> Option<crate::cas::Quotient> {
+fn quotient(e: &Expr, variable: &str, work: &mut super::Work<'_>) -> Option<crate::cas::Quotient> {
     use crate::cas::{Poly, Quotient, Rat};
-    let charge = |_| true;
-    let work = &mut super::Work::new(&charge);
     Some(match e {
         Expr::Num(v) => Quotient::polynomial(Poly::constant(Rat::from_value(*v)?)),
         Expr::Name(n) if n == variable => Quotient::polynomial(Poly::variable(0)),
         Expr::Neg(a) => {
             let zero = Quotient::polynomial(Poly::constant(Rat::new(0, 1)?));
-            zero.sub(quotient(a, variable)?, work)?
+            zero.sub(quotient(a, variable, work)?, work)?
         }
         Expr::Bin(op, a, b) => {
-            let (a, b) = (quotient(a, variable)?, quotient(b, variable)?);
+            let (a, b) = (quotient(a, variable, work)?, quotient(b, variable, work)?);
             match op {
                 b'+' => a.add(b, work)?,
                 b'-' => a.sub(b, work)?,
@@ -1337,5 +1389,61 @@ mod tests {
             "ggbsort(normal([op(solve(x=3))]))"
         );
         assert_eq!(fill("f(%0,%%0)", &["(1/2)"], &["0.5"]), "f((1/2),0.5)");
+    }
+
+    #[test]
+    fn malformed_output_reads_as_nothing() {
+        for text in [
+            "", "{", "{1,", "(1,2", "{x=}", "1 2", "{1}}", "√", "x=y=1", "@",
+        ] {
+            assert!(parse(text).is_none(), "{text:?}");
+        }
+    }
+
+    #[test]
+    fn deep_nesting_reads_as_nothing_without_overflowing() {
+        let deep = format!("{}x{}", "(".repeat(10_000), ")".repeat(10_000));
+        assert!(parse(&deep).is_none());
+        let signs = format!("{}1", "-".repeat(10_000));
+        assert!(parse(&signs).is_none());
+        let powers = vec!["2"; 10_000].join("^");
+        assert!(parse(&powers).is_none());
+        // A chain of sums builds a deep tree without recursing in the reader.
+        let chain = vec!["1"; 10_000].join("+");
+        assert!(parse(&chain).is_none());
+        let fine = format!("{}x{}", "(".repeat(20), ")".repeat(20));
+        assert!(parse(&fine).is_some());
+    }
+
+    #[test]
+    fn a_huge_power_stops_at_the_work_budget() {
+        let e = parse("(((x+1)^64)^64)^64").unwrap();
+        let used = std::cell::Cell::new(0u64);
+        let charge = |units| {
+            used.set(used.get().saturating_add(units as u64));
+            used.get() <= POLYNOMIAL_BUDGET
+        };
+        let work = &mut super::super::Work::new(&charge);
+        let start = std::time::Instant::now();
+        assert!(quotient(&e, "x", work).is_none());
+        assert!(start.elapsed() < std::time::Duration::from_secs(10));
+        // The function element still samples Giac's printed form.
+        assert!(function_slot(&e, "x").numeric_cell().is_none());
+    }
+
+    #[test]
+    fn non_finite_results_are_undefined() {
+        for text in ["1/0", "-1/0", "0/0", "10^400", "sqrt(-1)", "ln(0)"] {
+            assert_eq!(finite_number(&parse(text).unwrap()), None, "{text}");
+        }
+        assert_eq!(finite_number(&parse("-√4+1").unwrap()), Some(-1.0));
+    }
+
+    #[test]
+    fn unknown_names_and_calls_are_not_known() {
+        for text in ["fsolve(x^2=2,x)", "z", "ggbtmpvart", "{n_0*pi}", "f(1,2)"] {
+            assert!(!known(&parse(text).unwrap()), "{text}");
+        }
+        assert!(known(&parse("{x=-√3,(1,2),sin(pi)}").unwrap()));
     }
 }
