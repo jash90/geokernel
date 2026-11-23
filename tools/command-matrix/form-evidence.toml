@@ -319,11 +319,6 @@ form = "point,point,number"
 cases = ["conics-focilength-004", "conics-focilength-005", "conics-focilength-006"]
 
 [[form]]
-command = "Hyperbola"
-form = "point,point,point"
-cases = ["conics-hyperbola-001", "conics-hyperbola-002", "conics-hyperbola-003"]
-
-[[form]]
 command = "Incircle"
 form = "point,point,point"
 cases = ["conic-center-009", "conic-incircle-001", "conic-incircle-002"]

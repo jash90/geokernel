@@ -13,6 +13,12 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/adapters/BotanaCircleThreePoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLines.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectSingle.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectConics.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoParabolaPointLine.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/adapters/IntersectConicsAdapter.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCirclePointRadius.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLineBisector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/SymbolicParameters.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/polynomial/PPolynomial.java
@@ -33,6 +39,9 @@ use super::groebner;
 use super::poly::{Order, Poly, MAX_VARS};
 use super::{Budget, Outcome};
 use crate::algo::conic::ConicDef;
+use crate::algo::conic_nd::ConicType;
+use crate::algo::general_conic::GeneralConicDef;
+use crate::algo::intersect::pair::Output;
 use crate::algo::lines::LineDef;
 use crate::algo::path::PathDef;
 use crate::algo::predicate::PredicateDef;
@@ -42,6 +51,46 @@ use crate::kernel::{Construction, Def, Id, Kind, Value};
 
 /// The largest number of objects a proof translates.
 const MAX_OBJECTS: usize = 64;
+
+#[derive(Clone, Copy)]
+enum IntersectionConstraint {
+    None,
+    DistinctOutput(Id),
+    ExcludedPoint(Id),
+    MissingEquation,
+}
+
+/// The intersection adapter caches one translation per output. Object IDs
+/// stand for symbolic points across proofs, whose variable indices are local.
+#[derive(Default)]
+pub(crate) struct IntersectionTranslations {
+    constraints: BTreeMap<Id, (usize, IntersectionConstraint)>,
+    order: BTreeMap<usize, Id>,
+    /// Outputs created after the proof are still unlabelled during replay.
+    pub(crate) replay_rank: Option<usize>,
+}
+
+impl IntersectionTranslations {
+    pub(crate) fn checkpoint(&self) -> usize {
+        self.order
+            .last_key_value()
+            .map_or(0, |(&index, _)| index + 1)
+    }
+
+    pub(crate) fn truncate(&mut self, checkpoint: usize) {
+        if checkpoint < self.checkpoint() {
+            for id in self.order.split_off(&checkpoint).into_values() {
+                self.constraints.remove(&id);
+            }
+        }
+    }
+
+    fn insert(&mut self, id: Id, constraint: IntersectionConstraint) {
+        let index = self.checkpoint();
+        self.order.insert(index, id);
+        self.constraints.insert(id, (index, constraint));
+    }
+}
 
 pub(crate) struct System {
     /// The hypotheses, each in canonical order, without repetitions.
@@ -57,10 +106,13 @@ pub(crate) struct System {
     pub(super) path_points: Vec<Id>,
     line_vars: BTreeMap<Id, [usize; 4]>,
     circle_vars: BTreeMap<Id, [usize; 4]>,
+    parabola_feet: BTreeMap<Id, [usize; 2]>,
+    radius_vars: BTreeMap<Id, usize>,
+    pending_distinct_outputs: Vec<(Id, [usize; 2])>,
     /// How many coordinates of the first two free points are fixed.
     fixed_coordinates: usize,
     budget_vars: usize,
-    /// The statement has no translation in the reference either.
+    /// The reference leaves the proof result unknown.
     unknown: bool,
     /// The statement is an arithmetic formula the reference has its CAS
     /// rewrite, which also words its conditions.
@@ -70,8 +122,13 @@ pub(crate) struct System {
 type Built = Result<System, Outcome>;
 
 impl System {
-    pub(super) fn build(c: &Construction, statement: Id, budget: &Budget) -> Built {
-        let mut system = Self::hypotheses(c, statement, budget)?;
+    pub(super) fn build(
+        c: &Construction,
+        statement: Id,
+        budget: &Budget,
+        intersections: &mut IntersectionTranslations,
+    ) -> Built {
+        let mut system = Self::hypotheses(c, statement, budget, intersections)?;
         let done = match c.def(statement) {
             Def::Predicate(predicate) => system.statement(c, predicate, budget),
             _ => system.expression(c, statement, budget),
@@ -88,7 +145,12 @@ impl System {
 
     /// The translation of the construction the statement depends on
     /// (`AlgebraicStatement.setHypotheses`).
-    pub(super) fn hypotheses(c: &Construction, statement: Id, budget: &Budget) -> Built {
+    pub(super) fn hypotheses(
+        c: &Construction,
+        statement: Id,
+        budget: &Budget,
+        intersections: &mut IntersectionTranslations,
+    ) -> Built {
         if c.kind(statement) != Kind::Boolean {
             return Err(Outcome::Undecided);
         }
@@ -113,6 +175,9 @@ impl System {
             path_points: Vec::new(),
             line_vars: BTreeMap::new(),
             circle_vars: BTreeMap::new(),
+            parabola_feet: BTreeMap::new(),
+            radius_vars: BTreeMap::new(),
+            pending_distinct_outputs: Vec::new(),
             fixed_coordinates: 4,
             budget_vars: MAX_VARS,
             unknown: false,
@@ -127,7 +192,22 @@ impl System {
             return Err(Outcome::Unknown);
         }
         for &id in &predecessors {
-            system.object(c, id, budget).ok_or(Outcome::Undecided)?;
+            system.object(c, id, budget, intersections).ok_or({
+                if system.unknown {
+                    Outcome::Unknown
+                } else {
+                    Outcome::Undecided
+                }
+            })?;
+        }
+        for (other, p) in std::mem::take(&mut system.pending_distinct_outputs) {
+            // Without hypotheses for the other output, its unconstrained
+            // coordinates can always satisfy the distinctness equation.
+            if let Some(q) = system.point(other) {
+                system
+                    .add_distinct(p, q, budget)
+                    .ok_or(Outcome::Undecided)?;
+            }
         }
         Ok(system)
     }
@@ -161,7 +241,13 @@ impl System {
     }
 
     /// Adds the variables and equations of one predecessor.
-    fn object(&mut self, c: &Construction, id: Id, budget: &Budget) -> Option<()> {
+    fn object(
+        &mut self,
+        c: &Construction,
+        id: Id,
+        budget: &Budget,
+        intersections: &mut IntersectionTranslations,
+    ) -> Option<()> {
         let def = c.def(id);
         match def {
             // Numbers without a parent algorithm or with an arithmetic
@@ -207,30 +293,32 @@ impl System {
                 self.add(collinear([h[0], h[1]], [h[2], h[3]], [x, y], budget)?);
                 self.point_vars.insert(id, [x, y]);
             }
-            Def::IntersectLineConic(d) if symbolic_line_circle(c, d).is_some() => {
-                let (line, circle) = d.key();
-                self.line_circle_intersection(c, id, line, circle, budget)?;
-            }
-            Def::IntersectLineCircle { line, circle, .. } => {
-                self.line_circle_intersection(c, id, line, circle, budget)?;
-            }
-            Def::IntersectCircles { c1, c2, .. } => {
-                if !proper_circle(c, c1) || !proper_circle(c, c2) {
+            Def::IntersectLineConic(d) if self.parabola_feet.contains_key(&d.conic) => {
+                // AlgoIntersectSingle delegates to the same algebraic
+                // adapter for either selector. Its cache is read before
+                // checking the conic's current type.
+                let cached = intersections.constraints.contains_key(&id);
+                if !cached
+                    && !c
+                        .conic(d.conic)
+                        .is_some_and(|conic| conic.ty == ConicType::Parabola)
+                {
                     return None;
                 }
-                let a = self.circle(c1)?;
-                let b = self.circle(c2)?;
-                // As for a line and a circle: a point on both circles by
-                // construction is excluded only by the indexed command.
-                if shared_point(c, id, c1, c2, budget)? {
-                    return None;
+                let p = [self.new_var(false)?, self.new_var(false)?];
+                let [a, b, x, y] = self.line(d.line)?;
+                self.add_parabola_equations(c, d.conic, p, budget)?;
+                self.add(collinear(p, [a, b], [x, y], budget)?);
+                if !cached {
+                    intersections.insert(id, IntersectionConstraint::None);
                 }
-                let x = self.new_var(false)?;
-                let y = self.new_var(false)?;
-                self.add(equidistant([a[2], a[3]], [a[0], a[1]], [x, y], budget)?);
-                self.add(equidistant([b[2], b[3]], [b[0], b[1]], [x, y], budget)?);
-                self.distinct_from_earlier(c, id, c1, c2, [x, y], budget)?;
-                self.point_vars.insert(id, [x, y]);
+                self.point_vars.insert(id, p);
+            }
+            Def::IntersectLineConic(_)
+            | Def::IntersectLineCircle { .. }
+            | Def::IntersectConics(_)
+            | Def::IntersectCircles { .. } => {
+                self.circle_intersection(c, id, budget, intersections)?;
             }
             Def::Perpendicular { through, to } => {
                 // The second point of the line is the through point moved
@@ -273,6 +361,25 @@ impl System {
                 let [p1, p2] = self.point(through)?;
                 self.circle_vars.insert(id, [m1, m2, p1, p2]);
             }
+            Def::CircleRadius { center, radius } if matches!(c.def(radius), Def::Number(_)) => {
+                let [m1, m2] = self.point(center)?;
+                let p1 = self.new_var(false)?;
+                let p2 = self.new_var(false)?;
+                let r = if let Some(&r) = self.radius_vars.get(&radius) {
+                    r
+                } else {
+                    let r = self.new_var(false)?;
+                    self.radius_vars.insert(radius, r);
+                    r
+                };
+                self.add(
+                    square_distance([m1, m2], [p1, p2], budget)?
+                        .sub(&v(r).mul(&v(r), budget)?, budget)?,
+                );
+                self.circle_vars.insert(id, [m1, m2, p1, p2]);
+                // A numeric radius prevents fixing the second free point.
+                self.fixed_coordinates = 2;
+            }
             Def::Conic(ConicDef::ThroughThree(p, q, r)) => {
                 let a = self.point(p)?;
                 let b = self.point(q)?;
@@ -282,6 +389,12 @@ impl System {
                 self.add(equidistant(a, [o1, o2], b, budget)?);
                 self.add(equidistant(a, [o1, o2], d, budget)?);
                 self.circle_vars.insert(id, [o1, o2, a[0], a[1]]);
+            }
+            Def::GeneralConic(GeneralConicDef::Parabola { .. }) => {
+                let p = [self.new_var(false)?, self.new_var(false)?];
+                let foot = [self.new_var(false)?, self.new_var(false)?];
+                self.parabola_feet.insert(id, foot);
+                self.add_parabola_equations(c, id, p, budget)?;
             }
             Def::Path(PathDef::On { path } | PathDef::OnParam { path, .. }) => {
                 let x = self.new_var(true)?;
@@ -306,86 +419,103 @@ impl System {
         Some(())
     }
 
-    fn line_circle_intersection(
+    /// Like the reference's substitution, reuse the conic's foot variables
+    /// when adding its equations for an intersection point.
+    fn add_parabola_equations(
         &mut self,
         c: &Construction,
-        id: Id,
-        line: Id,
-        circle: Id,
+        conic: Id,
+        p: [usize; 2],
         budget: &Budget,
     ) -> Option<()> {
-        if !proper_circle(c, circle) {
+        let Def::GeneralConic(GeneralConicDef::Parabola { focus, directrix }) = c.def(conic) else {
             return None;
-        }
-        let g = self.line(line)?;
-        let k = self.circle(circle)?;
-        let x = self.new_var(false)?;
-        let y = self.new_var(false)?;
-        self.add(collinear([g[0], g[1]], [g[2], g[3]], [x, y], budget)?);
-        self.add(equidistant([k[2], k[3]], [k[0], k[1]], [x, y], budget)?);
-        // The reference excludes an existing intersection only for
-        // `Intersect(line, circle, n)`; the unindexed command (also
-        // behind `{P, Q} = Intersect(...)` and saved files) makes the
-        // same definition here, and its algorithm keeps the point.
-        // Which one made this object is not recorded, so a point that
-        // may lie on both by construction leaves it undecided.
-        if shared_point(c, id, line, circle, budget)? {
-            return None;
-        }
-        self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
-        self.point_vars.insert(id, [x, y]);
+        };
+        let f = self.point(focus)?;
+        let [a, b, x, y] = self.line(directrix)?;
+        let [tx, ty] = *self.parabola_feet.get(&conic)?;
+        let foot = [tx, ty];
+        self.add(equidistant(f, p, foot, budget)?);
+        self.add(collinear([a, b], [x, y], foot, budget)?);
+        self.add(perpendicular([p[0], p[1], tx, ty], [a, b, x, y], budget)?);
         Some(())
     }
 
-    /// The second output of an intersection algorithm differs from the
-    /// first one whose equations were made before (`botanaVars` of the
-    /// adapter): `|PQ|^2 * t = 1`. Tells whether it added that equation.
-    fn distinct_from_earlier(
+    fn circle_intersection(
         &mut self,
         c: &Construction,
         id: Id,
-        first: Id,
-        second: Id,
-        p: [usize; 2],
         budget: &Budget,
-    ) -> Option<bool> {
-        let same_pair = |other: Id| match c.def(other) {
-            Def::IntersectLineCircle { line, circle, .. } => (line, circle) == (first, second),
-            Def::IntersectLineConic(d) => symbolic_line_circle(c, d) == Some((first, second)),
-            Def::IntersectCircles { c1, c2, .. } => {
-                (c1, c2) == (first, second) || (c1, c2) == (second, first)
-            }
-            _ => false,
+        intersections: &mut IntersectionTranslations,
+    ) -> Option<()> {
+        let ([first, second], indexed) = symbolic_intersection(c, id)?;
+        let two_circles = c.kind(first) == Kind::Circle;
+        let cached = intersections
+            .constraints
+            .get(&id)
+            .map(|&(_, constraint)| constraint);
+        // GeoConicND.isCircle reads the retained type even when undefined.
+        let is_circle = |id| {
+            proper_circle(c, id)
+                || c.circle_record(id)
+                    .is_some_and(|conic| conic.ty == ConicType::Circle)
         };
-        // The other outputs read both objects, so the children of the first
-        // one hold them.
-        budget.charge(c.child_count(first) + 1)?;
-        let mut others: Vec<Id> = c
-            .children(first)
-            .filter(|&other| other != id && same_pair(other))
-            .collect();
-        others.sort_unstable();
-        others.dedup();
-        let translated: Vec<Id> = others
-            .iter()
-            .copied()
-            .filter(|other| self.point_vars.contains_key(other))
-            .collect();
-        // An output that this proof does not use may have been translated
-        // by an earlier proof of the reference; that is not reproduced.
-        if translated.len() != others.len() && others.iter().any(|&o| o < id) {
+        if cached.is_none() && (!is_circle(second) || (two_circles && !is_circle(first))) {
             return None;
         }
-        match translated.as_slice() {
-            [] => Some(false),
-            [other] => {
-                let q = self.point(*other)?;
-                let t = self.new_var(false)?;
-                self.add(distinct(p, q, t, budget)?);
-                Some(true)
-            }
-            _ => None,
+        let p = [self.new_var(false)?, self.new_var(false)?];
+        if two_circles {
+            let [a, b, x, y] = self.circle(first)?;
+            self.add(equidistant([x, y], [a, b], p, budget)?);
+        } else {
+            let [a, b, x, y] = self.line(first)?;
+            self.add(collinear([a, b], [x, y], p, budget)?);
         }
+        let [a, b, x, y] = self.circle(second)?;
+        self.add(equidistant([x, y], [a, b], p, budget)?);
+
+        let constraint = match cached {
+            Some(constraint) => constraint,
+            None => {
+                let constraint = intersection_constraint(
+                    c,
+                    id,
+                    [first, second],
+                    indexed,
+                    budget,
+                    intersections,
+                )?;
+                intersections.insert(id, constraint);
+                constraint
+            }
+        };
+        match constraint {
+            IntersectionConstraint::None => {}
+            IntersectionConstraint::DistinctOutput(other) => {
+                if let Some(q) = self.point(other) {
+                    self.add_distinct(p, q, budget)?;
+                } else {
+                    self.pending_distinct_outputs.push((other, p));
+                }
+            }
+            IntersectionConstraint::ExcludedPoint(other) => {
+                self.add_distinct(p, self.point(other)?, budget)?;
+            }
+            IntersectionConstraint::MissingEquation => {
+                // The reference's worker stops at the null equation and
+                // leaves the result at its initial value, UNKNOWN.
+                self.unknown = true;
+                return None;
+            }
+        }
+        self.point_vars.insert(id, p);
+        Some(())
+    }
+
+    fn add_distinct(&mut self, p: [usize; 2], q: [usize; 2], budget: &Budget) -> Option<()> {
+        let t = self.new_var(false)?;
+        self.add(distinct(p, q, t, budget)?);
+        Some(())
     }
 
     fn statement(&mut self, c: &Construction, p: PredicateDef, budget: &Budget) -> Option<()> {
@@ -704,7 +834,9 @@ fn predecessors(c: &Construction, statement: Id) -> Option<Vec<Id>> {
             stack.extend(c.reads(id));
         }
     }
-    Some(seen.into_iter().collect())
+    let mut ordered: Vec<_> = seen.into_iter().collect();
+    ordered.sort_unstable_by_key(|&id| c.evaluation_rank(id));
+    Some(ordered)
 }
 
 /// `sum c_i * v_i`.
@@ -780,7 +912,9 @@ fn distinct(p: [usize; 2], q: [usize; 2], t: usize, budget: &Budget) -> Option<P
 /// The points an object was drawn through, which lie on it by construction.
 fn drawn_through(c: &Construction, object: Id) -> Vec<Id> {
     match c.def(object) {
-        Def::Line(p, q) | Def::Segment(p, q) => vec![p, q],
+        Def::Line(p, q) | Def::Segment(p, q) | Def::Vector(VectorDef::RayPoints(p, q)) => {
+            vec![p, q]
+        }
         Def::Perpendicular { through, .. } | Def::Parallel { through, .. } => vec![through],
         Def::CircleThrough { through, .. } => vec![through],
         Def::Conic(ConicDef::ThroughThree(p, q, r)) => vec![p, q, r],
@@ -807,39 +941,103 @@ fn on_by_construction(c: &Construction, point: Id, object: Id) -> bool {
     }
 }
 
-fn symbolic_line_circle(
-    c: &Construction,
-    d: crate::algo::intersect::line_conic_state::LineConicDef,
-) -> Option<(Id, Id)> {
-    use crate::algo::intersect::pair::Output;
-    (matches!(d.output, Output::Index(0 | 1) | Output::Slot(0 | 1))
-        && c.kind(d.line) == Kind::Line
-        && c.kind(d.conic) == Kind::Circle)
-        .then_some(d.key())
+fn symbolic_intersection(c: &Construction, id: Id) -> Option<([Id; 2], bool)> {
+    let (pair, output) = match c.def(id) {
+        Def::IntersectLineCircle { line, circle, .. } => return Some(([line, circle], true)),
+        Def::IntersectCircles { c1, c2, .. } => return Some(([c1, c2], true)),
+        Def::IntersectLineConic(d)
+            if matches!(c.kind(d.line), Kind::Line | Kind::Segment | Kind::Ray)
+                && c.kind(d.conic) == Kind::Circle =>
+        {
+            ([d.line, d.conic], d.output)
+        }
+        Def::IntersectConics(d)
+            if c.kind(d.first) == Kind::Circle && c.kind(d.second) == Kind::Circle =>
+        {
+            ([d.first, d.second], d.output)
+        }
+        _ => return None,
+    };
+    match output {
+        Output::Slot(0 | 1) => Some((pair, false)),
+        Output::Index(0 | 1) => Some((pair, true)),
+        _ => None,
+    }
 }
 
-/// Whether a point other than the outputs of the intersection `id` of `a`
-/// and `b` may lie on both by construction. Only the points `a` and `b` were
-/// drawn through and the objects that read them can.
-fn shared_point(c: &Construction, id: Id, a: Id, b: Id, budget: &Budget) -> Option<bool> {
-    let same_pair = |other: Id| match c.def(other) {
-        Def::IntersectLineCircle { line, circle, .. } => (line, circle) == (a, b),
-        Def::IntersectLineConic(d) => symbolic_line_circle(c, d) == Some((a, b)),
-        Def::IntersectCircles { c1, c2, .. } => (c1, c2) == (a, b) || (c1, c2) == (b, a),
-        _ => false,
+/// The shared adapter keeps one distinctness equation if any output was
+/// translated before. A hidden helper's common-point exclusion overwrites
+/// that equation and leaves a null entry in its place.
+fn intersection_constraint(
+    c: &Construction,
+    id: Id,
+    [first, second]: [Id; 2],
+    indexed: bool,
+    budget: &Budget,
+    intersections: &IntersectionTranslations,
+) -> Option<IntersectionConstraint> {
+    budget.charge(c.child_count(first) + 1)?;
+    let mut labelled = false;
+    let mut earlier = None;
+    for other in c.children(first).filter(|&other| other != id) {
+        if let Some((pair, other_indexed)) = symbolic_intersection(c, other) {
+            if pair == [first, second] || pair == [second, first] {
+                labelled |= !other_indexed
+                    && intersections
+                        .replay_rank
+                        .is_none_or(|rank| c.evaluation_rank(other) < rank);
+                if intersections.constraints.contains_key(&other) {
+                    earlier = Some(other);
+                }
+            }
+        }
+    }
+    let shared = if indexed && !labelled {
+        shared_point(c, id, first, second, c.kind(first) == Kind::Circle, budget)?
+    } else {
+        None
     };
-    let mut candidates = drawn_through(c, a);
-    candidates.extend(drawn_through(c, b));
-    budget.charge((candidates.len() + c.child_count(a) + c.child_count(b)) * 4 + 1)?;
-    candidates.extend(c.children(a));
-    candidates.extend(c.children(b));
-    Some(candidates.into_iter().any(|p| {
-        p != id
+    Some(match (earlier, shared) {
+        (Some(_), Some(_)) => IntersectionConstraint::MissingEquation,
+        (Some(other), None) => IntersectionConstraint::DistinctOutput(other),
+        (None, Some(shared)) => IntersectionConstraint::ExcludedPoint(shared),
+        (None, None) => IntersectionConstraint::None,
+    })
+}
+
+/// The common point excluded by a hidden intersection algorithm. The
+/// line/circle adapter takes the first incident point. The circle pair
+/// adapter applies the exclusion only when exactly one point is shared.
+fn shared_point(
+    c: &Construction,
+    id: Id,
+    a: Id,
+    b: Id,
+    two_circles: bool,
+    budget: &Budget,
+) -> Option<Option<Id>> {
+    let on_a = drawn_through(c, a);
+    let on_b = drawn_through(c, b);
+    budget.charge((on_a.len() + on_b.len() + c.child_count(a) + c.child_count(b)) * 4 + 1)?;
+    let candidates = on_b
+        .into_iter()
+        .chain(c.children(b))
+        .chain(on_a)
+        .chain(c.children(a));
+    let before = c.evaluation_rank(id);
+    let mut shared = candidates.filter(|&p| {
+        c.evaluation_rank(p) < before
             && c.kind(p) == Kind::Point
-            && !same_pair(p)
+            && !symbolic_intersection(c, p)
+                .is_some_and(|(pair, _)| pair == [a, b] || pair == [b, a])
             && on_by_construction(c, p, a)
             && on_by_construction(c, p, b)
-    }))
+    });
+    let first = shared.next();
+    if two_circles && shared.any(|p| Some(p) != first) {
+        return Some(None);
+    }
+    Some(first)
 }
 
 /// `|AO|^2 - |OB|^2`.

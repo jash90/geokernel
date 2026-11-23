@@ -37,6 +37,7 @@ mod translate;
 
 use std::cell::Cell;
 
+use crate::algo::{predicate::PredicateDef, Group};
 use crate::expr::Slot;
 use crate::kernel::{Construction, Id, Kind, Value};
 use poly::{Order, Poly};
@@ -91,10 +92,17 @@ pub(crate) enum Question {
     Details,
 }
 
+pub(crate) use translate::IntersectionTranslations;
+
 /// Decides `statement`, a Boolean object of `c`.
-pub(crate) fn decide(c: &Construction, statement: Id, question: Question) -> Outcome {
+fn decide(
+    c: &Construction,
+    statement: Id,
+    question: Question,
+    intersections: &mut IntersectionTranslations,
+) -> Outcome {
     let budget = Budget::new(PROOF_WORK);
-    let system = match translate::System::build(c, statement, &budget) {
+    let system = match translate::System::build(c, statement, &budget, intersections) {
         Ok(system) => system,
         Err(outcome) => return outcome,
     };
@@ -469,13 +477,17 @@ impl ProveDef {
         c.expect(self.statement, &[Kind::Boolean])
     }
 
-    pub(crate) fn record(&self, c: &Construction) -> ProofData {
+    pub(crate) fn record(
+        &self,
+        c: &Construction,
+        intersections: &mut IntersectionTranslations,
+    ) -> ProofData {
         let question = if self.details {
             Question::Details
         } else {
             Question::Prove
         };
-        let outcome = decide(c, self.statement, question);
+        let outcome = decide(c, self.statement, question, intersections);
         let (value, slots) = if self.details {
             self.details_value(&outcome)
         } else {
@@ -506,8 +518,7 @@ impl ProveDef {
             Outcome::False => (vec![Slot::boolean(false)], Vec::new(), false),
             Outcome::True(texts) => {
                 if self.relation && !texts.is_empty() {
-                    // The relation tool words conditions with localized
-                    // sentences, which the kernel does not carry.
+                    // The relation tool can render localized conditions.
                     return (Value::Undefined, Vec::new());
                 }
                 (vec![Slot::boolean(true)], texts.clone(), false)
@@ -571,7 +582,7 @@ pub(crate) fn define(c: &mut Construction, label: &str, input: &str) -> Option<R
                 }),
             )
             .map_err(|e| e.to_string())?;
-        rewrite_statement(c, statement);
+        c.rewrite_proof_statement(statement);
         Ok(id)
     })();
     if result.is_err() {
@@ -580,13 +591,19 @@ pub(crate) fn define(c: &mut Construction, label: &str, input: &str) -> Option<R
     Some(result)
 }
 
-/// The translation of the thesis rewrites a Boolean expression once the
-/// construction has been translated (`DependentBooleanAdapter`). Tells
-/// whether the Boolean changed.
-pub(crate) fn rewrite_statement(c: &mut Construction, statement: Id) -> bool {
-    matches!(c.def(statement), crate::kernel::Def::Expr(_))
-        && translate::System::hypotheses(c, statement, &Budget::new(PROOF_WORK)).is_ok()
-        && crate::expr::replace_distance_operands(c, statement)
+/// A Boolean expression is eligible for the distance-operand rewrite once
+/// its hypotheses can be translated (`DependentBooleanAdapter`).
+pub(crate) fn can_rewrite_statement(
+    c: &Construction,
+    statement: Id,
+    intersections: &mut IntersectionTranslations,
+) -> bool {
+    let checkpoint = intersections.checkpoint();
+    let can_rewrite =
+        translate::System::hypotheses(c, statement, &Budget::new(PROOF_WORK), intersections)
+            .is_ok();
+    intersections.truncate(checkpoint);
+    can_rewrite
 }
 
 fn boolean_argument(c: &mut Construction, text: &str) -> Result<Id, String> {
@@ -594,6 +611,15 @@ fn boolean_argument(c: &mut Construction, text: &str) -> Result<Id, String> {
         return Ok(id);
     }
     let hidden = format!("\0arg{}", c.len());
+    if let Some((name, args)) = crate::script::split_call(text) {
+        if c.id(name).is_none() {
+            if let Some(predicate) = PredicateDef::parse(c, name, &args) {
+                return c
+                    .add(&hidden, crate::kernel::Def::Predicate(predicate?))
+                    .map_err(|error| error.to_string());
+            }
+        }
+    }
     if crate::expr::argument_object(c, text, &hidden, Kind::Boolean) {
         return Ok(c.id(&hidden).expect("argument object was just added"));
     }
@@ -607,7 +633,12 @@ mod tests {
 
     fn outcome(script: &str, question: Question) -> Outcome {
         let c = crate::script::load(script).unwrap();
-        decide(&c, c.id("b").unwrap(), question)
+        decide(
+            &c,
+            c.id("b").unwrap(),
+            question,
+            &mut IntersectionTranslations::default(),
+        )
     }
 
     const MIDLINE: &str = "A = (0, 0)\nB = (5, 1)\nC = (2, 4)\nD = Midpoint(A, B)\n\
@@ -649,6 +680,113 @@ mod tests {
         );
         assert_eq!(unindexed, indexed);
         assert!(matches!(unindexed, Outcome::True(_)), "{unindexed:?}");
+    }
+
+    #[test]
+    fn proves_a_diameter_when_the_line_is_constructed_through_the_center() {
+        const CIRCLE: &str = "A = (0, 0)\nr = 2\nk = Circle(A, r)\nB = (2, 0)\nC = (-2, 0)";
+        for outputs in [
+            "{P, Q} = Intersect(l, k)",
+            "P = Intersect(l, k, 1)\nQ = Intersect(l, k, 2)",
+        ] {
+            let proof = |line| {
+                outcome(
+                    &format!(
+                        "{CIRCLE}\nl = {line}\n{outputs}\nM = Midpoint(P, Q)\nb = AreEqual(M, A)"
+                    ),
+                    Question::Prove,
+                )
+            };
+            // The starting coordinates put A on Line(B, C), but the free
+            // endpoints do not constrain the line to pass through A.
+            assert_eq!(proof("Line(B, C)"), Outcome::False, "{outputs}");
+            assert_eq!(proof("Line(A, B)"), Outcome::True(Vec::new()), "{outputs}");
+        }
+    }
+
+    #[test]
+    fn a_shared_point_and_two_hidden_outputs_leave_the_proof_unknown() {
+        for (construction, pair, statement) in [
+            (
+                "O = (0, 0)\nA = (4, 0)\nc = Circle(O, A)\ng = Line(O, A)",
+                "g, c",
+                "M = Midpoint(P, Q)\nb = AreEqual(M, A)",
+            ),
+            (
+                "A = (0, 0)\nB = (4, 1)\nC = (1, 3)\nc = Circle(A, B)\nd = Circle(C, B)",
+                "c, d",
+                "b = AreEqual(P, Q)",
+            ),
+        ] {
+            let script = format!(
+                "{construction}\nP = Intersect({pair}, 1)\nQ = Intersect({pair}, 2)\n{statement}"
+            );
+            let c = crate::script::load(&format!("{script}\np = Prove(b)\nq = ProveDetails(b)"))
+                .unwrap();
+            assert_eq!(c.value(c.id("p").unwrap()), Value::Undefined);
+            assert_eq!(c.elements(c.id("q").unwrap()).unwrap().len(), 0);
+        }
+    }
+
+    #[test]
+    fn a_later_proof_sees_the_hidden_intersection_outputs_already_translated() {
+        const SCRIPT: &str = "O = (0, 0)\nA = (4, 0)\nc = Circle(O, A)\ng = Line(O, A)\n\
+             Q = Intersect(g, c, 1)\nM = Midpoint(A, Q)\nb = AreEqual(M, O)";
+        let later = [
+            "R = Intersect(g, c, 2)",
+            "b_{2} = AreEqual(A, R)",
+            "p_{2} = Prove(b_{2})",
+            "q_{2} = ProveDetails(b_{2})",
+        ];
+        let first = ["p = Prove(b)", "q = ProveDetails(b)"];
+        let assert_later_unknown = |c: &mut Construction| {
+            for line in later {
+                crate::script::exec(c, line).unwrap();
+            }
+            assert_eq!(c.value(c.id("p_{2}").unwrap()), Value::Undefined);
+            assert_eq!(c.elements(c.id("q_{2}").unwrap()).unwrap().len(), 0);
+        };
+        let mut c = crate::script::load(SCRIPT).unwrap();
+        for line in first {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        assert_eq!(c.value(c.id("p").unwrap()), Value::Bool(true));
+        let after_first_proof = c.checkpoint();
+        assert_later_unknown(&mut c);
+        c.rollback(after_first_proof).unwrap();
+        assert_later_unknown(&mut c);
+
+        let mut c = crate::script::load(SCRIPT).unwrap();
+        let before_first_proof = c.checkpoint();
+        for line in first {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        assert_later_unknown(&mut c);
+        c.rollback(before_first_proof).unwrap();
+        for line in later {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        assert_eq!(c.value(c.id("p_{2}").unwrap()), Value::Bool(false));
+    }
+
+    #[test]
+    fn redefining_an_intersection_input_rebuilds_its_proof_translation() {
+        let mut c = crate::script::load(
+            "O = (0, 0)\nB = (4, 0)\ng = Line(O, B)\nA = Point(g, 0.25)\nc = Circle(O, A)\n\
+             P = Intersect(g, c, 1)\nQ = Intersect(g, c, 2)\nb = AreCollinear(O, P, Q)\n\
+             p = Prove(b)",
+        )
+        .unwrap();
+        let p = c.id("p").unwrap();
+        assert_eq!(c.value(p), Value::Undefined);
+        crate::script::exec(&mut c, "A = (2, 0)").unwrap();
+        assert_eq!(c.value(p), Value::Bool(true));
+
+        // A newer direct dependency must be translated before the old point.
+        for line in ["D = (0, 4)", "h = Line(O, D)", "A = Point(h, 0.25)"] {
+            crate::script::exec(&mut c, line).unwrap();
+        }
+        assert_eq!(c.value(p), Value::Bool(true));
     }
 
     #[test]
@@ -754,9 +892,14 @@ mod tests {
     fn an_exhausted_budget_gives_up() {
         let c = crate::script::load(MIDLINE).unwrap();
         let tiny = Budget::new(10);
-        let system = translate::System::build(&c, c.id("b").unwrap(), &Budget::new(PROOF_WORK))
-            .ok()
-            .unwrap();
+        let system = translate::System::build(
+            &c,
+            c.id("b").unwrap(),
+            &Budget::new(PROOF_WORK),
+            &mut IntersectionTranslations::default(),
+        )
+        .ok()
+        .unwrap();
         assert_eq!(system.decide(&c, Question::Prove, &tiny), None);
     }
 

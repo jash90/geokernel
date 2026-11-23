@@ -69,8 +69,8 @@ AffineRatio,,geometry,P1,done,1,1,"AffineRatio(point, point, point)"
 CrossRatio,,geometry,P1,done,1,1,"CrossRatio(point, point, point, point)"
 ClosestPoint,,geometry,P1,partial,3,1,"Path and point in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers except line with segment"
 ClosestPointRegion,,geometry,P1,todo,0,0,
-Prove,,geometry,P1,todo,1,0,"Predicate statements (AreCollinear, AreParallel, ArePerpendicular, AreConcurrent, AreConcyclic, AreEqual of points, lines or circles) over points, lines, segments, midpoints, perpendiculars, parallels, perpendicular bisectors, circles, points on paths and circle intersections without a shared point by construction; == of points, lines, segments, circles and distances; formulas over segments with integer coefficients"
-ProveDetails,,geometry,P1,todo,2,0,"ProveDetails(boolean) for the statements Prove covers, with conditions read from a unique or variable-disjoint elimination basis; the conditions of a formula over segments and the relation-tool sentences are pending"
+Prove,,geometry,P1,todo,1,0,"Predicate statements (AreCollinear, AreParallel, ArePerpendicular, AreConcurrent, AreConcyclic, AreEqual of points, lines or circles) over points, lines, segments, midpoints, perpendiculars, parallels, perpendicular bisectors, circles, points on paths and labelled or indexed circle intersections, including intersections with segment and ray carriers, and line, segment or ray intersections with a focus-directrix parabola (including point and number selectors and reuse after a drag); == of points, lines, segments, circles and distances; formulas over segments with integer coefficients"
+ProveDetails,,geometry,P1,todo,2,0,"ProveDetails(boolean) for the statements Prove covers, with conditions read from a unique or variable-disjoint elimination basis; the conditions of a formula over segments are pending and the relation-tool wording differs"
 AreCollinear,,geometry,P1,todo,1,0,"AreCollinear(point, point, point)"
 AreParallel,,geometry,P1,todo,1,0,"AreParallel of two lines, segments or rays"
 AreConcyclic,,geometry,P1,todo,1,0,"AreConcyclic(point, point, point, point)"
@@ -154,7 +154,7 @@ ImplicitSurface,,english,,out_of_scope,,,Implicit surfaces are 3D-only objects.
 Normalize,,function,P2,done,3,3,
 SVD,,function,P2,done,1,1,
 Ellipse,,conic,P1,partial,2,1,"Ellipse(focus, focus, point); Ellipse(focus, focus, semi-major axis length)"
-Hyperbola,,conic,P1,done,2,2,"Hyperbola(focus, focus, point); Hyperbola(focus, focus, semi-major axis length)"
+Hyperbola,,conic,P1,partial,2,1,"Hyperbola(focus, focus, point); Hyperbola(focus, focus, semi-major axis length)"
 SecondAxisLength,,conic,P1,done,1,1,"SecondAxisLength(conic), as a number"
 SecondAxis,,conic,P1,done,1,1,SecondAxis(conic)
 Directrix,,conic,P1,done,1,1,Directrix(conic)
