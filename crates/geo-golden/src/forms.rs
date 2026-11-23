@@ -370,92 +370,223 @@ pub fn script_uses_form(
 ) -> bool {
     definitions(script).any(|rhs| {
         calls(rhs).iter().any(|(name, args)| {
-            names.get(name).is_some_and(|c| c == command) && {
-                if matches!(form, "inequality" | "interval") {
-                    return matches!(args.as_slice(), [arg] if inline_inequality(arg));
-                }
-                let mut kinds: Vec<Option<Kind>> =
-                    args.iter().map(|a| arg_kind(a, labels)).collect();
-                if command == "Cubic" && matches!(kinds.as_slice(), [_, _, _, Some(Kind::Angle)]) {
-                    kinds[3] = Some(Kind::Number);
-                }
-                if command == "TriangleCurve"
-                    && matches!(args.as_slice(), [_, _, _, equation]
+            names.get(name).is_some_and(|c| c == command)
+                && call_fits(command, form, args, &call_kinds(command, args, labels))
+        })
+    })
+}
+
+/// The kinds of the arguments of a call of `command`, as far as they can be
+/// told without the kernel (see [`arg_kind`]), with the readings particular
+/// to some commands: a bound variable, an inequality typed in place.
+fn call_kinds(
+    command: &str,
+    args: &[String],
+    labels: &BTreeMap<String, Kind>,
+) -> Vec<Option<Kind>> {
+    let mut kinds: Vec<Option<Kind>> = args.iter().map(|a| arg_kind(a, labels)).collect();
+    if command == "Cubic" && matches!(kinds.as_slice(), [_, _, _, Some(Kind::Angle)]) {
+        kinds[3] = Some(Kind::Number);
+    }
+    if command == "TriangleCurve"
+        && matches!(args, [_, _, _, equation]
                         if equation.matches('=').count() == 1
                             && !["<=", ">=", "!="].iter().any(|op| equation.contains(op)))
-                {
-                    kinds[3] = Some(Kind::ImplicitCurve);
-                }
-                if matches!(
-                    command,
-                    "IntersectPath" | "IntersectRegion" | "IntersectionPaths"
-                ) {
-                    // The region clipping overload uses circles and conic parts
-                    // as conic regions.
-                    for kind in &mut kinds {
-                        if matches!(kind, Some(Kind::Circle | Kind::Arc | Kind::Sector)) {
-                            *kind = Some(Kind::Conic);
-                        }
-                    }
-                }
-                if matches!(command, "If" | "CountIf" | "KeepIf") {
-                    match (args.as_slice(), kinds.as_mut_slice()) {
-                        ([test, ..], [first, ..]) if inline_inequality(test) => {
-                            *first = Some(Kind::Function);
-                        }
-                        ([test, variable, _], [first, binding, _])
-                            if matches!(command, "CountIf" | "KeepIf")
-                                && variable.chars().all(is_ident_char)
-                                && test.contains(['<', '>', '≤', '≥', '=']) =>
-                        {
-                            *first = Some(Kind::Boolean);
-                            // Only the name of the bound local matters for this form.
-                            *binding = Some(Kind::Number);
-                        }
-                        _ => {}
-                    }
-                }
-                if command == "BarChart" && matches!(args.len(), 6 | 7) {
-                    let variable = args[3].trim();
-                    if variable.chars().next().is_some_and(char::is_alphabetic)
-                        && variable.chars().all(is_ident_char)
-                    {
-                        let mut scope = labels.clone();
-                        scope.insert(variable.to_owned(), Kind::Number);
-                        kinds[2] = arg_kind(&args[2], &scope);
-                        kinds[3] = Some(Kind::Number);
-                    }
-                }
-                if matches!(command, "Solve" | "Solutions" | "NSolve" | "NSolutions")
-                    && args.len() == 2
-                {
-                    // The second argument counts only as a variable of the
-                    // equation, an assignment to one, or a list of them.
-                    kinds[1] =
-                        solving_variables(&args[0], &args[1], labels).then_some(Kind::Number);
-                }
-                let binding = match (command, args.len()) {
-                    ("CurveCartesian", 4) | ("Function", 4) => Some(1),
-                    ("CurveCartesian", 5) => Some(2),
-                    _ => None,
-                };
-                if let Some(i) = binding {
-                    let mut chars = args[i].chars();
-                    if chars.next().is_some_and(|c| c.is_alphabetic() || c == '_')
-                        && chars.all(is_ident_char)
-                    {
-                        kinds[i] = Some(Kind::Number);
-                    }
-                }
-                // Length's conic overload measures the arc of a conic part.
-                if command == "Length"
-                    && form == "conic"
-                    && matches!(kinds.as_slice(), [Some(Kind::Arc | Kind::Sector)])
-                {
-                    return true;
-                }
-                form_matches(form, &kinds)
+    {
+        kinds[3] = Some(Kind::ImplicitCurve);
+    }
+    if matches!(
+        command,
+        "IntersectPath" | "IntersectRegion" | "IntersectionPaths"
+    ) {
+        // The region clipping overload uses circles and conic parts
+        // as conic regions.
+        for kind in &mut kinds {
+            if matches!(kind, Some(Kind::Circle | Kind::Arc | Kind::Sector)) {
+                *kind = Some(Kind::Conic);
             }
+        }
+    }
+    if matches!(command, "If" | "CountIf" | "KeepIf") {
+        match (args, kinds.as_mut_slice()) {
+            ([test, ..], [first, ..]) if inline_inequality(test) => {
+                *first = Some(Kind::Function);
+            }
+            ([test, variable, _], [first, binding, _])
+                if matches!(command, "CountIf" | "KeepIf")
+                    && variable.chars().all(is_ident_char)
+                    && test.contains(['<', '>', '≤', '≥', '=']) =>
+            {
+                *first = Some(Kind::Boolean);
+                // Only the name of the bound local matters for this form.
+                *binding = Some(Kind::Number);
+            }
+            _ => {}
+        }
+    }
+    if command == "BarChart" && matches!(args.len(), 6 | 7) {
+        let variable = args[3].trim();
+        if variable.chars().next().is_some_and(char::is_alphabetic)
+            && variable.chars().all(is_ident_char)
+        {
+            let mut scope = labels.clone();
+            scope.insert(variable.to_owned(), Kind::Number);
+            kinds[2] = arg_kind(&args[2], &scope);
+            kinds[3] = Some(Kind::Number);
+        }
+    }
+    if matches!(command, "Solve" | "Solutions" | "NSolve" | "NSolutions") && args.len() == 2 {
+        // The second argument counts only as a variable of the
+        // equation, an assignment to one, or a list of them.
+        kinds[1] = solving_variables(&args[0], &args[1], labels).then_some(Kind::Number);
+    }
+    let binding = match (command, args.len()) {
+        ("CurveCartesian", 4) | ("Function", 4) => Some(1),
+        ("CurveCartesian", 5) => Some(2),
+        _ => None,
+    };
+    if let Some(i) = binding {
+        let mut chars = args[i].chars();
+        if chars.next().is_some_and(|c| c.is_alphabetic() || c == '_') && chars.all(is_ident_char) {
+            kinds[i] = Some(Kind::Number);
+        }
+    }
+    kinds
+}
+
+/// Whether a call with these arguments shows `form` exactly.
+fn call_fits(command: &str, form: &str, args: &[String], kinds: &[Option<Kind>]) -> bool {
+    if matches!(form, "inequality" | "interval") {
+        return matches!(args, [arg] if inline_inequality(arg));
+    }
+    // Length's conic overload measures the arc of a conic part.
+    if command == "Length" && form == "conic" && matches!(kinds, [Some(Kind::Arc | Kind::Sector)]) {
+        return true;
+    }
+    form_matches(form, kinds)
+}
+
+/// Whether a token takes a kind the way upstream's command processors do:
+/// a circle or a conic part is a conic there, a segment or a ray a line and
+/// an angle a number.
+fn token_may_take(token: &str, kind: Kind) -> bool {
+    token_matches(token, kind)
+        || match token {
+            "conic" => matches!(kind, Kind::Circle | Kind::Arc | Kind::Sector),
+            "line" => matches!(kind, Kind::Segment | Kind::Ray),
+            "number" => kind == Kind::Angle,
+            _ => false,
+        }
+}
+
+/// The kinds an argument of unknown kind may have, from its shape alone;
+/// `None` when it may be anything (it holds a call, a list or a text).
+/// Free names with operators make a number or a function, a pair a point
+/// or a vector, an equation a line, a conic, an implicit curve or a
+/// function, and a comparison a boolean or an inequality.
+fn possible_kinds(arg: &str) -> Option<&'static [Kind]> {
+    let a = arg.trim();
+    let has_call = a
+        .char_indices()
+        .any(|(i, c)| c == '(' && a[..i].chars().last().is_some_and(is_ident_char));
+    if has_call || a.contains(['{', '"']) {
+        return None;
+    }
+    if a.starts_with('(')
+        && closing(a, 0) == Some(a.len())
+        && split_args(&a[1..a.len() - 1]).len() > 1
+    {
+        return Some(&[Kind::Point, Kind::Vector]);
+    }
+    if a.contains(',') {
+        return None;
+    }
+    const COMPARISONS: [&str; 10] = ["<", ">", "==", "!=", "≟", "≠", "≤", "≥", "&&", "||"];
+    if COMPARISONS.iter().any(|op| a.contains(op)) {
+        return Some(&[
+            Kind::Boolean,
+            Kind::Function,
+            Kind::FunctionNVar,
+            Kind::ImplicitCurve,
+        ]);
+    }
+    if a.contains('=') {
+        return Some(&[
+            Kind::Line,
+            Kind::Conic,
+            Kind::Circle,
+            Kind::ImplicitCurve,
+            Kind::Function,
+            Kind::FunctionNVar,
+        ]);
+    }
+    Some(&[
+        Kind::Number,
+        Kind::Angle,
+        Kind::Function,
+        Kind::FunctionNVar,
+    ])
+}
+
+/// Whether arguments of these kinds may reach `form` upstream, reading every
+/// token as [`token_may_take`] does; an argument of unknown kind may have
+/// any of its [`possible_kinds`].
+fn form_may_take(form: &str, args: &[String], kinds: &[Option<Kind>]) -> bool {
+    let mut toks: Vec<&str> = if form == "()" {
+        Vec::new()
+    } else {
+        form.split(',').collect()
+    };
+    if let Some(repeat) = toks.iter().position(|&token| token == "...") {
+        if repeat == 0 || args.len() < toks.len() - 1 {
+            return false;
+        }
+        let token = toks[repeat - 1];
+        let extra = args.len() - (toks.len() - 1);
+        toks.splice(repeat..=repeat, std::iter::repeat_n(token, extra));
+    }
+    toks.len() == args.len()
+        && toks
+            .iter()
+            .zip(args)
+            .zip(kinds)
+            .all(|((token, arg), kind)| match kind {
+                Some(kind) => token_may_take(token, *kind),
+                None => possible_kinds(arg)
+                    .is_none_or(|kinds| kinds.iter().any(|&k| token_may_take(token, k))),
+            })
+}
+
+/// Whether a script may call `command` in `form`, one of its forms `all`:
+/// a call goes to the forms it shows exactly ([`script_uses_form`]) when
+/// there are any, and otherwise to every form its arguments may reach
+/// upstream, an argument of unknown kind (a nested call) reaching any token.
+/// This errs towards a call reaching a form, never away from it.
+pub fn script_may_use_form(
+    script: &[String],
+    labels: &BTreeMap<String, Kind>,
+    names: &BTreeMap<String, String>,
+    command: &str,
+    all: &[String],
+    form: &str,
+) -> bool {
+    definitions(script).any(|rhs| {
+        calls(rhs).iter().any(|(name, args)| {
+            if names.get(name).is_none_or(|c| c != command) {
+                return false;
+            }
+            let kinds = call_kinds(command, args, labels);
+            let exact: Vec<&String> = all
+                .iter()
+                .filter(|f| call_fits(command, f, args, &kinds))
+                .collect();
+            if !exact.is_empty() {
+                return exact.iter().any(|f| *f == form);
+            }
+            if matches!(form, "inequality" | "interval") {
+                return false;
+            }
+            form_may_take(form, args, &kinds)
         })
     })
 }

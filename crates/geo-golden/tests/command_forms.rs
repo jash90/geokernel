@@ -6,6 +6,9 @@
 //!   cases that exist, are not known gaps and call the command in that form,
 //!   a row of `DIFFERENCES.md` that names the form (`` `Mod(function,
 //!   function)` `` in its first cell) and gives it a disposition, or both;
+//! * no case of `known-gaps.toml` may call a form that has an evidence row,
+//!   so a form counts as done only when every recorded case calling it
+//!   agrees;
 //! * `forms_total`, `forms_done` and the `done` status of the matrix agree
 //!   with those two files (CI has no upstream checkout, so this is what keeps
 //!   the matrix from going stale there).
@@ -372,4 +375,60 @@ fn print_form_candidates() {
             }
         }
     }
+}
+
+/// A form counts as done only when every recorded case that may call it
+/// agrees: no case of `known-gaps.toml` may call a form of
+/// `form-evidence.toml`. A call reaches a form as
+/// [`forms::script_may_use_form`] reads it, so a circle reaches a `conic`
+/// form and a nested call any form its arity fits, unless the call shows
+/// another form of the command exactly.
+#[test]
+fn no_done_form_is_called_by_a_known_gap() {
+    let f = forms();
+    let m = matrix();
+    let names = names(&m);
+    let cases = harness_cases();
+    let gaps = gaps::load().unwrap_or_else(|e| panic!("{e}"));
+    let mut errors = Vec::new();
+    for e in evidence() {
+        let Some(cf) = f.get(&e.command) else {
+            continue; // reported by every_evidence_row_is_backed
+        };
+        let which = lines_of(&e);
+        let calling: Vec<&str> = gaps
+            .keys()
+            .filter(|id| {
+                cases.get(*id).is_some_and(|case| {
+                    let kinds = kinds_of(case);
+                    case_lines(case, which).any(|line| {
+                        forms::script_may_use_form(
+                            std::slice::from_ref(line),
+                            &kinds,
+                            &names,
+                            &e.command,
+                            &cf.forms,
+                            &e.form,
+                        )
+                    })
+                })
+            })
+            .map(String::as_str)
+            .collect();
+        if !calling.is_empty() {
+            errors.push(format!(
+                "`{}` `{}` is done, but known gaps call it: {}",
+                e.command,
+                e.form,
+                calling.join(", ")
+            ));
+        }
+    }
+    assert!(
+        errors.is_empty(),
+        "{} done forms are called by known gaps; remove their rows from \
+         tools/command-matrix/form-evidence.toml:\n{}",
+        errors.len(),
+        errors.join("\n")
+    );
 }
