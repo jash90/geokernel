@@ -36,8 +36,8 @@ if [ ! -f "$here/build/classpath.txt" ]; then
   exit 2
 fi
 : "${GEOGEBRA_SRC:?set GEOGEBRA_SRC to the root of a GeoGebra checkout}"
-ggb="$(cd "$GEOGEBRA_SRC" && pwd)"
-gradle="$(cd "${GRADLE_USER_HOME:-$HOME/.gradle}" && pwd)"
+ggb="$(cd "$GEOGEBRA_SRC" && pwd -P)"
+gradle="$(cd "${GRADLE_USER_HOME:-$HOME/.gradle}" && pwd -P)"
 runtime="${GGB_HARNESS_RUNTIME:-docker}"
 image="${GGB_HARNESS_IMAGE:-eclipse-temurin:17-jdk}"
 
