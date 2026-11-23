@@ -648,7 +648,7 @@ fn angle_bisector_lines(g: (f64, f64, f64), h: (f64, f64, f64), which: u8) -> Op
 
 /// A circle as GeoGebra stores it: centre, radius and the flat matrix
 /// `[1, 1, cx² + cy² - r², 0, -cx, -cy]` of `GeoQuadricND.setSphereNDMatrix`.
-struct CircleMatrix {
+pub(super) struct CircleMatrix {
     cx: f64,
     cy: f64,
     r: f64,
@@ -656,7 +656,7 @@ struct CircleMatrix {
 }
 
 impl CircleMatrix {
-    fn new(cx: f64, cy: f64, r: f64) -> Self {
+    pub(super) fn new(cx: f64, cy: f64, r: f64) -> Self {
         let mut m2 = -r * r;
         m2 += cx * cx;
         m2 += cy * cy;
@@ -677,7 +677,7 @@ impl CircleMatrix {
     }
 
     /// `GeoConicND.polarLine` for the point `(px, py, 1)`.
-    fn polar(&self, px: f64, py: f64) -> (f64, f64, f64) {
+    pub(super) fn polar(&self, px: f64, py: f64) -> (f64, f64, f64) {
         let m = &self.m;
         (
             m[0] * px + m[3] * py + m[4],
@@ -687,7 +687,7 @@ impl CircleMatrix {
     }
 
     /// `GeoConicND.diameterLine` for the direction `(vx, vy)`.
-    fn diameter(&self, vx: f64, vy: f64) -> (f64, f64, f64) {
+    pub(super) fn diameter(&self, vx: f64, vy: f64) -> (f64, f64, f64) {
         let m = &self.m;
         (
             m[0] * vx + m[3] * vy,
@@ -706,7 +706,7 @@ impl CircleMatrix {
     }
 
     /// `GeoConicND.isOnFullConic` for a circle.
-    fn is_on(&self, px: f64, py: f64, eps: f64) -> bool {
+    pub(super) fn is_on(&self, px: f64, py: f64, eps: f64) -> bool {
         let (x, y) = (px - self.cx, py - self.cy);
         let r2 = self.r * self.r;
         is_equal(x * x / r2 + y * y / r2, 1.0, eps)
@@ -774,10 +774,8 @@ fn intersect_line_circle(g: (f64, f64, f64), a: &CircleMatrix, eps: f64) -> [Pt;
     [None, None]
 }
 
-/// `AlgoIntersectLineConic.intersect` followed by `avoidDoubleTangentPoint`,
-/// with the identity permutation that a tangent algorithm keeps when its
-/// two tangent points are distinct at creation.
-fn tangent_points_of(g: (f64, f64, f64), a: &CircleMatrix) -> [Pt; 2] {
+/// The raw candidates for the tangent algorithm's private line/conic solver.
+pub(super) fn tangent_candidates(g: (f64, f64, f64), a: &CircleMatrix) -> [Pt; 2] {
     if g.0.is_nan() || g.1.is_nan() || g.2.is_nan() || (is_zero(g.0) && is_zero(g.1)) {
         return [None, None];
     }
@@ -806,6 +804,11 @@ fn tangent_points_of(g: (f64, f64, f64), a: &CircleMatrix) -> [Pt; 2] {
     if !ok {
         return [None, None];
     }
+    sol
+}
+
+fn tangent_points_of(g: (f64, f64, f64), a: &CircleMatrix) -> [Pt; 2] {
+    let mut sol = tangent_candidates(g, a);
     if let (Some(p), Some(q)) = (sol[0], sol[1]) {
         if is_equal(p.0, q.0, STANDARD_PRECISION) && is_equal(p.1, q.1, STANDARD_PRECISION) {
             sol[1] = None;

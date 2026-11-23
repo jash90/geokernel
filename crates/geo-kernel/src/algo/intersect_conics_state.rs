@@ -193,43 +193,57 @@ impl Intersection {
     }
 
     fn nearest(&self, candidates: Points, on_path: [bool; 4]) -> [usize; 4] {
-        let mut pairs: [(usize, usize, f64); 16] = std::array::from_fn(|i| {
-            let (old, new) = (i / 4, i % 4);
-            (
-                old,
-                new,
-                distance_squared(self.previous[old], candidates[new]) + f64::from(self.age[old]),
-            )
-        });
-        let max = pairs
-            .iter()
-            .map(|p| p.2)
-            .filter(|d| d.is_finite())
-            .fold(-1.0, f64::max);
-        for pair in &mut pairs {
-            if !pair.2.is_finite() {
-                pair.2 = max + 1.0;
-            }
-        }
-        pairs.sort_by(|a, b| {
-            self.alive[b.0]
-                .cmp(&self.alive[a.0])
-                .then_with(|| on_path[b.1].cmp(&on_path[a.1]))
-                .then_with(|| a.2.total_cmp(&b.2))
-        });
-        let mut used = [false; 4];
-        let mut order = [usize::MAX; 4];
-        for (old, new, _) in pairs {
-            if order[old] == usize::MAX && !used[new] {
-                order[old] = new;
-                used[new] = true;
-            }
-        }
-        order
+        nearest(self.previous, self.age, self.alive, candidates, on_path)
     }
 }
 
-fn distance_squared(a: Pt, b: Pt) -> f64 {
+/// The ordered point pairs of distanceTable and setNearTo. Both solvers
+/// prefer alive slots and incident points before comparing distances.
+pub(in crate::algo::intersect) fn nearest<const N: usize, Age: Into<f64> + Copy>(
+    previous: [Pt; N],
+    age: [Age; N],
+    alive: [bool; N],
+    candidates: [Pt; N],
+    on_path: [bool; N],
+) -> [usize; N] {
+    let mut rows: [[_; N]; N] = std::array::from_fn(|old| {
+        std::array::from_fn(|new| {
+            (
+                old,
+                new,
+                distance_squared(previous[old], candidates[new]) + age[old].into(),
+            )
+        })
+    });
+    let pairs = rows.as_flattened_mut();
+    let max = pairs
+        .iter()
+        .map(|p| p.2)
+        .filter(|d| d.is_finite())
+        .fold(-1.0, f64::max);
+    for pair in pairs.iter_mut() {
+        if !pair.2.is_finite() {
+            pair.2 = max + 1.0;
+        }
+    }
+    pairs.sort_by(|a, b| {
+        alive[b.0]
+            .cmp(&alive[a.0])
+            .then_with(|| on_path[b.1].cmp(&on_path[a.1]))
+            .then_with(|| a.2.total_cmp(&b.2))
+    });
+    let mut used = [false; N];
+    let mut order = [usize::MAX; N];
+    for &(old, new, _) in pairs.iter() {
+        if order[old] == usize::MAX && !used[new] {
+            order[old] = new;
+            used[new] = true;
+        }
+    }
+    order
+}
+
+pub(in crate::algo::intersect) fn distance_squared(a: Pt, b: Pt) -> f64 {
     match (a, b) {
         (Some((x, y)), Some((u, v))) => (x - u) * (x - u) + (y - v) * (y - v),
         _ => f64::INFINITY,

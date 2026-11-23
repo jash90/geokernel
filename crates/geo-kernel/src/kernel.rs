@@ -54,7 +54,9 @@ use crate::algo::general_conic::GeneralConicDef;
 use crate::algo::intersect::common_tangents::CommonTangentState;
 use crate::algo::intersect::{
     boundary::BoundaryDef,
+    line_conic_state::{LineConicDef, LineConicState},
     pair::{PairDef, PairState},
+    tangent_state::{TangentDef, TangentState},
 };
 use crate::algo::lines::{CommonTangentDef, LineDef};
 use crate::algo::measure::MeasureDef;
@@ -383,7 +385,7 @@ impl Value {
     /// Whether `other` is this value bit for bit. Unlike `==` it tells `0`
     /// from `-0`: a dependent `1 / v` turns that sign into the sign of an
     /// infinity, so the update must not take the two for the same value.
-    fn identical(&self, other: &Value) -> bool {
+    pub(crate) fn identical(&self, other: &Value) -> bool {
         fn parts(v: &Value) -> [f64; 5] {
             match *v {
                 Value::Point { x, y } | Value::Vector { x, y } => [x, y, 0.0, 0.0, 0.0],
@@ -551,6 +553,8 @@ pub enum Def {
     },
     /// One output of two conics, with its branch history in the construction.
     IntersectConics(PairDef),
+    /// One labelled or selected output of an intersection of a carrier and conic.
+    IntersectLineConic(LineConicDef),
     /// One output of an intersection with a polygon or polyline.
     IntersectBoundary(BoundaryDef),
     /// Bisectors and tangents.
@@ -723,6 +727,7 @@ impl Def {
             Def::Prove(d) => d.kind(),
             Def::Point(d) => d.kind(),
             Def::IntersectConics(d) => d.kind(),
+            Def::IntersectLineConic(d) => d.kind(),
             Def::IntersectBoundary(d) => d.kind(),
             Def::Expr(d) => d.kind(),
             Def::Polygon(d) => d.kind(),
@@ -821,6 +826,7 @@ impl Def {
             Def::IntersectLineCircle { line, circle, .. } => Parents::of(&[line, circle]),
             Def::IntersectCircles { c1, c2, .. } => Parents::of(&[c1, c2]),
             Def::IntersectConics(d) => d.parents(),
+            Def::IntersectLineConic(d) => d.parents(),
             Def::IntersectBoundary(d) => d.parents(),
             Def::Lines(d) => d.parents(),
             Def::Conic(d) => d.parents(),
@@ -929,6 +935,61 @@ enum ProtocolEntry {
     Output(u32),
 }
 
+/// The latest entry of a pair is live. Earlier entries retain the state
+/// needed when the outputs added after them are rolled back.
+#[derive(Clone, Debug)]
+struct LineConicOutput {
+    owner: usize,
+    key: (Id, Id),
+    prior: Option<usize>,
+    state: LineConicState,
+}
+
+#[derive(Clone, Copy)]
+struct TangentOutput {
+    owner: usize,
+    helper: usize,
+    state: TangentState,
+}
+
+/// The branch history of a line/conic intersection or tangent output.
+#[derive(Clone, Copy, Debug)]
+pub struct IntersectionState(IntersectionHistory);
+
+#[derive(Clone, Copy, Debug)]
+enum IntersectionHistory {
+    LineConic(LineConicDef, LineConicState),
+    Tangent(TangentDef, TangentState),
+}
+
+impl IntersectionState {
+    /// Whether the states describe the same output of the same operands.
+    pub fn same_definition(self, other: Self) -> bool {
+        match (self.0, other.0) {
+            (IntersectionHistory::LineConic(a, _), IntersectionHistory::LineConic(b, _)) => {
+                a.key() == b.key() && a.output == b.output
+            }
+            (IntersectionHistory::Tangent(a, _), IntersectionHistory::Tangent(b, _)) => {
+                a.same_algorithm(b) && a.which == b.which
+            }
+            _ => false,
+        }
+    }
+
+    /// Whether both states assign the same geometric branches to the slots.
+    pub fn same_branch(self, other: Self) -> bool {
+        match (self.0, other.0) {
+            (IntersectionHistory::LineConic(_, a), IntersectionHistory::LineConic(_, b)) => {
+                a.same_branch(b)
+            }
+            (IntersectionHistory::Tangent(_, a), IntersectionHistory::Tangent(_, b)) => {
+                a.same_branch(b)
+            }
+            _ => false,
+        }
+    }
+}
+
 /// A geometric construction.
 #[derive(Default)]
 pub struct Construction {
@@ -990,6 +1051,10 @@ pub struct Construction {
     conics: Vec<(usize, ConicData)>,
     /// The output permutation and previous positions of conic intersections.
     conic_intersections: Vec<(usize, PairState)>,
+    line_conic_outputs: Vec<LineConicOutput>,
+    tangent_outputs: Vec<TangentOutput>,
+    /// Most recently added output for each pair owns its solver state.
+    line_conic_pairs: BTreeMap<(Id, Id), usize>,
     continuous_conic_intersections: bool,
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
     pub(crate) clips: algo::polygon_clip::ClipCache,
@@ -1329,6 +1394,12 @@ impl Construction {
                     .conic_intersection_slot(id.0)
                     .expect("conic intersection state");
                 Def::IntersectConics(d.with_state(&self.conic_intersections[slot].1))
+            }
+            Def::IntersectLineConic(d) => {
+                let slot = self.line_conic_slot(id.0).expect("line/conic output");
+                let mut state = self.line_conic_outputs[self.line_conic_pairs[&d.key()]].state;
+                state.set_nearest(self.line_conic_outputs[slot].state.nearest());
+                Def::IntersectLineConic(d.with_state(&state))
             }
             Def::Lines(LineDef::CommonTangent(d)) => {
                 self.common_tangent_slot(id.0).map_or(def, |slot| {
@@ -1794,6 +1865,25 @@ impl Construction {
             self.conic_intersections
                 .partition_point(|&(owner, _)| owner < at.len),
         );
+        self.tangent_outputs.truncate(
+            self.tangent_outputs
+                .partition_point(|output| output.owner < at.len),
+        );
+        while self
+            .line_conic_outputs
+            .last()
+            .is_some_and(|output| output.owner >= at.len)
+        {
+            let output = self.line_conic_outputs.pop().expect("line/conic output");
+            match output.prior {
+                Some(prior) => {
+                    self.line_conic_pairs.insert(output.key, prior);
+                }
+                None => {
+                    self.line_conic_pairs.remove(&output.key);
+                }
+            }
+        }
         while self
             .conics
             .last()
@@ -2417,12 +2507,24 @@ impl Construction {
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
         let value = match def {
+            Def::Lines(LineDef::TangentPoint { .. } | LineDef::TangentLine { .. })
+            | Def::ConicPart(
+                ConicPartDef::TangentPoint { .. } | ConicPartDef::TangentLine { .. },
+            ) => {
+                self.add_tangent_output(id, TangentDef::of(def).expect("tangent definition"), owner)
+            }
             Def::Expr(d) => expr::update(self, id, d).0,
             Def::IntersectConics(d) => {
                 let mut state = self.create_conic_intersection(d);
                 let value = state.value(d, self).unwrap_or(Value::Undefined);
                 self.conic_intersections.push((id.0, state));
                 value
+            }
+            Def::IntersectLineConic(d) => self.add_line_conic_output(id, d),
+            Def::IntersectLineCircle { .. }
+            | Def::ConicPart(ConicPartDef::IntersectLine { .. }) => {
+                let d = LineConicDef::from_indexed(def).expect("indexed line/conic output");
+                self.add_line_conic_output(id, d)
             }
             Def::GeneralConic(d) => {
                 let data = d.record(self, &ConicData::new());
@@ -2590,20 +2692,6 @@ impl Construction {
     fn reindex_elements_from(&mut self, start: usize) {
         for (position, &id) in self.elements.iter().enumerate().skip(start) {
             self.element_of[id as usize] = ProtocolEntry::Element(position as u32);
-        }
-    }
-
-    /// Moves a just-added expression output into its owner's element.
-    pub(crate) fn adopt_output(&mut self, id: Id, owner: Id) {
-        let previous = self.element_of[id.0];
-        self.element_of[id.0] = self.output_entry(owner);
-        if let ProtocolEntry::Element(index) = previous {
-            let index = index as usize;
-            debug_assert_eq!(self.step, index + 1);
-            self.elements.remove(index);
-            self.step = index;
-            self.reindex_elements_from(index);
-            self.update_protocol();
         }
     }
 
@@ -2953,6 +3041,14 @@ impl Construction {
                 def = self.refresh_intersection_definition(i, def, &mut restored_pairs);
             }
             match def {
+                Def::Lines(LineDef::TangentPoint { .. } | LineDef::TangentLine { .. })
+                | Def::ConicPart(
+                    ConicPartDef::TangentPoint { .. } | ConicPartDef::TangentLine { .. },
+                ) => {
+                    if !self.update_tangent(i, TangentDef::of(def).expect("tangent definition")) {
+                        continue;
+                    }
+                }
                 Def::Expr(d) => {
                     if !self.update_expr(i, d) {
                         continue;
@@ -2965,6 +3061,18 @@ impl Construction {
                 }
                 Def::IntersectConics(d) => {
                     if !self.update_conic_intersection(i, d, refresh_definitions) {
+                        continue;
+                    }
+                }
+                Def::IntersectLineConic(d) => {
+                    if !self.update_line_conic(i, d, refresh_definitions) {
+                        continue;
+                    }
+                }
+                Def::IntersectLineCircle { .. }
+                | Def::ConicPart(ConicPartDef::IntersectLine { .. }) => {
+                    let d = LineConicDef::from_indexed(def).expect("indexed line/conic output");
+                    if !self.update_line_conic(i, d, refresh_definitions) {
                         continue;
                     }
                 }
@@ -3115,11 +3223,29 @@ impl Construction {
     ) -> Def {
         use algo::intersect::{circles, circles_special_point};
         let (def, key, swap) = match def {
-            Def::IntersectLineCircle {
-                line,
-                circle,
-                which,
-            } => {
+            Def::IntersectLineCircle { .. } | Def::IntersectLineConic(_) => {
+                let (line, circle, which) = match def {
+                    Def::IntersectLineCircle {
+                        line,
+                        circle,
+                        which,
+                    } => (line, circle, which),
+                    Def::IntersectLineConic(d)
+                        if self.kind(d.line) == Kind::Line
+                            && self.kind(d.conic) == Kind::Circle =>
+                    {
+                        let which = match d.output {
+                            algo::intersect::pair::Output::Index(i)
+                            | algo::intersect::pair::Output::Slot(i) => i as u8,
+                            _ => 0,
+                        };
+                        if which >= 2 {
+                            return def;
+                        }
+                        (d.line, d.conic, which)
+                    }
+                    _ => return def,
+                };
                 let previous = self.hints[i];
                 let hint = algo::intersect::hint(self, &def);
                 self.hints[i] = hint;
@@ -3320,6 +3446,186 @@ impl Construction {
         }
         .unwrap_or(Value::Undefined);
         self.conic_intersections[latest].1 = parent;
+        let changed = !new.identical(&self.values[i]);
+        self.values[i] = new;
+        changed
+    }
+
+    /// Saves the branch history of a line/conic intersection or tangent.
+    /// Replaying a script at different initial positions can choose other
+    /// slots from the same geometric solutions.
+    pub fn intersection_state(&self, id: Id) -> Option<IntersectionState> {
+        let def = *self.defs.get(id.0)?;
+        let history = if let Some(d) = TangentDef::of(def) {
+            let slot = self.tangent_slot(id.0)?;
+            IntersectionHistory::Tangent(
+                d,
+                self.tangent_outputs[self.tangent_outputs[slot].helper].state,
+            )
+        } else {
+            let d = match def {
+                Def::IntersectLineConic(d) => d,
+                _ => LineConicDef::from_indexed(def)?,
+            };
+            let slot = self.line_conic_slot(id.0)?;
+            let mut state = self.line_conic_outputs[self.line_conic_pairs[&d.key()]].state;
+            state.set_nearest(self.line_conic_outputs[slot].state.nearest());
+            IntersectionHistory::LineConic(d, state)
+        };
+        Some(IntersectionState(history))
+    }
+
+    /// Restores the branch history of an output rebuilt from the same
+    /// definition. The solver evaluates the current operands again.
+    pub fn restore_intersection_state(
+        &mut self,
+        id: Id,
+        state: IntersectionState,
+    ) -> Result<usize, Error> {
+        let target = self.intersection_state(id).ok_or(Error::UnknownObject)?;
+        if !state.same_definition(target) {
+            return Err(Error::NotFree(self.labels[id.0].clone()));
+        }
+        let value = match (state.0, target.0) {
+            (
+                IntersectionHistory::LineConic(_, mut state),
+                IntersectionHistory::LineConic(d, _),
+            ) => {
+                let slot = self.line_conic_slot(id.0).expect("line/conic output");
+                let latest = self.line_conic_pairs[&d.key()];
+                let value = state.restore(d, self);
+                self.line_conic_outputs[slot]
+                    .state
+                    .set_nearest(state.nearest());
+                state.set_nearest(self.line_conic_outputs[latest].state.nearest());
+                self.line_conic_outputs[latest].state = state;
+                value
+            }
+            (IntersectionHistory::Tangent(_, mut state), IntersectionHistory::Tangent(d, _)) => {
+                let slot = self.tangent_slot(id.0).expect("tangent output");
+                let helper = self.tangent_outputs[slot].helper;
+                state.restore(self, d);
+                self.tangent_outputs[helper].state = state;
+                state.value(d)
+            }
+            _ => return Err(Error::NotFree(self.labels[id.0].clone())),
+        };
+        let value = value.unwrap_or(Value::Undefined);
+        if value.identical(&self.values[id.0]) {
+            return Ok(0);
+        }
+        self.values[id.0] = value;
+        Ok(self.propagate(id))
+    }
+
+    fn tangent_slot(&self, i: usize) -> Option<usize> {
+        self.tangent_outputs
+            .binary_search_by_key(&i, |output| output.owner)
+            .ok()
+    }
+
+    fn add_tangent_output(&mut self, id: Id, d: TangentDef, owner: Option<Id>) -> Value {
+        let slot = self.tangent_outputs.len();
+        let helper = owner
+            .filter(|owner| {
+                TangentDef::of(self.defs[owner.0]).is_some_and(|other| other.same_algorithm(d))
+            })
+            .and_then(|owner| self.tangent_slot(owner.0))
+            .map_or(slot, |owner| self.tangent_outputs[owner].helper);
+        let mut state = TangentState::default();
+        let value = if helper == slot {
+            state.refresh(self, d, self.continuous_conic_intersections);
+            state.value(d)
+        } else {
+            self.tangent_outputs[helper].state.value(d)
+        };
+        self.tangent_outputs.push(TangentOutput {
+            owner: id.0,
+            helper,
+            state,
+        });
+        value.unwrap_or(Value::Undefined)
+    }
+
+    pub(crate) fn tangent_contact(&self, line: Id, conic: Id) -> Option<algo::intersect::Pt> {
+        let d = TangentDef::of(*self.defs.get(line.0)?)?;
+        if d.conic != conic {
+            return None;
+        }
+        let slot = self.tangent_slot(line.0)?;
+        let mut state = self.tangent_outputs[self.tangent_outputs[slot].helper].state;
+        state.refresh(self, d, self.continuous_conic_intersections);
+        Some(state.contact(d))
+    }
+
+    #[inline(never)]
+    fn update_tangent(&mut self, i: usize, d: TangentDef) -> bool {
+        let slot = self.tangent_slot(i).expect("tangent output");
+        let helper = self.tangent_outputs[slot].helper;
+        let mut state = self.tangent_outputs[helper].state;
+        state.refresh(self, d, self.continuous_conic_intersections);
+        let new = state.value(d).unwrap_or(Value::Undefined);
+        self.tangent_outputs[helper].state = state;
+        let changed = !new.identical(&self.values[i]);
+        self.values[i] = new;
+        changed
+    }
+
+    fn line_conic_slot(&self, i: usize) -> Option<usize> {
+        self.line_conic_outputs
+            .binary_search_by_key(&i, |output| output.owner)
+            .ok()
+    }
+
+    pub(crate) fn preview_line_conic(&self, d: LineConicDef) -> Option<Value> {
+        let mut state = self.line_conic_pairs.get(&d.key()).map_or_else(
+            || LineConicState::create(d, self, None, self.continuous_conic_intersections),
+            |&slot| self.line_conic_outputs[slot].state,
+        );
+        state.refresh(d, self, self.continuous_conic_intersections, false);
+        state.value(d, self)
+    }
+
+    fn add_line_conic_output(&mut self, id: Id, d: LineConicDef) -> Value {
+        let prior = self.line_conic_pairs.get(&d.key()).copied();
+        let mut state = LineConicState::create(
+            d,
+            self,
+            prior.map(|slot| self.line_conic_outputs[slot].state),
+            self.continuous_conic_intersections,
+        );
+        state.label_output(d);
+        let value = state.value(d, self).unwrap_or(Value::Undefined);
+        self.line_conic_pairs
+            .insert(d.key(), self.line_conic_outputs.len());
+        self.line_conic_outputs.push(LineConicOutput {
+            owner: id.0,
+            key: d.key(),
+            prior,
+            state,
+        });
+        value
+    }
+
+    #[inline(never)]
+    fn update_line_conic(&mut self, i: usize, d: LineConicDef, redefined: bool) -> bool {
+        let slot = self.line_conic_slot(i).expect("line/conic output");
+        let latest = self.line_conic_pairs[&d.key()];
+        let mut state = self.line_conic_outputs[latest].state;
+        if redefined && self.kind(d.line) == Kind::Line && self.kind(d.conic) == Kind::Circle {
+            state.restore_order(self.intersection_swaps.contains(&d.key()));
+        }
+        state.refresh(d, self, self.continuous_conic_intersections, redefined);
+        let nearest = state.nearest();
+        state.set_nearest(self.line_conic_outputs[slot].state.nearest());
+        let new = state.value(d, self).unwrap_or(Value::Undefined);
+        if slot != latest {
+            self.line_conic_outputs[slot]
+                .state
+                .set_nearest(state.nearest());
+            state.set_nearest(nearest);
+        }
+        self.line_conic_outputs[latest].state = state;
         let changed = !new.identical(&self.values[i]);
         self.values[i] = new;
         changed
@@ -3766,6 +4072,7 @@ impl Construction {
                 check_index(which)
             }
             Def::IntersectConics(d) => d.check(self),
+            Def::IntersectLineConic(d) => d.check(self),
             Def::IntersectBoundary(d) => d.check(self),
             Def::Lines(d) => d.check(self),
             Def::Conic(d) => d.check(self),
@@ -3927,6 +4234,7 @@ impl Construction {
                 )
             }
             Def::IntersectConics(d) => d.compute(self),
+            Def::IntersectLineConic(d) => d.compute(self),
             Def::IntersectBoundary(d) => d.compute(self),
             Def::Lines(d) => d.compute(self),
             Def::Conic(d) => d.compute(self),

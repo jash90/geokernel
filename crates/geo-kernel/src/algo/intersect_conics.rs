@@ -30,6 +30,7 @@ pub(in crate::algo) use self::roots::{
 };
 pub(crate) use self::state::Intersection;
 pub(crate) use self::state::SavedSlots;
+pub(super) use self::state::{distance_squared, nearest};
 
 use crate::tol::{MAX_PRECISION, MIN_PRECISION, STANDARD_PRECISION};
 

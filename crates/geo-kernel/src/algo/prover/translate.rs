@@ -207,27 +207,12 @@ impl System {
                 self.add(collinear([h[0], h[1]], [h[2], h[3]], [x, y], budget)?);
                 self.point_vars.insert(id, [x, y]);
             }
+            Def::IntersectLineConic(d) if symbolic_line_circle(c, d).is_some() => {
+                let (line, circle) = d.key();
+                self.line_circle_intersection(c, id, line, circle, budget)?;
+            }
             Def::IntersectLineCircle { line, circle, .. } => {
-                if !proper_circle(c, circle) {
-                    return None;
-                }
-                let g = self.line(line)?;
-                let k = self.circle(circle)?;
-                let x = self.new_var(false)?;
-                let y = self.new_var(false)?;
-                self.add(collinear([g[0], g[1]], [g[2], g[3]], [x, y], budget)?);
-                self.add(equidistant([k[2], k[3]], [k[0], k[1]], [x, y], budget)?);
-                // The reference excludes an existing intersection only for
-                // `Intersect(line, circle, n)`; the unindexed command (also
-                // behind `{P, Q} = Intersect(...)` and saved files) makes the
-                // same definition here, and its algorithm keeps the point.
-                // Which one made this object is not recorded, so a point that
-                // may lie on both by construction leaves it undecided.
-                if shared_point(c, id, line, circle, budget)? {
-                    return None;
-                }
-                self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
-                self.point_vars.insert(id, [x, y]);
+                self.line_circle_intersection(c, id, line, circle, budget)?;
             }
             Def::IntersectCircles { c1, c2, .. } => {
                 if !proper_circle(c, c1) || !proper_circle(c, c2) {
@@ -321,6 +306,37 @@ impl System {
         Some(())
     }
 
+    fn line_circle_intersection(
+        &mut self,
+        c: &Construction,
+        id: Id,
+        line: Id,
+        circle: Id,
+        budget: &Budget,
+    ) -> Option<()> {
+        if !proper_circle(c, circle) {
+            return None;
+        }
+        let g = self.line(line)?;
+        let k = self.circle(circle)?;
+        let x = self.new_var(false)?;
+        let y = self.new_var(false)?;
+        self.add(collinear([g[0], g[1]], [g[2], g[3]], [x, y], budget)?);
+        self.add(equidistant([k[2], k[3]], [k[0], k[1]], [x, y], budget)?);
+        // The reference excludes an existing intersection only for
+        // `Intersect(line, circle, n)`; the unindexed command (also
+        // behind `{P, Q} = Intersect(...)` and saved files) makes the
+        // same definition here, and its algorithm keeps the point.
+        // Which one made this object is not recorded, so a point that
+        // may lie on both by construction leaves it undecided.
+        if shared_point(c, id, line, circle, budget)? {
+            return None;
+        }
+        self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
+        self.point_vars.insert(id, [x, y]);
+        Some(())
+    }
+
     /// The second output of an intersection algorithm differs from the
     /// first one whose equations were made before (`botanaVars` of the
     /// adapter): `|PQ|^2 * t = 1`. Tells whether it added that equation.
@@ -335,6 +351,7 @@ impl System {
     ) -> Option<bool> {
         let same_pair = |other: Id| match c.def(other) {
             Def::IntersectLineCircle { line, circle, .. } => (line, circle) == (first, second),
+            Def::IntersectLineConic(d) => symbolic_line_circle(c, d) == Some((first, second)),
             Def::IntersectCircles { c1, c2, .. } => {
                 (c1, c2) == (first, second) || (c1, c2) == (second, first)
             }
@@ -783,10 +800,22 @@ fn on_by_construction(c: &Construction, point: Id, object: Id) -> bool {
         | Def::IntersectLineCircle { .. }
         | Def::IntersectCircles { .. }
         | Def::IntersectConics(_)
+        | Def::IntersectLineConic(_)
         | Def::IntersectBoundary(_)
         | Def::ConicPart(_) => c.reads(point).contains(&object),
         _ => false,
     }
+}
+
+fn symbolic_line_circle(
+    c: &Construction,
+    d: crate::algo::intersect::line_conic_state::LineConicDef,
+) -> Option<(Id, Id)> {
+    use crate::algo::intersect::pair::Output;
+    (matches!(d.output, Output::Index(0 | 1) | Output::Slot(0 | 1))
+        && c.kind(d.line) == Kind::Line
+        && c.kind(d.conic) == Kind::Circle)
+        .then_some(d.key())
 }
 
 /// Whether a point other than the outputs of the intersection `id` of `a`
@@ -795,6 +824,7 @@ fn on_by_construction(c: &Construction, point: Id, object: Id) -> bool {
 fn shared_point(c: &Construction, id: Id, a: Id, b: Id, budget: &Budget) -> Option<bool> {
     let same_pair = |other: Id| match c.def(other) {
         Def::IntersectLineCircle { line, circle, .. } => (line, circle) == (a, b),
+        Def::IntersectLineConic(d) => symbolic_line_circle(c, d) == Some((a, b)),
         Def::IntersectCircles { c1, c2, .. } => (c1, c2) == (a, b) || (c1, c2) == (b, a),
         _ => false,
     };

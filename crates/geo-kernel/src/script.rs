@@ -1840,8 +1840,8 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
         // the indexed outputs of one intersection share the element of
         // the first (`AlgoIntersectConics` is one construction element)
         let added = match first {
-            Some(owner) => intersect::add_labelled_output_of(c, &label, def, owner),
-            None => intersect::add_labelled_output(c, &label, def),
+            Some(owner) => c.add_output(&label, def, owner),
+            None => c.add(&label, def),
         };
         match added {
             Ok(id) => {
@@ -1849,7 +1849,7 @@ pub(crate) fn add_outputs(c: &mut Construction, name: &str, defs: Vec<Def>) -> R
             }
             Err(e) => {
                 c.discard_since(at);
-                return Err(e);
+                return Err(e.to_string());
             }
         }
     }
@@ -1930,7 +1930,7 @@ fn probe(c: &Construction, def: &Def) -> Result<bool, String> {
             c.check(def).map_err(|e| e.to_string())?;
             Ok(intersect::probe_line_circle(c, *line, *circle, *which))
         }
-        Def::IntersectConics(_) | Def::IntersectBoundary(_) => c
+        Def::IntersectConics(_) | Def::IntersectLineConic(_) | Def::IntersectBoundary(_) => c
             .evaluate(*def)
             .map(|v| v != Value::Undefined)
             .map_err(|e| e.to_string()),
@@ -2454,8 +2454,8 @@ pub(crate) fn add_named_outputs(
     for (slot, def) in slots.iter().zip(defs) {
         if !slot.is_empty() {
             let added = match first {
-                Some(owner) => intersect::add_labelled_output_of(c, slot, def, owner),
-                None => intersect::add_labelled_output(c, slot, def),
+                Some(owner) => c.add_output(slot, def, owner),
+                None => c.add(slot, def),
             };
             match added {
                 Ok(id) => {
@@ -2463,7 +2463,7 @@ pub(crate) fn add_named_outputs(
                 }
                 Err(e) => {
                     c.discard_since(at);
-                    return Err(e);
+                    return Err(e.to_string());
                 }
             }
         }

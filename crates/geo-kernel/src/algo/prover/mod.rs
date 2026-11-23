@@ -629,6 +629,29 @@ mod tests {
     }
 
     #[test]
+    fn reads_both_outputs_of_an_unindexed_line_circle_intersection() {
+        // The second output of `P = Intersect(g, c)` is translated like the
+        // indexed `Intersect(g, c, 2)`: the statement over the chord's
+        // midpoint is decided, and the same way.
+        const CHORD: &str = "O = (0, 0)\nA = (3, 1)\nB = (1, 4)\nC = (0, 5)\n\
+            c = Circle(O, C)\ng = Line(A, B)\n";
+        const STATEMENT: &str = "h = Line(O, M)\nb = ArePerpendicular(h, g)";
+        let unindexed = outcome(
+            &format!("{CHORD}P = Intersect(g, c)\nM = Midpoint(P_{{1}}, P_{{2}})\n{STATEMENT}"),
+            Question::Prove,
+        );
+        let indexed = outcome(
+            &format!(
+                "{CHORD}P = Intersect(g, c, 1)\nQ = Intersect(g, c, 2)\n\
+                 M = Midpoint(P, Q)\n{STATEMENT}"
+            ),
+            Question::Prove,
+        );
+        assert_eq!(unindexed, indexed);
+        assert!(matches!(unindexed, Outcome::True(_)), "{unindexed:?}");
+    }
+
+    #[test]
     fn keeps_the_result_while_points_move() {
         let mut c =
             crate::script::load(&format!("{MIDLINE}\np = Prove(b)\nq = ProveDetails(b)")).unwrap();
