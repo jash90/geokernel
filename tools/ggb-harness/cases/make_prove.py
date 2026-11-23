@@ -307,4 +307,22 @@ proof("review", ["A = (0, 0)", "B = (4, 1)", "CZ = (1, 3)", "Ca = (3, -2)",
                  "h = PerpendicularBisector(B, Ca)", "O = Intersect(f, g)", "R = Intersect(f, h)",
                  "M = Midpoint(A, B)"], "AreCollinear(O, R, M)")
 
+cases.topic("incidence")
+proof("incidence", ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)",
+                    "g = Line(O, A)", "P = Intersect(g, c)", "M = Midpoint(P_{1}, P_{2})"],
+      "AreEqual(M, O)")
+proof("incidence", ["A = (0, 0)", "B = (4, 1)", "C = (1, 3)", "c = Circle(A, B)",
+                    "d = Circle(C, B)", "P = Intersect(c, d)", "f = Line(P_{1}, P_{2})",
+                    "g = Line(A, C)"], "ArePerpendicular(f, g)")
+proof("incidence", ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)", "g = Line(O, A)",
+                    "P = Intersect(g, c)", "Q = Intersect(g, c, 1)", "M = Midpoint(A, Q)"],
+      "AreEqual(M, O)")
+proof("incidence", ["A = (0, 0)", "B = (4, 0)", "C = (2, 4)", "D = (2, 3)",
+                    "c = Circle(A, B, C)", "d = Circle(A, B, D)", "P = Intersect(c, d, 1)"],
+      "AreEqual(A, P)")
+
+proof("incidence", ["A = (0, 0)", "r = 2", "k = Circle(A, r)", "B = (2, 0)",
+                    "l = Line(A, B)", "P = Intersect(l, k)", "M = Midpoint(P_{1}, P_{2})"],
+      "AreEqual(M, A)", details=False)
+
 cases.write()

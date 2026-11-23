@@ -652,6 +652,28 @@ mod tests {
     }
 
     #[test]
+    fn proves_a_diameter_when_the_line_is_constructed_through_the_center() {
+        const CIRCLE: &str = "A = (0, 0)\nr = 2\nk = Circle(A, r)\nB = (2, 0)\nC = (-2, 0)";
+        for outputs in [
+            "{P, Q} = Intersect(l, k)",
+            "P = Intersect(l, k, 1)\nQ = Intersect(l, k, 2)",
+        ] {
+            let proof = |line| {
+                outcome(
+                    &format!(
+                        "{CIRCLE}\nl = {line}\n{outputs}\nM = Midpoint(P, Q)\nb = AreEqual(M, A)"
+                    ),
+                    Question::Prove,
+                )
+            };
+            // The starting coordinates put A on Line(B, C), but the free
+            // endpoints do not constrain the line to pass through A.
+            assert_eq!(proof("Line(B, C)"), Outcome::False, "{outputs}");
+            assert_eq!(proof("Line(A, B)"), Outcome::True(Vec::new()), "{outputs}");
+        }
+    }
+
+    #[test]
     fn keeps_the_result_while_points_move() {
         let mut c =
             crate::script::load(&format!("{MIDLINE}\np = Prove(b)\nq = ProveDetails(b)")).unwrap();

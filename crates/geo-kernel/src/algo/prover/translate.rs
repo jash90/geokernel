@@ -13,6 +13,11 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/adapters/BotanaCircleThreePoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLinePointLine.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLines.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectLineConic.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectSingle.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoIntersectConics.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/adapters/IntersectConicsAdapter.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCirclePointRadius.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoLineBisector.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/SymbolicParameters.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/prover/polynomial/PPolynomial.java
@@ -33,6 +38,7 @@ use super::groebner;
 use super::poly::{Order, Poly, MAX_VARS};
 use super::{Budget, Outcome};
 use crate::algo::conic::ConicDef;
+use crate::algo::intersect::pair::Output;
 use crate::algo::lines::LineDef;
 use crate::algo::path::PathDef;
 use crate::algo::predicate::PredicateDef;
@@ -57,6 +63,7 @@ pub(crate) struct System {
     pub(super) path_points: Vec<Id>,
     line_vars: BTreeMap<Id, [usize; 4]>,
     circle_vars: BTreeMap<Id, [usize; 4]>,
+    radius_vars: BTreeMap<Id, usize>,
     /// How many coordinates of the first two free points are fixed.
     fixed_coordinates: usize,
     budget_vars: usize,
@@ -113,6 +120,7 @@ impl System {
             path_points: Vec::new(),
             line_vars: BTreeMap::new(),
             circle_vars: BTreeMap::new(),
+            radius_vars: BTreeMap::new(),
             fixed_coordinates: 4,
             budget_vars: MAX_VARS,
             unknown: false,
@@ -207,30 +215,11 @@ impl System {
                 self.add(collinear([h[0], h[1]], [h[2], h[3]], [x, y], budget)?);
                 self.point_vars.insert(id, [x, y]);
             }
-            Def::IntersectLineConic(d) if symbolic_line_circle(c, d).is_some() => {
-                let (line, circle) = d.key();
-                self.line_circle_intersection(c, id, line, circle, budget)?;
-            }
-            Def::IntersectLineCircle { line, circle, .. } => {
-                self.line_circle_intersection(c, id, line, circle, budget)?;
-            }
-            Def::IntersectCircles { c1, c2, .. } => {
-                if !proper_circle(c, c1) || !proper_circle(c, c2) {
-                    return None;
-                }
-                let a = self.circle(c1)?;
-                let b = self.circle(c2)?;
-                // As for a line and a circle: a point on both circles by
-                // construction is excluded only by the indexed command.
-                if shared_point(c, id, c1, c2, budget)? {
-                    return None;
-                }
-                let x = self.new_var(false)?;
-                let y = self.new_var(false)?;
-                self.add(equidistant([a[2], a[3]], [a[0], a[1]], [x, y], budget)?);
-                self.add(equidistant([b[2], b[3]], [b[0], b[1]], [x, y], budget)?);
-                self.distinct_from_earlier(c, id, c1, c2, [x, y], budget)?;
-                self.point_vars.insert(id, [x, y]);
+            Def::IntersectLineConic(_)
+            | Def::IntersectLineCircle { .. }
+            | Def::IntersectConics(_)
+            | Def::IntersectCircles { .. } => {
+                self.circle_intersection(c, id, budget)?;
             }
             Def::Perpendicular { through, to } => {
                 // The second point of the line is the through point moved
@@ -273,6 +262,25 @@ impl System {
                 let [p1, p2] = self.point(through)?;
                 self.circle_vars.insert(id, [m1, m2, p1, p2]);
             }
+            Def::CircleRadius { center, radius } if matches!(c.def(radius), Def::Number(_)) => {
+                let [m1, m2] = self.point(center)?;
+                let p1 = self.new_var(false)?;
+                let p2 = self.new_var(false)?;
+                let r = if let Some(&r) = self.radius_vars.get(&radius) {
+                    r
+                } else {
+                    let r = self.new_var(false)?;
+                    self.radius_vars.insert(radius, r);
+                    r
+                };
+                self.add(
+                    square_distance([m1, m2], [p1, p2], budget)?
+                        .sub(&v(r).mul(&v(r), budget)?, budget)?,
+                );
+                self.circle_vars.insert(id, [m1, m2, p1, p2]);
+                // A numeric radius prevents fixing the second free point.
+                self.fixed_coordinates = 2;
+            }
             Def::Conic(ConicDef::ThroughThree(p, q, r)) => {
                 let a = self.point(p)?;
                 let b = self.point(q)?;
@@ -306,86 +314,61 @@ impl System {
         Some(())
     }
 
-    fn line_circle_intersection(
-        &mut self,
-        c: &Construction,
-        id: Id,
-        line: Id,
-        circle: Id,
-        budget: &Budget,
-    ) -> Option<()> {
-        if !proper_circle(c, circle) {
+    fn circle_intersection(&mut self, c: &Construction, id: Id, budget: &Budget) -> Option<()> {
+        let ([first, second], indexed) = symbolic_intersection(c, id)?;
+        let two_circles = c.kind(first) == Kind::Circle;
+        if !proper_circle(c, second) || (two_circles && !proper_circle(c, first)) {
             return None;
         }
-        let g = self.line(line)?;
-        let k = self.circle(circle)?;
-        let x = self.new_var(false)?;
-        let y = self.new_var(false)?;
-        self.add(collinear([g[0], g[1]], [g[2], g[3]], [x, y], budget)?);
-        self.add(equidistant([k[2], k[3]], [k[0], k[1]], [x, y], budget)?);
-        // The reference excludes an existing intersection only for
-        // `Intersect(line, circle, n)`; the unindexed command (also
-        // behind `{P, Q} = Intersect(...)` and saved files) makes the
-        // same definition here, and its algorithm keeps the point.
-        // Which one made this object is not recorded, so a point that
-        // may lie on both by construction leaves it undecided.
-        if shared_point(c, id, line, circle, budget)? {
-            return None;
+        let p = [self.new_var(false)?, self.new_var(false)?];
+        if two_circles {
+            let [a, b, x, y] = self.circle(first)?;
+            self.add(equidistant([x, y], [a, b], p, budget)?);
+        } else {
+            let [a, b, x, y] = self.line(first)?;
+            self.add(collinear([a, b], [x, y], p, budget)?);
         }
-        self.distinct_from_earlier(c, id, line, circle, [x, y], budget)?;
-        self.point_vars.insert(id, [x, y]);
+        let [a, b, x, y] = self.circle(second)?;
+        self.add(equidistant([x, y], [a, b], p, budget)?);
+
+        // The reference excludes an existing common point when the indexed
+        // output uses a hidden intersection algorithm. The unindexed
+        // command and saved slots put that algorithm in the construction.
+        budget.charge(c.child_count(first) + 1)?;
+        let mut labelled = false;
+        let mut earlier = None;
+        for other in c.children(first).filter(|&other| other != id) {
+            if let Some((pair, other_indexed)) = symbolic_intersection(c, other) {
+                if pair == [first, second] || pair == [second, first] {
+                    labelled |= !other_indexed;
+                    if let Some(q) = self.point(other) {
+                        // The adapter has equations for a pair of distinct
+                        // outputs. Several earlier variables are ambiguous.
+                        if earlier.replace(q).is_some() {
+                            return None;
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(q) = earlier {
+            // The second translated output differs from the first, whether
+            // the outputs are labelled or indexed.
+            self.add_distinct(p, q, budget)?;
+        }
+        if indexed && !labelled {
+            if let Some(shared) = shared_point(c, id, first, second, two_circles, budget)? {
+                self.add_distinct(p, self.point(shared)?, budget)?;
+            }
+        }
+        self.point_vars.insert(id, p);
         Some(())
     }
 
-    /// The second output of an intersection algorithm differs from the
-    /// first one whose equations were made before (`botanaVars` of the
-    /// adapter): `|PQ|^2 * t = 1`. Tells whether it added that equation.
-    fn distinct_from_earlier(
-        &mut self,
-        c: &Construction,
-        id: Id,
-        first: Id,
-        second: Id,
-        p: [usize; 2],
-        budget: &Budget,
-    ) -> Option<bool> {
-        let same_pair = |other: Id| match c.def(other) {
-            Def::IntersectLineCircle { line, circle, .. } => (line, circle) == (first, second),
-            Def::IntersectLineConic(d) => symbolic_line_circle(c, d) == Some((first, second)),
-            Def::IntersectCircles { c1, c2, .. } => {
-                (c1, c2) == (first, second) || (c1, c2) == (second, first)
-            }
-            _ => false,
-        };
-        // The other outputs read both objects, so the children of the first
-        // one hold them.
-        budget.charge(c.child_count(first) + 1)?;
-        let mut others: Vec<Id> = c
-            .children(first)
-            .filter(|&other| other != id && same_pair(other))
-            .collect();
-        others.sort_unstable();
-        others.dedup();
-        let translated: Vec<Id> = others
-            .iter()
-            .copied()
-            .filter(|other| self.point_vars.contains_key(other))
-            .collect();
-        // An output that this proof does not use may have been translated
-        // by an earlier proof of the reference; that is not reproduced.
-        if translated.len() != others.len() && others.iter().any(|&o| o < id) {
-            return None;
-        }
-        match translated.as_slice() {
-            [] => Some(false),
-            [other] => {
-                let q = self.point(*other)?;
-                let t = self.new_var(false)?;
-                self.add(distinct(p, q, t, budget)?);
-                Some(true)
-            }
-            _ => None,
-        }
+    fn add_distinct(&mut self, p: [usize; 2], q: [usize; 2], budget: &Budget) -> Option<()> {
+        let t = self.new_var(false)?;
+        self.add(distinct(p, q, t, budget)?);
+        Some(())
     }
 
     fn statement(&mut self, c: &Construction, p: PredicateDef, budget: &Budget) -> Option<()> {
@@ -807,39 +790,62 @@ fn on_by_construction(c: &Construction, point: Id, object: Id) -> bool {
     }
 }
 
-fn symbolic_line_circle(
-    c: &Construction,
-    d: crate::algo::intersect::line_conic_state::LineConicDef,
-) -> Option<(Id, Id)> {
-    use crate::algo::intersect::pair::Output;
-    (matches!(d.output, Output::Index(0 | 1) | Output::Slot(0 | 1))
-        && c.kind(d.line) == Kind::Line
-        && c.kind(d.conic) == Kind::Circle)
-        .then_some(d.key())
+fn symbolic_intersection(c: &Construction, id: Id) -> Option<([Id; 2], bool)> {
+    let (pair, output) = match c.def(id) {
+        Def::IntersectLineCircle { line, circle, .. } => return Some(([line, circle], true)),
+        Def::IntersectCircles { c1, c2, .. } => return Some(([c1, c2], true)),
+        Def::IntersectLineConic(d)
+            if c.kind(d.line) == Kind::Line && c.kind(d.conic) == Kind::Circle =>
+        {
+            ([d.line, d.conic], d.output)
+        }
+        Def::IntersectConics(d)
+            if c.kind(d.first) == Kind::Circle && c.kind(d.second) == Kind::Circle =>
+        {
+            ([d.first, d.second], d.output)
+        }
+        _ => return None,
+    };
+    match output {
+        Output::Slot(0 | 1) => Some((pair, false)),
+        Output::Index(0 | 1) => Some((pair, true)),
+        _ => None,
+    }
 }
 
-/// Whether a point other than the outputs of the intersection `id` of `a`
-/// and `b` may lie on both by construction. Only the points `a` and `b` were
-/// drawn through and the objects that read them can.
-fn shared_point(c: &Construction, id: Id, a: Id, b: Id, budget: &Budget) -> Option<bool> {
-    let same_pair = |other: Id| match c.def(other) {
-        Def::IntersectLineCircle { line, circle, .. } => (line, circle) == (a, b),
-        Def::IntersectLineConic(d) => symbolic_line_circle(c, d) == Some((a, b)),
-        Def::IntersectCircles { c1, c2, .. } => (c1, c2) == (a, b) || (c1, c2) == (b, a),
-        _ => false,
-    };
-    let mut candidates = drawn_through(c, a);
-    candidates.extend(drawn_through(c, b));
-    budget.charge((candidates.len() + c.child_count(a) + c.child_count(b)) * 4 + 1)?;
-    candidates.extend(c.children(a));
-    candidates.extend(c.children(b));
-    Some(candidates.into_iter().any(|p| {
-        p != id
+/// The common point excluded by a hidden intersection algorithm. The
+/// line/circle adapter takes the first incident point. The circle pair
+/// adapter applies the exclusion only when exactly one point is shared.
+fn shared_point(
+    c: &Construction,
+    id: Id,
+    a: Id,
+    b: Id,
+    two_circles: bool,
+    budget: &Budget,
+) -> Option<Option<Id>> {
+    let on_a = drawn_through(c, a);
+    let on_b = drawn_through(c, b);
+    budget.charge((on_a.len() + on_b.len() + c.child_count(a) + c.child_count(b)) * 4 + 1)?;
+    let candidates = on_b
+        .into_iter()
+        .chain(c.children(b))
+        .chain(on_a)
+        .chain(c.children(a));
+    let before = c.evaluation_rank(id);
+    let mut shared = candidates.filter(|&p| {
+        c.evaluation_rank(p) < before
             && c.kind(p) == Kind::Point
-            && !same_pair(p)
+            && !symbolic_intersection(c, p)
+                .is_some_and(|(pair, _)| pair == [a, b] || pair == [b, a])
             && on_by_construction(c, p, a)
             && on_by_construction(c, p, b)
-    }))
+    });
+    let first = shared.next();
+    if two_circles && shared.any(|p| Some(p) != first) {
+        return Some(None);
+    }
+    Some(first)
 }
 
 /// `|AO|^2 - |OB|^2`.
