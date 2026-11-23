@@ -18,7 +18,10 @@ jobs:
   # repository. Pull requests from forks never reach those machines: they run
   # the same job on a GitHub-hosted Linux runner instead.
   check:
-    runs-on: ${{ (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted", "geokernel"]') || 'ubuntu-latest' }}
+    runs-on: >-
+      ${{ (github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository) &&
+      fromJSON('["self-hosted", "geokernel"]') || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +37,9 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+          sudo apt-get install -y --no-install-recommends \
+            libxkbcommon-dev libxcb-render0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev
 
       - name: Format
         run: cargo fmt --all --check
@@ -53,7 +58,8 @@ jobs:
           export GEOGEBRA_SRC
           printf 'GEOGEBRA_SRC=%s\n' "$GEOGEBRA_SRC" >> "$GITHUB_ENV"
           git init "$GEOGEBRA_SRC"
-          git -C "$GEOGEBRA_SRC" fetch --depth=1 https://github.com/geogebra/geogebra.git "$GEOGEBRA_REV"
+          git -C "$GEOGEBRA_SRC" fetch --depth=1 \
+            https://github.com/geogebra/geogebra.git "$GEOGEBRA_REV"
           git -C "$GEOGEBRA_SRC" checkout --detach FETCH_HEAD
           tools/ggb-harness/harness.sh build
       - name: Reload exported archives in the reference app
@@ -72,7 +78,8 @@ jobs:
       - name: Check Android target
         run: |
           rustup target add aarch64-linux-android
-          cargo check --target aarch64-linux-android -p geo-kernel -p geo-import -p geo-app-core
+          cargo check --target aarch64-linux-android \
+            -p geo-kernel -p geo-import -p geo-app-core
 
   # The optional Giac backend (docs/cas-giac.md): the binding replays the
   # recorded Giac exchanges and the golden data runs with the feature on
@@ -92,18 +99,34 @@ jobs:
           path="$(tools/giac/fetch.sh)"
           echo "GEO_GIAC_LIBRARY=$path" >> "$GITHUB_ENV"
       - name: Clippy with the feature
-        run: cargo clippy -p geo-giac -p geo-kernel -p geo-golden --all-targets --features geo-golden/giac -- -D warnings
+        run: |
+          cargo clippy -p geo-giac -p geo-kernel -p geo-golden --all-targets \
+            --features geo-golden/giac -- -D warnings
       - name: Binding tests
         run: cargo test -p geo-giac --features giac
       - name: Kernel tests with the feature
-        run: cargo test -p geo-kernel --features giac
+        run: |
+          cargo test -p geo-kernel --features giac \
+            -- --skip mutated_corpus_lines_never_panic
+      # The mutation fuzz runs with the library absent: a mutated CAS input
+      # can crash the native library (a segmentation fault ends the whole
+      # test binary) or take the library's whole time limit per line, and the
+      # test has a wall-clock budget. The recorded CAS inputs run with the
+      # library in the golden step below.
+      - name: Mutation fuzz with the feature and no library
+        run: |
+          env -u GEO_GIAC_LIBRARY cargo test -p geo-kernel --features giac \
+            --test fuzz_script
       - name: Golden data with the feature
-        run: cargo test -p geo-golden --features giac --test golden -- --nocapture
+        run: |
+          cargo test -p geo-golden --features giac --test golden -- --nocapture
       - name: Command forms with the feature
         run: cargo test -p geo-golden --features giac --test command_forms
       # Without a library the feature must change nothing.
       - name: Golden data with the feature and no library
-        run: env -u GEO_GIAC_LIBRARY cargo test -p geo-golden --features giac --test golden -- --nocapture
+        run: |
+          env -u GEO_GIAC_LIBRARY cargo test -p geo-golden --features giac \
+            --test golden -- --nocapture
 
   # The desktop release targets macOS, Windows and Linux; this job builds and
   # tests the workspace on all three systems. A break that only one target's
@@ -123,7 +146,9 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libxkbcommon-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+          sudo apt-get install -y --no-install-recommends \
+            libxkbcommon-dev libxcb-render0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev
       - name: Test
         run: cargo test --workspace
       - name: Build application
