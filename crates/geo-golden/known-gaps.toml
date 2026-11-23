@@ -3344,11 +3344,6 @@ mismatches = ["1:g", "2:g"]
 # funcrest
 
 [[gap]]
-id = "funcrest-freehandreaders-010"
-reason = "Bounded intersection of two functions in the kernel requires two expression trees. It lacks an intersection search over freehand samples, so the recorded point stays undefined."
-mismatches = ["0:S"]
-
-[[gap]]
 id = "funcrest-svd-002"
 reason = "The kernel orients each left vector by its largest component. It lacks the reference sign convention for both diagonal matrices."
 mismatches = ["0:s", "0:t"]

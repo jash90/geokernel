@@ -38,7 +38,8 @@ use geo_kernel::script::equation::{parse_style, Style as EquationStyle};
 use geo_kernel::script::saved::{self, mark_inline_arguments, Property, INLINE_ARGUMENTS};
 use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
 use geo_kernel::script::{
-    boundary_slot_owner, find_unquoted, restore_boundary_labels, split_comment, BoundaryOutputs,
+    boundary_slot_owner, find_unquoted, first_slot_owner, growth_owner, restore_boundary_labels,
+    split_comment, BoundaryOutputs,
 };
 use shared::Chain;
 pub use shared::Labels;
@@ -644,9 +645,26 @@ impl Log {
                 BoundaryOutputs::is_command(e.rhs()) || boundary_slot_owner(e.rhs()).is_some()
             })
             .collect();
+        // A first output whose label was freed and given again is named by
+        // the line that gave it.
+        let renamed: BTreeMap<&str, &str> = entries
+            .iter()
+            .filter_map(|e| Some((first_slot_owner(e.rhs())?, e.labels.first()?.as_str())))
+            .collect();
         let mut groups = BoundaryOutputs::default();
         for e in entries.into_iter().rev() {
-            if let Some(first) = e.labels.first().and_then(|label| c.id(label)) {
+            let Some(mut label) = e.labels.first().map(String::as_str) else {
+                continue;
+            };
+            if BoundaryOutputs::is_command(e.rhs()) {
+                for _ in 0..renamed.len() {
+                    match renamed.get(label) {
+                        Some(next) => label = next,
+                        None => break,
+                    }
+                }
+            }
+            if let Some(first) = growth_owner(c, label) {
                 groups.record(c, &e.line, first, e.labels.len());
             }
         }
@@ -693,10 +711,15 @@ impl Log {
         let mut groups = Vec::new();
         for e in self.entries_rev() {
             if let Some(owner) = boundary_slot_owner(e.rhs()) {
-                births
-                    .entry(owner)
-                    .or_default()
-                    .extend(e.labels.iter().rev().cloned());
+                // The slots born under the label a first output takes again
+                // belong to the label it had.
+                let later = first_slot_owner(e.rhs())
+                    .and(e.labels.first())
+                    .and_then(|label| births.remove(label.as_str()))
+                    .unwrap_or_default();
+                let born = births.entry(owner).or_default();
+                born.extend(later);
+                born.extend(e.labels.iter().rev().cloned());
             } else if let Some(born) = e
                 .labels
                 .first()

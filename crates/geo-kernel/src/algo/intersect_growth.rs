@@ -13,6 +13,9 @@ const SLOT_COMMAND: &str = "$boundarySlot";
 struct Outputs {
     first: Id,
     prefix: String,
+    /// The label typed before `=`, which the first output takes again
+    /// after it was freed (`AlgoGeoPointsFunction.updateLabels`).
+    name: String,
     /// The object of each slot, where known.
     ids: Vec<Option<Id>>,
     dependencies: BTreeSet<Id>,
@@ -121,12 +124,16 @@ impl BoundaryOutputs {
     /// Rebuilds the registry from a definition that has already executed.
     pub fn record(&mut self, c: &Construction, line: &str, first: Id, count: usize) {
         if let Some((prefix, _)) = boundary_command(line) {
+            let name = line
+                .split_once(['=', ':'])
+                .map_or("", |(name, _)| name.trim());
             if count > 0 && GrowthAnchor::from_def(c.def(first)).is_some() {
                 // Inline arguments are added before the first output.
                 let slots = count.min(c.len() - first.index());
                 self.groups.push(Outputs {
                     first,
                     prefix: prefix.to_owned(),
+                    name: name.to_owned(),
                     ids: (first.index()..first.index() + slots)
                         .map(|index| Some(Id(index)))
                         .collect(),
@@ -137,7 +144,7 @@ impl BoundaryOutputs {
             .split_once('=')
             .and_then(|(_, rhs)| slot_args(rhs.trim()))
         {
-            if let Some(owner) = c.id(anchor) {
+            if let Some(owner) = slot_owner(c, anchor, slot) {
                 if let Some(group) = self.groups.iter_mut().find(|group| group.first == owner) {
                     if group.ids.len() <= slot {
                         group.ids.resize(slot + 1, None);
@@ -217,6 +224,18 @@ impl BoundaryOutputs {
                 continue;
             };
             if frees {
+                // With no root left, a point that another object reads keeps
+                // every other point from being reset: they are all removed,
+                // the first one too.
+                if count == 0
+                    && (0..group.ids.len()).any(|slot| {
+                        group
+                            .slot_id(c, &anchor, slot)
+                            .is_some_and(|id| c.has_dependents(id))
+                    })
+                {
+                    released |= c.free_owner_label(group.first);
+                }
                 for slot in count.max(1)..group.ids.len() {
                     if let Some(id) = group.slot_id(c, &anchor, slot) {
                         released |= c.free_output_label(id);
@@ -226,9 +245,9 @@ impl BoundaryOutputs {
             let Some(record) = record.as_mut() else {
                 continue;
             };
-            let owner = c.label(group.first).to_owned();
-            let start = if frees { 1 } else { group.ids.len() };
+            let start = if frees { 0 } else { group.ids.len() };
             for slot in start..count {
+                let owner = owner_name(c, group.first).to_owned();
                 let existing = if slot < group.ids.len() {
                     match group.slot_id(c, &anchor, slot) {
                         Some(id) if c.is_freed_output(id) => Some(id),
@@ -240,7 +259,14 @@ impl BoundaryOutputs {
                 if self.recorded.contains(&(owner.clone(), slot)) {
                     break;
                 }
-                let label = if frees {
+                let label = if slot == 0 {
+                    // `labels[0]`; a reference that renames the object
+                    // holding it is not reproduced
+                    if c.resolve_label(&group.name).is_some() {
+                        continue;
+                    }
+                    group.name.clone()
+                } else if frees {
                     crate::algo::polygon::default_point_label(c)
                 } else {
                     script::index_label(c, &group.prefix)
@@ -278,7 +304,7 @@ pub(crate) fn existing_slot(c: &Construction, owner: Id, def: Def) -> Option<Id>
     GrowthAnchor::from_def(c.def(owner))
         .filter(GrowthAnchor::default_labels)
         .and_then(|_| {
-            (owner.index() + 1..c.len())
+            (owner.index()..c.len())
                 .map(Id)
                 .find(|&id| c.def(id) == def)
         })
@@ -324,7 +350,35 @@ fn slot_args(rhs: &str) -> Option<(&str, usize)> {
         .strip_suffix(')')?
         .split_once(',')?;
     let slot = slot.trim().parse::<usize>().ok()?.checked_sub(1)?;
-    (slot > 0).then_some((anchor.trim(), slot))
+    Some((anchor.trim(), slot))
+}
+
+/// The first output a slot line names: the first slot names a first output
+/// whose label was freed by the label it had.
+fn slot_owner(c: &Construction, anchor: &str, slot: usize) -> Option<Id> {
+    if slot == 0 {
+        c.freed_owner(anchor)
+    } else {
+        c.id(anchor)
+    }
+}
+
+/// The label slot lines give the first output `first`.
+fn owner_name(c: &Construction, first: Id) -> &str {
+    c.former_owner_label(first)
+        .unwrap_or_else(|| c.label(first))
+}
+
+/// For a slot line that labels a freed first output again, the label that
+/// output had.
+pub fn first_slot_owner(rhs: &str) -> Option<&str> {
+    slot_args(rhs).and_then(|(owner, slot)| (slot == 0).then_some(owner))
+}
+
+/// The first output of a command recorded under `label`, also when its
+/// label was freed.
+pub fn growth_owner(c: &Construction, label: &str) -> Option<Id> {
+    c.freed_owner(label).or_else(|| c.id(label))
 }
 
 /// For a recorded slot definition, identifies the first output of its command.
@@ -338,9 +392,13 @@ pub(crate) fn parse_slot(c: &Construction, rhs: &str) -> Option<Result<(Def, Id)
     }
     Some((|| {
         let (anchor, slot) = slot_args(rhs).ok_or("invalid boundary slot")?;
-        let id = c
-            .id(anchor)
-            .ok_or_else(|| format!("unknown object `{anchor}`"))?;
+        let id = slot_owner(c, anchor, slot).ok_or_else(|| {
+            if slot == 0 && c.id(anchor).is_some() {
+                format!("`{anchor}` has no growing output at slot 1")
+            } else {
+                format!("unknown object `{anchor}`")
+            }
+        })?;
         GrowthAnchor::from_def(c.def(id))
             .and_then(|def| def.slot(slot))
             .map(|def| (def, id))

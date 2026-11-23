@@ -68,7 +68,9 @@ use crate::kernel::locus::LocusDef;
 use crate::kernel::{Construction, Def, Id, Kind, Value};
 use std::fmt;
 
-pub use intersect::growth::{boundary_slot_owner, restore_boundary_labels, BoundaryOutputs};
+pub use intersect::growth::{
+    boundary_slot_owner, first_slot_owner, growth_owner, restore_boundary_labels, BoundaryOutputs,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ScriptError {

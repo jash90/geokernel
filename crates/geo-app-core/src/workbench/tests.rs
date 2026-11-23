@@ -1787,7 +1787,14 @@ type LabelCase<'a> = (&'a str, &'a str, &'a [f64], &'a [&'a str], &'a [&'a str])
 
 #[test]
 fn interval_roots_free_labels_and_take_new_ones_through_every_replay() {
-    let cases: [LabelCase; 2] = [
+    let cases: [LabelCase; 3] = [
+        (
+            "f(x) = sin(x)\nh(x) = 0\nb = 10\nR = Intersect(f, h, 1, b)\nd = x(R_{3})",
+            "b",
+            &[2.0, 10.0, 13.0, 2.0, 13.0],
+            &["R", "R_{3}", "A", "B", "d"],
+            &["R_{1}", "R_{2}"],
+        ),
         (
             "f(x) = x^2 - 1\nh(x) = 0\na = 3\nb = -3\nR = Intersect(f, h, a, b)",
             "a",
