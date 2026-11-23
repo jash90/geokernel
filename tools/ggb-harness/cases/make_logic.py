@@ -238,4 +238,9 @@ case("definedreview", [
 ], [])
 case("definedreview", ["s = Slider((?), 2)", "b = Defined(s)"], [])
 
+
+case("definedproducts", ["a = -1.001", "b = -1", "f(x) = a*(b*?)", "d = Defined(f)"], [])
+case("definedproducts", ["f(x) = ?+0*If(true, 2, 3)", "d = Defined(f)"], [])
+case("definedproducts", ["r(x) = x", "f(x) = ?+0*r(x)", "d = Defined(f)"], [])
+
 cases.write()

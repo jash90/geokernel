@@ -1619,9 +1619,17 @@ pub(crate) fn initialize(c: &mut Construction, id: Id, d: ExprDef) -> Result<Val
         && e.nodes.iter().any(|node| matches!(node, Node::If(..)))
         && e.nodes.iter().any(|node| matches!(node, Node::Dilate(..)))
     {
-        let transforms = eval::validate_dilations(c, e)?;
-        c.exprs.entries[d.index as usize].nested_transforms = transforms;
+        let meter = eval::Lists::new(Vec::new());
+        return eval::with_command_budget(Some(&meter), || {
+            let transforms = eval::validate_dilations(c, entry(c, d), &meter)?;
+            c.exprs.entries[d.index as usize].nested_transforms = transforms;
+            initialize_value(c, id, d)
+        });
     }
+    initialize_value(c, id, d)
+}
+
+fn initialize_value(c: &mut Construction, id: Id, d: ExprDef) -> Result<Value, Error> {
     let (value, invalid_transform_list) = if entry(c, d).lists
         && !matches!(d.kind, Kind::Text | Kind::Function | Kind::FunctionNVar)
     {

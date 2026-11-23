@@ -316,8 +316,20 @@ pub fn arg_kind(arg: &str, labels: &BTreeMap<String, Kind>) -> Option<Kind> {
     if a == "true" || a == "false" {
         return Some(Kind::Boolean);
     }
-    if a.starts_with('{') && closing(a, 0) == Some(a.len()) {
+    let list_literal =
+        |value: &str| value.starts_with('{') && closing(value, 0) == Some(value.len());
+    if list_literal(a) {
         return Some(Kind::List);
+    }
+    // Dilating a list preserves its kind. This identifies the Length(list)
+    // probe in dilation cases without attributing its gap to other overloads.
+    if a.starts_with("Dilate(") {
+        let (_, args) = geo_kernel::script::split_call(a)?;
+        if let [source, _] | [source, _, _] = args.as_slice() {
+            if list_literal(source) || labels.get(*source) == Some(&Kind::List) {
+                return Some(Kind::List);
+            }
+        }
     }
     if a.starts_with('(') && closing(a, 0) == Some(a.len()) {
         let inner = split_args(&a[1..a.len() - 1]);
@@ -993,6 +1005,8 @@ mod tests {
         assert_eq!(arg_kind("true", &l), Some(Kind::Boolean));
         assert_eq!(arg_kind("(1, a)", &l), Some(Kind::Point));
         assert_eq!(arg_kind("{1, 2}", &l), Some(Kind::List));
+        assert_eq!(arg_kind("Dilate({A}, 2)", &l), Some(Kind::List));
+        assert_eq!(arg_kind("Dilate(A, 2)", &l), None);
         assert_eq!(arg_kind("A + (1, 0)", &l), None);
         assert_eq!(arg_kind("sqrt(a)", &l), None);
         assert_eq!(arg_kind("Segment(A, A)", &l), None);

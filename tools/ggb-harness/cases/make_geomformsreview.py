@@ -44,4 +44,9 @@ case("orthogonalspace", [
     "P = (2, 2)", "g: y = 2", "h = OrthogonalLine(P, g, space)",
 ], [mv("P", 3, -1)])
 
+
+case("orthogonalgrouped", [
+    "P = (2, 2)", "g: y = 2", "h = OrthogonalLine(P, g, (space))",
+], [mv("P", 3, -1)])
+
 cases.write()

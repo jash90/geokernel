@@ -39,7 +39,7 @@ Intersect,,geometry,P0,partial,79,70,"Carriers, conics, functions, polygonal bou
 IntersectPath,,geometry,P1,partial,9,6,"Polygons with lines, segments, rays or other polygons. Conics with segments or paths of up to 1,000 vertices."
 IntersectRegion,,english,P2,partial,9,8,
 Distance,,geometry,P0,partial,4,1,"Distance(point, point); point and path in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers"
-Length,,geometry,P1,partial,11,9,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
+Length,,geometry,P1,partial,11,8,"Point, vector, segment, list, text, locus sample count, conic part, function or Cartesian curve between bounds"
 Radius,,geometry,P1,todo,1,0,Radius(conic or conic part); defined for circle and single-point types
 Type,,geometry,P1,todo,0,0,
 CircleArc,,geometry,P1,done,1,1,"CircularArc(centre, point, point)"
@@ -104,7 +104,7 @@ CountIf,,logical,P2,done,2,2,
 IsInteger,,logical,P2,done,1,1,
 KeepIf,,logical,P2,done,2,2,
 Relation,,logical,P2,done,2,2,Numerical reports for supported objects. CAS function comparisons and the symbolic prover are outside scope.
-Defined,,logical,P2,done,1,1,
+Defined,,logical,P2,todo,1,0,
 IsInRegion,,logical,P2,todo,1,0,
 Root,,function,P2,done,4,4,"Seed, interval, polynomial factors and legacy function intersection. Growing additional output labels after creation is pending."
 Roots,,function,P2,done,2,2,Numerical crossings in a supplied interval or the active sampling window. Growing additional output labels after creation is pending.
@@ -340,7 +340,7 @@ Identity,,vector,P2,done,1,1,
 Dimension,,vector,P2,done,3,3,
 MatrixRank,,vector,P2,done,1,1,
 Mirror,,transformation,P1,done,3,3,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector in a point or a line; point, line, segment, circle, arc or sector in a circle (inversion)"
-Dilate,,transformation,P1,done,19,19,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function, Cartesian curve, raster image or list by a factor, from the origin or a point"
+Dilate,,transformation,P1,partial,19,18,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc, sector, function, Cartesian curve, raster image or list by a factor, from the origin or a point"
 Rotate,,transformation,P1,done,2,2,"point, line, segment, ray, vector, polygon, polyline, circle, conic, arc or sector by an angle, about the origin or a point"
 Translate,,transformation,P1,done,2,2,"point, line, segment, circle, conic, ray, vector, polygon, polyline, arc or sector by a vector"
 Shear,,transformation,P1,done,2,2,"point, line, segment, ray, vector, polygon, circle, conic, arc or sector with a line and a ratio"
@@ -437,7 +437,7 @@ Minimize,,optimization,P2,todo,2,0,
 ExportImage,,scripting,,out_of_scope,,,
 Curve,CurveCartesian,function,P2,partial,,,
 FormulaText,LaTeX,text,P2,done,,,
-IsDefined,Defined,logical,P2,done,,,
+IsDefined,Defined,logical,P2,todo,,,
 ConjugateDiameter,Diameter,conic,P1,partial,,,
 LinearEccentricity,Excentricity,conic,P1,todo,,,
 MajorAxis,FirstAxis,conic,P1,todo,,,

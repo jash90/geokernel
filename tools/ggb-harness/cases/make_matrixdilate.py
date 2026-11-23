@@ -166,4 +166,29 @@ case("dilatereview", [
     "n = 2", "q = Dilate(p, n, A)", "w = Length(Dilate({p}, n, A))",
 ], [mv("A", 1, -1)])
 
+
+case("dilatevalidation", [
+    "A = (1, 1)",
+    "l = Sequence(Length(Dilate(If(i > 0, {A}, {1}), 2)), i, 1, 2)",
+], [])
+zeros = ", ".join(["0"] * 64)
+case("dilatevalidation", ["A = (1, 1)"], [
+    {"action": "reject", "line": f"q = If(false, Length({{{zeros}}}) + Length(Dilate({{1, A}}, 2)), 7)"},
+])
+case("dilatevalidation", [
+    "F = (0, 2)", "g: y = 0", "p = Parabola(F, g)", "t = Text(Dilate({p}, 2))",
+], [])
+case("dilateleaves", [
+    "A = (0, 0)", "B = (2, 0)", "C = (0, 2)", "p = Polygon(A, B, C)",
+    "n = Length(Dilate({p}, 2))",
+], [])
+case("dilateleaves", [
+    "c = CurveCartesian(t, t^2, t, 0, 1)", "n = Length(Dilate({c}, 2))",
+], [])
+case("dilatecarrier", [
+    "r0 = Circle((1, 2), 2)",
+    *[f"r{i} = If(true, r{i-1}, r{i-1})" for i in range(1, 65)],
+    "n = Length(Dilate({r64}, 2))",
+], [])
+
 cases.write()

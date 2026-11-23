@@ -508,10 +508,7 @@ command = "Last"
 form = "text,number"
 cases = ["lists-textelem-008", "lists-textelem-012"]
 
-[[form]]
-command = "Length"
-form = "list"
-cases = ["lists-length-001", "lists-length-002", "lists-length-003"]
+# Length(list) is open. The probes in matrixdilate-dilateleaves depend on unsupported leaves.
 
 [[form]]
 command = "Length"
@@ -3511,92 +3508,9 @@ cases = [
   "vectorforms-pointforms-002",
 ]
 
-[[form]]
-command = "Dilate"
-form = "list,number"
-cases = [
-  "matrixdilate-dilatelist-001",
-  "matrixdilate-dilatelist-002",
-  "matrixdilate-dilatelist-003",
-  "matrixdilate-dilatelist-004",
-  "matrixdilate-dilatelist-005",
-  "matrixdilate-dilatelist-006",
-  "matrixdilate-dilateorigin-001",
-  "matrixdilate-dilatereject-001",
-  "matrixdilate-dilatesegment-001",
-  "matrixdilate-dilateslots-001",
-  "matrixdilate-dilatereview-001",
-  "matrixdilate-dilatereview-002",
-]
+# Dilate(list,number) is open. Polygon and Cartesian curve list leaves have gaps in matrixdilate-dilateleaves.
 
-[[form]]
-command = "Defined"
-form = "any"
-cases = [
-  "algebralogic-logic-013",
-  "algebralogic-logic-014",
-  "financial-future-010",
-  "financial-future-011",
-  "financial-future-012",
-  "funcrest-svd-011",
-  "funcrest-svd-025",
-  "infinity-inputs-040",
-  "infinity-setnumber-001",
-  "logic-defined-001",
-  "logic-defined-002",
-  "logic-defined-003",
-  "logic-defined-004",
-  "logic-defined-005",
-  "logic-defined-006",
-  "logic-defined-007",
-  "logic-defined-008",
-  "logic-defined-009",
-  "logic-defined-010",
-  "logic-defined-011",
-  "conics-arcreaders-001",
-  "corners-definedimage-001",
-  "misc-sum-010",
-  "misc-sum-011",
-  "tpairfixes-fnundef-001",
-  "tpairfixes-fnundef-002",
-  "tpairfixes-fnundef-003",
-  "tpairfixes-fnundef-004",
-  "tpairfixes-fnundef-005",
-  "tpairfixes-fnundef-006",
-  "tpairfixes-fnundef-007",
-  "tpairfixes-fnundef-008",
-  "tpairfixes-fnundef-009",
-  "tpairfixes-fnundef-010",
-  "tpairfixes-fnundef-011",
-  "tpairfixes-fnundef-012",
-  "tpairfixes-fnundef-013",
-  "tpairfixes-fnundef-014",
-  "tpairfixes-fnundef-015",
-  "tpairfixes-fnundef-016",
-  "tpairfixes-fnundef-017",
-  "tpairfixes-fnundef-018",
-  "tpairfixes-fnundef-019",
-  "tpairfixes-fnundef-020",
-  "tpairfixes-fnundef-021",
-  "tpairfixes-fnundef-022",
-  "tpairfixes-fnundef-023",
-  "tpairfixes-fnundef-024",
-  "tpairfixes-fnundef-025",
-  "tpairfixes-fnundef-026",
-  "tpairfixes-fnundef-027",
-  "tpairfixes-fnundef-028",
-  "tpairfixes-fnundef-029",
-  "tpairfixes-fnundef-030",
-  "tpairfixes-fnundef-031",
-  "tpairfixes-fnundef-032",
-  "tpairfixes-fnundef-033",
-  "tpairfixes-fnundef-034",
-  "tpairfixes-fnundef-035",
-  "logic-definedreview-001",
-  "logic-definedreview-002",
-  "logic-definedreview-003",
-  "logic-definedreview-005",
-]
+# Defined(any) is open. Printed product simplification has gaps in logic-definedproducts.
 
 
 [[form]]

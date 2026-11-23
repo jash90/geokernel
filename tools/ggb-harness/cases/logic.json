@@ -218,6 +218,9 @@
     {"id": "logic-definedreview-002", "group": "logic", "script": ["a = 1.001", "f(x) = a*?", "b = Defined(f)"], "steps": [{"action": "initial"}, {"action": "set_number", "label": "a", "value": 1.01}, {"action": "set_number", "label": "a", "value": -1.001}, {"action": "set_number", "label": "a", "value": 0.001}]},
     {"id": "logic-definedreview-003", "group": "logic", "script": ["f(x) = ?+0*If(x > 0, x, -x)", "b = Defined(f)"], "steps": [{"action": "initial"}]},
     {"id": "logic-definedreview-004", "group": "logic", "script": ["A = (0, 0)", "B = (1, 0)", "C = (0, 1)", "b = !Defined((Polygon(A, B, C)))", "c = Defined((inf, true))"], "steps": [{"action": "initial"}]},
-    {"id": "logic-definedreview-005", "group": "logic", "script": ["s = Slider((?), 2)", "b = Defined(s)"], "steps": [{"action": "initial"}]}
+    {"id": "logic-definedreview-005", "group": "logic", "script": ["s = Slider((?), 2)", "b = Defined(s)"], "steps": [{"action": "initial"}]},
+    {"id": "logic-definedproducts-001", "group": "logic", "script": ["a = -1.001", "b = -1", "f(x) = a*(b*?)", "d = Defined(f)"], "steps": [{"action": "initial"}]},
+    {"id": "logic-definedproducts-002", "group": "logic", "script": ["f(x) = ?+0*If(true, 2, 3)", "d = Defined(f)"], "steps": [{"action": "initial"}]},
+    {"id": "logic-definedproducts-003", "group": "logic", "script": ["r(x) = x", "f(x) = ?+0*r(x)", "d = Defined(f)"], "steps": [{"action": "initial"}]}
   ]
 }

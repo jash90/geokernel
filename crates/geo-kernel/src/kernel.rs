@@ -867,6 +867,7 @@ pub enum Error {
     BadIndex(u8),
     NotFinite,
     InvalidTransformList,
+    EvaluationLimit,
 }
 
 impl fmt::Display for Error {
@@ -893,6 +894,9 @@ impl fmt::Display for Error {
             ),
             Error::BadIndex(i) => write!(f, "intersection index {i} is out of range"),
             Error::NotFinite => write!(f, "coordinates must be finite numbers"),
+            Error::EvaluationLimit => {
+                write!(f, "expression validation exceeded the evaluation limit")
+            }
             Error::InvalidTransformList => write!(
                 f,
                 "the list transform has no reusable geometry for its first element"

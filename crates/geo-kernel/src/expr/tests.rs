@@ -830,3 +830,35 @@ fn defined_function_reuses_the_callers_work_budget() {
         assert!(super::work_done() - before <= 3);
     });
 }
+
+#[test]
+fn exhausted_dilation_validation_refuses_the_command() {
+    let mut c = load("A = (1, 1)").unwrap();
+    let zeros = vec!["0"; 64].join(", ");
+    let source = format!("q = If(false, Length({{{zeros}}}) + Length(Dilate({{1, A}}, 2)), 7)");
+    let before = super::work_done();
+    let result = super::eval::with_work_limit(32, || crate::script::exec(&mut c, &source));
+    assert!(result.is_err());
+    assert!(c.id("q").is_none());
+    assert!(super::work_done() - before <= 32);
+}
+
+#[test]
+fn list_dilation_respects_the_remaining_carrier_budget() {
+    let mut c = load("r0 = Circle((1, 2), 2)").unwrap();
+    for i in 1..=64 {
+        let previous = i - 1;
+        crate::script::exec(
+            &mut c,
+            &format!("r{i} = If(true, r{previous}, r{previous})"),
+        )
+        .unwrap();
+    }
+    let source = "n = Length(Dilate({r64}, 2))";
+    let before = super::work_done();
+    let n = super::eval::with_work_limit(32, || crate::script::exec(&mut c, source))
+        .unwrap()
+        .unwrap();
+    assert_eq!(c.value(n), Value::Undefined);
+    assert!(super::work_done() - before <= 33);
+}

@@ -231,7 +231,7 @@ impl Lists {
             built: Cell::new(0),
             nested_transforms: RefCell::new(super::NestedTransforms::new()),
             invalid_transform_list: Cell::new(false),
-            end: work_done().saturating_add(limit()),
+            end: carrier_deadline(),
         }
     }
 
@@ -755,26 +755,66 @@ pub(super) fn text_root(
 pub(super) fn validate_dilations(
     c: &Construction,
     e: &Entry,
+    lists: &Lists,
 ) -> Result<super::NestedTransforms, crate::Error> {
-    let lists = Lists::new(Vec::new());
     let ctx = Ctx::<true> {
-        lists: Some(&lists),
-        meter: Some(&lists),
+        lists: Some(lists),
+        meter: Some(lists),
         ..Ctx::new(c, e, &Env::None)
     };
+    // Children precede their parents. Track the outermost local each node
+    // needs so dilation can wait until the sequence or other binder runs.
+    let mut free_locals = Vec::new();
     for (i, node) in e.nodes.iter().enumerate() {
         if !lists.charge(1) {
-            break;
+            return Err(crate::Error::EvaluationLimit);
         }
-        if matches!(node, Node::Dilate(..)) && matches!(e.tys[i], Ty::List(_)) {
+        let depth = outermost_local(node, &free_locals);
+        free_locals.push(depth);
+        if depth == super::NONE
+            && matches!(node, Node::Dilate(..))
+            && matches!(e.tys[i], Ty::List(_))
+        {
             ctx.list(i as u32);
             if lists.invalid_transform_list.get() {
                 return Err(crate::Error::InvalidTransformList);
+            }
+            if lists.over() {
+                return Err(crate::Error::EvaluationLimit);
             }
             lists.truncate(0);
         }
     }
     Ok(lists.take_nested_transforms())
+}
+
+fn outermost_local(node: &Node, free_locals: &[u32]) -> u32 {
+    use super::{IterationMode, NONE};
+
+    if let Node::Local(depth, _) = *node {
+        return depth;
+    }
+    super::children(node)
+        .enumerate()
+        .filter_map(|(argument, child)| {
+            let depth = free_locals[child as usize];
+            let first_bound = match (*node, argument) {
+                (Node::Seq(.., local), 0) | (Node::Filter { local, .. }, 1) => local,
+                (
+                    Node::Iteration {
+                        mode: IterationMode::Local { first, .. },
+                        ..
+                    },
+                    0,
+                ) => first,
+                (Node::Call(CallOp::Zip, first, _), 0) => free_locals[first as usize + 1],
+                (Node::Call(CallOp::Zip, ..), k) if k % 2 == 1 => return None,
+                _ => NONE,
+            };
+            (depth < first_bound).then_some(depth)
+        })
+        .min()
+        .unwrap_or(NONE)
 }
 
 /// Evaluates an entry whose result is a list: its elements go to `out`,
@@ -1504,8 +1544,10 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Dilate(src, factor, center) => {
                 let (r, sx, sy) = self.dilation(factor, center);
                 let source = self.list(src)?;
-                commands::map_list(self, i, source, |slot| {
-                    commands::dilate_slot(self.c, slot, r, sx, sy)
+                with_command_budget(self.meter, || {
+                    commands::map_list(self, i, source, |slot| {
+                        commands::dilate_slot(self.c, slot, r, sx, sy)
+                    })
                 })
             }
             _ => None,

@@ -450,6 +450,8 @@ impl Format {
                     self.quoted(text)
                 } else if let Some(id) = slot.object_id().filter(|_| slot.value.is_defined()) {
                     self.object_value(ctx, id)?
+                } else if matches!(slot.value, Value::Conic { .. }) {
+                    self.conic_equation(&slot.conic(ctx.c)?)
                 } else if slot.kind == Kind::Text {
                     self.quoted("")
                 } else {

@@ -2178,8 +2178,9 @@ pub(crate) fn parse_def(c: &Construction, rhs: &str) -> Result<Def, String> {
         func,
         "Perpendicular" | "PerpendicularLine" | "OrthogonalLine"
     ) {
-        if let [_, _, orientation @ ("xOyPlane" | "space")] = args.as_slice() {
-            if c.id(orientation).is_none() {
+        if let [_, _, orientation] = args.as_slice() {
+            let orientation = ungroup(orientation);
+            if matches!(orientation, "xOyPlane" | "space") && c.id(orientation).is_none() {
                 args.pop();
             }
         }

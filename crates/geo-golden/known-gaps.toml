@@ -3121,3 +3121,34 @@ mismatches = ["0:p", "0:q"]
 id = "cas-literal-001"
 reason = "Without the giac feature the kernel's own solver reads Solve(x+y=-0.75, y) with the free x in the place of the solving variable y and answers the line y = -0.375; the reference's CAS answers y = -x - 3/4 (recorded with Giac). The case was added to check typed decimals between -1 and 0 in the Giac input, and agrees with the feature (known-gaps-giac.toml)."
 mismatches = ["0:r4"]
+
+# Function value printing
+
+[[gap]]
+id = "logic-definedproducts-001"
+reason = "StringTemplate cancels two printed negative multipliers (outer -1.001 prints as -1, inner -1 is exact), so AlgoDefined sees exactly ?. The kernel's definedness scan does not cancel the signs across nested products."
+mismatches = ["0:d"]
+
+[[gap]]
+id = "logic-definedproducts-002"
+reason = "StringTemplate drops the zero product with the constant-condition If helper, so AlgoDefined sees exactly ?. The kernel's polynomial check sees the If operation and keeps the product."
+mismatches = ["0:d"]
+
+[[gap]]
+id = "logic-definedproducts-003"
+reason = "StringTemplate retains the zero product with the function application, so the printed value contains more than ?. The kernel's polynomial check accepts the application node as a leaf and drops the product."
+mismatches = ["0:d"]
+
+# List dilation
+
+[[gap]]
+id = "matrixdilate-dilateleaves-001"
+reason = "GeoGebra allocates a dilated polygon as a list element. The kernel's expression list slots cannot store the transformed polygon vertices, so the dilation is undefined."
+mismatches = ["0:n"]
+undefined = true
+
+[[gap]]
+id = "matrixdilate-dilateleaves-002"
+reason = "GeoGebra allocates a dilated Cartesian curve as a list element. The kernel's expression list slots cannot store the transformed curve definition and parameter interval, so the dilation is undefined."
+mismatches = ["0:n"]
+undefined = true
