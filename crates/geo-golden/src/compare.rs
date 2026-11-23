@@ -1,6 +1,7 @@
 //! The comparison rules of `golden/SCHEMA.md`.
 
 use crate::model::{ConicParts, Expected, ExpectedData, SAMPLE_XS};
+use geo_kernel::algo::stroke::StrokeData;
 use geo_kernel::expr::{Element, List};
 use geo_kernel::{ArcData, ConicData, Construction, Id, Kind, LocusData, Value};
 
@@ -185,6 +186,7 @@ pub fn compare_construction_object(
     match kind {
         Kind::Arc | Kind::Sector => compare_arc(expected, kind, &value, c.arc(id).as_ref()),
         Kind::Locus => compare_locus(expected, kind, &value, c.locus(id)),
+        Kind::PenStroke => compare_stroke(expected, kind, &value, c.stroke(id)),
         Kind::Conic => compare_conic(expected, kind, &value, c.conic(id).as_ref()).0,
         Kind::List => compare_list(c, expected, kind, c.elements(id)),
         Kind::Text | Kind::FunctionNVar | Kind::Curve | Kind::ImplicitCurve => {
@@ -669,6 +671,56 @@ pub fn compare_locus(
             return Err(format!(
                 "point {i} differs: expected {at:?} lineTo {line_to}, kernel has ({}, {}) lineTo {}",
                 p.x, p.y, p.line_to
+            ));
+        }
+    }
+    Ok(Sign::NotApplicable)
+}
+
+/// Compares a pen stroke point by point: the same number of points, each
+/// with the same segment code and coordinates within the tolerance; a
+/// missing coordinate only agrees with a non-finite one.
+pub fn compare_stroke(
+    expected: &Expected,
+    kind: Kind,
+    actual: &Value,
+    data: Option<&StrokeData>,
+) -> Result<Sign, String> {
+    if expected.kind != kind {
+        return Err(format!(
+            "type mismatch: expected {}, got {kind}",
+            expected.kind
+        ));
+    }
+    let (want, got) = match (&expected.data, actual, data) {
+        (None, Value::Undefined, _) => return Ok(Sign::NotApplicable),
+        (None, _, _) => return Err("expected undefined, kernel has a value".into()),
+        (Some(_), Value::Undefined, _) | (Some(_), _, None) => {
+            return Err("expected a value, kernel is undefined".into())
+        }
+        (Some(ExpectedData::Stroke(want)), Value::PenStroke { .. }, Some(d)) => {
+            (want, d.points.iter())
+        }
+        _ => return Err("kernel value has a different shape than its kind".into()),
+    };
+    if want.len() != got.len() {
+        return Err(format!(
+            "{} points expected, kernel has {}",
+            want.len(),
+            got.len()
+        ));
+    }
+    let agree = |want: Option<f64>, got: f64| match want {
+        Some(w) => numbers_agree(w, got),
+        None => !got.is_finite(),
+    };
+    for (i, (&(x, y, code), p)) in want.iter().zip(got).enumerate() {
+        let got_code = if p.is_defined() { p.segment.code() } else { 0 };
+        let same_y = x.is_none() || agree(y, p.y);
+        if !agree(x, p.x) || !same_y || code != got_code {
+            return Err(format!(
+                "point {i} differs: expected ({x:?}, {y:?}) code {code}, kernel has ({}, {}) code {got_code}",
+                p.x, p.y
             ));
         }
     }

@@ -320,17 +320,30 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
                 }
             }
         };
-        if let Some(repeat) = args.get(1) {
-            // the repeat flag is read as a double: a number or a boolean
-            let numeric = crate::expr::argument_number(c, repeat).is_some()
-                || matches!(*repeat, "true" | "false")
-                || c.id(repeat).is_some_and(
-                    |id| matches!(c.kind(id), k if k.is_number() || k == Kind::Boolean),
-                );
-            if !numeric {
-                return Err(format!("`{repeat}` is not a number"));
-            }
+        // The repeat flag is read as a double and cut to an `int`: `true`
+        // and 1 repeat, anything else plays once (`CmdSlowPlot`).
+        let mut repeat = 1.0;
+        if let Some(arg) = args.get(1) {
+            repeat = match *arg {
+                "true" => 1.0,
+                "false" => 0.0,
+                _ => match c.id(arg) {
+                    Some(id) if c.kind(id).is_number() => match c.value(id) {
+                        Value::Number(v) => v,
+                        _ => f64::NAN,
+                    },
+                    Some(id) if c.kind(id) == Kind::Boolean => match c.value(id) {
+                        Value::Bool(b) => f64::from(u8::from(b)),
+                        _ => f64::NAN,
+                    },
+                    Some(_) => return Err(format!("`{arg}` is not a number")),
+                    None => crate::expr::argument_number(c, arg)
+                        .ok_or_else(|| format!("`{arg}` is not a number"))?,
+                },
+            };
         }
+        // Java's `(int)` cast: NaN is 0, the rest truncates and saturates
+        let repeats = repeat as i32 == 1;
         let label = (0..=c.len() / 23 + 1)
             .flat_map(|index| (b'a'..=b'w').map(move |letter| (index, char::from(letter))))
             .map(|(index, letter)| {
@@ -352,6 +365,19 @@ fn slow_plot(c: &mut Construction, name: &str, args: &[&str]) -> Result<Option<I
         };
         let corners = [corner("1")?, corner("2")?];
         crate::expr::define_slow_plot(c, name, function, slider, corners)?;
+        // the slider plays through its interval with the automatic
+        // increment of a new number (0.001 for this interval while it plays;
+        // 0.01 is only the stored step) and the source graph is hidden
+        let mode = if repeats {
+            crate::kernel::animation::AnimationMode::Increasing
+        } else {
+            crate::kernel::animation::AnimationMode::IncreasingOnce
+        };
+        c.start_animation(
+            slider,
+            crate::kernel::animation::Animation::playing(0.01, mode),
+        );
+        c.request_hidden(function);
         Ok(Some(slider))
     })();
     if result.is_err() {
@@ -507,6 +533,11 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     // function under a plain name
     if let Some(("SlowPlot", args)) = split_call(rhs) {
         return slow_plot(c, name, &args);
+    }
+    // `name = PenStroke(...)`: literal points frozen into a smoothed stroke
+    // (`CmdPenStroke` reads its arguments without resolving them)
+    if let Some(("PenStroke", args)) = split_call(rhs) {
+        return c.add_pen_stroke(name, &args).map(Some);
     }
     // `name = Maximize(expr, independent)` and `Minimize`: the dependent value
     // may be an inline arithmetic expression, which becomes a hidden
@@ -927,6 +958,7 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
     if !rhs.starts_with("$saved(")
         && !rhs.starts_with("$pointOnPath(")
         && !rhs.starts_with("$slider(")
+        && !rhs.starts_with("$penStroke(")
     {
         return None;
     }
@@ -941,6 +973,12 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
                     parse_number(max)?,
                 )
                 .map_err(|e| e.to_string()),
+            ("$saved", [literal, _definition]) if literal.starts_with("$penStroke(") => {
+                match split_call(literal) {
+                    Some(("$penStroke", coords)) => c.add_saved_stroke(name, &coords),
+                    _ => Err("invalid saved stroke".into()),
+                }
+            }
             ("$saved", [literal, _definition]) => {
                 let def = if let Some(def) = parse_forced(literal) {
                     def?
@@ -951,6 +989,7 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
                 };
                 c.add(name, def).map_err(|e| e.to_string())
             }
+            ("$penStroke", coords) => c.add_saved_stroke(name, coords),
             ("$pointOnPath", [curve, parameter]) => c
                 .add_saved_curve_point(name, object(c, curve)?, parse_number(parameter)?)
                 .map_err(|e| e.to_string()),
@@ -969,6 +1008,25 @@ fn define_saved(c: &mut Construction, name: &str, rhs: &str) -> Option<Result<Id
         }
     };
     Some(parse())
+}
+
+/// The journal line that keeps the points of the pen stroke `id` made by
+/// `line`: `label = $saved($penStroke(...), definition)`, so that replaying
+/// it restores the frozen points whatever the view, and the definition
+/// stays as typed. `None` for any other object or a line already saved.
+pub fn frozen_stroke_line(c: &Construction, id: Id, line: &str) -> Option<String> {
+    if c.kind(id) != Kind::PenStroke || split_comment(line).1.is_some() {
+        return None;
+    }
+    let separator = line.find([':', '='])?;
+    let (lhs, rhs) = (line[..separator].trim(), line[separator + 1..].trim());
+    if rhs.starts_with('$') {
+        return None;
+    }
+    // an undefined stroke has no points that a view could change
+    let stroke = c.stroke(id).filter(|stroke| stroke.defined)?;
+    let saved = crate::algo::stroke::saved_definition(stroke);
+    Some(format!("{lhs} = $saved({saved}, {rhs})"))
 }
 
 /// The definition text saved with an independent object's exact value.
@@ -1871,7 +1929,7 @@ fn is_finite(v: &Value) -> bool {
         Value::Conic { .. } => true,
         Value::Arc { length } => length.is_finite(),
         Value::Sector { area } => area.is_finite(),
-        Value::Locus { .. } => true,
+        Value::Locus { .. } | Value::PenStroke { .. } => true,
         Value::HomogeneousPoint { .. }
         | Value::Button
         | Value::InputBox

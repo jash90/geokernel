@@ -293,9 +293,26 @@ pub fn hit(
                     .any(|e| segment_meets_square(e[0], e[1], p, t)),
             )
         }
+        Value::PenStroke { .. } => {
+            let runs = c.stroke(id)?.runs(STROKE_STEPS);
+            let t = t + CURVE_STROKE / 2.0;
+            boundary(runs.iter().any(|run| {
+                let pts: Vec<_> = run.iter().map(|&(x, y)| tr.world_to_screen(x, y)).collect();
+                match pts.as_slice() {
+                    // a lone point is drawn as the round cap of the pen
+                    [q] => (q.0 - p.0).abs() <= t && (q.1 - p.1).abs() <= t,
+                    _ => pts
+                        .windows(2)
+                        .any(|e| segment_meets_square(e[0], e[1], p, t)),
+                }
+            }))
+        }
         _ => None,
     }
 }
+
+/// The chords a cubic piece of a pen stroke is hit with.
+const STROKE_STEPS: usize = 16;
 
 /// A conic's quadratic in its own coordinate system avoids cancellation
 /// from the expanded world coefficients of a translated curve.

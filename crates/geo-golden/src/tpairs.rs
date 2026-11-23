@@ -261,6 +261,9 @@ pub fn value_string(c: &Construction, id: Id, template: &str) -> Option<String> 
             return styled_point(*x, *y, mode);
         }
     }
+    if c.kind(id) == Kind::PenStroke {
+        return Some(stroke_string(c.stroke(id)));
+    }
     match (&value, c.kind(id)) {
         (Value::Undefined, kind) => match kind {
             Kind::Number if template != "xml" => Some("?".into()),
@@ -284,6 +287,23 @@ pub fn value_string(c: &Construction, id: Id, template: &str) -> Option<String> 
         (_, Kind::List) => list_string(c, c.elements(id)?, template, &mut 16_384),
         _ => object_template(c, id, template),
     }
+}
+
+/// The value of a pen stroke, `PenStrokeBezier[x,y,code,...]`, every number
+/// in five significant digits (`GeoLocusStroke.getPointString`); a break
+/// prints `NaN,NaN,0`.
+fn stroke_string(stroke: Option<&geo_kernel::algo::stroke::StrokeData>) -> String {
+    let mut fields = Vec::new();
+    for p in stroke.map_or(&[][..], |s| &s.points[..]) {
+        if p.is_defined() {
+            fields.push(geo_kernel::algo::stroke::reference_number(p.x));
+            fields.push(geo_kernel::algo::stroke::reference_number(p.y));
+            fields.push(p.segment.code().to_string());
+        } else {
+            fields.extend(["NaN".into(), "NaN".into(), "0".into()]);
+        }
+    }
+    format!("PenStrokeBezier[{}]", fields.join(","))
 }
 
 /// A point in the coordinate style `ToComplex` or `ToPolar` set
@@ -916,6 +936,8 @@ fn compare_at(
             compare_conic(&expected, kind, &actual, c.conic(id).as_ref())
                 .0
                 .err()
+        } else if kind == Kind::PenStroke {
+            crate::compare::compare_stroke(&expected, kind, &actual, c.stroke(id)).err()
         } else if kind == Kind::List {
             compare_list(c, &expected, kind, c.elements(id)).err()
         } else if matches!(
@@ -1451,6 +1473,31 @@ pub fn write_gaps(gaps: &BTreeMap<String, (Category, String, BTreeMap<String, ()
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stroke_numbers_round_half_up_in_five_digits() {
+        assert_eq!(geo_kernel::algo::stroke::reference_number(1.0), "1.0000E0");
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(-0.8533333333333334),
+            "-8.5333E-1"
+        );
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(1.03125),
+            "1.0313E0"
+        );
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(99999.5),
+            "1.0000E5"
+        );
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(-0.0),
+            "-0.0000E0"
+        );
+        assert_eq!(
+            geo_kernel::algo::stroke::reference_number(2.5e-10),
+            "2.5000E-10"
+        );
+    }
 
     #[test]
     fn xml_doubles_use_exponents_outside_the_plain_range() {

@@ -3171,18 +3171,6 @@ reason = "the kernel refuses the input: unknown command `PlaySound`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:3240"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `PenStroke`"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:3241"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `PenStroke`"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:3248"
 category = "unsupported-command"
 reason = "the kernel refuses the input: unknown command `Percentile`"

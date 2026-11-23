@@ -85,8 +85,35 @@ impl Construction {
         if restored.iter().all(Option::is_none) {
             return Err("slider has no saved endpoints".into());
         }
+        let old_bounds = self.slider_bounds(id);
+        let old_value = match self.values[id.index()] {
+            Value::Number(v) => v,
+            _ => f64::NAN,
+        };
         self.saved_slider_bounds.insert(id, restored);
         let [min, max] = self.slider_bounds(id);
+        // An animation goes on from the value the bounds set last: the
+        // reference sets the lower end, then the upper one, and each sets
+        // the number again in an ordered interval
+        // (`GeoNumeric.resolveMinMax`) or leaves it undefined in a reversed
+        // one, without touching the animation.
+        let mut position = None;
+        if let ([Some(_), Some(old_max)], Some(min), Some(max)) = (old_bounds, min, max) {
+            let mut value = old_value;
+            for [lo, hi] in [[min, old_max], [min, max]] {
+                if lo <= hi {
+                    let from = if value.is_nan() { 1.0 } else { value };
+                    value = clamp(from, [Some(lo), Some(hi)]);
+                    position = Some(value);
+                } else {
+                    value = f64::NAN;
+                }
+            }
+        }
+        match position {
+            Some(position) => self.set_animation_position(id, position),
+            None => self.reset_animation_position(id),
+        }
         if min.zip(max).is_some_and(|(min, max)| min > max) {
             self.values[id.index()] = Value::Undefined;
             self.propagate(id);

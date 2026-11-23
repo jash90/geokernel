@@ -1094,9 +1094,23 @@ impl Log {
             kept.ops = self.ops.prefix(n);
         }
         kept.hidden = self.hidden.clone();
+        // A replay keeps the visibility of the journal, whatever the
+        // commands it runs asked for.
+        c.take_hidden_requests();
         self.replay_conditions(&mut c, &mut kept);
         kept.prune_image_assets(&mut c);
         Ok((c, kept))
+    }
+
+    /// Hides the objects the commands of the line just run asked to hide
+    /// (`SlowPlot` hides its source graph); hidden helpers have no row.
+    pub(crate) fn apply_hidden_requests(&mut self, c: &mut Construction) {
+        for id in c.take_hidden_requests() {
+            let label = c.label(id);
+            if !label.starts_with('\0') && c.id(label) == Some(id) {
+                self.hidden.insert(label.to_owned());
+            }
+        }
     }
 
     /// A copy that shares no storage with `self`: what every clone was
@@ -1654,6 +1668,7 @@ impl Log {
                 .unwrap_or_else(|| exec_definition(&mut c, &line))
                 .map_err(at)?;
             log.record_definition(&c, before, first, &line);
+            log.apply_hidden_requests(&mut c);
             if let Some(id) = first.filter(|_| grow && c.len() > before) {
                 groups.record(&c, &line, id, c.len() - before);
             }

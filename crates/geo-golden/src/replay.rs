@@ -2,7 +2,7 @@
 
 use crate::compare::{
     compare_arc, compare_conic, compare_extra, compare_list, compare_locus, compare_sampled,
-    line_scale_agrees, Sign,
+    compare_stroke, line_scale_agrees, Sign,
 };
 use crate::model::{implicit_output, indexed_prefix, label_prefix, Case, Step};
 use geo_app_core::workbench::Workbench;
@@ -150,6 +150,7 @@ fn replay_document(case: &Case) -> CaseOutcome {
             Step::SetSliderBounds { .. } => {
                 Err("unexpected slider bounds edit in a deletion case".into())
             }
+            Step::Animate { .. } => Err("unexpected animation in a deletion case".into()),
         };
         if let Err(error) = result {
             out.mismatches
@@ -202,6 +203,18 @@ fn compare_snapshot(
         }
         if c.kind(id) == Kind::Locus {
             if let Err(why) = compare_locus(expected, Kind::Locus, &actual, c.locus(id)) {
+                out.mismatches.push(failure(
+                    i,
+                    label,
+                    &format!("{expected:?}"),
+                    format!("{actual:?} ({why})"),
+                ));
+            }
+            continue;
+        }
+        if c.kind(id) == Kind::PenStroke {
+            let data = c.stroke(id);
+            if let Err(why) = compare_stroke(expected, Kind::PenStroke, &actual, data) {
                 out.mismatches.push(failure(
                     i,
                     label,
@@ -292,6 +305,12 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
                 bounds: [Some(min.to_string()), Some(max.to_string())],
             }
             .apply(c)?;
+            Ok(None)
+        }
+        Step::Animate { frames } => {
+            for _ in 0..*frames {
+                c.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);
+            }
             Ok(None)
         }
         Step::Reject { line, error } => {

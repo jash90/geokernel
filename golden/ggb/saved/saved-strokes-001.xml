@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<expression label="s" exp="PenStroke[]"/>
+<element type="penstroke" label="s">
+	<strokeBezierCoords val="-3.0000E0,3.0000E0,1,-1.1680E0,2.9040E0,0,5.5600E-1,2.8320E0,0,2.0640E0,2.8080E0,0,2.5187E0,2.8107E0,4,2.9193E0,2.8253E0,4,3.2480E0,2.8560E0,3,3.5767E0,2.8867E0,4,3.8333E0,2.9333E0,4,4.0000E0,3.0000E0,3,4.1667E0,3.0667E0,4,4.2433E0,3.1533E0,4,4.2480E0,3.2560E0,3,4.2527E0,3.3587E0,4,4.1853E0,3.4773E0,4,4.0640E0,3.6080E0,3,3.9427E0,3.7387E0,4,3.7673E0,3.8813E0,4,3.5560E0,4.0320E0,3,3.3447E0,4.1827E0,4,3.0973E0,4.3413E0,4,2.8320E0,4.5040E0,3,2.0000E0,5.0000E0,0,NaN,NaN,0"/>
+	<show object="true" label="false" ev="8"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+</element>
+<expression label="t" exp="PenStroke[]"/>
+<element type="penstroke" label="t">
+	<strokeBezierCoords val="0.0000E0,0.0000E0,1,1.0000E0,1.0000E0,0,NaN,NaN,0,2.0000E0,0.0000E0,1,2.2000E0,2.9600E-1,0,2.2667E0,3.9200E-1,4,2.3333E0,4.8400E-1,4,2.4000E0,5.6800E-1,3,2.4667E0,6.5200E-1,4,2.5333E0,7.2800E-1,4,2.6000E0,7.9200E-1,3,2.6667E0,8.5600E-1,4,2.7333E0,9.0800E-1,4,2.8000E0,9.4400E-1,3,2.8667E0,9.8000E-1,4,2.9333E0,1.0000E0,4,3.0000E0,1.0000E0,3,3.0667E0,1.0000E0,4,3.1333E0,9.8000E-1,4,3.2000E0,9.4400E-1,3,3.2667E0,9.0800E-1,4,3.3333E0,8.5600E-1,4,3.4000E0,7.9200E-1,3,3.4667E0,7.2800E-1,4,3.5333E0,6.5200E-1,4,3.6000E0,5.6800E-1,3,3.6667E0,4.8400E-1,4,3.7333E0,3.9200E-1,4,3.8000E0,2.9600E-1,3,4.0000E0,0.0000E0,0,NaN,NaN,0"/>
+	<show object="true" label="false" ev="8"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+</element>
+<expression label="u" exp="PenStroke[]"/>
+<element type="penstroke" label="u">
+	<strokeBezierCoords val="1.0000E0,3.0000E0,1,1.0000E0,3.0000E0,0,NaN,NaN,0"/>
+	<show object="true" label="false" ev="8"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+</element>
+<expression label="v" exp="PenStroke[]"/>
+<element type="penstroke" label="v">
+	<strokeBezierCoords val=""/>
+	<show object="true" label="false" ev="8"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+</element>
+<expression label="w" exp="PenStroke[]"/>
+<element type="penstroke" label="w">
+	<strokeBezierCoords val=""/>
+	<show object="true" label="false" ev="8"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+</element>
+<expression label="q" exp="PenStroke[]"/>
+<element type="penstroke" label="q">
+	<strokeBezierCoords val="0.0000E0,0.0000E0,1,1.4641E-2,9.5393E-3,4,2.9282E-2,1.9079E-2,4,4.5000E-2,5.0000E-2,3,6.0718E-2,8.0921E-2,4,7.7513E-2,1.3322E-1,4,9.0000E-2,1.8000E-1,3,1.0249E-1,2.2678E-1,4,1.1067E-1,2.6802E-1,4,1.2000E-1,3.2000E-1,3,1.5000E-1,5.0000E-1,0,1.8000E-1,7.2000E-1,0,2.1000E-1,9.8000E-1,0,2.2001E-1,1.0476E0,4,2.3000E-1,1.0771E0,4,2.4000E-1,1.2800E0,3,2.5000E-1,1.4829E0,4,2.6000E-1,1.8592E0,4,2.7000E-1,1.6200E0,3,3.0000E-1,3.0000E-1,0,3.1000E-1,7.4021E-2,4,3.2000E-1,4.7685E-1,4,3.3000E-1,7.2000E-1,3,3.6000E-1,1.1800E0,0,3.9000E-1,1.6800E0,0,NaN,NaN,0"/>
+	<show object="true" label="false" ev="8"/>
+	<objColor r="28" g="28" b="31" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+</element>
+</construction>
+</geogebra>

@@ -287,6 +287,114 @@ fn a_slow_plot_slider_assignment_survives_undo_and_redo() {
 }
 
 #[test]
+fn slow_plot_hides_its_source_and_plays_its_slider() {
+    let mut w = Workbench::default();
+    w.run_line("f(x) = sin(x)").unwrap();
+    w.run_line("g = SlowPlot(f, false)").unwrap();
+    let c = w.construction();
+    let (f, a) = (c.id("f").unwrap(), c.id("a").unwrap());
+    assert!(!w.is_visible(f));
+    assert!(w.is_visible(a));
+    assert!(w.is_animating());
+    for _ in 0..400 {
+        w.animate(30.0);
+    }
+    // played once to the upper end, without journal entries of its own
+    assert!(!w.is_animating());
+    assert_eq!(w.construction().value(a), Value::Number(1.0));
+    assert!(w.undo());
+    assert!(w.construction().id("g").is_none());
+    assert!(w.is_visible(w.construction().id("f").unwrap()));
+}
+
+#[test]
+fn a_rebuild_keeps_where_the_slow_plot_slider_was() {
+    let mut w = Workbench::default();
+    w.run_line("f(x) = x").unwrap();
+    w.run_line("g = SlowPlot(f, false)").unwrap();
+    for _ in 0..400 {
+        w.animate(30.0);
+    }
+    assert!(!w.is_animating());
+    w.run_line("B = (1, 1)").unwrap();
+    let id = w.construction().id("B").unwrap();
+    assert!(w.delete(id));
+    let c = w.construction();
+    assert_eq!(c.value(c.id("a").unwrap()), Value::Number(1.0));
+    assert!(!w.is_animating());
+    // a slider still playing goes on from where it was
+    w.run_line("h = SlowPlot(f)").unwrap();
+    for _ in 0..30 {
+        w.animate(30.0);
+    }
+    let b = w.construction().id("b").unwrap();
+    let before = w.construction().value(b);
+    w.run_line("C = (2, 2)").unwrap();
+    let id = w.construction().id("C").unwrap();
+    assert!(w.delete(id));
+    assert_eq!(w.construction().value(b), before);
+    assert!(w.is_animating());
+    w.set_animation_running(false);
+    assert!(!w.is_animating() && w.has_animation());
+}
+
+#[test]
+fn a_redone_slow_plot_plays_while_older_sliders_stay_paused() {
+    let mut w = Workbench::default();
+    w.run_line("f(x) = x").unwrap();
+    w.run_line("g = SlowPlot(f)").unwrap();
+    w.set_animation_running(false);
+    w.run_line("h = SlowPlot(f)").unwrap();
+    assert!(w.is_animating());
+    w.set_animation_running(false);
+    assert!(w.undo());
+    assert!(w.construction().id("h").is_none());
+    assert!(!w.is_animating());
+    // the redone command starts its slider again, as running it did
+    assert!(w.redo());
+    assert!(w.construction().id("h").is_some());
+    assert!(w.is_animating());
+}
+
+#[test]
+fn a_typed_stroke_keeps_its_points_through_a_rebuild_in_another_view() {
+    let mut w = Workbench::default();
+    // 10 pixels per unit: the stroke is subdivided less than in the 50
+    // pixels per unit of a construction a rebuild starts from
+    w.set_view(crate::interact::ViewTransform::new(
+        geo_kernel::svg::View {
+            xmin: -40.0,
+            xmax: 40.0,
+            ymin: -40.0,
+            ymax: 40.0,
+        },
+        800.0,
+        800.0,
+    ));
+    w.run_line("s = PenStroke((-3, 3), (4, 3), (2, 5))")
+        .unwrap();
+    w.run_line("A = (1, 1)").unwrap();
+    let bits = |w: &Workbench| {
+        let c = w.construction();
+        let stroke = c.stroke(c.id("s").unwrap()).unwrap();
+        stroke
+            .triplets()
+            .iter()
+            .map(|v| v.to_bits())
+            .collect::<Vec<_>>()
+    };
+    let before = bits(&w);
+    assert_eq!(before.len(), 3 * 16, "smoothed at 10 pixels per unit");
+    assert_eq!(
+        w.definition("s"),
+        Some("PenStroke((-3, 3), (4, 3), (2, 5))")
+    );
+    let id = w.construction().id("A").unwrap();
+    assert!(w.delete(id));
+    assert_eq!(bits(&w), before);
+}
+
+#[test]
 fn set_number_recomputes_dependents_and_undoes() {
     let mut w = triangle();
     let r = w.construction().id("r").unwrap();

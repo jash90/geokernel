@@ -31,6 +31,7 @@
 
 #[path = "algo/angle.rs"]
 pub mod angle;
+pub mod animation;
 #[path = "algo/axis.rs"]
 mod axis;
 #[path = "control.rs"]
@@ -159,6 +160,9 @@ pub enum Kind {
     InputBox,
     Image,
     PieChart,
+    /// A freehand stroke of lines and cubic pieces, frozen at creation;
+    /// its points are read with [`Construction::stroke`].
+    PenStroke,
 }
 
 impl Kind {
@@ -196,6 +200,7 @@ impl fmt::Display for Kind {
             Kind::InputBox => "input box",
             Kind::Image => "image",
             Kind::PieChart => "pie chart",
+            Kind::PenStroke => "pen stroke",
         })
     }
 }
@@ -309,6 +314,11 @@ pub enum Value {
     Locus {
         len: u32,
     },
+    /// A defined pen stroke with its number of points, subpath breaks
+    /// included. The points are read with [`Construction::stroke`].
+    PenStroke {
+        len: u32,
+    },
     /// The object does not exist for the current positions
     /// (for example two circles that no longer meet).
     Undefined,
@@ -399,6 +409,7 @@ impl Value {
                 | Value::List { .. }
                 | Value::Conic { .. }
                 | Value::Locus { .. }
+                | Value::PenStroke { .. }
                 | Value::ImplicitCurve
                 | Value::Undefined => [0.0; 5],
             }
@@ -433,6 +444,7 @@ impl Value {
             | Value::List { .. }
             | Value::Conic { .. }
             | Value::Locus { .. }
+            | Value::PenStroke { .. }
             | Value::Undefined => true,
         }
     }
@@ -469,6 +481,9 @@ pub enum Def {
     InputBox(Option<Id>),
     Image(IdList),
     Chart(algo::charts::ChartDef),
+    /// A pen stroke; its frozen points are kept by the construction (see
+    /// [`Construction::stroke`]) and it reads no objects.
+    PenStroke,
     /// A free angle in radians, such as `c = 30°`: a number the user can
     /// change that `floor`, `ceil` and `round` treat in whole degrees
     /// (GeoGebra's independent `GeoAngle`).
@@ -679,6 +694,7 @@ impl Def {
             Def::InputBox(_) => Kind::InputBox,
             Def::Image(_) => Kind::Image,
             Def::Chart(d) => d.kind(),
+            Def::PenStroke => Kind::PenStroke,
             Def::Angle(_)
             | Def::Measure(MeasureDef::Angle(..))
             | Def::Polygon(PolygonDef::Angle { .. }) => Kind::Angle,
@@ -770,6 +786,7 @@ impl Def {
             | Def::InputBox(None)
             | Def::Image(_)
             | Def::Chart(_)
+            | Def::PenStroke
             | Def::Angle(_)
             | Def::Expr(_)
             | Def::Equation(_)
@@ -915,6 +932,16 @@ pub struct Construction {
     replacement_label: Option<String>,
     images: image::Images,
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
+    /// The animations of the sliders, see [`Construction::animate`].
+    animations: std::collections::BTreeMap<Id, animation::Animation>,
+    /// Whether the animation timer runs (`AnimationManager.isRunning`); a
+    /// playing slider moves only while it does.
+    animation_running: bool,
+    /// Objects commands asked to hide (see
+    /// [`Construction::take_hidden_requests`]).
+    hidden_requests: Vec<Id>,
+    /// The frozen points of the pen strokes.
+    pub(crate) strokes: std::collections::BTreeMap<Id, algo::stroke::StrokeData>,
     drawing_styles: std::collections::BTreeMap<Id, DrawingStyle>,
     drawing_layers: u16,
     text_presentations: HashMap<Id, text::TextOverrides>,
@@ -1668,6 +1695,12 @@ impl Construction {
         });
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
+        self.strokes.split_off(&Id(at.len));
+        self.animations.split_off(&Id(at.len));
+        if !self.animations.values().any(|a| a.playing) {
+            self.animation_running = false;
+        }
+        self.hidden_requests.retain(|id| id.0 < at.len);
         self.drawing_styles.split_off(&Id(at.len));
         self.discard_text_presentations(at.len);
         self.equation_forms.retain(|id, _| id.0 < at.len);
@@ -2661,7 +2694,12 @@ impl Construction {
         self.update_number(id, v, false)
     }
 
-    fn update_number(&mut self, id: Id, v: f64, clamp_slider: bool) -> Result<usize, Error> {
+    pub(crate) fn update_number(
+        &mut self,
+        id: Id,
+        v: f64,
+        clamp_slider: bool,
+    ) -> Result<usize, Error> {
         self.last_update_changed_automatic_root = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
@@ -2709,6 +2747,8 @@ impl Construction {
         }
         self.defs[id.0] = new_def;
         self.values[id.0] = self.compute(new_def, id.0);
+        // a value set by hand is where an animation goes on from
+        self.reset_animation_position(id);
         Ok(self.propagate(id))
     }
 
@@ -3417,7 +3457,12 @@ impl Construction {
 
     pub(crate) fn check(&self, def: &Def) -> Result<(), Error> {
         match *def {
-            Def::XAxis | Def::YAxis | Def::Boolean(_) | Def::Button | Def::InputBox(None) => Ok(()),
+            Def::XAxis
+            | Def::YAxis
+            | Def::Boolean(_)
+            | Def::Button
+            | Def::InputBox(None)
+            | Def::PenStroke => Ok(()),
             Def::Chart(d) => d.check(self),
             Def::Image(list) => self.expect_list(list, POINT),
             Def::Conditional { args, kind } => {
@@ -3542,6 +3587,12 @@ impl Construction {
 
     /// `def` is the definition of the object at index `i`.
     fn compute(&self, def: Def, i: usize) -> Value {
+        if let Def::PenStroke = def {
+            return self
+                .strokes
+                .get(&Id(i))
+                .map_or(Value::Undefined, algo::stroke::StrokeData::value);
+        }
         self.compute_with(def, |c| c.hints[i])
     }
 
@@ -3586,6 +3637,8 @@ impl Construction {
             Def::Button => Some(Value::Button),
             Def::InputBox(_) => Some(Value::InputBox),
             Def::Chart(d) => Some(d.compute(self).value),
+            // the stroke keeps its value in its record (see `compute`)
+            Def::PenStroke => None,
             Def::Image(list) => self
                 .list(list)
                 .iter()

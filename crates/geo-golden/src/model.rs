@@ -58,6 +58,10 @@ pub enum Step {
     Redefine {
         line: String,
     },
+    /// Animation frames of the playing sliders at the highest frame rate.
+    Animate {
+        frames: u32,
+    },
 }
 
 #[derive(Deserialize)]
@@ -74,6 +78,7 @@ struct RawStep {
     line: Option<String>,
     error: Option<String>,
     reference_parse_error: Option<bool>,
+    frames: Option<f64>,
 }
 
 impl<'de> Deserialize<'de> for Step {
@@ -94,6 +99,9 @@ impl<'de> Deserialize<'de> for Step {
             return Err(D::Error::custom(
                 "only step `set_slider_bounds` takes `min` and `max`",
             ));
+        }
+        if raw.action != "animate" && raw.frames.is_some() {
+            return Err(D::Error::custom("only step `animate` takes `frames`"));
         }
         if raw.action != "move" && raw.reference_parse_error.is_some() {
             return Err(D::Error::custom(
@@ -170,6 +178,19 @@ impl<'de> Deserialize<'de> for Step {
                 } else {
                     Ok(Step::Redefine { line })
                 }
+            }
+            "animate" => {
+                if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
+                {
+                    return Err(D::Error::custom("step `animate` takes only `frames`"));
+                }
+                let frames = raw.frames.ok_or_else(|| need("frames"))?;
+                if frames.fract() != 0.0 || !(1.0..=10_000.0).contains(&frames) {
+                    return Err(D::Error::custom("step `animate` needs 1 to 10000 frames"));
+                }
+                Ok(Step::Animate {
+                    frames: frames as u32,
+                })
             }
             other => Err(D::Error::custom(format!("unknown action `{other}`"))),
         }
@@ -319,6 +340,8 @@ pub enum ExpectedData {
     List(Vec<Expected>),
     /// The points of a locus in order.
     Locus(Vec<LocusPoint>),
+    /// The points of a pen stroke in order.
+    Stroke(Vec<StrokePoint>),
     /// A general conic: its type name (`ConicType::name`), its raw matrix
     /// `[A00, A11, A22, A01, A02, A12]` and the parts its type records.
     Conic {
@@ -345,6 +368,11 @@ pub type CurveSample = (f64, Option<(f64, f64)>);
 /// A point of a locus: `(x, y)`, `None` for an undefined point, and whether
 /// it is joined to the point before it.
 pub type LocusPoint = (Option<(f64, f64)>, bool);
+
+/// A point of a pen stroke: `x` (`None` at a subpath break), `y` (`None`
+/// when not finite) and its segment code (0 line, 1 move, 3 end of a cubic
+/// piece, 4 control point).
+pub type StrokePoint = (Option<f64>, Option<f64>, u8);
 
 /// What an arc or sector of a circle or ellipse records besides its value
 /// (`golden/SCHEMA.md`).
@@ -660,6 +688,36 @@ fn locus_points(v: &serde_json::Value) -> Result<Vec<LocusPoint>, String> {
         .collect()
 }
 
+/// The points of a pen stroke: `[x, y, code]` each, `x` null at a break.
+fn stroke_points(v: &serde_json::Value) -> Result<Vec<StrokePoint>, String> {
+    v.as_array()
+        .ok_or_else(|| format!("`points` must be a list, got {v}"))?
+        .iter()
+        .map(|p| match p.as_array().map(Vec::as_slice) {
+            Some([x, y, code]) => {
+                let code = code
+                    .as_u64()
+                    .and_then(|c| u8::try_from(c).ok())
+                    .filter(|c| matches!(c, 0 | 1 | 3 | 4))
+                    .ok_or_else(|| format!("a stroke point needs a segment code, got {p}"))?;
+                let coordinate = |name, v: &serde_json::Value| {
+                    if v.is_null() {
+                        Ok(None)
+                    } else {
+                        number(name, v).map(Some)
+                    }
+                };
+                let (x, y) = (coordinate("x", x)?, coordinate("y", y)?);
+                if x.is_none() && (y.is_some() || code != 0) {
+                    return Err(format!("a stroke break must be [null, null, 0], got {p}"));
+                }
+                Ok((x, y, code))
+            }
+            _ => Err(format!("a stroke point must be [x, y, code], got {p}")),
+        })
+        .collect()
+}
+
 /// The samples of a defined function: exactly one per [`SAMPLE_XS`], in order.
 fn function_samples(raw: &RawObject) -> Result<ExpectedData, String> {
     if !raw.fields.is_empty() {
@@ -711,6 +769,7 @@ impl TryFrom<RawObject> for Expected {
             "arc" => (Kind::Arc, &[]),
             "sector" => (Kind::Sector, &[]),
             "locus" => (Kind::Locus, &["points"]),
+            "stroke" => (Kind::PenStroke, &["points"]),
             "implicit" => (
                 Kind::ImplicitCurve,
                 &["coefficients", "equation", "input_form"],
@@ -883,6 +942,13 @@ impl TryFrom<RawObject> for Expected {
                 legacy_angle_number: false,
                 kind,
                 data: Some(ExpectedData::Locus(locus_points(&raw.fields["points"])?)),
+            });
+        }
+        if kind == Kind::PenStroke {
+            return Ok(Expected {
+                legacy_angle_number: false,
+                kind,
+                data: Some(ExpectedData::Stroke(stroke_points(&raw.fields["points"])?)),
             });
         }
         if kind == Kind::List {
@@ -1880,6 +1946,7 @@ fn atoms(d: &ExpectedData) -> Vec<Atom<'_>> {
         | ExpectedData::FunctionNVar(_)
         | ExpectedData::Pie { .. }
         | ExpectedData::Locus(_)
+        | ExpectedData::Stroke(_)
         | ExpectedData::List(_) => unreachable!("sampled data has no atoms"),
     }
     out
@@ -1961,6 +2028,14 @@ fn restore_data(old: &mut ExpectedData, new: &ExpectedData, signed: bool) -> Res
             }
             restore_locus_point(&mut o.0, n.0, signed)
         }),
+        // A stroke records no infinite sample: its points must match exactly.
+        (ExpectedData::Stroke(a), ExpectedData::Stroke(b)) => {
+            if a == b {
+                Ok(0)
+            } else {
+                Err("stroke points differ".into())
+            }
+        }
         (ExpectedData::List(_), _) | (_, ExpectedData::List(_)) => Err("list shapes differ".into()),
         (old, new) if std::mem::discriminant(old) == std::mem::discriminant(new) => {
             let (a, b) = (atoms(old), atoms(new));

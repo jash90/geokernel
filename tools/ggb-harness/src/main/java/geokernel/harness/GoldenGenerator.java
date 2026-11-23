@@ -200,6 +200,15 @@ public final class GoldenGenerator {
                     outStep.put("max", max);
                     break;
                 }
+                case "animate": {
+                    int frames = (int) number(step.get("frames"));
+                    if (frames != number(step.get("frames")) || frames < 1 || frames > 10000) {
+                        throw new IllegalArgumentException("bad frame count in " + step);
+                    }
+                    session.animate(frames);
+                    outStep.put("frames", (double) frames);
+                    break;
+                }
                 case "reject": {
                     String line = (String) step.get("line");
                     session.reject(line);

@@ -43,6 +43,7 @@ pub mod point;
 pub mod polygon;
 pub mod polygon_clip;
 pub mod predicate;
+pub mod stroke;
 pub mod transform;
 pub mod vector;
 

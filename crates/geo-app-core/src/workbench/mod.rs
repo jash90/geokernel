@@ -484,6 +484,7 @@ impl Workbench {
             let target = geo_kernel::script::assignment_target(&self.construction, &line);
             let slider = geo_kernel::script::slider_assignment_target(&self.construction, &line);
             let assigns_slider = slider.is_some();
+            self.construction.take_hidden_requests();
             // Only lines that succeeded go into the log: a failed one would
             // fail again on every replay.
             match exec_definition(&mut self.construction, &line) {
@@ -493,8 +494,21 @@ impl Workbench {
                         !added && (assigns_slider || self.construction.step() != step_before);
                     let replaced = target.is_some() && first == target;
                     if added || mutated || replaced {
+                        // A stroke keeps the points of its creation: the
+                        // journal replays them, not the smoothing in
+                        // another view.
+                        let line = first
+                            .and_then(|id| {
+                                geo_kernel::script::frozen_stroke_line(
+                                    &self.construction,
+                                    id,
+                                    &line,
+                                )
+                            })
+                            .unwrap_or(line);
                         self.log
                             .record_definition(&self.construction, before, first, &line);
+                        self.log.apply_hidden_requests(&mut self.construction);
                         if let Some(first) = first.filter(|_| added) {
                             self.boundary_outputs.record(
                                 &self.construction,
@@ -591,7 +605,9 @@ impl Workbench {
         Ok(())
     }
 
-    fn install_replay(&mut self, c: Construction, mut kept: Log) {
+    fn install_replay(&mut self, mut c: Construction, mut kept: Log) {
+        // a replay plays nothing again: the sliders keep where they were
+        c.carry_animations_from(&self.construction);
         let selected = self
             .selected
             .filter(|id| id.index() < self.construction.len())
@@ -1141,6 +1157,36 @@ impl Workbench {
         }
         self.version += 1;
         true
+    }
+
+    /// Whether a slider of the construction is playing.
+    pub fn is_animating(&self) -> bool {
+        self.construction.is_animating()
+    }
+
+    /// Whether something can be played or paused: a slider has an animation.
+    pub fn has_animation(&self) -> bool {
+        self.construction.has_animations()
+    }
+
+    /// Plays or pauses the animation, as the reference's play button does
+    /// (`AnimationManager.startAnimation` and `stopAnimation`). Pausing
+    /// keeps every slider where it is; playing goes on from there.
+    pub fn set_animation_running(&mut self, running: bool) {
+        self.construction.set_animation_running(running);
+        self.version += 1;
+    }
+
+    /// One animation frame of the playing sliders at `frame_rate` frames per
+    /// second (`AnimationManager.sliderStep`). The values are not journaled,
+    /// as the reference does not store animation frames as undo steps.
+    /// Returns whether a value changed.
+    pub fn animate(&mut self, frame_rate: f64) -> bool {
+        let changed = self.construction.animate(frame_rate);
+        if changed {
+            self.version += 1;
+        }
+        changed
     }
 
     pub fn set_boolean(&mut self, id: Id, value: bool) -> bool {

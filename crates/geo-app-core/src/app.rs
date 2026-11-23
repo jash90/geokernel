@@ -115,6 +115,8 @@ pub struct App {
     pub camera: Option<Camera>,
     /// Time of the last camera-driven locus update.
     pub locus_sample_time: Option<f64>,
+    /// Time of the last slider animation frame, `None` while nothing plays.
+    pub animation_time: Option<f64>,
     pub view_request: Option<ViewRequest>,
     pub drag: Option<Drag>,
     /// The pointer automaton of the graphics view.
@@ -213,6 +215,7 @@ impl App {
             rules: OwnerRules::OURS,
             camera: None,
             locus_sample_time: None,
+            animation_time: None,
             view_request: Some(ViewRequest::Initial),
             drag: None,
             gesture: Gesture::new(&Metrics::desktop()),
