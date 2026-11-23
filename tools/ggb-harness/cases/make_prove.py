@@ -269,7 +269,7 @@ cases.case("expression", TRI + ["D = (-1, 3)", "b = Distance(A, B) == Distance(C
 # Formulas whose terms have mixed signs: the elimination squares each length.
 ISO = ["A = (0, 0)", "B = (4, 0)", "f = PerpendicularBisector(A, B)", "P = Point(f)",
        "s = Segment(P, A)", "t = Segment(P, B)"]
-proof("expression", ISO, "s + t == 0")
+proof("expression", ISO, "s + t == 0", relation=True)
 proof("expression", ISO, "s - t == 0")
 proof("expression", ISO, "s == -t")
 proof("expression", TRI + ["s = Segment(A, B)", "t = Segment(B, C)", "u = Segment(A, C)"],
@@ -306,5 +306,100 @@ proof("review", ["A = (0, 0)", "B = (4, 1)", "CZ = (1, 3)", "Ca = (3, -2)",
                  "f = PerpendicularBisector(A, B)", "g = PerpendicularBisector(B, CZ)",
                  "h = PerpendicularBisector(B, Ca)", "O = Intersect(f, g)", "R = Intersect(f, h)",
                  "M = Midpoint(A, B)"], "AreCollinear(O, R, M)")
+
+cases.topic("incidence")
+proof("incidence", ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)",
+                    "g = Line(O, A)", "P = Intersect(g, c)", "M = Midpoint(P_{1}, P_{2})"],
+      "AreEqual(M, O)")
+proof("incidence", ["A = (0, 0)", "B = (4, 1)", "C = (1, 3)", "c = Circle(A, B)",
+                    "d = Circle(C, B)", "P = Intersect(c, d)", "f = Line(P_{1}, P_{2})",
+                    "g = Line(A, C)"], "ArePerpendicular(f, g)")
+proof("incidence", ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)", "g = Line(O, A)",
+                    "P = Intersect(g, c)", "Q = Intersect(g, c, 1)", "M = Midpoint(A, Q)"],
+      "AreEqual(M, O)")
+proof("incidence", ["A = (0, 0)", "B = (4, 0)", "C = (2, 4)", "D = (2, 3)",
+                    "c = Circle(A, B, C)", "d = Circle(A, B, D)", "P = Intersect(c, d, 1)"],
+      "AreEqual(A, P)")
+
+proof("incidence", ["A = (0, 0)", "r = 2", "k = Circle(A, r)", "B = (2, 0)",
+                    "l = Line(A, B)", "P = Intersect(l, k)", "M = Midpoint(P_{1}, P_{2})"],
+      "AreEqual(M, A)")
+DIAMETER = ["O = (0, 0)", "A = (4, 0)", "c = Circle(O, A)", "g = Line(O, A)"]
+INDEXED_DIAMETER = DIAMETER + ["Q = Intersect(g, c, 1)"]
+MIDPOINT_PROOF = ["M = Midpoint(A, Q)", "b = AreEqual(M, O)",
+                  "p = Prove(b)", "q = ProveDetails(b)"]
+cases.case("incidence", INDEXED_DIAMETER + MIDPOINT_PROOF
+           + ["P = Intersect(g, c)", "q_{2} = ProveDetails(b)"], [])
+cases.case("incidence", INDEXED_DIAMETER + ["b = AreEqual(A, Q)", "p = Prove(b)",
+                                           "P = Intersect(g, c)", "p_{2} = Prove(b)"], [])
+proof("incidence", DIAMETER + ["P = Intersect(g, c)", "R = Intersect(g, c, 1)"],
+      "AreCollinear(P_{1}, P_{2}, R)")
+
+for carrier in ("Segment", "Ray"):
+    proof("incidence", ["A = (-4, 0)", "B = (4, 0)", "O = Midpoint(A, B)", "C = (0, 2)",
+                        "k = Circle(O, C)", f"s = {carrier}(A, B)",
+                        "P = Intersect(s, k, 1)", "Q = Intersect(s, k, 2)",
+                        "M = Midpoint(P, Q)"], "AreEqual(M, O)")
+
+# A labelled pair can share the hidden helper of an earlier indexed output.
+cases.topic("peer")
+cases.case("peer", INDEXED_DIAMETER + [
+    "b = AreEqual(A, Q)", "p = Prove(b)", "S = Intersect(g, c)",
+    "b_{2} = AreCollinear(O, A, S_{1})", "p_{2} = Prove(b_{2})",
+    "R = Intersect(g, c, 2)", "b_{3} = AreEqual(Q, R)",
+    "p_{3} = Prove(b_{3})", "q_{3} = ProveDetails(b_{3})",
+], [])
+
+# The symbolic incidence uses the supporting line of each carrier.
+cases.topic("parabola")
+PARABOLA = ["D = (-3, -1)", "E = (3, -1)", "d = Line(D, E)",
+            "F = (0, 1)", "k = Parabola(F, d)", "A = (-4, 1)", "B = (4, 1)"]
+for carrier in ("Line", "Segment", "Ray"):
+    proof("parabola", PARABOLA + [f"s = {carrier}(A, B)", "P = Intersect(s, k, 1)"],
+          "AreCollinear(A, B, P)")
+proof("parabola", PARABOLA + ["s = Line(A, B)", "P = Intersect(s, k, 1)",
+                              "h = PerpendicularLine(P, d)", "H = Intersect(h, d)",
+                              "u = Segment(P, F)", "v = Segment(P, H)"],
+      "u == v", details=False)
+
+def add(line):
+    return {"action": "add", "line": line}
+
+
+def redefine(line):
+    return {"action": "redefine", "line": line}
+
+
+cases.case("replay", INDEXED_DIAMETER + ["b = A == Q", "p = Prove(b)"], [
+    redefine("b = false"), add("S = Intersect(g, c)"), add("p_2 = Prove(AreEqual(A, Q))"),
+    add("q_2 = ProveDetails(AreEqual(A, Q))"),
+])
+cases.case("replay", [
+    "O = (0, 0)", "B = (4, 0)", "g = Line(O, B)", "A = Point(g, 0.25)",
+    "c = Circle(O, A)", "Q = Intersect(g, c, 1)", "p = Prove(AreEqual(A, Q))",
+    "S = Intersect(g, c)", "U = (0, 4)", "h = Line(O, U)",
+], [redefine("B = Point(h, 0.5)"), add("p_2 = Prove(AreEqual(A, Q))")])
+
+# An unaffected proof also runs before the pair is labelled in a full replay.
+cases.case("replay", INDEXED_DIAMETER + [
+    "b = A == Q", "p = Prove(b)", "r = Prove(AreEqual(A, Q))",
+], [
+    redefine("b = false"), add("S = Intersect(g, c)"), add("p_2 = Prove(AreEqual(A, Q))"),
+])
+
+proof("selector", PARABOLA + ["s = Line(A, B)", "P = Intersect(s, k, A)"],
+      "AreCollinear(A, B, P)")
+proof("selector", PARABOLA + ["s = Line(A, B)", "n = 1", "P = Intersect(s, k, n)"],
+      "AreCollinear(A, B, P)")
+proof("paraboladrag", PARABOLA + ["s = Line(A, B)", "P = Intersect(s, k, 1)"],
+      "AreCollinear(A, B, P)", [
+          mv("F", 0, -1), add("p_2 = Prove(b)"), add("q_2 = ProveDetails(b)"),
+      ])
+
+for conic, point in (("Ellipse", "(0, 2)"), ("Hyperbola", "(1.5, 0)")):
+    proof("focalconic", ["F = (-2, 0)", "G = (2, 0)", f"T = {point}",
+                         f"k = {conic}(F, G, T)", "A = (-4, 1)", "B = (4, 1)",
+                         "s = Line(A, B)", "P = Intersect(s, k, 1)"],
+          "AreCollinear(A, B, P)")
 
 cases.write()

@@ -974,7 +974,8 @@
         "t = Segment(P, B)",
         "b = s + t == 0",
         "p = Prove(b)",
-        "q = ProveDetails(b)"
+        "q = ProveDetails(b)",
+        "r = ProveDetails(b, true)"
       ],
       "steps": [
         { "action": "initial" }
@@ -990,6 +991,20 @@
           "b": { "type": "boolean", "defined": true, "value": false },
           "p": { "type": "boolean", "defined": true, "value": true },
           "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "s = t" }
+                ]
+              }
+            ]
+          },
+          "r": {
             "type": "list",
             "defined": true,
             "elements": [
