@@ -27,11 +27,6 @@ def vec(label, x, y):
     return pt(label, x, y)
 
 
-def vec(label, x, y):
-    """A free vector: the same literal as a point, with a lower-case label."""
-    return pt(label, x, y)
-
-
 def subject(kind, label_prefix=""):
     """Script lines and the label of an object of the given kind, plus the
     labels of its free points. Kinds: point, line, segment, circle, circle_r."""
