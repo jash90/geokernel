@@ -3407,12 +3407,12 @@ mismatches = ["0:g", "0:h", "3:g", "3:h"]
 
 [[gap]]
 id = "funcrest-derivative-004"
-reason = "The 260-point spline system is solved with the reference elimination and agrees bit for bit on the x coordinates. Seven of its y inputs sin(k) (k = 18, 64, 89, 131, 202, 224, 233) differ by one ulp: the kernel evaluates sin with the portable fdlibm algorithm, the recording JVM with its Math.sin intrinsic. The ill-conditioned 260-piece monomial system amplifies the ulp to a relative 1.5e-9 in y(0.875). Both derivatives agree."
+reason = "The 260-point spline system is solved with the reference elimination. Its y inputs come from MyDouble.sin, which calls Math.sin; on the recording JVM (HotSpot x86_64, OpenJDK 17) that call runs the libm intrinsic stub, which differs by one ulp from StrictMath (fdlibm, the kernel's algorithm) for k = 18, 24, 26, 62, 89, 131, 202 and 233 in 1..260. The ill-conditioned 260-piece monomial system amplifies these ulps to a relative 1.5e-9 in y(0.875). Black-box check: substituting the intrinsic's Math.sin values for those inputs makes the case agree, and with -XX:-UseLibmIntrinsic the JVM's Math.sin equals StrictMath.sin. The stub is HotSpot assembly under GPLv2 with no EUPL or published description, so the kernel does not port it."
 mismatches = ["1:s"]
 
 [[gap]]
 id = "funcrest-splinelong-003"
-reason = "Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM's Math.pow intrinsic is off by one ulp when the exact power lies within about 0.003 ulp of a rounding midpoint, which happens for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. The later steps, including the stale point-count check, agree."
+reason = "Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM (HotSpot x86_64, OpenJDK 17) runs Math.pow as its libm intrinsic stub, which is off by one ulp from that for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. Black-box check: substituting the intrinsic's Math.pow values for all 3963 powers the kernel's spline code asks for makes the case agree. The stub is HotSpot assembly under GPLv2 with no EUPL or published description, so the kernel does not port it. The later steps, including the stale point-count check, agree."
 mismatches = ["1:d", "1:s"]
 
 [[gap]]
