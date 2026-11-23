@@ -1,0 +1,54 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "redefine-tangent-001",
+      "group": "redefine",
+      "script": [
+        "O = (0, 0)",
+        "c = Circle(O, 2)",
+        "A = Point(c)",
+        "l = Tangent(A, c)",
+        "X = Intersect(l, c, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "A = (5, 1)" },
+        { "action": "move", "label": "A", "x": 1.0, "y": 1.0 },
+        { "action": "move", "label": "A", "x": 5.0, "y": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "l": { "type": "line", "defined": true, "a": 2.0, "b": 0.0, "c": -4.0 },
+          "X": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -0.957852215316704, "b": -4.591570443063341, "c": 9.380831519646861 },
+          "X": { "type": "point", "defined": true, "x": 0.4084295569366593, "y": 1.957852215316704 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 1.0, "y": 1.0 },
+          "l": { "type": "line", "defined": false },
+          "X": { "type": "point", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "A": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "l": { "type": "line", "defined": true, "a": -0.957852215316704, "b": -4.591570443063341, "c": 9.380831519646861 },
+          "X": { "type": "point", "defined": true, "x": 0.4084295569366593, "y": 1.957852215316704 }
+        }
+      ]
+    }
+  ]
+}

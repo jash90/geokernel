@@ -19,13 +19,31 @@ pub enum Sign {
 
 pub const TOLERANCE: f64 = 1e-9;
 
-/// `|p - q| <= 1e-9 * max(1, |p|, |q|)`.
+/// Finite values agree within `1e-9 * max(1, |p|, |q|)`.
+/// Infinite values agree when their signs match.
 pub fn numbers_agree(p: f64, q: f64) -> bool {
-    (p - q).abs() <= TOLERANCE * 1.0_f64.max(p.abs()).max(q.abs())
+    p == q
+        || (p.is_finite()
+            && q.is_finite()
+            && (p - q).abs() <= TOLERANCE * 1.0_f64.max(p.abs()).max(q.abs()))
 }
 
 fn all_agree(pairs: &[(f64, f64)]) -> bool {
     pairs.iter().all(|&(p, q)| numbers_agree(p, q))
+}
+
+fn samples_agree(want: Option<f64>, got: Option<f64>) -> bool {
+    match (want, got) {
+        (Some(p), Some(q)) => numbers_agree(p, q),
+        (None, got) => got.is_none_or(f64::is_nan),
+        _ => false,
+    }
+}
+
+/// A recorded coordinate against the kernel's: NaN, a recorded `null` from
+/// schema 4, agrees with NaN only; every other value by [`numbers_agree`].
+fn coordinate_agrees(want: f64, got: f64) -> bool {
+    samples_agree((!want.is_nan()).then_some(want), Some(got))
 }
 
 pub(crate) fn implicit_matrices_agree(expected: &[Vec<f64>], matrix: &[Vec<f64>]) -> bool {
@@ -59,9 +77,10 @@ pub fn line_scale_agrees(expected: &Expected, actual: &Value) -> Option<bool> {
         _ => return None,
     };
     let scale = [*a, *b, *c, x, y, z]
-        .iter()
+        .into_iter()
+        .filter(|v| v.is_finite())
         .fold(0.0_f64, |m, v| m.max(v.abs()));
-    let close = |p: f64, q: f64| (p - q).abs() <= TOLERANCE * scale;
+    let close = |p: f64, q: f64| p == q || (p - q).abs() <= TOLERANCE * scale;
     Some(close(*a, x) && close(*b, y) && close(*c, z))
 }
 
@@ -90,12 +109,10 @@ pub(crate) fn compare_pie(
                 ));
             }
             if fractions.len() != pie.fractions.len()
-                || !fractions.iter().zip(&pie.fractions).all(|(want, &got)| {
-                    want.map_or_else(
-                        || !got.is_finite(),
-                        |want| got.is_finite() && numbers_agree(want, got),
-                    )
-                })
+                || !fractions
+                    .iter()
+                    .zip(&pie.fractions)
+                    .all(|(want, &got)| samples_agree(*want, Some(got)))
             {
                 return Err(format!("pie fractions differ: {:?}", pie.fractions));
             }
@@ -276,11 +293,15 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
         Some(ExpectedData::Curve { samples, .. }) => {
             let result = compare(expected, kind, &c.value(id))?;
             for &(t, want) in samples {
-                let got = c.curve_point(id, t);
+                let got = c.curve_sample(id, t);
                 let agrees = match (want, got) {
-                    (Some((x, y)), Some((a, b))) => all_agree(&[(x, a), (y, b)]),
-                    (None, None) => true,
-                    _ => false,
+                    (Some((x, y)), Some((a, b))) => {
+                        coordinate_agrees(x, a) && coordinate_agrees(y, b)
+                    }
+                    (Some((x, y)), None) => x.is_nan() && y.is_nan(),
+                    (None, got) => got.is_none_or(|(x, y)| {
+                        !x.is_infinite() && !y.is_infinite() && (x.is_nan() || y.is_nan())
+                    }),
                 };
                 if !agrees {
                     return Err(format!("curve at {t}: expected {want:?}, got {got:?}"));
@@ -290,13 +311,8 @@ pub(crate) fn compare_extra(c: &Construction, id: Id, expected: &Expected) -> Re
         }
         Some(ExpectedData::FunctionNVar(samples)) => {
             for &(x, y, want) in samples {
-                let got = c.function_value_xy(id, x, y).filter(|v| v.is_finite());
-                let agrees = match (want, got) {
-                    (Some(a), Some(b)) => numbers_agree(a, b),
-                    (None, None) => true,
-                    _ => false,
-                };
-                if !agrees {
+                let got = c.function_value_xy(id, x, y);
+                if !samples_agree(want, got) {
                     return Err(format!("at ({x}, {y}): expected {want:?}, got {got:?}"));
                 }
             }
@@ -448,15 +464,10 @@ pub fn compare_sampled(
             let Some(sample) = sample else {
                 return Err("a function is compared only through its samples".into());
             };
-            for (&x, want) in SAMPLE_XS.iter().zip(samples) {
-                let got = sample(x).filter(|v| v.is_finite());
-                let agree = match (*want, got) {
-                    (None, None) => true,
-                    (Some(p), Some(q)) => numbers_agree(p, q),
-                    _ => false,
-                };
-                if !agree {
-                    return Err(format!("value at x = {x} differs: kernel has {got:?}"));
+            for (&x, &want) in SAMPLE_XS.iter().zip(samples) {
+                let got = sample(x);
+                if !samples_agree(want, got) {
+                    return Err(format!("at x = {x}: expected {want:?}, got {got:?}"));
                 }
             }
             Ok(Sign::NotApplicable)
@@ -652,8 +663,9 @@ pub fn compare_locus(
     }
     for (i, ((at, line_to), p)) in want.iter().zip(got).enumerate() {
         let same = match *at {
-            Some((x, y)) => numbers_agree(x, p.x) && numbers_agree(y, p.y),
-            None => !p.x.is_finite() && !p.y.is_finite(),
+            // from schema 4 a NaN coordinate stands for a recorded `null`
+            Some((x, y)) => coordinate_agrees(x, p.x) && coordinate_agrees(y, p.y),
+            None => p.x.is_nan() && p.y.is_nan(),
         };
         if !same || *line_to != p.line_to {
             return Err(format!(
@@ -826,6 +838,27 @@ mod tests {
     }
 
     #[test]
+    fn an_infinite_number_agrees_only_with_the_same_infinity() {
+        let inf = f64::INFINITY;
+        let n = |want: f64, got: f64| compare(&num(want), Kind::Number, &Value::Number(got));
+        assert!(n(inf, inf).is_ok());
+        assert!(n(-inf, -inf).is_ok());
+        assert!(n(inf, -inf).is_err());
+        assert!(n(inf, 1e308).is_err());
+        assert!(n(1e308, inf).is_err());
+        assert!(n(0.0, -inf).is_err());
+        assert!(compare(&num(inf), Kind::Number, &Value::Undefined).is_err());
+        let undefined = Expected {
+            legacy_angle_number: false,
+            kind: Kind::Number,
+            data: None,
+        };
+        assert!(compare(&undefined, Kind::Number, &Value::Number(inf)).is_err());
+        assert!(compare(&undefined, Kind::Number, &Value::Number(-inf)).is_err());
+        assert!(compare(&undefined, Kind::Number, &Value::Undefined).is_ok());
+    }
+
+    #[test]
     fn undefined_must_match_in_both_directions() {
         let undefined = Expected {
             legacy_angle_number: false,
@@ -970,6 +1003,78 @@ mod tests {
     }
 
     #[test]
+    fn signed_infinity_only_agrees_with_itself() {
+        for infinite in [f64::INFINITY, f64::NEG_INFINITY] {
+            assert!(numbers_agree(infinite, infinite));
+            for different in [-infinite, 1.0, f64::NAN] {
+                assert!(!numbers_agree(infinite, different));
+                assert!(!numbers_agree(different, infinite));
+            }
+        }
+    }
+
+    #[test]
+    fn curve_and_two_variable_samples_keep_infinite_values() {
+        let c = geo_kernel::script::load("c = Curve(t, 1/t, t, -1, 1)\nf(x, y) = y/x").unwrap();
+        for (label, kind) in [("c", Kind::Curve), ("f", Kind::FunctionNVar)] {
+            let id = c.id(label).unwrap();
+            for (sample, agrees) in [
+                (None, false),
+                (Some(f64::NEG_INFINITY), false),
+                (Some(f64::INFINITY), true),
+            ] {
+                let data = if kind == Kind::Curve {
+                    ExpectedData::Curve {
+                        start: -1.0,
+                        end: 1.0,
+                        samples: vec![(0.0, sample.map(|y| (0.0, y)))],
+                    }
+                } else {
+                    ExpectedData::FunctionNVar(vec![(0.0, 1.0, sample)])
+                };
+                let expected = Expected {
+                    kind,
+                    legacy_angle_number: false,
+                    data: Some(data),
+                };
+                assert_eq!(compare_extra(&c, id, &expected).is_ok(), agrees, "{label}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_recorded_null_coordinate_meets_nan_only() {
+        assert!(coordinate_agrees(f64::NAN, f64::NAN));
+        assert!(!coordinate_agrees(f64::NAN, 1.0));
+        assert!(!coordinate_agrees(f64::NAN, f64::INFINITY));
+        assert!(coordinate_agrees(f64::INFINITY, f64::INFINITY));
+        assert!(!coordinate_agrees(1.0, f64::NAN));
+    }
+
+    #[test]
+    fn signed_curve_coordinates_meet_nan_or_the_same_infinity() {
+        let c = geo_kernel::script::load("c = Curve(t, 1/t, t, -1, 1)").unwrap();
+        let id = c.id("c").unwrap();
+        for (want, agrees) in [
+            ((0.0, f64::INFINITY), true),
+            ((0.0, f64::NEG_INFINITY), false),
+            ((0.0, f64::NAN), false),
+            ((f64::NAN, f64::INFINITY), false),
+        ] {
+            let expected = Expected {
+                kind: Kind::Curve,
+                legacy_angle_number: false,
+                data: Some(ExpectedData::Curve {
+                    start: -1.0,
+                    end: 1.0,
+                    samples: vec![(0.0, Some(want))],
+                }),
+            };
+            assert_eq!(compare_extra(&c, id, &expected).is_ok(), agrees, "{want:?}");
+        }
+    }
+
+    #[test]
     fn functions_are_compared_by_samples() {
         let mut samples = vec![Some(1.0); 11];
         samples[0] = None;
@@ -983,7 +1088,7 @@ mod tests {
         assert!(compare_sampled(&e, Kind::Function, &Value::Function, &[], Some(&ok)).is_ok());
         let infinite = at(|x| if x == -8.0 { f64::INFINITY } else { 1.0 });
         assert!(
-            compare_sampled(&e, Kind::Function, &Value::Function, &[], Some(&infinite)).is_ok()
+            compare_sampled(&e, Kind::Function, &Value::Function, &[], Some(&infinite)).is_err()
         );
         // a value where GeoGebra has none, and the other way round
         let value = at(|_| 1.0);

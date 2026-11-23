@@ -26,6 +26,8 @@ pub struct Case {
     /// Generator of the file this case came from. Filled by the loader.
     #[serde(skip)]
     pub generator: String,
+    #[serde(skip)]
+    schema: u32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -40,12 +42,20 @@ pub enum Step {
         label: String,
         value: f64,
     },
+    Delete {
+        label: String,
+    },
     SetSliderBounds {
         label: String,
         min: f64,
         max: f64,
     },
+    /// `error`: the kernel's exact failure, when the case asserts it.
     Reject {
+        line: String,
+        error: Option<String>,
+    },
+    Redefine {
         line: String,
     },
     /// Animation frames of the playing sliders at the highest frame rate.
@@ -62,9 +72,11 @@ struct RawStep {
     x: Option<f64>,
     y: Option<f64>,
     value: Option<f64>,
+    infinity: Option<i8>,
     min: Option<f64>,
     max: Option<f64>,
     line: Option<String>,
+    error: Option<String>,
     reference_parse_error: Option<bool>,
     frames: Option<f64>,
 }
@@ -74,8 +86,14 @@ impl<'de> Deserialize<'de> for Step {
         use serde::de::Error;
         let raw = RawStep::deserialize(d)?;
         let need = |name: &str| D::Error::custom(format!("step `{}` needs `{name}`", raw.action));
-        if raw.action != "reject" && raw.line.is_some() {
-            return Err(D::Error::custom("only step `reject` takes `line`"));
+        if !matches!(raw.action.as_str(), "reject" | "redefine") && raw.line.is_some() {
+            return Err(D::Error::custom("only `reject` and `redefine` take `line`"));
+        }
+        if raw.action != "reject" && raw.error.is_some() {
+            return Err(D::Error::custom("only step `reject` takes `error`"));
+        }
+        if raw.action != "set_number" && raw.infinity.is_some() {
+            return Err(D::Error::custom("only `set_number` takes `infinity`"));
         }
         if raw.action != "set_slider_bounds" && (raw.min.is_some() || raw.max.is_some()) {
             return Err(D::Error::custom(
@@ -112,9 +130,23 @@ impl<'de> Deserialize<'de> for Step {
                 if raw.x.is_some() || raw.y.is_some() {
                     return Err(D::Error::custom("step `set_number` takes no `x`/`y`"));
                 }
+                let value = match (raw.value, raw.infinity) {
+                    (Some(value), None) => value,
+                    (None, Some(1)) => f64::INFINITY,
+                    (None, Some(-1)) => f64::NEG_INFINITY,
+                    _ => return Err(D::Error::custom("expected a value or a signed infinity")),
+                };
                 Ok(Step::SetNumber {
                     label: raw.label.clone().ok_or_else(|| need("label"))?,
-                    value: raw.value.ok_or_else(|| need("value"))?,
+                    value,
+                })
+            }
+            "delete" => {
+                if raw.x.is_some() || raw.y.is_some() || raw.value.is_some() {
+                    return Err(D::Error::custom("step `delete` takes only `label`"));
+                }
+                Ok(Step::Delete {
+                    label: raw.label.ok_or_else(|| need("label"))?,
                 })
             }
             "set_slider_bounds" => {
@@ -129,14 +161,23 @@ impl<'de> Deserialize<'de> for Step {
                     max: raw.max.ok_or_else(|| need("max"))?,
                 })
             }
-            "reject" => {
+            "reject" | "redefine" => {
                 if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
                 {
-                    return Err(D::Error::custom("step `reject` takes only `line`"));
+                    return Err(D::Error::custom(format!(
+                        "step `{}` takes only `line`",
+                        raw.action
+                    )));
                 }
-                Ok(Step::Reject {
-                    line: raw.line.ok_or_else(|| need("line"))?,
-                })
+                let line = raw.line.ok_or_else(|| need("line"))?;
+                if raw.action == "reject" {
+                    Ok(Step::Reject {
+                        line,
+                        error: raw.error,
+                    })
+                } else {
+                    Ok(Step::Redefine { line })
+                }
             }
             "animate" => {
                 if raw.label.is_some() || raw.x.is_some() || raw.y.is_some() || raw.value.is_some()
@@ -168,14 +209,57 @@ pub struct Expected {
 }
 
 impl Expected {
-    fn set_angle_encoding(&mut self, legacy: bool) {
-        self.legacy_angle_number = legacy && self.kind == Kind::Number;
-        if let Some(ExpectedData::List(elements)) = &mut self.data {
-            for element in elements {
-                element.set_angle_encoding(legacy);
+    fn set_encoding(&mut self, encoding: Encoding) -> Result<(), String> {
+        if !encoding.signed_samples && self.records_signed_samples() {
+            return Err("signed infinite samples require schema 4".into());
+        }
+        if encoding.signed_samples {
+            if let Some(ExpectedData::Curve { samples, .. }) = &self.data {
+                if samples.iter().any(|s| s.1.is_none()) {
+                    return Err("a schema 4 curve sample needs its coordinate pair".into());
+                }
             }
         }
+        self.legacy_angle_number = encoding.angles_as_numbers && self.kind == Kind::Number;
+        if let Some(ExpectedData::List(elements)) = &mut self.data {
+            for element in elements {
+                element.set_encoding(encoding)?;
+            }
+        }
+        Ok(())
     }
+
+    /// Whether a sample, pie fraction or curve or locus coordinate carries
+    /// the schema 4 encoding: a signed infinity, or a single null coordinate.
+    fn records_signed_samples(&self) -> bool {
+        let infinite = |v: &Option<f64>| v.is_some_and(f64::is_infinite);
+        let nonfinite =
+            |p: &Option<(f64, f64)>| p.is_some_and(|(x, y)| !x.is_finite() || !y.is_finite());
+        match &self.data {
+            Some(ExpectedData::Function { samples }) => samples.iter().any(infinite),
+            Some(ExpectedData::FunctionNVar(samples)) => samples.iter().any(|s| infinite(&s.2)),
+            Some(ExpectedData::Curve { samples, .. }) => samples.iter().any(|s| nonfinite(&s.1)),
+            Some(ExpectedData::Pie { fractions, .. }) => fractions.iter().any(infinite),
+            // the harness writes each locus coordinate on its own in every
+            // schema, so a single null (NaN) is legacy output too
+            Some(ExpectedData::Locus(points)) => points
+                .iter()
+                .any(|p| p.0.is_some_and(|(x, y)| x.is_infinite() || y.is_infinite())),
+            Some(ExpectedData::List(elements)) => elements.iter().any(Self::records_signed_samples),
+            _ => false,
+        }
+    }
+}
+
+/// What a schema version leaves out of a recorded number.
+#[derive(Debug, Clone, Copy)]
+struct Encoding {
+    /// Angles are recorded as numbers (schema 1).
+    angles_as_numbers: bool,
+    /// Samples, pie fractions and curve and locus coordinates record the
+    /// sign of an infinity, and `null` there means NaN only (schema 4).
+    /// Before, `null` stood for any value that is not finite.
+    signed_samples: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -227,7 +311,7 @@ pub enum ExpectedData {
         c: f64,
     },
     /// The values at [`SAMPLE_XS`], in that order; `None` where GeoGebra's
-    /// value is not finite.
+    /// value is NaN (schema 4) or not finite (earlier schemas).
     Function {
         samples: Vec<Option<f64>>,
     },
@@ -276,7 +360,9 @@ pub enum ExpectedData {
     },
 }
 
-/// A curve parameter and its coordinates, when finite.
+/// A curve parameter and its coordinates. Before schema 4 the pair is `None`
+/// when either coordinate is not finite; from schema 4 it is always present,
+/// with NaN for a `null` coordinate and the recorded sign of an infinity.
 pub type CurveSample = (f64, Option<(f64, f64)>);
 
 /// A point of a locus: `(x, y)`, `None` for an undefined point, and whether
@@ -481,12 +567,75 @@ struct RawObject {
     #[serde(rename = "type")]
     ty: String,
     defined: bool,
-    /// Only for a function: `[x, y]` pairs, `y` null where not finite.
-    samples: Option<Vec<(f64, Option<f64>)>>,
-    samples_xy: Option<Vec<(f64, f64, Option<f64>)>>,
-    samples_curve: Option<Vec<CurveSample>>,
+    /// Only for a function: `[x, y]` pairs, `y` a sample value (see
+    /// [`sample_value`]).
+    samples: Option<Vec<(f64, serde_json::Value)>>,
+    samples_xy: Option<Vec<(f64, f64, serde_json::Value)>>,
+    samples_curve: Option<Vec<(f64, serde_json::Value)>>,
     #[serde(flatten)]
     fields: BTreeMap<String, serde_json::Value>,
+}
+
+/// A sampled value: a number, `null`, or the sign of an infinity written
+/// `{"infinity": 1}` or `-1` (schema 4, checked by [`Expected::set_encoding`]).
+fn sample_value(v: &serde_json::Value) -> Result<Option<f64>, String> {
+    if v.is_null() {
+        return Ok(None);
+    }
+    if let Some(n) = v.as_f64() {
+        return Ok(Some(n));
+    }
+    match v.as_object() {
+        Some(o) if o.len() == 1 => match o.get("infinity").and_then(serde_json::Value::as_i64) {
+            Some(1) => Ok(Some(f64::INFINITY)),
+            Some(-1) => Ok(Some(f64::NEG_INFINITY)),
+            _ => Err(format!("a sample's `infinity` must be 1 or -1, got {v}")),
+        },
+        _ => Err(format!(
+            "a sample must be a number, null or a signed infinity, got {v}"
+        )),
+    }
+}
+
+/// A curve sample: `null` (before schema 4, a coordinate that is not
+/// finite), or `[x, y]` whose coordinates are sample values, NaN for `null`.
+fn curve_sample(t: f64, v: &serde_json::Value) -> Result<CurveSample, String> {
+    if v.is_null() {
+        return Ok((t, None));
+    }
+    match v.as_array().map(Vec::as_slice) {
+        Some([x, y]) => {
+            let coordinate = |c| sample_value(c).map(|c| c.unwrap_or(f64::NAN));
+            Ok((t, Some((coordinate(x)?, coordinate(y)?))))
+        }
+        _ => Err(format!("a curve sample must be null or [x, y], got {v}")),
+    }
+}
+
+/// Whether two lists of numbers have the same bits, so -0 differs from +0.
+fn same_bits(a: &[f64], b: &[f64]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).all(|(p, q)| p.to_bits() == q.to_bits())
+}
+
+/// Where the harness samples a curve: these fractions of its parameter
+/// interval, each parameter computed as `start + (end - start) * fraction`.
+const CURVE_FRACTIONS: [f64; 7] = [0.0, 0.125, 0.25, 0.5, 0.75, 0.875, 1.0];
+
+/// Checks that curve samples sit exactly at the harness's parameters.
+fn check_curve_parameters(start: f64, end: f64, samples: &[CurveSample]) -> Result<(), String> {
+    if samples.is_empty() {
+        return Ok(());
+    }
+    let want: Vec<f64> = CURVE_FRACTIONS
+        .iter()
+        .map(|fraction| start + (end - start) * fraction)
+        .collect();
+    let got: Vec<f64> = samples.iter().map(|s| s.0).collect();
+    if same_bits(&want, &got) {
+        Ok(())
+    } else {
+        Err(format!("curve samples must be at {want:?}, got {got:?}"))
+    }
 }
 
 /// A number field.
@@ -526,10 +675,11 @@ fn locus_points(v: &serde_json::Value) -> Result<Vec<LocusPoint>, String> {
                 let line_to = line_to
                     .as_bool()
                     .ok_or_else(|| format!("a locus point needs a boolean lineTo, got {p}"))?;
-                let at = match (x.is_null(), y.is_null()) {
-                    (true, true) => None,
-                    (false, false) => Some((number("x", x)?, number("y", y)?)),
-                    _ => return Err(format!("a locus point has one null coordinate: {p}")),
+                // a single `null` coordinate is NaN, which only schema 4
+                // writes (checked by `Expected::set_encoding`)
+                let at = match (sample_value(x)?, sample_value(y)?) {
+                    (None, None) => None,
+                    (x, y) => Some((x.unwrap_or(f64::NAN), y.unwrap_or(f64::NAN))),
                 };
                 Ok((at, line_to))
             }
@@ -578,16 +728,17 @@ fn function_samples(raw: &RawObject) -> Result<ExpectedData, String> {
         .as_ref()
         .ok_or("defined function needs `samples`")?;
     let xs: Vec<f64> = pairs.iter().map(|p| p.0).collect();
-    if xs != SAMPLE_XS {
+    // bit for bit: a sample at -0 would be another sample than at +0
+    if !same_bits(&xs, &SAMPLE_XS) {
         return Err(format!(
             "function samples must be at {SAMPLE_XS:?}, got {xs:?}"
         ));
     }
-    if pairs.iter().any(|p| p.1.is_some_and(|y| !y.is_finite())) {
-        return Err("function samples must be finite or null".into());
-    }
     Ok(ExpectedData::Function {
-        samples: pairs.iter().map(|p| p.1).collect(),
+        samples: pairs
+            .iter()
+            .map(|p| sample_value(&p.1))
+            .collect::<Result<_, _>>()?,
     })
 }
 
@@ -658,12 +809,16 @@ impl TryFrom<RawObject> for Expected {
         if kind == Kind::FunctionNVar {
             let samples = raw
                 .samples_xy
-                .ok_or("defined two-variable function needs samples_xy")?;
+                .ok_or("defined two-variable function needs samples_xy")?
+                .iter()
+                .map(|(x, y, v)| Ok((*x, *y, sample_value(v)?)))
+                .collect::<Result<Vec<_>, String>>()?;
             if !raw.fields.is_empty()
                 || samples.len() != SAMPLE_XS.len()
-                || samples.iter().zip(SAMPLE_XS).any(|(&(x, y, v), want_x)| {
-                    x != want_x || y != 1.0 - 2.0 * want_x || v.is_some_and(|v| !v.is_finite())
-                })
+                || samples
+                    .iter()
+                    .zip(SAMPLE_XS)
+                    .any(|(&(x, y, _), want_x)| !same_bits(&[x, y], &[want_x, 1.0 - 2.0 * want_x]))
             {
                 return Err("unexpected two-variable function samples".into());
             }
@@ -709,8 +864,22 @@ impl TryFrom<RawObject> for Expected {
                 data: Some(arc_data(&raw)?),
             });
         }
-        let expected: BTreeSet<&str> = names.iter().copied().collect();
         let got: BTreeSet<&str> = raw.fields.keys().map(String::as_str).collect();
+        // Schema 3: a number that is infinite in GeoGebra is defined and
+        // carries the sign of its infinity in place of a value.
+        if kind == Kind::Number && got.len() == 1 && got.contains("infinity") {
+            let value = match raw.fields["infinity"].as_i64() {
+                Some(1) => f64::INFINITY,
+                Some(-1) => f64::NEG_INFINITY,
+                _ => return Err("a number's `infinity` must be 1 or -1".into()),
+            };
+            return Ok(Expected {
+                kind,
+                data: Some(ExpectedData::Number(value)),
+                legacy_angle_number: false,
+            });
+        }
+        let expected: BTreeSet<&str> = names.iter().copied().collect();
         if expected != got {
             return Err(format!(
                 "defined {} must carry exactly {names:?}, got {got:?}",
@@ -789,6 +958,13 @@ impl TryFrom<RawObject> for Expected {
                 .iter()
                 .map(|e| Expected::deserialize(e).map_err(|err| format!("list element: {err}")))
                 .collect::<Result<Vec<_>, _>>()?;
+            // list replay compares a curve element by its bounds only, and the
+            // harness samples no curve inside a list
+            if elements.iter().any(|e| {
+                matches!(&e.data, Some(ExpectedData::Curve { samples, .. }) if !samples.is_empty())
+            }) {
+                return Err("a curve inside a list carries no samples_curve".into());
+            }
             return Ok(Expected {
                 legacy_angle_number: false,
                 kind,
@@ -799,9 +975,12 @@ impl TryFrom<RawObject> for Expected {
             let center: [f64; 2] =
                 serde_json::from_value(raw.fields["center"].clone()).map_err(|e| e.to_string())?;
             let radius = number("radius", &raw.fields["radius"])?;
-            let fractions: Vec<Option<f64>> =
-                serde_json::from_value(raw.fields["fractions"].clone())
-                    .map_err(|e| e.to_string())?;
+            let fractions = raw.fields["fractions"]
+                .as_array()
+                .ok_or("a pie chart's `fractions` must be an array")?
+                .iter()
+                .map(sample_value)
+                .collect::<Result<Vec<_>, _>>()?;
             return Ok(Expected {
                 legacy_angle_number: false,
                 kind,
@@ -817,6 +996,13 @@ impl TryFrom<RawObject> for Expected {
             nums.insert(name.as_str(), number(name, v)?);
         }
         let f = |n: &str| nums[n];
+        let curve_samples = || -> Result<Vec<CurveSample>, String> {
+            raw.samples_curve
+                .iter()
+                .flatten()
+                .map(|(t, v)| curve_sample(*t, v))
+                .collect()
+        };
         let data = match kind {
             Kind::Point => ExpectedData::Point {
                 x: f("x"),
@@ -840,11 +1026,15 @@ impl TryFrom<RawObject> for Expected {
             },
             Kind::Number | Kind::Angle => ExpectedData::Number(f("value")),
             Kind::Image => ExpectedData::Image,
-            Kind::Curve => ExpectedData::Curve {
-                start: f("start"),
-                end: f("end"),
-                samples: raw.samples_curve.unwrap_or_default(),
-            },
+            Kind::Curve => {
+                let samples = curve_samples()?;
+                check_curve_parameters(f("start"), f("end"), &samples)?;
+                ExpectedData::Curve {
+                    start: f("start"),
+                    end: f("end"),
+                    samples,
+                }
+            }
             Kind::Vector => ExpectedData::Vector {
                 x: f("x"),
                 y: f("y"),
@@ -926,20 +1116,25 @@ pub fn line_label(lhs: &str) -> String {
         .to_string()
 }
 
-fn legacy_angle_numbers(schema: u32) -> Result<bool, String> {
+fn encoding(schema: u32) -> Result<Encoding, String> {
     match schema {
-        1 => Ok(true),
-        2 => Ok(false),
+        1..=4 => Ok(Encoding {
+            angles_as_numbers: schema == 1,
+            signed_samples: schema >= 4,
+        }),
         _ => Err(format!("unsupported schema {schema}")),
     }
 }
 
 /// Parses one snapshot object from JSON, in the format of `golden/SCHEMA.md`
-/// (the `object` field of a verified t-pair output). Angles keep the current
-/// encoding: they are recorded as the angle type there.
+/// (the `object` field of a verified t-pair output). The pairs were recorded
+/// in the schema 2 encoding: angles carry the angle type, an infinite number
+/// is written as undefined and a sample that is not finite as `null`.
 pub fn expected_from_json(v: &serde_json::Value) -> Result<Expected, String> {
     let raw: RawObject = serde_json::from_value(v.clone()).map_err(|e| format!("object: {e}"))?;
-    Expected::try_from(raw)
+    let mut expected = Expected::try_from(raw)?;
+    expected.set_encoding(encoding(2)?)?;
+    Ok(expected)
 }
 
 /// Apply the file's angle encoding to a snapshot read outside a replay case,
@@ -948,9 +1143,11 @@ pub fn set_snapshot_schema(
     schema: u32,
     snapshot: &mut BTreeMap<String, Expected>,
 ) -> Result<(), String> {
-    let legacy = legacy_angle_numbers(schema)?;
-    for expected in snapshot.values_mut() {
-        expected.set_angle_encoding(legacy);
+    let encoding = encoding(schema)?;
+    for (label, expected) in snapshot.iter_mut() {
+        expected
+            .set_encoding(encoding)
+            .map_err(|e| format!("`{label}`: {e}"))?;
     }
     Ok(())
 }
@@ -959,9 +1156,10 @@ pub fn set_snapshot_schema(
 pub fn parse_file(text: &str, source: &str) -> Result<File, String> {
     let mut file: File =
         serde_json::from_str(text).map_err(|e| format!("{source}: malformed JSON: {e}"))?;
-    legacy_angle_numbers(file.schema).map_err(|e| format!("{source}: {e}"))?;
+    encoding(file.schema).map_err(|e| format!("{source}: {e}"))?;
     for case in &mut file.cases {
         case.generator = file.generator.clone();
+        case.schema = file.schema;
         for snapshot in &mut case.snapshots {
             set_snapshot_schema(file.schema, snapshot).map_err(|e| format!("{source}: {e}"))?;
         }
@@ -1133,6 +1331,15 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     }
                 };
                 check_keys(&keys, &outputs, created).map_err(|e| format!("snapshot {i}: {e}"))?;
+                previous_keys = Some(keys);
+            }
+            Some(previous) if matches!(&case.steps[i], Step::Delete { .. }) => {
+                let Step::Delete { label } = &case.steps[i] else {
+                    unreachable!()
+                };
+                if !previous.contains(label) || keys.contains(label) || !keys.is_subset(previous) {
+                    return Err(format!("snapshot {i} has invalid labels after deletion"));
+                }
                 previous_keys = Some(keys);
             }
             Some(previous) if *previous != keys => {
@@ -1534,10 +1741,433 @@ pub fn load_all(root: &Path) -> Result<Vec<Case>, String> {
         }
     }
     if errors.is_empty() {
+        restore_legacy_infinities(&mut cases)?;
         Ok(cases)
     } else {
         Err(errors.join("\n"))
     }
+}
+
+/// A value of a legacy file and the same value of its paired recording:
+/// equal within the golden tolerance (the rounding of another platform),
+/// the same infinity, or both NaN.
+fn drift_agrees(p: f64, q: f64) -> bool {
+    if p == 0.0 && q == 0.0 {
+        // a signed zero can decide the sign of a later infinity
+        return p.is_sign_negative() == q.is_sign_negative();
+    }
+    crate::compare::numbers_agree(p, q) || (p.is_nan() && q.is_nan())
+}
+
+fn check_drift(what: &str, p: f64, q: f64) -> Result<(), String> {
+    if drift_agrees(p, q) {
+        Ok(())
+    } else {
+        Err(format!("{what} {p:?} is recorded as {q:?}"))
+    }
+}
+
+/// One legacy sample checked against the same position of the recording.
+/// A legacy `null` takes the sign of a recorded infinity (`signed`, a schema
+/// 4 recording) or is verified as NaN; finite values may drift within the
+/// tolerance; anything else contradicts the legacy file. Returns the `null`
+/// positions verified.
+fn restore_sample(old: &mut Option<f64>, new: Option<f64>, signed: bool) -> Result<usize, String> {
+    match (*old, new) {
+        (None, None) => Ok(usize::from(signed)),
+        (None, Some(v)) if signed && v.is_infinite() => {
+            *old = Some(v);
+            Ok(1)
+        }
+        (Some(p), Some(q)) if p.is_finite() && q.is_finite() => {
+            check_drift("sample", p, q).map(|()| 0)
+        }
+        _ => Err(format!("sample {old:?} is recorded as {new:?}")),
+    }
+}
+
+/// A coordinate pair of a legacy curve checked against the recording. A
+/// legacy `None` stands for coordinates that are not all finite.
+fn restore_curve_pair(
+    old: &mut Option<(f64, f64)>,
+    new: Option<(f64, f64)>,
+    signed: bool,
+) -> Result<usize, String> {
+    let finite = |(x, y): (f64, f64)| x.is_finite() && y.is_finite();
+    match (*old, new) {
+        (None, None) => Ok(0),
+        (None, Some(q)) if signed && !finite(q) => {
+            *old = new;
+            Ok(1)
+        }
+        (Some(p), Some(q)) if finite(p) && finite(q) => {
+            check_drift("coordinate", p.0, q.0)?;
+            check_drift("coordinate", p.1, q.1).map(|()| 0)
+        }
+        _ => Err(format!("coordinates {old:?} are recorded as {new:?}")),
+    }
+}
+
+/// A legacy locus point checked against the recording coordinate by
+/// coordinate: the harness writes each coordinate on its own, `null` (NaN
+/// here, both for a `None` point) where it is not finite. Each legacy
+/// `null` takes a recorded infinity (`signed`) or is verified as NaN.
+fn restore_locus_point(
+    old: &mut Option<(f64, f64)>,
+    new: Option<(f64, f64)>,
+    signed: bool,
+) -> Result<usize, String> {
+    let (ox, oy) = old.unwrap_or((f64::NAN, f64::NAN));
+    let (nx, ny) = new.unwrap_or((f64::NAN, f64::NAN));
+    let mut count = 0;
+    let mut coordinate = |o: f64, n: f64| -> Result<f64, String> {
+        if o.is_nan() && n.is_nan() {
+            count += usize::from(signed);
+            Ok(o)
+        } else if o.is_nan() && signed && n.is_infinite() {
+            count += 1;
+            Ok(n)
+        } else if o.is_finite() && n.is_finite() {
+            check_drift("coordinate", o, n).map(|()| o)
+        } else {
+            Err(format!("locus point {old:?} is recorded as {new:?}"))
+        }
+    };
+    let (x, y) = (coordinate(ox, nx)?, coordinate(oy, ny)?);
+    if old.is_some() || !x.is_nan() || !y.is_nan() {
+        *old = Some((x, y));
+    }
+    Ok(count)
+}
+
+/// The numbers, names and flags of an object that has no samples, in a
+/// fixed order, to check a legacy object against its recording.
+#[derive(Debug, PartialEq)]
+enum Atom<'a> {
+    Number(f64),
+    Text(&'a str),
+    Flag(Option<bool>),
+}
+
+fn atoms(d: &ExpectedData) -> Vec<Atom<'_>> {
+    use Atom::Number as N;
+    let pair = |(x, y): (f64, f64)| [N(x), N(y)];
+    let mut out = Vec::new();
+    match d {
+        ExpectedData::Implicit {
+            coefficients,
+            equation,
+            input_form,
+        } => {
+            out.extend(coefficients.iter().map(|row| N(row.len() as f64)));
+            out.extend(coefficients.iter().flatten().map(|&v| N(v)));
+            out.push(Atom::Text(equation));
+            out.push(Atom::Flag(Some(*input_form)));
+        }
+        ExpectedData::Point { x, y } | ExpectedData::Vector { x, y } => out.extend(pair((*x, *y))),
+        ExpectedData::Line { a, b, c } => out.extend([N(*a), N(*b), N(*c)]),
+        ExpectedData::Segment { x1, y1, x2, y2 } => out.extend([N(*x1), N(*y1), N(*x2), N(*y2)]),
+        ExpectedData::Circle { cx, cy, r } => out.extend([N(*cx), N(*cy), N(*r)]),
+        ExpectedData::Number(v) => out.push(N(*v)),
+        ExpectedData::Image => {}
+        ExpectedData::Bool(b) => out.push(Atom::Flag(Some(*b))),
+        ExpectedData::Ray { x, y, a, b, c } => out.extend([N(*x), N(*y), N(*a), N(*b), N(*c)]),
+        ExpectedData::Text(t) => out.push(Atom::Text(t)),
+        ExpectedData::Relation(reports) => out.extend(reports.iter().map(|r| Atom::Text(r))),
+        ExpectedData::Polygon {
+            vertices,
+            area,
+            signed_area,
+        } => {
+            out.push(N(vertices.len() as f64));
+            out.extend(vertices.iter().flat_map(|&v| pair(v)));
+            out.extend([N(*area), N(*signed_area)]);
+        }
+        ExpectedData::PolyLine { vertices, length } => {
+            out.push(N(vertices.len() as f64));
+            for v in vertices {
+                match v {
+                    Some(v) => out.extend(pair(*v)),
+                    None => out.push(Atom::Flag(None)),
+                }
+            }
+            out.push(N(*length));
+        }
+        ExpectedData::Conic {
+            conic_type,
+            matrix,
+            parts,
+        } => {
+            out.push(Atom::Text(conic_type));
+            out.extend(matrix.iter().map(|&v| N(v)));
+            match parts {
+                ConicParts::Central {
+                    midpoint,
+                    half_axes,
+                    eigenvectors,
+                } => {
+                    out.extend(pair(*midpoint));
+                    out.extend(pair(*half_axes));
+                    out.extend(eigenvectors.iter().flat_map(|&v| pair(v)));
+                }
+                ConicParts::Parabola {
+                    vertex,
+                    p,
+                    eigenvectors,
+                } => {
+                    out.extend(pair(*vertex));
+                    out.push(N(*p));
+                    out.extend(eigenvectors.iter().flat_map(|&v| pair(v)));
+                }
+                ConicParts::SinglePoint { point } => out.extend(pair(*point)),
+                ConicParts::Lines { lines } => out.extend(lines.iter().flatten().map(|&v| N(v))),
+                ConicParts::Empty => {}
+            }
+        }
+        ExpectedData::Arc {
+            value,
+            conic_type,
+            orientation,
+            curve,
+        } => {
+            out.push(N(*value));
+            out.push(Atom::Text(conic_type));
+            out.push(Atom::Flag(*orientation));
+            if let Some(a) = curve {
+                out.extend([N(a.start), N(a.end), N(a.arc_length), N(a.area)]);
+                out.extend(pair(a.midpoint));
+                out.extend(pair(a.half_axes));
+                out.extend(a.eigenvectors.iter().flat_map(|&v| pair(v)));
+            }
+        }
+        // sampled data and lists are walked by `restore_data`
+        ExpectedData::Curve { .. }
+        | ExpectedData::Function { .. }
+        | ExpectedData::FunctionNVar(_)
+        | ExpectedData::Pie { .. }
+        | ExpectedData::Locus(_)
+        | ExpectedData::Stroke(_)
+        | ExpectedData::List(_) => unreachable!("sampled data has no atoms"),
+    }
+    out
+}
+
+/// Checks one defined legacy object against its recording, field by field
+/// and sample by sample, and restores the signs of its `null` samples.
+fn restore_data(old: &mut ExpectedData, new: &ExpectedData, signed: bool) -> Result<usize, String> {
+    fn each<T, U>(
+        old: &mut [T],
+        new: &[U],
+        mut restore: impl FnMut(&mut T, &U) -> Result<usize, String>,
+    ) -> Result<usize, String> {
+        if old.len() != new.len() {
+            return Err(format!(
+                "{} samples are recorded as {}",
+                old.len(),
+                new.len()
+            ));
+        }
+        old.iter_mut().zip(new).map(|(o, n)| restore(o, n)).sum()
+    }
+    match (old, new) {
+        (ExpectedData::Function { samples: a }, ExpectedData::Function { samples: b }) => {
+            each(a, b, |o, n| restore_sample(o, *n, signed))
+        }
+        (
+            ExpectedData::Pie {
+                center,
+                radius,
+                fractions: a,
+            },
+            ExpectedData::Pie {
+                center: c,
+                radius: r,
+                fractions: b,
+            },
+        ) => {
+            check_drift("center", center.0, c.0)?;
+            check_drift("center", center.1, c.1)?;
+            check_drift("radius", *radius, *r)?;
+            each(a, b, |o, n| restore_sample(o, *n, signed))
+        }
+        (ExpectedData::FunctionNVar(a), ExpectedData::FunctionNVar(b)) => each(a, b, |o, n| {
+            if !same_bits(&[o.0, o.1], &[n.0, n.1]) {
+                return Err(format!(
+                    "sample at {:?} is recorded at {:?}",
+                    (o.0, o.1),
+                    (n.0, n.1)
+                ));
+            }
+            restore_sample(&mut o.2, n.2, signed)
+        }),
+        (
+            ExpectedData::Curve {
+                start,
+                end,
+                samples: a,
+            },
+            ExpectedData::Curve {
+                start: s,
+                end: e,
+                samples: b,
+            },
+        ) => {
+            check_drift("curve start", *start, *s)?;
+            check_drift("curve end", *end, *e)?;
+            each(a, b, |o, n| {
+                // a sign moves only between identical parameters
+                if o.0.to_bits() != n.0.to_bits() {
+                    return Err(format!("curve parameter {} is recorded as {}", o.0, n.0));
+                }
+                restore_curve_pair(&mut o.1, n.1, signed)
+            })
+        }
+        (ExpectedData::Locus(a), ExpectedData::Locus(b)) => each(a, b, |o, n| {
+            if o.1 != n.1 {
+                return Err("locus lineTo differs".into());
+            }
+            restore_locus_point(&mut o.0, n.0, signed)
+        }),
+        // A stroke records no infinite sample: its points must match exactly.
+        (ExpectedData::Stroke(a), ExpectedData::Stroke(b)) => {
+            if a == b {
+                Ok(0)
+            } else {
+                Err("stroke points differ".into())
+            }
+        }
+        (ExpectedData::List(_), _) | (_, ExpectedData::List(_)) => Err("list shapes differ".into()),
+        (old, new) if std::mem::discriminant(old) == std::mem::discriminant(new) => {
+            let (a, b) = (atoms(old), atoms(new));
+            let agree = a.len() == b.len()
+                && a.iter().zip(&b).all(|pair| match pair {
+                    (Atom::Number(p), Atom::Number(q)) => drift_agrees(*p, *q),
+                    (p, q) => p == q,
+                });
+            if agree {
+                Ok(0)
+            } else {
+                Err(format!("{old:?} is recorded as {new:?}"))
+            }
+        }
+        (old, new) => Err(format!("{old:?} is recorded as {new:?}")),
+    }
+}
+
+/// Checks a legacy object against the same object of its paired recording
+/// and restores what the recording supplies: the sign of an undefined
+/// number of a schema 1 or 2 file, and, from a schema 4 recording, the
+/// sign or NaN of each `null` sample. Returns the positions verified.
+fn restore_object(old: &mut Expected, new: &Expected, signed: bool) -> Result<usize, String> {
+    let kinds = old.kind == new.kind || (old.legacy_angle_number && new.kind == Kind::Angle);
+    if !kinds {
+        return Err(format!("a {} is recorded as a {}", old.kind, new.kind));
+    }
+    match (&mut old.data, &new.data) {
+        (None, None) => Ok(0),
+        (None, Some(ExpectedData::Number(value)))
+            if old.kind == Kind::Number && value.is_infinite() =>
+        {
+            old.data = Some(ExpectedData::Number(*value));
+            Ok(1)
+        }
+        (Some(ExpectedData::List(a)), Some(ExpectedData::List(b))) => {
+            if a.len() != b.len() {
+                return Err(format!("{} elements are recorded as {}", a.len(), b.len()));
+            }
+            a.iter_mut()
+                .zip(b)
+                .enumerate()
+                .map(|(i, (old, new))| {
+                    restore_object(old, new, signed).map_err(|e| format!("element {}: {e}", i + 1))
+                })
+                .sum()
+        }
+        (Some(a), Some(b)) => restore_data(a, b, signed),
+        (old, new) => Err(format!(
+            "defined {} is recorded as defined {}",
+            old.is_some(),
+            new.is_some()
+        )),
+    }
+}
+
+/// Whether two cases run the same input bit for bit: a step that sets +0
+/// instead of -0 flips the sign of a later infinity, and `==` on numbers
+/// treats them alike. The `Debug` form of an `f64` keeps its sign and bits.
+fn same_inputs(a: &Case, b: &Case) -> bool {
+    a.script == b.script
+        && format!("{:?}", a.view) == format!("{:?}", b.view)
+        && format!("{:?}", a.steps) == format!("{:?}", b.steps)
+}
+
+/// Checks every object of every legacy snapshot against the recording of
+/// the same input and restores what the recording supplies. Returns the
+/// positions verified.
+fn restore_snapshots(
+    old: &mut [BTreeMap<String, Expected>],
+    new: &[BTreeMap<String, Expected>],
+    signed: bool,
+) -> Result<usize, String> {
+    if old.len() != new.len() {
+        return Err("step counts differ".into());
+    }
+    let mut count = 0;
+    for (step, (old, new)) in old.iter_mut().zip(new).enumerate() {
+        if !old.keys().eq(new.keys()) {
+            return Err(format!("step {step}: labels differ"));
+        }
+        for (label, expected) in old.iter_mut() {
+            count += restore_object(expected, &new[label], signed)
+                .map_err(|e| format!("`{step}:{label}`: {e}"))?;
+        }
+    }
+    Ok(count)
+}
+
+/// A legacy undefined number can recover its sign only at the matching
+/// position of a separately recorded case of schema 3 or later. A `null`
+/// sample of a file before schema 4 recovers the sign of an infinity or is
+/// verified as NaN at the matching position of a schema 4 recording. Every
+/// object of every step must match its recording, so one agreeing object
+/// cannot cover for a contradictory one.
+fn restore_legacy_infinities(cases: &mut [Case]) -> Result<(), String> {
+    const PAIRS: &str = include_str!("../../../tools/ggb-harness/cases/legacy-infinity.txt");
+    let positions: BTreeMap<_, _> = cases
+        .iter()
+        .enumerate()
+        .map(|(i, case)| (case.id.clone(), i))
+        .collect();
+    for pair in PAIRS.lines() {
+        let (old, new) = pair.split_once(' ').expect("two case IDs per line");
+        let (&old_pos, &new_pos) = positions
+            .get(old)
+            .zip(positions.get(new))
+            .ok_or_else(|| format!("missing case in legacy infinity pair {pair}"))?;
+        let recording = &cases[new_pos];
+        let legacy = &cases[old_pos];
+        if recording.schema < 3 || recording.generator != "ggb-harness" {
+            return Err(format!("unexpected formats in legacy infinity pair {pair}"));
+        }
+        if !same_inputs(legacy, recording) {
+            return Err(format!("inputs differ in legacy infinity pair {pair}"));
+        }
+        // A legacy file re-recorded in schema 4 carries its own signs.
+        if legacy.schema >= 4 {
+            continue;
+        }
+        if !matches!(legacy.schema, 1 | 2) {
+            return Err(format!("unexpected formats in legacy infinity pair {pair}"));
+        }
+        let signed = recording.schema >= 4;
+        let snapshots = recording.snapshots.clone();
+        let count = restore_snapshots(&mut cases[old_pos].snapshots, &snapshots, signed)
+            .map_err(|e| format!("legacy infinity pair {pair}, {e}"))?;
+        if count == 0 {
+            return Err(format!("no legacy infinity positions verified by {pair}"));
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -1558,7 +2188,7 @@ mod tests {
     fn malformed_files_fail_loudly() {
         for bad in [
             "not json",
-            &GOOD.replace("\"schema\":1", "\"schema\":3"),
+            &GOOD.replace("\"schema\":1", "\"schema\":5"),
             &GOOD.replace("\"y\":0.0", "\"z\":0.0"),
             &GOOD.replace("\"initial\"", "\"teleport\""),
             &GOOD.replace("\"A\":{", "\"B\":{"),
@@ -1570,6 +2200,357 @@ mod tests {
             ),
         ] {
             assert!(parse_file(bad, "t").is_err(), "accepted: {bad}");
+        }
+    }
+
+    #[test]
+    fn an_infinite_number_is_recorded_only_from_schema_3() {
+        let parse = |json: &str| serde_json::from_str::<Expected>(json);
+        let plus = parse(r#"{"type":"number","defined":true,"infinity":1}"#).unwrap();
+        assert_eq!(plus.data, Some(ExpectedData::Number(f64::INFINITY)));
+        let minus = parse(r#"{"type":"number","defined":true,"infinity":-1}"#).unwrap();
+        assert_eq!(minus.data, Some(ExpectedData::Number(f64::NEG_INFINITY)));
+        for bad in [
+            r#"{"type":"number","defined":true,"infinity":0}"#,
+            r#"{"type":"number","defined":true,"infinity":1,"value":1.0}"#,
+            r#"{"type":"number","defined":false,"infinity":1}"#,
+            r#"{"type":"angle","defined":true,"infinity":1}"#,
+            r#"{"type":"vector","defined":true,"infinity":1}"#,
+        ] {
+            assert!(parse(bad).is_err(), "accepted: {bad}");
+        }
+    }
+
+    /// A file of `schema` with one snapshot holding `object` as `f`.
+    fn file_with(schema: u32, object: &str) -> String {
+        format!(
+            r#"{{"schema":{schema},"generator":"format-sample","upstream_commit":null,
+              "cases":[{{"id":"x","group":"g","script":["f(x) = 1 / x"],
+              "steps":[{{"action":"initial"}}],"snapshots":[{{"f":{object}}}]}}]}}"#
+        )
+    }
+
+    fn function_with(value: &str) -> String {
+        let samples: Vec<String> = SAMPLE_XS
+            .iter()
+            .map(|x| format!("[{x:?}, {}]", if *x == 0.0 { value } else { "1.0" }))
+            .collect();
+        format!(
+            r#"{{"type":"function","defined":true,"samples":[{}]}}"#,
+            samples.join(",")
+        )
+    }
+
+    #[test]
+    fn infinite_samples_carry_their_sign_from_schema_4() {
+        let at_zero = |text: &str| {
+            let file = parse_file(text, "t").unwrap();
+            match &file.cases[0].snapshots[0]["f"].data {
+                Some(ExpectedData::Function { samples }) => samples[5],
+                other => panic!("not a function: {other:?}"),
+            }
+        };
+        let plus = function_with(r#"{"infinity":1}"#);
+        let minus = function_with(r#"{"infinity":-1}"#);
+        assert_eq!(at_zero(&file_with(4, &plus)), Some(f64::INFINITY));
+        assert_eq!(at_zero(&file_with(4, &minus)), Some(f64::NEG_INFINITY));
+        assert_eq!(at_zero(&file_with(4, &function_with("null"))), None);
+        assert_eq!(at_zero(&file_with(3, &function_with("null"))), None);
+        // older schemas only know `null` for a value that is not finite
+        for schema in 1..=3 {
+            assert!(parse_file(&file_with(schema, &plus), "t").is_err());
+        }
+        for bad in [
+            r#"{"infinity":0}"#,
+            r#"{"infinity":1,"x":1}"#,
+            r#"{}"#,
+            "true",
+        ] {
+            assert!(
+                parse_file(&file_with(4, &function_with(bad)), "t").is_err(),
+                "{bad}"
+            );
+        }
+        // the verified t-pairs keep the schema 2 encoding
+        let value: serde_json::Value = serde_json::from_str(&plus).unwrap();
+        assert!(expected_from_json(&value).is_err());
+    }
+
+    /// A curve on [`start`, 1] sampled at the harness's parameters: `first`
+    /// at the start and `rest` at every other parameter.
+    fn curve_json(start: f64, first: &str, rest: &str) -> String {
+        let samples: Vec<String> = CURVE_FRACTIONS
+            .iter()
+            .enumerate()
+            .map(|(i, fraction)| {
+                let t = start + (1.0 - start) * fraction;
+                format!("[{t:?},{}]", if i == 0 { first } else { rest })
+            })
+            .collect();
+        format!(
+            r#"{{"type":"curve","defined":true,"start":{start:?},"end":1.0,"samples_curve":[{}]}}"#,
+            samples.join(",")
+        )
+    }
+
+    #[test]
+    fn curve_samples_sit_at_the_harness_parameters() {
+        let good = curve_json(-1.0, "[1.0,2.0]", "[1.0,2.0]");
+        assert!(parse_file(&file_with(4, &good), "t").is_ok());
+        // the midpoint of [-1, 1] is +0, never -0
+        let forged = good.replace("[0.0,[1.0,2.0]]", "[-0.0,[1.0,2.0]]");
+        assert_ne!(forged, good);
+        assert!(parse_file(&file_with(4, &forged), "t").is_err());
+        let shifted = good.replace("[0.0,[1.0,2.0]]", "[5e-10,[1.0,2.0]]");
+        assert!(parse_file(&file_with(4, &shifted), "t").is_err());
+        // a function is sampled at +0 too
+        let samples: Vec<String> = SAMPLE_XS.iter().map(|x| format!("[{x:?},1.0]")).collect();
+        let function = format!(
+            r#"{{"type":"function","defined":true,"samples":[{}]}}"#,
+            samples.join(",")
+        );
+        assert!(parse_file(&file_with(4, &function), "t").is_ok());
+        let forged = function.replace("[0.0,1.0]", "[-0.0,1.0]");
+        assert_ne!(forged, function);
+        assert!(parse_file(&file_with(4, &forged), "t").is_err());
+    }
+
+    #[test]
+    fn curve_pie_and_locus_coordinates_carry_their_sign_from_schema_4() {
+        let curve = curve_json(0.0, r#"[{"infinity":-1},null]"#, "[1.0,2.0]");
+        let curve = curve.as_str();
+        let file = parse_file(&file_with(4, curve), "t").unwrap();
+        let Some(ExpectedData::Curve { samples, .. }) = &file.cases[0].snapshots[0]["f"].data
+        else {
+            panic!("not a curve");
+        };
+        let (x, y) = samples[0].1.unwrap();
+        assert!(x == f64::NEG_INFINITY && y.is_nan());
+        assert_eq!(samples[1].1, Some((1.0, 2.0)));
+        assert!(parse_file(&file_with(3, curve), "t").is_err());
+        let legacy = curve_json(0.0, "null", "[1.0,2.0]");
+        assert!(parse_file(&file_with(3, &legacy), "t").is_ok());
+        // schema 4 always writes the coordinate pair
+        assert!(parse_file(&file_with(4, &legacy), "t").is_err());
+
+        let pie = r#"{"type":"piechart","defined":true,"center":[0.0,0.0],"radius":1.0,
+            "fractions":[null,{"infinity":1}]}"#;
+        let file = parse_file(&file_with(4, pie), "t").unwrap();
+        let Some(ExpectedData::Pie { fractions, .. }) = &file.cases[0].snapshots[0]["f"].data
+        else {
+            panic!("not a pie chart");
+        };
+        assert_eq!(fractions, &[None, Some(f64::INFINITY)]);
+        assert!(parse_file(&file_with(3, pie), "t").is_err());
+
+        let locus = r#"{"type":"locus","defined":true,
+            "points":[[{"infinity":1},2.0,false],[null,null,true]]}"#;
+        let file = parse_file(&file_with(4, locus), "t").unwrap();
+        let Some(ExpectedData::Locus(points)) = &file.cases[0].snapshots[0]["f"].data else {
+            panic!("not a locus");
+        };
+        assert_eq!(points[0], (Some((f64::INFINITY, 2.0)), false));
+        assert_eq!(points[1], (None, true));
+        assert!(parse_file(&file_with(3, locus), "t").is_err());
+        // the harness writes each coordinate on its own
+        let single = r#"{"type":"locus","defined":true,
+            "points":[[null,{"infinity":1},false],[1.0,null,true]]}"#;
+        let file = parse_file(&file_with(4, single), "t").unwrap();
+        let Some(ExpectedData::Locus(points)) = &file.cases[0].snapshots[0]["f"].data else {
+            panic!("not a locus");
+        };
+        assert!(matches!(points[0].0, Some((x, y)) if x.is_nan() && y == f64::INFINITY));
+        assert!(matches!(points[1].0, Some((x, y)) if x == 1.0 && y.is_nan()));
+        assert!(parse_file(&file_with(3, single), "t").is_err());
+        // the harness writes a single null coordinate in legacy files too
+        let legacy_single = r#"{"type":"locus","defined":true,"points":[[null,1.0,false]]}"#;
+        let file = parse_file(&file_with(2, legacy_single), "t").unwrap();
+        let Some(ExpectedData::Locus(points)) = &file.cases[0].snapshots[0]["f"].data else {
+            panic!("not a locus");
+        };
+        assert!(matches!(points[0].0, Some((x, y)) if x.is_nan() && y == 1.0));
+
+        // list replay compares a curve element by its bounds only
+        let element = curve_json(-1.0, "[1.0,2.0]", r#"[0.0,{"infinity":1}]"#);
+        let list = format!(r#"{{"type":"list","defined":true,"elements":[{element}]}}"#);
+        assert!(parse_file(&file_with(4, &element), "t").is_ok());
+        assert!(parse_file(&file_with(4, &list), "t").is_err());
+        let bounds = r#"{"type":"list","defined":true,"elements":[{"type":"curve",
+            "defined":true,"start":-1.0,"end":1.0}]}"#;
+        assert!(parse_file(&file_with(4, bounds), "t").is_ok());
+    }
+
+    fn function(samples: &[Option<f64>]) -> Expected {
+        Expected {
+            kind: Kind::Function,
+            data: Some(ExpectedData::Function {
+                samples: samples.to_vec(),
+            }),
+            legacy_angle_number: false,
+        }
+    }
+
+    fn curve(samples: &[CurveSample]) -> Expected {
+        Expected {
+            kind: Kind::Curve,
+            data: Some(ExpectedData::Curve {
+                start: 0.0,
+                end: 1.0,
+                samples: samples.to_vec(),
+            }),
+            legacy_angle_number: false,
+        }
+    }
+
+    #[test]
+    fn legacy_null_samples_take_the_signed_recording() {
+        let mut legacy = function(&[None, None, Some(1.0)]);
+        let recorded = function(&[Some(f64::NEG_INFINITY), None, Some(1.0 + 1e-15)]);
+        assert_eq!(restore_object(&mut legacy, &recorded, true), Ok(2));
+        assert_eq!(
+            legacy,
+            function(&[Some(f64::NEG_INFINITY), None, Some(1.0)])
+        );
+        // a value on one side only contradicts the legacy file, and a finite
+        // value may drift within the tolerance only
+        for (old, new) in [
+            (None, Some(2.0)),
+            (Some(2.0), None),
+            (Some(2.0), Some(f64::INFINITY)),
+            (Some(2.0), Some(2.0 + 1e-6)),
+        ] {
+            let mut sample = old;
+            assert!(
+                restore_sample(&mut sample, new, true).is_err(),
+                "{old:?} {new:?}"
+            );
+        }
+        // a schema 3 recording has no sign to give
+        let mut sample = None;
+        assert!(restore_sample(&mut sample, Some(f64::INFINITY), false).is_err());
+        assert_eq!(restore_sample(&mut sample, None, false), Ok(0));
+    }
+
+    #[test]
+    fn legacy_curve_signs_need_the_same_parameters() {
+        let recorded = curve(&[(0.0, Some((f64::INFINITY, 0.0))), (1.0, Some((1.0, 1.0)))]);
+        let mut legacy = curve(&[(0.0, None), (1.0, Some((1.0, 1.0)))]);
+        assert_eq!(restore_object(&mut legacy, &recorded, true), Ok(1));
+        assert_eq!(legacy, recorded);
+        // the sign of t = 1 must not move to t = 0
+        let mut moved = curve(&[(0.0, None), (1.0, Some((1.0, 1.0)))]);
+        let other = curve(&[(1.0, Some((f64::INFINITY, 2.0))), (1.0, Some((1.0, 1.0)))]);
+        assert!(restore_object(&mut moved, &other, true).is_err());
+        // nor between curves of other bounds
+        // a parameter shifted within the tolerance is still another point
+        let mut shifted_t = curve(&[(-5e-10, None)]);
+        let at_zero = curve(&[(0.0, Some((f64::INFINITY, 2.0)))]);
+        assert!(restore_object(&mut shifted_t, &at_zero, true).is_err());
+        let mut bounds = curve(&[(0.0, None)]);
+        let mut shifted = curve(&[(0.0, Some((f64::INFINITY, 0.0)))]);
+        if let Some(ExpectedData::Curve { end, .. }) = &mut shifted.data {
+            *end = 2.0;
+        }
+        assert!(restore_object(&mut bounds, &shifted, true).is_err());
+        // finite coordinates where the legacy file has none contradict it
+        let mut finite = curve(&[(0.0, None)]);
+        assert!(restore_object(&mut finite, &curve(&[(0.0, Some((1.0, 2.0)))]), true).is_err());
+    }
+
+    #[test]
+    fn every_object_of_a_pair_must_match_its_recording() {
+        let snapshot =
+            |f: Expected, g: Expected| BTreeMap::from([("f".to_string(), f), ("g".to_string(), g)]);
+        let recorded = [snapshot(
+            function(&[Some(f64::INFINITY)]),
+            function(&[Some(1.0)]),
+        )];
+        let mut legacy = [snapshot(function(&[None]), function(&[Some(1.0)]))];
+        assert_eq!(restore_snapshots(&mut legacy, &recorded, true), Ok(1));
+        // an undefined g contradicts the recording even though f verifies
+        let undefined = Expected {
+            kind: Kind::Function,
+            data: None,
+            legacy_angle_number: false,
+        };
+        let mut contradictory = [snapshot(function(&[None]), undefined)];
+        assert!(restore_snapshots(&mut contradictory, &recorded, true).is_err());
+        // so does a missing label or a point that moved
+        let mut missing = [BTreeMap::from([("f".to_string(), function(&[None]))])];
+        assert!(restore_snapshots(&mut missing, &recorded, true).is_err());
+        let point = |x: f64| Expected {
+            kind: Kind::Point,
+            data: Some(ExpectedData::Point { x, y: 0.0 }),
+            legacy_angle_number: false,
+        };
+        assert_eq!(
+            restore_object(&mut point(1.0), &point(1.0 + 1e-13), true),
+            Ok(0)
+        );
+        assert!(restore_object(&mut point(1.0), &point(1.1), true).is_err());
+        // a signed zero decides the sign of a later infinity
+        assert_eq!(restore_object(&mut point(-0.0), &point(-0.0), true), Ok(0));
+        assert!(restore_object(&mut point(0.0), &point(-0.0), true).is_err());
+    }
+
+    #[test]
+    fn pair_inputs_must_agree_bit_for_bit() {
+        let case = |value: &str| {
+            let text = format!(
+                r#"{{"schema":2,"generator":"format-sample","upstream_commit":null,
+                  "cases":[{{"id":"x","group":"g","script":["a = 1","r = 1 / a"],
+                  "steps":[{{"action":"initial"}},
+                    {{"action":"set_number","label":"a","value":{value}}}],
+                  "snapshots":[{{"a":{{"type":"number","defined":true,"value":1.0}},
+                    "r":{{"type":"number","defined":true,"value":1.0}}}},
+                  {{"a":{{"type":"number","defined":true,"value":{value}}},
+                    "r":{{"type":"number","defined":false}}}}]}}]}}"#
+            );
+            parse_file(&text, "t").unwrap().cases.remove(0)
+        };
+        assert!(same_inputs(&case("0.0"), &case("0.0")));
+        assert!(!same_inputs(&case("0.0"), &case("-0.0")));
+    }
+
+    #[test]
+    fn legacy_locus_points_take_the_signed_recording() {
+        let locus = |points: Vec<LocusPoint>| Expected {
+            kind: Kind::Locus,
+            data: Some(ExpectedData::Locus(points)),
+            legacy_angle_number: false,
+        };
+        let recorded = locus(vec![
+            (Some((f64::INFINITY, f64::NAN)), true),
+            (None, false),
+            (Some((1.0, 2.0)), true),
+        ]);
+        let mut legacy = locus(vec![(None, true), (None, false), (Some((1.0, 2.0)), true)]);
+        // one restored and three verified null coordinates
+        assert_eq!(restore_object(&mut legacy, &recorded, true), Ok(4));
+        let Some(ExpectedData::Locus(points)) = &legacy.data else {
+            panic!("not a locus");
+        };
+        assert!(matches!(points[0].0, Some((x, y)) if x == f64::INFINITY && y.is_nan()));
+        // a legacy point with one null coordinate keeps its finite one
+        let mut single = locus(vec![(Some((f64::NAN, 1.0)), false)]);
+        let infinite = locus(vec![(Some((f64::NEG_INFINITY, 1.0)), false)]);
+        assert_eq!(restore_object(&mut single, &infinite, true), Ok(1));
+        assert_eq!(single, infinite);
+        let mut single = locus(vec![(Some((f64::NAN, 1.0)), false)]);
+        let finite = locus(vec![(Some((2.0, 1.0)), false)]);
+        assert!(restore_object(&mut single, &finite, true).is_err());
+        // a legacy null point covers both coordinates, and lineTo must match
+        for bad in [
+            locus(vec![
+                (Some((f64::INFINITY, 1.0)), true),
+                (None, false),
+                (Some((1.0, 2.0)), true),
+            ]),
+            locus(vec![(None, false), (None, false), (Some((1.0, 2.0)), true)]),
+            locus(vec![(None, true), (None, false), (Some((1.5, 2.0)), true)]),
+        ] {
+            let mut legacy = locus(vec![(None, true), (None, false), (Some((1.0, 2.0)), true)]);
+            assert!(restore_object(&mut legacy, &bad, true).is_err());
         }
     }
 

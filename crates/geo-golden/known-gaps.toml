@@ -11,6 +11,35 @@
 # The test fails when a listed case disagrees anywhere else, or agrees where
 # the list says it does not, so an entry can neither hide a new difference
 # nor go stale.
+#
+# An entry may also state what the kernel answers at every listed mismatch:
+# `undefined = true` (the kernel's value is undefined) or
+# `failure = "error text"` (the kernel refuses the line with exactly this
+# error). The test fails when the kernel answers anything else there.
+
+# intersectgrowth
+
+[[gap]]
+id = "intersectgrowth-interval-003"
+reason = "AlgoRoots.initPoints removes every output from slot max(number, 1) on that has no dependents and is undefined, which unsets its label; when the slot is defined again AlgoGeoPointsFunction.updateLabels gives it the next default point label (B, then D past the taken C). The harness still reads the same object under its old label R_{2} or R_{3}. The kernel keeps one fixed label per output, so the slots stay R_{2} and R_{3} and no B or D exists"
+mismatches = ["3:B", "3:D", "4:B", "4:D"]
+
+[[gap]]
+id = "intersectgrowth-interval-005"
+reason = "AlgoRoots.initPoints unlabels the undefined second slot when the interval collapses; when it is defined again it is labelled with the next default point label A, which the harness reads besides the old label R_{2}. The kernel keeps one fixed label per output, so the slot stays R_{2} and no A exists"
+mismatches = ["2:A", "3:A", "4:A"]
+
+[[gap]]
+id = "intersectgrowth-interval-007"
+reason = "When b moves to 5.5, R = Intersect(f, h, b, 3) loses its roots and AlgoRoots.initPoints removes its second output A, which frees the label before S = Intersect(g, h, 0, b) grows; S then names its roots 4 and 5 A and B. The kernel keeps A on R's undefined slot, so S's new outputs are B and C"
+mismatches = ["2:A", "2:B"]
+
+# corners
+
+[[gap]]
+id = "corners-review-004"
+reason = "AlgoVertexIneq keeps the intersection helper it created on the first update. The helper for y > x^n and x > 1 was made while n = 2 made the border polynomial; after n becomes 0.5 that cached polynomial helper still evaluates the border on the vertical line and finds (1, 1). Which helper exists depends on the edit history, so the kernel leaves the variable exponent undefined instead"
+mismatches = ["1:P_{1}"]
 
 # conic
 
@@ -174,21 +203,6 @@ reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps the ne
 mismatches = ["0:D", "0:E", "0:F", "3:D", "3:E", "3:F"]
 
 # lists
-
-[[gap]]
-id = "lists-index-017"
-reason = "an index past the end of a list of lists: GeoGebra gives its template element, a list holding one undefined number (so `Length` is 1); the kernel gives an undefined list"
-mismatches = ["2:c", "2:m"]
-
-[[gap]]
-id = "lists-objects-025"
-reason = "an index past the end of a list object of lists: GeoGebra gives its template element, a list holding one undefined number; the kernel gives an undefined list (as lists-index-017)"
-mismatches = ["2:p", "3:p", "4:p"]
-
-[[gap]]
-id = "lists-objects-026"
-reason = "`Length` of an index past the end of a list object of lists: 1 for GeoGebra's template element, undefined in the kernel (as lists-index-017)"
-mismatches = ["2:c", "3:c", "4:c"]
 
 [[gap]]
 id = "lists-if-014"
@@ -466,11 +480,6 @@ mismatches = ["1:S"]
 # intersectgrowth
 
 [[gap]]
-id = "intersectgrowth-interval-001"
-reason = "Intersect(f, h, a, b) keeps its creation-time output count. When b increases from 0.5 to 2, AlgoRoots allocates and labels one more point A, then keeps that label while the root is outside the interval and reuses it when b increases again."
-mismatches = ["1:A", "2:A", "3:A"]
-
-[[gap]]
 id = "vectorforms-identity-002"
 reason = "AlgoIdentity marks its list undefined at size zero and never marks it defined again. After the size returns to two, the kernel's list expression recomputes a defined identity matrix."
 mismatches = ["2:m"]
@@ -530,22 +539,10 @@ id = "matrixdilate-dilatelist-006"
 reason = "Dilate reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
 mismatches = ["1:step"]
 
-
-
-[[gap]]
-id = "lists-classes-015"
-reason = "intended difference, recorded in DIFFERENCES.md: in GeoGebra 1 / 0 is infinity and defined, so it takes part in the bounds of Classes (min 2, max infinity, width -infinity); the three bounds come out NaN, -infinity and infinity, which all show as undefined numbers. The kernel has no infinity: 1 / 0 is undefined, the bounds stay 2 and the three classes are defined"
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p", "6:p", "7:p", "8:p", "9:p"]
-
 [[gap]]
 id = "lists-take-016"
 reason = "intended difference, recorded in DIFFERENCES.md: Take(l, m) with m past the end of the list makes an undefined list, but GeoGebra keeps the elements of the last defined one, and + 1 maps over them, giving one undefined number per stale element. The undefined value of the kernel has no elements"
 mismatches = ["5:p", "6:p", "7:p"]
-
-[[gap]]
-id = "lists-undef-001"
-reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so RemoveUndefined keeps it (and a point with an infinite coordinate); the kernel has no infinity and drops those elements like undefined ones"
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
 
 [[gap]]
 id = "lists-undef-003"
@@ -553,24 +550,9 @@ reason = "intended difference, recorded in DIFFERENCES.md: a point with an infin
 mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
 
 [[gap]]
-id = "lists-undef-004"
-reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined number"
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
-
-[[gap]]
 id = "lists-undef-005"
 reason = "intended difference, recorded in DIFFERENCES.md: a point with an infinite coordinate is defined in GeoGebra, so RemoveUndefined keeps it; the kernel has no infinity and drops it like an undefined point"
 mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
-
-[[gap]]
-id = "lists-undef-008"
-reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so it survives arithmetic and RemoveUndefined keeps the point built from it; the kernel has no infinity and drops it like an undefined one"
-mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
-
-[[gap]]
-id = "lists-undef-010"
-reason = "intended difference, recorded in DIFFERENCES.md: 1 / 0 is infinity and defined in GeoGebra, so RemoveUndefined keeps the list element built from it; the kernel has no infinity and drops it like an undefined one"
-mismatches = ["0:p", "1:p", "3:p", "4:p", "5:p"]
 
 [[gap]]
 id = "algebralogic-logic-022"
@@ -628,8 +610,8 @@ mismatches = ["0:g"]
 
 [[gap]]
 id = "calculus-degree-010"
-reason = "The reference exhausts its heap expanding (a x + b)^300. Its native CAS fallback returns degree zero when a is zero, but leaves the other snapshots undefined. The kernel shares the coefficient subtrees and evaluates each once, so all snapshots get a degree."
-mismatches = ["0:d", "1:d", "3:d"]
+reason = "The reference exhausts its heap expanding (a x + b)^300. Its native CAS fallback returns degree zero when a is zero, but leaves the other snapshots undefined. The kernel shares the coefficient subtrees and evaluates each once, so all snapshots get a degree. At 1:f the file records null at x = -8 and x = 8, where the kernel evaluates (2x + 1)^300 to positive infinity. The file cannot be recorded again with signed samples, because the reference runs out of heap expanding the power for Degree (Function.expandToPolyFunctionNoCas) before the case ends. infinity-outputs-031 records the same function without the Degree line, with positive infinity at x = -8 and x = 8 for a = 2."
+mismatches = ["0:d", "1:d", "1:f", "3:d"]
 
 # Numerical function analysis
 
@@ -696,24 +678,2346 @@ mismatches = ["0:R"]
 # cas
 
 [[gap]]
+id = "cas-coefficient-001"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-coefficient-002"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-coefficient-003"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-coefficient-004"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-coefficient-005"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-009"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-010"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r5", "0:r7"]
+
+[[gap]]
+id = "cas-conic-012"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-014"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-015"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-016"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-017"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-018"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-019"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-020"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-021"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-022"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-023"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-024"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-025"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-026"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-027"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-028"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-029"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-030"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-031"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-032"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-033"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-034"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-035"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-036"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-037"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-038"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-039"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-040"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-041"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-042"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-043"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-044"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-045"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-046"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-047"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-048"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-049"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-050"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-conic-051"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r3", "0:r4", "0:r5", "0:r6"]
+
+[[gap]]
+id = "cas-conic-052"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r5", "0:r6"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-054"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r5", "0:r6"]
+
+[[gap]]
+id = "cas-conic-056"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r2", "2:r3", "3:r1", "3:r2", "4:r1", "4:r2"]
+
+[[gap]]
+id = "cas-conic-057"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-conic-058"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-conic-059"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-conic-060"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-curve-001"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-002"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`Factor` needs a function"
+
+[[gap]]
+id = "cas-curve-003"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`IFactor` needs a function"
+
+[[gap]]
+id = "cas-curve-004"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-005"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-006"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-007"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-008"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-009"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-010"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-011"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-012"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-013"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-014"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-015"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-curve-016"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-curve-017"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-curve-018"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-019"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-curve-020"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-curve-021"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-022"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-023"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-curve-024"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-curve-025"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-curve-026"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-curve-027"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-curve-028"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`Factor` needs a function"
+
+[[gap]]
+id = "cas-curve-029"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`IFactor` needs a function"
+
+[[gap]]
+id = "cas-degree-001"
+reason = "Refused as on main; the reference answers. Future work."
+mismatches = ["0:script line 1"]
+failure = "`y` needs arguments"
+
+[[gap]]
+id = "cas-degree-002"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-degree-003"
+reason = "Refused as on main; the reference answers. Future work."
+mismatches = ["0:script line 3"]
+failure = "`y` needs arguments"
+
+[[gap]]
+id = "cas-degree-004"
+reason = "Refused as on main; the reference answers. Future work."
+mismatches = ["0:script line 1"]
+failure = "`y` needs arguments"
+
+[[gap]]
+id = "cas-edge-001"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 3"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-edge-002"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-edge-003"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["1:r2", "1:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-edge-004"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-edge-006"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["1:r1", "1:r3"]
+
+[[gap]]
+id = "cas-edge-007"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-edge-008"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 4"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-edge-011"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r3", "0:r4", "1:r3", "1:r4", "2:r3", "2:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-edge-012"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-edge-014"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 1"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-edge-015"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-edge-018"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["1:step"]
+
+[[gap]]
+id = "cas-edge-019"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-edge-020"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1"]
+undefined = true
+
+[[gap]]
+id = "cas-edge-021"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 1"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-edge-022"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-family-001"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-family-002"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-family-003"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-freevariable-005"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-freevariable-006"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-freevariable-007"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-freevariable-008"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1"]
+
+[[gap]]
+id = "cas-freevariable-009"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r2"]
+
+[[gap]]
+id = "cas-freevariable-010"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r2"]
+
+[[gap]]
+id = "cas-freevariable-011"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r2"]
+
+[[gap]]
+id = "cas-hint-005"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-006"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-009"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-010"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-013"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-hint-014"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r5", "0:r6", "0:r7", "0:r8"]
+
+[[gap]]
+id = "cas-hint-015"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-hint-016"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:result"]
+undefined = true
+
+[[gap]]
+id = "cas-hint-017"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-018"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-019"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-020"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-021"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-022"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-023"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 3"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-024"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 3"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-025"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-026"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-hint-027"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "2:r2", "2:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3"]
+
+[[gap]]
+id = "cas-hint-028"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-hint-029"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-hintobject-001"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-hintobject-002"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-hintobject-003"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-implicit-001"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-002"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-003"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-004"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-005"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-006"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-007"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-008"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-009"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-010"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 6"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-011"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 7"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicit-012"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r4", "1:r1", "1:r2", "1:r4", "2:r1", "2:r2", "2:r4", "3:r1", "3:r2", "3:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-implicit-013"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 5"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-implicitrewrite-001"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-implicitrewrite-002"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`Factor` needs a function"
+
+[[gap]]
+id = "cas-implicitrewrite-003"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`IFactor` needs a function"
+
+[[gap]]
+id = "cas-implicitrewrite-004"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-implicitrewrite-005"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-implicitrewrite-006"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`Factor` needs a function"
+
+[[gap]]
+id = "cas-implicitrewrite-007"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`IFactor` needs a function"
+
+[[gap]]
+id = "cas-implicitrewrite-008"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-implicitrewrite-009"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Expand`"
+
+[[gap]]
+id = "cas-implicitrewrite-010"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`Factor` needs a function"
+
+[[gap]]
+id = "cas-implicitrewrite-011"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "`IFactor` needs a function"
+
+[[gap]]
+id = "cas-implicitrewrite-012"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-magnitude-001"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-002"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-003"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-004"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-005"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-006"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-007"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-008"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-009"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-010"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-011"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-012"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-013"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-014"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-015"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-016"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-017"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-018"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-019"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-020"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-021"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-022"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-023"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-024"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-025"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-026"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-027"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-028"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-029"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-magnitude-030"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-magnitude-039"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r3"]
+
+[[gap]]
+id = "cas-magnitude-040"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r3"]
+
+[[gap]]
+id = "cas-magnitude-041"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r3"]
+
+[[gap]]
+id = "cas-magnitude-042"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r3"]
+
+[[gap]]
+id = "cas-magnitude-043"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-name-001"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-name-002"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-name-003"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 3"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-name-004"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-name-005"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-name-006"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-name-007"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-name-008"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 7"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-name-009"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r4", "0:r5"]
+undefined = true
+
+[[gap]]
+id = "cas-name-010"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["1:step"]
+
+[[gap]]
+id = "cas-name-011"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r2", "0:r3", "0:r4", "0:r5"]
+
+[[gap]]
+id = "cas-name-012"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 3"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-name-013"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 3"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-name-014"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-order-001"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-002"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "1:r1", "1:r2", "1:r3", "1:r4", "2:r1", "2:r2", "2:r3", "2:r4", "3:r1", "3:r2", "3:r3", "3:r4", "4:r1", "4:r2", "4:r3", "4:r4", "5:r1", "5:r2", "5:r3", "5:r4"]
+
+[[gap]]
+id = "cas-order-003"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-004"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-005"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6"]
+undefined = true
+
+[[gap]]
+id = "cas-order-006"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-007"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r5", "0:r6"]
+undefined = true
+
+[[gap]]
+id = "cas-order-008"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-009"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-010"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-011"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-012"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-013"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-014"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-015"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-016"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-017"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-018"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-019"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-020"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-021"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-022"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-023"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-024"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-025"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-026"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-027"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-028"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-029"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-030"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-031"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-032"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-033"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-034"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-035"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-036"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-037"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-038"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-039"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-040"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-041"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-042"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-043"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-044"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-045"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-046"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-047"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-048"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-049"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-050"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-051"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-052"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-053"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-054"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-055"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-056"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-057"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-058"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-059"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-060"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-061"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-062"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-063"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-064"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-065"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-066"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-067"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-068"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-069"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-070"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-071"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-072"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-073"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-074"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-075"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-order-076"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-077"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-078"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-079"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-080"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-081"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-082"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-083"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-084"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-085"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-086"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-087"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-088"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-089"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-090"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-092"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "2:r1", "2:r2", "2:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3", "5:r1", "5:r2", "5:r3", "6:r1", "6:r2", "6:r3"]
+
+[[gap]]
+id = "cas-order-093"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2", "3:r1", "3:r2", "4:r1", "4:r2", "5:r1", "5:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-order-094"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "2:r1", "2:r2", "2:r3", "3:r1", "3:r2", "3:r3"]
+undefined = true
+
+[[gap]]
+id = "cas-order-095"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-096"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-order-097"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+undefined = true
+
+[[gap]]
+id = "cas-order-098"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "1:r1", "1:r2", "1:r3", "2:r1", "2:r2", "2:r3", "3:r1", "3:r2", "3:r3", "4:r1", "4:r2", "4:r3"]
+
+[[gap]]
+id = "cas-order-099"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "1:r1", "1:r2", "2:r1", "2:r2", "3:r1", "3:r2"]
+
+[[gap]]
+id = "cas-plot-001"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-002"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-003"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-004"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 4"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-005"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 1"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-006"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 4"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-007"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 5"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-008"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 4"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-009"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 3"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-010"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-011"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-012"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-013"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-014"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-015"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-016"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-017"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-018"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-019"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-020"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 3"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-021"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 3"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-023"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-024"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-plot-025"
+reason = "PlotSolve is not supported, as on main: the lane's PlotSolve was removed with the other answer paths that depend on the reference's CAS (future work)."
+mismatches = ["0:script line 2"]
+failure = "unknown command `PlotSolve`"
+
+[[gap]]
+id = "cas-rows-001"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-rows-002"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-rows-003"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-rows-004"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-rows-005"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-rows-006"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-rows-007"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-rows-009"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3"]
+
+[[gap]]
+id = "cas-shape-001"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-002"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-003"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r3"]
+
+[[gap]]
+id = "cas-shape-004"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-005"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-006"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-007"
+reason = "Refused as on main; the reference answers. Future work."
+mismatches = ["0:script line 1"]
+failure = "`y` needs arguments"
+
+[[gap]]
+id = "cas-shape-008"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r3"]
+
+[[gap]]
+id = "cas-shape-009"
+reason = "Refused as on main; the reference answers. Future work."
+mismatches = ["0:script line 1"]
+failure = "`y` needs arguments"
+
+[[gap]]
+id = "cas-shape-010"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4", "0:r6", "0:r7", "0:r8"]
+
+[[gap]]
+id = "cas-shape-011"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-012"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r3", "1:r1", "1:r2", "1:r3", "3:r1", "3:r3", "4:r1", "4:r3"]
+
+[[gap]]
+id = "cas-shape-013"
+reason = "Refused as on main; the reference answers. Future work."
+mismatches = ["0:script line 1"]
+failure = "`y` needs arguments"
+
+[[gap]]
+id = "cas-shape-014"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 1"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-shape-015"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 1"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-shape-016"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-017"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-018"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r2"]
+
+[[gap]]
+id = "cas-shape-019"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-021"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2", "0:r5", "0:r6"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-023"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r2"]
+
+[[gap]]
+id = "cas-shape-024"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-025"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2", "0:r3", "0:r4"]
+
+[[gap]]
+id = "cas-shape-026"
+reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
+mismatches = ["0:r1", "0:r2"]
+undefined = true
+
+[[gap]]
+id = "cas-shape-028"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-029"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-030"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-031"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-032"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-shape-033"
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
+mismatches = ["0:r1", "0:r2"]
+
+[[gap]]
+id = "cas-simplify-007"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-simplify-008"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 2"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-simplify-009"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 4"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-simplify-010"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 5"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-simplify-011"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 1"]
+failure = "`y` needs arguments"
+
+[[gap]]
+id = "cas-simplify-012"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 5"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-simplify-013"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-simplify-014"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-simplify-015"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 3"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-simplify-016"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 4"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
+id = "cas-simplify-017"
+reason = "Refused as on main. The reference rewrites this object in its CAS and evaluates the printed result (cancelled poles, Math.pow, factored forms), which the lane's removed rewrite paths could not reproduce exactly; future work."
+mismatches = ["0:script line 5"]
+failure = "invalid arguments to `Simplify`"
+
+[[gap]]
 id = "cas-solve-013"
-reason = "GeoGebra lists the solutions of a system in the order its CAS returns them, which follows no rule across inputs (Solutions({x^2=1},{x}) answers {1},{-1} while Solutions({x^4-16=0},{x}) answers {-2},{2}). The kernel always answers rows in ascending order of the first coordinate, so the solution multisets agree while the order may differ."
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
 mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-solve-040"
-reason = "GeoGebra lists the solutions of a system in the order its CAS returns them, which follows no rule across inputs (Solutions({x^2=1},{x}) answers {1},{-1} while Solutions({x^4-16=0},{x}) answers {-2},{2}). The kernel always answers rows in ascending order of the first coordinate, so the solution multisets agree while the order may differ."
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
 mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-solve-041"
-reason = "GeoGebra lists the assignments of a system solve in the order its CAS returns the roots, which follows no rule across inputs. The kernel lists the same lines in ascending order of the solved coordinate, so the line sets agree while the order may differ."
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
 mismatches = ["0:result"]
 
 [[gap]]
 id = "cas-solve-045"
-reason = "GeoGebra lists the solution families of a product equation in the order its CAS factors it (the y = 0 family of x*y = 0 before x = 0), which follows no rule. The kernel lists the family whose first coordinate is constant first, so the families agree while the order differs."
+reason = "Same as main: main's solver answers this input and its answer is kept unchanged, so that no input main answers changes; GeoGebra answers differently here. A follow-up for main's solver."
 mismatches = ["0:result"]
+
+[[gap]]
+id = "cas-start-001"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-002"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-003"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-004"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-005"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-006"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 3"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-007"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-008"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-009"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-010"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-011"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-012"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-013"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-014"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-015"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-016"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-017"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-018"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-019"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-020"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-021"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-022"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-023"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-024"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-025"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
+
+[[gap]]
+id = "cas-start-026"
+reason = "Start values (`variable = value`) are not supported, as on main: the lane's start-value solving was removed because the reference's numeric search picks roots that no rule over the equation predicts (golden/cas/start.json, magnitude.json, edge.json); future work."
+mismatches = ["0:script line 2"]
+failure = "expected up to three distinct solving variables"
 
 [[gap]]
 id = "georestintersect-spline-001"
@@ -791,11 +3095,6 @@ reason = "Text corners require the drawable bounding box, including its headless
 mismatches = ["0:P", "1:P", "2:P", "4:P"]
 
 [[gap]]
-id = "corners-inequality-002"
-reason = "A sinusoidal border prevents polynomial expansion of the full inequality tree. The reference can still return the three vertices from pairs of linear borders."
-mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}"]
-
-[[gap]]
 id = "corners-text-002"
 reason = "A text corner reads the drawable's font metrics and anchor bounds. The kernel has no drawable bounds."
 mismatches = ["0:P", "3:P"]
@@ -804,11 +3103,6 @@ mismatches = ["0:P", "3:P"]
 id = "corners-checkbox-001"
 reason = "A Boolean corner reads the checkbox drawable. This headless drawable reports a zero-size rectangle at the pixel origin, and the kernel has no checkbox bounds."
 mismatches = ["0:P", "1:P", "3:P"]
-
-[[gap]]
-id = "corners-vertex-003"
-reason = "The bounded polynomial solver cannot expand the sinusoidal border. The reference can still use it as a filter for crossings of the three linear borders."
-mismatches = ["0:P_{1}", "0:P_{2}", "0:P_{3}"]
 
 [[gap]]
 id = "curvepairs-growth-001"
@@ -919,6 +3213,119 @@ mismatches = [
   "0:P_{66}", "0:P_{6}", "0:P_{7}", "0:P_{8}", "0:P_{9}",
 ]
 
+# infinity
+
+[[gap]]
+id = "infinity-inputs-034"
+reason = "intended difference, recorded in DIFFERENCES.md: a vector with an infinite coordinate is defined in GeoGebra, so Length((1, c)) with c infinite is infinity; the kernel shows such a vector as undefined, and Length of it is undefined"
+mismatches = ["1:r", "3:r"]
+
+[[gap]]
+id = "infinity-functions-064"
+reason = "intended difference, recorded in DIFFERENCES.md: nroot(-Infinity, 2) is Infinity in GeoGebra, whose NROOT operation hands a negative base with an even degree to Math.pow; the kernel reads nroot(a, n) as a^(1/n), where a negative base with an even root is undefined"
+mismatches = ["0:c"]
+
+[[gap]]
+id = "infinity-functions-097"
+reason = "intended difference, recorded in DIFFERENCES.md: nroot(-Infinity, 4) is Infinity in GeoGebra, whose NROOT operation hands a negative base with an even degree to Math.pow; the kernel reads nroot(a, n) as a^(1/n), where a negative base with an even root is undefined"
+mismatches = ["0:c"]
+
+# tpairfixes
+
+[[gap]]
+id = "tpairfixes-fnundef-003"
+reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `? + 0 x` after dropping the zero term; the kernel asks whether the function is defined"
+mismatches = ["0:b"]
+
+[[gap]]
+id = "tpairfixes-fnundef-024"
+reason = "intended difference, recorded in DIFFERENCES.md: GeoGebra keeps `-(?)` as the product of -1 and the undefined constant, a defined function; the kernel negates the constant as it does for `-?`, which leaves the undefined constant alone and an undefined function"
+mismatches = ["0:b", "0:f", "0:g"]
+
+[[gap]]
+id = "tpairfixes-fnundef-029"
+reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `? + 0` after dropping the zero term; the kernel asks whether the function is defined"
+mismatches = ["0:b"]
+
+[[gap]]
+id = "tpairfixes-fnundef-030"
+reason = "intended difference, recorded in DIFFERENCES.md: IsDefined(f) of a function is false when GeoGebra prints the function as `?`, which it does for `1 ?` after dropping the factor 1; the kernel asks whether the function is defined"
+mismatches = ["0:b"]
+
+[[gap]]
+id = "calculus-sums-012"
+reason = "UpperSum of a constant function over an infinite interval is positive infinity in the reference, recorded as `infinity: 1` for u in the signed recording of this file. The first rectangle then starts at 0 + 0 * Infinity, which is NaN, and the reference's minimum search still returns a height on that bracket. The kernel's search requires a finite bracket and leaves the sum undefined. The reference search is third-party code that cannot be consulted, and this one constant function does not determine its behaviour on other functions. LeftSum, d, agrees."
+mismatches = ["0:u"]
+
+[[gap]]
+id = "georestsmall-matrixcurve-005"
+reason = "The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. ApplyMatrix with the projective matrix {{1, 0, 0}, {0, n, 0}, {0, 0, 1}} on Curve(t, sqrt(t), t, -1, 1): GeoCurveCartesian.matrixTransform builds each coordinate with ExpressionNode.multiply and plus, which turn a zero entry into the constant itself and leave out a zero addend. For t < 0, where sqrt(t) is NaN, the recording keeps x = t finite, and y = 0 while n = 0. Plain arithmetic computes 0 * NaN = NaN in x, y and the denominator."
+mismatches = ["0:d", "1:d", "2:d"]
+
+[[gap]]
+id = "georestsmall-matrixcurve-006"
+reason = "The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. The projective row (-1, 0, 0) applied to Curve(0, t, t, -1, 1): the reference multiplies the literal 0 coordinate into -0 and leaves out the zero addends, so the denominator is -0 and the recording has negative infinity in both coordinates. Plain arithmetic adds the +0 terms, gets a +0 denominator and positive infinity. The chain e through a zero row agrees."
+mismatches = ["0:q"]
+
+[[gap]]
+id = "georestsmall-matrixfunction-002"
+reason = "The reference simplifies the transformed expression symbolically; the kernel uses plain arithmetic as on main. ApplyMatrix({{1, 0}, {1, 2}}, f) for f = Function(sin(x) + x(A), -1, 2): outside its domain f is NaN, and the reference builds x = t * 1 + f(t) * 0 with the zero term left out, so the signed recording keeps x = t finite. Plain arithmetic computes 0 * NaN = NaN, so x is NaN. Main compared this case with its schema 2 recording, which wrote the whole coordinate pair as null."
+mismatches = ["0:c", "3:c"]
+
+[[gap]]
+id = "georestsmall-ifgeometry-003"
+reason = "The selected circle has an infinite radius, which Radius returns as positive infinity in the reference: infinity-legacy-075 records d as `infinity: 1` at step 1, where this schema 2 file writes an undefined number. The kernel represents that circle as undefined and Radius is undefined."
+mismatches = ["1:d"]
+
+[[gap]]
+id = "infinity-legacy-010"
+reason = "Same script as calculus-sums-012: UpperSum of a constant function over an infinite interval is positive infinity in the reference. Its first rectangle starts at the NaN 0 + 0 * Infinity, and the kernel's minimum search requires a finite bracket. LeftSum agrees."
+mismatches = ["0:u"]
+
+[[gap]]
+id = "infinity-legacy-075"
+reason = "Radius of the selected circle with an infinite radius is positive infinity in the reference. The kernel represents the circle as undefined."
+mismatches = ["1:d"]
+
+[[gap]]
+id = "infinity-legacy-113"
+reason = "RemoveUndefined in the reference retains projective points with infinite coordinates. The kernel drops those points from the list."
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "infinity-legacy-114"
+reason = "RemoveUndefined in the reference retains projective points with infinite coordinates. The kernel drops those points from the list."
+mismatches = ["0:p", "1:p", "2:p", "3:p", "4:p", "5:p"]
+
+[[gap]]
+id = "infinity-legacy-152"
+reason = "Same script as funcanalysis-asymptote-001: the headless harness uses CASFactoryDummy and returns an empty list for 1/x. The numeric result has the horizontal line y=0 and the pole x=0."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "infinity-legacy-153"
+reason = "Same script as funcanalysis-asymptote-002: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the oblique line y=x+1 and the pole x=1."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "infinity-legacy-154"
+reason = "Same script as funcanalysis-asymptote-004: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has y=x+1 and discards the removable pole."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "infinity-legacy-155"
+reason = "Same script as funcanalysis-asymptote-007: the headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the logarithmic pole x=0."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "infinity-outputs-039"
+reason = "LowerSum of a constant function up to an infinite bound is positive or negative infinity in the reference, with the sign of the step. The first rectangle starts at 1 + 0 * Infinity, which is NaN, and the reference's minimum search still returns a height on that bracket. The kernel's search requires a finite bracket and leaves the sum undefined, as for UpperSum in calculus-sums-012. The other sums of infinity-outputs-032 to infinity-outputs-045 agree."
+mismatches = ["1:s", "2:s", "4:s"]
+
+[[gap]]
+id = "infinity-outputs-040"
+reason = "UpperSum of a constant function up to an infinite bound is positive or negative infinity in the reference, with the sign of the step. The first rectangle starts at 1 + 0 * Infinity, which is NaN, and the kernel's minimum search requires a finite bracket, as in calculus-sums-012."
+mismatches = ["1:s", "2:s", "4:s"]
 # odesymbolic
 
 [[gap]]

@@ -206,6 +206,21 @@ impl FunctionIntersection {
         }
     }
 
+    /// The first slot of `Intersect(f, g, a, b)`, which owns the outputs
+    /// that later edits reveal.
+    pub(super) fn is_interval_anchor(self) -> bool {
+        matches!(self.method, Method::Interval { slot: 0, .. })
+    }
+
+    pub(super) fn root_count(self, c: &Construction) -> usize {
+        self.with_points(c, |points| points.len())
+    }
+
+    pub(super) fn interval_slot(self, slot: usize) -> Option<Self> {
+        let slot = u32::try_from(slot).ok()?;
+        matches!(self.method, Method::Interval { .. }).then(|| self.with_slot(slot))
+    }
+
     fn with_slot(self, slot: u32) -> Self {
         let method = match self.method {
             Method::Conic(_) => Method::Conic(slot),

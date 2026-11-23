@@ -101,11 +101,20 @@ pub fn load_with_assets(
             .apply(&mut c)
             .map_err(|message| ScriptError { line: 1, message })?;
     }
+    let mut groups = BoundaryOutputs::for_script(src);
     for (i, raw) in src.lines().enumerate() {
-        exec(&mut c, raw).map_err(|message| ScriptError {
+        let slider = slider_assignment_target(&c, raw);
+        let before = c.len();
+        let first = exec(&mut c, raw).map_err(|message| ScriptError {
             line: i + 1,
             message,
         })?;
+        if let Some(first) = first.filter(|_| c.len() > before) {
+            groups.record(&c, raw, first, c.len() - before);
+        }
+        if let Some(id) = slider {
+            groups.grow(&mut c, id, |_, _, _| {});
+        }
     }
     c.prune_image_assets();
     Ok(c)
@@ -117,8 +126,9 @@ pub mod image;
 pub mod saved;
 pub mod text;
 
-/// Runs one line. Returns the first output, or `Ok(None)` if the line
-/// creates nothing. Internal objects for inline arguments precede the outputs.
+/// Runs one line. An assignment returns its first output and a bare label
+/// returns the existing object. Directives with no output return `Ok(None)`.
+/// Internal objects for inline arguments precede the outputs.
 pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     if let Some(asset) = saved::load_image_asset(c, raw) {
         return asset.map(|_| None);
@@ -132,6 +142,9 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
     let line = lowered.as_deref().unwrap_or(line);
     if line.is_empty() {
         return Ok(None);
+    }
+    if let Some(id) = c.id(line) {
+        return Ok(Some(id));
     }
     if let Some(property) = saved::parse(line) {
         return property?.apply(c).map(|()| None);
@@ -166,28 +179,70 @@ pub fn exec(c: &mut Construction, raw: &str) -> Result<Option<Id>, String> {
             .map_err(|e| e.to_string())?;
         return Ok(None);
     }
-    // `name: definition`, the input bar's other form of a labelled line.
-    // A definition with `=` in it is an equation (`a: 2x + 3y = 6`); the
-    // rest is the same as after `=`. A `:` after the first `=` belongs to
-    // the definition (`c = Circle(O, r:c)` names a label holding a colon),
-    // so only a `:` before any `=` separates the label.
-    let label_colon = line
-        .find(':')
-        .filter(|&i| line.find('=').is_none_or(|e| i < e));
-    if let Some((name, rhs)) = label_colon.map(|i| (&line[..i], &line[i + 1..])) {
-        let name = name.trim();
+    let (name, rhs, colon) = assignment(line).ok_or("expected `name = definition`")?;
+    if let Some((id, value)) = slider_assignment_value(c, name, rhs) {
+        c.assign_slider_number(id, value)
+            .map_err(|e| e.to_string())?;
+        return Ok(None);
+    }
+    if let Some(label) = definition_label(name) {
+        if let Some(id) = c.resolve_label(label) {
+            let original = c.label(id);
+            if label != original {
+                let name = format!("{original}{}", &name[label.len()..]);
+                return c.redefine(id, |c| define_assignment(c, &name, rhs, colon));
+            }
+            return c.redefine(id, |c| define_assignment(c, name, rhs, colon));
+        }
+    }
+    define_assignment(c, name, rhs, colon)
+}
+
+/// The visible label assigned by a single-output definition.
+pub fn assignment_label(line: &str) -> Option<&str> {
+    assignment(split_comment(line).0).and_then(|(name, _, _)| definition_label(name))
+}
+
+/// The existing object a single assignment would replace, including numeric
+/// subscript aliases.
+pub fn assignment_target(c: &Construction, line: &str) -> Option<Id> {
+    c.resolve_label(assignment_label(line)?)
+}
+
+fn definition_label(name: &str) -> Option<&str> {
+    let label = split_call(name).map_or(name, |(label, _)| label);
+    (is_output_label(label) && !label.starts_with('\0')).then_some(label)
+}
+
+/// Finds the assignment delimiter before the definition.
+fn assignment(line: &str) -> Option<(&str, &str, bool)> {
+    let i = line.find([':', '='])?;
+    let rhs = &line[i + 1..];
+    let colon = line.as_bytes()[i] == b':';
+    let (rhs, colon) = if let (true, Some(rhs)) = (colon, rhs.strip_prefix('=')) {
+        (rhs, false)
+    } else {
+        (rhs, colon)
+    };
+    Some((line[..i].trim(), rhs.trim(), colon))
+}
+
+fn define_assignment(
+    c: &mut Construction,
+    name: &str,
+    rhs: &str,
+    colon: bool,
+) -> Result<Option<Id>, String> {
+    if colon {
         if !is_output_label(name) {
             return Err(format!("`{name}` is not a valid object name"));
         }
         check_label(name)?;
-        let rhs = rhs.trim();
         if crate::expr::equation::has_equation_separator(rhs) {
             return crate::expr::equation::define(c, name, rhs).map(Some);
         }
         return define_after_label(c, name, rhs);
     }
-    let (name, rhs) = line.split_once('=').ok_or("expected `name = definition`")?;
-    let name = name.trim();
     // Named functions use `x`, and also `y` for inequalities.
     let function = name
         .strip_suffix("(x)")
@@ -373,11 +428,8 @@ fn convert_source(c: &mut Construction, arg: &str) -> Result<Id, String> {
 /// The definition of a labelled line after its name has been read and
 /// checked: the forms of the module documentation other than arithmetic.
 fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Option<Id>, String> {
-    if let Some((id, value)) = slider_assignment_value(c, name, rhs) {
-        c.assign_slider_number(id, value)
-            .map_err(|e| e.to_string())?;
-        return Ok(None);
-    }
+    let inline = inline_arguments(c, rhs);
+    let rhs = inline.as_deref().unwrap_or(rhs);
     if let Some(result) = with_saved_arguments(c, rhs, |c, call| define_after_label(c, name, call))
     {
         return result;
@@ -566,12 +618,16 @@ fn define_after_label(c: &mut Construction, name: &str, rhs: &str) -> Result<Opt
     result
 }
 
+/// The number that a slider assignment such as `b = 10` sets: a growing
+/// command that depends on it can reveal more outputs.
+pub fn slider_assignment_target(c: &Construction, line: &str) -> Option<Id> {
+    let (name, rhs, _) = assignment(split_comment(line).0)?;
+    slider_assignment_value(c, name, rhs).map(|(id, _)| id)
+}
+
 /// Whether the line assigns a literal value to an existing slider.
 pub fn is_slider_assignment(c: &Construction, line: &str) -> bool {
-    split_comment(line)
-        .0
-        .split_once('=')
-        .is_some_and(|(name, rhs)| slider_assignment_value(c, name.trim(), rhs.trim()).is_some())
+    slider_assignment_target(c, line).is_some()
 }
 
 fn slider_assignment_value(c: &Construction, name: &str, rhs: &str) -> Option<(Id, f64)> {
@@ -591,8 +647,65 @@ fn implicit_multi_output(c: &Construction, rhs: &str) -> bool {
     })
 }
 
-/// Lowers saved inputs and inline optimizers within their owning definition.
-/// Each temporary object is anonymous and shares the lifetime of that definition's replay.
+/// Marks inline geometry for the same lowering used by saved definitions.
+fn inline_arguments(c: &Construction, rhs: &str) -> Option<String> {
+    let (command, args) = split_call(rhs)?;
+    let equations = matches!(
+        command,
+        "Intersect"
+            | "IntersectPath"
+            | "IntersectionPaths"
+            | "AngularBisector"
+            | "AngleBisector"
+            | "Arc"
+            | "Sector"
+            | "Area"
+            | "AreConcurrent"
+            | "AreParallel"
+            | "ArePerpendicular"
+            | "Center"
+            | "Circumference"
+            | "ConjugateDiameter"
+            | "Diameter"
+            | "Direction"
+            | "IsTangent"
+            | "Point"
+            | "Radius"
+            | "Slope"
+            | "OrthogonalVector"
+            | "PerpendicularVector"
+            | "UnitOrthogonalVector"
+            | "UnitPerpendicularVector"
+            | "UnitVector"
+            | "Tangent"
+    );
+    let mut rewritten = false;
+    let args = args
+        .iter()
+        .map(|&arg| {
+            let inline = c.id(arg).is_none()
+                && (equations && crate::expr::equation::split_equation(arg).is_ok()
+                    || matches!(
+                        command,
+                        "Circle" | "Polygon" | "PolyLine" | "Arc" | "Sector"
+                    ) && arg.starts_with('(')
+                    || matches!(
+                        (command, split_call(arg).map(|(name, _)| name)),
+                        ("PathParameter", Some("Point")) | ("Centroid", Some("Polygon"))
+                    ));
+            if inline {
+                rewritten = true;
+                format!("$arg({arg})")
+            } else {
+                arg.to_owned()
+            }
+        })
+        .collect::<Vec<_>>();
+    rewritten.then(|| format!("{command}({})", args.join(", ")))
+}
+
+/// Lowers an imported argument within its owning definition. Each temporary
+/// object is anonymous and shares the lifetime of that definition's replay.
 fn with_saved_arguments(
     c: &mut Construction,
     rhs: &str,
@@ -661,6 +774,9 @@ fn saved_argument(c: &mut Construction, source: &str, depth: usize) -> Result<St
     let start = c.checkpoint();
     let label = format!("\0arg{}", c.len());
     let call = split_call(source);
+    if let Some(("Polygon", args)) = &call {
+        return inline_polygon(c, &label, args).map(|_| label);
+    }
     if let Some(("Vector", args)) = &call {
         if let [arg] = args.as_slice() {
             if c.id(arg).is_some_and(|id| c.kind(id) == Kind::Vector) {
@@ -747,6 +863,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if rhs.starts_with("Vertex") || rhs.starts_with("Corner") {
         if let Some((func @ ("Vertex" | "Corner"), args)) = split_call(rhs) {
             if let Some(source) = PointDef::inequality_source(c, func, &args) {
+                if crate::expr::inequality::fails(c, source) {
+                    return Err(INEQUALITY_FAILURE.into());
+                }
                 let count = crate::expr::inequality::vertices(c, source).len().max(1);
                 return add_outputs(c, name, PointDef::inequality_slots(source, count)).map(Some);
             }
@@ -779,6 +898,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     }
     if let Some(result) = crate::expr::division_list(c, name, rhs) {
         return result.map(Some);
+    }
+    if let Some(error) = crate::expr::refuse_empty_simplify(c, rhs) {
+        return Err(error);
     }
     if let Some(result) = crate::algo::discrete::exec(c, name, rhs) {
         return result.map(Some);
@@ -1281,37 +1403,7 @@ fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<Strin
     }
     let label = format!("\0textarg{}", c.len());
     let id = if command == "Polygon" && args.len() >= 2 {
-        let mut points = Vec::with_capacity(args.len());
-        for token in &args {
-            if let Some(id) = c.id(token).filter(|&id| c.kind(id) == Kind::Point) {
-                points.push(id);
-            } else {
-                let point = format!("\0textpoint{}", c.len());
-                if crate::expr::argument_object(c, token, &point, Kind::Point) {
-                    points.push(c.id(&point).unwrap());
-                } else {
-                    break;
-                }
-            }
-        }
-        let polygon = if points.len() == 2 && args.len() == 3 {
-            let n = crate::algo::polygon::count_arg(c, args[2])?;
-            c.add(
-                &label,
-                Def::Polygon(crate::algo::polygon::PolygonDef::Regular {
-                    a: points[0],
-                    b: points[1],
-                    n,
-                }),
-            )
-        } else if points.len() == args.len() && points.len() >= 3 {
-            c.add_with_list(&label, &points, |list| {
-                Def::Polygon(crate::algo::polygon::PolygonDef::Polygon(list))
-            })
-        } else {
-            return Err("expected points or two points and a vertex count".into());
-        };
-        polygon.map_err(|err| err.to_string())?
+        inline_polygon(c, &label, &args)?
     } else {
         define_after_label(c, &label, first)?.ok_or("the text argument has no value")?
     };
@@ -1323,6 +1415,41 @@ fn resolve_text_argument(c: &mut Construction, rhs: &str) -> Result<Option<Strin
             .collect::<Vec<_>>()
             .join(", ")
     )))
+}
+
+/// Builds the polygon value of a nested command without publishing its sides.
+fn inline_polygon(c: &mut Construction, label: &str, args: &[&str]) -> Result<Id, String> {
+    let mut points = Vec::with_capacity(args.len());
+    for token in args {
+        if let Some(id) = c.id(token).filter(|&id| c.kind(id) == Kind::Point) {
+            points.push(id);
+        } else {
+            let point = format!("\0polypoint{}", c.len());
+            if crate::expr::argument_object(c, token, &point, Kind::Point) {
+                points.push(c.id(&point).unwrap());
+            } else {
+                break;
+            }
+        }
+    }
+    let polygon = if points.len() == 2 && args.len() == 3 {
+        let n = crate::algo::polygon::count_arg(c, args[2])?;
+        c.add(
+            label,
+            Def::Polygon(crate::algo::polygon::PolygonDef::Regular {
+                a: points[0],
+                b: points[1],
+                n,
+            }),
+        )
+    } else if points.len() == args.len() && points.len() >= 3 {
+        c.add_with_list(label, &points, |list| {
+            Def::Polygon(crate::algo::polygon::PolygonDef::Polygon(list))
+        })
+    } else {
+        return Err("expected points or two points and a vertex count".into());
+    };
+    polygon.map_err(|err| err.to_string())
 }
 
 /// Give inline numeric and list inputs a live dependency, as for the
@@ -1551,6 +1678,9 @@ fn parse_multi(c: &Construction, rhs: &str) -> Option<Result<Vec<Def>, String>> 
         return Some(Ok(defs));
     }
     if let Some(source) = PointDef::inequality_source(c, func, &args) {
+        if crate::expr::inequality::fails(c, source) {
+            return Some(Err(INEQUALITY_FAILURE.into()));
+        }
         let count = crate::expr::inequality::vertices(c, source).len().max(1);
         return Some(Ok(PointDef::inequality_slots(source, count)));
     }
@@ -1727,6 +1857,10 @@ fn rotated_point_label(c: &Construction, from: Id, angle: &str) -> String {
     }
     unreachable!("the label sequence is infinite")
 }
+
+/// The error of a vertex command whose inequality cannot test its
+/// candidates (see [`crate::expr::inequality::fails`]).
+const INEQUALITY_FAILURE: &str = "an inequality border is neither polynomial nor a function";
 
 /// `Construction.buildIndexedLabel`: the first `p_{n}` that is free, where
 /// for `n < 10` the short form `p_n` must be free too.
@@ -2186,6 +2320,8 @@ fn exec_labelled(c: &mut Construction, line: &str) -> Result<Option<Id>, String>
         .strip_prefix('=')
         .ok_or("expected `=` after the output labels")?
         .trim();
+    let inline = inline_arguments(c, rhs);
+    let rhs = inline.as_deref().unwrap_or(rhs);
     if let Some(result) = with_saved_arguments(c, rhs, |c, call| exec_slots(c, &slots, call)) {
         return result;
     }
@@ -2441,6 +2577,18 @@ mod tests {
     }
 
     #[test]
+    fn a_colon_assignment_updates_an_existing_slider() {
+        let mut c = load("a = Slider(0, 4)\nb = 2 a").unwrap();
+        let slider = c.id("a").unwrap();
+        assert!(is_slider_assignment(&c, "a: 3"));
+        assert_eq!(slider_assignment_target(&c, "a: 3"), Some(slider));
+        assert_eq!(slider_assignment_target(&c, "a := 3"), Some(slider));
+        assert_eq!(exec(&mut c, "a: 3"), Ok(None));
+        assert_eq!(c.id("a"), Some(slider));
+        assert_eq!(c.value(c.id("b").unwrap()), Value::Number(6.0));
+    }
+
+    #[test]
     fn set_construction_step_script_and_labelled_forms() {
         // One object exists, so every set is clamped to step 0; the labelled
         // form also creates no object, exactly like GeoGebra's processor.
@@ -2620,7 +2768,9 @@ mod tests {
         assert_eq!(c.value(c.id("a").unwrap()), Value::Point { x: 7.0, y: 8.0 });
         assert!(exec(&mut c, "d = $point(1)").is_err());
         assert!(exec(&mut c, "d = $point(1, x)").is_err());
-        assert!(exec(&mut c, "a = $vector(1, 2)").is_err());
+        let a = c.id("a").unwrap();
+        assert_eq!(exec(&mut c, "a = $vector(1, 2)").unwrap(), Some(a));
+        assert_eq!(c.value(a), Value::Vector { x: 1.0, y: 2.0 });
     }
 
     #[test]

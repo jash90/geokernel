@@ -21,7 +21,9 @@ impl Construction {
     pub fn formatted_equation(&self, id: Id) -> Option<String> {
         Format::new(false).equation::<false>(self, id, None)
     }
+}
 
+impl Construction {
     /// Mathematical definitions and rectangular numeric list values for the algebra panel.
     pub fn algebra_formula(&self, id: Id) -> Option<String> {
         let format = Format::new(true);

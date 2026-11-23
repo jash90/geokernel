@@ -140,6 +140,8 @@ case("curveedge", "v = (1,2)\nc = Curve(v,t,0,1)")
 case("inverted", "a = 2\nf(x) = a*x+1\ng = NInvert(f)", [setn("a", -3), setn("a", 0)])
 case("inverted", "g = NInvert(x^2)")
 case("inverted", "g = NInvert(x^2+x)")
+case("inverted", "a = 2\nf(x) = a*x+1\ng = NInvert(f)",
+     [setn("a", -3), setn("a", -1), setn("a", 4)])
 case("odeedge", "s = SolveODE(y,0,1,1,0.25)")
 case("odeedge", "s = SolveODE(-100*y,0,1,1,0.01)")
 case("odeedge", "s = SolveODE(y,0,1,1,0)")

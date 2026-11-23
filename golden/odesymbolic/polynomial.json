@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": [
@@ -1074,17 +1074,17 @@
             "type": "function",
             "defined": true,
             "samples": [
-              [-8.0, null],
-              [-4.0, null],
-              [-2.0, null],
-              [-1.0, null],
-              [-0.5, null],
+              [-8.0, { "infinity": -1 }],
+              [-4.0, { "infinity": -1 }],
+              [-2.0, { "infinity": -1 }],
+              [-1.0, { "infinity": -1 }],
+              [-0.5, { "infinity": -1 }],
               [0.0, null],
-              [0.5, null],
-              [1.0, null],
-              [2.0, null],
-              [4.0, null],
-              [8.0, null]
+              [0.5, { "infinity": 1 }],
+              [1.0, { "infinity": 1 }],
+              [2.0, { "infinity": 1 }],
+              [4.0, { "infinity": 1 }],
+              [8.0, { "infinity": 1 }]
             ]
           },
           "g": { "type": "function", "defined": false },
@@ -1163,17 +1163,17 @@
             "type": "function",
             "defined": true,
             "samples": [
-              [-8.0, null],
-              [-4.0, null],
-              [-2.0, null],
-              [-1.0, null],
-              [-0.5, null],
-              [0.0, null],
-              [0.5, null],
-              [1.0, null],
-              [2.0, null],
-              [4.0, null],
-              [8.0, null]
+              [-8.0, { "infinity": 1 }],
+              [-4.0, { "infinity": 1 }],
+              [-2.0, { "infinity": 1 }],
+              [-1.0, { "infinity": 1 }],
+              [-0.5, { "infinity": 1 }],
+              [0.0, { "infinity": 1 }],
+              [0.5, { "infinity": 1 }],
+              [1.0, { "infinity": 1 }],
+              [2.0, { "infinity": 1 }],
+              [4.0, { "infinity": 1 }],
+              [8.0, { "infinity": 1 }]
             ]
           },
           "g": { "type": "function", "defined": false },

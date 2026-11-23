@@ -37,6 +37,7 @@ public final class GoldenGenerator {
             System.err.println("usage: GoldenGenerator <cases.json> <golden dir> <upstream commit> [topic or !topic]");
             System.exit(2);
         }
+        Session.recordInfinity = true;
         Path casesFile = Path.of(args[0]);
         Path goldenDir = Path.of(args[1]);
         String commit = args[2];
@@ -83,7 +84,7 @@ public final class GoldenGenerator {
 
         for (Map.Entry<String, List<Object>> e : byFile.entrySet()) {
             Map<String, Object> file = new LinkedHashMap<>();
-            file.put("schema", 2L);
+            file.put("schema", 4L);
             file.put("generator", "ggb-harness");
             file.put("upstream_commit", commit);
             file.put("cases", e.getValue());
@@ -162,10 +163,31 @@ public final class GoldenGenerator {
                 }
                 case "set_number": {
                     String label = (String) step.get("label");
-                    double value = number(step.get("value"));
-                    session.setNumber(label, value);
                     outStep.put("label", label);
-                    outStep.put("value", value);
+                    Object infinity = step.get("infinity");
+                    double value;
+                    if (infinity == null) {
+                        value = number(step.get("value"));
+                        outStep.put("value", value);
+                    } else if (Long.valueOf(1).equals(infinity) || Long.valueOf(-1).equals(infinity)) {
+                        value = number(infinity) * Double.POSITIVE_INFINITY;
+                        outStep.put("infinity", infinity);
+                    } else {
+                        throw new IllegalArgumentException("infinity must be 1 or -1");
+                    }
+                    session.setNumber(label, value);
+                    break;
+                }
+                case "delete": {
+                    String label = (String) step.get("label");
+                    session.delete(label);
+                    outStep.put("label", label);
+                    break;
+                }
+                case "redefine": {
+                    String line = (String) step.get("line");
+                    session.redefine(line);
+                    outStep.put("line", line);
                     break;
                 }
                 case "set_slider_bounds": {
@@ -191,6 +213,11 @@ public final class GoldenGenerator {
                     String line = (String) step.get("line");
                     session.reject(line);
                     outStep.put("line", line);
+                    // The kernel's own failure for the line, checked by the
+                    // Rust replay; GeoGebra's message is not recorded.
+                    if (step.containsKey("error")) {
+                        outStep.put("error", step.get("error"));
+                    }
                     break;
                 }
                 default:

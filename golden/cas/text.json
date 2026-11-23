@@ -1,0 +1,511 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-text-001",
+      "group": "cas",
+      "script": [
+        "t = \"x+x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "x+x" },
+          "result": { "type": "text", "defined": true, "text": "x + x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-002",
+      "group": "cas",
+      "script": [
+        "result = Simplify(\"x+-x--x\")"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": { "type": "text", "defined": true, "text": "x − x + x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-003",
+      "group": "cas",
+      "script": [
+        "t = \"+1x++x--x+-1x-+1x++x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "+1x++x--x+-1x-+1x++x" },
+          "result": { "type": "text", "defined": true, "text": "x + x + x − x − x + x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-004",
+      "group": "cas",
+      "script": [
+        "t = \"x-x-x-x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "x-x-x-x" },
+          "result": { "type": "text", "defined": true, "text": "x − x − x − x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-005",
+      "group": "cas",
+      "script": [
+        "t = \"x=x=x=x+x+x+x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "x=x=x=x+x+x+x" },
+          "result": { "type": "text", "defined": true, "text": "x = x = x = x + x + x + x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-006",
+      "group": "cas",
+      "script": [
+        "t = \"1x - 2\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "1x - 2" },
+          "result": { "type": "text", "defined": true, "text": "x − 2" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-007",
+      "group": "cas",
+      "script": [
+        "t = \"+\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "+" },
+          "result": { "type": "text", "defined": true, "text": "" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-008",
+      "group": "cas",
+      "script": [
+        "t = \"a - -b+ +c\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "a - -b+ +c" },
+          "result": { "type": "text", "defined": true, "text": "a +b + c" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-009",
+      "group": "cas",
+      "script": [
+        "t = \"3 -1x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "3 -1x" },
+          "result": { "type": "text", "defined": true, "text": "3 −x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-010",
+      "group": "cas",
+      "script": [
+        "t = \"-1x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "-1x" },
+          "result": { "type": "text", "defined": true, "text": "-x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-011",
+      "group": "cas",
+      "script": [
+        "t = \"1x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "1x" },
+          "result": { "type": "text", "defined": true, "text": "x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-012",
+      "group": "cas",
+      "script": [
+        "t = \"11x+1xy\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "11x+1xy" },
+          "result": { "type": "text", "defined": true, "text": "11x + xy" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-013",
+      "group": "cas",
+      "script": [
+        "t = \"x - - 1 x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "x - - 1 x" },
+          "result": { "type": "text", "defined": true, "text": "x +x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-014",
+      "group": "cas",
+      "script": [
+        "t = \"+++\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "+++" },
+          "result": { "type": "text", "defined": true, "text": "+" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-015",
+      "group": "cas",
+      "script": [
+        "t = \"---\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "---" },
+          "result": { "type": "text", "defined": true, "text": "-" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-016",
+      "group": "cas",
+      "script": [
+        "t = \"x+ +1 x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "x+ +1 x" },
+          "result": { "type": "text", "defined": true, "text": "x + x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-017",
+      "group": "cas",
+      "script": [
+        "t = \"2=-1x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "2=-1x" },
+          "result": { "type": "text", "defined": true, "text": "2= − x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-018",
+      "group": "cas",
+      "script": [
+        "t = \"y = - 1x+ - 3\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "y = - 1x+ - 3" },
+          "result": { "type": "text", "defined": true, "text": "y = −x- 3" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-019",
+      "group": "cas",
+      "script": [
+        "t = \" +x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": " +x" },
+          "result": { "type": "text", "defined": true, "text": " +x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-020",
+      "group": "cas",
+      "script": [
+        "t = \"x^2+-1x^2\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "x^2+-1x^2" },
+          "result": { "type": "text", "defined": true, "text": "x^2 − x^2" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-021",
+      "group": "cas",
+      "script": [
+        "t = \"1x1x-1x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "1x1x-1x" },
+          "result": { "type": "text", "defined": true, "text": "x1x − x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-022",
+      "group": "cas",
+      "script": [
+        "t = \"+ 1x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "+ 1x" },
+          "result": { "type": "text", "defined": true, "text": "x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-023",
+      "group": "cas",
+      "script": [
+        "t = \"a+b=c-d\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "a+b=c-d" },
+          "result": { "type": "text", "defined": true, "text": "a + b = c − d" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-024",
+      "group": "cas",
+      "script": [
+        "t = \"- - -x\"",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "- - -x" },
+          "result": { "type": "text", "defined": true, "text": "-x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-025",
+      "group": "cas",
+      "script": [
+        "a = 2",
+        "t = \"x+\" + a",
+        "result = Simplify(t)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -3.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 },
+        { "action": "set_number", "label": "a", "value": -1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "text", "defined": true, "text": "x+2" },
+          "result": { "type": "text", "defined": true, "text": "x + 2" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.0 },
+          "t": { "type": "text", "defined": true, "text": "x+-3" },
+          "result": { "type": "text", "defined": true, "text": "x − 3" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "text", "defined": true, "text": "x+1" },
+          "result": { "type": "text", "defined": true, "text": "x + 1" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "t": { "type": "text", "defined": true, "text": "x+-1" },
+          "result": { "type": "text", "defined": true, "text": "x − 1" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-026",
+      "group": "cas",
+      "script": [
+        "t = \"1\"",
+        "u = t + \"x-x\"",
+        "result = Simplify(u)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "1" },
+          "u": { "type": "text", "defined": true, "text": "1x-x" },
+          "result": { "type": "text", "defined": true, "text": "x − x" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-027",
+      "group": "cas",
+      "script": [
+        "t = \"\""
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = Simplify(t)", "error": "`Simplify` needs a text that is not empty" }
+      ],
+      "snapshots": [
+        {
+          "t": { "type": "text", "defined": true, "text": "" }
+        },
+        {
+          "t": { "type": "text", "defined": true, "text": "" }
+        }
+      ]
+    },
+    {
+      "id": "cas-text-028",
+      "group": "cas",
+      "script": [
+        "r1 = Simplify(\"α=β\")",
+        "r2 = Simplify(\"a=b\")",
+        "r3 = Simplify(\"x+-1x=2\")",
+        "r4 = Simplify(\"a,b=c\")",
+        "r5 = Simplify(\"(a=b\")"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": { "type": "text", "defined": true, "text": "α = β" },
+          "r2": { "type": "text", "defined": true, "text": "a = b" },
+          "r3": { "type": "text", "defined": true, "text": "x − x = 2" },
+          "r4": { "type": "text", "defined": true, "text": "a,b = c" },
+          "r5": { "type": "text", "defined": true, "text": "(a = b" }
+        }
+      ]
+    }
+  ]
+}

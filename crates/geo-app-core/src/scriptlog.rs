@@ -33,7 +33,7 @@
 use geo_kernel::algo::measure::MeasureDef;
 use geo_kernel::kernel::control::{decode_text, encode_text, visibility_boolean};
 use geo_kernel::kernel::text::TextPosition;
-use geo_kernel::kernel::{Construction, Def, EquationForm, Id, Value};
+use geo_kernel::kernel::{Construction, Def, EquationForm, Id, Kind, Value};
 use geo_kernel::script::equation::{parse_style, Style as EquationStyle};
 use geo_kernel::script::saved::{self, mark_inline_arguments, Property, INLINE_ARGUMENTS};
 use geo_kernel::script::text::{parse_properties, Properties as TextProperties};
@@ -62,17 +62,6 @@ fn snapshot_labels(comment: &str) -> Option<&str> {
     } else {
         comment.strip_prefix(LABELS)
     }
-}
-
-fn has_recorded_growth(src: &str) -> bool {
-    src.lines().any(|line| {
-        !line.trim_start().starts_with("$imageAsset(")
-            && split_comment(line)
-                .0
-                .split_once('=')
-                .and_then(|(_, rhs)| boundary_slot_owner(rhs.trim()))
-                .is_some()
-    })
 }
 
 /// One accepted line and the objects it created.
@@ -177,6 +166,9 @@ fn normalize_definition(input: &str) -> String {
     let eq = find_unquoted(line, '=');
     match (colon, eq) {
         (Some(c), None) => format!("{} = {}", line[..c].trim(), line[c + 1..].trim()),
+        (Some(c), Some(e)) if c + 1 == e => {
+            format!("{} = {}", line[..c].trim(), line[e + 1..].trim())
+        }
         (Some(c), Some(e)) if c < e => format!("{}: {}", line[..c].trim(), line[c + 1..].trim()),
         _ => line.to_owned(),
     }
@@ -371,6 +363,34 @@ fn uses_removed_object(entry: &Entry, gone: &BTreeSet<String>) -> bool {
             .any(|source| tokens(&source).any(|token| gone.contains(token)))
 }
 
+/// An identity to use until the active definition's later inputs exist.
+fn replacement_seed(c: &Construction, id: Id) -> Option<String> {
+    use crate::describe::exact;
+
+    let label = c.label(id);
+    let coordinates = match c.value(id) {
+        Value::Point { x, y } | Value::Vector { x, y } => (exact(x), exact(y)),
+        _ => ("0".into(), "0".into()),
+    };
+    let (x, y) = coordinates;
+    let rhs = match c.kind(id) {
+        Kind::Point => format!("$point({x}, {y})"),
+        Kind::Vector => format!("$vector({x}, {y})"),
+        Kind::Number => match c.value(id) {
+            Value::Number(n) if n.is_finite() => exact(n),
+            _ => "0".into(),
+        },
+        Kind::Angle => "$saved(0 rad, 0)".into(),
+        Kind::Boolean => matches!(c.value(id), Value::Bool(true)).to_string(),
+        Kind::Text => "\"\"".into(),
+        Kind::List => "{}".into(),
+        Kind::Function => return Some(format!("{label}(x) = x")),
+        Kind::FunctionNVar => return Some(format!("{label}(x, y) = x + y")),
+        _ => return None,
+    };
+    Some(format!("{label} = {rhs}"))
+}
+
 /// Internal dependencies have a kernel id but no user-visible label.
 pub(crate) fn object_ids(c: &Construction) -> impl Iterator<Item = Id> + '_ {
     outputs(c, 0)
@@ -378,6 +398,21 @@ pub(crate) fn object_ids(c: &Construction) -> impl Iterator<Item = Id> + '_ {
 
 fn outputs(c: &Construction, from: usize) -> impl Iterator<Item = Id> + '_ {
     c.ids().skip(from).filter(|&id| !is_internal(c, id))
+}
+
+fn definition_outputs<'a>(
+    c: &'a Construction,
+    from: usize,
+    first: Option<Id>,
+    line: &str,
+) -> impl Iterator<Item = Id> + 'a {
+    let target = first
+        .filter(|&id| id.index() < from)
+        .and_then(|_| geo_kernel::script::assignment_target(c, line));
+    first
+        .filter(|&id| target == Some(id) && !is_internal(c, id))
+        .into_iter()
+        .chain(outputs(c, from))
 }
 
 pub(crate) fn is_internal(c: &Construction, id: Id) -> bool {
@@ -516,10 +551,17 @@ impl Log {
 
     /// Records new objects, a slider assignment or a protocol step.
     pub fn record(&mut self, c: &Construction, from: usize, line: &str) {
-        let labels: Vec<String> = c
-            .ids()
-            .skip(from)
-            .filter(|&id| !is_internal(c, id))
+        self.record_definition(c, from, None, line);
+    }
+
+    pub(crate) fn record_definition(
+        &mut self,
+        c: &Construction,
+        from: usize,
+        first: Option<Id>,
+        line: &str,
+    ) {
+        let labels: Vec<String> = definition_outputs(c, from, first, line)
             .map(|id| c.label(id).to_owned())
             .collect();
         if !labels.is_empty()
@@ -654,9 +696,9 @@ impl Log {
     /// The definition text of the entry that created `label`.
     pub fn rhs_of(&self, label: &str) -> Option<&str> {
         let definition = |name| {
-            self.definitions()
-                .find(|(label, _)| *label == name)
-                .map(|(_, rhs)| rhs)
+            self.entries_rev()
+                .find(|entry| entry.labels.iter().any(|label| label == name))
+                .map(Entry::rhs)
         };
         let rhs = definition(label)?;
         match boundary_slot_owner(rhs) {
@@ -685,8 +727,11 @@ impl Log {
     /// line created) and the moves of those objects. Returns whether there
     /// was such a line. Lines that use a removed object go on the next
     /// rebuild, which also drops the start points those lines froze.
-    pub fn remove(&mut self, label: &str) -> bool {
-        let Some(entry) = self.entries().find(|e| e.labels.iter().any(|l| l == label)) else {
+    pub fn remove(&mut self, label: &str, c: &Construction) -> bool {
+        let Some(entry) = self
+            .entries_rev()
+            .find(|e| e.labels.iter().any(|l| l == label))
+        else {
             return false;
         };
         let grown = (BoundaryOutputs::is_command(entry.rhs())
@@ -697,21 +742,144 @@ impl Log {
                 .find(|group| group.labels.iter().any(|member| member == label))
         })
         .flatten();
-        let (grouped, labels) = match grown {
-            Some(group) => (true, group.labels),
-            None => (false, entry.labels.clone()),
-        };
+        let mut labels: BTreeSet<_> = grown
+            .map_or_else(|| entry.labels.clone(), |group| group.labels)
+            .into_iter()
+            .collect();
+        let mut defined = BTreeSet::new();
+        let repeated: BTreeSet<_> = self
+            .entries()
+            .flat_map(|entry| entry.labels.iter().map(String::as_str))
+            .filter(|&label| !defined.insert(label))
+            .collect();
+        if !repeated.is_empty() {
+            // Follow the current graph before replay can see a superseded rule.
+            let mut pending: Vec<_> = labels.iter().filter_map(|label| c.id(label)).collect();
+            let mut visited = BTreeSet::new();
+            let mut remaining = 1_000_000usize;
+            while let Some(id) = pending.pop() {
+                if !visited.insert(id) {
+                    continue;
+                }
+                labels.insert(c.label(id).to_owned());
+                for child in c.direct_dependents(id) {
+                    let Some(next) = remaining.checked_sub(1) else {
+                        return false;
+                    };
+                    remaining = next;
+                    pending.push(child);
+                }
+            }
+            if let Some(compacted) = self.compact_removed_inputs(c, &labels, &repeated) {
+                self.ops = compacted;
+            }
+        }
         self.ops.retain(|op| match op {
-            Op::Define(e) if grouped => !e.labels.iter().any(|label| labels.contains(label)),
-            Op::Define(e) => e.labels != labels,
+            Op::Define(e) => !e.labels.iter().any(|label| labels.contains(label)),
             Op::Set { label, .. } | Op::EquationStyle { label, .. } => !labels.contains(label),
-            Op::SavedProperty(property) => !property
-                .label()
-                .is_some_and(|label| labels.iter().any(|l| l == label)),
+            Op::SavedProperty(property) => {
+                !property.label().is_some_and(|label| labels.contains(label))
+            }
             Op::Freeze { .. } | Op::MovePoints(_) | Op::TextProperties(_) => true,
         });
         self.removed.extend(labels);
         true
+    }
+
+    /// Replace superseded lines whose inputs will be deleted. Install the
+    /// active line at the first broken entry when its inputs exist there.
+    /// Otherwise keep the original position with a seed and replay the
+    /// active assignment where its inputs were originally available.
+    fn compact_removed_inputs(
+        &self,
+        c: &Construction,
+        gone: &BTreeSet<String>,
+        repeated: &BTreeSet<&str>,
+    ) -> Option<Chain<Op>> {
+        let ops = self.ops.items();
+        let mut active = BTreeMap::new();
+        let mut broken = BTreeMap::new();
+        for (at, op) in ops.iter().enumerate() {
+            if let Op::Define(entry) = op {
+                if let [label] = entry.labels.as_slice() {
+                    if repeated.contains(label.as_str()) && !gone.contains(label) {
+                        active.insert(label.as_str(), (at, entry));
+                        if uses_removed_object(entry, gone) {
+                            broken.entry(label.as_str()).or_insert(at);
+                        }
+                    }
+                }
+            }
+        }
+        broken.retain(|label, first| *first < active[label].0);
+        let start = broken.values().copied().min()?;
+        let mut kept = self.ops.prefix(start);
+        let mut born: BTreeSet<&str> = ops[..start]
+            .iter()
+            .filter_map(|op| match op {
+                Op::Define(entry) => Some(entry.labels.iter().map(String::as_str)),
+                _ => None,
+            })
+            .flatten()
+            .filter(|label| !gone.contains(*label))
+            .collect();
+        let mut moved = BTreeSet::new();
+        let superseded = |label: &str, at| {
+            broken
+                .get(label)
+                .is_some_and(|&first| first <= at && at < active[label].0)
+        };
+        for (at, &op) in ops.iter().enumerate().skip(start) {
+            let next = match op {
+                Op::Define(entry) => {
+                    if let [label] = entry.labels.as_slice() {
+                        let label = label.as_str();
+                        if broken.get(label) == Some(&at) {
+                            let current = active[label].1;
+                            let ready = tokens(current.rhs()).all(|token| {
+                                token == label
+                                    || born.contains(token)
+                                    || c.id(token).is_none_or(|id| id.index() >= c.len())
+                            });
+                            if ready {
+                                kept.push(Op::Define(current.clone()));
+                                moved.insert(label);
+                            } else if !born.contains(label) {
+                                let line = c.id(label).and_then(|id| replacement_seed(c, id))?;
+                                kept.push(Op::Define(Entry {
+                                    labels: entry.labels.clone(),
+                                    line,
+                                }));
+                            }
+                            born.insert(label);
+                            continue;
+                        }
+                        if superseded(label, at) || moved.contains(label) {
+                            continue;
+                        }
+                    }
+                    if !entry.labels.iter().any(|label| gone.contains(label)) {
+                        born.extend(entry.labels.iter().map(String::as_str));
+                    }
+                    op.clone()
+                }
+                Op::Set { label, to, .. }
+                    if superseded(label, at) && !matches!(to, Setting::AngleStyle(_)) =>
+                {
+                    continue
+                }
+                Op::MovePoints(points) => Op::MovePoints(
+                    points
+                        .iter()
+                        .filter(|(label, _, _)| !superseded(label, at))
+                        .cloned()
+                        .collect(),
+                ),
+                _ => op.clone(),
+            };
+            kept.push(next);
+        }
+        Some(kept)
     }
 
     /// Writes the start point a deleted locus froze on `line` into the
@@ -734,14 +902,14 @@ impl Log {
         );
     }
 
-    /// The journal position of the entry that created `label`, with every
+    /// The journal position of the active definition of `label`, with every
     /// label that entry made: the position a rebuild has to place at what
     /// that entry froze, before the operations that follow it.
     pub(crate) fn define_entry(&self, label: &str) -> Option<(usize, &[String])> {
         let ops = self.ops.items();
         let at = ops
             .iter()
-            .position(|op| matches!(op, Op::Define(e) if e.labels.iter().any(|l| l == label)))?;
+            .rposition(|op| matches!(op, Op::Define(e) if e.labels.iter().any(|l| l == label)))?;
         match &ops[at] {
             Op::Define(e) => Some((at, &e.labels[..])),
             _ => None,
@@ -780,9 +948,10 @@ impl Log {
                 Op::Define(e) => {
                     let before = c.len();
                     match e.replay(&mut c) {
-                        Ok(_) => {
-                            let made: Vec<&str> =
-                                outputs(&c, before).map(|id| c.label(id)).collect();
+                        Ok(first) => {
+                            let made: Vec<&str> = definition_outputs(&c, before, first, &e.line)
+                                .map(|id| c.label(id))
+                                .collect();
                             if made != e.labels {
                                 return Err(format!(
                                     "`{}` created {made:?} instead of {:?}",
@@ -792,14 +961,19 @@ impl Log {
                             // What `record` would make of it is `e` itself.
                             match &mut same {
                                 Some(n) => *n = i + 1,
-                                None => kept.record(&c, before, &e.line),
+                                None => kept.record_definition(&c, before, first, &e.line),
                             }
                         }
                         Err(err) => {
                             if c.len() != before || !uses_removed_object(e, &gone) {
                                 return Err(format!("`{}`: {err}", e.line));
                             }
-                            gone.extend(e.labels.iter().cloned());
+                            gone.extend(
+                                e.labels
+                                    .iter()
+                                    .filter(|label| c.id(label).is_none())
+                                    .cloned(),
+                            );
                             diverge(&mut kept, &mut same);
                         }
                     }
@@ -975,22 +1149,28 @@ impl Log {
                 Op::Define(e) => {
                     let before = c.len();
                     match e.replay(&mut c) {
-                        Ok(_) => {
-                            let made: Vec<&str> =
-                                outputs(&c, before).map(|id| c.label(id)).collect();
+                        Ok(first) => {
+                            let made: Vec<&str> = definition_outputs(&c, before, first, &e.line)
+                                .map(|id| c.label(id))
+                                .collect();
                             if made != e.labels {
                                 return Err(format!(
                                     "`{}` created {made:?} instead of {:?}",
                                     e.line, e.labels
                                 ));
                             }
-                            kept.record(&c, before, &e.line);
+                            kept.record_definition(&c, before, first, &e.line);
                         }
                         Err(err) => {
                             if c.len() != before || !uses_removed_object(e, &gone) {
                                 return Err(format!("`{}`: {err}", e.line));
                             }
-                            gone.extend(e.labels.iter().cloned());
+                            gone.extend(
+                                e.labels
+                                    .iter()
+                                    .filter(|label| c.id(label).is_none())
+                                    .cloned(),
+                            );
                         }
                     }
                 }
@@ -1298,8 +1478,8 @@ impl Log {
     pub fn load_tolerant(src: &str, checked: bool) -> (Construction, Log, Vec<Rejected>) {
         let mut c = Construction::new();
         let mut log = Log::default();
-        let mut groups = BoundaryOutputs::default();
-        let grow = !checked && !has_recorded_growth(src);
+        let mut groups = BoundaryOutputs::for_script(src);
+        let grow = !checked;
         let mut rejected = Vec::new();
         let mut gone: BTreeSet<String> = BTreeSet::new();
         for (i, raw) in src.lines().enumerate() {
@@ -1354,9 +1534,13 @@ impl Log {
                     None => check_names(&line).and_then(|()| {
                         let expected = (checked || listed.is_some()).then_some(named.as_slice());
                         let before = c.len();
+                        let slider = geo_kernel::script::slider_assignment_target(&c, &line);
                         let first = log.define_checked(&mut c, &line, expected)?;
                         if let Some(id) = first.filter(|_| grow && c.len() > before) {
                             groups.record(&c, &line, id, c.len() - before);
+                        }
+                        if let Some(id) = slider.filter(|_| grow) {
+                            log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
                         }
                         Ok(())
                     }),
@@ -1386,10 +1570,24 @@ impl Log {
         line: &str,
         expected: Option<&[&str]>,
     ) -> Result<Option<Id>, String> {
-        if expected.is_some_and(|labels| !labels.is_empty())
-            && geo_kernel::script::is_slider_assignment(c, line)
-        {
-            return Err("a slider assignment creates no objects".into());
+        // Older snapshots could have annotated a bare read with its label.
+        if let Some(id) = c.id(split_comment(line).0.trim()) {
+            return Ok(Some(id));
+        }
+        // Validate the expected label before changing an existing definition.
+        if let Some(expected) = expected {
+            if geo_kernel::script::is_slider_assignment(c, line) {
+                if !expected.is_empty() {
+                    return Err("a slider assignment creates no objects".into());
+                }
+            } else if let Some(id) = geo_kernel::script::assignment_target(c, line) {
+                let label = c.label(id);
+                if expected != [label] {
+                    return Err(format!(
+                        "it would redefine {label:?} instead of creating {expected:?}"
+                    ));
+                }
+            }
         }
         let at = c.checkpoint();
         let before = c.len();
@@ -1405,16 +1603,18 @@ impl Log {
             .unwrap_or_else(|| exec_definition(c, line));
         let first = result.map_err(|reason| undo(c, reason))?;
         if let Some(expected) = expected {
-            if !outputs(c, before)
+            if !definition_outputs(c, before, first, line)
                 .map(|id| c.label(id))
                 .eq(expected.iter().copied())
             {
-                let made: Vec<&str> = outputs(c, before).map(|id| c.label(id)).collect();
+                let made: Vec<&str> = definition_outputs(c, before, first, line)
+                    .map(|id| c.label(id))
+                    .collect();
                 let reason = format!("it made {made:?} instead of {expected:?}");
                 return Err(undo(c, reason));
             }
         }
-        self.record(c, before, line);
+        self.record_definition(c, before, first, line);
         Ok(first)
     }
 
@@ -1434,8 +1634,10 @@ impl Log {
             asset.apply(&mut c)?;
             log.record_asset(Some(asset.clone()));
         }
-        let mut groups = BoundaryOutputs::default();
-        let grow = !has_recorded_growth(src);
+        let mut groups = BoundaryOutputs::for_script(src);
+        // Growth during replay stops before the slots that the script
+        // records itself (`BoundaryOutputs::for_script`).
+        let grow = true;
         for (i, raw) in src.lines().enumerate() {
             let at = |e: String| format!("line {}: {e}", i + 1);
             if let Some(asset) = saved::load_image_asset(&mut c, raw) {
@@ -1459,15 +1661,19 @@ impl Log {
             let labels = comment
                 .and_then(snapshot_labels)
                 .map(|labels| labels.split(',').map(str::trim).collect::<Vec<_>>());
+            let slider = geo_kernel::script::slider_assignment_target(&c, &line);
             let first = labels
                 .as_ref()
                 .and_then(|labels| restore_boundary_labels(&mut c, &line, labels))
                 .unwrap_or_else(|| exec_definition(&mut c, &line))
                 .map_err(at)?;
-            log.record(&c, before, &line);
+            log.record_definition(&c, before, first, &line);
             log.apply_hidden_requests(&mut c);
             if let Some(id) = first.filter(|_| grow && c.len() > before) {
                 groups.record(&c, &line, id, c.len() - before);
+            }
+            if let Some(id) = slider.filter(|_| grow) {
+                log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));
             }
         }
         log.prune_image_assets(&mut c);
@@ -1477,6 +1683,28 @@ impl Log {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_bare_read_does_not_replace_the_definition_when_loading() {
+        let (_, original) = Log::load("A = (1, 2)").unwrap();
+        let (c, log) = Log::load("A = (1, 2)\nA").unwrap();
+        assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 1.0, y: 2.0 });
+        assert_eq!(log.to_labelled_script(), original.to_labelled_script());
+        assert_eq!(log.rhs_of("A"), Some("(1, 2)"));
+    }
+
+    #[test]
+    fn journal_position_tracks_the_active_assignment() {
+        let (c, mut log) = Log::load("a = 1\nb = a + 1\nn = 4\na = 2 n").unwrap();
+        let (at, labels) = log.define_entry("a").unwrap();
+        assert!(at > log.define_entry("n").unwrap().0);
+        assert_eq!(labels, ["a"]);
+        assert!(log.remove("a", &c));
+        let (c, _) = log.rebuild().unwrap();
+        assert!(c.id("a").is_none());
+        assert!(c.id("b").is_none());
+        assert_eq!(c.value(c.id("n").unwrap()), Value::Number(4.0));
+    }
+
     use super::*;
     use geo_kernel::kernel::Value;
 
@@ -1528,13 +1756,13 @@ mod tests {
 
     #[test]
     fn removing_an_entry_cascades_through_dependents_on_rebuild() {
-        let (_, mut log) = sample();
-        assert!(log.remove("A"));
+        let (c, mut log) = sample();
+        assert!(log.remove("A", &c));
         let (c, kept) = log.rebuild().unwrap();
         let labels: Vec<&str> = c.ids().map(|id| c.label(id)).collect();
         assert_eq!(labels, ["B", "C"]);
         assert_eq!(kept.entries().count(), 2);
-        assert!(!log.remove("zzz"));
+        assert!(!log.remove("zzz", &c));
     }
 
     #[test]

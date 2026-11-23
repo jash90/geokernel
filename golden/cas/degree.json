@@ -1,0 +1,204 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-degree-001",
+      "group": "cas",
+      "script": [
+        "result = Solutions(x^3+y=0, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 2.0],
+                  [-4.0, 1.5874010519681994],
+                  [-2.0, 1.2599210498948732],
+                  [-1.0, 1.0],
+                  [-0.5, 0.7937005259840998],
+                  [0.0, -0.0],
+                  [0.5, -0.7937005259840998],
+                  [1.0, -1.0],
+                  [2.0, -1.2599210498948732],
+                  [4.0, -1.5874010519681994],
+                  [8.0, -2.0]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-degree-002",
+      "group": "cas",
+      "script": [
+        "result = Solutions(x*y^2+y=1, y)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, 0.7320508075688772],
+                  [1.0, 0.6180339887498949],
+                  [2.0, 0.5],
+                  [4.0, 0.3903882032022076],
+                  [8.0, 0.2965351654086268]
+                ]
+              },
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, null],
+                  [-4.0, null],
+                  [-2.0, null],
+                  [-1.0, null],
+                  [-0.5, null],
+                  [0.0, null],
+                  [0.5, -2.732050807568877],
+                  [1.0, -1.618033988749895],
+                  [2.0, -1.0],
+                  [4.0, -0.6403882032022076],
+                  [8.0, -0.4215351654086268]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-degree-003",
+      "group": "cas",
+      "script": [
+        "r1 = Solutions(x^3+y=0, y)",
+        "r2 = Solve(x^3+y=0, y)",
+        "r3 = Solutions(x*y^2+y=1, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "r1": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 512.0],
+                  [-4.0, 64.0],
+                  [-2.0, 8.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.125],
+                  [0.0, -0.0],
+                  [0.5, -0.125],
+                  [1.0, -1.0],
+                  [2.0, -8.0],
+                  [4.0, -64.0],
+                  [8.0, -512.0]
+                ]
+              }
+            ]
+          },
+          "r2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 512.0],
+                  [-4.0, 64.0],
+                  [-2.0, 8.0],
+                  [-1.0, 1.0],
+                  [-0.5, 0.125],
+                  [0.0, -0.0],
+                  [0.5, -0.125],
+                  [1.0, -1.0],
+                  [2.0, -8.0],
+                  [4.0, -64.0],
+                  [8.0, -512.0]
+                ]
+              }
+            ]
+          },
+          "r3": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              {
+                "type": "function",
+                "defined": true,
+                "samples": [
+                  [-8.0, 0.140625],
+                  [-4.0, 0.3125],
+                  [-2.0, 0.75],
+                  [-1.0, 2.0],
+                  [-0.5, 6.0],
+                  [0.0, null],
+                  [0.5, 2.0],
+                  [1.0, 0.0],
+                  [2.0, -0.25],
+                  [4.0, -0.1875],
+                  [8.0, -0.109375]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cas-degree-004",
+      "group": "cas",
+      "script": [
+        "result = Solve(x^3+y=0, x)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "result": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "implicit", "defined": false }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

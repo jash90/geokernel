@@ -195,30 +195,56 @@ impl Workbench {
                 grown.remove(owner);
             }
         }
+        let mut redefined = false;
+        let mut assignments = BTreeMap::new();
+        for entry in self.log.entries() {
+            if let [label] = entry.labels.as_slice() {
+                let label = label.as_str();
+                redefined |= assignments.insert(label, entry).is_some();
+            }
+        }
         // The same names before the separator, and a form without a writer.
         let replaced = unlisted.and_then(|label| {
             let entry = self
                 .log
-                .entries()
+                .entries_rev()
                 .find(|entry| entry.labels.iter().any(|made| made == label))?;
             let names = &entry.line[..entry.line.find([':', '='])?];
             Some((entry, format!("{names}= $unlisted()")))
         });
-        let definitions = self.log.entries().filter_map(|entry| {
-            if boundary_slot_owner(entry.rhs()).is_some_and(|owner| grown.contains_key(owner)) {
-                return None;
-            }
-            let outputs = entry
-                .labels
-                .first()
-                .and_then(|label| grown.get(label.as_str()))
-                .unwrap_or(&entry.labels);
-            let line = match &replaced {
-                Some((changed, line)) if std::ptr::eq(*changed, entry) => line.as_str(),
-                _ => entry.line.as_str(),
-            };
-            Some(Definition { line, outputs })
-        });
+        let mut definitions: Vec<_> = self
+            .log
+            .entries()
+            .filter_map(|entry| {
+                if let [label] = entry.labels.as_slice() {
+                    if !std::ptr::eq(entry, assignments[label.as_str()]) {
+                        return None;
+                    }
+                }
+                if boundary_slot_owner(entry.rhs()).is_some_and(|owner| grown.contains_key(owner)) {
+                    return None;
+                }
+                let outputs = entry
+                    .labels
+                    .first()
+                    .and_then(|label| grown.get(label.as_str()))
+                    .unwrap_or(&entry.labels);
+                let line = match &replaced {
+                    Some((changed, line)) if std::ptr::eq(*changed, entry) => line.as_str(),
+                    _ => entry.line.as_str(),
+                };
+                Some(Definition { line, outputs })
+            })
+            .collect();
+        if redefined {
+            definitions.sort_by_key(|definition| {
+                definition
+                    .outputs
+                    .first()
+                    .and_then(|label| c.id(label))
+                    .map_or(usize::MAX, |id| c.evaluation_rank(id))
+            });
+        }
         export::ggb(c, definitions, &self.export_presentation(view))
     }
 

@@ -1,0 +1,150 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "tpairfixes-symbolic-001",
+      "group": "tpairfixes",
+      "script": [
+        "f(x) = (3 / 2)^x",
+        "n = 2",
+        "a = f(n)",
+        "b = 5 * 10^(-2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -1.0 },
+        { "action": "set_number", "label": "n", "value": -2.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03901844231062338],
+              [-4.0, 0.19753086419753085],
+              [-2.0, 0.4444444444444444],
+              [-1.0, 0.6666666666666666],
+              [-0.5, 0.816496580927726],
+              [0.0, 1.0],
+              [0.5, 1.224744871391589],
+              [1.0, 1.5],
+              [2.0, 2.25],
+              [4.0, 5.0625],
+              [8.0, 25.62890625]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 2.0 },
+          "a": { "type": "number", "defined": true, "value": 2.25 },
+          "b": { "type": "number", "defined": true, "value": 0.05 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03901844231062338],
+              [-4.0, 0.19753086419753085],
+              [-2.0, 0.4444444444444444],
+              [-1.0, 0.6666666666666666],
+              [-0.5, 0.816496580927726],
+              [0.0, 1.0],
+              [0.5, 1.224744871391589],
+              [1.0, 1.5],
+              [2.0, 2.25],
+              [4.0, 5.0625],
+              [8.0, 25.62890625]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": -1.0 },
+          "a": { "type": "number", "defined": true, "value": 0.6666666666666666 },
+          "b": { "type": "number", "defined": true, "value": 0.05 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03901844231062338],
+              [-4.0, 0.19753086419753085],
+              [-2.0, 0.4444444444444444],
+              [-1.0, 0.6666666666666666],
+              [-0.5, 0.816496580927726],
+              [0.0, 1.0],
+              [0.5, 1.224744871391589],
+              [1.0, 1.5],
+              [2.0, 2.25],
+              [4.0, 5.0625],
+              [8.0, 25.62890625]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": -2.0 },
+          "a": { "type": "number", "defined": true, "value": 0.4444444444444444 },
+          "b": { "type": "number", "defined": true, "value": 0.05 }
+        },
+        {
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.03901844231062338],
+              [-4.0, 0.19753086419753085],
+              [-2.0, 0.4444444444444444],
+              [-1.0, 0.6666666666666666],
+              [-0.5, 0.816496580927726],
+              [0.0, 1.0],
+              [0.5, 1.224744871391589],
+              [1.0, 1.5],
+              [2.0, 2.25],
+              [4.0, 5.0625],
+              [8.0, 25.62890625]
+            ]
+          },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 0.05 }
+        }
+      ]
+    },
+    {
+      "id": "tpairfixes-symbolic-002",
+      "group": "tpairfixes",
+      "script": [
+        "n = 8",
+        "a = sqrt(n)",
+        "b = sqrt(1024 * 2 * 3)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": -3.0 },
+        { "action": "set_number", "label": "n", "value": 17.0 },
+        { "action": "set_number", "label": "n", "value": 8.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 8.0 },
+          "a": { "type": "number", "defined": true, "value": 2.8284271247461903 },
+          "b": { "type": "number", "defined": true, "value": 78.38367176906169 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": -3.0 },
+          "a": { "type": "number", "defined": false },
+          "b": { "type": "number", "defined": true, "value": 78.38367176906169 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 17.0 },
+          "a": { "type": "number", "defined": true, "value": 4.123105625617661 },
+          "b": { "type": "number", "defined": true, "value": 78.38367176906169 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 8.0 },
+          "a": { "type": "number", "defined": true, "value": 2.8284271247461903 },
+          "b": { "type": "number", "defined": true, "value": 78.38367176906169 }
+        }
+      ]
+    }
+  ]
+}

@@ -66,7 +66,9 @@ impl PairDef {
     }
 
     pub(crate) fn oriented(self, c: &Construction) -> Self {
-        for &id in c.children(self.first) {
+        // The first output set the operand order of this shared solver.
+        // A selector can move in dependency order without changing that order.
+        for id in c.children(self.first) {
             let (first, second) = match c.def(id) {
                 Def::IntersectConics(d) => (d.first, d.second),
                 Def::IntersectCircles { c1, c2, .. } => (c1, c2),
@@ -87,9 +89,7 @@ impl PairDef {
 
     pub(crate) fn previous(self, c: &Construction) -> Option<Id> {
         c.children(self.first)
-            .iter()
             .rev()
-            .copied()
             .find(|&id| matches!(c.def(id), Def::IntersectConics(d) if self.matches(d)))
     }
 
@@ -288,6 +288,11 @@ pub(crate) struct PairState {
 }
 
 impl PairState {
+    pub(crate) fn refresh_definition(&mut self, def: PairDef, c: &Construction) {
+        self.common = def.common_array(c);
+        self.special = self.circle_intersections(c).is_some();
+    }
+
     pub(crate) fn refresh(&mut self, def: PairDef, c: &Construction, continuous: bool) {
         let operands = [Operand::get(c, def.first), Operand::get(c, def.second)];
         if !Operand::same(operands[0], self.operands[0])

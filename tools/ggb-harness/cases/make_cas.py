@@ -1,6 +1,6 @@
 """Polynomial CAS cases, including algebra-input cases from the upstream tests."""
 
-from caselib import Cases, setn
+from caselib import Cases, mv, setn
 
 c = Cases("cas")
 for topic, expression in [
@@ -193,4 +193,714 @@ for expression in [
     "NextPrime(-2.5)", "PreviousPrime(-2.5)", "NextPrime(1)", "PreviousPrime(1)",
 ]:
     c.case("prime", [f"result = {expression}"], [])
+
+SOLVERS = ("Solve", "Solutions", "NSolve", "NSolutions")
+
+
+def results(calls):
+    """One labelled result per call: r1, r2, ..."""
+    return [f"r{k} = {call}" for k, call in enumerate(calls, 1)]
+
+
+# A solving variable or a numeric guess after a function or a line.
+for command in SOLVERS:
+    c.case("hint", ["f(x) = x^2-3", f"result = {command}(f, x)"], [])
+for command in SOLVERS:
+    c.case("hint", ["g: x+y=1", f"result = {command}(g, x)"], [])
+for command in SOLVERS:
+    c.case("hint", ["g: 2x+3y=6", f"result = {command}(g, y)"], [])
+# A variable the equation does not contain.
+c.case("hint", ["f(x) = x^2-3"] + results(f"{command}(f, y)" for command in SOLVERS), [])
+c.case("hint", ["g: x=3"] + results(
+    [f"{command}(g, x)" for command in SOLVERS] + [f"{command}(g, y)" for command in SOLVERS]), [])
+c.case("hint", ["g: y=2"] + results(
+    [f"{command}(g, x)" for command in SOLVERS] + [f"{command}(g, y)" for command in SOLVERS]), [])
+c.case("hint", ["g: x+y=1", "result = Solve(g, z)"], [])
+# A numeric guess picks one root, except for Solve.
+c.case("hint", ["f(x) = x^2-3", "r1 = Solve(f, x=1)", "r2 = Solutions(f, x=1)",
+                "r3 = NSolve(f, x=-1)", "r4 = NSolutions(f, x=10)"], [])
+c.case("hint", ["f(x) = x^3-x"] + results(
+    f"NSolutions(f, x={guess})" for guess in
+    ["0.4", "0.5", "0.6", "0.57", "0.58", "2", "-0.45", "100", "0", "1"]), [])
+c.case("hint", ["f(x) = x^5-3x+1"] + results(
+    f"NSolutions(f, x={guess})" for guess in ["0", "1", "-1", "0.9", "5", "-2.658", "1.068"]), [])
+c.case("hint", ["f(x) = x^4-5x^2+4"] + results(
+    f"NSolve(f, x={guess})" for guess in ["3.2", "-0.4", "1.6", "-1.7", "0.9"]), [])
+c.case("hint", ["f(x) = x^2+1", "r1 = NSolutions(f, x=1)", "r2 = NSolve(f, x=1)",
+                "r3 = Solutions(f, x=1)", "r4 = Solve(f, x=1)"], [])
+c.case("hint", ["f(x) = x^2", "r1 = NSolutions(f, x=1)", "r2 = Solve(f, x=1)"], [])
+c.case("hint", ["a = 1", "f(x) = x^2-a", "r1 = NSolutions(f, x=2)", "r2 = Solve(f, x)",
+                "r3 = Solutions(f, y)"], [setn("a", 4), setn("a", -1), setn("a", 0), setn("a", 2)])
+c.case("hint", ["b = 2", "f(x) = x^2-3", "result = NSolutions(f, x=b)"], [setn("b", -2), setn("b", 5)])
+c.case("hint", ["g: x=3", "r1 = NSolve(g, x=1)", "r2 = Solve(g, x=1)", "r3 = Solutions(g, x=1)"], [])
+c.case("hint", ["g: x+y=1", "r1 = NSolve(g, x=1)", "r2 = Solve(g, x=1)",
+                "r3 = Solutions(g, y=1)"], [])
+# A line through two points follows them, also when it turns vertical or
+# collapses and comes back.
+c.case("hint", ["A = (0, 1)", "B = (1, 0)", "g = Line(A, B)", "r1 = Solve(g, x)",
+                "r2 = Solutions(g, y)", "r3 = Solve(g, y)", "r4 = NSolutions(g, x)"],
+       [mv("B", 3, 0), mv("B", 0, 5), mv("B", 0, 1), mv("B", 2, 2)])
+# A list of variables after a single equation follows the system solver.
+c.case("hint", ["f(x) = x^2-3", "result = Solve(f, {x})"], [])
+c.case("hint", ["f(x) = x^2-3", "result = Solutions(f, {x})"], [])
+
+# Conics. A conic in one variable is a polynomial equation.
+for command in SOLVERS:
+    c.case("conic", ["k: x^2=4", f"result = {command}(k)"], [])
+for command in SOLVERS:
+    c.case("conic", ["k: x^2=4", f"result = {command}(k, x)"], [])
+c.case("conic", ["k: x^2=4"] + results(f"{command}(k, y)" for command in SOLVERS), [])
+c.case("conic", ["k: y^2=4"] + results(
+    [f"{command}(k)" for command in SOLVERS] + ["Solve(k, x)", "Solve(k, y)", "NSolve(k, x)"]), [])
+c.case("conic", ["k: x^2-5x+6=0"] + results(f"{command}(k)" for command in SOLVERS), [])
+# A conic in both variables gives one function per branch.
+c.case("conic", ["k: x^2+y^2=4", "r1 = Solutions(k)", "r2 = Solutions(k, x)",
+                 "r3 = Solutions(k, y)", "r4 = Solve(k, y)"], [])
+c.case("conic", ["k: x^2+y^2=4", "r1 = NSolve(k)", "r2 = NSolutions(k)", "r3 = NSolve(k, x)",
+                 "r4 = NSolutions(k, x)", "r5 = NSolve(k, y)", "r6 = NSolutions(k, y)"], [])
+for equation in [
+    "x^2+4y^2=4", "x^2+x*y+y^2=3", "x^2+x*y+y^2=1", "x^2-y^2=1", "2x^2+3y^2+x-y=5",
+    "(x-1)^2+(y-2)^2=9", "3x^2-y^2+x=2", "x^2+x*y=1", "x^2+2x*y+3y^2=6", "x^2+2x-y^2=-3",
+    "x^2+2x-y^2=3", "x^2-4x*y+y^2+2x=1", "x^2+x*y+y^2+x=3", "x^2+x*y-y^2=-5", "x^2+3y^2-x=5",
+    "x*y=1", "x*y+x+y=1", "y^2=x",
+]:
+    c.case("conic", [f"k: {equation}", "r1 = Solutions(k)", "r2 = Solutions(k, y)",
+                     "r3 = Solve(k, y)"], [])
+# Solving a parabola for its squared variable needs both roots.
+for equation in ["y=x^2", "y=x^2+x", "x^2+2x-y=3", "x^2+y=3"]:
+    c.case("conic", [f"k: {equation}", "r1 = Solutions(k)", "r2 = Solutions(k, y)"], [])
+# Degenerate conics split into lines.
+for equation in [
+    "x^2-y^2=0", "x^2+2x*y+y^2=1", "x^2-2x*y+y^2=0", "x*y=0", "x^2-2y^2=0", "(x-2y)*(x-3y)=0",
+    "(x-y/2)*(x-2y)=0", "(x-y)*(x-2)=0", "(x-2y-1)*(x+2y-3)=0", "x^2+3x*y+2y^2=0",
+    "2x^2-x*y-y^2+x+2y=1", "(x-2y+5)*(x-2y-4)=0", "(x+y/3)*(x-y/2)=0", "x^2-2x*y-y^2=0",
+    "(x-2)*(y-1)=0",
+]:
+    c.case("conic", [f"k: {equation}", "r1 = Solve(k)", "r2 = Solutions(k)", "r3 = Solve(k, y)",
+                     "r4 = Solutions(k, y)"], [])
+# Conics without real points.
+for equation in ["x^2+y^2=-4", "x^2+y^2=0", "x^2+1=0", "x^2=0"]:
+    c.case("conic", [f"k: {equation}"] + results(
+        [f"{command}(k)" for command in SOLVERS] + ["Solve(k, y)", "Solutions(k, y)"]), [])
+# The conic changes its type while a number moves.
+c.case("conic", ["a = 4", "k: x^2=a", "r1 = Solve(k)", "r2 = NSolutions(k)", "r3 = Solutions(k, x)"],
+       [setn("a", 9), setn("a", -1), setn("a", 0), setn("a", 2)])
+c.case("conic", ["a = 4", "k: x^2+y^2=a", "r1 = Solutions(k)", "r2 = Solve(k, y)", "r3 = NSolve(k)"],
+       [setn("a", 9), setn("a", -1), setn("a", 0), setn("a", 1)])
+c.case("conic", ["A = (1, 2)", "k = Circle(A, 3)", "r1 = Solutions(k)", "r2 = Solve(k, y)"],
+       [mv("A", 0, 0), mv("A", -2, 1.5)])
+c.case("conic", ["k: x^2=4", "r1 = NSolutions(k, x=1)", "r2 = NSolve(k, x=-1)", "r3 = Solve(k, x=1)",
+                 "r4 = Solutions(k, x=1)"], [])
+c.case("conic", ["k: x^2+y^2=4", "r1 = Solutions(k, x=1)", "r2 = NSolve(k, y=1)"], [])
+
+
+def curve_case(script, steps=()):
+    """A case whose curves are recorded with sample points."""
+    c.case("curve", script, list(steps))
+    c.cases[-1]["sample_curves"] = True
+
+
+# The kernel's exact failure for each refused line, asserted by the replay.
+ERRORS = {
+    "r = Expand(g)": "invalid arguments to `Expand`",
+    "r = Expand(k)": "invalid arguments to `Expand`",
+    "r = Expand(l)": "invalid arguments to `Expand`",
+    "r = Expand(s)": "invalid arguments to `Expand`",
+    "r = Expand(x+y=1)": "`y` needs arguments",
+    "r = Expand(x^2+y^2=4)": "`y` needs arguments",
+    "r = Expand({1, 2})": "invalid arguments to `Expand`",
+    "r = Expand({x^2-1, (x+1)^2})": "invalid arguments to `Expand`",
+    "r = Factor(g)": "`Factor` needs a function",
+    "r = Factor(k)": "`Factor` needs a function",
+    "r = Factor(l)": "`Factor` needs a function",
+    "r = Factor(s)": "`Factor` needs a function",
+    "r = Factor(x+y=1)": "`y` needs arguments",
+    "r = Factor(x^2+y^2=4)": "`y` needs arguments",
+    "r = Factor({1, 2})": "`Factor` needs a function",
+    "r = Factor({x^2-1, (x+1)^2})": "invalid arguments to `Factor`",
+    "r = IFactor(g)": "`IFactor` needs a function",
+    "r = IFactor(k)": "`IFactor` needs a function",
+    "r = IFactor(l)": "`IFactor` needs a function",
+    "r = IFactor(s)": "`IFactor` needs a function",
+    "r = IFactor(x+y=1)": "`y` needs arguments",
+    "r = IFactor(x^2+y^2=4)": "`y` needs arguments",
+    "r = IFactor({1, 2})": "`IFactor` needs a function",
+    "r = IFactor({x^2-1, (x+1)^2})": "invalid arguments to `IFactor`",
+    "r = NSolutions(u^2=4, u)": "undefined variable `u`",
+    "r = PlotSolve(2)": "unknown command `PlotSolve`",
+    "r = PlotSolve(f, x)": "unknown command `PlotSolve`",
+    "r = PlotSolve(f, x=1)": "unknown command `PlotSolve`",
+    "r = PlotSolve(g, y)": "unknown command `PlotSolve`",
+    "r = PlotSolve(x, y)": "unknown command `PlotSolve`",
+    "r = Simplify(\"\")": "`Simplify` needs a text that is not empty",
+    "r = Simplify(A)": "invalid arguments to `Simplify`",
+    "r = Simplify(l)": "invalid arguments to `Simplify`",
+    "r = Simplify(p)": "invalid arguments to `Simplify`",
+    "r = Simplify(t)": "`Simplify` needs a text that is not empty",
+    "r = Simplify({1, 2})": "invalid arguments to `Simplify`",
+    "r = Simplify({x^2-1, (x+1)^2})": "invalid arguments to `Simplify`",
+    "r = Solutions(a^2=4, a)": "undefined variable `a`",
+    "r = Solutions(f, a)": "undefined variable `a`",
+    "r = Solve(f, abc)": "undefined variable `abc`",
+}
+
+
+def reject(line):
+    return {"action": "reject", "line": line, "error": ERRORS[line]}
+
+
+# Expand, Factor and IFactor rewrite a curve coordinate by coordinate.
+REWRITES = ("Expand", "Factor", "IFactor")
+for command in REWRITES:
+    curve_case(["k = Curve((t+1)^2, t^2-1, t, 0, 2)", f"result = {command}(k)"])
+# A rational coordinate loses its removable pole, and keeps a real one.
+curve_case(["k = Curve((t^2-1)/(t-1), t, t, 0, 2)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["k = Curve(1/t, t, t, -1, 1)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["k = Curve((t^2-4)/(t+2), 1/(t-1), t, -3, 3)"]
+           + results(f"{command}(k)" for command in REWRITES))
+# Coordinates the polynomial commands cannot rewrite stay as they are.
+curve_case(["k = Curve(cos(t), sin(t), t, 0, 3)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["k = Curve(t^2-2, sqrt(t), t, 0, 4)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["k = Curve(t^2-2, t^4-4, t, -2, 2)"] + results(f"{command}(k)" for command in REWRITES))
+curve_case(["f(x) = x^2", "k = Curve(f(t)+1, t*f(t), t, 0, 2)"]
+           + results(f"{command}(k)" for command in REWRITES))
+# The result follows the numbers of the curve, also through an empty
+# interval and back.
+curve_case(["a = 2", "k = Curve(a*t^2, (t+a)^2, t, 0, a)"]
+           + results(f"{command}(k)" for command in REWRITES),
+           [setn("a", 3), setn("a", -1), setn("a", 0), setn("a", 1)])
+curve_case(["a = 1", "k = Curve((t^2-a^2)/(t-a), t, t, 0, 2)", "r1 = Expand(k)", "r2 = Factor(k)"],
+           [setn("a", 0.5), setn("a", 3), setn("a", 0)])
+curve_case(["k = Curve(t^2, t, t, 0, 2)", "r1 = Expand(k)", "r2 = Factor(r1)", "r3 = IFactor(r2)"])
+curve_case(["k = Curve(t^2, t, t, 2, 0)"] + results(f"{command}(k)" for command in REWRITES))
+
+# The reference refuses a line, a conic and a list.
+for command in REWRITES:
+    c.case("rejected", ["g: x+y=1", "k: x^2+y^2=4", "l = {1, 2}", "A = (0, 1)", "B = (1, 0)",
+                        "s = Segment(A, B)"],
+           [reject(f"r = {command}({argument})") for argument in
+            ["g", "k", "l", "s", "x+y=1", "x^2+y^2=4", "{1, 2}", "{x^2-1, (x+1)^2}"]])
+
+# Simplify reads a line and a parabola in y as the function it graphs.
+c.case("simplify", ["g: x+y=1", "result = Simplify(g)"], [])
+c.case("simplify", ["k: y=x^2", "result = Simplify(k)"], [])
+c.case("simplify", ["g: 2x+3y=6", "h: y=2", "v: x=3", "r1 = Simplify(g)", "r2 = Simplify(h)",
+                     "r3 = Simplify(v)"], [])
+c.case("simplify", ["A = (0, 1)", "B = (1, 0)", "g = Line(A, B)", "s = Segment(A, B)",
+                     "r1 = Simplify(g)", "r2 = Simplify(s)"],
+       [mv("B", 3, 0), mv("B", 0, 5), mv("B", 0, 1), mv("B", 2, 2)])
+c.case("simplify", ["r1 = Simplify(x+y=1)", "r2 = Simplify(y=x^2-x)", "r3 = Simplify(x=2)"], [])
+c.case("simplify", ["k: x^2+y^2=4", "h: x*y=1", "p: y^2=x", "q: 2y=x^2+4x", "r1 = Simplify(k)",
+                     "r2 = Simplify(h)", "r3 = Simplify(p)", "r4 = Simplify(q)"], [])
+c.case("simplify", ["A = (0, 1)", "k = Circle(A, 2)", "result = Simplify(k)"], [mv("A", 1, 1)])
+c.case("simplify", ["a = 1", "k: y=a*x^2+x+a", "result = Simplify(k)"],
+       [setn("a", -2), setn("a", 0), setn("a", 0.5)])
+c.case("simplify", ["a = 1", "k: x^2+a*y^2+y=1", "result = Simplify(k)"],
+       [setn("a", 0), setn("a", 2), setn("a", 0)])
+
+# Simplify rewrites a curve like the other three commands.
+curve_case(["k = Curve((t+1)^2, t^2-1, t, 0, 2)", "result = Simplify(k)"])
+curve_case(["k = Curve((t^2-1)/(t-1), cos(t), t, 0, 2)", "j = Curve(1/t, sqrt(t), t, 0, 4)",
+            "r1 = Simplify(k)", "r2 = Simplify(j)"])
+curve_case(["a = 2", "k = Curve(a*t^2, (t^2-a^2)/(t-a), t, 0, a)", "result = Simplify(k)"],
+           [setn("a", 3), setn("a", -1), setn("a", 0), setn("a", 1)])
+
+# Simplify of a text tidies its signs as a text.
+c.case("text", ['t = "x+x"', "result = Simplify(t)"], [])
+c.case("text", ['result = Simplify("x+-x--x")'], [])
+for k, text in enumerate([
+    "+1x++x--x+-1x-+1x++x", "x-x-x-x", "x=x=x=x+x+x+x", "1x - 2", "+", "a - -b+ +c", "3 -1x",
+    "-1x", "1x", "11x+1xy", "x - - 1 x", "+++", "---", "x+ +1 x", "2=-1x", "y = - 1x+ - 3",
+    " +x", "x^2+-1x^2", "1x1x-1x", "+ 1x", "a+b=c-d", "- - -x",
+]):
+    c.case("text", [f't = "{text}"', "result = Simplify(t)"], [])
+c.case("text", ["a = 2", 't = "x+" + a', "result = Simplify(t)"],
+       [setn("a", -3), setn("a", 1), setn("a", -1)])
+c.case("text", ['t = "1"', 'u = t + "x-x"', "result = Simplify(u)"], [])
+c.case("text", ['t = ""'], [reject("r = Simplify(t)")])
+
+c.case("rejected", ["l = {1, 2}", "A = (0, 1)", "B = (1, 0)", "C = (2, 3)", "p = Polygon(A, B, C)"],
+       [reject(f"r = Simplify({argument})") for argument in
+        ["l", "{1, 2}", "{x^2-1, (x+1)^2}", "A", "p"]])
+
+# PlotSolve: the solutions of one equation as points on the x-axis.
+c.case("plot", ["f(x) = x^2-3", "result = PlotSolve(f)"], [])
+c.case("plot", ["g: x=3", "result = PlotSolve(g)"], [])
+c.case("plot", ["k: x^2=4", "result = PlotSolve(k)"], [])
+c.case("plot", ["g: x+y=1", "h: x-y=0", "l = {g, h}", "result = PlotSolve(l)"], [])
+# The upstream test and other equations in x.
+c.case("plot", results(f"PlotSolve({equation})" for equation in
+                       ["x^3-x", "x^2=2", "x=x", "(x-1)^2*(x+2)", "x^2+1", "x^2=0", "2x=7"]), [])
+c.case("plot", ["f(x) = 0x", "g(x) = x^2+1", "h(x) = (x^2-1)/(x-1)", "r1 = PlotSolve(f)",
+                "r2 = PlotSolve(g)", "r3 = PlotSolve(h)"], [])
+# A second variable stays as the parameter of a line along the x-axis.
+c.case("plot", ["g: x+y=1", "h: 2x+3y=6", "i: y=2", "j: 2x-y=0", "r1 = PlotSolve(g)",
+                "r2 = PlotSolve(h)", "r3 = PlotSolve(i)", "r4 = PlotSolve(j)"], [])
+c.case("plot", ["A = (0, 1)", "B = (1, 0)", "g = Line(A, B)", "result = PlotSolve(g)"],
+       [mv("B", 3, 0), mv("B", 0, 5), mv("B", 0, 1), mv("B", 2, 2)])
+c.case("plot", ["a = 1", "f(x) = x^2-a", "result = PlotSolve(f)"],
+       [setn("a", 4), setn("a", -1), setn("a", 0), setn("a", 2)])
+# Conics in one variable and degenerate conics.
+for equation in ["y^2=4", "x^2-5x+6=0", "x^2+1=0", "x^2=0", "x^2-y^2=0", "x*y=0", "x^2-2y^2=0",
+                 "(x-y)*(x-2)=0", "x^2+2x*y+y^2=1", "x^2+y^2=-4"]:
+    c.case("plot", [f"k: {equation}", "result = PlotSolve(k)"], [])
+c.case("plot", ["a = 4", "k: x^2=a", "result = PlotSolve(k)"],
+       [setn("a", 9), setn("a", -1), setn("a", 0), setn("a", 2)])
+# A list always passes its variables as a second argument, which the
+# command does not take.
+c.case("plot", ["g: x+y=1", "h: x-y=0", "r1 = PlotSolve({g, h})", "r2 = PlotSolve({x^2=1})"], [])
+c.case("plot", ["f(x) = x^2-3", "g: x=3"],
+       [reject("r = PlotSolve(f, x)"), reject("r = PlotSolve(g, y)"), reject("r = PlotSolve(2)"),
+        reject("r = PlotSolve(x, y)"), reject("r = PlotSolve(f, x=1)")])
+# Results the kernel does not reach: curves inside the list, and a
+# function that is no polynomial.
+c.case("plot", ["k: x^2+y^2=4", "result = PlotSolve(k)"], [])
+c.case("plot", ["k: x*y=1", "result = PlotSolve(k)"], [])
+c.case("plot", ["f(x) = sin(x)", "result = PlotSolve(f)"], [])
+# A parabola solved for its linear variable is the conic itself, which
+# the kernel cannot hold inside a list.
+c.case("conic", ["k: y=x^2+x", "result = Solve(k, y)"], [])
+
+# The order of the two branches of a conic. The solutions pass through the
+# sort of the CAS, which compares numerically where it can decide the sign
+# of a difference and by the structure of the printed terms otherwise. With
+# the equation as A s^2 + b s + c = 0 over the integers, A > 0, without a
+# common factor, D = b^2 - 4 A c = k m^2 D' (k square-free, D' primitive),
+# the roots are P +- q sqrt(k) sqrt(D') with P = -b / (2 A), q = m / (2 A).
+
+
+def swapped(equation):
+    """The same equation with x and y exchanged."""
+    return equation.replace("x", "#").replace("y", "x").replace("#", "y")
+
+
+def radical_order(equation):
+    c.case("order", [f"k: {equation}", f"j: {swapped(equation)}", "r1 = Solutions(k)",
+                     "r2 = Solutions(k, x)", "r3 = Solutions(j, y)", "r4 = Solve(j, y)"], [])
+
+
+def line_order(equation):
+    c.case("order", [f"k: {equation}", f"j: {swapped(equation)}", "r1 = Solve(k)",
+                     "r2 = Solutions(k)", "r3 = Solve(j, y)", "r4 = Solutions(j, y)"], [])
+
+
+# The inputs of the review.
+c.case("order", ["k: 2*x^2+2*x*y+2*y^2=3", "r1 = Solutions(k, x)", "r2 = Solutions(k)",
+                 "r3 = Solutions(k, y)", "r4 = Solve(k, y)"], [])
+c.case("order", ["a = 1", "k: a*x^2+x*y=0", "r1 = Solutions(k)", "r2 = Solve(k)",
+                 "r3 = Solutions(k, y)", "r4 = Solve(k, y)"],
+       [setn("a", 2), setn("a", -1), setn("a", 0.5), setn("a", 3), setn("a", -0.25)])
+c.case("order", ["k: y^2+x*y+y=3", "r1 = Solutions(k, y)", "r2 = Solve(k, y)",
+                 "r3 = Solutions(k)"], [])
+c.case("order", ["k: 2x^2+3x=y", "j: x^2+3x=3y", "r1 = Solutions(k)", "r2 = Solutions(j)",
+                 "r3 = Solutions(k, x)", "r4 = Solutions(j, x)"], [])
+c.case("order", ["k: y^2=x^2-1", "j: x^2-y^2=1", "r1 = Solutions(k)", "r2 = Solutions(j)",
+                 "r3 = Solutions(k, y)", "r4 = Solutions(j, y)", "r5 = Solve(k, y)",
+                 "r6 = Solve(j, y)"], [])
+# The same curve written differently gives the same order.
+c.case("order", ["k: 4x^2+4y^2=16", "j: x^2/2+y^2/2=2", "i: -x^2-y^2=-4", "h: 4=x^2+y^2"]
+       + results(f"Solutions({name}, y)" for name in "kjih"), [])
+c.case("order", ["k: 3=2x^2+2x*y+2y^2", "j: x^2+x*y+y^2=1.5", "i: -4x^2-4x*y-4y^2=-6"]
+       + results([f"Solutions({name})" for name in "kji"]
+                 + [f"Solutions({name}, y)" for name in "kji"]), [])
+# P = 0: the negative root first.
+for equation in ["5x^2+4y^2+3y-3=0", "4x^2-2y^2-4y-5=0", "3x^2-3y^2-2y-1=0"]:
+    radical_order(equation)
+# D' positive for every value of the parameter: the negative root first,
+# whatever k and q are.
+for equation in ["x^2+6x*y+5x-y^2-y-5=0", "2x^2-3x*y+x-4y^2-5=0", "x^2-2x*y+4x-5y^2+5y-3=0",
+                 "x^2-4x*y+4x-2y^2-3y-4=0", "5x^2-5x*y+5x-4y^2-4y-4=0",
+                 "6x^2+3x*y-6x-6y^2+2y-2=0", "x^2-4x*y+2x+y^2+2y-5=0", "x^2+6x*y-3y^2-6y-3=0"]:
+    radical_order(equation)
+# k > 1: the negative root first when q is an integer or a half.
+for equation in ["x^2+2x*y-y^2-4y+6=0", "x^2-4x*y+2x+6y^2-2y-1=0", "x^2+3x*y-2x+6y^2+6y+4=0",
+                 "2x^2-4x*y+4y^2-3y+1=0", "5x^2-5x*y+y^2-4y+4=0", "3x^2+6x-y^2+5y+1=0",
+                 "5x^2+2x*y-2x-y^2-4y+3=0"]:
+    radical_order(equation)
+# k = 1: the negative root first when q is an integer from 2 on.
+for equation in ["x^2-6x*y-4x-3y^2-4y=0", "x^2+6x*y+2x-3y+1=0", "x^2+2x*y+2x-3y^2+2y+5=0",
+                 "4x^2-4x*y+y^2+4y=0", "4x^2+4x+4y^2-4y-3=0", "x^2-4x*y+6y^2+4y-1=0",
+                 "x^2+2x*y-6x+6y^2-5y+1=0", "x^2-5x*y-5x-2y^2+y+5=0", "x^2-2x*y-3x+5y^2+3y-1=0",
+                 "2x^2-5x*y-x+3y^2-6y+2=0", "3x^2-3x*y+x+4y^2+2y=0", "6x^2-x*y+x+3y^2+y-1=0"]:
+    radical_order(equation)
+# Two lines with rational coefficients, s = a t + b, are ordered by the
+# shape of the printed term: a nonzero integer constant, then a > 0 without
+# and with a constant, then a < 0 with and without one, then zero or a
+# fraction; equal slopes by the constant.
+for equation in [
+    "(x-3)*(x-2y)=0", "(x-3)*(x-2y-1)=0", "(x-3)*(x+2y-1)=0", "(x-3)*(x+2y)=0", "(x+3)*(x-2y)=0",
+    "(x-2y)*(x-3y-1)=0", "(x-2y)*(x+3y-1)=0", "(x-2y)*(x+3y)=0", "x*(x-2y)=0", "(2x-1)*(x-2y)=0",
+    "(x-2y-1)*(x+3y-2)=0", "(x-2y-1)*(x+3y)=0", "x*(x-2y-1)=0", "(2x-1)*(x-2y-1)=0",
+    "(x+2y-1)*(x+3y)=0", "x*(x+2y-1)=0", "(2x+3)*(x+2y-1)=0", "x*(x+2y)=0", "(2x-1)*(x+2y)=0",
+    "(x-2y)*(2x-y)=0", "(2x-y)*(3x-y)=0", "(2x-3y)*(3x-2y)=0", "(3x-2y)*(5x-2y)=0",
+    "(x-2y-1)*(x-3y-1)=0", "(x-2y-1)*(2x-y-1)=0", "(2x-y-1)*(3x-y+2)=0", "(x-2y+3)*(x-5y-3)=0",
+    "(x+2y-1)*(x+3y-1)=0", "(x+2y-1)*(2x+y-1)=0", "(2x+y+1)*(3x+y-2)=0",
+    "(x+2y)*(x+3y)=0", "(x+2y)*(2x+y)=0", "(2x+y)*(3x+y)=0", "(2x+3y)*(3x+2y)=0",
+    "(x-2y+1)*(x-2y-1)=0", "(2x-y+3)*(2x-y-2)=0", "(x+3y+2)*(x+3y+5)=0", "(2x-3y)*(2x-3y+1)=0",
+]:
+    line_order(equation)
+# Two lines with an irrational slope: the one with +sqrt(k) first. With
+# equal slopes the constants ascend.
+for equation in ["(x-1)^2-2y^2=0", "x^2-3*(y+1)^2=0", "x^2+2x*y-2y^2=0", "x^2+2x*y-4y^2=0",
+                 "2x^2-4x*y-y^2=0", "(x-y)^2=2", "(x-2y)^2=3", "(x+y-1)^2=5", "(2x-y)^2=3"]:
+    line_order(equation)
+# D = k m^2 q(t)^2 with an odd m: the CAS answers P +- sqrt(k) |q(t)| / (2 A),
+# which are no lines, with the negative root first.
+for equation in ["x^2+x*y-y^2=0", "x^2+x*y-3y^2=0", "x^2+x*y+x-y^2-2y-1=0", "3x^2+x*y-y^2=0",
+                 "x^2-3x*y+y^2=0", "x^2+3x*y-y^2+3x-2y-1=0"]:
+    c.case("order", [f"k: {equation}", f"j: {swapped(equation)}", "r1 = Solutions(k)",
+                     "r2 = Solutions(j, y)", "r3 = Solve(j, y)"], [])
+# A conic in one variable: the constants ascend.
+c.case("order", ["k: 2x^2-3x-1=0", "j: 3y^2+y-1=0", "i: (x-3)*(2x-1)=0", "r1 = Solutions(k)",
+                 "r2 = Solve(k)", "r3 = Solutions(j)", "r4 = Solve(j, y)", "r5 = Solutions(i)",
+                 "r6 = Solve(i)"], [])
+# The conic changes its class while a number moves.
+c.case("order", ["a = 1", "k: x^2+a*x*y+y^2=4", "r1 = Solutions(k)", "r2 = Solutions(k, y)",
+                 "r3 = Solve(k, y)"],
+       [setn("a", 2), setn("a", 3), setn("a", 0), setn("a", -1), setn("a", -2), setn("a", 4)])
+c.case("order", ["a = 1", "k: y^2+2x*y+a*x^2=x+1", "r1 = Solutions(k, y)", "r2 = Solve(k, y)"],
+       [setn("a", 2), setn("a", 0), setn("a", -3), setn("a", 1), setn("a", 0.5)])
+# Decimal coefficients and conics that follow points.
+c.case("order", ["A = (0.37, -1.21)", "k = Circle(A, 1.7)", "r1 = Solutions(k)",
+                 "r2 = Solutions(k, y)", "r3 = Solve(k, y)"],
+       [mv("A", 0.123456, 0.654321), mv("A", -2.5, 0.75), mv("A", 0, 0)])
+c.case("order", ["k: 0.3x^2+0.7x*y-1.1y^2=2.3", "j: 1.5x^2-0.25x*y+0.125y^2+0.5x=1",
+                 "r1 = Solutions(k)", "r2 = Solutions(k, y)", "r3 = Solutions(j)",
+                 "r4 = Solutions(j, y)"], [])
+c.case("order", ["A = (1, 2)", "B = (3, -1)", "C = (-2, 0.5)", "D = (0.5, 3)", "E = (-1, -2)",
+                 "k = Conic(A, B, C, D, E)", "r1 = Solutions(k)", "r2 = Solutions(k, y)"],
+       [mv("A", 1.5, 2.5), mv("E", -1.25, -0.5)])
+c.case("order", ["F = (1, 1)", "g: x+y=-1", "k = Parabola(F, g)", "P = (0, 0)", "Q = (2, 1)",
+                 "R = (3, 2)", "h = Ellipse(P, Q, R)",
+                 "r1 = Solutions(k)", "r2 = Solutions(k, y)", "r3 = Solutions(h)",
+                 "r4 = Solutions(h, y)"], [])
+
+# A list of equations with one variable: the solutions of all of them, as
+# one row when there are several.
+for equations in ["{x^2=4}", "{2x=4}", "{x^2=-1}", "{x^3-x=0}", "{x^2=4, x=2}",
+                  "{x^2-1=0, x^2-3x+2=0}", "{x+y=3, x-y=1}", "{x^2=4, x=3}"]:
+    c.case("shape", results(f"{command}({equations}, x)" for command in SOLVERS), [])
+c.case("shape", ["r1 = Solutions({x^2=y}, x)", "r2 = Solutions({x+y=3}, x)",
+                 "r3 = Solve({x+y=3}, x)", "r4 = Solutions({x*y=1}, y)"], [])
+c.case("shape", results([f"{command}({{x^2=4}}, y)" for command in SOLVERS]
+                        + [f"{command}({{y^2=4}}, y)" for command in SOLVERS]), [])
+c.case("shape", ["g: x=3", "h: x+y=1", "m = {g}", "n = {g, h}", "r1 = Solutions(m, x)",
+                 "r2 = Solve(m, x)", "r3 = NSolutions(m, x)", "r4 = Solutions(n, x)"], [])
+c.case("shape", ["a = 4", "r1 = Solutions({x^2=a}, x)", "r2 = Solve({x^2=a}, x)",
+                 "r3 = NSolutions({x^2=a}, x)"],
+       [setn("a", 0), setn("a", -1), setn("a", 9), setn("a", 2)])
+c.case("shape", ["r1 = Solutions({(x-y)*(x-1)=0, (x-y)*(x+2)=0}, x)",
+                 "r2 = Solve({(x-y)*(x-1)=0, (x-y)*(x+2)=0}, x)",
+                 "r3 = Solutions({x*y=1, x*y=1}, x)", "r4 = Solutions({x^2-y^2=0, x-y=0}, x)",
+                 "r5 = Solutions({x^2-y^2=0, x^2-2x*y+y^2=0}, y)"], [])
+# A start value after a list goes to the system solver, which does not
+# follow it. `Solve({x^2=4}, x=3)` and `Solutions({x^4-5x^2+4=0}, x=-3)`
+# answered differently from one harness run to the next, so they are not
+# recorded.
+c.case("shape", results(["NSolutions({x^2=4}, x=3)", "NSolutions({x^2=4}, x=-0.5)",
+                        "NSolutions({x^2-5x+6=0}, x=0)", "NSolve({x^2=4}, x=3)"]), [])
+c.case("shape", results(["NSolutions({x^3-x=0}, x=2)", "NSolutions({2x=4}, x=1)",
+                        "NSolutions({x^5-3x+1=0}, x=0)"]), [])
+# A list of variables after one equation: the system solver.
+c.case("shape", ["f(x) = x^2-4"] + results(f"{command}(f, {{x}})" for command in SOLVERS), [])
+c.case("shape", ["f(x) = x^2-3", "r1 = NSolve(f, {x})", "r2 = NSolutions(f, {x})"], [])
+c.case("shape", ["f(x) = 2x-4"] + results(f"{command}(f, {{x}})" for command in SOLVERS), [])
+c.case("shape", ["f(x) = x^3-x", "r1 = Solutions(f, {x})", "r2 = Solve(f, {x})"], [])
+c.case("shape", ["f(x) = x^2+1", "r1 = Solutions(f, {x})", "r2 = Solve(f, {x})"], [])
+c.case("shape", ["g: x+y=1"] + results(
+    [f"{command}(g, {{x}})" for command in SOLVERS] + ["Solve(g, {y})", "Solutions(g, {y})"]), [])
+c.case("shape", ["g: x+y=1", "r1 = Solve(g, {x, y})", "r2 = Solutions(g, {x, y})"], [])
+c.case("shape", ["g: x=3"] + results(f"{command}(g, {{x}})" for command in SOLVERS), [])
+c.case("shape", ["k: x^2+y^2=4", "r1 = Solutions(k, {y})", "r2 = Solve(k, {y})",
+                 "r3 = NSolve(k, {y})", "r4 = NSolutions(k, {y})"], [])
+c.case("shape", ["k: x^2=4", "r1 = Solve(k, {x})", "r2 = Solutions(k, {x})",
+                 "r3 = NSolve(k, {x})", "r4 = NSolutions(k, {x})"], [])
+c.case("shape", ["k: x^2-y^2=0", "r1 = Solutions(k, {y})", "r2 = Solve(k, {y})"], [])
+
+# The second argument is bound to the name it names. `t` is a variable of
+# its own; a number is printed as its value, which is no variable.
+c.case("name", ["f(x) = x^2-9"] + results(f"{command}(f, t)" for command in SOLVERS), [])
+c.case("name", ["f(x) = x^2-9", "r1 = Solutions(f, t=1)", "r2 = NSolutions(f, t=1)",
+                "r3 = Solve(f, t=1)"], [])
+c.case("name", results(["Solutions(t^2=4, t)", "NSolutions(t^2=4, t)", "Solutions(t^2=4, t=1)",
+                        "NSolutions(t^2=4, t=1)", "Solutions(t^2=x, t)", "Solutions(x^2+t=4, t)",
+                        "Solutions(2t=x, t)"]), [])
+c.case("name", ["r1 = Solve(t^2=4, t)", "r2 = NSolve(t^2=4, t)"], [])
+c.case("name", ["g: x+y=1"] + results(f"{command}(g, t)" for command in SOLVERS), [])
+c.case("name", ["k: x^2+y^2=4"] + results(f"{command}(k, t)" for command in SOLVERS), [])
+c.case("name", ["k: x^2=4"] + results(f"{command}(k, t)" for command in SOLVERS), [])
+c.case("name", ["b = 2", "f(x) = x^2-9", "r1 = Solve(f, b)", "r2 = Solutions(f, b)",
+                "r3 = NSolutions(f, b)", "r4 = Solve(x^2=b, b)", "r5 = Solutions(f, b=1)",
+                "r6 = NSolutions(f, b=1)", "r7 = Solve(f, b=1)", "r8 = NSolve(f, b=1)"],
+       [setn("b", 3)])
+c.case("name", ["b = 2", "g: x+y=1", "k: x^2+y^2=4", "r1 = Solve(g, b)", "r2 = Solutions(g, b)",
+                "r3 = NSolutions(g, b)", "r4 = Solve(k, b)", "r5 = Solutions(k, b)",
+                "r6 = NSolutions(k, b)"], [])
+c.case("name", ["b = 2", "f(x) = x^2-9", "g: x+y=1"],
+       [reject("r = Solutions(f, a)"),
+        reject("r = Solve(f, abc)"), reject("r = Solutions(a^2=4, a)"),
+        reject("r = NSolutions(u^2=4, u)")])
+c.case("name", ["f(x) = x^2-9", "r1 = Solutions(f, x)", "r2 = Solutions(f, y)",
+                "r3 = Solutions(f, z)", "r4 = NSolutions(f, y)", "r5 = NSolve(f, z)"], [])
+# `Solve` reads `name = value` as an assumption and solves for x.
+c.case("name", ["f(x) = x^2-9", "g: x+y=1", "r1 = Solve(f, y=1)", "r2 = Solve(g, y=1)",
+                "r3 = Solve(g, t=1)", "r4 = Solve(x^2=4, t=1)", "r5 = Solve(y^2=4, y=1)",
+                "r6 = Solve(y=2x+1, y=1)", "r7 = Solve(f, z=1)", "r8 = Solve(y^2=4, x=1)",
+                "r9 = Solve(g, x=1)"], [])
+c.case("name", ["k: x^2-y^2=0", "j: y^2=4", "r1 = Solve(k, y=1)", "r2 = Solve(j, y=1)",
+                "r3 = Solve(k, x=1)"], [])
+
+# The numeric solver from a start value: Newton's method where every step
+# lowers the residual, at most halved once, and ends on a simple root.
+c.case("start", ["f(x) = x^2-2"] + results(
+    f"NSolutions(f, x={start})" for start in ["1", "-1", "0.5", "-3", "100"]), [])
+c.case("start", ["f(x) = x^3-2x+2"] + results(
+    f"NSolutions(f, x={start})" for start in ["-2", "-1.5", "-5"]), [])
+c.case("start", ["f(x) = x^4-x^2-1"] + results(
+    f"NSolutions(f, x={start})" for start in ["1", "-1", "2", "-3", "0.9"]), [])
+c.case("start", ["f(x) = (x+1)^2*(x-4)"] + results(
+    f"NSolutions(f, x={start})" for start in ["5", "4.5", "3.5"]), [])
+c.case("start", ["f(x) = x^2-3", "r1 = NSolve(f, x=2)", "r2 = Solutions(f, x=-2)",
+                 "r3 = Solve(f, x=2)", "r4 = NSolutions(f, x=1000)"], [])
+c.case("start", ["a = 2", "f(x) = x^2-a", "result = NSolutions(f, x=a)"],
+       [setn("a", 9), setn("a", 0.25), setn("a", -1), setn("a", 3)])
+# Where the iteration stalls, cycles, needs shorter steps or runs out of
+# steps the solver searches on in a way the start value does not explain.
+for function, starts in [
+    ("x^2-2", ["-0.01", "0", "10^(-17)", "10^300", "10^30"]),
+    ("x^2-3", ["10^(-17)", "10^300", "-0.0003", "-0.00029", "-0.0001", "0.00001"]),
+    ("x^3-2x+2", ["-1", "0", "1", "0.5"]),
+    ("x^3+1", ["0"]),
+    ("x^5-x+3", ["0", "1"]),
+    ("x^4-x^2-1", ["0", "0.1", "-0.1"]),
+    ("x^4+5x^3+2x^2-4x+2", ["0.193392"]),
+    ("x^4+x^3-4x^2-5x+5", ["-1"]),
+    ("(x+1)^2*(x-4)", ["-2.752"]),
+    ("(x-3)^3", ["-1.292"]),
+    ("x^2", ["1"]),
+    ("x^5+x^4-6x^3-5x^2+4", ["100000"]),
+]:
+    c.case("start", [f"f(x) = {function}"] + results(
+        f"NSolutions(f, x={start})" for start in starts), [])
+# The solver is not bound to polynomials.
+c.case("start", ["f(x) = sqrt(x)-2", "r1 = NSolutions(f, x=1)", "r2 = NSolutions(f, x=-1)"], [])
+
+# A text holding an equals sign is a text, not an equation.
+c.case("text", ['r1 = Simplify("α=β")', 'r2 = Simplify("a=b")', 'r3 = Simplify("x+-1x=2")',
+                'r4 = Simplify("a,b=c")', 'r5 = Simplify("(a=b")'], [])
+
+# A coordinate whose expansion is too large for the kernel, and coordinates
+# that are no polynomials: the CAS rewrites them, also where the value
+# changes (a cancelled pole, a square root squared).
+curve_case(["k = Curve((t^65-1)/(t-1), t, t, 0, 2)", "r1 = Expand(k)", "r2 = Simplify(k)"])
+curve_case(["k = Curve((t^2-1)/(t-1)+sin(t), t, t, 0, 2)",
+            "j = Curve((t^2-1)/(t-1)*sin(t), t, t, 0, 2)", "r1 = Simplify(k)", "r2 = Expand(j)"])
+curve_case(["k = Curve(sin(t)/t, t, t, -1, 1)", "j = Curve(sqrt(t)^2, t, t, -1, 1)",
+            "r1 = Simplify(k)", "r2 = Simplify(j)"])
+curve_case(["k = Curve(sin(t)^2+t, cos(t)*t^2, t, 0, 2)"]
+           + results(f"{command}(k)" for command in REWRITES + ("Simplify",)))
+curve_case(["a = 2", "k = Curve(a*sin(t)+t^2, t^3-a, t, 0, 2)", "r1 = Expand(k)",
+            "r2 = Simplify(k)"], [setn("a", -1), setn("a", 0.5)])
+
+# A line through points with fractions for coordinates.
+c.case("simplify", ["A = (1/3, 2/7)", "B = (5/11, 1/13)", "g = Line(A, B)",
+                     "result = Simplify(g)"], [mv("B", 0.3, 0.7), mv("A", 0.123456, -0.654321)])
+c.case("simplify", ["A = (0.1, 0.2)", "B = (0.7, 0.3)", "g = Line(A, B)", "k: y=0.1x^2+0.7x-1/3",
+                     "r1 = Simplify(g)", "r2 = Simplify(k)"], [])
+
+# A variable of degree three or more, and a leading coefficient that
+# depends on the parameter.
+c.case("degree", ["result = Solutions(x^3+y=0, x)"], [])
+c.case("degree", ["result = Solutions(x*y^2+y=1, y)"], [])
+c.case("degree", ["r1 = Solutions(x^3+y=0, y)", "r2 = Solve(x^3+y=0, y)",
+                  "r3 = Solutions(x*y^2+y=1, x)"], [])
+
+# An implicit curve: its polynomial is solved like an equation typed in
+# place. Every solve command with every shape of second argument.
+IMPLICIT = ["x^3+y^3=1", "x^3=8", "x^3-x=0", "y^3=x", "x^2*y=1", "x^3-x*y^2=0", "(x+y)^3=1",
+            "x^4+y^4=1", "x^3+x*y=2", "y^2=x^3-x"]
+for equation in IMPLICIT:
+    c.case("implicit", [f"k: {equation}"] + results(
+        [f"{command}(k)" for command in SOLVERS + ("PlotSolve",)]
+        + [f"{command}(k, {hint})" for command in SOLVERS for hint in ("y", "x", "x=1")]
+        + [f"{command}({{k}}, x)" for command in SOLVERS]), [])
+# The curve changes with a number, also into one of lower degree.
+c.case("implicit", ["a = 1", "k: x^3-a*x=0"] + results(
+    ["Solutions(k)", "NSolutions(k)", "Solve(k)", "NSolve(k)", "PlotSolve(k)",
+     "NSolutions(k, x=2)", "Solutions(k, y)"]),
+    [setn("a", 4), setn("a", 0), setn("a", -1), setn("a", 2)])
+c.case("implicit", ["a = 1", "k: a*x^3+x^2*y=4", "r1 = Solutions(k, y)", "r2 = Solve(k, y)",
+                    "r3 = NSolutions(k, y)", "r4 = Solutions(k, x)"],
+       [setn("a", 0), setn("a", -2), setn("a", 1)])
+c.case("implicit", results([f"{command}(x^3+y^3=1)" for command in SOLVERS + ("PlotSolve",)]
+                           + [f"{command}(x^3-x=0)" for command in SOLVERS + ("PlotSolve",)]), [])
+# A product of two lines solved for x: two branches, whose order the CAS
+# chooses; with a = 0 one factor holds no x and one branch is left.
+c.case("order", ["a = 3", "k: (13*x-10*y-10)*(a*x-5*y+2)=0", "r1 = Solutions(k, x)",
+                 "r2 = Solutions(k)", "r3 = Solve(k, x)"],
+       [setn("a", 6.5), setn("a", 0), setn("a", -1), setn("a", 3)])
+c.case("order", ["a = 1", "k: a*x^2+x*y=0", "r1 = Solutions(k)", "r2 = Solve(k)"],
+       [setn("a", 0), setn("a", 2), setn("a", 0)])
+
+# Large coefficients of an object: every term counts.
+c.case("coefficient", ["k: x^2+10^14*y^2=10^14", "r1 = Solutions(k, y)", "r2 = NSolutions(k, y)",
+                       "r3 = Solutions(k, x)"], [])
+c.case("coefficient", ["k: x^3+10^14*y^3=10^14", "r1 = NSolutions(k, y)", "r2 = Solutions(k, x)"],
+       [])
+c.case("coefficient", ["A = (1/3, 2/7)", "B = (5/11, 1/13)", "g = Line(A, B)",
+                       "r1 = Solutions(g, y)", "r2 = Solutions(g, x)", "r3 = Solve(g, y)"],
+       [mv("B", 0.3, 0.7)])
+c.case("coefficient", ["g: y=x/3+1/7", "k: y=x^2/3-2/7", "r1 = Solutions(g, y)",
+                       "r2 = Solutions(k, y)", "r3 = Solve(g, y)", "r4 = Solutions(k, x)"], [])
+
+# A start value: the root depends on the search unless the equation has
+# exactly one real root.
+c.case("start", ["f(x) = x^3-x", "r1 = NSolutions(f, x=0.52)"], [])
+c.case("start", ["f(x) = x^4-24*x^3+213*x^2-826*x+1176", "r1 = NSolutions(f, x=5.8)"], [])
+c.case("start", ["f(x) = x^2-2", "r1 = NSolutions(f, x=1.2*10^13)", "r2 = NSolutions(f, x=1.3*10^13)"],
+       [])
+for function in ["x^3-2x+2", "x^3+1", "x^5+x+1", "2x-7"]:
+    c.case("start", [f"f(x) = {function}"] + results(
+        [f"NSolutions(f, x={start})" for start in ["0", "-7", "10^13", "-10^13", "10^300"]]
+        + ["NSolve(f, x=3)", "Solutions(f, x=3)"]), [])
+
+# One equation and a list of variables in the numeric solver.
+for function in ["(x-2)^2", "(x-2)^3", "x^3+1", "x^2+1", "x^2-4x+3", "x^3-2x+2"]:
+    c.case("shape", [f"f(x) = {function}", "r1 = NSolutions(f, {x})", "r2 = NSolve(f, {x})"], [])
+c.case("shape", ["g: x+y=1", "r1 = NSolutions(g, {x, y})", "r2 = NSolve(g, {x, y})"], [])
+
+# A list of one variable the function does not hold.
+c.case("name", ["f(x) = x^2-9", "r1 = Solutions(f, {t})", "r2 = Solve(f, {t})",
+                "r3 = NSolutions(f, {t})"], [])
+
+# A rewrite the kernel cannot perform.
+curve_case(["k = Curve(exp(t)*exp(-t), t, t, 700, 800)", "r1 = Simplify(k)"])
+
+# Solve of a cubic variable itself.
+c.case("degree", ["result = Solve(x^3+y=0, x)"], [])
+# Magnitude ladders for the numeric solver from a start value, on
+# equations with exactly one real root, which is simple.
+for k in [-12, -9, -6, -3, 0, 3, 6, 9, 12]:
+    c.case("magnitude", [f"f(x) = x^3-10^({3 * k})", "r1 = NSolutions(f, x=1)", "r2 = NSolutions(f, x=0)"], [])
+for k in [-40, -30, -20, -10, 10, 20, 30, 40]:
+    c.case("magnitude", [f"f(x) = 10^({k})*(x^3+x+1)", "r1 = NSolutions(f, x=0)"], [])
+for k in [-30, -20, -10, 10, 20, 30, 40]:
+    c.case("magnitude", [f"f(x) = x^3+x-10^({k})", "r1 = NSolutions(f, x=0)"], [])
+for m in [2, 4, 6, 8, 12]:
+    c.case("magnitude", [f"f(x) = (x-10^{m})^3+(10^{3 * m}-10^({3 * m - 11}))", "r1 = NSolutions(f, x=0)"], [])
+# The same ladders for one linear equation with a list of variables.
+for k in [-40, -35, -30, -20, -15, -10, -5, 5, 10, 15, 20, 30, 35, 40]:
+    c.case("magnitude", [f"f(x) = 10^({k})*x-1", f"g(x) = x-10^({k})", "r1 = NSolutions(f, {x})",
+                         "r2 = NSolutions(g, {x})", "r3 = NSolve(f, {x})"], [])
+
+# A constructed line with a coefficient below the printing precision.
+c.case("coefficient", ["A = (0, 1)", "B = (1, 1+1/10^9)", "g = Line(A, B)", "r1 = Solutions(g, x)",
+                       "r2 = Solutions(g, y)", "r3 = Solve(g, x)"], [])
+
+# Simplify of a rational curve: the reference picks the shorter of the
+# normal form and the factored form.
+curve_case(["k = Curve((t-10^8)^3/(t-10^8), t, t, 10^8-1, 10^8+1)", "r1 = Simplify(k)", "r2 = Expand(k)",
+            "r3 = Factor(k)"])
+
+# Families of solutions on the system path.
+c.case("family", ["a = -1", "k: (13*x-10*y-10)*(a*x-5*y+2)=0", "r1 = Solutions(k, {x, y})",
+                  "r2 = Solve(k, {x, y})"], [setn("a", 0), setn("a", 3)])
+c.case("family", ["k: (x-y)^2=0", "r1 = Solve(k, {x, y})", "r2 = Solutions(k, {x, y})"], [])
+c.case("family", ["g: x+y=1", "k: x-2y=3", "r1 = Solve(g, {x, y})", "r2 = Solutions(k, {x, y})",
+                  "r3 = Solve({x+y+z=1}, {x, y, z})"], [])
+# Fifth round: values that cancel, rational equations and typed decimals.
+c.case("edge", ["a = 1", "f(x) = a*(a*x+1)-a*(a*x-x)-1", "r1 = NSolutions(f, x=0)", "r2 = NSolutions(f, {x})"],
+       [setn("a", 10000000000), setn("a", 2)])
+c.case("edge", ["f(x) = (x^3+x-10^9)/(x-1000)", "r1 = NSolutions(f, x=0)"], [])
+c.case("edge", ["a = 1", "g: a*x=3", "r1 = Solutions(g)", "r2 = Solve(g)", "r3 = NSolutions(g)",
+                "r4 = Solutions(g, x)"], [setn("a", 0), setn("a", 2)])
+c.case("edge", ["a = 0.1234567890123456", "f(x) = x+10^10*(a-0.123456789012345)", "r1 = Solutions(f, x)",
+                "r2 = NSolutions(f, x)"], [])
+c.case("edge", ["f(x) = 10^15*(x-1)", "r1 = NSolutions(f, {x})"], [])
+c.case("edge", ["A = (0, 1)", "B = (0, 2)", "g = Line(A, B)", "C = (1, 3)", "D = (2.5, 3)", "h = Line(C, D)",
+                "r1 = Solutions(g)", "r2 = Solutions(h, y)", "r3 = Solve(g)", "r4 = Solutions(h)"],
+       [mv("A", 0.1, 1), mv("A", 0, 1)])
+curve_case(["k = Curve((t^2-10^8*t-99999999)/(t-10^8), t, t, 10^8, 10^8+2)", "r1 = Simplify(k)"])
+
+# Linear systems with a free variable: which variable the reference keeps.
+for system, variables in [("{x+y=1}", "{x, y}"), ("{x+y=1}", "{y, x}"), ("{x-2y=3}", "{x, y}"),
+                          ("{2x+y=3}", "{x, y}"), ("{x+z=1}", "{x, y, z}"), ("{y+z=1}", "{x, y, z}"),
+                          ("{x+y=1}", "{x, y, z}"), ("{x+y=1, z=0}", "{x, y, z}"),
+                          ("{x+y+z=1, x-y=0}", "{x, y, z}"), ("{x+y+z=1, y-z=0}", "{x, y, z}"),
+                          ("{x+y+z=1, x-z=2}", "{x, y, z}"), ("{x=2y}", "{x, y}")]:
+    c.case("freevariable", [f"r1 = Solutions({system}, {variables})", f"r2 = Solve({system}, {variables})"], [])
+
+# One variable, several roots: the order of the rows.
+for equation in ["x^2=4", "x^2=9", "x^3-x=0", "(x-1)*(x-2)*(x+3)=0", "x^4-5x^2+4=0", "x^2-3x+2=0",
+                 "(x+1)*(x+2)=0", "x^4=16", "(x-5)*(x+7)*(x-1)*(x+2)=0"]:
+    c.case("rows", [f"r1 = Solutions({{{equation}}})", f"r2 = Solve({{{equation}}})",
+                    f"r3 = Solutions({{{equation}}}, {{x}})"], [])
+# Sixth round: the reproducers of the final review.
+c.case("edge", ["f(x) = (0.1000000001-0.1)*x-0.0000001", "r1 = NSolutions(f, x=0)", "r2 = NSolutions(f, {x})"], [])
+c.case("edge", ["f(x) = 0.5x-1", "g(x) = x^3-0.3", "h(x) = 0.25x+0.75", "r1 = NSolutions(f, x=0)",
+                "r2 = NSolutions(g, x=1)", "r3 = NSolutions(f, {x})", "r4 = NSolutions(h, x=3)"], [])
+c.case("edge", ["a = 1.000030517578125", "b = 1.000091552734375", "f(x) = x+10^8*(b-a-0.00006103515625)",
+                "r1 = Solutions(f, x)"], [])
+c.case("edge", ["r = NSolutions(x-1, {x})", "e = Element(r, 1)", "s = NSolutions(y-1, {y})",
+                "t = NSolve(y-1, {y})"], [])
+c.case("edge", ["A = (0, 0)", "B = (1, 1)", "g = Line(A, B)", "h: x=2", "r1 = NSolutions({g, h})",
+                "r2 = Solutions({g, h})", "r3 = Solve(g, y)", "r4 = Solutions(g, x)"], [mv("B", 2, 3), mv("B", 1, 1)])
+c.case("edge", ["r1 = Solve(x^4=16, {x})", "r2 = Solve(x^2=4, {x})", "r3 = Solve(x^3-x=0, {x})"], [])
+curve_case(["k = Curve(t^2-10^8*t-99999999, t, t, 10^8, 10^8+2)", "r1 = Simplify(k)", "r2 = Expand(k)"])
+# Seventh round: the reproducers of the verification review.
+curve_case(["k = Curve(t^5-100020001*t^3+1, t, t, 10000, 10002)", "r1 = Expand(k)", "r2 = Simplify(k)"])
+c.case("edge", ["a = 1.000030517578125", "b = 1.000091552734375", "f = Simplify(x+10^8*(a+b-2.0001220703125))",
+                "r = f(0)"], [])
+c.case("edge", ["r1 = NSolutions(0.1000000001*x-0.1*x-0.0000001, x=0)"], [])
+c.case("edge", ["g: x=2", "r1 = NSolutions(g, {y})"], [])
+c.case("edge", ["f(x) = x+1", "g(x) = x-f(1)", "r1 = NSolutions(g, {x})"], [])
+c.case("edge", ["A = (0, 0)", "g = Line(A, (1, 1.5))", "h: x=2", "r1 = NSolutions({g, h})"], [])
+# Eighth round: the reproducers of the last review.
+c.case("edge", [], [{"action": "reject", "line": "k = Curve(1+Simplify((t-10)^2), t, t, 0, 2)"}])
+c.case("edge", ["k: x^3-x+y=0", "g: y=0", "r1 = NSolve({k, g})", "r2 = NSolutions({k, g})"], [])
+c.case("edge", ["k: x^3-x=0", "r1 = NSolutions(k, {x})"], [])
+c.case("edge", ["r1 = NSolutions((1000000001/10000000000)*x-(1/10)*x-1/10000000, x=0)"], [])
+c.case("edge", ["g: y=(x-10^8)^2", "f = Simplify(g)", "n = f(10^8+1)"], [])
+curve_case(["k = Curve(t^2-10^8*t-99999999, t, t, 10^8, 10^8+2)", "s = Factor(k)"])
+curve_case(["k = Curve((t-10^8)^2-2, t, t, 10^8, 10^8+2)", "s = IFactor(k)"])
+# In these topics the kernel refuses a script line of some case (main's
+# solver has no start value, no PlotSolve and no rewrite of a curve, a line or
+# a conic, and it reads some typed equations differently). Every case script
+# under cases/ must load, and the harness writes one golden file per topic, so
+# these topics are written whole with the reference cases, under the same
+# ids; their recorded values stay in golden/cas, and the golden test checks
+# every case, the exact failure included (known-gaps.toml).
+KERNEL_REFUSES = ("conic", "curve", "degree", "edge", "hint", "implicit", "magnitude",
+                  "name", "plot", "shape", "simplify", "start")
+
+
+def kernel_refuses(case):
+    return case["id"].split("-")[1] in KERNEL_REFUSES
+
+
+refused = [case for case in c.cases if kernel_refuses(case)]
+c.cases = [case for case in c.cases if not kernel_refuses(case)]
+c.case("denominator", ["f(x) = 1/(x - 0.25)", "g(x) = 1/(x + 0.25)",
+                       "result = CommonDenominator(f, g)"], [])
+c.case("delegated", ["f(x) = 1/(x - 0.25)", "result = Asymptote(f)"], [])
 c.write()
+
+# Expand, Factor, IFactor and Simplify of an implicit curve answer an
+# implicit curve, which the kernel does not compute: it refuses them. One
+# refusal per case, so that each one is checked.
+reference = Cases("cas")
+for equation in ["x^3+y^3=1", "x^3-x=0", "(x+y)^3=1"]:
+    for command in REWRITES + ("Simplify",):
+        reference.case("implicitrewrite", [f"k: {equation}", f"r = {command}(k)"], [])
+# An empty text is refused by the kernel and the reference alike.
+reference.case("textrefusal", [], [reject('r = Simplify("")')])
+
+# A point as the solving argument and a number after a list: the
+# reference prints them into its CAS and answers whatever comes back.
+# (NSolve(f, b) makes the reference throw while it reads that answer,
+# which the harness cannot record.)
+reference.case("hintobject", ["P = (1, 2)", "f(x) = x^2-9", "result = Solve(f, P)"], [])
+reference.case("hintobject", ["P = (1, 2)", "f(x) = x^2-9", "result = Solutions(f, P)"], [])
+reference.case("hintobject", ["b = 2", "result = Solutions({x^2=4}, b)"], [])
+reference.cases.extend(refused)
+reference.write("reference")

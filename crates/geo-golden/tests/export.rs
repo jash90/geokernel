@@ -56,6 +56,8 @@ const GOLDEN_CASES: &[(&str, usize)] = &[
     ("stroke-literals-002", 0),
     ("stroke-points-010", 0),
     ("stroke-points-004", 0),
+    ("redefine-assignment-001", 2),
+    ("redefine-assignment-015", 3),
     ("textobjects-dynamic-001", 1),
     ("vector-chain-001", 0),
 ];
@@ -208,8 +210,10 @@ fn corpus() -> Vec<Case> {
                     let id = wb.construction().id(label).unwrap();
                     wb.set_number(id, *value);
                 }
-                Step::Reject { .. } => panic!("{name}: unexpected rejection step"),
-                Step::SetSliderBounds { .. } => panic!("{name}: unexpected slider bounds edit"),
+                Step::Redefine { line } => wb.run_line(line).unwrap(),
+                Step::Reject { .. } | Step::Delete { .. } | Step::SetSliderBounds { .. } => {
+                    panic!("{name}: unexpected step")
+                }
                 Step::Animate { frames } => {
                     for _ in 0..*frames {
                         wb.animate(geo_kernel::kernel::animation::MAX_ANIMATION_FRAME_RATE);

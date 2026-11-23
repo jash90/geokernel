@@ -186,6 +186,7 @@ impl Construction {
     /// journal; the timer runs as it ran. The reference rebuilds from
     /// a file that holds the value and the playing flag.
     pub fn carry_animations_from(&mut self, old: &Construction) {
+        let mut carried = std::collections::BTreeSet::new();
         for (&old_id, animation) in &old.animations {
             let Some(id) = self.id(old.label(old_id)) else {
                 continue;
@@ -201,8 +202,16 @@ impl Construction {
                 }
             }
             self.animations.insert(id, *animation);
+            carried.insert(id);
         }
-        self.animation_running = old.animation_running;
+        // A slider the old construction did not animate was started by its
+        // command during the rebuild (a redone SlowPlot): its timer keeps
+        // running even when the carried sliders were paused.
+        let started = self
+            .animations
+            .iter()
+            .any(|(id, a)| a.playing && !carried.contains(id));
+        self.animation_running = old.animation_running || (self.animation_running && started);
     }
 
     /// Whether a slider plays, the timer running or paused (the reference

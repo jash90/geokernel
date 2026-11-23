@@ -1,0 +1,20 @@
+{
+  "schema": 2,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "cas-textrefusal-001",
+      "group": "cas",
+      "script": [],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "r = Simplify(\"\")", "error": "`Simplify` needs a text that is not empty" }
+      ],
+      "snapshots": [
+        {},
+        {}
+      ]
+    }
+  ]
+}
