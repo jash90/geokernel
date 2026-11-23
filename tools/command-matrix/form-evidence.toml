@@ -3385,3 +3385,41 @@ command = "PlotSolve"
 form = "list"
 cases = ["cas-plot-004", "cas-plot-021"]
 giac = true
+
+[[form]]
+command = "Corner"
+form = "text,number"
+cases = ["corners-text-001", "corners-textbounds-001", "corners-textbounds-002", "corners-textbounds-003"]
+difference = "geometry-command-arguments: `Corner(text, number)`, `Vertex(text, number)`"
+
+[[form]]
+command = "Vertex"
+form = "text,number"
+cases = ["corners-text-002"]
+difference = "geometry-command-arguments: `Corner(text, number)`, `Vertex(text, number)`"
+
+[[form]]
+command = "Vertex"
+form = "inequality"
+cases = ["corners-inequality-016", "corners-review-004", "corners-review-016", "corners-review-017"]
+difference = "geometry-command-arguments: `Corner(inequality)` and `Vertex(inequality)`"
+
+[[form]]
+command = "Intersect"
+form = "implicit,function"
+cases = ["implicit-graph-001", "implicit-graph-002", "implicit-graph-003"]
+
+[[form]]
+command = "Intersect"
+form = "implicit,polyline"
+cases = ["implicit-polyline-001", "implicit-polyline-003"]
+
+[[form]]
+command = "IntersectPath"
+form = "polyline,conic"
+cases = ["georestclip-polyline-001", "georestclip-polyline-003", "georestclip-largepath-001"]
+
+[[form]]
+command = "IntersectPath"
+form = "polygon,conic"
+cases = ["georestclip-polygon-001", "georestclip-polygon-002", "georestclip-polygon-003", "georestclip-largepath-002"]

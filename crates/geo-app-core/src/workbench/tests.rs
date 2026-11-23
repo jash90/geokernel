@@ -1939,3 +1939,48 @@ fn deleting_an_object_replays_labels_another_command_took() {
     assert!(w.delete(p));
     assert_eq!(labelled_values(&w), before);
 }
+
+#[test]
+fn inequality_vertex_keeps_its_polynomial_helper_after_snapshot_restore() {
+    let mut w =
+        Workbench::from_script("n = 2\nq(x,y) = y > x^n && x > 4 && y > 0\nP = Vertex(q)").unwrap();
+    let n = w.construction().id("n").unwrap();
+    assert!(w.set_number(n, 0.5));
+    let assert_vertex = |w: &Workbench| {
+        let c = w.construction();
+        assert_eq!(
+            c.value(c.id("P_{1}").unwrap()),
+            Value::Point { x: 4.0, y: 2.0 }
+        );
+    };
+    assert_vertex(&w);
+
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_vertex(&restored);
+}
+
+#[test]
+fn snapshot_keeps_the_edit_that_first_selects_a_newton_vertex_helper() {
+    let mut w =
+        Workbench::from_script("n = 0\nq(x,y) = n*y > x^n && x > 4 && y > 0\nP = Vertex(q)")
+            .unwrap();
+    let n = w.construction().id("n").unwrap();
+    assert!(w.set_number(n, 0.5));
+    assert!(w.set_number(n, 2.0));
+    let assert_undefined = |w: &Workbench| {
+        let c = w.construction();
+        assert_eq!(c.value(c.id("P_{1}").unwrap()), Value::Undefined);
+    };
+    assert_undefined(&w);
+
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    assert_undefined(&restored);
+}

@@ -26,13 +26,34 @@ fn trim(poly: &mut Polynomial) {
 }
 
 pub(super) fn product(a: &[f64], b: &[f64], work: &IntersectionWork) -> Option<Polynomial> {
+    product_with_degree(a, b, work, MAX_DEGREE)
+}
+
+pub(super) fn resultant_product(
+    a: &[f64],
+    b: &[f64],
+    work: &IntersectionWork,
+) -> Option<Polynomial> {
+    // Two supported implicit equations can have a projection of degree
+    // up to the product of their degrees. Keep this allowance local to
+    // elimination so the substitution budget still applies to graphs.
+    const INPUT_DEGREE: usize = crate::expr::equation::implicit::MAX_DEGREE as usize;
+    product_with_degree(a, b, work, INPUT_DEGREE * INPUT_DEGREE)
+}
+
+fn product_with_degree(
+    a: &[f64],
+    b: &[f64],
+    work: &IntersectionWork,
+    max_degree: usize,
+) -> Option<Polynomial> {
     let a = &a[..a.iter().rposition(|&v| v != 0.0).map_or(0, |i| i + 1)];
     let b = &b[..b.iter().rposition(|&v| v != 0.0).map_or(0, |i| i + 1)];
     if a.is_empty() || b.is_empty() {
         return Some(Vec::new());
     }
     let length = a.len() + b.len() - 1;
-    if length > MAX_DEGREE + 1 || !work.charge((a.len() * b.len()) as u64) {
+    if length > max_degree + 1 || !work.charge((a.len() * b.len()) as u64) {
         return None;
     }
     let mut result = vec![0.0; length];
@@ -230,4 +251,19 @@ pub(super) fn elimination_roots(poly: &[f64], work: &IntersectionWork) -> Vec<f6
         }
     }
     found
+}
+
+/// Use the reference's bounded deflation for the larger projections.
+/// EquationSolver.laguerreAll discards an incomplete deflation after 100
+/// evaluations. Exact zero roots are factored out first.
+pub(super) fn pair_roots(poly: &[f64], work: &IntersectionWork) -> Vec<f64> {
+    if poly.len() <= MAX_DEGREE + 1 {
+        return elimination_roots(poly, work);
+    }
+    near_roots_with(poly, 0.1, work, |p, work| {
+        let mut roots =
+            super::super::intersect::conics::polynomial_analysis_roots(p, &|n| work.charge(n));
+        roots.dedup_by(|a, b| (*a - *b).abs() <= MIN_PRECISION);
+        roots
+    })
 }

@@ -269,4 +269,32 @@ cases.case("review", ["n = 2", "P = Vertex(y > x^n && x > 4 && y > 0)"],
            [setn("n", 0.5), setn("n", 3)])
 cases.cases[-1]["track_boundary_growth"] = True
 
+# Headless drawable bounds for indexed, multiline, and formula text.
+cases.case("textbounds", [
+    pt("A", 0.3, 1.2), "b = UnicodeToLetter(10)", 'a = "A_{12}" + b + "Wide"',
+    't = Text(a, A)',
+    "P = Corner(t, 1)", "Q = Corner(t, 3)",
+], [mv("A", -0.35, 0.25)])
+cases.case("textbounds", [
+    pt("A", 1, 2), 't = Text("x^2", A, false, true)',
+    "P = Corner(t, 1)", "Q = Corner(t, 3)",
+], [mv("A", 2, 0)])
+
+cases.case("textbounds", [
+    't = Text("Before $x^2$ after", (0, 0), false, true)',
+    "P = Corner(t, 1)", "Q = Corner(t, 3)",
+], [])
+
+# A border can simplify to a line and still seed a polynomial helper
+# before the exponent becomes nonintegral.
+cases.case("helperstate", [
+    "n = 0", "q(x,y) = y > x^n && x > 4 && y > 0", "P = Vertex(q)",
+], [setn("n", 0.5), setn("n", 2)])
+cases.cases[-1]["track_boundary_growth"] = True
+
+cases.case("helperstate", [
+    "n = 0", "q(x,y) = n*y > x^n && x > 4 && y > 0", "P = Vertex(q)",
+], [setn("n", 0.5), setn("n", 2)])
+cases.cases[-1]["track_boundary_growth"] = True
+
 cases.write()

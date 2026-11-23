@@ -1057,6 +1057,7 @@ pub struct Construction {
     line_conic_pairs: BTreeMap<(Id, Id), usize>,
     continuous_conic_intersections: bool,
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
+    pub(crate) inequality_helpers: expr::inequality::VertexHelpers,
     pub(crate) clips: algo::polygon_clip::ClipCache,
     pub(crate) analysis: AnalysisCache,
     last_update_changed_automatic_root: bool,
@@ -1857,6 +1858,7 @@ impl Construction {
             .truncate(self.view_readers.partition_point(|&i| i < at.len));
         self.lists.truncate(at.lists.min(self.lists.len()));
         self.exprs.truncate(at.exprs, at.len);
+        self.inequality_helpers.truncate(at.len);
         self.function_roots.clear();
         self.clips.clear();
         self.analysis.clear();
@@ -2506,6 +2508,9 @@ impl Construction {
         let id = Id(self.defs.len());
         // compute reads the hint of the new object from `hints`
         self.hints.push(algo::intersect::hint(self, &def));
+        if let Def::Point(PointDef::InequalityVertex { source, .. }) = def {
+            self.inequality_helpers.attach(source, id);
+        }
         let value = match def {
             Def::Lines(LineDef::TangentPoint { .. } | LineDef::TangentLine { .. })
             | Def::ConicPart(
@@ -2996,6 +3001,12 @@ impl Construction {
         self.last_update_changed_automatic_root
     }
 
+    /// Whether replay must keep this edit before the next one to preserve
+    /// an intersection's history.
+    pub fn last_update_needs_ordered_replay(&self) -> bool {
+        self.last_update_changed_automatic_root() || self.inequality_helpers.changed()
+    }
+
     /// Recomputes the descendants of `start` in dependency order.
     ///
     /// A set of dirty indices ([`DirtySet`]) gives the order: the smallest
@@ -3022,6 +3033,7 @@ impl Construction {
         refresh_definitions: bool,
     ) -> usize {
         self.last_update_changed_automatic_root = false;
+        self.inequality_helpers.begin_update();
         self.function_roots.clear();
         self.clips.clear();
         self.analysis.clear();
@@ -3342,6 +3354,12 @@ impl Construction {
         Some(b < a || a == b && self.intersection_swaps.contains(&key))
     }
 
+    fn has_text_corner(&self, id: Id) -> bool {
+        self.children(id).any(|child| {
+            matches!(self.def(child), Def::Point(PointDef::DrawableCorner { source, .. }) if source == id)
+        })
+    }
+
     /// Recomputes the expression object `i`; tells whether its children
     /// must follow. An expression compares its raw result, infinities kept.
     /// Kept out of line so that the loop of [`Self::propagate`] stays small.
@@ -3349,7 +3367,7 @@ impl Construction {
     fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
         let (value, changed) = expr::update(self, Id(i), d);
         self.values[i] = value;
-        changed
+        changed || d.kind() == Kind::Text && self.has_text_corner(Id(i))
     }
 
     /// Recomputes the conic record of object `i` from its previous record;

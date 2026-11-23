@@ -27,7 +27,10 @@ type XY = (f64, f64);
 type Edge = (XY, XY);
 
 const CONIC_CLIP_PATHS: &[Kind] = &[Kind::Polygon, Kind::PolyLine, Kind::Segment];
-const MAX_CONIC_PATH_VERTICES: usize = polygon::MAX_REGULAR_VERTICES;
+/// Work reserved per collected vertex, including at most two conic roots,
+/// two closure cuts and the resulting segments.
+const CONIC_PATH_VERTEX_WORK: u64 = 32;
+const MAX_CONIC_PATH_OUTPUTS: usize = crate::expr::MAX_ELEMENTS as usize;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ClipMode {
@@ -205,7 +208,7 @@ impl ClipDef {
         if c.kind(self.first) == Kind::Segment {
             3
         } else {
-            MAX_CONIC_PATH_VERTICES * 3
+            MAX_CONIC_PATH_OUTPUTS
         }
     }
 
@@ -432,9 +435,7 @@ fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
         Kind::PolyLine | Kind::Polygon => {
             let points = c.vertices(path);
             let count = points.size_hint().0;
-            // Each edge has at most two conic roots and two closure cuts.
-            // Reserve a fixed allowance for collecting, cutting and testing it.
-            if count > MAX_CONIC_PATH_VERTICES || !work.charge(32 * count as u64) {
+            if !work.charge(CONIC_PATH_VERTEX_WORK.saturating_mul(count as u64)) {
                 return result;
             }
             vertices = points.collect::<Vec<_>>();
@@ -535,6 +536,9 @@ fn conic_segments(c: &Construction, path: Id, id: Id) -> Vec<Edge> {
             }
             start = t;
         }
+    }
+    if result.len() > MAX_CONIC_PATH_OUTPUTS {
+        return Vec::new();
     }
     result
 }
@@ -749,6 +753,20 @@ mod tests {
 
         c.move_point(c.id("O").unwrap(), 50.0, 50.0).unwrap();
         assert!(clip.segments(&c).is_empty());
+    }
+
+    #[test]
+    fn a_long_path_clips_with_one_charged_pass() {
+        let c = script::load(
+            "O = (0, 0)\nk = Circle(O, 1.5)\np = PolyLine(Sequence((j, If(j < 1000, 0, 3)), j, 0, 1000))",
+        ).unwrap();
+        let clip = ClipDef::parse(&c, "IntersectPath", &["p", "k"]).unwrap();
+        let before = expr::work_done();
+        assert_eq!(
+            &*clip.segments(&c),
+            &[((0.0, 0.0), (1.0, 0.0)), ((1.0, 0.0), (1.5, 0.0))]
+        );
+        assert_eq!(expr::work_done() - before, 32 * 1001);
     }
 
     #[test]

@@ -188,6 +188,72 @@ impl<P> Default for TextOverrides<P> {
     }
 }
 
+/// The headless drawable uses GFontCommon and TextLayoutCommon, with
+/// StringUtil.estimateLength for string advances and DrawEquationStub for
+/// formulas. The canvas measures its glyphs separately for painting.
+fn headless_box(text: &str, size: f64, latex: bool) -> (f64, f64) {
+    if !latex {
+        let mut lines = text.split_inclusive('\n').peekable();
+        let mut width = 0.0_f64;
+        let mut count = 0;
+        while let Some(line) = lines.next() {
+            let line = if lines.peek().is_some() {
+                line.strip_suffix('\n').unwrap_or(line)
+            } else {
+                line
+            };
+            count += 1;
+            width = width.max(indexed_advance(line, size));
+        }
+        return (width, (1.5 * size * f64::from(count.max(1))).trunc());
+    }
+
+    let mut previous = None;
+    let mut blocks = text.split(|ch| {
+        let delimiter = ch == '$' && previous != Some('\\');
+        previous = Some(ch);
+        delimiter
+    });
+    let first = blocks.next().unwrap_or_default();
+    let mut blocks = blocks.peekable();
+    let (mut width, mut line_width, mut lines) = (0.0_f64, 0.0, 1);
+    if blocks.peek().is_some() {
+        // The blocks alternate between text and zero-width formulas.
+        for block in std::iter::once(first).chain(blocks.skip(1).step_by(2)) {
+            for (i, line) in block.split('\n').enumerate() {
+                if i != 0 {
+                    lines += 1;
+                    width = width.max(line_width);
+                    line_width = 0.0;
+                }
+                line_width += indexed_advance(&line.replace("\\$", "$"), size);
+            }
+        }
+    }
+    (
+        width.max(line_width),
+        (size + (size * 0.5).trunc()) * f64::from(lines),
+    )
+}
+
+fn indexed_advance(text: &str, size: f64) -> f64 {
+    let mut text = text.encode_utf16();
+    let index_size = (size * 0.9).trunc().max(8.0);
+    let (mut width, mut depth) = (0.0, 0_usize);
+    while let Some(unit) = text.next() {
+        match unit {
+            95 => match text.next() {
+                Some(123) => depth += 1,
+                Some(_) => width += index_size * 0.5,
+                None => {}
+            },
+            125 => depth = depth.saturating_sub(1),
+            _ => width += if depth == 0 { size } else { index_size } * 0.5,
+        }
+    }
+    width.round()
+}
+
 impl Construction {
     /// How to display a text. An anchor point is read from the live construction.
     pub fn text_presentation(&self, id: Id) -> Option<TextPresentation> {
@@ -211,6 +277,51 @@ impl Construction {
 
     pub fn text_position(&self, id: Id) -> Option<TextPosition> {
         Some(self.text_presentation(id)?.position)
+    }
+
+    /// The world-coordinate corners of the headless text drawable, from
+    /// bottom left counter-clockwise.
+    pub(crate) fn text_corner(&self, id: Id, index: i32) -> Option<(f64, f64)> {
+        const HEADLESS_FONT_SIZE: f64 = 12.0;
+        const MARGIN: f64 = 3.0;
+        let style = self.text_presentation(id)?;
+        if matches!(
+            style.position,
+            TextPosition::Screen { .. } | TextPosition::ScreenPoint(_)
+        ) {
+            return None;
+        }
+        let text = self.text(id)?;
+        if !crate::expr::IntersectionWork::new().charge(text.len() as u64) {
+            return None;
+        }
+        let [xmin, _, _, ymax, xs, ys] = self.view();
+        let (x_zero, y_zero) = (-xmin * xs, ymax * ys);
+        let (x, y) = style.pixel_anchor(self, |x, y| (x_zero + x * xs, y_zero - y * ys))?;
+        let size = (HEADLESS_FONT_SIZE * style.size).max(4.0).trunc();
+        let (width, height) = headless_box(text, size, style.latex);
+        let width = width + 2.0 * MARGIN;
+        let height = height + 2.0 * MARGIN;
+        let [x, y] = style
+            .aligned_top_left(
+                [x as f32, y as f32],
+                [width as f32, height as f32],
+                size as f32,
+                0.0,
+            )
+            .map(f64::from);
+        let left = (x - MARGIN - x_zero) / xs;
+        let top = (y_zero - y + MARGIN + if style.latex { 0.0 } else { size }) / ys;
+        let right = left + width / xs;
+        let bottom = top - height / ys;
+        let point = match index {
+            1 => (left, bottom),
+            2 => (right, bottom),
+            3 => (right, top),
+            4 => (left, top),
+            _ => return None,
+        };
+        (point.0.is_finite() && point.1.is_finite()).then_some(point)
     }
 
     pub(crate) fn text_latex_override(&self, id: Id) -> Option<bool> {
@@ -245,12 +356,10 @@ impl Construction {
         current.latex = props.latex.or(current.latex);
         current.font = props.font.or(current.font);
         current.offset = props.offset.or(current.offset);
-        if template_changed {
-            if let super::Def::Expr(def) = self.def(id) {
-                if self.update_expr(id.0, def) {
-                    self.propagate(id);
-                }
-            }
+        let value_changed = template_changed
+            && matches!(self.def(id), super::Def::Expr(def) if self.update_expr(id.0, def));
+        if value_changed || self.has_text_corner(id) {
+            self.propagate(id);
         }
         Ok(())
     }

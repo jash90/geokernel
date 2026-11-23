@@ -617,7 +617,7 @@ impl Log {
     }
 
     pub(crate) fn record_update(&mut self, c: &Construction, label: &str, to: Setting) {
-        self.push_set(label, to, c.last_update_changed_automatic_root());
+        self.push_set(label, to, c.last_update_needs_ordered_replay());
     }
 
     fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {
@@ -626,8 +626,8 @@ impl Log {
             to,
             ordered,
         };
-        // A hidden Newton start point follows each successful root. Keep
-        // any edit that moved it, since the next edit starts from there.
+        // An edit can move a hidden Newton seed or choose the class of a
+        // vertex helper. Keep those edits so replay starts from the same state.
         if !ordered
             && matches!(
                 self.ops.last(),
@@ -1114,7 +1114,7 @@ impl Log {
                     // A set right after a set of the same object is merged
                     // into it by `record_set` (after a `remove` they can
                     // meet): the journal and `kept` part there.
-                    let keep_order = *ordered || c.last_update_changed_automatic_root();
+                    let keep_order = *ordered || c.last_update_needs_ordered_replay();
                     let merges = !keep_order
                         && i > 0
                         && matches!(
@@ -1341,11 +1341,7 @@ impl Log {
                     };
                     result.map_err(|e| format!("`{label}`: {e}"))?;
                     groups.release_after(&mut c, std::iter::once(id));
-                    kept.push_set(
-                        label,
-                        *to,
-                        *ordered || c.last_update_changed_automatic_root(),
-                    );
+                    kept.push_set(label, *to, *ordered || c.last_update_needs_ordered_replay());
                 }
                 Op::MovePoints(points) => {
                     let positions = replay_move_points(&mut c, points, Some(&gone))?;

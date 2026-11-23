@@ -194,16 +194,20 @@ fn view_corner(c: &Construction, view: Option<Count>, index: Count) -> Option<Va
 /// returns before `updateLabel` for a hidden one, so the rectangle stays
 /// the empty one at the pixel origin that `Drawable` starts with. Every
 /// corner is then `(toRealWorldCoordX(0), toRealWorldCoordY(0))`, which is
-/// `(xmin, ymax)` of the view. A text needs its rendered bounds, which the
-/// kernel does not have.
+/// `(xmin, ymax)` of the view. Text uses its headless drawable bounds.
 fn drawable_corner(c: &Construction, source: Id, index: Count) -> Option<Value> {
     // Only a labeled object gets a drawable (`EuclidianView.drawableNeeded`).
-    if c.kind(source) != Kind::Boolean || c.label(source).starts_with('\0') {
+    if c.label(source).starts_with('\0') {
         return None;
     }
     // `AlgoTextCorner.compute` casts the index with `(int)`.
-    if !(1..=4).contains(&(index.value(c) as i32)) {
+    let index = index.value(c) as i32;
+    if !(1..=4).contains(&index) {
         return None;
+    }
+    if c.kind(source) == Kind::Text {
+        let (x, y) = c.text_corner(source, index)?;
+        return Some(Value::Point { x, y });
     }
     let [xmin, _, _, ymax, _, _] = c.view();
     Some(Value::Point { x: xmin, y: ymax })
