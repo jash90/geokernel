@@ -147,8 +147,10 @@ case "$cmd" in
               exit
               ;;
             cas.json|locusequation.json|envelope.json|curvepairs.json) enable_giac ;;
+            prove.json) enable_giac ;;
           esac
         fi
+        if [ "${file##*/}" = prove.json ]; then java_opts+=("-DggbHarness.prover=1"); fi
         run_golden
       )
     done

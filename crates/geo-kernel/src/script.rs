@@ -884,6 +884,9 @@ fn define_resolved(c: &mut Construction, name: &str, rhs: &str) -> Result<Option
     if let Some(result) = crate::expr::define_relation(c, name, rhs) {
         return result.map(Some);
     }
+    if let Some(result) = crate::algo::prover::define(c, name, rhs) {
+        return result.map(Some);
+    }
     if let Some(result) = crate::expr::define_geometry_if(c, name, rhs) {
         return result.map(Some);
     }

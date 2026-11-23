@@ -555,6 +555,9 @@ pub enum Def {
     Vector(VectorDef),
     /// Boolean tests such as `AreCollinear`.
     Predicate(PredicateDef),
+    /// `Prove` and `ProveDetails`; the construction keeps the result (see
+    /// [`Construction::proof`]).
+    Prove(algo::prover::ProveDef),
     /// Points from `ClosestPoint` and `Trilinear`.
     Point(PointDef),
     /// An arithmetic expression; the tree is kept by the construction, so
@@ -705,6 +708,7 @@ impl Def {
             Def::Transform(d) => d.kind(),
             Def::Vector(d) => d.kind(),
             Def::Predicate(d) => d.kind(),
+            Def::Prove(d) => d.kind(),
             Def::Point(d) => d.kind(),
             Def::IntersectConics(d) => d.kind(),
             Def::IntersectBoundary(d) => d.kind(),
@@ -813,6 +817,7 @@ impl Def {
             Def::Transform(d) => d.parents(),
             Def::Vector(d) => d.parents(),
             Def::Predicate(d) => d.parents(),
+            Def::Prove(d) => Parents::of(&[d.statement]),
             Def::Point(d) => d.parents(),
             Def::Polygon(d) => d.parents(),
             Def::GeneralConic(d) => d.parents(),
@@ -932,6 +937,7 @@ pub struct Construction {
     replacement_label: Option<String>,
     images: image::Images,
     charts: std::collections::BTreeMap<Id, algo::charts::ChartData>,
+    proofs: std::collections::BTreeMap<Id, algo::prover::ProofData>,
     /// The animations of the sliders, see [`Construction::animate`].
     animations: std::collections::BTreeMap<Id, animation::Animation>,
     /// Whether the animation timer runs (`AnimationManager.isRunning`); a
@@ -1523,6 +1529,11 @@ impl Construction {
         }
     }
 
+    /// The result of a `Prove` or `ProveDetails` object.
+    pub fn proof(&self, id: Id) -> Option<&algo::prover::ProofData> {
+        self.proofs.get(&id)
+    }
+
     pub fn chart(&self, id: Id) -> Option<&algo::charts::ChartData> {
         self.charts.get(&id)
     }
@@ -1695,6 +1706,7 @@ impl Construction {
         });
         self.images.discard_since(at.len, at.image_assets);
         self.charts.split_off(&Id(at.len));
+        self.proofs.split_off(&Id(at.len));
         self.strokes.split_off(&Id(at.len));
         self.animations.split_off(&Id(at.len));
         if !self.animations.values().any(|a| a.playing) {
@@ -2333,6 +2345,12 @@ impl Construction {
                 self.charts.insert(id, data);
                 value
             }
+            Def::Prove(d) => {
+                let data = d.record(self);
+                let value = data.value;
+                self.proofs.insert(id, data);
+                value
+            }
             Def::Locus(d) => {
                 let data = locus::record(self, d, id);
                 self.store_locus(id, data)
@@ -2841,6 +2859,15 @@ impl Construction {
                         continue;
                     }
                 }
+                // A redefinition can change the structure the proof reads
+                // (a free point put on a path): the reference rebuilds it.
+                Def::Prove(d) if refresh_definitions => {
+                    let data = d.record(self);
+                    self.values[i] = data.value;
+                    self.proofs.insert(Id(i), data);
+                }
+                // The result does not depend on positions.
+                Def::Prove(_) => continue,
                 Def::Chart(d) => {
                     let mut data = d.compute(self);
                     let id = Id(i);
@@ -3464,6 +3491,7 @@ impl Construction {
             | Def::InputBox(None)
             | Def::PenStroke => Ok(()),
             Def::Chart(d) => d.check(self),
+            Def::Prove(d) => d.check(self),
             Def::Image(list) => self.expect_list(list, POINT),
             Def::Conditional { args, kind } => {
                 let ids = self.list(args);
@@ -3692,6 +3720,7 @@ impl Construction {
             Def::Transform(d) => d.compute(self),
             Def::Vector(d) => d.compute(self),
             Def::Predicate(d) => d.compute(self),
+            Def::Prove(d) => Some(d.record(self).value),
             Def::Point(d) => d.compute(self),
             Def::Expr(d) => Some(expr::current(self, d)),
             Def::Polygon(d) => d.compute(self),

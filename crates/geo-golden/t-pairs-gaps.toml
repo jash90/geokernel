@@ -6058,15 +6058,15 @@ mismatches = ["step"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:211"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `Prove`"
-mismatches = ["step"]
+category = "dummy-cas-expectation"
+reason = "Bool(true) does not match `false` (values differ)"
+mismatches = ["a"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:216"
-category = "unsupported-command"
-reason = "the kernel refuses the input: unknown command `ProveDetails`"
-mismatches = ["step"]
+category = "dummy-cas-expectation"
+reason = "List { len: 1 } does not match `{}` (expected 0 elements, kernel has 1)"
+mismatches = ["l1"]
 
 [[gap]]
 id = "commands/CommandsUsingMockedCasTest.java:222"

@@ -69,8 +69,8 @@ AffineRatio,,geometry,P1,done,1,1,"AffineRatio(point, point, point)"
 CrossRatio,,geometry,P1,done,1,1,"CrossRatio(point, point, point, point)"
 ClosestPoint,,geometry,P1,done,3,3,"Path and point in either order (line, segment, ray, conic, arc, sector, polygon, polyline, function or point list); two line carriers except line with segment"
 ClosestPointRegion,,geometry,P1,todo,0,0,
-Prove,,geometry,P1,todo,1,0,
-ProveDetails,,geometry,P1,todo,2,0,
+Prove,,geometry,P1,todo,1,0,"Predicate statements (AreCollinear, AreParallel, ArePerpendicular, AreConcurrent, AreConcyclic, AreEqual of points, lines or circles) over points, lines, segments, midpoints, perpendiculars, parallels, perpendicular bisectors, circles, points on paths and circle intersections without a shared point by construction; arithmetic statements are pending"
+ProveDetails,,geometry,P1,todo,2,0,"ProveDetails(boolean) for the statements Prove covers, with conditions read from a unique or variable-disjoint elimination basis; the relation-tool sentences are pending"
 AreCollinear,,geometry,P1,done,1,1,"AreCollinear(point, point, point)"
 AreParallel,,geometry,P1,done,1,1,"AreParallel of two lines, segments or rays"
 AreConcyclic,,geometry,P1,done,1,1,"AreConcyclic(point, point, point, point)"

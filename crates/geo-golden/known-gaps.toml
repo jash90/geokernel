@@ -3476,3 +3476,70 @@ mismatches = ["2:b"]
 id = "stroke-limits-001"
 reason = "intended difference, recorded in DIFFERENCES.md: the smoothed stroke has 32,489 points whose exact coordinates are longer than the 1 MiB an imported XML attribute may hold; the kernel makes a stroke that could not be saved, journaled and read back undefined at creation, while the reference keeps it"
 mismatches = ["0:s"]
+
+# prove
+
+[[gap]]
+id = "prove-expression-001"
+reason = "The statement is an arithmetic Boolean (`D == E`). The reference has the CAS rewrite the expression into a polynomial with extra distance variables before the elimination; the kernel translates only the predicate commands and answers undefined."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-relation-001"
+reason = "The relation-tool form of ProveDetails words each condition as a localized sentence from the reference's language files, which the kernel does not carry; it answers an undefined list whenever there is a condition to word."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "prove-relation-002"
+reason = "The relation-tool form of ProveDetails words each condition as a localized sentence from the reference's language files, which the kernel does not carry; it answers an undefined list whenever there is a condition to word."
+mismatches = ["0:r"]
+
+[[gap]]
+id = "prove-review-001"
+reason = "The line is drawn through a point on the circle as its path, so that point lies on both objects by construction (the kernel's intersection finds it by incidence and agrees on Q and the Boolean). The prover answers undefined: the reference excludes that point only for the indexed command, and the kernel does not record which command made the intersection."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-review-002"
+reason = "The line is drawn through a point on the circle as its path, so that point lies on both objects by construction (the kernel's intersection finds it by incidence and agrees on Q, M and the Boolean). The prover answers undefined: the reference excludes that point only for the indexed command, and the kernel does not record which command made the intersection."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-intersect-002"
+reason = "The intersection has a point on both objects by construction. The reference excludes that point with an extra equation only for the indexed `Intersect(a, b, n)`; the unindexed command, `{P, Q} = Intersect(a, b)` and intersections read from saved files make the same kernel definition, and the kernel does not record which command made it, so the prover answers undefined."
+mismatches = ["0:p", "0:q", "1:p", "1:q"]
+
+[[gap]]
+id = "prove-intersect-005"
+reason = "The intersection has a point on both objects by construction. The reference excludes that point with an extra equation only for the indexed `Intersect(a, b, n)`; the unindexed command, `{P, Q} = Intersect(a, b)` and intersections read from saved files make the same kernel definition, and the kernel does not record which command made it, so the prover answers undefined."
+mismatches = ["0:p", "0:q", "1:p", "1:q"]
+
+[[gap]]
+id = "prove-intersect-006"
+reason = "The intersection has a point on both objects by construction. The reference excludes that point with an extra equation only for the indexed `Intersect(a, b, n)`; the unindexed command, `{P, Q} = Intersect(a, b)` and intersections read from saved files make the same kernel definition, and the kernel does not record which command made it, so the prover answers undefined."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-intersect-007"
+reason = "The intersection has a point on both objects by construction. The reference excludes that point with an extra equation only for the indexed `Intersect(a, b, n)`; the unindexed command, `{P, Q} = Intersect(a, b)` and intersections read from saved files make the same kernel definition, and the kernel does not record which command made it, so the prover answers undefined."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-intersect-010"
+reason = "The intersection has a point on both objects by construction. The reference excludes that point with an extra equation only for the indexed `Intersect(a, b, n)`; the unindexed command, `{P, Q} = Intersect(a, b)` and intersections read from saved files make the same kernel definition, and the kernel does not record which command made it, so the prover answers undefined."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-review-006"
+reason = "The unindexed `Intersect(g, c)` with a point on both objects by construction: the reference's algorithm keeps that point and adds no exclusion. The kernel makes the same definition as for the indexed command and does not record which command made it, so the prover answers undefined."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-review-007"
+reason = "A point on the line as its path is a point the circle was drawn through, so it lies on both objects by construction. The reference excludes it only for the indexed `Intersect(a, b, n)`; the kernel does not record which command made the intersection and answers undefined."
+mismatches = ["0:p", "0:q"]
+
+[[gap]]
+id = "prove-review-008"
+reason = "A point on the first circle as its path is a point the second circle was drawn through, so it lies on both by construction. The reference excludes it only for the indexed `Intersect(a, b, n)`; the kernel does not record which command made the intersection, and the prover answers undefined. The kernel's intersection finds the path point by incidence and agrees on Q and the Boolean."
+mismatches = ["0:p", "0:q"]

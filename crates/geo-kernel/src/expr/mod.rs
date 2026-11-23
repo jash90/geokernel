@@ -71,6 +71,13 @@
 
 mod cas;
 mod commands;
+
+/// The order of `GeoText.getComparator`: texts compared without accents,
+/// then as they are, both by UTF-16 units (as `Sort` of texts orders them).
+pub(crate) fn text_order(a: &str, b: &str) -> std::cmp::Ordering {
+    use commands::text::strings::{java_cmp, remove_accents};
+    java_cmp(&remove_accents(a), &remove_accents(b)).then_with(|| java_cmp(a, b))
+}
 pub(crate) use commands::brent_minimum;
 mod decimal;
 pub(crate) mod derivative;
@@ -1670,6 +1677,7 @@ fn list_slots(c: &Construction, id: Id) -> Option<&[Slot]> {
     match c.def(id) {
         Def::Expr(d) => Some(&entry(c, d).items),
         Def::Chart(_) => c.chart(id).map(|data| data.slots.as_slice()),
+        Def::Prove(_) => c.proof(id).map(|data| data.slots.as_slice()),
         _ => None,
     }
 }

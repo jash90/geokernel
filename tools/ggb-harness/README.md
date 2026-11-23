@@ -66,6 +66,15 @@ automatically. The `odesymbolic` group's `nocas` topic uses the dummy backend
 to verify behavior without symbolic evaluation. `GGB_HARNESS_CAS=1` selects
 the native backend for other runs. The remaining historical cases default
 to the dummy backend.
+The `prove` group also sets `-DggbHarness.prover`. The headless app's prover
+never decides a statement: its `Prover.compute` is empty, so every `Prove` is
+`false` and every `ProveDetails` is `{}`. `ProverOracle` installs a prover
+that runs `Prover.decideStatement`, synchronously and without a timeout, as the
+desktop app's prover does, with the algebraic engine selected. The numerical
+engine and the external Wu prover of the desktop app are not on the harness
+class path.
+The desktop app abandons a proof after five seconds and pins Giac 70501; the
+oracle has no deadline and uses the Giac library this script downloads.
 Giac is a separate GPL reference backend used only to record and check fixtures.
 The Rust workspace and release builds have no runtime or build dependency on it.
 
