@@ -344,8 +344,11 @@ sample, pie fraction, curve pair or locus coordinate the loader takes the
 recorded sign of an infinity, keeps `null` where the recording has NaN, and
 refuses the pair where one side is finite and the other is not. A locus is
 checked coordinate by coordinate. A legacy
-case whose own file is in schema 4 needs no pair; its pair is kept so the
-recording keeps its id.
+case whose own file is in schema 4 needs no pair, and the loader refuses a
+pair whose original is recorded in schema 4. The pairs left are the five
+cases of `intersections/selectorreview.json`, which has no case input to
+record it again from, and `calculus-degree-008`, whose file in schema 4
+would change the outcome of `calculus-degree-010`.
 
 Script lines may also be equations in `x` and `y` (group `equations`),
 written `label: lhs = rhs` as GeoGebra's input bar reads them: a linear
