@@ -74,6 +74,21 @@ pub(crate) struct TangentState {
 }
 
 impl TangentState {
+    pub(crate) fn same_branch(self, other: Self) -> bool {
+        self.equal_lines == other.equal_lines && self.slots.same_order(other.slots)
+    }
+
+    pub(crate) fn restore(&mut self, c: &Construction, d: TangentDef) {
+        let saved = self.slots;
+        self.slots = saved.before_restore();
+        self.source = None;
+        self.conic = None;
+        self.values = [None; 2];
+        self.contacts = [None; 2];
+        self.refresh(c, d, false);
+        self.slots.after_restore(saved);
+    }
+
     pub(crate) fn refresh(&mut self, c: &Construction, d: TangentDef, continuous: bool) {
         let data = c.conic(d.conic).filter(|data| data.defined);
         let source = if d.point {

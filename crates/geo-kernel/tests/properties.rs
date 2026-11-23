@@ -114,14 +114,17 @@ fn rebuild_from_defs(orig: &Construction) -> Result<Construction, String> {
                 .restore_path_state(new, state)
                 .map_err(|e| format!("restoring `{}` failed: {e}", orig.label(id)))?;
         }
+        if let Some(state) = orig.intersection_state(id) {
+            fresh
+                .restore_intersection_state(new, state)
+                .map_err(|e| format!("restoring `{}` failed: {e}", orig.label(id)))?;
+        }
     }
     Ok(fresh)
 }
 
-/// Gives every point on a path of `to` the state of the object at the same
-/// index of `from`, in creation order: the one part of a construction that
-/// depends on the history of moves by design (`Construction::path_state`).
-fn restore_path_states(from: &Construction, to: &mut Construction) -> Result<(), String> {
+/// Restores paths and intersection branches in construction order.
+fn restore_states(from: &Construction, to: &mut Construction) -> Result<(), String> {
     for id in from.ids() {
         if let Some(state) = from.path_state(id) {
             // a fresh build with another layout is reported by the caller
@@ -134,6 +137,17 @@ fn restore_path_states(from: &Construction, to: &mut Construction) -> Result<(),
             };
             to.restore_path_state(target, state)
                 .map_err(|e| format!("restoring `{}` failed: {e}", from.label(id)))?;
+        }
+        if let Some(state) = from.intersection_state(id) {
+            if let Some(target) = to.ids().nth(id.index()).filter(|&target| {
+                from.label(id) == to.label(target)
+                    && to
+                        .intersection_state(target)
+                        .is_some_and(|t| state.same_definition(t))
+            }) {
+                to.restore_intersection_state(target, state)
+                    .map_err(|e| format!("restoring `{}` failed: {e}", from.label(id)))?;
+            }
         }
     }
     Ok(())
@@ -235,8 +249,9 @@ fn check_twins(case: &Case) -> Result<(), String> {
 /// arguments only.
 fn reads(case: &Case) -> Vec<Vec<usize>> {
     let mut reads = case.deps.clone();
-    let on = |d: Def, k: Id| match d {
+    let on = |id: Id, k: Id| match case.c.def(id) {
         Def::IntersectLineCircle { circle, .. } => circle == k,
+        Def::IntersectLineConic(_) => case.c.inputs(id).nth(1) == Some(k),
         Def::IntersectCircles { c1, c2, .. } => c1 == k || c2 == k,
         _ => false,
     };
@@ -252,11 +267,7 @@ fn reads(case: &Case) -> Vec<Vec<usize>> {
         if k != c2 || drawn_through {
             continue;
         }
-        let first = case
-            .c
-            .ids()
-            .take(id.index())
-            .find(|&s| on(case.c.def(s), k));
+        let first = case.c.ids().take(id.index()).find(|&s| on(s, k));
         if let Some(s) = first {
             if !reads[id.index()].contains(&s.index()) {
                 reads[id.index()].push(s.index());
@@ -426,6 +437,11 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                     Some((p, case.c.follow_path_from(id, p) == Some(p)))
                 })
                 .collect();
+            let home_branches: Vec<_> = case
+                .c
+                .ids()
+                .map(|id| case.c.intersection_state(id))
+                .collect();
             let rebuilt = match rebuild_from_defs(&case.c) {
                 Ok(f) => f,
                 Err(e) => fail!("{e}"),
@@ -447,6 +463,13 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 Ok(Err(e)) => fail!("back move failed: {e}"),
                 Err(e) => fail!("after the back move: {e}"),
             }
+            let restored = match rebuild_from_defs(&case.c) {
+                Ok(f) => f,
+                Err(e) => fail!("{e}"),
+            };
+            if let Some(d) = first_difference(&case.c, &values(&case.c), &values(&restored)) {
+                fail!("the back move differs from a recompute: {d}");
+            }
             // A point on a path need not come back: it follows the parameter
             // it kept, and a way through an undefined or degenerate path
             // changes that parameter (`GeoPoint.setUndefined` restores the
@@ -460,12 +483,22 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
             // and the way back left its parameter and path type as they
             // were. The others, and what depends on them, are compared
             // against a recompute above; here they are left out.
-            let returns = |i: usize| match home_states[i] {
-                Some((home, fixed)) => {
-                    let now = case.c.path_state(id_at(&case.c, i));
-                    fixed && now.is_some_and(|s| s.same_parameter(&home))
-                }
-                None => true,
+            // Line/conic slots likewise return only if the permutation did
+            // not change (golden topic slotreview). The recompute above
+            // solves the current inputs again with that saved permutation.
+            let returns = |i: usize| {
+                let id = id_at(&case.c, i);
+                home_states[i].is_none_or(|(home, fixed)| {
+                    fixed
+                        && case
+                            .c
+                            .path_state(id)
+                            .is_some_and(|s| s.same_parameter(&home))
+                }) && home_branches[i].is_none_or(|home| {
+                    case.c
+                        .intersection_state(id)
+                        .is_some_and(|s| home.same_branch(s))
+                })
             };
             let mut history = vec![false; case.c.len()];
             for i in 0..case.c.len() {
@@ -515,7 +548,7 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
             }
         }
         // after the numbers: setting one makes the points on paths follow
-        if let Err(e) = restore_path_states(&case.c, &mut fresh) {
+        if let Err(e) = restore_states(&case.c, &mut fresh) {
             fail!("{e}");
         }
     }
@@ -561,7 +594,7 @@ fn run_case(seed: u64, all_commands: bool, totals: &mut Totals) -> Result<(), St
                 );
             }
         }
-        if let Err(e) = restore_path_states(&case.c, &mut carried) {
+        if let Err(e) = restore_states(&case.c, &mut carried) {
             fail!("{e}");
         }
         if let Some(d) = first_difference(&case.c, &values(&case.c), &values(&carried)) {

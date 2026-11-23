@@ -213,6 +213,22 @@ impl Default for Slots {
 }
 
 impl Slots {
+    pub(crate) fn same_order(self, other: Self) -> bool {
+        self.order == other.order && self.first == other.first
+    }
+
+    pub(crate) fn before_restore(mut self) -> Self {
+        self.needs_permutation = false;
+        self
+    }
+
+    pub(crate) fn after_restore(&mut self, saved: Self) {
+        let (current, suppressed) = (self.current, self.suppressed);
+        *self = saved;
+        self.current = current;
+        self.suppressed = suppressed;
+    }
+
     pub(crate) fn replace_current(&mut self, points: [Pt; 2]) {
         self.current = points;
         self.suppressed = None;
@@ -364,6 +380,21 @@ impl LineConicState {
         }
     }
 
+    pub(crate) fn same_branch(self, other: Self) -> bool {
+        self.slots.same_order(other.slots)
+            && self.special == other.special
+            && self.nearest == other.nearest
+    }
+
+    pub(crate) fn restore(&mut self, d: LineConicDef, c: &Construction) -> Option<Value> {
+        let saved = self.slots;
+        self.slots = saved.before_restore();
+        self.inputs = Some(Inputs::read(c, d));
+        self.update(d, c, false);
+        self.slots.after_restore(saved);
+        self.value(d, c)
+    }
+
     pub(crate) fn refresh(
         &mut self,
         d: LineConicDef,
@@ -383,6 +414,11 @@ impl LineConicState {
 
     fn update(&mut self, d: LineConicDef, c: &Construction, continuous: bool) {
         let Some(input) = self.inputs else { return };
+        if !(input.carrier.is_defined() && c.value(d.conic).is_defined()) {
+            self.slots
+                .update([None; 2], [false; 2], self.labelled, continuous);
+            return;
+        }
         if let Some(tangent) = d.tangent(c) {
             self.slots.replace_current([tangent, None]);
             return;

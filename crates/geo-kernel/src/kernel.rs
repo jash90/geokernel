@@ -940,6 +940,44 @@ struct TangentOutput {
     state: TangentState,
 }
 
+/// The branch history of a line/conic intersection or tangent output.
+#[derive(Clone, Copy, Debug)]
+pub struct IntersectionState(IntersectionHistory);
+
+#[derive(Clone, Copy, Debug)]
+enum IntersectionHistory {
+    LineConic(LineConicDef, LineConicState),
+    Tangent(TangentDef, TangentState),
+}
+
+impl IntersectionState {
+    /// Whether the states describe the same output of the same operands.
+    pub fn same_definition(self, other: Self) -> bool {
+        match (self.0, other.0) {
+            (IntersectionHistory::LineConic(a, _), IntersectionHistory::LineConic(b, _)) => {
+                a.key() == b.key() && a.output == b.output
+            }
+            (IntersectionHistory::Tangent(a, _), IntersectionHistory::Tangent(b, _)) => {
+                a.same_algorithm(b) && a.which == b.which
+            }
+            _ => false,
+        }
+    }
+
+    /// Whether both states assign the same geometric branches to the slots.
+    pub fn same_branch(self, other: Self) -> bool {
+        match (self.0, other.0) {
+            (IntersectionHistory::LineConic(_, a), IntersectionHistory::LineConic(_, b)) => {
+                a.same_branch(b)
+            }
+            (IntersectionHistory::Tangent(_, a), IntersectionHistory::Tangent(_, b)) => {
+                a.same_branch(b)
+            }
+            _ => false,
+        }
+    }
+}
+
 /// A geometric construction.
 #[derive(Default)]
 pub struct Construction {
@@ -3311,6 +3349,73 @@ impl Construction {
         let changed = !new.identical(&self.values[i]);
         self.values[i] = new;
         changed
+    }
+
+    /// Saves the branch history of a line/conic intersection or tangent.
+    /// Replaying a script at different initial positions can choose other
+    /// slots from the same geometric solutions.
+    pub fn intersection_state(&self, id: Id) -> Option<IntersectionState> {
+        let def = *self.defs.get(id.0)?;
+        let history = if let Some(d) = TangentDef::of(def) {
+            let slot = self.tangent_slot(id.0)?;
+            IntersectionHistory::Tangent(
+                d,
+                self.tangent_outputs[self.tangent_outputs[slot].helper].state,
+            )
+        } else {
+            let d = match def {
+                Def::IntersectLineConic(d) => d,
+                _ => LineConicDef::from_indexed(def)?,
+            };
+            let slot = self.line_conic_slot(id.0)?;
+            let mut state = self.line_conic_outputs[self.line_conic_pairs[&d.key()]].state;
+            state.set_nearest(self.line_conic_outputs[slot].state.nearest());
+            IntersectionHistory::LineConic(d, state)
+        };
+        Some(IntersectionState(history))
+    }
+
+    /// Restores the branch history of an output rebuilt from the same
+    /// definition. The solver evaluates the current operands again.
+    pub fn restore_intersection_state(
+        &mut self,
+        id: Id,
+        state: IntersectionState,
+    ) -> Result<usize, Error> {
+        let target = self.intersection_state(id).ok_or(Error::UnknownObject)?;
+        if !state.same_definition(target) {
+            return Err(Error::NotFree(self.labels[id.0].clone()));
+        }
+        let value = match (state.0, target.0) {
+            (
+                IntersectionHistory::LineConic(_, mut state),
+                IntersectionHistory::LineConic(d, _),
+            ) => {
+                let slot = self.line_conic_slot(id.0).expect("line/conic output");
+                let latest = self.line_conic_pairs[&d.key()];
+                let value = state.restore(d, self);
+                self.line_conic_outputs[slot]
+                    .state
+                    .set_nearest(state.nearest());
+                state.set_nearest(self.line_conic_outputs[latest].state.nearest());
+                self.line_conic_outputs[latest].state = state;
+                value
+            }
+            (IntersectionHistory::Tangent(_, mut state), IntersectionHistory::Tangent(d, _)) => {
+                let slot = self.tangent_slot(id.0).expect("tangent output");
+                let helper = self.tangent_outputs[slot].helper;
+                state.restore(self, d);
+                self.tangent_outputs[helper].state = state;
+                state.value(d)
+            }
+            _ => return Err(Error::NotFree(self.labels[id.0].clone())),
+        };
+        let value = value.unwrap_or(Value::Undefined);
+        if value.identical(&self.values[id.0]) {
+            return Ok(0);
+        }
+        self.values[id.0] = value;
+        Ok(self.propagate(id))
     }
 
     fn tangent_slot(&self, i: usize) -> Option<usize> {
