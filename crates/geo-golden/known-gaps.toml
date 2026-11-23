@@ -250,13 +250,6 @@ mismatches = [
 ]
 
 [[gap]]
-id = "geomforms-segment-006"
-reason = "The fixed-length endpoint's internal circle falls outside the construction move dispatcher."
-mismatches = [
-  "1:step",
-]
-
-[[gap]]
 id = "geomclip-difference-001"
 reason = "The contours agree geometrically. GeoGebra's sweep selects a different first vertex, which rotates the polygon vertices and the emitted point and segment slots."
 mismatches = [

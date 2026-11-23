@@ -1215,6 +1215,9 @@ impl PathDef {
             PathDef::RigidEndpoint { anchor, radius, .. } => {
                 st.set_coords(&fixed_circle(c, anchor, Count::Literal(radius)), x, y)
             }
+            PathDef::FixedEndpoint { start, length } => {
+                st.set_coords(&fixed_circle(c, start, length), x, y)
+            }
             _ => return None,
         }
         Some(st)
