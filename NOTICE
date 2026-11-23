@@ -1,0 +1,16 @@
+geokernel is licensed under the European Union Public Licence 1.2 (LICENSE).
+
+Optional Giac backend
+---------------------
+
+The crate crates/geo-giac can, when built with its `giac` feature, load the
+Giac computer algebra system (https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac.html)
+at run time. Giac is Copyright (C) Bernard Parisse and Renee De Graeve,
+Institut Fourier, and is licensed under the GNU General Public License,
+version 3 or later.
+
+No Giac source or binary is part of this repository, and builds without the
+`giac` feature contain no Giac code. A program built with the feature and
+distributed together with a Giac library is a combined work that must be
+distributed under the GNU General Public License, version 3 or later; the
+EUPL 1.2 lists that licence as compatible. See docs/cas-giac.md.
