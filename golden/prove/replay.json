@@ -1,0 +1,227 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-replay-001",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "A = (4, 0)",
+        "c = Circle(O, A)",
+        "g = Line(O, A)",
+        "Q = Intersect(g, c, 1)",
+        "b = A == Q",
+        "p = Prove(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "b = false" },
+        { "action": "add", "line": "S = Intersect(g, c)" },
+        { "action": "add", "line": "p_2 = Prove(AreEqual(A, Q))" },
+        { "action": "add", "line": "q_2 = ProveDetails(AreEqual(A, Q))" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "S_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "S_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "p_2": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "S_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "p_2": { "type": "boolean", "defined": true, "value": true },
+          "q_2": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "…" }
+                ]
+              },
+              { "type": "text", "defined": true, "text": "c" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-replay-002",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "B = (4, 0)",
+        "g = Line(O, B)",
+        "A = Point(g, 0.25)",
+        "c = Circle(O, A)",
+        "Q = Intersect(g, c, 1)",
+        "p = Prove(AreEqual(A, Q))",
+        "S = Intersect(g, c)",
+        "U = (0, 4)",
+        "h = Line(O, U)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "B = Point(h, 0.5)" },
+        { "action": "add", "line": "p_2 = Prove(AreEqual(A, Q))" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "Q": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "S_{1}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": 4.0, "y": -0.0 },
+          "U": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "h": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "g": { "type": "line", "defined": false },
+          "A": { "type": "point", "defined": false },
+          "c": { "type": "circle", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "S_{1}": { "type": "point", "defined": false },
+          "S_{2}": { "type": "point", "defined": false },
+          "U": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "h": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "g": { "type": "line", "defined": false },
+          "A": { "type": "point", "defined": false },
+          "c": { "type": "circle", "defined": false },
+          "Q": { "type": "point", "defined": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "S_{1}": { "type": "point", "defined": false },
+          "S_{2}": { "type": "point", "defined": false },
+          "U": { "type": "point", "defined": true, "x": 0.0, "y": 4.0 },
+          "h": { "type": "line", "defined": true, "a": -4.0, "b": 0.0, "c": 0.0 },
+          "p_2": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "prove-replay-003",
+      "group": "prove",
+      "script": [
+        "O = (0, 0)",
+        "A = (4, 0)",
+        "c = Circle(O, A)",
+        "g = Line(O, A)",
+        "Q = Intersect(g, c, 1)",
+        "b = A == Q",
+        "p = Prove(b)",
+        "r = Prove(AreEqual(A, Q))"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "b = false" },
+        { "action": "add", "line": "S = Intersect(g, c)" },
+        { "action": "add", "line": "p_2 = Prove(AreEqual(A, Q))" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "r": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "r": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "r": { "type": "boolean", "defined": true, "value": false },
+          "S_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "c": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 4.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 4.0, "c": 0.0 },
+          "Q": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "b": { "type": "boolean", "defined": true, "value": false },
+          "p": { "type": "boolean", "defined": true, "value": false },
+          "r": { "type": "boolean", "defined": true, "value": false },
+          "S_{1}": { "type": "point", "defined": true, "x": 4.0, "y": 0.0 },
+          "S_{2}": { "type": "point", "defined": true, "x": -4.0, "y": 0.0 },
+          "p_2": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    }
+  ]
+}
