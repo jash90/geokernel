@@ -206,6 +206,7 @@ public final class GoldenGenerator {
                     outStep.put("label", label);
                     break;
                 }
+                case "add":
                 case "append": {
                     String line = (String) step.get("line");
                     session.run(line);

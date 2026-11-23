@@ -1,0 +1,125 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-focalconic-001",
+      "group": "prove",
+      "script": [
+        "F = (-2, 0)",
+        "G = (2, 0)",
+        "T = (0, 2)",
+        "k = Ellipse(F, G, T)",
+        "A = (-4, 1)",
+        "B = (4, 1)",
+        "s = Line(A, B)",
+        "P = Intersect(s, k, 1)",
+        "b = AreCollinear(A, B, P)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "T": { "type": "point", "defined": true, "x": 0.0, "y": 2.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "ellipse",
+            "matrix": [64.00000000000001, 128.00000000000003, -512.0000000000003, 0.0, -0.0, -0.0],
+            "midpoint": [0.0, 0.0],
+            "half_axes": [2.8284271247461907, 2.0000000000000004],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "s": { "type": "line", "defined": true, "a": 0.0, "b": 8.0, "c": -8.0 },
+          "P": { "type": "point", "defined": true, "x": -2.449489742783179, "y": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[F,G]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-focalconic-002",
+      "group": "prove",
+      "script": [
+        "F = (-2, 0)",
+        "G = (2, 0)",
+        "T = (1.5, 0)",
+        "k = Hyperbola(F, G, T)",
+        "A = (-4, 1)",
+        "B = (4, 1)",
+        "s = Line(A, B)",
+        "P = Intersect(s, k, 1)",
+        "b = AreCollinear(A, B, P)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "F": { "type": "point", "defined": true, "x": -2.0, "y": 0.0 },
+          "G": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "T": { "type": "point", "defined": true, "x": 1.5, "y": 0.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "hyperbola",
+            "matrix": [-28.0, 36.0, 63.0, 0.0, -0.0, -0.0],
+            "midpoint": [-0.0, 0.0],
+            "half_axes": [1.5, 1.3228756555322954],
+            "eigenvectors": [
+              [1.0, 0.0],
+              [-0.0, 1.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "s": { "type": "line", "defined": true, "a": 0.0, "b": 8.0, "c": -8.0 },
+          "P": { "type": "point", "defined": true, "x": 1.880349511584026, "y": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[F,G]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

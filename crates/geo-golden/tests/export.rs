@@ -210,7 +210,7 @@ fn corpus() -> Vec<Case> {
                     let id = wb.construction().id(label).unwrap();
                     wb.set_number(id, *value);
                 }
-                Step::Redefine { line } => wb.run_line(line).unwrap(),
+                Step::Add { line } | Step::Redefine { line } => wb.run_line(line).unwrap(),
                 Step::Reject { .. }
                 | Step::Delete { .. }
                 | Step::SetSliderBounds { .. }

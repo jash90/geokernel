@@ -67,6 +67,7 @@ One JSON object per file, stored under `golden/<group>/`.
 | `move` | `label`, `x`, `y` | Move the free point `label` to `(x, y)`, or set the free vector `label` to `(x, y)`. A point made by `Point(path)` moves too: GeoGebra puts it at the point of its path closest to `(x, y)` (`GeoPoint.setCoords` with `Path.pointChanged`) and keeps its path parameter. |
 | `set_number` | `label`, `value` or `infinity` | Set a free number. Use `infinity: 1` or `infinity: -1` for an infinite value. |
 | `set_slider_bounds` | `label`, `min`, `max` | Edit the endpoints of a free number's slider. |
+| `add` | `line` | Run an assignment to a new label after the initial script. |
 | `redefine` | `line` | Assign a new definition to an existing label. |
 | `delete` | `label` | Remove the object and its dependents from the construction. Subsequent snapshots omit the deleted labels. |
 | `reject` | `line`, optional `error` | Check that the command reports an error and creates no output. With `error`, the kernel's error must be exactly that text (GeoGebra's message is not recorded). |
@@ -78,7 +79,7 @@ the values left in the construction after the edit.
 
 ## Snapshot
 
-A JSON object that maps every label created by the script to an Object.
+A JSON object that maps the labels in the construction after this step to Objects.
 
 A line whose command creates several objects is recorded under the labels
 GeoGebra gives them: `p_{1}`, `p_{2}`, … when two or more are defined at

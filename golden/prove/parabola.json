@@ -1,0 +1,244 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "prove-parabola-001",
+      "group": "prove",
+      "script": [
+        "D = (-3, -1)",
+        "E = (3, -1)",
+        "d = Line(D, E)",
+        "F = (0, 1)",
+        "k = Parabola(F, d)",
+        "A = (-4, 1)",
+        "B = (4, 1)",
+        "s = Line(A, B)",
+        "P = Intersect(s, k, 1)",
+        "b = AreCollinear(A, B, P)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "d": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": 6.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [36.0, 0.0, 0.0, -0.0, -0.0, -72.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "s": { "type": "line", "defined": true, "a": 0.0, "b": 8.0, "c": -8.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[D,E]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-parabola-002",
+      "group": "prove",
+      "script": [
+        "D = (-3, -1)",
+        "E = (3, -1)",
+        "d = Line(D, E)",
+        "F = (0, 1)",
+        "k = Parabola(F, d)",
+        "A = (-4, 1)",
+        "B = (4, 1)",
+        "s = Segment(A, B)",
+        "P = Intersect(s, k, 1)",
+        "b = AreCollinear(A, B, P)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "d": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": 6.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [36.0, 0.0, 0.0, -0.0, -0.0, -72.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "s": { "type": "segment", "defined": true, "x1": -4.0, "y1": 1.0, "x2": 4.0, "y2": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[D,E]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-parabola-003",
+      "group": "prove",
+      "script": [
+        "D = (-3, -1)",
+        "E = (3, -1)",
+        "d = Line(D, E)",
+        "F = (0, 1)",
+        "k = Parabola(F, d)",
+        "A = (-4, 1)",
+        "B = (4, 1)",
+        "s = Ray(A, B)",
+        "P = Intersect(s, k, 1)",
+        "b = AreCollinear(A, B, P)",
+        "p = Prove(b)",
+        "q = ProveDetails(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "d": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": 6.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [36.0, 0.0, 0.0, -0.0, -0.0, -72.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "s": { "type": "ray", "defined": true, "x": -4.0, "y": 1.0, "a": 0.0, "b": 8.0, "c": -8.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true },
+          "q": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "boolean", "defined": true, "value": true },
+              {
+                "type": "list",
+                "defined": true,
+                "elements": [
+                  { "type": "text", "defined": true, "text": "AreEqual[D,E]" }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prove-parabola-004",
+      "group": "prove",
+      "script": [
+        "D = (-3, -1)",
+        "E = (3, -1)",
+        "d = Line(D, E)",
+        "F = (0, 1)",
+        "k = Parabola(F, d)",
+        "A = (-4, 1)",
+        "B = (4, 1)",
+        "s = Line(A, B)",
+        "P = Intersect(s, k, 1)",
+        "h = PerpendicularLine(P, d)",
+        "H = Intersect(h, d)",
+        "u = Segment(P, F)",
+        "v = Segment(P, H)",
+        "b = u == v",
+        "p = Prove(b)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "D": { "type": "point", "defined": true, "x": -3.0, "y": -1.0 },
+          "E": { "type": "point", "defined": true, "x": 3.0, "y": -1.0 },
+          "d": { "type": "line", "defined": true, "a": 0.0, "b": 6.0, "c": 6.0 },
+          "F": { "type": "point", "defined": true, "x": 0.0, "y": 1.0 },
+          "k": {
+            "type": "conic",
+            "defined": true,
+            "conic_type": "parabola",
+            "matrix": [36.0, 0.0, 0.0, -0.0, -0.0, -72.0],
+            "vertex": [0.0, -0.0],
+            "p": 2.0,
+            "eigenvectors": [
+              [0.0, 1.0],
+              [-1.0, 0.0]
+            ]
+          },
+          "A": { "type": "point", "defined": true, "x": -4.0, "y": 1.0 },
+          "B": { "type": "point", "defined": true, "x": 4.0, "y": 1.0 },
+          "s": { "type": "line", "defined": true, "a": 0.0, "b": 8.0, "c": -8.0 },
+          "P": { "type": "point", "defined": true, "x": -2.0, "y": 1.0 },
+          "h": { "type": "line", "defined": true, "a": -6.0, "b": 0.0, "c": -12.0 },
+          "H": { "type": "point", "defined": true, "x": -2.0, "y": -1.0 },
+          "u": { "type": "segment", "defined": true, "x1": -2.0, "y1": 1.0, "x2": 0.0, "y2": 1.0 },
+          "v": { "type": "segment", "defined": true, "x1": -2.0, "y1": 1.0, "x2": -2.0, "y2": -1.0 },
+          "b": { "type": "boolean", "defined": true, "value": true },
+          "p": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    }
+  ]
+}

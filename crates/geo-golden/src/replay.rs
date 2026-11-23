@@ -155,7 +155,9 @@ fn replay_document(case: &Case) -> CaseOutcome {
         let id = |label: &str| document.construction().id(label);
         let result = match step {
             Step::Initial => Ok(()),
-            Step::Redefine { line } | Step::Append { line } => document.run_line(line),
+            Step::Add { line } | Step::Redefine { line } | Step::Append { line } => {
+                document.run_line(line)
+            }
             Step::AnchorText { label, point } => document.run_lines(&[format!(
                 "$textProperties({label}, -, -, -, -, -, point, {point})"
             )]),
@@ -354,6 +356,13 @@ fn apply(c: &mut Construction, step: &Step) -> Result<Option<geo_kernel::Id>, St
             c.set_number(id, *value)
                 .map(|recomputed| (recomputed > 0).then_some(id))
                 .map_err(|e| format!("set `{label}`: {e}"))
+        }
+        Step::Add { line } => {
+            if script::assignment_target(c, line).is_some() {
+                return Err(format!("expected an assignment to a new label: {line}"));
+            }
+            script::exec(c, line)?;
+            Ok(None)
         }
         Step::Redefine { line } => {
             let id = script::assignment_target(c, line)
