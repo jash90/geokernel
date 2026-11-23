@@ -510,6 +510,33 @@ impl Saved {
     }
 }
 
+/// The undefined-for-good state of the expressions in a locus chain
+/// (`SVD`, see `expr::Stuck`). The reference samples a copy of the
+/// construction (its macro construction), so nothing a sample does reaches
+/// the live objects; the sampling puts the state back before
+/// [`Saved::restore`] recomputes the chain. An optimizer's trials update the live objects in the
+/// reference, so its search keeps what they stick.
+struct SavedStuck(Vec<(crate::expr::ExprDef, Vec<u32>)>);
+
+impl SavedStuck {
+    fn of(c: &Construction, ids: &[usize]) -> Self {
+        Self(
+            ids.iter()
+                .filter_map(|&i| match c.defs[i] {
+                    Def::Expr(d) => Some((d, crate::expr::stuck_nodes(c, d))),
+                    _ => None,
+                })
+                .collect(),
+        )
+    }
+
+    fn restore(self, c: &Construction) {
+        for (d, nodes) in self.0 {
+            crate::expr::restore_stuck_nodes(c, d, nodes);
+        }
+    }
+}
+
 /// Recomputes object `i` from its parents, as an update does.
 pub(crate) fn recompute(c: &mut Construction, i: usize) {
     let def = c.defs[i];
@@ -702,6 +729,7 @@ fn record_path(c: &mut Construction, q: Id, p: Id, owner: Id) -> LocusData {
     let mut ids = chain.clone();
     ids.push(p.0);
     let saved = Saved::of(c, &ids);
+    let stuck = SavedStuck::of(c, &ids);
 
     // `resetMacroConstruction`: the copy of P takes P's coordinates
     // (`GeoPoint.set`, which puts them on the path again), and
@@ -723,6 +751,8 @@ fn record_path(c: &mut Construction, q: Id, p: Id, owner: Id) -> LocusData {
     let copy = PathCopy { id: p, path, st };
     let mover = Mover::new(copy.st.parameter(), min, max, closed, false);
     let data = sample(c, q, &chain, copy, mover, false);
+    // before the chain is recomputed with the saved inputs
+    stuck.restore(c);
     saved.restore(c, &chain);
     data
 }
@@ -736,6 +766,7 @@ fn record_slider(c: &mut Construction, q: Id, a: Id) -> LocusData {
     let mut ids = chain.clone();
     ids.push(a.0);
     let saved = Saved::of(c, &ids);
+    let stuck = SavedStuck::of(c, &ids);
     let copy = SliderCopy {
         id: a,
         min,
@@ -744,6 +775,8 @@ fn record_slider(c: &mut Construction, q: Id, a: Id) -> LocusData {
     };
     let mover = Mover::new(min, min, max, false, true);
     let data = sample(c, q, &chain, copy, mover, true);
+    // before the chain is recomputed with the saved inputs
+    stuck.restore(c);
     saved.restore(c, &chain);
     data
 }
@@ -783,6 +816,27 @@ pub(crate) fn sample_path_point(
     };
     point.calc(c, parameter);
     point.apply(c);
+    c.value(id)
+}
+
+/// [`sample_path_point`] on the conic record `record` instead of the
+/// path's current geometry: a point on a circle that keeps its last record
+/// while undefined is still placed on it (`GeoConicND.pathChanged` reads
+/// the half axes and midpoint whatever `defined` says).
+pub(crate) fn sample_path_point_on(
+    c: &mut Construction,
+    id: Id,
+    record: crate::algo::conic_nd::ConicData,
+    mut st: PathState,
+    parameter: f64,
+) -> Value {
+    st.put_t(parameter);
+    Geom::Conic(record).path_changed(&mut st);
+    st.update_coords();
+    if let Some(slot) = c.path_slot(id.0) {
+        c.paths[slot].1 = st;
+        c.values[id.0] = PathDef::value(&st);
+    }
     c.value(id)
 }
 
@@ -1601,4 +1655,30 @@ fn parse_hull(c: &Construction, list: &str, number: &str) -> Result<LocusDef, St
         ));
     }
     Ok(LocusDef::Hull(list))
+}
+
+#[cfg(test)]
+mod stuck_tests {
+    use crate::{script, Value};
+
+    /// A locus samples a copy of the construction in the reference: a
+    /// sample where the `SVD` input is undefined must not make the live
+    /// result undefined for good (case `funcrest-svd-025`).
+    #[test]
+    fn locus_sampling_leaves_svd_defined() {
+        let mut c = script::load(
+            "c = Circle((0, 0), 2)\nA = Point(c)\nm = If(x(A) > 0, {{x(A), 1}, {2, 3}})\n\
+             s = SVD(m)\nQ = (Length(s), y(A))\nL = Locus(Q, A)\n",
+        )
+        .unwrap();
+        let (a, s) = (c.id("A").unwrap(), c.id("s").unwrap());
+        c.move_point(a, 1.2, 1.6).unwrap();
+        assert!(matches!(c.value(s), Value::List { len: 3 }));
+        c.move_point(a, 2.0, 0.0).unwrap();
+        assert!(matches!(c.value(s), Value::List { len: 3 }));
+        // an ordinary update with an undefined input still sticks
+        c.move_point(a, -2.0, 0.0).unwrap();
+        c.move_point(a, 2.0, 0.0).unwrap();
+        assert!(!c.value(s).is_defined());
+    }
 }

@@ -152,7 +152,7 @@ Spline,,function,P2,partial,4,2,
 BezierCurve,,function,P2,done,1,1,
 ImplicitSurface,,english,,out_of_scope,,,Implicit surfaces are 3D-only objects.
 Normalize,,function,P2,done,3,3,
-SVD,,function,P2,todo,1,0,
+SVD,,function,P2,done,1,1,
 Ellipse,,conic,P1,todo,2,0,"Ellipse(focus, focus, point); Ellipse(focus, focus, semi-major axis length)"
 Hyperbola,,conic,P1,done,2,2,"Hyperbola(focus, focus, point); Hyperbola(focus, focus, semi-major axis length)"
 SecondAxisLength,,conic,P1,todo,1,0,"SecondAxisLength(conic), as a number"

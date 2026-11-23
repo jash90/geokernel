@@ -806,6 +806,50 @@ pub(crate) struct Entry {
     depth: u32,
     cost: u64,
     vars: u64,
+    /// The command nodes of this tree that went undefined for good.
+    stuck: Stuck,
+}
+
+/// The argument nodes of the `SVD` commands in a tree whose result became
+/// undefined for good: `AlgoSVD.compute` marks its output list undefined
+/// when the input is undefined or not a matrix, and a later decomposition
+/// fills the list without marking it defined again. A new definition
+/// starts a new tree, which forgets the state, as rebuilding the algorithm
+/// does.
+#[derive(Default)]
+pub(crate) struct Stuck(std::sync::Mutex<Vec<u32>>);
+
+impl Stuck {
+    fn nodes(&self) -> std::sync::MutexGuard<'_, Vec<u32>> {
+        self.0.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    pub(super) fn contains(&self, node: u32) -> bool {
+        self.nodes().contains(&node)
+    }
+
+    pub(super) fn insert(&self, node: u32) {
+        let mut nodes = self.nodes();
+        if !nodes.contains(&node) {
+            nodes.push(node);
+        }
+    }
+}
+
+/// The nodes of `d`'s tree that went undefined for good (see [`Stuck`]).
+pub(crate) fn stuck_nodes(c: &Construction, d: ExprDef) -> Vec<u32> {
+    entry(c, d).stuck.nodes().clone()
+}
+
+/// Puts back what [`stuck_nodes`] returned for `d`.
+pub(crate) fn restore_stuck_nodes(c: &Construction, d: ExprDef, nodes: Vec<u32>) {
+    *entry(c, d).stuck.nodes() = nodes;
+}
+
+impl Clone for Stuck {
+    fn clone(&self) -> Self {
+        Self(std::sync::Mutex::new(self.nodes().clone()))
+    }
 }
 
 impl Entry {
@@ -843,6 +887,7 @@ impl Entry {
         });
         let lists = reads_list(&p.nodes, &p.tys);
         Entry {
+            stuck: Stuck::default(),
             checks_branches,
             inverts,
             lists,

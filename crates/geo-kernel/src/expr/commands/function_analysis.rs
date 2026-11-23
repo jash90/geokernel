@@ -258,60 +258,98 @@ pub(super) fn normalize<const M: bool>(ctx: &Ctx<'_, M>, l: u32) -> Option<(u32,
     Some((out, len))
 }
 
+/// `SVD(list)` (`AlgoSVD`). An input that is undefined or not a matrix
+/// (`GeoList.isMatrix`: rows of one nonzero length whose elements are not
+/// lists) makes the result undefined for good (see [`super::super::Stuck`]).
 pub(super) fn svd<const M: bool>(ctx: &Ctx<'_, M>, l: u32) -> Option<(u32, u32)> {
     let lists = ctx.lists?;
-    let (start, rows) = ctx.list(l)?;
+    if ctx.e.stuck.contains(l) {
+        return None;
+    }
+    let stick = || {
+        // running out of work is not an answer of the reference
+        if !lists.over() {
+            ctx.e.stuck.insert(l);
+        }
+        None
+    };
+    let Some((start, rows)) = ctx.list(l) else {
+        return stick();
+    };
     if rows == 0 {
-        return None;
+        return stick();
     }
-    let (_, cols) = lists.read(ctx.c, start).run()?;
-    if cols == 0 || !lists.charge(u64::from(rows) * u64::from(cols)) {
-        return None;
+    let Some((_, cols)) = lists.read(ctx.c, start).run() else {
+        return stick();
+    };
+    if cols == 0 {
+        return stick();
     }
-    let wide = rows < cols;
-    let [height, rank] = if wide { [cols, rows] } else { [rows, cols] }.map(|n| n as usize);
-    let mut columns = vec![vec![0.0; height]; rank];
+    // `AlgebraProcessor.processList`: an independent list literal whose
+    // rows hold only undefined elements (`GeoList.isUndefinedMatrix`) is
+    // undefined itself, so `SVD({{0/0}})` meets an undefined input.
+    let undefined_row = |i: u32| {
+        lists
+            .read(ctx.c, start + i)
+            .run()
+            .is_some_and(|(input, length)| {
+                length > 0
+                    && (0..length).all(|j| {
+                        let slot = lists.read(ctx.c, input + j);
+                        let (kind, defined) = (slot.kind, slot.value.is_defined());
+                        kind != Kind::List && number_of(slot).map_or(!defined, f64::is_nan)
+                    })
+            })
+    };
+    if ctx.is_constant(l) && (0..rows).all(undefined_row) {
+        return stick();
+    }
     for i in 0..rows {
-        let (input, length) = lists.read(ctx.c, start + i).run()?;
-        if length < cols {
-            return None;
-        }
-        for j in 0..cols {
-            let x = number_of(lists.read(ctx.c, input + j)).filter(|x| x.is_finite())?;
-            if wide {
-                columns[i as usize][j as usize] = x;
-            } else {
-                columns[j as usize][i as usize] = x;
+        match lists.read(ctx.c, start + i).run() {
+            Some((input, length)) if length == cols => {
+                if (0..cols).any(|j| lists.read(ctx.c, input + j).kind == Kind::List) {
+                    return stick();
+                }
             }
+            _ => return stick(),
         }
     }
-    let (mut left, singular, mut right) = svd::decompose(columns, |work| lists.charge(work))?;
+    if !lists.charge(u64::from(rows) * u64::from(cols)) {
+        return None;
+    }
+    // A matrix with fewer rows than columns is decomposed transposed.
+    let wide = rows < cols;
+    let [height, width] = if wide { [cols, rows] } else { [rows, cols] }.map(|n| n as usize);
+    let mut matrix = vec![vec![0.0; width]; height];
+    for i in 0..rows {
+        let (input, _) = lists.read(ctx.c, start + i).run()?;
+        for j in 0..cols {
+            // `NaN` and infinite entries are decomposed as they are
+            let x = number_of(lists.read(ctx.c, input + j))?;
+            let (r, c) = if wide { (j, i) } else { (i, j) };
+            matrix[r as usize][c as usize] = x;
+        }
+    }
+    let (mut left, singular, mut right) = svd::decompose(matrix, |work| lists.charge(work))?;
     if wide {
         std::mem::swap(&mut left, &mut right);
     }
+    let rank = singular.len();
     let mut diag = vec![vec![0.0; rank]; rank];
     for (i, sigma) in singular.into_iter().enumerate() {
         diag[i][i] = sigma;
-        // Choose a sign from the largest entry of the left vector.
-        let pivot = left[i].iter().max_by(|a, b| a.abs().total_cmp(&b.abs()))?;
-        if *pivot < 0.0 {
-            for value in left[i].iter_mut().chain(&mut right[i]) {
-                *value = -*value;
-            }
-        }
     }
     let out = lists.reserve(3)?;
     for (i, matrix) in [left, diag, right].into_iter().enumerate() {
-        let rows = matrix[0].len() as u32;
-        let run = lists.reserve(rows)?;
-        for row in 0..rows {
+        let run = lists.reserve(matrix.len() as u32)?;
+        for (r, row) in matrix.iter().enumerate() {
             let cells = lists.reserve(rank as u32)?;
-            for (col, column) in matrix.iter().enumerate() {
-                lists.set(cells + col as u32, Slot::number(column[row as usize]));
+            for (col, &x) in row.iter().enumerate() {
+                lists.set(cells + col as u32, Slot::number(x));
             }
-            lists.set(run + row, Slot::list(cells, rank as u32));
+            lists.set(run + r as u32, Slot::list(cells, rank as u32));
         }
-        lists.set(out + i as u32, Slot::list(run, rows));
+        lists.set(out + i as u32, Slot::list(run, matrix.len() as u32));
     }
     Some((out, 3))
 }
