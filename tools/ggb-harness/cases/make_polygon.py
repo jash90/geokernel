@@ -331,4 +331,10 @@ for count in (4, 5):
                        num("nv", count), "p = Polygon(A, B, nv)"],
          [setn("n", 0)] + ([setn("nv", 3), setn("nv", 5)] if count == 5 else [setn("n", 1)]))
 
+# A vertex keeps the coordinates it gained while the first endpoint was defined.
+topic("keptvertices")
+case("keptvertices", [num("n", 0), pt("U", 0, 0), "A = If(n > 0, U)", pt("B", 2, 0),
+                      "p = Polygon(A, B, 5)"],
+     [setn("n", 1), setn("n", 0)])
+
 cases.write()

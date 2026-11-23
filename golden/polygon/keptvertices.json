@@ -1,0 +1,67 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "polygon-keptvertices-001",
+      "group": "polygon",
+      "script": [
+        "n = 0",
+        "U = (0, 0)",
+        "A = If(n > 0, U)",
+        "B = (2, 0)",
+        "p = Polygon(A, B, 5)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 1.0 },
+        { "action": "set_number", "label": "n", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "U": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": false },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "p": { "type": "polygon", "defined": false },
+          "C": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "D": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "E": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "U": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "p": {
+            "type": "polygon",
+            "defined": true,
+            "vertices": [
+              [0.0, 0.0],
+              [2.0, 0.0],
+              [2.618033988749895, 1.9021130325903064],
+              [1.0000000000000004, 3.077683537175253],
+              [-0.6180339887498947, 1.9021130325903073]
+            ],
+            "area": 6.881909602355867,
+            "signed_area": 6.881909602355867
+          },
+          "C": { "type": "point", "defined": true, "x": 2.618033988749895, "y": 1.9021130325903064 },
+          "D": { "type": "point", "defined": true, "x": 1.0000000000000004, "y": 3.077683537175253 },
+          "E": { "type": "point", "defined": true, "x": -0.6180339887498947, "y": 1.9021130325903073 }
+        },
+        {
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "U": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "A": { "type": "point", "defined": false },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "p": { "type": "polygon", "defined": false },
+          "C": { "type": "point", "defined": true, "x": 2.618033988749895, "y": 1.9021130325903064 },
+          "D": { "type": "point", "defined": true, "x": 1.0000000000000004, "y": 3.077683537175253 },
+          "E": { "type": "point", "defined": true, "x": -0.6180339887498947, "y": 1.9021130325903073 }
+        }
+      ]
+    }
+  ]
+}

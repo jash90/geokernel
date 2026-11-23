@@ -2028,6 +2028,32 @@ fn deleting_a_reader_keeps_the_circle_from_the_intermediate_edit() {
 }
 
 #[test]
+fn deleting_an_unrelated_object_keeps_regular_polygon_vertices_from_the_intermediate_edit() {
+    let mut w = Workbench::from_script(
+        "n = 0\nU = (0, 0)\nA = If(n > 0, U)\nB = (2, 0)\np = Polygon(A, B, 5)\nZ = (5, 5)",
+    )
+    .unwrap();
+    let vertices = |w: &Workbench| {
+        ["C", "D", "E"].map(|label| w.construction.value(w.construction.id(label).unwrap()))
+    };
+    let initial = vertices(&w);
+    let n = w.construction.id("n").unwrap();
+
+    assert!(w.set_number(n, 1.0));
+    let defined = vertices(&w);
+    for (before, after) in initial.into_iter().zip(defined) {
+        assert!(matches!(after, Value::Point { .. }));
+        assert_ne!(before, after);
+    }
+
+    assert!(w.set_number(n, 0.0));
+    assert_eq!(vertices(&w), defined);
+    let z = w.construction.id("Z").unwrap();
+    assert!(w.delete(z));
+    assert_eq!(vertices(&w), defined);
+}
+
+#[test]
 fn redoing_an_undefined_circle_restores_it_from_the_snapshot() {
     let mut w = Workbench::default();
     for line in [

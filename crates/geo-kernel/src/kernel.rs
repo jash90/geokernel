@@ -2416,7 +2416,8 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(Id(i)));
             }
         }
-        // Rebuild symbolic helpers for all intersections after redefinition.
+        // Redefinition rebuilds symbolic helpers even for intersections
+        // that do not read the edited definition.
         self.proof_intersections = Default::default();
         self.rebuild_self_circle_updates();
         self.propagate_dirty_with(dirty, 0, Propagation::Redefinition { rebuild_records });
@@ -3284,8 +3285,8 @@ impl Construction {
         Ok(self.propagate(id))
     }
 
-    /// True when the last coordinate or value update changed a geometric
-    /// record or a hidden intersection start that a later edit can retain.
+    /// True when the last coordinate or value update must replay in order
+    /// to preserve retained geometry or a hidden intersection start.
     pub fn last_update_requires_replay(&self) -> bool {
         self.last_update_requires_replay
     }
@@ -3494,7 +3495,11 @@ impl Construction {
                         continue;
                     }
                     let new = self.compute(def, i);
-                    let record_changed = self.keep_circle_record(i, def, new, rebuild_records);
+                    // Redefinition retains the circle through a point when
+                    // either input is undefined, including its type for proofs.
+                    let reset_circle_record = rebuild_records
+                        && !(refresh_definitions && matches!(def, Def::CircleThrough { .. }));
+                    let record_changed = self.keep_circle_record(i, def, new, reset_circle_record);
                     if let Def::IntersectBoundary(intersection) = def {
                         if let Some(saved) = intersection.with_root(new) {
                             self.defs[i] = Def::IntersectBoundary(saved);
@@ -3518,6 +3523,13 @@ impl Construction {
                             }
                         )
                     {
+                        // An undefined endpoint leaves this vertex at its
+                        // previous coordinates, so replay the edit that set them.
+                        if matches!(def, Def::Polygon(PolygonDef::RegularVertex { a, b, .. })
+                            if new.is_defined() && (self.point(a).is_none() || self.point(b).is_none()))
+                        {
+                            self.last_update_requires_replay = true;
+                        }
                         // Direct placement can define Point(circle) using
                         // retained geometry. The next path algorithm update
                         // clears it even if the circle's record stayed equal.
