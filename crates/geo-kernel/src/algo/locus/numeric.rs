@@ -181,7 +181,9 @@ impl NumericLocus {
 
     fn solve(self, c: &Construction) -> Option<Vec<LocusPoint>> {
         let work = IntersectionWork::new();
-        let number = |arg| c.number(id(arg));
+        // An infinite start, end or step has no bounded integration (the
+        // reference hands it to its fixed-step integrator as it is).
+        let number = |arg| c.number(id(arg)).filter(|v| v.is_finite());
         let function = |arg| FunctionFraction::new(c, id(arg));
         let point = |x, y, line_to| LocusPoint { x, y, line_to };
         match self {
@@ -273,9 +275,11 @@ impl NumericLocus {
             .map(|i| initial.numeric_cell(i))
             .collect::<Option<_>>()?;
         let work = IntersectionWork::new();
+        // as for `solve`: no integration from or to an infinite parameter
+        let bound = |arg| c.number(id(arg)).filter(|v| v.is_finite());
         let traces = adaptive(
-            c.number(id(start))?,
-            c.number(id(end))?,
+            bound(start)?,
+            bound(end)?,
             &initial,
             |t, ys, out| {
                 for (function, value) in functions.iter().zip(out.iter_mut()) {

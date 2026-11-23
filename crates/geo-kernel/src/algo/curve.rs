@@ -576,10 +576,15 @@ impl<'a> Cartesian<'a> {
 }
 
 impl Construction {
-    /// Evaluates a Cartesian curve at its parameter.
+    /// Evaluates a Cartesian curve at its parameter and keeps finite points.
     pub fn curve_point(&self, id: Id, parameter: f64) -> Option<(f64, f64)> {
-        let point = Cartesian::new(self, id)?.value(parameter);
-        (point.0.is_finite() && point.1.is_finite()).then_some(point)
+        self.curve_sample(id, parameter)
+            .filter(|&(x, y)| x.is_finite() && y.is_finite())
+    }
+
+    /// Evaluates a Cartesian curve at its parameter, including nonfinite coordinates.
+    pub fn curve_sample(&self, id: Id, parameter: f64) -> Option<(f64, f64)> {
+        Some(Cartesian::new(self, id)?.value(parameter))
     }
 }
 

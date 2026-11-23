@@ -333,7 +333,7 @@ impl Parser<'_> {
 
     /// The object named `label`, if the construction has it.
     pub(super) fn lookup(&self, label: &str) -> Option<Id> {
-        self.c.id(label)
+        self.c.resolve_label(label)
     }
 
     pub(super) fn read(&mut self, id: Id, input: bool) {
@@ -933,7 +933,22 @@ impl Parser<'_> {
                 _ => Err(format!("`{text}` takes one argument")),
             };
         }
-        if let Some(id) = self.c.id(text) {
+        if text.starts_with("log_{") && self.lookup(text).is_none() {
+            if let Some((base, rhs)) = text.strip_prefix("log_{").and_then(|s| s.split_once('}')) {
+                if let Some(base) = super::plain_number(base) {
+                    let base = self.push(Node::Num(base));
+                    let arg = if rhs.is_empty() {
+                        self.element()?
+                    } else if let Some(number) = super::plain_number(rhs) {
+                        self.push(Node::Num(number))
+                    } else {
+                        return Err(format!("invalid logarithm argument `{rhs}`"));
+                    };
+                    return Ok(self.push(Node::Bin(Bin::LogB, base, arg)));
+                }
+            }
+        }
+        if let Some(id) = self.lookup(text) {
             if self.equation && matches!(self.c.def(id), crate::Def::XAxis | crate::Def::YAxis) {
                 return Err("a line cannot be used in an expression".into());
             }
@@ -1028,6 +1043,39 @@ impl Parser<'_> {
                 product = self.implicit_product(product, right);
             }
             return Ok(product);
+        }
+        if text.len() <= MAX_NESTING as usize {
+            let mut letters = text.chars();
+            if let Some(first) = letters.next() {
+                if !letters.as_str().is_empty()
+                    && text.chars().all(|letter| {
+                        let mut bytes = [0; 4];
+                        (letter.is_ascii_lowercase() || letter == 'π')
+                            && (matches!(letter, 'x' | 'e' | 'π')
+                                || self.c.id(letter.encode_utf8(&mut bytes)).is_some())
+                    })
+                {
+                    let prefix = text.trim_end_matches('x');
+                    let power = text.len() - prefix.len();
+                    if power > 1 {
+                        let var = self.name("x", false)?;
+                        let exponent = self.push(Node::Num(power as f64));
+                        let right = self.push(Node::Bin(Bin::Pow, var, exponent));
+                        if prefix.is_empty() {
+                            return Ok(right);
+                        }
+                        let left = self.name(prefix, false)?;
+                        return Ok(self.implicit_product(left, right));
+                    }
+                    let mut bytes = [0; 4];
+                    let mut product = self.name(first.encode_utf8(&mut bytes), false)?;
+                    for letter in letters {
+                        let right = self.name(letter.encode_utf8(&mut bytes), false)?;
+                        product = self.implicit_product(product, right);
+                    }
+                    return Ok(product);
+                }
+            }
         }
         Err(format!("unknown object `{text}`"))
     }

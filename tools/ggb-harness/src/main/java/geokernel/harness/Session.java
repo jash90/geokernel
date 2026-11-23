@@ -92,7 +92,7 @@ final class Session {
     private final Map<String, BufferedImage> fixtureImages = new LinkedHashMap<>();
 
     private static final Pattern LINE =
-            Pattern.compile("^([A-Za-z][A-Za-z0-9']*(?:_\\{[A-Za-z0-9]+\\})?)"
+            Pattern.compile("^([A-Za-z][A-Za-z0-9']*(?:_(?:\\{[A-Za-z0-9]+\\}|[A-Za-z0-9]))?)"
                     + "(\\([A-Za-z][A-Za-z0-9]*(?:, *[A-Za-z][A-Za-z0-9]*)*\\))? = (.+)$");
     /** `label: definition`, where a comparison or equation belongs to the definition. */
     private static final Pattern EQUATION =
@@ -178,9 +178,10 @@ final class Session {
     /** Checks that GeoGebra reports an error and creates no output. */
     void reject(String line) {
         Matcher matcher = LINE.matcher(line);
-        if (!matcher.matches() || kernel.lookupLabel(matcher.group(1)) != null) {
-            throw new IllegalArgumentException("expected an assignment to a new label: " + line);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("expected an assignment: " + line);
         }
+        GeoElement original = kernel.lookupLabel(matcher.group(1));
         CommandErrorHandler errors = new CommandErrorHandler(line, true);
         Log logger = Log.getLogger();
         Log.Level level = logger.getLogLevel();
@@ -195,9 +196,47 @@ final class Session {
             logger.setLogLevel(level);
         }
         if (!errors.reported || (out != null && out.length != 0)
-                || kernel.lookupLabel(matcher.group(1)) != null) {
-            throw new IllegalStateException("GeoGebra did not reject: " + line);
+                || kernel.lookupLabel(matcher.group(1)) != original) {
+            throw new IllegalStateException("expected rejection with an unchanged label: " + line);
         }
+    }
+
+    /** Applies an assignment to a label already in the snapshot. */
+    void redefine(String line) {
+        Matcher matcher = LINE.matcher(line);
+        if (!matcher.matches() || kernel.lookupLabel(matcher.group(1)) == null) {
+            throw new IllegalArgumentException("expected an assignment to an existing label: " + line);
+        }
+        GeoElementND[] out = processor.processAlgebraCommandNoExceptionHandling(
+                line, false, new CommandErrorHandler(line, false), false, null);
+        GeoElement replacement = kernel.lookupLabel(matcher.group(1));
+        if (out == null || out.length != 1 || replacement != out[0]) {
+            throw new IllegalStateException("expected one replacement from: " + line);
+        }
+        objects.replaceAll((name, old) -> kernel.lookupLabel(name));
+        Map<AlgoElement, String> liveGroups = new LinkedHashMap<>();
+        growingPoints.forEach((algo, prefix) -> {
+            AlgoElement live = algo;
+            for (GeoElement old : algo.getOutput()) {
+                String name = old.getLabelSimple();
+                if (name == null || !name.startsWith(prefix)) {
+                    continue;
+                }
+                GeoElement current = kernel.lookupLabel(name);
+                if (current != null && current.getParentAlgorithm() != null) {
+                    live = current.getParentAlgorithm();
+                    break;
+                }
+            }
+            liveGroups.put(live, prefix);
+        });
+        growingPoints.clear();
+        growingPoints.putAll(liveGroups);
+    }
+
+    void delete(String label) {
+        lookup(label).remove();
+        objects.entrySet().removeIf(entry -> kernel.lookupLabel(entry.getKey()) == null);
     }
 
     /** Runs a scripting command that creates no object of its own, such as
@@ -437,6 +476,10 @@ final class Session {
             namedMultivariate.add(geo);
         }
         String actual = "conic".equals(expected) && geo instanceof GeoConic ? "conic" : schemaType(geo);
+        if (COORDINATES.equals(expected)) {
+            // the class of the folded expression decides, not the label
+            expected = actual.equals("vector") ? "vector" : "point";
+        }
         if (expression && !equationLine && !planeInequality) {
             expected = expressionType(label, actual, line);
         }
@@ -817,7 +860,11 @@ final class Session {
                 }
                 GeoElement previous = objects.putIfAbsent(label, geo);
                 if (previous != null && previous != geo) {
-                    throw new IllegalStateException("label used twice: " + label);
+                    // A removed output frees its label, which a new output can take.
+                    if (previous.isLabelSet() && label.equals(previous.getLabelSimple())) {
+                        throw new IllegalStateException("label used twice: " + label);
+                    }
+                    objects.put(label, geo);
                 }
             }
         }
@@ -941,6 +988,54 @@ final class Session {
                 if (depth == 0) {
                     return i == definition.length() - 1;
                 }
+            }
+        }
+        return false;
+    }
+
+    /** Stands for a point or a vector where the script cannot tell which. */
+    private static final String COORDINATES = "point or vector";
+
+    /**
+     * Whether the expression of a four-argument `Sum` or `Product` is a
+     * point or a vector: it holds a coordinate pair or names such an object.
+     */
+    private boolean foldsCoordinates(String expression) {
+        int depth = 0;
+        for (int i = 0; i < expression.length(); i++) {
+            char ch = expression.charAt(i);
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                depth--;
+            } else if ((ch == ',' || ch == ';') && depth > 0
+                    && !isCallArgument(expression, i)) {
+                return true;
+            }
+        }
+        Matcher m = LABEL.matcher(expression);
+        while (m.find()) {
+            GeoElement named = objects.get(m.group());
+            if (named instanceof GeoPoint || named instanceof GeoVector) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether the separator at `at` splits the arguments of a call, not a pair. */
+    private static boolean isCallArgument(String expression, int at) {
+        int depth = 0;
+        for (int i = at - 1; i >= 0; i--) {
+            char ch = expression.charAt(i);
+            if (ch == ')') {
+                depth++;
+            } else if (ch == '(') {
+                if (depth == 0) {
+                    return i > 0 && (Character.isLetterOrDigit(expression.charAt(i - 1))
+                            || expression.charAt(i - 1) == '_');
+                }
+                depth--;
             }
         }
         return false;
@@ -1316,8 +1411,8 @@ final class Session {
                 return first instanceof GeoLine ? "point" : "line";
             case "Center":
             case "Midpoint":
-                return VARIABLE_X.matcher(arguments).find()
-                        || first instanceof GeoFunction && ((GeoFunction) first).isBooleanFunction()
+                return (VARIABLE_X.matcher(arguments).find() && arguments.matches(".*[<>].*")
+                        || first instanceof GeoFunction && ((GeoFunction) first).isBooleanFunction())
                         ? "number" : "point";
             case "Line":
             case "PerpendicularLine":
@@ -1489,6 +1584,9 @@ final class Session {
                         && VARIABLE_X.matcher(folded.get(0).trim()).find()) {
                     return "function";
                 }
+                if (folded.size() == 4 && foldsCoordinates(folded.get(0))) {
+                    return COORDINATES;
+                }
                 return !folded.isEmpty()
                         && (POINT.matcher(folded.get(0).trim()).matches()
                                 || lead instanceof GeoPoint
@@ -1554,6 +1652,12 @@ final class Session {
                 // the polynomial of an implicit curve.
                 return first instanceof GeoCurveCartesian ? "curve"
                         : first instanceof GeoImplicitCurve ? "implicit" : null;
+            case "Product":
+                // like `Sum`: the fold of points or vectors is one of them;
+                // every other product is typed like an expression
+                List<String> factors = arguments(definition);
+                return factors.size() == 4 && foldsCoordinates(factors.get(0))
+                        ? COORDINATES : null;
             default:
                 // a mathematical function such as `sqrt(a)` or `x(A)`
                 return null;
@@ -1606,6 +1710,33 @@ final class Session {
         return true;
     }
 
+    /**
+     * Whether infinities are recorded with their sign (schema 4, the golden
+     * files): an infinite number in place of its value, and an infinite
+     * sample, pie fraction or locus coordinate in place of the null that
+     * then means NaN only. Otherwise every value that is not finite is
+     * undefined or null (schema 2, which the snapshot and t-pair writers
+     * still produce).
+     */
+    static boolean recordInfinity;
+
+    /**
+     * A sampled value: the number when finite; with {@link #recordInfinity}
+     * the sign of an infinity as {@code {"infinity": 1}} or {@code -1} and
+     * null for NaN; otherwise null for every value that is not finite.
+     */
+    static Object sample(double v) {
+        if (Double.isFinite(v)) {
+            return v;
+        }
+        if (recordInfinity && Double.isInfinite(v)) {
+            Map<String, Object> infinity = new LinkedHashMap<>();
+            infinity.put("infinity", v > 0 ? 1L : -1L);
+            return infinity;
+        }
+        return null;
+    }
+
     static Map<String, Object> describe(GeoElement geo, String type, boolean sampleCurves) {
         Map<String, Object> object = describe(geo, type);
         if (sampleCurves && geo instanceof GeoCurveCartesian curve && curve.isDefined()) {
@@ -1616,7 +1747,10 @@ final class Session {
                 double t = start + (end - start) * fraction;
                 double[] xy = new double[2];
                 curve.evaluateCurve(t, xy);
-                Object point = Double.isFinite(xy[0]) && Double.isFinite(xy[1])
+                // schema 4 records each coordinate like a sample; before,
+                // the pair was null when either coordinate was not finite
+                Object point = recordInfinity ? Arrays.asList(sample(xy[0]), sample(xy[1]))
+                        : Double.isFinite(xy[0]) && Double.isFinite(xy[1])
                         ? pair(xy[0], xy[1]) : null;
                 samples.add(Arrays.asList(t, point));
             }
@@ -1635,7 +1769,7 @@ final class Session {
                 obj.put("radius", pie.getRadius());
                 List<Object> fractions = new ArrayList<>();
                 for (double fraction : pie.getData()) {
-                    fractions.add(Double.isFinite(fraction) ? fraction : null);
+                    fractions.add(sample(fraction));
                 }
                 obj.put("fractions", fractions);
             }
@@ -1671,7 +1805,7 @@ final class Session {
                 List<Object> samples = new ArrayList<>();
                 for (double x : SAMPLES) {
                     double v = sampleFunction(geo, x);
-                    samples.add(Arrays.asList(x, Double.isFinite(v) ? (Object) v : null));
+                    samples.add(Arrays.asList(x, sample(v)));
                 }
                 obj.put("samples", samples);
             }
@@ -1688,10 +1822,18 @@ final class Session {
                     argument[0] = x;
                     argument[1] = y;
                     double v = f.evaluate(argument);
-                    samples.add(Arrays.asList(x, y, Double.isFinite(v) ? (Object) v : null));
+                    samples.add(Arrays.asList(x, y, sample(v)));
                 }
                 obj.put("samples_xy", samples);
             }
+            return obj;
+        }
+        if (recordInfinity && type.equals("number") && geo.isDefined()
+                && Double.isInfinite(((GeoNumeric) geo).getDouble())) {
+            // GeoGebra keeps an infinite number defined; schema 3 and later record
+            // which infinity it holds in place of a value
+            obj.put("defined", true);
+            obj.put("infinity", ((GeoNumeric) geo).getDouble() > 0 ? 1L : -1L);
             return obj;
         }
         Map<String, Object> fields = geo.isDefined() ? fields(geo, type) : null;
@@ -1712,9 +1854,12 @@ final class Session {
         return ((GeoFunctionNVar) geo).evaluate(argument, 0);
     }
 
-    /** Whether a field is finite: a number, or a list of finite fields or nulls; a name is. */
+    /**
+     * Whether a field is finite: a number, or a list of finite fields, nulls
+     * or recorded infinities; a name is.
+     */
     private static boolean finite(Object v) {
-        if (v == null || v instanceof String || v instanceof Boolean) {
+        if (v == null || v instanceof String || v instanceof Boolean || v instanceof Map) {
             return true;
         }
         if (v instanceof List) {
@@ -1873,8 +2018,7 @@ final class Session {
                 // coordinates
                 List<Object> points = new ArrayList<>();
                 for (MyPoint p : ((GeoLocus) geo).getPoints()) {
-                    points.add(Arrays.asList(Double.isFinite(p.x) ? (Object) p.x : null,
-                            Double.isFinite(p.y) ? (Object) p.y : null, p.getLineTo()));
+                    points.add(Arrays.asList(sample(p.x), sample(p.y), p.getLineTo()));
                 }
                 f.put("points", points);
                 return f;

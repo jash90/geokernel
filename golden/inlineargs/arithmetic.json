@@ -1,0 +1,181 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "inlineargs-arithmetic-001",
+      "group": "inlineargs",
+      "script": [
+        "aa_{1} = 1",
+        "b = aa_1 + aa_{1}"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "aa_{1}", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "aa_{1}": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 }
+        },
+        {
+          "aa_{1}": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": -4.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-arithmetic-002",
+      "group": "inlineargs",
+      "script": [
+        "a = 1",
+        "b = 2",
+        "c = ab + a"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "b", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "c": { "type": "number", "defined": true, "value": 3.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "b": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": -1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": -2.0 },
+          "c": { "type": "number", "defined": true, "value": 0.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-arithmetic-003",
+      "group": "inlineargs",
+      "script": [
+        "a = 1",
+        "f = axx + a",
+        "b = f(2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -3.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 65.0],
+              [-4.0, 17.0],
+              [-2.0, 5.0],
+              [-1.0, 2.0],
+              [-0.5, 1.25],
+              [0.0, 1.0],
+              [0.5, 1.25],
+              [1.0, 2.0],
+              [2.0, 5.0],
+              [4.0, 17.0],
+              [8.0, 65.0]
+            ]
+          },
+          "b": { "type": "number", "defined": true, "value": 5.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, 0.0],
+              [-4.0, 0.0],
+              [-2.0, 0.0],
+              [-1.0, 0.0],
+              [-0.5, 0.0],
+              [0.0, 0.0],
+              [0.5, 0.0],
+              [1.0, 0.0],
+              [2.0, 0.0],
+              [4.0, 0.0],
+              [8.0, 0.0]
+            ]
+          },
+          "b": { "type": "number", "defined": true, "value": 0.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -3.0 },
+          "f": {
+            "type": "function",
+            "defined": true,
+            "samples": [
+              [-8.0, -195.0],
+              [-4.0, -51.0],
+              [-2.0, -15.0],
+              [-1.0, -6.0],
+              [-0.5, -3.75],
+              [0.0, -3.0],
+              [0.5, -3.75],
+              [1.0, -6.0],
+              [2.0, -15.0],
+              [4.0, -51.0],
+              [8.0, -195.0]
+            ]
+          },
+          "b": { "type": "number", "defined": true, "value": -15.0 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-arithmetic-004",
+      "group": "inlineargs",
+      "script": [
+        "a = log_{2}2 / (2)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.5 }
+        }
+      ]
+    },
+    {
+      "id": "inlineargs-arithmetic-005",
+      "group": "inlineargs",
+      "script": [
+        "a = 2",
+        "b = log_{2}(a)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -2.0 },
+        { "action": "set_number", "label": "a", "value": 8.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 8.0 },
+          "b": { "type": "number", "defined": true, "value": 3.0 }
+        }
+      ]
+    }
+  ]
+}

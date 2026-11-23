@@ -1,0 +1,100 @@
+{
+  "schema": 3,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "tpairfixes-numbertext-001",
+      "group": "tpairfixes",
+      "script": [
+        "a = 2",
+        "b = 1 / a",
+        "t = Text(a)",
+        "u = Text(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": 1.0E100 },
+        { "action": "set_number", "label": "a", "value": 1.0E-100 },
+        { "action": "set_number", "label": "a", "value": -0.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": -2.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 2.0 },
+          "b": { "type": "number", "defined": true, "value": 0.5 },
+          "t": { "type": "text", "defined": true, "text": "2" },
+          "u": { "type": "text", "defined": true, "text": "0.5" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E100 },
+          "b": { "type": "number", "defined": true, "value": 1.0E-100 },
+          "t": { "type": "text", "defined": true, "text": "1 ⋅ 10¹⁰⁰" },
+          "u": { "type": "text", "defined": true, "text": "0" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0E-100 },
+          "b": { "type": "number", "defined": true, "value": 1.0E100 },
+          "t": { "type": "text", "defined": true, "text": "0" },
+          "u": { "type": "text", "defined": true, "text": "1 ⋅ 10¹⁰⁰" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -0.0 },
+          "b": { "type": "number", "defined": true, "infinity": -1 },
+          "t": { "type": "text", "defined": true, "text": "0" },
+          "u": { "type": "text", "defined": true, "text": "-∞" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "infinity": 1 },
+          "t": { "type": "text", "defined": true, "text": "0" },
+          "u": { "type": "text", "defined": true, "text": "∞" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -2.0 },
+          "b": { "type": "number", "defined": true, "value": -0.5 },
+          "t": { "type": "text", "defined": true, "text": "-2" },
+          "u": { "type": "text", "defined": true, "text": "-0.5" }
+        }
+      ]
+    },
+    {
+      "id": "tpairfixes-numbertext-002",
+      "group": "tpairfixes",
+      "script": [
+        "a = 4",
+        "b = sqrt(a)",
+        "t = Text(b)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "a", "value": -1.0 },
+        { "action": "set_number", "label": "a", "value": 0.0 },
+        { "action": "set_number", "label": "a", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "text", "defined": true, "text": "2" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": -1.0 },
+          "b": { "type": "number", "defined": false },
+          "t": { "type": "text", "defined": false }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "b": { "type": "number", "defined": true, "value": 0.0 },
+          "t": { "type": "text", "defined": true, "text": "0" }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 4.0 },
+          "b": { "type": "number", "defined": true, "value": 2.0 },
+          "t": { "type": "text", "defined": true, "text": "2" }
+        }
+      ]
+    }
+  ]
+}

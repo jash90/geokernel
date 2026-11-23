@@ -46,6 +46,40 @@ fn both_label_forms_and_bare_definitions_work() {
 }
 
 #[test]
+fn bare_label_reads_leave_the_journal_version_and_undo_unchanged() {
+    let mut w = Workbench::default();
+    w.run_line("A = (1, 2)").unwrap();
+    let text = w.snapshot_text();
+    let version = w.version();
+    w.run_line("A").unwrap();
+    w.run_lines(&[" A # read".into()]).unwrap();
+    assert_eq!(w.version(), version);
+    assert_eq!(w.undo_depth(), (1, 0));
+    assert_eq!(w.snapshot_text(), text);
+    assert_eq!(w.log.rhs_of("A"), Some("(1, 2)"));
+
+    let clean = Workbench::from_script("A = (1, 2)").unwrap();
+    let clean_bytes = clean.export_ggb(None).unwrap();
+    let expected_xml = geo_import::archive::extract_xml(&clean_bytes).unwrap();
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&format!("{text}\nA\nA # labels: A\n"))
+        .unwrap()
+        .is_empty());
+    for document in [&w, &restored] {
+        let bytes = document.export_ggb(None).unwrap();
+        let xml = geo_import::archive::extract_xml(&bytes).unwrap();
+        assert_eq!(xml, expected_xml);
+        assert!(xml.contains(r#"<coords x="1" y="2" z="1"/>"#));
+    }
+
+    assert!(w.undo());
+    assert!(w.construction().id("A").is_none());
+    assert!(w.redo());
+    assert_eq!(w.snapshot_text(), text);
+}
+
+#[test]
 fn failed_line_changes_nothing() {
     let mut w = triangle();
     let n = w.construction().len();
@@ -56,8 +90,24 @@ fn failed_line_changes_nothing() {
     assert_eq!(w.version(), v);
     assert_eq!(w.history.len(), 0);
     assert!(!w.can_undo());
-    // A duplicate name is also an error.
-    assert!(w.run_line("A = (9, 9)").is_err());
+    assert!(w.run_line("A = A + (9, 9)").is_err());
+}
+
+#[test]
+fn redefinition_keeps_the_object_and_survives_undo_and_replay() {
+    let mut w = triangle();
+    let a = w.construction().id("A").unwrap();
+    let before = w.construction().value(a);
+    w.run_line("A = (9, 9)").unwrap();
+    assert_eq!(w.construction().id("A"), Some(a));
+    assert_eq!(w.construction().value(a), Value::Point { x: 9.0, y: 9.0 });
+    let text = w.snapshot_text();
+    assert!(w.undo());
+    assert_eq!(w.construction().value(a), before);
+    assert!(w.redo());
+    assert_eq!(w.construction().value(a), Value::Point { x: 9.0, y: 9.0 });
+    let (restored, _) = crate::scriptlog::Log::load(&text).unwrap();
+    assert_eq!(restored.value(a), Value::Point { x: 9.0, y: 9.0 });
 }
 
 #[test]
@@ -1403,6 +1453,67 @@ fn equation_sides_keep_their_inputs_through_rebuild_and_undo() {
     check(&w, 1.0, 13.0);
 }
 
+#[test]
+fn deleting_a_replacement_parent_removes_the_active_dependents() {
+    let mut w = Workbench::from_script("X = (1, 1)\nA = (0, 0)\nB = 2 A\nC = (4, 1)\n").unwrap();
+    w.run_line("A = X + (1, 0)").unwrap();
+    let check = |w: &Workbench, exists| {
+        let c = w.construction();
+        for label in ["X", "A", "B"] {
+            assert_eq!(c.id(label).is_some(), exists, "{label}");
+        }
+        assert!(c.id("C").is_some());
+        if exists {
+            assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 2.0, y: 1.0 });
+        }
+    };
+    assert!(w.delete(w.construction().id("X").unwrap()));
+    check(&w, false);
+    assert!(w.undo());
+    check(&w, true);
+    assert!(w.redo());
+    check(&w, false);
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    check(&restored, false);
+}
+
+#[test]
+fn deleting_a_superseded_parent_keeps_the_redefined_object_and_its_dependents() {
+    for (replacement, tail, expected) in [
+        ("(0, 0)", "C = (4, 1)", Value::Point { x: 0.0, y: 0.0 }),
+        ("(n, 1 / n)", "n = 2", Value::Point { x: 4.0, y: 1.0 }),
+    ] {
+        let mut w = Workbench::from_script(&format!("X = (1, 1)\nA = X + (1, 0)\nB = 2 A\n{tail}"))
+            .unwrap();
+        w.run_line(&format!("A = {replacement}")).unwrap();
+        let before = w.snapshot_text();
+        let check = |w: &Workbench| {
+            let c = w.construction();
+            assert!(c.id("X").is_none());
+            let tail = tail.split_once(' ').unwrap().0;
+            assert_eq!(labels(w), ["A", "B", tail]);
+            assert_eq!(c.value(c.id("B").unwrap()), expected);
+            assert_eq!(w.log.rhs_of("A"), Some(replacement));
+        };
+        assert!(w.delete(w.construction().id("X").unwrap()));
+        check(&w);
+        assert!(w.undo());
+        assert_eq!(w.snapshot_text(), before);
+        assert!(w.redo());
+        check(&w);
+        let mut restored = Workbench::default();
+        assert!(restored
+            .restore_text(&w.snapshot_text())
+            .unwrap()
+            .is_empty());
+        check(&restored);
+    }
+}
+
 /// A failed undo keeps its step: the stacks go back to exactly what they
 /// were, so the undo can be taken again and still reaches the state the
 /// step holds (the recovery used to push a fresh state of the current
@@ -1496,4 +1607,56 @@ fn sustained_view_changes_do_not_evict_construction_history() {
     }
     assert_eq!(labels(&w), ["A"], "a construction step was evicted");
     assert!(undos >= 2, "only {undos} steps left");
+}
+
+#[test]
+fn typed_slider_assignments_reveal_interval_roots() {
+    let src = "b = Slider(1, 13)\nb = 4\nf(x) = sin(x)\nh(x) = 0\nR = Intersect(f, h, 1, b)";
+    let check = |w: &Workbench| {
+        let c = w.construction();
+        for (label, x) in [("A", 2.0), ("B", 3.0)] {
+            let id = c.id(label).unwrap_or_else(|| panic!("no {label}"));
+            let Value::Point { x: px, .. } = c.value(id) else {
+                panic!("{label} is undefined");
+            };
+            assert!(
+                (px - x * std::f64::consts::PI).abs() < 1e-6,
+                "{label}: {px}"
+            );
+        }
+    };
+    let mut w = Workbench::from_script(src).unwrap();
+    assert!(w.construction().id("A").is_none());
+    w.run_line("b = 10").unwrap();
+    check(&w);
+    // A replay of the journal keeps the grown labels.
+    let mut restored = Workbench::default();
+    assert!(restored
+        .restore_text(&w.snapshot_text())
+        .unwrap()
+        .is_empty());
+    check(&restored);
+    // A plain script with the assignment grows the same outputs.
+    check(&Workbench::from_script(&format!("{src}\nb = 10")).unwrap());
+}
+
+#[test]
+fn recorded_slots_do_not_stop_later_growth() {
+    let src = concat!(
+        "b = Slider(1, 13)\nb = 4\nf(x) = sin(x)\nh(x) = 0\nR = Intersect(f, h, 1, b)\n",
+        "b = 7\nA = $boundarySlot(R, 2)\nb = 10"
+    );
+    let w = Workbench::from_script(src).unwrap();
+    let c = w.construction();
+    for (label, x) in [("A", 2.0), ("B", 3.0)] {
+        let id = c.id(label).unwrap_or_else(|| panic!("no {label}"));
+        let Value::Point { x: px, .. } = c.value(id) else {
+            panic!("{label} is undefined");
+        };
+        assert!(
+            (px - x * std::f64::consts::PI).abs() < 1e-6,
+            "{label}: {px}"
+        );
+    }
+    assert!(c.id("C").is_none());
 }

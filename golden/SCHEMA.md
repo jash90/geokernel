@@ -18,7 +18,7 @@ One JSON object per file, stored under `golden/<group>/`.
 
 ```json
 {
-  "schema": 2,
+  "schema": 4,
   "generator": "ggb-harness",
   "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
   "cases": []
@@ -27,7 +27,7 @@ One JSON object per file, stored under `golden/<group>/`.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `schema` | integer | `1` stores angles as numbers. `2` records the angle type explicitly. |
+| `schema` | integer | `1` stores angles as numbers. `2` records the angle type explicitly. `3` also records an infinite number as such. `4` also records the sign of an infinite sample (see "Signed samples" below). |
 | `generator` | string | `ggb-harness` for golden data, `format-sample` for the fixture. |
 | `upstream_commit` | string or null | Full GeoGebra commit the values were recorded from. `null` only in the fixture. |
 | `cases` | array of Case | See below. |
@@ -65,8 +65,10 @@ One JSON object per file, stored under `golden/<group>/`.
 | --- | --- | --- |
 | `initial` | none | The state right after the script has run. |
 | `move` | `label`, `x`, `y` | Move the free point `label` to `(x, y)`, or set the free vector `label` to `(x, y)`. A point made by `Point(path)` moves too: GeoGebra puts it at the point of its path closest to `(x, y)` (`GeoPoint.setCoords` with `Path.pointChanged`) and keeps its path parameter. |
-| `set_number` | `label`, `value` | Set the free number `label` to `value`. |
+| `set_number` | `label`, `value` or `infinity` | Set a free number. Use `infinity: 1` or `infinity: -1` for an infinite value. |
 | `set_slider_bounds` | `label`, `min`, `max` | Edit the endpoints of a free number's slider. |
+| `redefine` | `line` | Assign a new definition to an existing label. |
+| `delete` | `label` | Remove the object and its dependents from the construction. Subsequent snapshots omit the deleted labels. |
 | `reject` | `line`, optional `error` | Check that the command reports an error and creates no output. With `error`, the kernel's error must be exactly that text (GeoGebra's message is not recorded). |
 
 A `move` step may include `reference_parse_error`, which records whether the
@@ -117,23 +119,23 @@ carries no numeric fields. When it is `true` it carries exactly these:
 | `line` | `a`, `b`, `c` | Raw GeoGebra coefficients of `a*x + b*y + c = 0`, not normalised. |
 | `segment` | `x1`, `y1`, `x2`, `y2` | Start point and end point, in that order. |
 | `circle` | `cx`, `cy`, `r` | Centre and radius. |
-| `number` | `value` | The numeric value. |
+| `number` | `value` or `infinity` | The numeric value. From schema 3 a number that is `Infinity` or `-Infinity` in GeoGebra is defined and carries `infinity`, 1 or -1, in place of `value`. |
 | `angle` | `value` | The angle in radians, recorded in schema 2. |
 | `vector` | `x`, `y` | The vector's coordinates. Where GeoGebra draws it from (its start point) is not recorded. |
 | `ray` | `x`, `y`, `a`, `b`, `c` | Start point `(x, y)` and the raw GeoGebra coefficients of the line `a*x + b*y + c = 0` it lies on, not normalised. The ray points along `(b, -a)`. |
 | `boolean` | `value` | `true` or `false`, a JSON boolean. `defined` is `false` only for the prover-only "unknown" state. |
-| `function` | `samples` | The values at arguments -8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8, as pairs `[argument, value]` in this order. Nonfinite values are `null` and boolean values are 1 or 0. For a two-variable slope function, the argument supplies `x` and `y` is zero. An undefined function carries no `samples`. |
-| `function_nvar` | `samples_xy` | For an equation side, triples `[x, y, value]` at the function sample coordinates with `y = 1 - 2*x`. A non-finite output is `null`. |
+| `function` | `samples` | The values at arguments -8, -4, -2, -1, -0.5, 0, 0.5, 1, 2, 4, 8, as pairs `[argument, value]` in this order. A value that is not finite is a signed sample (below) and boolean values are 1 or 0. For a two-variable slope function, the argument supplies `x` and `y` is zero. An undefined function carries no `samples`. |
+| `function_nvar` | `samples_xy` | For an equation side, triples `[x, y, value]` at the function sample coordinates with `y = 1 - 2*x`. A value that is not finite is a signed sample. |
 | `image` | | Raster placement is sampled with named corner points. The snapshot of the image records its kind and defined state. |
 | `text` | `text` | The exact text string, compared without numeric tolerance or whitespace normalization. LaTeX is recorded as the stored markup. Text position, visibility and style are read from saved construction fixtures. |
 | `relation` | `reports` | The sorted check name and outcome strings from the numerical relation API. Each string has the form `check=outcome`, with `null` for a missing check or outcome. Conic pairs can add `/touch`, `/intersect`, or `/disjoint` to distinguish reports with the same outcome. Localized dialog text is omitted. |
 | `polygon` | `vertices`, `area`, `signed_area` | `vertices` is the list of vertices in order, each `[x, y]`. `area` is GeoGebra's area (never negative), `signed_area` the area with its sign: positive when the vertices run counter-clockwise. |
 | `polyline` | `vertices`, `length` | `vertices` is the list of vertices in order, each `[x, y]`, or `null` for an undefined point (GeoGebra leaves a hole there). `length` is the value GeoGebra stores, usually the sum of the lengths of the pieces between two defined points. |
-| `piechart` | `center`, `radius`, `fractions` | A world center `[x, y]` and the sector fractions in order, starting at twelve o'clock. A non-finite fraction is `null`. |
+| `piechart` | `center`, `radius`, `fractions` | A world center `[x, y]` and the sector fractions in order, starting at twelve o'clock. A fraction that is not finite is a signed sample. |
 | `list` | `elements` | The elements in order, each an Object of its own (`number`, `angle`, `point`, `vector`, `boolean`, `function`, `text` or `list`, defined or not): `{ "type": "list", "defined": true, "elements": [{ "type": "number", "defined": true, "value": 1.0 }, { "type": "list", "defined": true, "elements": [] }] }`. An element that is a point or vector carries `x` and `y` like an object. |
 | `conic` | `conic_type`, `matrix`, and the parts of the type (below) | A general conic: an object made by `Conic`, `Ellipse`, `Hyperbola` or `Parabola`, or the image of one under a transformation. Every other conic object of GeoGebra is a `circle`, an `arc` or a `sector`. |
 | `curve` | `start`, `end` | The lower and upper parameters of a Cartesian curve. Length cases measure the coordinates over this interval or a supplied interval. |
-| `locus` | `points` | The points of a locus or slope field, in order, each `[x, y, lineTo]`: `lineTo` is `true` when the point is joined to the one before it and `false` when it starts a new piece. `x` and `y` are both `null` for an undefined point, which GeoGebra may append at the end. See below for the view the points depend on. |
+| `locus` | `points` | The points of a locus or slope field, in order, each `[x, y, lineTo]`: `lineTo` is `true` when the point is joined to the one before it and `false` when it starts a new piece. `x` and `y` are both `null` for an undefined point, which GeoGebra may append at the end. The harness writes each coordinate on its own: a single `null` coordinate is not finite (before schema 4) or NaN (from schema 4), and from schema 4 an infinite coordinate is a signed sample. See below for the view the points depend on. |
 | `arc`, `sector` | `value`, `conic_type`, and further fields of the type (below) | A part of a circle or conic (GeoGebra's `GeoConicPart`), made by `CircularArc`, `CircumcircularArc`, `Semicircle` or `Arc` (an `arc`), or by `CircularSector`, `CircumcircularSector` or `Sector` (a `sector`). `value` is the length of an arc and the area of a sector. |
 
 A `conic` carries `conic_type`, a string, and `matrix`, the six numbers
@@ -186,7 +188,8 @@ takes longer than 500 ms, which makes the points depend on the machine; no
 case comes near it, and `geo-kernel` has no such limit.
 
 All numbers are finite JSON numbers that round-trip to the same `f64`.
-A value that is not finite in GeoGebra is recorded as `defined: false`.
+A value that is not finite in GeoGebra is recorded as `defined: false`,
+except, from schema 3 on, a number that holds an infinity (see below).
 This includes a point at infinity and a circle whose centre is at infinity,
 both of which GeoGebra itself reports as defined. A polygon with a vertex at
 infinity is recorded as undefined; in a polyline such a vertex is `null`, and
@@ -194,14 +197,35 @@ its length is not finite, so the polyline is undefined.
 
 A defined Cartesian curve can also carry `samples_curve`, an array of
 `[parameter, [x, y]]` entries at fixed fractions of its parameter interval.
-The coordinate pair is `null` when either coordinate is nonfinite. If the
-array is present, replay checks every sample at the existing tolerance.
+Before schema 4 the coordinate pair is `null` when either coordinate is not
+finite. From schema 4 the pair is always written, a `null` pair is refused,
+and each coordinate that is not finite is a signed sample. If the array is
+present, replay checks every sample at the existing tolerance. A curve inside
+a list carries no `samples_curve`: list replay compares its bounds only, so
+the loader refuses one.
+
+### Signed samples
+
+A sampled value, a pie fraction or a curve or locus coordinate that is not
+finite is written as follows:
+
+| Schema | NaN | `Infinity` | `-Infinity` |
+| --- | --- | --- | --- |
+| 1 to 3 | `null` | `null` | `null` |
+| 4 | `null` | `{ "infinity": 1 }` | `{ "infinity": -1 }` |
+
+So `null` means NaN only in schema 4, and any value that is not finite in
+older files. The infinity is written like the sign of an infinite number
+(`infinity: 1` or `-1`), as a one-field object in place of the value, for
+example `[0.0, { "infinity": 1 }]`. A file before schema 4 must not contain
+such an object.
 
 ## Comparison rules
 
 These rules are applied by the Rust side (`crates/geo-golden`).
 
 - Two numbers `p` and `q` agree when `|p - q| <= 1e-9 * max(1, |p|, |q|)`.
+  An infinite number agrees only with the same infinity.
 - An object that is undefined in GeoGebra must be undefined in `geo-kernel`,
   and the other way round.
 - The object types must be equal.
@@ -213,9 +237,14 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   component magnitude of the two triples, same sign) is also counted for the
   `ggb-harness` cases and reported per group and defining command; it does
   not fail the comparison.
-- Functions: every sample is compared like a number; a `null` sample must
-  meet a value that is not finite in `geo-kernel`, and a finite value a
-  finite one.
+- Functions and curves compare each sample by the numeric rule, so a
+  signed infinity agrees only with the same infinity. A `null` sample
+  requires an absent sample or NaN, in every schema. Before schema 4 a
+  `null` curve pair requires an absent sample, or NaN in one coordinate with
+  the other finite or NaN. From schema 4 each curve coordinate is compared
+  on its own, `null` with NaN; a sample the kernel cannot evaluate agrees
+  only with `null` in both coordinates. Pie fractions follow the sample
+  rule.
 - Segments are compared with their end points in order.
 - Vectors are compared by `x` and `y`.
 - Booleans are compared exactly.
@@ -233,8 +262,8 @@ These rules are applied by the Rust side (`crates/geo-golden`).
   (`Construction::arc`), raw.
 - Loci: the number of points must be equal, and each point must agree with
   the kernel's (`Construction::locus`) like two numbers per coordinate, with
-  the same `lineTo`; a `null` point must meet coordinates that are not
-  finite.
+  the same `lineTo`. A `null` point requires NaN in both coordinates, and a
+  single `null` coordinate requires NaN in that coordinate.
 - Lists: the number of elements must be equal, and each element is
   compared like an object of its type, nested lists recursively
   (`Construction::elements`).
@@ -283,6 +312,38 @@ The type `locus` and the `Slider` line were added the same way, in schema
 
 Schema 2 distinguishes `angle` from `number`, including inside lists. Only
 schema 1 permits an expected number to match an angle in the kernel.
+
+Schema 3 records a number whose value is `Infinity` or `-Infinity` (group
+`infinity`). GeoGebra keeps such a number defined: `GeoNumeric.isDefined`
+only refuses NaN. It is written `{ "type": "number", "defined": true,
+"infinity": 1 }`, or `-1` for the negative one, also as a list element.
+Angles, coordinates and every other value keep the rule above. Schema 1
+and 2 wrote an infinite number as `defined: false`. An undefined number
+in those files agrees with an undefined value. For the exact case pairs in
+`tools/ggb-harness/cases/legacy-infinity.txt`, the loader also restores an
+infinity at each matching snapshot position where the new recording
+supplies its sign. The original files keep their schema version and bytes.
+
+Schema 4 records the sign of an infinite sample (see "Signed samples"). The
+golden files that had a `null` sample were recorded again in schema 4 where
+the new recording changed nothing but those samples, the schema field and
+the encodings the schema bump implies (an infinite number of a schema 1 or 2
+file). A file whose new recording also changed other values, such as the last
+bits of a finite sample, keeps its schema and bytes. Its cases with a `null`
+sample are paired in `legacy-infinity.txt` with a schema 4 recording of the
+same input in the `infinity` group. The two inputs must agree bit for bit,
+so a step that sets +0 is not paired with one that sets -0. The loader checks
+every object of every step of such a pair: the same labels, types and
+definedness, the same list lengths, sample positions, curve bounds, identical
+curve parameters and locus `lineTo` flags, and finite values within the
+comparison tolerance (the rounding of another platform), zeros with the same
+sign. One agreeing object cannot cover a contradictory one. At each `null`
+sample, pie fraction, curve pair or locus coordinate the loader takes the
+recorded sign of an infinity, keeps `null` where the recording has NaN, and
+refuses the pair where one side is finite and the other is not. A locus is
+checked coordinate by coordinate. A legacy
+case whose own file is in schema 4 needs no pair; its pair is kept so the
+recording keeps its id.
 
 Script lines may also be equations in `x` and `y` (group `equations`),
 written `label: lhs = rhs` as GeoGebra's input bar reads them: a linear

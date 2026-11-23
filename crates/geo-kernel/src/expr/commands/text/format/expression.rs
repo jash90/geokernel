@@ -227,14 +227,7 @@ impl Format {
             | Bin::GreaterEqual
             | Bin::Equal
             | Bin::NotEqual => {
-                let sign = match op {
-                    Bin::Less => " < ",
-                    Bin::Greater => " > ",
-                    Bin::LessEqual => " ≤ ",
-                    Bin::GreaterEqual => " ≥ ",
-                    Bin::Equal => " ≟ ",
-                    _ => " ≠ ",
-                };
+                let sign = comparison_sign(op);
                 (3, format!("{}{sign}{}", term(a, 4)?, term(b, 4)?))
             }
             _ => return Some(self.command(binary_name(op), &[term(a, 0)?, term(b, 0)?])),
@@ -259,6 +252,17 @@ impl Format {
             (true, Un::X | Un::Y) | (false, _) => self.command(unary_name(op), &[arg]),
             (true, _) => format!(r"\operatorname{{{}}} \left( {arg} \right)", unary_name(op)),
         }
+    }
+}
+
+fn comparison_sign(op: Bin) -> &'static str {
+    match op {
+        Bin::Less => " < ",
+        Bin::Greater => " > ",
+        Bin::LessEqual => " ≤ ",
+        Bin::GreaterEqual => " ≥ ",
+        Bin::Equal => " ≟ ",
+        _ => " ≠ ",
     }
 }
 

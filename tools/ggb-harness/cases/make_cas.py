@@ -880,6 +880,9 @@ def kernel_refuses(case):
 
 refused = [case for case in c.cases if kernel_refuses(case)]
 c.cases = [case for case in c.cases if not kernel_refuses(case)]
+c.case("denominator", ["f(x) = 1/(x - 0.25)", "g(x) = 1/(x + 0.25)",
+                       "result = CommonDenominator(f, g)"], [])
+c.case("delegated", ["f(x) = 1/(x - 0.25)", "result = Asymptote(f)"], [])
 c.write()
 
 # Expand, Factor, IFactor and Simplify of an implicit curve answer an

@@ -1680,6 +1680,15 @@ fn num(text: &str) -> Option<f64> {
     text.trim().parse::<f64>().ok().filter(|v| v.is_finite())
 }
 
+/// The infinity a saved number holds, as Java writes it.
+fn saved_infinity(text: &str) -> Option<f64> {
+    match text.trim() {
+        "Infinity" => Some(f64::INFINITY),
+        "-Infinity" => Some(f64::NEG_INFINITY),
+        _ => None,
+    }
+}
+
 /// Three numbers of `<coords>`, all finite.
 fn coords3(el: &Element) -> Option<[f64; 3]> {
     let [x, y, z] = el.coords.as_ref()?;
@@ -1807,7 +1816,12 @@ fn saved_defined(el: &Element) -> Option<bool> {
                 .collect::<Option<Vec<f64>>>()
                 .is_some_and(|v| v.iter().all(|x| x.is_finite()) && v.iter().any(|x| *x != 0.0))
         }),
-        "numeric" | "angle" => el.value.as_ref().map(|v| num(v).is_some()),
+        // an infinite number is a defined value, an infinite angle is not
+        "numeric" => el
+            .value
+            .as_ref()
+            .map(|v| num(v).is_some() || saved_infinity(v).is_some()),
+        "angle" => el.value.as_ref().map(|v| num(v).is_some()),
         "boolean" => el
             .value
             .as_deref()
@@ -1946,6 +1960,10 @@ fn cross_check(
         Value::Conic { .. } => matrix6(el)
             .zip(c.conic(id))
             .map(|(saved, computed)| same_matrix(saved, computed.matrix)),
+        Value::Number(n) if n.is_infinite() => el
+            .value
+            .as_deref()
+            .map(|saved| saved_infinity(saved) == Some(n)),
         Value::Number(n) => el.value.as_deref().and_then(num).map(|s| {
             let s = if kind == Kind::Angle {
                 el.angle_style
