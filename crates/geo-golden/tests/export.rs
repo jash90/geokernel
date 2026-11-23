@@ -883,6 +883,8 @@ const WITNESSES: &[(&str, &[(&str, &str)])] = &[
         &[
             ("saved-styles-003", "a"),
             ("saved-styles-003", "a2"),
+            // The journal retains slider thickness. The free number's
+            // thickness still differs from its stripped export.
             ("saved-styles-003", "n"),
         ],
     ),
