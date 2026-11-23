@@ -355,4 +355,19 @@ case("internalnames", [
     *[{"action": "reject", "line": f"j = {command}(O)"}
       for command in ("FirstAxis", "SecondAxis", "Excentricity")]])
 
+
+case("arcreaders", [
+    "A = (0, 0)", "B = (3, 0)", "C = (1, 0)", "r = CircumcircleArc(A, B, C)",
+    "g = FirstAxis(r)", "h = SecondAxis(r)", "e = Excentricity(r)",
+    "b = Defined(If(true, r, r))",
+], [mv("C", 1, 1), mv("C", 1, 0)])
+case("arcreaders", [
+    "A = (1, 2)", "B = (4, 5)", "C = (2, 3)", "r = CircumcircleArc(A, B, C)",
+    "g = FirstAxis(r)", "h = SecondAxis(r)",
+], [mv("C", 0, 0), mv("C", 2, 3)])
+case("internalnames", ["k = Circle((1, 2), 3)", "g = firstaxis(k)"], [])
+case("internalnames", ["g = FirstAxis(Circle((1, 2), 3))"], [])
+case("internalnames", ["k = Circle((1, 2), 3)", "FirstAxis = (3, 4)"],
+     [{"action": "reject", "line": "g = FirstAxis(k)"}])
+
 cases.write()

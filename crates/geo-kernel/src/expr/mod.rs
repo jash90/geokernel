@@ -354,7 +354,7 @@ pub(crate) enum Node {
         elem: Elem,
         explicit: bool,
     },
-    Defined(u32),
+    Defined(u32, bool),
     ObjectDefined(Id),
 }
 
@@ -771,6 +771,7 @@ impl From<Option<eval::Exact>> for StoredExtra {
 struct TextResult {
     text: Option<String>,
     presentation: crate::kernel::text::TextPresentation,
+    invalid_transform_list: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -1054,7 +1055,7 @@ pub(crate) fn children(node: &Node) -> impl Iterator<Item = u32> {
         Node::Filter {
             list, condition, ..
         } => fixed[..2].copy_from_slice(&[list, condition]),
-        Node::Defined(a)
+        Node::Defined(a, _)
         | Node::RootList(a)
         | Node::FunctionAsymptotes(a)
         | Node::VertexForm(a)
@@ -1120,7 +1121,7 @@ pub(crate) fn shift_children(node: &mut Node, by: u32) {
             shift(list);
             shift(condition);
         }
-        Node::Defined(a)
+        Node::Defined(a, _)
         | Node::RootList(a)
         | Node::FunctionAsymptotes(a)
         | Node::VertexForm(a)
@@ -1565,6 +1566,19 @@ pub(crate) fn evaluate(c: &Construction, d: ExprDef) -> Outcome {
         Outcome { raw, dec: None }
     } else {
         let (raw, dec) = eval::root(c, e, None);
+        // An independent point has homogeneous weight 1 even when a
+        // coordinate is infinite. AlgoDependentPoint discards that result.
+        let raw = match raw {
+            Raw::Vec(x, y)
+                if d.kind == Kind::Point
+                    && e.parents.is_empty()
+                    && matches!(e.nodes[e.root as usize], Node::Tuple(..) | Node::Polar(..))
+                    && (x.is_infinite() || y.is_infinite()) =>
+            {
+                Raw::Homogeneous([x, y, 1.0])
+            }
+            _ => raw,
+        };
         Outcome { raw, dec }
     }
 }
@@ -1591,6 +1605,25 @@ fn evaluate_lists(
         return Outcome { raw, dec };
     };
     Outcome { raw, dec: None }
+}
+
+/// The first evaluation can reject an invalid list transform argument.
+pub(crate) fn initialize(c: &mut Construction, id: Id, d: ExprDef) -> Result<Value, Error> {
+    let (value, invalid_transform_list) = if entry(c, d).lists
+        && !matches!(d.kind, Kind::Text | Kind::Function | Kind::FunctionNVar)
+    {
+        let ((value, _), invalid) = update_lists(c, d);
+        (value, invalid)
+    } else {
+        let (value, _) = update(c, id, d);
+        let invalid = matches!(&entry(c, d).extra, StoredExtra::Text(result)
+            if result.invalid_transform_list);
+        (value, invalid)
+    };
+    if invalid_transform_list {
+        return Err(Error::InvalidTransformList);
+    }
+    Ok(value)
 }
 
 /// Recomputes the expression object `d` and keeps its result; its value,
@@ -1642,7 +1675,7 @@ pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) 
         );
     }
     if entry(c, d).lists {
-        return update_lists(c, d);
+        return update_lists(c, d).0;
     }
     if let Some(interval) = entry(c, d).evaluate_interval(c) {
         c.exprs.entries[d.index as usize].interval = Some(interval);
@@ -1667,11 +1700,12 @@ pub(crate) fn update(c: &mut Construction, id: Id, d: ExprDef) -> (Value, bool) 
 /// table and given back, so a recompute allocates nothing once they have
 /// grown.
 #[inline(never)]
-pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
+fn update_lists(c: &mut Construction, d: ExprDef) -> ((Value, bool), bool) {
     let lists = eval::Lists::new(std::mem::take(&mut c.exprs.arena));
     let mut items = std::mem::take(&mut c.exprs.out);
     items.clear();
     let out = evaluate_lists(c, d, &lists, &mut items);
+    let invalid_transform_list = lists.invalid_transform_list.get();
     c.exprs.arena = lists.into_arena();
     let e = &mut c.exprs.entries[d.index as usize];
     let items_changed = !list::same_slots(&e.items, &items);
@@ -1688,7 +1722,7 @@ pub(crate) fn update_lists(c: &mut Construction, d: ExprDef) -> (Value, bool) {
     c.exprs.out = items;
     let v = value(d, out.raw);
     let changed = store(c, d, out);
-    (v, changed || items_changed)
+    ((v, changed || items_changed), invalid_transform_list)
 }
 
 /// `AlgoDependentFunction.inputDefined`: a function is defined when every
@@ -2215,7 +2249,7 @@ pub(crate) fn arithmetic_number(c: &Construction, text: &str) -> Option<f64> {
                 | Node::Tuple(..)
                 | Node::Polar(..)
                 | Node::ObjectDefined(_)
-                | Node::Defined(_)
+                | Node::Defined(..)
         )
     });
     if !arithmetic
@@ -2668,15 +2702,6 @@ fn add_parsed(
     let vector_label = kind == Kind::Vector;
     let mut entry = Entry::new(c, parsed, function);
     entry.function_of_y = function_of_y;
-    if let (Kind::List, Node::Dilate(source, _, _)) = (kind, entry.nodes[entry.root as usize]) {
-        if let Some(found) = eval::invalid_dilation_element(c, &entry, source) {
-            return Err(Error::WrongKind {
-                label: "first leaf of the Dilate list".into(),
-                expected: &[Kind::Point, Kind::Vector],
-                found,
-            });
-        }
-    }
     if constant {
         // `AlgebraProcessor`: an expression without objects is free.
         let angle = entry.root_ty() == Ty::Num(1);

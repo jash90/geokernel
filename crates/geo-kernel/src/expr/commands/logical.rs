@@ -24,11 +24,17 @@ use crate::{Construction, Def, Id, Kind, Value};
 /// `AlgoDefined` uses an object's defined flag. For functions it also
 /// checks the value string, and for points and vectors it excludes infinity.
 pub(in crate::expr) fn defined_object(c: &Construction, id: Id) -> bool {
-    if let Some(arc) = c.arc(id) {
-        return arc.defined;
+    match c.kind(id) {
+        Kind::Point => c
+            .stored_value(id)
+            .point_coords()
+            .is_some_and(|(x, y, z)| !crate::kernel::point_at_infinity(x, y, z)),
+        Kind::Arc | Kind::Sector => c.stored_value(id).is_defined(),
+        Kind::Function => {
+            crate::expr::object_defined(c, id) && super::text::function_has_value(c, id)
+        }
+        _ => crate::expr::object_defined(c, id),
     }
-    crate::expr::object_defined(c, id)
-        && (c.kind(id) != Kind::Function || !super::text::function_displays_undefined(c, id))
 }
 
 /// The commands of this group (see `commands::is_command`).
@@ -146,10 +152,19 @@ pub(super) fn parse(p: &mut Parser, text: &str) -> Result<Option<u32>, String> {
                     return Ok(Some(p.push(Node::ObjectDefined(id))));
                 }
             }
+            // A free x in this argument creates a function for CmdDefined;
+            // it does not make the enclosing Boolean a function.
+            let uses_var = std::mem::take(&mut p.uses_var);
             let [arg] = p.arguments()?[..] else {
                 return Err(format!("`{text}` takes one argument"));
             };
-            Ok(Some(p.push(Node::Defined(arg))))
+            let function = p.uses_var;
+            p.uses_var = uses_var;
+            let node = match p.node(arg) {
+                Node::Obj(id) | Node::FunctionObject(id) => Node::ObjectDefined(id),
+                _ => Node::Defined(arg, function),
+            };
+            Ok(Some(p.push(node)))
         }
         _ => Ok(None),
     }

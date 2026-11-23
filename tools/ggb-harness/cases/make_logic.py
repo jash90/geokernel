@@ -201,4 +201,30 @@ case("defined", [
     "a = CircumcircularArc(A, B, C)", "b = Defined(a)",
 ], [mv("C", 1, 0), mv("C", 4, 0), mv("C", 1, 1)])
 
+
+case("defined", ["f(x) = ?" + " + 0" * 27, "b = Defined(f)"], [])
+case("defined", ["a = 1", "f(x) = a * ?", "b = Defined(f)"],
+     [setn("a", 2), setn("a", 1)])
+case("defined", [
+    "f(x) = ? + 0 * (x + 1)", "g(x) = ? + 0 * x^x",
+    "b = Defined(f)", "c = Defined(g)",
+], [])
+case("defined", [
+    "f(x) = x", "b = Defined((f))", "c = Defined(x + 1)",
+    "A = (0, 0)", "B = (1, 0)", "C = (0, 1)",
+    "d = !Defined(Polygon(A, B, C))",
+], [])
+case("defined", [
+    "A = (inf, 1)", "b = Defined(A)", "c = Defined((inf, 1))",
+    "B = (0, 0)", "C = (1, 0)", "D = (0, 1)", "E = (1, 1)",
+    "g = Line(B, C)", "h = Line(D, E)", "P = Intersect(g, h)",
+    't = Text("abc", P)', "d = Defined(P)", "e = Defined(t)",
+], [])
+case("defined", [
+    "A = (0, 0)", "B = (1, 0)", "g0 = Line(A, B)",
+    *[f"g{i} = If(true, g{i-1}, g{i-1})" for i in range(1, 65)],
+    "b = Defined(g64)",
+], [mv("B", 0, 0), mv("B", 0, 1)])
+case("defined", ["s = Slider(?, 2)", "b = Defined(s)"], [])
+
 cases.write()

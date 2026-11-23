@@ -270,11 +270,6 @@ reason = "AlgoTranspose clears its output on empty input but preserves the defin
 mismatches = ["2:a"]
 
 [[gap]]
-id = "matrixdilate-applylist-006"
-reason = "ApplyMatrix reports a command error when a number is visited before any transformable list element. The kernel creates an undefined list."
-mismatches = ["1:step"]
-
-[[gap]]
 id = "lists-take-016"
 reason = "intended difference, recorded in DIFFERENCES.md: Take(l, m) with m past the end of the list makes an undefined list, but GeoGebra keeps the elements of the last defined one, and + 1 maps over them, giving one undefined number per stale element. The undefined value of the kernel has no elements"
 mismatches = ["5:p", "6:p", "7:p"]

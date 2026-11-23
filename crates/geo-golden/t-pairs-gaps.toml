@@ -5811,12 +5811,6 @@ reason = "the kernel refuses the input: unknown command `Checkbox`"
 mismatches = ["step"]
 
 [[gap]]
-id = "commands/CommandsTest.java:891"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `CircularArc` does not take 6 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
 id = "commands/CommandsTest.java:896"
 category = "text-formatting"
 reason = "values agree but `GeoConic` of kind circle has no the reference-style text yet; the reference prints `(x - 1)² + (y - 1)² = 1764`"
@@ -5850,12 +5844,6 @@ mismatches = ["step"]
 id = "commands/CommandsTest.java:910"
 category = "incomplete-context"
 reason = "the kernel refuses the input: `Circle` does not take 4 argument(s)"
-mismatches = ["step"]
-
-[[gap]]
-id = "commands/CommandsTest.java:915"
-category = "unsupported-command"
-reason = "the kernel refuses the input: `CircularSector` does not take 6 argument(s)"
 mismatches = ["step"]
 
 [[gap]]

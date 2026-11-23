@@ -72,6 +72,25 @@
           "b": { "type": "line", "defined": true, "a": -3.0, "b": 1.0, "c": -0.0 }
         }
       ]
+    },
+    {
+      "id": "lines-internalnames-002",
+      "group": "lines",
+      "script": [
+        "P = (1, 2)",
+        "g: x + y = 7",
+        "m = OrthogonalLine(P, g, xOyPlane)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "P": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 1.0, "c": -7.0 },
+          "m": { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -1.0 }
+        }
+      ]
     }
   ]
 }

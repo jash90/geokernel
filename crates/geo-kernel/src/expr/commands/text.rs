@@ -9,7 +9,7 @@
 // Licensed by GeoGebra GmbH under the EUPL 1.2.
 
 mod format;
-pub(super) use format::function_displays_undefined;
+pub(super) use format::{function_expression_has_value, function_has_value};
 mod numeric;
 pub(crate) mod strings;
 mod table;

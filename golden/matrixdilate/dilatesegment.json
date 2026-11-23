@@ -1,0 +1,62 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "matrixdilate-dilatesegment-001",
+      "group": "matrixdilate",
+      "script": [
+        "A = (0, 0)",
+        "B = (2, 0)",
+        "s = Segment(A, B)",
+        "l_{s} = {s}",
+        "t = Dilate(l_{s}, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "B", "x": 0.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 2.0, "y": 0.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 },
+          "l_{s}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 2.0, "y2": 0.0 }
+            ]
+          },
+          "t": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 4.0, "y2": 0.0 }
+            ]
+          }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "s": { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 3.0 },
+          "l_{s}": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 3.0 }
+            ]
+          },
+          "t": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "segment", "defined": true, "x1": 0.0, "y1": 0.0, "x2": 0.0, "y2": 6.0 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

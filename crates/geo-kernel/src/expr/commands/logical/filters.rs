@@ -75,8 +75,44 @@ impl Parser<'_> {
     }
 }
 
+fn independent_coordinates<const M: bool>(ctx: &Ctx<'_, M>, root: u32) -> bool {
+    let mut pending = vec![root];
+    while let Some(i) = pending.pop() {
+        if ctx.stop(1) {
+            return false;
+        }
+        let node = ctx.node(i);
+        match node {
+            Node::Tuple(..) | Node::Polar(..) | Node::Bin(..) | Node::Un(..) => {
+                pending.extend(crate::expr::children(&node));
+            }
+            Node::Num(_) | Node::MinusOne | Node::Degree => (),
+            _ => return false,
+        }
+    }
+    true
+}
+
 impl<const M: bool> Ctx<'_, M> {
-    pub(crate) fn is_defined_argument(&self, arg: u32) -> bool {
+    pub(crate) fn is_defined_argument(&self, arg: u32, function: bool) -> bool {
+        if function {
+            let meter = crate::expr::eval::Lists::new(Vec::new());
+            let ctx = Ctx::<true> {
+                meter: Some(&meter),
+                ..Ctx::new(self.c, self.e, &crate::expr::eval::Env::None)
+            };
+            return crate::expr::defined_below(&ctx, arg)
+                && crate::expr::commands::text::function_expression_has_value(&ctx, arg);
+        }
+        match self.node(arg) {
+            Node::Obj(id) | Node::FunctionObject(id) => return super::defined_object(self.c, id),
+            Node::If(..) if self.e.tys[arg as usize] == Ty::Object => {
+                return self
+                    .if_alternative(arg)
+                    .is_some_and(|chosen| self.is_defined_argument(chosen, false));
+            }
+            _ => (),
+        }
         if matches!(self.e.tys[arg as usize], Ty::List(_)) {
             return self.list(arg).is_some();
         }
@@ -85,7 +121,13 @@ impl<const M: bool> Ctx<'_, M> {
         }
         match self.full(arg).val {
             Val::N(x) => !x.is_nan(),
-            Val::V(x, y) => x.is_finite() && y.is_finite(),
+            Val::V(x, y) => {
+                !x.is_nan()
+                    && !y.is_nan()
+                    && (x.is_finite() && y.is_finite()
+                        || matches!(self.node(arg), Node::Tuple(..) | Node::Polar(..))
+                            && independent_coordinates(self, arg))
+            }
             Val::B(_, defined) => {
                 defined
                     || !matches!(

@@ -151,6 +151,21 @@ impl ConicPartDef {
     }
 }
 
+impl ConicPartDef {
+    pub(crate) fn reader_name(name: &str) -> Option<&'static str> {
+        [
+            "FirstAxis",
+            "MajorAxis",
+            "SecondAxis",
+            "MinorAxis",
+            "Excentricity",
+            "LinearEccentricity",
+        ]
+        .into_iter()
+        .find(|command| command.eq_ignore_ascii_case(name))
+    }
+}
+
 impl Group for ConicPartDef {
     fn kind(&self) -> Kind {
         match self {
@@ -216,12 +231,15 @@ impl Group for ConicPartDef {
         // An undefined parent makes the object undefined, also where
         // GeoGebra would still read the stale record of an undefined conic
         // or take a point on both objects by construction.
-        if self
-            .parents()
-            .as_slice()
-            .iter()
-            .any(|&p| !c.value(p).is_defined())
-        {
+        if self.parents().as_slice().iter().any(|&p| {
+            let reads_carrier = matches!(self, Self::Axis { .. } | Self::LinearEccentricity(_))
+                && matches!(c.kind(p), Kind::Arc | Kind::Sector);
+            if reads_carrier {
+                !c.stored_value(p).is_defined()
+            } else {
+                !c.value(p).is_defined()
+            }
+        }) {
             return None;
         }
         if let ConicPartDef::IntersectLine { line, conic, which } = *self {
@@ -336,6 +354,10 @@ impl Group for ConicPartDef {
                 (_, k) => Err(format!("`{func}` does not take a {k} and a conic")),
             });
         }
+        if c.id(func).is_some() && Self::reader_name(func).is_some() {
+            return None;
+        }
+        let func = Self::reader_name(func).unwrap_or(func);
         let [arg] = args else { return None };
         let conic = c.id(arg)?;
         let kinds = match func {

@@ -173,6 +173,60 @@
           "d": { "type": "number", "defined": true, "value": 0.0 }
         }
       ]
+    },
+    {
+      "id": "conics-internalnames-002",
+      "group": "conics",
+      "script": [
+        "k = Circle((1, 2), 3)",
+        "g = firstaxis(k)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "g": { "type": "line", "defined": true, "a": -0.0, "b": 1.0, "c": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "conics-internalnames-003",
+      "group": "conics",
+      "script": [
+        "g = FirstAxis(Circle((1, 2), 3))"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "g": { "type": "line", "defined": true, "a": -0.0, "b": 1.0, "c": -2.0 }
+        }
+      ]
+    },
+    {
+      "id": "conics-internalnames-004",
+      "group": "conics",
+      "script": [
+        "k = Circle((1, 2), 3)",
+        "FirstAxis = (3, 4)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "reject", "line": "g = FirstAxis(k)" }
+      ],
+      "snapshots": [
+        {
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "FirstAxis": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        },
+        {
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 3.0 },
+          "FirstAxis": { "type": "point", "defined": true, "x": 3.0, "y": 4.0 }
+        }
+      ]
     }
   ]
 }

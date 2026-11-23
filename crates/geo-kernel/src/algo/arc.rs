@@ -5,6 +5,8 @@
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPart.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartCircle.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartCircumcircleND.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoCircleThreePoints.java
+//   source/shared/common/src/main/java/org/geogebra/common/kernel/kernelND/GeoConicND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartConicPoints.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartConicPointsND.java
 //   source/shared/common/src/main/java/org/geogebra/common/kernel/algos/AlgoConicPartConicParameters.java
@@ -478,11 +480,10 @@ fn circle_through(m: (f64, f64), p: (f64, f64)) -> ConicData {
     ConicData::circle(m.0, m.1, my_length(p.0 - m.0, p.1 - m.1))
 }
 
-/// The value of an arc or a sector from its record: undefined when the
-/// part is, or when its value is not finite (two rays, a degenerate
-/// sector), which GeoGebra counts as defined.
+/// Keep the defined flag in the stored value even when the part has an
+/// infinite measure (two rays or a degenerate sector).
 pub(crate) fn value(sector: bool, a: &ArcData) -> Value {
-    if !a.defined || !a.value.is_finite() {
+    if !a.defined {
         return Value::Undefined;
     }
     if sector {
@@ -1059,6 +1060,19 @@ fn circum_circle(a: &mut ArcData, pa: (f64, f64), pb: (f64, f64), pc: (f64, f64)
 fn circum_degenerate(a: &mut ArcData, pa: (f64, f64), pb: (f64, f64), pc: (f64, f64)) {
     a.conic.ty = ConicType::ParallelLines;
     a.conic.defined = true;
+    // GeoConicND.setCircle with the circumcenter at infinity: the
+    // midpoint is A and the first eigenvector is perpendicular to the
+    // center's direction.
+    let end =
+        if (pb.0 - pa.0).abs() < STANDARD_PRECISION && (pb.1 - pa.1).abs() < STANDARD_PRECISION {
+            pc
+        } else {
+            pb
+        };
+    let (dx, dy) = (pa.0 - end.0, pa.1 - end.1);
+    let length = my_length(dx, dy);
+    a.conic.midpoint = [pa.0, pa.1];
+    a.conic.eigenvec = [[dx / length, dy / length], [-dy / length, dx / length]];
     a.line_points = Some([pa, pc]);
     let (x, y, z) = join(pa, pc);
     let lambda = affine_ratio(pa, pc, pb);

@@ -3395,6 +3395,7 @@ cases = [
   "algebralogic-logic-024",
   "angle-conic-003",
   "arcs-chain-001",
+  "arcs-inline-001",
   "arcs-chain-002",
   "arcs-circular-001",
   "arcs-circular-002",
@@ -3521,6 +3522,9 @@ cases = [
   "matrixdilate-dilatelist-005",
   "matrixdilate-dilatelist-006",
   "matrixdilate-dilateorigin-001",
+  "matrixdilate-dilatereject-001",
+  "matrixdilate-dilatesegment-001",
+  "matrixdilate-dilateslots-001",
 ]
 
 [[form]]
@@ -3540,6 +3544,15 @@ cases = [
   "logic-defined-002",
   "logic-defined-003",
   "logic-defined-004",
+  "logic-defined-005",
+  "logic-defined-006",
+  "logic-defined-007",
+  "logic-defined-008",
+  "logic-defined-009",
+  "logic-defined-010",
+  "logic-defined-011",
+  "conics-arcreaders-001",
+  "corners-definedimage-001",
   "misc-sum-010",
   "misc-sum-011",
   "tpairfixes-fnundef-001",
@@ -3577,4 +3590,18 @@ cases = [
   "tpairfixes-fnundef-033",
   "tpairfixes-fnundef-034",
   "tpairfixes-fnundef-035",
+]
+
+
+[[form]]
+command = "ApplyMatrix"
+form = "list,list"
+cases = [
+  "matrixdilate-applylist-001",
+  "matrixdilate-applylist-002",
+  "matrixdilate-applylist-003",
+  "matrixdilate-applylist-004",
+  "matrixdilate-applylist-005",
+  "matrixdilate-applylist-006",
+  "vectorforms-inlineimages-001",
 ]

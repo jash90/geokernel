@@ -18,12 +18,9 @@ use crate::expr::eval::{Ctx, Val};
 use crate::expr::{self, Node, Ty};
 use crate::kernel::{Def, Id, Kind, Value};
 
-pub(in crate::expr::commands) fn function_displays_undefined(
-    c: &crate::Construction,
-    id: Id,
-) -> bool {
+pub(in crate::expr::commands) fn function_has_value(c: &crate::Construction, id: Id) -> bool {
     let Def::Expr(def) = c.def(id) else {
-        return false;
+        return true;
     };
     let entry = expr::entry(c, def);
     let meter = expr::eval::Lists::new(Vec::new());
@@ -31,11 +28,20 @@ pub(in crate::expr::commands) fn function_displays_undefined(
         meter: Some(&meter),
         ..Ctx::new(c, entry, &expr::eval::Env::None)
     };
+    function_expression_has_value(&ctx, entry.root)
+}
+
+pub(in crate::expr::commands) fn function_expression_has_value<const M: bool>(
+    ctx: &Ctx<'_, M>,
+    root: u32,
+) -> bool {
     let format = Format {
         simplify_coefficients: true,
         ..Format::new(false)
     };
-    format.expression(&ctx, entry.root, true, 0).as_deref() == Some("?")
+    format
+        .expression(ctx, root, true, 0)
+        .is_some_and(|text| text != "?")
 }
 
 pub(super) fn evaluate<const M: bool>(
@@ -128,7 +134,11 @@ fn describe<const M: bool>(ctx: &Ctx<'_, M>, op: TextOp, args: &[u32]) -> Option
     // AlgoText switches the flag after formatting its content.
     let format = Format::new(formula || ctx.text_latex());
     let text_input = ctx.e.tys[input as usize] == Ty::Text;
-    if !formula && (anchor && !defined(ctx, args[1]) || !text_input && !defined(ctx, input)) {
+    let anchor_defined = |i| match ctx.node(i) {
+        Node::Obj(id) => ctx.c.stored_value(id).is_defined(),
+        _ => defined(ctx, i),
+    };
+    if !formula && (anchor && !anchor_defined(args[1]) || !text_input && !defined(ctx, input)) {
         return None;
     }
     let Some(substitute) = substitute else {

@@ -356,6 +356,7 @@ pub(super) fn makes_list(op: ListOp) -> bool {
 
 pub(super) fn list_fn<const M: bool>(
     ctx: &Ctx<'_, M>,
+    node: u32,
     op: ListOp,
     l: u32,
     n: u32,
@@ -405,7 +406,7 @@ pub(super) fn list_fn<const M: bool>(
     if op == ListOp::ApplyMatrix {
         let m = lists.with_list(ctx.c, start, len, |list| Some(matrix::Matrix::read(list)))?;
         let source = ctx.list(n)?;
-        return map_list(ctx, source, |value| m?.apply(value));
+        return map_list(ctx, node, source, |value| m?.apply(value));
     }
     if op == ListOp::MatrixDimension {
         if len == 0 {
@@ -453,21 +454,34 @@ pub(super) fn list_fn<const M: bool>(
 /// transformation reuses its last point or vector output.
 pub(in crate::expr) fn map_list<const M: bool>(
     ctx: &Ctx<'_, M>,
+    node: u32,
     (start, len): (u32, u32),
     transform: impl Fn(Value) -> Option<Value>,
 ) -> Option<(u32, u32)> {
     let lists = ctx.lists?;
+    let dilate = matches!(ctx.node(node), Node::Dilate(..));
     let transformed = |slot: Slot| match transform(slot.value) {
         Some(point @ (Value::Point { .. } | Value::HomogeneousPoint { .. })) => Slot::point(point),
         Some(Value::Vector { x, y }) => Slot::coords(Kind::Vector, x, y),
+        Some(value @ Value::Segment { x1, y1, x2, y2 })
+            if [x1, y1, x2, y2].into_iter().all(f64::is_finite) =>
+        {
+            Slot::with_value(slot.kind, value)
+        }
+        Some(value @ Value::Line { .. }) => Slot::with_value(slot.kind, value),
         _ => Slot::undefined(slot.kind),
     };
     let out = lists.reserve(len)?;
     let mut pending = Vec::new();
-    let mut current = (start, out, len);
+    // AlgoTransformation keeps the output slot at each existing index.
+    let prior = match ctx.e.raw {
+        crate::expr::Raw::List(len) if node == ctx.e.root => (0, len),
+        _ => (0, 0),
+    };
+    let mut current = (start, out, len, prior);
     let mut last = None;
     loop {
-        let (source, target, size) = current;
+        let (source, target, size, (prior, prior_len)) = current;
         if size == 0 {
             let Some(next) = pending.pop() else {
                 return Some((out, len));
@@ -478,21 +492,53 @@ pub(in crate::expr) fn map_list<const M: bool>(
         if !lists.charge(1) {
             return None;
         }
-        current = (source + 1, target + 1, size - 1);
+        let previous = (prior_len > 0).then(|| &ctx.e.items[prior as usize]);
+        current = (
+            source + 1,
+            target + 1,
+            size - 1,
+            (prior + 1, prior_len.saturating_sub(1)),
+        );
         let slot = lists.read(ctx.c, source);
         let result = if let Some((list, len)) = slot.run() {
             let dest = lists.reserve(len)?;
             if len != 0 {
                 pending.push(current);
-                current = (list, dest, len);
+                current = (
+                    list,
+                    dest,
+                    len,
+                    previous.and_then(Slot::run).unwrap_or((0, 0)),
+                );
             }
             Slot::list(dest, len)
-        } else if matches!(slot.kind, Kind::Point | Kind::Vector) {
+        } else if matches!(slot.kind, Kind::Point | Kind::Vector)
+            || dilate && matches!(slot.kind, Kind::Segment | Kind::Line)
+        {
             last = Some(target);
             transformed(slot)
+        } else if slot.kind.is_number() && previous.is_some_and(|p| p.kind == Kind::Point) {
+            // GeoPoint.set copies a number as (value, 0) into the old point.
+            last = Some(target);
+            let point = match slot.value {
+                Value::Number(x) => Slot::coords(Kind::Point, x, 0.0),
+                _ => Slot::undefined(Kind::Point),
+            };
+            transformed(point)
         } else {
             if slot.kind != Kind::List {
-                let previous = last?;
+                let Some(previous) = last else {
+                    // AlgoApplyMatrix and AlgoDilate reuse the most recent
+                    // transformable template across nested lists. Before
+                    // any such template exists, a numeric item raises an
+                    // error when the command is constructed.
+                    if slot.kind.is_number()
+                        || dilate && matches!(slot.kind, Kind::Boolean | Kind::Text)
+                    {
+                        lists.invalid_transform_list.set(true);
+                    }
+                    return None;
+                };
                 lists.set(previous, transformed(lists.read(ctx.c, previous)));
             }
             slot

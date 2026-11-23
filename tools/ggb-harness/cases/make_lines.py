@@ -383,4 +383,8 @@ case("internalnames", [
     {"action": "reject", "line": "g = OrthogonalLine(P, 1)"},
     {"action": "reject", "line": "g = LineBisector(l)"}])
 
+
+case("internalnames", ["P = (1, 2)", "g: x + y = 7",
+                       "m = OrthogonalLine(P, g, xOyPlane)"], [])
+
 cases.write()

@@ -172,15 +172,18 @@ impl Format {
                 };
                 let variable = matches!(base, Node::Var | Node::VarY);
                 if substitute && self.simplify_coefficients {
-                    match ctx.node(a) {
-                        Node::Num(1.0) => return term(b, outer),
-                        Node::Num(0.0) if variable => return Some("0".into()),
-                        Node::Obj(id) if variable => match ctx.c.value(id) {
-                            crate::Value::Number(0.0) => return Some("0".into()),
-                            crate::Value::Number(1.0) => return term(b, outer),
-                            crate::Value::Number(-1.0) => return Some(format!("-{}", term(b, 6)?)),
-                            _ => (),
+                    let coefficient = match ctx.node(a) {
+                        Node::Num(value) => Some(value),
+                        Node::Obj(id) => match ctx.c.value(id) {
+                            crate::Value::Number(value) => Some(value),
+                            _ => None,
                         },
+                        _ => None,
+                    };
+                    match coefficient {
+                        Some(1.0) => return term(b, outer),
+                        Some(-1.0) => return Some(format!("-{}", term(b, 6)?)),
+                        Some(0.0) if polynomial_expression(ctx, b)? => return Some("0".into()),
                         _ => (),
                     }
                 }
@@ -198,19 +201,26 @@ impl Format {
                 (5, format!("{}{sep}{}", term(a, 5)?, term(b, 6)?))
             }
             Bin::Add | Bin::Sub => {
-                let (left, right) = (term(a, 4)?, term(b, 5)?);
                 let zero = |i| match ctx.node(i) {
                     Node::Num(x) => x == 0.0,
                     Node::Obj(id) => ctx.c.value(id) == crate::Value::Number(0.0),
                     _ => false,
                 };
                 if substitute {
-                    if zero(b) || self.simplify_coefficients && right == "0" {
+                    if zero(b) {
                         return term(a, outer);
                     }
-                    if op == Bin::Add && (zero(a) || self.simplify_coefficients && left == "0") {
+                    if op == Bin::Add && zero(a) {
                         return term(b, outer);
                     }
+                }
+                let right = term(b, 5)?;
+                if substitute && self.simplify_coefficients && right == "0" {
+                    return term(a, outer);
+                }
+                let left = term(a, 4)?;
+                if substitute && self.simplify_coefficients && op == Bin::Add && left == "0" {
+                    return Some(right);
                 }
                 let (negative, term) = right
                     .strip_prefix('-')
@@ -255,6 +265,36 @@ impl Format {
             (true, _) => format!(r"\operatorname{{{}}} \left( {arg} \right)", unary_name(op)),
         }
     }
+}
+
+/// StringTemplate accepts constant subexpressions and leaves, and checks
+/// the operations that combine variables separately.
+fn polynomial_expression<const M: bool>(ctx: &Ctx<'_, M>, i: u32) -> Option<bool> {
+    if ctx.stop(1) {
+        return None;
+    }
+    Some(match ctx.node(i) {
+        Node::Bin(Bin::Add | Bin::Sub | Bin::Mul, a, b) => {
+            polynomial_expression(ctx, a)? && polynomial_expression(ctx, b)?
+        }
+        Node::Bin(Bin::Div | Bin::Pow, a, b) => {
+            polynomial_expression(ctx, a)? && constant_expression(ctx, b)?
+        }
+        Node::Bin(..) | Node::Un(..) => constant_expression(ctx, i)?,
+        _ => true,
+    })
+}
+
+fn constant_expression<const M: bool>(ctx: &Ctx<'_, M>, i: u32) -> Option<bool> {
+    if ctx.stop(1) {
+        return None;
+    }
+    Some(match ctx.node(i) {
+        Node::Num(_) | Node::MinusOne | Node::Degree | Node::Bool(_) => true,
+        Node::Bin(_, a, b) => constant_expression(ctx, a)? && constant_expression(ctx, b)?,
+        Node::Un(_, a) => constant_expression(ctx, a)?,
+        _ => false,
+    })
 }
 
 fn comparison_sign(op: Bin) -> &'static str {

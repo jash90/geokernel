@@ -180,6 +180,7 @@ pub(super) struct Lists {
     /// nothing for them.
     objects: RefCell<([Id; MAX_OBJECTS], usize)>,
     built: Cell<u64>,
+    pub(super) invalid_transform_list: Cell<bool>,
     /// The reading of [`work_done`] past which the evaluation is over.
     end: u64,
 }
@@ -191,6 +192,7 @@ impl Lists {
             arena: RefCell::new(arena),
             objects: RefCell::new(([Id(0); MAX_OBJECTS], 0)),
             built: Cell::new(0),
+            invalid_transform_list: Cell::new(false),
             end: work_done().saturating_add(limit()),
         }
     }
@@ -681,39 +683,11 @@ pub(super) fn text_root(c: &Construction, e: &Entry, latex: Option<bool>) -> sup
         }
         text
     });
-    super::TextResult { text, presentation }
-}
-
-/// A list transform has no reusable output until it visits a point or vector.
-pub(super) fn invalid_dilation_element(c: &Construction, e: &Entry, source: u32) -> Option<Kind> {
-    let lists = Lists::new(Vec::new());
-    let ctx = Ctx::<true> {
-        lists: Some(&lists),
-        meter: Some(&lists),
-        ..Ctx::new(c, e, &Env::None)
-    };
-    let mut pending = vec![ctx.list(source)?];
-    while let Some((start, len)) = pending.pop() {
-        for offset in 0..len {
-            if !lists.charge(1) {
-                return None;
-            }
-            let slot = lists.read(c, start + offset);
-            if let Some(nested) = slot.run() {
-                pending.push((start + offset + 1, len - offset - 1));
-                pending.push(nested);
-                break;
-            }
-            match slot.kind {
-                Kind::List => (),
-                kind @ (Kind::Number | Kind::Angle | Kind::Boolean | Kind::Text) => {
-                    return Some(kind);
-                }
-                _ => return None,
-            }
-        }
+    super::TextResult {
+        text,
+        presentation,
+        invalid_transform_list: meter.invalid_transform_list.get(),
     }
-    None
 }
 
 /// Evaluates an entry whose result is a list: its elements go to `out`,
@@ -985,7 +959,9 @@ impl<const M: bool> Ctx<'_, M> {
             Node::ObjectDefined(id) => {
                 Ex::plain(Val::B(commands::defined_object(self.c, id), true))
             }
-            Node::Defined(a) => Ex::plain(Val::B(self.is_defined_argument(a), true)),
+            Node::Defined(a, function) => {
+                Ex::plain(Val::B(self.is_defined_argument(a, function), true))
+            }
             Node::Filter {
                 keep: false,
                 list,
@@ -1065,7 +1041,7 @@ impl<const M: bool> Ctx<'_, M> {
             | Node::Local(..)
             | Node::Algebra(..)
             | Node::ObjectDefined(_)
-            | Node::Defined(_)
+            | Node::Defined(..)
             | Node::Filter { .. }
             | Node::ListOp(..)
             | Node::Range(..)
@@ -1430,7 +1406,7 @@ impl<const M: bool> Ctx<'_, M> {
                 elem,
                 explicit,
             } => self.filter(list, condition, local, elem, explicit, true),
-            Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, op, l, n),
+            Node::ListOp(op, l, n) if op.makes_list() => commands::list_fn(self, i, op, l, n),
             // an element that is a list: its elements were built with the
             // list it belongs to
             Node::ListOp(op, l, n) => self.pick(op, l, n)?.run(),
@@ -1438,7 +1414,7 @@ impl<const M: bool> Ctx<'_, M> {
             Node::Dilate(src, factor, center) => {
                 let (r, sx, sy) = self.dilation(factor, center);
                 let source = self.list(src)?;
-                commands::map_list(self, source, |value| {
+                commands::map_list(self, i, source, |value| {
                     crate::algo::transform::dilate_element(value, r, sx, sy)
                 })
             }

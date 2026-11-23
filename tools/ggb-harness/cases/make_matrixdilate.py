@@ -138,4 +138,16 @@ case("dilateorigin", ["A = (2, 3)", "v = (-1, 2)", "n = 2",
                       "l = {A, {v, A}, 1}", "p = Dilate(l, n)"],
      [setn("n", -2), setn("n", 0), mv("A", -1, 2), setn("n", 0.5)])
 
+
+case("dilateslots", ["A = (1, 1)", "n = 1", "l = If(n > 0, {A}, {3})",
+                     "t = Dilate(l, 2)"], [setn("n", -1), setn("n", 1)])
+case("dilatereject", ["A = (1, 1)"], [
+    *[{"action": "reject", "line": f"n = Length(Dilate({src}, 2))"}
+      for src in ("{1, A}", "{1}", "{true, A}", '{"abc", A}', "{{1}, A}")],
+    {"action": "reject", "line": "txt = Text(Dilate({1, A}, 2))"},
+])
+case("dilatesegment", [
+    "A = (0, 0)", "B = (2, 0)", "s = Segment(A, B)", "l_{s} = {s}", "t = Dilate(l_{s}, 2)",
+], [mv("B", 0, 3)])
+
 cases.write()

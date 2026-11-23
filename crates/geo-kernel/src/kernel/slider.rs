@@ -174,6 +174,18 @@ impl Construction {
     /// [`Construction::set_number`] keeps its value in. A new number is 0,
     /// put in the interval (`GeoNumeric.setIntervalMin` and `Max`).
     pub fn add_slider(&mut self, label: &str, min: f64, max: f64) -> Result<Id, Error> {
+        if min.is_nan() || max.is_nan() {
+            if min.is_infinite() || max.is_infinite() {
+                return Err(Error::NotFinite);
+            }
+            // GeoNumeric.resolveMinMax leaves the initial value in place
+            // when either endpoint is undefined.
+            let id = self.add(label, Def::Number(0.0))?;
+            let bound = |v: f64| v.is_finite().then_some(Bound::Literal(v));
+            self.saved_slider_bounds
+                .insert(id, [bound(min), bound(max)]);
+            return Ok(id);
+        }
         if !(min.is_finite() && max.is_finite()) {
             return Err(Error::NotFinite);
         }
