@@ -262,6 +262,15 @@ impl IntersectionWork {
                 f64::NAN
             };
         }
+        // AlgoFunctionFreehand evaluates two neighboring samples. It has
+        // no expression entry, but the numeric root solvers can still read it.
+        if crate::algo::calculus::freehand_list(c, id).is_some() {
+            return if self.charge(4) {
+                c.function_value(id, x).unwrap_or(f64::NAN)
+            } else {
+                f64::NAN
+            };
+        }
         let env = Env::Value(x);
         self.context(c, id, &env)
             .map_or(f64::NAN, |ctx| ctx.fast(ctx.e.root))
