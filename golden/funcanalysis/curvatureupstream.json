@@ -100,7 +100,7 @@
       ],
       "snapshots": [
         {
-          "R": { "type": "vector", "defined": false }
+          "R": { "type": "vector", "defined": true, "x": 0.2723957318355315, "y": -0.5041543019104001 }
         }
       ]
     },

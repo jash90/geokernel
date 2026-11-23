@@ -14,8 +14,8 @@ env:
 
 jobs:
   # Formatting, lints, the full test suite and the Android check run on the
-  # project's own macOS runner for pushes and for pull requests from this
-  # repository. Pull requests from forks never reach that machine: they run
+  # project's own Linux runners for pushes and for pull requests from this
+  # repository. Pull requests from forks never reach those machines: they run
   # the same job on a GitHub-hosted Linux runner instead.
   check:
     runs-on: ${{ (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted", "geokernel"]') || 'ubuntu-latest' }}
@@ -74,13 +74,14 @@ jobs:
           rustup target add aarch64-linux-android
           cargo check --target aarch64-linux-android -p geo-kernel -p geo-import -p geo-app-core
 
-  # The desktop release targets macOS, Windows and Linux; the job above covers
-  # macOS, this one builds and tests the workspace on the other two systems.
+  # The desktop release targets macOS, Windows and Linux; this job builds and
+  # tests the workspace on all three systems. A break that only one target's
+  # compiler or dependency graph shows (the macOS one adds `objc2`) fails here.
   desktop:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:

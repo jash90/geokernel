@@ -35,7 +35,10 @@
           "r": {
             "type": "list",
             "defined": true,
-            "elements": []
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
           }
         }
       ]
@@ -72,7 +75,10 @@
           "r": {
             "type": "list",
             "defined": true,
-            "elements": []
+            "elements": [
+              { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -1.0 },
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -1.0 }
+            ]
           }
         }
       ]
@@ -146,7 +152,9 @@
           "r": {
             "type": "list",
             "defined": true,
-            "elements": []
+            "elements": [
+              { "type": "line", "defined": true, "a": -1.0, "b": 1.0, "c": -1.0 }
+            ]
           }
         }
       ]
@@ -183,7 +191,9 @@
           "r": {
             "type": "list",
             "defined": true,
-            "elements": []
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 0.0 }
+            ]
           }
         }
       ]
@@ -220,7 +230,10 @@
           "r": {
             "type": "list",
             "defined": true,
-            "elements": []
+            "elements": [
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": -1.5707963267948966 },
+              { "type": "line", "defined": true, "a": 0.0, "b": 1.0, "c": 1.5707963267948966 }
+            ]
           }
         }
       ]
@@ -257,7 +270,9 @@
           "r": {
             "type": "list",
             "defined": true,
-            "elements": []
+            "elements": [
+              { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": 0.0 }
+            ]
           }
         }
       ]

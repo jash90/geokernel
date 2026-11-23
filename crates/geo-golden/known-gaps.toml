@@ -610,68 +610,6 @@ mismatches = ["0:d", "1:d", "1:f", "3:d"]
 # Numerical function analysis
 
 [[gap]]
-id = "funcanalysis-asymptote-001"
-reason = "The headless harness uses CASFactoryDummy and returns an empty list for 1/x. The numeric result has the horizontal line y=0 and the pole x=0."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "funcanalysis-asymptote-002"
-reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the oblique line y=x+1 and the pole x=1."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "funcanalysis-asymptote-004"
-reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has y=x+1 and discards the removable pole."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "funcanalysis-asymptote-005"
-reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the horizontal line y=0 at negative infinity."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "funcanalysis-asymptote-006"
-reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the two horizontal limits of atan."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "funcanalysis-asymptote-007"
-reason = "The headless harness uses CASFactoryDummy and returns an empty list. The numeric result has the logarithmic pole x=0."
-mismatches = ["0:r"]
-
-[[gap]]
-id = "funcanalysis-curvatureupstream-004"
-reason = "CommandsTest and the headless harness record an undefined sine curvature vector because the CAS-derived function is unavailable. The kernel evaluates the vector from numeric derivatives."
-mismatches = ["0:R"]
-
-[[gap]]
-id = "funcanalysis-discontinuity-001"
-reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole (1, 2)."
-mismatches = ["0:R"]
-
-[[gap]]
-id = "funcanalysis-discontinuity-002"
-reason = "The headless CAS supplies no denominator roots and records one undefined point. The numeric result finds two removable holes and labels both in index order."
-mismatches = ["0:R"]
-
-[[gap]]
-id = "funcanalysis-discontinuity-004"
-reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole at zero with limit 1."
-mismatches = ["0:R"]
-
-[[gap]]
-id = "funcanalysis-discontinuity-005"
-reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole at zero with limit 1/2."
-mismatches = ["0:R"]
-
-[[gap]]
-id = "funcanalysis-discontinuity-006"
-reason = "The headless CAS supplies no denominator roots. The numeric result finds the removable hole at (1, 0)."
-mismatches = ["0:R"]
-
-# cas
-
-[[gap]]
 id = "cas-coefficient-001"
 reason = "Main answers nothing here and the kernel keeps that. The lane's own answer paths (start values, the implicit-object and other-object fallbacks, curve rewrites, Simplify of lines and conics, PlotSolve) were removed in the last review round because the reference delegates these answers to its CAS backend, whose choices the kernel could not reproduce exactly; they are future work."
 mismatches = ["0:r1", "0:r3"]
