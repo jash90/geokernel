@@ -1224,7 +1224,16 @@ impl PathDef {
     ) -> Option<PathState> {
         let mut st = *old;
         match self {
-            PathDef::On { path } => st.set_coords(&geom(c, path), x, y),
+            PathDef::On { path } => {
+                // A direct coordinate edit calls pointChanged even if the
+                // circle is undefined. Construction updates still use geom.
+                let geometry = if c.kind(path) == Kind::Circle && !c.value(path).is_defined() {
+                    c.conic_fields(path).map_or(Geom::Undefined, Geom::Conic)
+                } else {
+                    geom(c, path)
+                };
+                st.set_coords(&geometry, x, y);
+            }
             PathDef::InRegion { region } => st.place_in_region(c, region, (x, y)),
             PathDef::RigidEndpoint { anchor, radius, .. } => {
                 st.set_coords(&fixed_circle(c, anchor, Count::Literal(radius)), x, y)

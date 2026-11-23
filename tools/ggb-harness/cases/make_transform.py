@@ -722,4 +722,9 @@ case("polychain", script, [mv("C", *rp()), setn("f", -1.0), setn("g", 2.0), mv("
                            mv("E", *rp()), setn("f", 0.0), setn("f", 1.5), mv("A", *rp()),
                            setn("g", -0.5)])
 
+topic("keptcircle")
+case("keptcircle", [pt("O", 0, 0), pt("B", 1, 0), "g = Line(O, B)", num("r", 2),
+                    "k = Circle(O, r)", "v = (5, 0)", "j = Translate(k, v)", "d = Diameter(g, j)"],
+     [setn("r", -2), setn("r", 3)])
+
 cases.write()

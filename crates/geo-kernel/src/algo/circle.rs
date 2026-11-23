@@ -45,18 +45,6 @@ pub(crate) fn with_radius_value(c: &Construction, center: Id, r: f64) -> Option<
     Some(Value::Circle { cx, cy, r })
 }
 
-/// A Cartesian infinite centre makes the circle unrenderable, but the
-/// circle setter still writes its radius.
-pub(super) fn infinite_center_record(c: &Construction, def: Def) -> Option<(f64, f64, f64)> {
-    let (center, r) = match def {
-        Def::CircleRadius { center, radius } => (center, c.number(radius)?),
-        Def::Conic(ConicDef::LiteralRadius { center, radius }) => (center, radius),
-        _ => return None,
-    };
-    let (x, y) = c.cartesian_point(center)?;
-    (x.is_infinite() || y.is_infinite()).then_some((x, y, radius(r)?))
-}
-
 /// Whether the circle command behind `def` leaves the circle's last record
 /// in place for the current inputs: `GeoQuadricND.setSphereND` returns
 /// before it writes the matrix when the centre is undefined or the radius
@@ -81,6 +69,24 @@ pub(crate) fn keeps_record(c: &Construction, def: Def) -> Option<bool> {
         }
         _ => None,
     }
+}
+
+/// The setter can write a circle record even when its geometry cannot
+/// be displayed: a numeric radius may be undefined, or the Cartesian
+/// centre may have an infinite coordinate with weight 1.
+pub(crate) fn invalid_record(c: &Construction, def: Def) -> Option<(f64, f64, f64)> {
+    let (center, r) = match def {
+        Def::CircleRadius { center, radius } => (
+            center,
+            c.number(radius)
+                .or_else(|| c.infinite_number(radius))
+                .unwrap_or(f64::NAN),
+        ),
+        Def::Conic(ConicDef::LiteralRadius { center, radius }) => (center, radius),
+        _ => return None,
+    };
+    let (x, y) = c.cartesian_point(center)?;
+    (x.is_infinite() || y.is_infinite() || r.is_nan()).then_some((x, y, radius(r)?))
 }
 
 #[cfg(test)]

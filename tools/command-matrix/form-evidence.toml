@@ -792,7 +792,23 @@ cases = ["vector-free-007", "vector-translate-016"]
 [[form]]
 command = "Translate"
 form = "any,vector"
-cases = ["transform-translate-001", "transform-translate-002", "transform-translate-003", "transform-translate-004", "transform-translate-005", "transform-translate-006", "transform-translate-007", "transform-translate-008", "vector-translate-001", "vector-translate-004", "vector-translate-006", "transformsreview-polyline-001"]
+cases = [
+    "arcs-keptpart-001",
+    "arcs-keptpart-002",
+    "transform-keptcircle-001",
+    "transform-translate-001",
+    "transform-translate-002",
+    "transform-translate-003",
+    "transform-translate-004",
+    "transform-translate-005",
+    "transform-translate-006",
+    "transform-translate-007",
+    "transform-translate-008",
+    "transformsreview-polyline-001",
+    "vector-translate-001",
+    "vector-translate-004",
+    "vector-translate-006",
+]
 
 [[form]]
 command = "Trilinear"
@@ -3399,67 +3415,445 @@ cases = ["geomforms-area-001", "geomforms-area-003"]
 [[form]]
 command = "Area"
 form = "polygon"
-cases = ["polygon-regundef-001", "funcrest-conditional-004", "polygon-derived-001"]
+cases = [
+    "funcrest-conditional-004",
+    "polygon-derived-001",
+    "polygon-derived-002",
+    "polygon-derived-003",
+    "polygon-derived-004",
+    "polygon-derived-005",
+    "polygon-derived-006",
+    "polygon-derived-007",
+    "polygon-derived-008",
+    "polygon-derived-009",
+    "polygon-derived-010",
+    "polygon-many-001",
+    "polygon-many-002",
+    "polygon-many-003",
+    "polygon-many-004",
+    "polygon-many-005",
+    "polygon-many-006",
+    "polygon-many-007",
+    "polygon-many-008",
+    "polygon-many-009",
+    "polygon-many-010",
+    "polygon-many-011",
+    "polygon-quad-001",
+    "polygon-quad-002",
+    "polygon-quad-003",
+    "polygon-quad-004",
+    "polygon-quad-005",
+    "polygon-quad-006",
+    "polygon-quad-007",
+    "polygon-quad-008",
+    "polygon-quad-009",
+    "polygon-quad-010",
+    "polygon-quad-011",
+    "polygon-quad-012",
+    "polygon-quad-013",
+    "polygon-quad-014",
+    "polygon-quad-015",
+    "polygon-quad-016",
+    "polygon-quad-017",
+    "polygon-quad-018",
+    "polygon-quad-019",
+    "polygon-quad-020",
+    "polygon-quad-021",
+    "polygon-quad-022",
+    "polygon-quad-023",
+    "polygon-quad-024",
+    "polygon-quad-025",
+    "polygon-quad-026",
+    "polygon-quad-027",
+    "polygon-quad-028",
+    "polygon-regsmall-001",
+    "polygon-regsmall-002",
+    "polygon-regsmall-003",
+    "polygon-regsmall-004",
+    "polygon-regsmall-005",
+    "polygon-regsmall-006",
+    "polygon-regsmall-007",
+    "polygon-regsmall-008",
+    "polygon-regular-001",
+    "polygon-regular-002",
+    "polygon-regular-003",
+    "polygon-regular-004",
+    "polygon-regular-005",
+    "polygon-regular-006",
+    "polygon-regular-007",
+    "polygon-regular-008",
+    "polygon-regular-009",
+    "polygon-regular-010",
+    "polygon-regular-011",
+    "polygon-regular-012",
+    "polygon-regular-013",
+    "polygon-regular-014",
+    "polygon-regular-015",
+    "polygon-regundef-001",
+    "polygon-regundef-002",
+    "polygon-small-001",
+    "polygon-small-002",
+    "polygon-small-003",
+    "polygon-triangle-001",
+    "polygon-triangle-002",
+    "polygon-triangle-003",
+    "polygon-triangle-004",
+    "polygon-triangle-005",
+    "polygon-triangle-006",
+    "polygon-triangle-007",
+    "polygon-triangle-008",
+    "polygon-triangle-009",
+    "polygon-triangle-010",
+    "polygon-triangle-011",
+    "polygon-triangle-012",
+    "polygon-triangle-013",
+    "polygon-triangle-014",
+    "polygon-triangle-015",
+    "polygon-triangle-016",
+    "polygon-triangle-017",
+    "polygon-triangle-018",
+    "polygon-triangle-019",
+    "polygon-triangle-020",
+    "polygon-triangle-021",
+    "polygon-triangle-022",
+    "polygon-triangle-023",
+    "polygon-triangle-024",
+    "polygon-triangle-025",
+    "polygon-triangle-026",
+    "polygon-two-001",
+    "polygon-two-002",
+    "polygon-two-003",
+    "polygon-two-004",
+    "polygon-two-005",
+    "polygon-vertex-009",
+    "polygon-wrap-001",
+    "polygon-wrap-002",
+    "polygon-wrap-003",
+    "polygon-wrap-004",
+    "polygon-wrap-005",
+]
 
 [[form]]
 command = "Axes"
 form = "conic"
-cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+]
 
 [[form]]
 command = "Center"
 form = "conic"
-cases = ["conics-readers-009", "conicforms-coefficients-001", "conicforms-list-002"]
+cases = [
+    "conicforms-coefficients-001",
+    "conicforms-list-002",
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+    "conics-transform-033",
+    "export-conics-001",
+    "matrixdilate-applyconic-001",
+]
 
 [[form]]
 command = "CircumcircleArc"
 form = "point,point,point"
-cases = ["arcs-undefined-003", "arcs-circum-001", "arcs-circum-002"]
+cases = [
+    "arcs-circum-001",
+    "arcs-circum-002",
+    "arcs-circum-005",
+    "arcs-circum-006",
+    "arcs-circum-009",
+    "arcs-circum-010",
+    "arcs-circum-011",
+    "arcs-circum-012",
+    "arcs-circum-013",
+    "arcs-keptpart-001",
+    "arcs-keptpart-003",
+    "arcs-points-003",
+    "arcs-points-004",
+    "arcs-undefined-003",
+    "arcs-undefined-007",
+    "export-conics-001",
+    "locus-arc-003",
+    "transform-anglearg-007",
+    "transform-arcchain-002",
+    "transform-circumarc-001",
+    "transform-circumarc-002",
+    "transform-circumarc-003",
+    "transform-circumarc-004",
+    "transform-circumarc-005",
+    "transform-circumarc-006",
+    "transform-circumarc-007",
+    "transform-circumarc-008",
+    "transform-circumarc-009",
+    "transform-circumarc-010",
+]
 
 [[form]]
 command = "CircumcircleSector"
 form = "point,point,point"
-cases = ["arcs-undefined-007", "arcs-circum-003", "arcs-circum-004"]
+cases = [
+    "arcs-circum-003",
+    "arcs-circum-004",
+    "arcs-circum-007",
+    "arcs-circum-008",
+    "arcs-circum-009",
+    "arcs-circum-010",
+    "arcs-circum-011",
+    "arcs-points-010",
+    "arcs-undefined-007",
+    "export-conics-001",
+    "transform-arcchain-003",
+    "transform-circumsec-001",
+    "transform-circumsec-002",
+    "transform-circumsec-003",
+    "transform-circumsec-004",
+    "transform-circumsec-005",
+    "transform-circumsec-006",
+    "transform-circumsec-007",
+    "transform-circumsec-008",
+    "transform-circumsec-009",
+    "transform-circumsec-010",
+]
 
 [[form]]
 command = "Diameter"
 form = "line,conic"
-cases = ["conics-tangent-013", "conics-tangent-003", "conics-tangent-006"]
+cases = [
+    "conics-tangent-003",
+    "conics-tangent-006",
+    "conics-tangent-009",
+    "conics-tangent-013",
+    "conics-tangent-014",
+]
 
 [[form]]
 command = "Directrix"
 form = "conic"
-cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-011",
+    "conics-readers-012",
+]
 
 [[form]]
 command = "Eccentricity"
 form = "conic"
-cases = ["conics-readers-011", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+]
 
 [[form]]
 command = "Ellipse"
 form = "point,point,number"
-cases = ["conics-readers-009", "conicforms-pole-001", "conicpaths-ellipse-007"]
+cases = [
+    "conicforms-pole-001",
+    "conicpaths-ellipse-007",
+    "conics-focilength-001",
+    "conics-focilength-002",
+    "conics-focilength-003",
+    "conics-focilength-007",
+    "conics-focilength-008",
+    "conics-focilength-009",
+    "conics-intersection-014",
+    "conics-intersection-017",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-tangent-013",
+    "corners-conic-001",
+    "export-conics-001",
+    "geomclip-conic-003",
+    "geomforms-area-001",
+    "geomforms-closest-002",
+    "geomforms-normal-002",
+    "geomforms-pointin-005",
+    "geomforms-tangent-001",
+    "georestclip-paths-002",
+    "georestclip-paths-003",
+    "georestclip-paths-004",
+    "georestclip-polygon-002",
+    "georestclip-polygon-005",
+    "georestclip-polyline-003",
+    "georestclip-polyline-004",
+    "georestclip-region-002",
+    "georestclip-region-003",
+    "georestclip-region-004",
+    "georestclip-segment-003",
+    "georestclip-segment-004",
+    "infinity-inputs-031",
+    "infinity-legacy-001",
+    "infinity-legacy-002",
+    "infinity-legacy-003",
+    "infinity-legacy-004",
+    "infinity-legacy-005",
+    "intersections-boundedconicreview-007",
+    "intersections-boundedconicreview-008",
+    "intersections-boundedconicreview-009",
+    "intersections-boundedconicreview-010",
+    "intersections-boundedconicreview-011",
+    "intersections-boundedconicreview-012",
+    "intersections-boundedconicreview-019",
+    "intersections-boundedconicreview-020",
+    "intersections-boundedconicreview-021",
+    "intersections-boundedconicreview-022",
+    "intersections-boundedconicreview-023",
+    "intersections-boundedconicreview-024",
+    "intersections-conicline-001",
+    "intersections-conicline-002",
+    "intersections-conicline-003",
+    "intersections-conicline-004",
+    "intersections-conicline-005",
+    "intersections-conicline-006",
+    "intersections-lineconicseed-005",
+    "intersections-lineconicseed-006",
+    "intersections-selectorreview-001",
+    "intersections-selectorreview-002",
+    "intersections-selectorreview-003",
+    "intersections-selectorreview-004",
+    "intersections-selectorreview-005",
+    "intersections-selectorreview-009",
+    "intersections-selectorreview-010",
+    "intersections-slotreview-001",
+    "intersections-slotreview-002",
+    "intersections-slotreview-010",
+    "misc-maximizepoint-007",
+    "misc-minimizepoint-007",
+]
 
 [[form]]
 command = "Excentricity"
 form = "conic"
-cases = ["conics-readers-011", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+    "conics-readers-016",
+]
 
 [[form]]
 command = "FirstAxis"
 form = "conic"
-cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+    "conics-readers-016",
+]
 
 [[form]]
 command = "FirstAxisLength"
 form = "conic"
-cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+    "conics-readers-016",
+    "conics-transform-033",
+    "georestsmall-ifgeometry-004",
+]
 
 [[form]]
 command = "Focus"
 form = "conic"
-cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-015",
+    "conics-transform-033",
+]
 
 [[form]]
 command = "IsTangent"
@@ -3469,22 +3863,231 @@ cases = ["geomforms-tangent-001"]
 [[form]]
 command = "Length"
 form = "conic"
-cases = ["arcs-undefined-007", "arcs-circular-001", "arcs-circular-002"]
+cases = [
+    "arcs-circular-001",
+    "arcs-circular-002",
+    "arcs-circular-003",
+    "arcs-circular-004",
+    "arcs-circular-005",
+    "arcs-circular-006",
+    "arcs-circular-007",
+    "arcs-circular-008",
+    "arcs-circular-009",
+    "arcs-circular-010",
+    "arcs-circular-011",
+    "arcs-circum-001",
+    "arcs-circum-002",
+    "arcs-circum-003",
+    "arcs-circum-004",
+    "arcs-circum-005",
+    "arcs-circum-006",
+    "arcs-circum-007",
+    "arcs-circum-008",
+    "arcs-conicparams-001",
+    "arcs-conicparams-002",
+    "arcs-conicparams-003",
+    "arcs-conicparams-004",
+    "arcs-conicparams-005",
+    "arcs-conicparams-006",
+    "arcs-conicparams-007",
+    "arcs-conicpoints-001",
+    "arcs-conicpoints-002",
+    "arcs-conicpoints-003",
+    "arcs-conicpoints-004",
+    "arcs-conicpoints-005",
+    "arcs-keptpart-002",
+    "arcs-semicircle-001",
+    "arcs-semicircle-002",
+    "arcs-semicircle-003",
+    "arcs-semicircle-004",
+    "arcs-undefined-005",
+    "arcs-undefined-006",
+    "arcs-undefined-007",
+    "export-conics-001",
+    "funcrest-conditional-003",
+    "geomclosure-partlength-001",
+]
 
 [[form]]
 command = "Midpoint"
 form = "conic"
-cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+]
 
 [[form]]
 command = "Parameter"
 form = "conic"
-cases = ["conics-readers-011", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+]
 
 [[form]]
 command = "PathParameter"
 form = "point"
-cases = ["arcs-undefined-003", "arcs-chain-001", "arcs-chain-002"]
+cases = [
+    "arcs-chain-001",
+    "arcs-chain-002",
+    "arcs-keptpart-001",
+    "arcs-points-001",
+    "arcs-points-002",
+    "arcs-points-003",
+    "arcs-points-004",
+    "arcs-points-005",
+    "arcs-points-006",
+    "arcs-points-007",
+    "arcs-points-008",
+    "arcs-points-009",
+    "arcs-points-010",
+    "arcs-undefined-001",
+    "arcs-undefined-002",
+    "arcs-undefined-003",
+    "arcs-undefined-004",
+    "conicpaths-degenerate-001",
+    "conicpaths-degenerate-002",
+    "conicpaths-degenerate-003",
+    "conicpaths-degenerate-004",
+    "conicpaths-degenerate-005",
+    "conicpaths-degenerate-006",
+    "conicpaths-ellipse-001",
+    "conicpaths-ellipse-002",
+    "conicpaths-ellipse-003",
+    "conicpaths-ellipse-004",
+    "conicpaths-ellipse-005",
+    "conicpaths-ellipse-006",
+    "conicpaths-ellipse-007",
+    "conicpaths-ellipse-008",
+    "conicpaths-hyperbola-001",
+    "conicpaths-hyperbola-002",
+    "conicpaths-hyperbola-003",
+    "conicpaths-hyperbola-004",
+    "conicpaths-hyperbola-005",
+    "conicpaths-hyperbola-006",
+    "conicpaths-hyperbola-007",
+    "conicpaths-hyperbola-008",
+    "conicpaths-parabola-001",
+    "conicpaths-parabola-002",
+    "conicpaths-parabola-003",
+    "conicpaths-parabola-004",
+    "conicpaths-parabola-005",
+    "conicpaths-parabola-006",
+    "export-curve-001",
+    "paths-chain-001",
+    "paths-chain-002",
+    "paths-chain-003",
+    "paths-circle-001",
+    "paths-circle-002",
+    "paths-circle-003",
+    "paths-circle-004",
+    "paths-circle-005",
+    "paths-circle-006",
+    "paths-circle-007",
+    "paths-circle-008",
+    "paths-circle-009",
+    "paths-circle-010",
+    "paths-closest-001",
+    "paths-closest-002",
+    "paths-closest-003",
+    "paths-closest-004",
+    "paths-line-001",
+    "paths-line-002",
+    "paths-line-003",
+    "paths-line-004",
+    "paths-line-005",
+    "paths-line-006",
+    "paths-line-007",
+    "paths-line-008",
+    "paths-line-009",
+    "paths-line-010",
+    "paths-line-011",
+    "paths-line-012",
+    "paths-line-013",
+    "paths-polygon-001",
+    "paths-polygon-002",
+    "paths-polygon-003",
+    "paths-polygon-004",
+    "paths-polygon-005",
+    "paths-polygon-006",
+    "paths-polygon-007",
+    "paths-polygon-008",
+    "paths-polygon-009",
+    "paths-polyline-001",
+    "paths-polyline-002",
+    "paths-polyline-003",
+    "paths-polyline-004",
+    "paths-polyline-005",
+    "paths-polyline-006",
+    "paths-ray-001",
+    "paths-ray-002",
+    "paths-ray-003",
+    "paths-ray-004",
+    "paths-ray-005",
+    "paths-ray-006",
+    "paths-segment-001",
+    "paths-segment-002",
+    "paths-segment-003",
+    "paths-segment-004",
+    "paths-segment-005",
+    "paths-segment-006",
+    "paths-segment-007",
+    "paths-segment-008",
+    "paths-segment-009",
+    "paths-segment-010",
+    "paths-start-001",
+    "paths-start-002",
+    "paths-start-003",
+    "paths-start-004",
+    "paths-start-005",
+    "paths-start-006",
+    "paths-start-007",
+    "paths-start-008",
+    "paths-start-009",
+    "paths-start-010",
+    "paths-start-011",
+    "paths-start-012",
+    "paths-start-013",
+    "paths-transformed-001",
+    "paths-transformed-002",
+    "paths-transformed-003",
+    "paths-transformed-004",
+    "paths-transformed-005",
+    "paths-transformed-006",
+    "paths-transformed-007",
+    "paths-transformed-008",
+    "paths-transformed-009",
+    "paths-transformed-010",
+    "paths-transformed-011",
+    "paths-transformed-012",
+    "paths-transformed-013",
+]
 
 [[form]]
 command = "Perimeter"
@@ -3494,27 +4097,252 @@ cases = ["geomextras-perimeterconic-001"]
 [[form]]
 command = "Perimeter"
 form = "polygon"
-cases = ["polygon-regundef-001", "polygon-derived-001", "polygon-derived-002"]
+cases = [
+    "polygon-derived-001",
+    "polygon-derived-002",
+    "polygon-derived-003",
+    "polygon-derived-004",
+    "polygon-derived-008",
+    "polygon-derived-009",
+    "polygon-derived-010",
+    "polygon-many-001",
+    "polygon-many-002",
+    "polygon-many-003",
+    "polygon-many-004",
+    "polygon-many-005",
+    "polygon-many-006",
+    "polygon-many-007",
+    "polygon-many-008",
+    "polygon-many-009",
+    "polygon-many-010",
+    "polygon-many-011",
+    "polygon-quad-001",
+    "polygon-quad-002",
+    "polygon-quad-003",
+    "polygon-quad-004",
+    "polygon-quad-005",
+    "polygon-quad-006",
+    "polygon-quad-007",
+    "polygon-quad-008",
+    "polygon-quad-009",
+    "polygon-quad-010",
+    "polygon-quad-011",
+    "polygon-quad-012",
+    "polygon-quad-013",
+    "polygon-quad-014",
+    "polygon-quad-015",
+    "polygon-quad-016",
+    "polygon-quad-017",
+    "polygon-quad-018",
+    "polygon-quad-019",
+    "polygon-quad-020",
+    "polygon-quad-021",
+    "polygon-quad-022",
+    "polygon-quad-023",
+    "polygon-quad-024",
+    "polygon-quad-025",
+    "polygon-quad-026",
+    "polygon-quad-027",
+    "polygon-quad-028",
+    "polygon-regsmall-007",
+    "polygon-regular-001",
+    "polygon-regular-002",
+    "polygon-regular-003",
+    "polygon-regular-004",
+    "polygon-regular-005",
+    "polygon-regular-006",
+    "polygon-regular-007",
+    "polygon-regular-008",
+    "polygon-regular-009",
+    "polygon-regular-010",
+    "polygon-regular-011",
+    "polygon-regular-012",
+    "polygon-regular-013",
+    "polygon-regular-014",
+    "polygon-regular-016",
+    "polygon-regular-017",
+    "polygon-regular-018",
+    "polygon-regular-019",
+    "polygon-regular-020",
+    "polygon-regular-021",
+    "polygon-regular-022",
+    "polygon-regular-023",
+    "polygon-regular-024",
+    "polygon-regular-025",
+    "polygon-regular-026",
+    "polygon-regular-027",
+    "polygon-regundef-001",
+    "polygon-small-001",
+    "polygon-small-002",
+    "polygon-small-004",
+    "polygon-triangle-001",
+    "polygon-triangle-002",
+    "polygon-triangle-003",
+    "polygon-triangle-004",
+    "polygon-triangle-005",
+    "polygon-triangle-006",
+    "polygon-triangle-007",
+    "polygon-triangle-008",
+    "polygon-triangle-009",
+    "polygon-triangle-010",
+    "polygon-triangle-011",
+    "polygon-triangle-012",
+    "polygon-triangle-013",
+    "polygon-triangle-014",
+    "polygon-triangle-015",
+    "polygon-triangle-016",
+    "polygon-triangle-017",
+    "polygon-triangle-018",
+    "polygon-triangle-019",
+    "polygon-triangle-020",
+    "polygon-triangle-021",
+    "polygon-triangle-022",
+    "polygon-triangle-023",
+    "polygon-triangle-024",
+    "polygon-triangle-025",
+    "polygon-triangle-026",
+    "polygon-two-001",
+    "polygon-two-002",
+    "polygon-two-003",
+    "polygon-two-004",
+    "polygon-two-005",
+    "polygon-vertex-009",
+    "polygon-wrap-001",
+    "polygon-wrap-002",
+    "polygon-wrap-003",
+    "polygon-wrap-004",
+]
 
 [[form]]
 command = "Polar"
 form = "point,conic"
-cases = ["conics-tangent-013", "conicforms-pole-001", "conics-tangent-003"]
+cases = [
+    "conicforms-pole-001",
+    "conics-tangent-003",
+    "conics-tangent-006",
+    "conics-tangent-009",
+    "conics-tangent-013",
+    "conics-tangent-014",
+]
 
 [[form]]
 command = "Polygon"
 form = "point,point,number"
-cases = ["polygon-regundef-001", "angle-polygon-002", "georestclip-polygon-003"]
+cases = [
+    "angle-polygon-002",
+    "georestclip-polygon-003",
+    "georestclip-polygon-004",
+    "inlineargs-points-002",
+    "matrixdilate-applypoly-003",
+    "matrixdilate-upstream-009",
+    "paths-polygon-005",
+    "polygon-keptsides-001",
+    "polygon-keptsides-002",
+    "polygon-labels-005",
+    "polygon-regsmall-001",
+    "polygon-regsmall-002",
+    "polygon-regsmall-003",
+    "polygon-regsmall-004",
+    "polygon-regsmall-005",
+    "polygon-regsmall-006",
+    "polygon-regsmall-007",
+    "polygon-regsmall-008",
+    "polygon-regular-001",
+    "polygon-regular-002",
+    "polygon-regular-003",
+    "polygon-regular-004",
+    "polygon-regular-005",
+    "polygon-regular-006",
+    "polygon-regular-007",
+    "polygon-regular-008",
+    "polygon-regular-009",
+    "polygon-regular-010",
+    "polygon-regular-011",
+    "polygon-regular-012",
+    "polygon-regular-013",
+    "polygon-regular-014",
+    "polygon-regular-015",
+    "polygon-regular-016",
+    "polygon-regular-017",
+    "polygon-regular-018",
+    "polygon-regular-019",
+    "polygon-regular-020",
+    "polygon-regular-021",
+    "polygon-regular-022",
+    "polygon-regular-023",
+    "polygon-regular-024",
+    "polygon-regular-025",
+    "polygon-regular-026",
+    "polygon-regular-027",
+    "polygon-regundef-001",
+    "polygon-regundef-002",
+    "polygon-shrink-001",
+    "polygon-vertexidx-001",
+    "polygon-wrap-001",
+    "polygon-wrap-002",
+    "polygon-wrap-003",
+    "polygon-wrap-004",
+    "polygon-wrap-005",
+    "textformat-formula-001",
+    "textformat-formula-002",
+    "textformat-formula-003",
+    "textformat-text-001",
+    "textformat-text-002",
+    "textformat-text-003",
+    "textformat-text-004",
+    "textformat-text-005",
+    "textformat-text-006",
+    "textformat-text-007",
+    "transformsfix-area-001",
+    "transformsfix-area-002",
+    "transformsfix-area-003",
+    "transformsfix-area-004",
+    "transformsfix-area-005",
+]
 
 [[form]]
 command = "SecondAxis"
 form = "conic"
-cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+    "conics-readers-016",
+]
 
 [[form]]
 command = "SecondAxisLength"
 form = "conic"
-cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+    "conics-readers-016",
+]
 
 [[form]]
 command = "Sector"
@@ -3524,32 +4352,79 @@ cases = ["geomextras-conicparts-001", "geomextras-conicparts-002"]
 [[form]]
 command = "Tangent"
 form = "line,conic"
-cases = ["conics-tangent-013", "conics-tangent-002", "conics-tangent-005"]
+cases = [
+    "conics-tangent-002",
+    "conics-tangent-005",
+    "conics-tangent-008",
+    "conics-tangent-013",
+]
 
 [[form]]
 command = "Tangent"
 form = "point,conic"
-cases = ["conics-tangent-013", "conics-tangent-001", "conics-tangent-004"]
+cases = [
+    "conics-tangent-001",
+    "conics-tangent-004",
+    "conics-tangent-007",
+    "conics-tangent-010",
+    "conics-tangent-011",
+    "conics-tangent-012",
+    "conics-tangent-013",
+    "equations-mixed-002",
+]
 
 [[form]]
 command = "Vertex"
 form = "conic"
-cases = ["conics-readers-009", "conics-readers-001", "conics-readers-002"]
+cases = [
+    "conics-readers-001",
+    "conics-readers-002",
+    "conics-readers-003",
+    "conics-readers-004",
+    "conics-readers-005",
+    "conics-readers-006",
+    "conics-readers-007",
+    "conics-readers-008",
+    "conics-readers-009",
+    "conics-readers-010",
+    "conics-readers-011",
+    "conics-readers-012",
+    "conics-readers-013",
+    "conics-readers-014",
+    "conics-readers-015",
+]
 
 [[form]]
 command = "Vertex"
 form = "polygon,number"
-cases = ["polygon-regundef-002", "polygon-regular-015", "polygon-shrink-001"]
+cases = [
+    "polygon-regular-015",
+    "polygon-regundef-002",
+    "polygon-shrink-001",
+    "polygon-triangle-022",
+    "polygon-vertex-001",
+    "polygon-vertex-002",
+    "polygon-vertex-003",
+    "polygon-vertex-004",
+    "polygon-vertex-005",
+    "polygon-vertex-006",
+    "polygon-vertex-007",
+    "polygon-vertex-008",
+    "polygon-vertex-009",
+    "polygon-vertexidx-001",
+    "polygon-vertexidx-002",
+    "polygon-vertexidx-003",
+]
 
 [[form]]
 command = "Point"
 form = "list"
-cases = ["geomextras-pointlist-007"]
+cases = ["geomextras-pointlist-007", "keptvalues-pointgrowth-001", "keptvalues-pointgrowth-002"]
 
 [[form]]
 command = "Take"
 form = "list,number"
-cases = ["lists-take-001", "lists-take-016"]
+cases = ["lists-take-001", "lists-take-016", "keptvalues-replay-001"]
 
 [[form]]
 command = "RemoveUndefined"
@@ -3559,17 +4434,17 @@ cases = ["lists-undef-003", "lists-undef-005"]
 [[form]]
 command = "Length"
 form = "vector"
-cases = ["infinity-inputs-034"]
+cases = ["infinity-inputs-034", "keptvalues-defined-001"]
 
 [[form]]
 command = "LowerSum"
 form = "function,number,number,number"
-cases = ["calculus-sums-001", "infinity-outputs-039"]
+cases = ["calculus-sums-001", "infinity-outputs-039", "keptvalues-areasums-001", "keptvalues-areasums-002"]
 
 [[form]]
 command = "UpperSum"
 form = "function,number,number,number"
-cases = ["calculus-sums-012", "infinity-outputs-040"]
+cases = ["calculus-sums-012", "infinity-outputs-040", "keptvalues-areasums-001", "keptvalues-areasums-002"]
 
 [[form]]
 command = "LeftSum"
@@ -3579,19 +4454,19 @@ cases = ["calculus-sums-012"]
 [[form]]
 command = "Radius"
 form = "conic"
-cases = ["geomforms-area-001", "geomforms-area-003"]
+cases = ["geomforms-area-001", "geomforms-area-003", "keptvalues-cartesian-001"]
 
 [[form]]
 command = "Transpose"
 form = "list"
-cases = ["matrixdilate-elimination-009"]
+cases = ["matrixdilate-elimination-009", "keptvalues-transpose-001"]
 
 [[form]]
 command = "Intersect"
 form = "line,curve"
-cases = ["georestintersect-spline-001", "georestintersect-trig-001"]
+cases = ["georestintersect-spline-001", "georestintersect-trig-001", "keptvalues-spline-001"]
 
 [[form]]
 command = "Distance"
 form = "point,point"
-cases = ["expr-cmd-001", "expr-fnundef-008"]
+cases = ["expr-cmd-001", "expr-fnundef-008", "keptvalues-cartesian-001"]

@@ -203,7 +203,7 @@ pub(crate) fn record(c: &mut Construction, d: OptimizeDef) -> Value {
             c.def(id),
             Def::CircleRadius { .. } | Def::CircleThrough { .. }
         ) {
-            record = c.circle_record(id);
+            record = c.circle_record(id).filter(|d| d.half_axes[0].is_finite());
             record.map(|d| path::Geom::Conic(d).range())
         } else {
             // A circle from an undefined radius segment remains unavailable

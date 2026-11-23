@@ -107,6 +107,49 @@ fn check_review_values(snap: &Snapshot, c: &Construction, skipped: &[&str]) {
 }
 
 #[test]
+fn saved_regular_polygon_keeps_undefined_generated_vertices() {
+    use geo_import::export::{ggb, Definition, Presentation};
+
+    let (snap, imported) = fixture("saved-keptvertices-001");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    let replayed = script::load(&imported.script.join("\n")).unwrap();
+    check_review_values(&snap, &replayed, &[]);
+
+    let definitions = [
+        ("n = 0", "n"),
+        ("U = (0, 0)", "U"),
+        ("A = If(n > 0, U)", "A"),
+        ("B = (2, 0)", "B"),
+        ("nv = 5", "nv"),
+        ("p = $regularPolygon(A, B, nv)", "p C D E f g h i j"),
+    ]
+    .map(|(line, labels)| {
+        (
+            line,
+            labels
+                .split_whitespace()
+                .map(str::to_owned)
+                .collect::<Vec<_>>(),
+        )
+    });
+    let file = ggb(
+        &replayed,
+        definitions
+            .iter()
+            .map(|(line, outputs)| Definition { line, outputs }),
+        &Presentation::default(),
+    )
+    .unwrap();
+    let reimported = import(&file).unwrap();
+    assert!(reimported.skipped.is_empty(), "{:?}", reimported.skipped);
+    check_review_values(
+        &snap,
+        &script::load(&reimported.script.join("\n")).unwrap(),
+        &[],
+    );
+}
+
+#[test]
 fn saved_curve_intersections_keep_their_output_slots() {
     for name in [
         "saved-curve-intersections-001",
@@ -712,10 +755,10 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
             } else {
                 Vec::new()
             };
-            let agrees = if kind == Kind::ImplicitCurve {
-                compare_construction_object(expected, &c, id)
-            } else {
-                compare_object(expected, kind, &c.value(id), &vertices)
+            let agrees = match kind {
+                Kind::ImplicitCurve => compare_construction_object(expected, &c, id),
+                Kind::List => compare_list(&c, expected, kind, c.elements(id)),
+                _ => compare_object(expected, kind, &c.value(id), &vertices),
             };
             match agrees {
                 Ok(_) => compared += 1,
@@ -810,6 +853,7 @@ fn an_undefined_regular_polygon_reloads_its_saved_vertices() {
 fn a_saved_self_intersection_follows_the_reference_load_order() {
     let (_, imported) = fixture("saved-keptvalues-002");
     assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    assert!(imported.mismatched.is_empty(), "{:?}", imported.mismatched);
     let c = script::load(&imported.script.join("\n")).unwrap();
     let value = |label| c.value(c.id(label).unwrap());
     assert_eq!(value("P"), Value::Undefined);

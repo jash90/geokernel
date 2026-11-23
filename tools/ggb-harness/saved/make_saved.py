@@ -664,6 +664,13 @@ case("slowplot", [
     "h = SlowPlot(l, false)", "k = SlowPlot(x^2, 0)",
 ], [])
 
+topic("keptvertices")
+case("keptvertices", [
+    "n = 1", "U = (0, 0)", "A = If(n > 0, U)", "B = (2, 0)",
+    "nv = 5", "p = Polygon(A, B, nv)",
+], [{"action": "set_number", "label": label, "value": value}
+    for label, value in [("n", 0), ("nv", 3), ("nv", 5)]])
+
 topic("keptvalues")
 case("keptvalues", [
     "a = 1", "l = If(a > 0, {{a, 2}}, {{a, 2}, {3, 4}})", "P = Point(l)",

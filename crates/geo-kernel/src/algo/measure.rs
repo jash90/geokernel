@@ -54,7 +54,7 @@
 use super::conic_nd::ConicType;
 use super::point::{closest_coords, CLOSEST_PATH};
 use super::polygon::{count_arg, Count};
-use super::{conic_object, Group, Parents, CARRIERS, CONIC_OBJECTS, POINT};
+use super::{Group, Parents, CARRIERS, CONIC_OBJECTS, POINT};
 use crate::kernel::{Construction, Def, Error, Id, Kind, Value};
 use crate::script::object;
 use crate::tol::STANDARD_PRECISION;
@@ -145,13 +145,6 @@ pub(super) fn my_length(x: f64, y: f64) -> f64 {
         let t = ax / ay;
         ay * (1.0 + t * t).sqrt()
     }
-}
-
-/// Radius of a circle as GeoGebra reports it: a radius below the tolerance
-/// makes the conic a single point of radius 0.
-fn circle_radius(c: &Construction, id: Id) -> Option<f64> {
-    let (_, _, r) = c.circle(id)?;
-    Some(if is_zero(r) { 0.0 } else { r })
 }
 
 /// Length of a segment; GeoGebra sets lengths below the tolerance to 0.
@@ -602,12 +595,7 @@ impl Group for MeasureDef {
                 }
             }
             MeasureDef::Radius(k) => {
-                if c.kind(k) == Kind::Circle {
-                    return number(circle_radius(c, k).or_else(|| {
-                        super::circle::infinite_center_record(c, c.def(k)).map(|(_, _, r)| r)
-                    })?);
-                }
-                let d = conic_object(c, k)?;
+                let d = c.conic_fields(k).or_else(|| c.arc(k).map(|a| a.conic))?;
                 match d.ty {
                     ConicType::Circle => number(d.half_axes[0]),
                     ConicType::SinglePoint => number(0.0),
@@ -615,11 +603,7 @@ impl Group for MeasureDef {
                 }
             }
             MeasureDef::Circumference(k) => {
-                if c.kind(k) == Kind::Circle {
-                    let r = circle_radius(c, k)?;
-                    return (r != 0.0).then_some(Value::Number(2.0 * r * PI));
-                }
-                let d = conic_object(c, k)?;
+                let d = c.conic_fields(k)?;
                 match d.ty {
                     ConicType::Circle => number(2.0 * d.half_axes[0] * PI),
                     ConicType::Ellipse => number(super::elliptic::circumference(d.half_axes)),

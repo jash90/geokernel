@@ -616,4 +616,16 @@ case("homogeneous", [pt("A", 0, 0), pt("B", 4, 0), pt("C", 4, 4), pt("D", 0, 4),
                      "q = AreCollinear(S, A, C)"],
      [mv("E", 3, 7), mv("F", 5, 1), mv("D", 1, 5), mv("C", 6, 1)])
 
+topic("keptcircle")
+case("keptcircle", [pt("O", 0, 0), num("r", 2), "k = Circle(O, r)", "j = Circle(O, 2)",
+                    "t = AreEqual(k, j)", "u = k == j"],
+     [setn("r", -2), setn("r", 3)])
+case("keptcircle", [pt("O", 0, 0), num("r", 2), "k = Circle(O, r)", "j = Circle(O, 3)",
+                    "ar = Area(k)", "t = AreEqual(k, j)"],
+     [setn("r", 3), setn("r", -1), {"action": "delete", "label": "ar"}])
+
+case("keptcircle", [pt("O", 0, 0), num("r", 2), "k = Circle(O, r)", "j = Circle(O, 2)",
+                    num("m", 1), "t = AreEqual(k, j)"],
+     [{"action": "redefine", "line": "r = -m"}])
+
 cases.write()

@@ -868,7 +868,7 @@ impl Clone for Stuck {
 /// A list helper owns its copied elements even when its defined flag is
 /// cleared. Arithmetic needs the element kinds but never their old values.
 /// Transpose also keeps its prior flag when clearing an empty result.
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct ListRecords {
     shapes: std::collections::HashMap<u32, std::sync::Arc<[Kind]>>,
     elements: usize,
@@ -900,8 +900,11 @@ pub(crate) fn list_record_revision(c: &Construction, d: ExprDef) -> Option<u64> 
     e.lists.then(|| e.list_history.records().revision)
 }
 
-pub(crate) fn restore_list_records(c: &Construction, d: ExprDef, records: ListRecords) {
-    *entry(c, d).list_history.records() = records;
+pub(crate) fn restore_list_records(c: &Construction, d: ExprDef, records: ListRecords) -> bool {
+    let mut live = entry(c, d).list_history.records();
+    let changed = live.revision != records.revision;
+    *live = records;
+    changed
 }
 
 impl Entry {

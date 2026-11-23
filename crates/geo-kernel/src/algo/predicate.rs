@@ -267,15 +267,6 @@ fn lines_equal(c: &Construction, a: Id, b: Id) -> bool {
     lin_dep(ga, gb)
 }
 
-/// The flat matrix of a circle as a GeoGebra conic holds it
-/// (`GeoQuadricND.setSphereNDMatrix`).
-fn circle_matrix(cx: f64, cy: f64, r: f64) -> [f64; 6] {
-    let mut m2 = -r * r;
-    m2 += cx * cx;
-    m2 += cy * cy;
-    [1.0, 1.0, m2, 0.0, -cx, -cy]
-}
-
 /// `GeoQuadricND.hasEqualMatrix`: the matrices are proportional.
 fn equal_matrix(a: &[f64; 6], b: &[f64; 6]) -> bool {
     let mut lambda1 = 0.0;
@@ -297,19 +288,6 @@ fn equal_matrix(a: &[f64; 6], b: &[f64; 6]) -> bool {
         }
     }
     equal
-}
-
-/// `GeoConicND.isEqualExtended` for two circles.
-fn circles_equal(c: &Construction, a: Id, b: Id) -> bool {
-    match (c.circle(a), c.circle(b)) {
-        // Both conics are empty.
-        (None, None) => true,
-        (Some(p), Some(q)) => {
-            equal_matrix(&circle_matrix(p.0, p.1, p.2), &circle_matrix(q.0, q.1, q.2))
-        }
-        // The matrix of an undefined conic is NaN.
-        _ => false,
-    }
 }
 
 /// Length of a segment as `GeoSegment` holds it: below the tolerance is 0.
@@ -568,10 +546,12 @@ fn equal(c: &Construction, a: Id, b: Id) -> bool {
                     }
             }
         }
-        Kind::Circle if kb == Kind::Circle => circles_equal(c, a, b),
         Kind::Circle | Kind::Conic => {
-            match (super::conic_object(c, a), super::conic_object(c, b)) {
+            // GeoConicND.isEqualExtended reads the matrices with no definedness check.
+            let second = c.conic_fields(b).or_else(|| c.arc(b).map(|arc| arc.conic));
+            match (c.conic_fields(a), second) {
                 (Some(a), Some(b)) => conics_equal(a, b),
+                (None, None) => ka == Kind::Circle && kb == Kind::Circle,
                 _ => false,
             }
         }
@@ -790,22 +770,7 @@ impl Group for PredicateDef {
                 point(c, d),
                 point(c, e),
             )),
-            PredicateDef::Equal(a, b) => {
-                // AlgoAreEqual.java delegates to GeoConicND.java (isEqualExtended).
-                // Keep the argument order: a conic part has its own equality test.
-                let conic = |id| matches!(c.kind(id), Kind::Circle | Kind::Conic);
-                if conic(a) && (conic(b) || matches!(c.kind(b), Kind::Arc | Kind::Sector)) {
-                    let first = c.conic_fields(a);
-                    let second = c.conic_fields(b).or_else(|| c.arc(b).map(|b| b.conic));
-                    answer(match (first, second) {
-                        (Some(a), Some(b)) => conics_equal(a, b),
-                        (None, None) => c.kind(a) == Kind::Circle && c.kind(b) == Kind::Circle,
-                        _ => false,
-                    })
-                } else {
-                    answer(equal(c, a, b))
-                }
-            }
+            PredicateDef::Equal(a, b) => answer(equal(c, a, b)),
             PredicateDef::Congruent(a, b) => congruent(c, a, b).map(Value::Bool),
             PredicateDef::Tangent { line, circle } => answer(tangent(c, line, circle)),
             PredicateDef::InRegion(point, region) => answer(in_region(c, point, region)),

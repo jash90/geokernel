@@ -404,13 +404,16 @@ pub(crate) fn coefficient_matrix(list: List<'_>) -> Option<[f64; 6]> {
 /// is not (a part that is not finite) counts as undefined, so that the
 /// image of an undefined conic is undefined.
 fn set_out(c: &Construction, src: Id, d: &mut ConicData) -> bool {
-    match c.conic(src) {
+    match c.conic_fields(src) {
         Some(s) => {
             *d = s;
             d.defined = s.defined && c.value(src).is_defined();
             d.defined
         }
         None => {
+            if c.kind(src) == Kind::Circle {
+                *d = ConicData::new();
+            }
             d.defined = false;
             false
         }
