@@ -48,7 +48,7 @@ impl Construction {
 
     /// Changes a free checkbox and updates its mathematical dependents.
     pub fn set_boolean(&mut self, id: Id, value: bool) -> Result<usize, crate::kernel::Error> {
-        self.last_update_requires_ordered_replay = false;
+        self.last_update_requires_replay = false;
         let def = self
             .defs
             .get_mut(id.index())

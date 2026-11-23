@@ -127,7 +127,7 @@ impl Construction {
         if next.identical(&old) {
             return false;
         }
-        self.last_update_requires_ordered_replay = true;
+        self.last_update_requires_replay = true;
         crate::expr::forget_decimal(self, id);
         self.construction_sources.remove(&id);
         if let Value::Number(value) = next {

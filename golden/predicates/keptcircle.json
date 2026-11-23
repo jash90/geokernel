@@ -1,0 +1,186 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "predicates-keptcircle-001",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "j = Circle(O, 2)",
+        "t = AreEqual(k, j)",
+        "u = k == j"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": -2.0 },
+        { "action": "set_number", "label": "r", "value": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -2.0 },
+          "k": { "type": "circle", "defined": false },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": true },
+          "u": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "t": { "type": "boolean", "defined": true, "value": false },
+          "u": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-keptcircle-002",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "j = Circle(O, 3)",
+        "ar = Area(k)",
+        "t = AreEqual(k, j)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "r", "value": 3.0 },
+        { "action": "set_number", "label": "r", "value": -1.0 },
+        { "action": "delete", "label": "ar" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "ar": { "type": "number", "defined": true, "value": 12.566370614359172 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "ar": { "type": "number", "defined": true, "value": 28.274333882308138 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "k": { "type": "circle", "defined": false },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "ar": { "type": "number", "defined": false },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "k": { "type": "circle", "defined": false },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        }
+      ]
+    },
+    {
+      "id": "predicates-keptcircle-003",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "j = Circle(O, 2)",
+        "m = 1",
+        "t = AreEqual(k, j)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "redefine", "line": "r = -m" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": true }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": -1.0 },
+          "k": { "type": "circle", "defined": false },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "t": { "type": "boolean", "defined": true, "value": false }
+        }
+      ]
+    },
+    {
+      "id": "predicates-keptcircle-004",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "m = 2",
+        "j = Circle(O, m)",
+        "f = Circle(O, 2)",
+        "e = AreEqual(j, f)",
+        "n = 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": -1.0 },
+        { "action": "redefine", "line": "r = 2 * n" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "f": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "e": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "j": { "type": "circle", "defined": false },
+          "f": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "e": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "j": { "type": "circle", "defined": false },
+          "f": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "e": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
+    }
+  ]
+}

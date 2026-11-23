@@ -535,6 +535,11 @@ impl Writer<'_> {
             return self.expression(id, &format!("{lhs} = {}", syntax(source)?));
         }
         if let Some((name, inputs)) = call {
+            let name = if name == "$regularPolygon" {
+                "Polygon"
+            } else {
+                name
+            };
             if name == "$point" || name == "$vector" {
                 return self.expression(id, &syntax(&format!("({})", inputs.join(", ")))?);
             }

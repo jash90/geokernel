@@ -198,8 +198,8 @@ impl Group for ConicPartDef {
             _ => {}
         }
         let conics = match self {
-            Self::Asymptote { .. } => CONIC_OBJECTS,
-            Self::Pole { .. } => CIRCLE_OR_CONIC,
+            Self::Asymptote { .. } | Self::Axis { .. } => CONIC_OBJECTS,
+            Self::Pole { .. } | Self::Diameter { .. } => CIRCLE_OR_CONIC,
             _ => CONIC,
         };
         c.expect(self.conic(), conics)?;
@@ -211,14 +211,26 @@ impl Group for ConicPartDef {
     }
 
     fn compute(&self, c: &Construction) -> Option<Value> {
-        // An undefined parent makes the object undefined, also where
-        // GeoGebra would still read the stale record of an undefined conic
-        // or take a point on both objects by construction.
+        // AlgoVertexConic.java, AlgoAxes.java, AlgoAxis.java,
+        // AlgoAxisLength.java, AlgoEccentricity.java, AlgoExcentricity.java,
+        // AlgoParabolaParameter.java and GeoConicND.java (diameterLine)
+        // read the stored fields even if the conic is undefined.
+        let reads_fields = matches!(
+            self,
+            Self::Vertex { .. }
+                | Self::Axis { .. }
+                | Self::AxisLength { .. }
+                | Self::Eccentricity(_)
+                | Self::LinearEccentricity(_)
+                | Self::Parameter(_)
+                | Self::Diameter { .. }
+        );
+        let conic = self.conic();
         if self
             .parents()
             .as_slice()
             .iter()
-            .any(|&p| !c.value(p).is_defined())
+            .any(|&p| !(c.value(p).is_defined() || p == conic && reads_fields))
         {
             return None;
         }
@@ -228,7 +240,12 @@ impl Group for ConicPartDef {
         if let ConicPartDef::Asymptote { conic, which } = *self {
             return asymptote(&super::conic_object(c, conic)?, which);
         }
-        let d = c.conic(self.conic())?;
+        let d = if reads_fields {
+            c.conic_fields(conic)
+                .or_else(|| c.arc(conic).map(|a| a.conic))?
+        } else {
+            c.conic(conic)?
+        };
         match *self {
             ConicPartDef::IntersectLine { .. } | ConicPartDef::Asymptote { .. } => None,
             ConicPartDef::TangentPoint {
@@ -317,7 +334,11 @@ impl Group for ConicPartDef {
             {
                 return Some(Ok(Self::Pole { line: first, conic }));
             }
-            if c.kind(conic) != Kind::Conic {
+            if c.kind(conic) != Kind::Conic
+                && !(c.kind(conic) == Kind::Circle
+                    && c.kind(first) == Kind::Vector
+                    && func != "Polar")
+            {
                 return None;
             }
             return Some(match (func, c.kind(first)) {
@@ -335,7 +356,12 @@ impl Group for ConicPartDef {
             });
         }
         let [arg] = args else { return None };
-        let conic = c.id(arg).filter(|&k| c.kind(k) == Kind::Conic)?;
+        let kinds = if matches!(func, "MajorAxis" | "FirstAxis" | "MinorAxis" | "SecondAxis") {
+            CONIC_OBJECTS
+        } else {
+            CONIC
+        };
+        let conic = c.id(arg).filter(|&k| kinds.contains(&c.kind(k)))?;
         let def = match func {
             "Center" | "Midpoint" => ConicPartDef::Center(conic),
             "MajorAxis" | "FirstAxis" => ConicPartDef::Axis { conic, which: 0 },
@@ -378,7 +404,7 @@ impl Group for ConicPartDef {
             };
         }
         let [arg] = args else { return None };
-        let kinds = if func == "Asymptote" {
+        let kinds = if matches!(func, "Asymptote" | "Axes") {
             CONIC_OBJECTS
         } else {
             CONIC
