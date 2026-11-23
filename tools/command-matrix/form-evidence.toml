@@ -682,7 +682,7 @@ cases = ["lists-wrapped-003"]
 [[form]]
 command = "Rotate"
 form = "any,number"
-cases = ["transform-rotate-001", "transform-rotate-002", "transform-rotate-003", "transform-rotate-004", "transform-rotate-006", "transform-rotate-008", "transform-rotate-009", "transform-rotate-010", "transform-rotate-011", "transform-rotate-012", "transform-rotate-013", "transformsreview-polyline-001"]
+cases = ["transform-rotate-001", "transform-rotate-002", "transform-rotate-003", "transform-rotate-004", "transform-rotate-006", "transform-rotate-008", "transform-rotate-009", "transform-rotate-010", "transform-rotate-011", "transform-rotate-012", "transform-rotate-013", "transformsreview-polyline-001", "arcs-keptpart-005"]
 
 [[form]]
 command = "Rotate"
@@ -808,6 +808,9 @@ cases = [
     "vector-translate-001",
     "vector-translate-004",
     "vector-translate-006",
+    "arcs-keptpart-004",
+    "transform-keptcircle-002",
+    "transform-keptcircle-003",
 ]
 
 [[form]]
@@ -3613,6 +3616,7 @@ cases = [
     "transform-circumarc-008",
     "transform-circumarc-009",
     "transform-circumarc-010",
+    "arcs-keptpart-006",
 ]
 
 [[form]]

@@ -277,6 +277,13 @@ impl ConicData {
         }
     }
 
+    /// `GeoQuadricND.setUndefined` clears the type and matrix.
+    pub(crate) fn set_undefined(&mut self) {
+        self.defined = false;
+        self.ty = ConicType::Empty;
+        self.matrix.fill(f64::NAN);
+    }
+
     /// The record GeoGebra makes from a matrix (`GeoConicND.setMatrix`
     /// followed by the classification), from this one's state.
     pub fn set_matrix(&mut self, m: [f64; 6]) {

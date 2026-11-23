@@ -130,6 +130,57 @@
           "t": { "type": "boolean", "defined": true, "value": false }
         }
       ]
+    },
+    {
+      "id": "predicates-keptcircle-004",
+      "group": "predicates",
+      "script": [
+        "O = (0, 0)",
+        "r = 2",
+        "k = Circle(O, r)",
+        "m = 2",
+        "j = Circle(O, m)",
+        "f = Circle(O, 2)",
+        "e = AreEqual(j, f)",
+        "n = 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": -1.0 },
+        { "action": "redefine", "line": "r = 2 * n" }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": 2.0 },
+          "j": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "f": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "e": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "j": { "type": "circle", "defined": false },
+          "f": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "e": { "type": "boolean", "defined": true, "value": true },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "m": { "type": "number", "defined": true, "value": -1.0 },
+          "j": { "type": "circle", "defined": false },
+          "f": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 2.0 },
+          "e": { "type": "boolean", "defined": true, "value": false },
+          "n": { "type": "number", "defined": true, "value": 1.0 }
+        }
+      ]
     }
   ]
 }

@@ -208,4 +208,20 @@ case("keptpart", [pt("A", -2, 0), pt("B", 3, 0), pt("C", 2, 0),
                   "a = CircumcircleArc(A, B, C)", "g = FirstAxis(a)"],
      [mv("B", 0, 2), mv("B", 3, 0)])
 
+case("keptpart", [pt("O", 1, 2), num("n", 1), "r = If(n > 0, 2)", "k = Circle(O, r)",
+                  pt("P", 3, 2), pt("Q", 1, 4), "a = Arc(k, P, Q)", "v = (3, 4)",
+                  "b = Translate(a, v)", "g = FirstAxis(b)"],
+     [setn("n", 0), mv("O", 5, 7), setn("n", 1)])
+case("keptpart", [pt("O", 1, 2), num("n", 1), pt("P", 3, 2), "S = If(n > 0, P)",
+                  pt("Q", 1, 4), "a = CircularArc(O, S, Q)", "t = pi / 2",
+                  "b = Rotate(a, t)", "g = FirstAxis(b)"],
+     [setn("n", 0), setn("t", 1), setn("n", 1)])
+# A fresh construction with the inputs present when an undo snapshot reloads.
+case("keptpart", [num("n", 0), pt("U", 0, 0), "A = If(n > 0, U)", pt("B", 1, 2), pt("C", 2, 0),
+                  "a = CircumcircleArc(A, B, C)", "g = FirstAxis(a)"], [])
+case("keptpart", [pt("O", 0, 0), "k = Circle(O, 2)", pt("P", 2, 0), num("n", 1),
+                  "Q = If(n > 0, (1, n))", "a = Arc(k, P, Q)", "len = Length(a)",
+                  pt("U", 3, 4)],
+     [setn("n", 2), setn("n", 0), {"action": "delete", "label": "U"}])
+
 cases.write()

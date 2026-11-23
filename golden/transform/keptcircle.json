@@ -53,6 +53,119 @@
           "d": { "type": "line", "defined": true, "a": 1.0, "b": 0.0, "c": -5.0 }
         }
       ]
+    },
+    {
+      "id": "transform-keptcircle-002",
+      "group": "transform",
+      "script": [
+        "O = (1, 2)",
+        "n = 1",
+        "r = If(n > 0, 2)",
+        "k = Circle(O, r)",
+        "u = (1, 2)",
+        "v = (3, 4)",
+        "j = Translate(k, v)",
+        "d = Diameter(u, j)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "move", "label": "O", "x": 5.0, "y": 7.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "j": { "type": "circle", "defined": true, "cx": 4.0, "cy": 6.0, "r": 2.0 },
+          "d": { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -16.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "r": { "type": "number", "defined": false },
+          "k": { "type": "circle", "defined": false },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "j": { "type": "circle", "defined": false },
+          "d": { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -16.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 5.0, "y": 7.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "r": { "type": "number", "defined": false },
+          "k": { "type": "circle", "defined": false },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "j": { "type": "circle", "defined": false },
+          "d": { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -30.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 5.0, "y": 7.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "r": { "type": "number", "defined": true, "value": 2.0 },
+          "k": { "type": "circle", "defined": true, "cx": 5.0, "cy": 7.0, "r": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 1.0, "y": 2.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "j": { "type": "circle", "defined": true, "cx": 8.0, "cy": 11.0, "r": 2.0 },
+          "d": { "type": "line", "defined": true, "a": 1.0, "b": 2.0, "c": -30.0 }
+        }
+      ]
+    },
+    {
+      "id": "transform-keptcircle-003",
+      "group": "transform",
+      "script": [
+        "O = (1, 2)",
+        "n = 1",
+        "k = Circle(O, 2)",
+        "u = (3, 4)",
+        "v = If(n > 0, u)",
+        "j = Translate(k, v)",
+        "rr = Radius(j)",
+        "d = Diameter(u, j)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "n", "value": 0.0 },
+        { "action": "set_number", "label": "n", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "j": { "type": "circle", "defined": true, "cx": 4.0, "cy": 6.0, "r": 2.0 },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "line", "defined": true, "a": 3.0, "b": 4.0, "c": -36.0 }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 0.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": false },
+          "j": { "type": "circle", "defined": false },
+          "rr": { "type": "number", "defined": false },
+          "d": { "type": "line", "defined": false }
+        },
+        {
+          "O": { "type": "point", "defined": true, "x": 1.0, "y": 2.0 },
+          "n": { "type": "number", "defined": true, "value": 1.0 },
+          "k": { "type": "circle", "defined": true, "cx": 1.0, "cy": 2.0, "r": 2.0 },
+          "u": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "v": { "type": "vector", "defined": true, "x": 3.0, "y": 4.0 },
+          "j": { "type": "circle", "defined": true, "cx": 4.0, "cy": 6.0, "r": 2.0 },
+          "rr": { "type": "number", "defined": true, "value": 2.0 },
+          "d": { "type": "line", "defined": true, "a": 3.0, "b": 4.0, "c": -36.0 }
+        }
+      ]
     }
   ]
 }

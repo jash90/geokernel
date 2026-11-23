@@ -199,7 +199,7 @@ impl Group for ConicPartDef {
         }
         let conics = match self {
             Self::Asymptote { .. } | Self::Axis { .. } => CONIC_OBJECTS,
-            Self::Pole { .. } => CIRCLE_OR_CONIC,
+            Self::Pole { .. } | Self::Diameter { .. } => CIRCLE_OR_CONIC,
             _ => CONIC,
         };
         c.expect(self.conic(), conics)?;
@@ -334,7 +334,11 @@ impl Group for ConicPartDef {
             {
                 return Some(Ok(Self::Pole { line: first, conic }));
             }
-            if c.kind(conic) != Kind::Conic {
+            if c.kind(conic) != Kind::Conic
+                && !(c.kind(conic) == Kind::Circle
+                    && c.kind(first) == Kind::Vector
+                    && func != "Polar")
+            {
                 return None;
             }
             return Some(match (func, c.kind(first)) {

@@ -384,4 +384,7 @@ case("keptcircle", [pt("O", 0, 0), num("r", 2), "k = Circle(O, r)", "rr = Radius
                     "cc = Circumference(k)", "Q = Point(k)"],
      [setn("r", -2), mv("Q", 0, 10), setn("r", 3)])
 
+case("keptcircle", [pt("O", 0, 0), num("r", 2), "k = Circle(O, r)", "Q = Point(k)"],
+     [setn("r", -2), mv("Q", 0, 10), mv("O", 1, 0), setn("r", 3)])
+
 cases.write()

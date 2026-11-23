@@ -2057,3 +2057,24 @@ fn redoing_an_undefined_circle_restores_it_from_the_snapshot() {
         Value::Bool(false)
     );
 }
+
+#[test]
+fn undo_reloads_an_undefined_circumcircle_arc() {
+    let mut w = Workbench::default();
+    w.load_script(
+        "n = 1\nU = (0, 0)\nA = If(n > 0, U)\nB = (1, 2)\nC = (2, 0)\n\
+         a = CircumcircleArc(A, B, C)\ng = FirstAxis(a)\nh: y = 0.75\ne = AreEqual(g, h)",
+    )
+    .unwrap();
+    let actual = |w: &Workbench, label| w.construction.value(w.construction.id(label).unwrap());
+    assert_eq!(actual(&w, "e"), Value::Bool(true));
+    assert!(w.set_number(w.construction.id("n").unwrap(), 0.0));
+    assert_eq!(actual(&w, "e"), Value::Bool(true));
+    w.run_line("P = (3, 4)").unwrap();
+    assert!(w.undo());
+    assert_eq!(actual(&w, "g"), Value::Undefined);
+    assert_eq!(actual(&w, "e"), Value::Bool(false));
+    assert!(w.redo());
+    assert!(w.delete(w.construction.id("P").unwrap()));
+    assert_eq!(actual(&w, "e"), Value::Bool(false));
+}

@@ -900,11 +900,8 @@ pub(crate) fn list_record_revision(c: &Construction, d: ExprDef) -> Option<u64> 
     e.lists.then(|| e.list_history.records().revision)
 }
 
-pub(crate) fn restore_list_records(c: &Construction, d: ExprDef, records: ListRecords) -> bool {
-    let mut live = entry(c, d).list_history.records();
-    let changed = live.revision != records.revision;
-    *live = records;
-    changed
+pub(crate) fn restore_list_records(c: &Construction, d: ExprDef, records: ListRecords) {
+    *entry(c, d).list_history.records() = records;
 }
 
 impl Entry {
