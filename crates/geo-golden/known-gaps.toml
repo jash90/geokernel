@@ -3366,26 +3366,6 @@ reason = "Bounded intersection of two functions in the kernel requires two expre
 mismatches = ["0:S"]
 
 [[gap]]
-id = "funcrest-svd-002"
-reason = "The kernel orients each left vector by its largest component. It lacks the reference sign convention for both diagonal matrices."
-mismatches = ["0:s", "0:t"]
-
-[[gap]]
-id = "funcrest-svd-003"
-reason = "The kernel orients each left vector by its largest component. It lacks the reference negative signs on both vectors of the one-row and one-column decompositions."
-mismatches = ["0:s", "0:t"]
-
-[[gap]]
-id = "funcrest-svd-005"
-reason = "The kernel uses its own singular vector signs and orthonormal completion. It lacks the reference null-space basis for the rank-one matrix and the reference signs for the identity."
-mismatches = ["0:s", "0:t"]
-
-[[gap]]
-id = "funcrest-svd-006"
-reason = "The kernel lacks the reference sign convention for the initial rank-one input and has no persistent undefined state for SVD after an empty input."
-mismatches = ["0:s", "2:s", "3:s"]
-
-[[gap]]
 id = "funcrest-conditionalmixed-001"
 reason = "The kernel lacks a segment record with a separately assignable supporting line and retained endpoints. It therefore rejects a segment followed by a plain line."
 mismatches = ["0:script line 7"]
@@ -3414,26 +3394,6 @@ mismatches = ["1:s"]
 id = "funcrest-splinelong-003"
 reason = "Platform rounding of Math.pow in the spline matrix. The kernel computes the integer powers of the knots correctly rounded; the recording JVM's Math.pow intrinsic is off by one ulp when the exact power lies within about 0.003 ulp of a rounding midpoint, which happens for 24 entries of this 120-point quartic system (for example (1/119)^3). The ill-conditioned system amplifies those ulps beyond 1e-9 in the curve and its derivative. The later steps, including the stale point-count check, agree."
 mismatches = ["1:d", "1:s"]
-
-[[gap]]
-id = "funcrest-svd-008"
-reason = "A ragged row makes both results undefined. The kernel has no persistent undefined state after an invalid matrix and decomposes the repaired matrix."
-mismatches = ["2:s"]
-
-[[gap]]
-id = "funcrest-svd-009"
-reason = "The kernel rejects every nonfinite matrix entry. For a one-cell matrix with an infinite entry the reference returns two unit factors and an undefined singular value. Both reject a NaN entry."
-mismatches = ["0:s"]
-
-[[gap]]
-id = "funcrest-svd-010"
-reason = "The kernel lacks the reference singular vector sign convention for the rank-deficient 3 by 3 matrix. The reference also makes its smallest singular value exactly zero."
-mismatches = ["0:s"]
-
-[[gap]]
-id = "funcrest-svd-011"
-reason = "The cyclic rotation sweep exceeds the kernel work budget on the dense 200 by 200 matrix. The enclosing IsDefined becomes undefined, while the reference finishes and returns true."
-mismatches = ["0:d"]
 
 [[gap]]
 id = "locusequation-boolean-001"

@@ -3161,6 +3161,11 @@ form = "function,function,function,number,number,number,number,number"
 cases = ["funcanalysis-forms-022"]
 
 [[form]]
+command = "SVD"
+form = "list"
+cases = ["funcrest-svd-001", "funcrest-svd-004", "funcrest-svd-006", "funcrest-svd-010"]
+
+[[form]]
 command = "NSolveODE"
 form = "list,number,list,number"
 cases = ["funcanalysis-nsode-001", "funcanalysis-nsode-002", "funcanalysis-nsode-003"]

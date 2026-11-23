@@ -2,6 +2,8 @@
 groups: `Function()`, `Function(list)` and the commands added after them,
 one topic per command form."""
 
+import random
+
 from caselib import Cases, mv, setn
 
 cases = Cases("funcrest")
@@ -111,6 +113,40 @@ case("svd", "n = 2\nl = {{1, 2}, Sequence(k + 2, k, 1, n)}\ns = SVD(l)",
 case("svd", "s = SVD({{1/0}})\nt = SVD({{0/0}})")
 case("svd", "s = SVD({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})")
 case("svd", "d = IsDefined(SVD(Sequence(Sequence(sin(i*j), j, 1, 200), i, 1, 200)))")
+# Random, rank-deficient and decimal matrices of every shape pin down the
+# signs and null-space vectors of the decomposition.
+_svd_rng = random.Random("funcrest-svd-random")
+_svd_lines = []
+for _rows, _cols in [(2, 2), (3, 3), (3, 2), (2, 3), (4, 4), (4, 2), (2, 4), (5, 3), (3, 5),
+                     (6, 6), (1, 4), (4, 1)]:
+    _mats = [[[str(_svd_rng.randint(-9, 9)) for _ in range(_cols)] for _ in range(_rows)]
+             for _ in range(4)]
+    _base = [_svd_rng.randint(-5, 5) for _ in range(_cols)]
+    _mats.append([[str(_base[j] * (i + 1)) for j in range(_cols)] for i in range(_rows)])
+    _mats.append([[str(round(_svd_rng.uniform(-3, 3), 3)) for _ in range(_cols)]
+                  for _ in range(_rows)])
+    for _m in _mats:
+        _rows_text = ", ".join("{" + ", ".join(r) + "}" for r in _m)
+        _svd_lines.append("m%d = SVD({%s})" % (len(_svd_lines), _rows_text))
+for _k in range(0, len(_svd_lines), 12):
+    case("svd", "\n".join(_svd_lines[_k:_k + 12]))
+# NaN and infinite entries are decomposed; a row of another length is not
+# a matrix
+case("svd", "a = SVD({{1/0, 1}, {2, 3}})\nb = SVD({{0/0, 1}, {2, 3}})\nd = SVD({{1, 2}, {3, 1/0}})\n"
+     "e = SVD({{-1/0}})\nf = SVD({{1/0, 2}})\ng = SVD({{1/0}, {2}})\nh = SVD({{0, 0, 0}, {0, 0, 0}})\n"
+     "i = SVD({{10^300, 0}, {0, 10^(-300)}})\nj = SVD({{0, 1}, {1, 0}})\nk = SVD({{1, 2}, {3, 4, 5}})\n"
+     "p = SVD({{0/0, 1}})\nq = SVD({{1}, {0/0}})\nr = SVD({{0/0}, {1}})")
+# an entry that becomes infinite or NaN does not stick; an input that is no
+# matrix does
+case("svd", "n = 1\nl = {{n / (n - 1)}}\ns = SVD(l)", [setn("n", 0), setn("n", 2)])
+case("svd", "n = 2\nl = {{sqrt(n - 3), 2}, {3, 4}}\ns = SVD(l)", [setn("n", 4), setn("n", 2), setn("n", 7)])
+case("svd", "n = 2\nl = If(n > 0, {{1, 2}, {3, 4}}, {1, 2})\ns = SVD(l)", [setn("n", -1), setn("n", 1)])
+case("svd", "n = 2\nl = If(n > 0, {{1, 2}, {3, 4}})\ns = SVD(l)", [setn("n", -1), setn("n", 1)])
+case("svd", "n = 2\nl = {{1, 2}, Sequence(k, k, 1, n)}\ns = SVD(l)", [setn("n", 3), setn("n", 2)])
+# a constant list whose rows hold only undefined numbers is undefined
+# (`AlgebraProcessor.processList`); a dependent one is decomposed
+case("svd", "a = SVD({{sqrt(-1)}})\nb = SVD({{0/0, 0/0}, {0/0, 0/0}})\nn = -1\nd = SVD({{sqrt(n)}})\n"
+     "e = SVD({{0/0, 0/0}, {0/0, 1}})", [setn("n", 4), setn("n", -1)])
 
 # ------------------------------------------------------------- IsVertexForm
 cases.topic("vertexform")
