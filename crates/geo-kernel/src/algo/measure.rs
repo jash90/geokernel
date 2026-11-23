@@ -254,30 +254,42 @@ fn point_segment_distance(p: (f64, f64), x1: f64, y1: f64, x2: f64, y2: f64) -> 
     }
 }
 
-/// `GeoSegment.distance(GeoPoint)` for a segment whose line coefficients
-/// `(x, y, z)` were copied from another line: `getParameter` projects on
-/// that line and measures from the start point along `(y, -x)`, and a
-/// parameter outside `[0, 1]` gives the distance to an end point.
+/// `AlgoDistancePointObject` for a segment whose line coefficients
+/// `(x, y, z)` were copied from another line: the distance to its
+/// `AlgoClosestPoint`. That algorithm sets the closest point to `p`, which
+/// already runs `GeoSegment.pointChanged` because the point is on the path,
+/// and then runs `pointChanged` again from the result. Each pass projects on
+/// the copied line, reads the parameter from the start point along
+/// `(y, -x)` (`GeoLine.projectCoordsAndComputePathParam`) and clamps it to an
+/// end point. With copied coefficients the second pass can move the point
+/// again; for a segment of length zero both passes give the start point.
 fn carried_segment_distance(
     p: (f64, f64),
     start: (f64, f64),
     end: (f64, f64),
     (x, y, z): (f64, f64, f64),
 ) -> f64 {
-    let t = -(z + x * p.0 + y * p.1) / (x * x + y * y);
-    let (px, py) = (p.0 + t * x, p.1 + t * y);
-    let parameter = if x.abs() <= y.abs() {
-        (px - start.0) / y
-    } else {
-        (start.1 - py) / x
+    let pass = |q: (f64, f64)| {
+        if start == end {
+            return start;
+        }
+        let t = -(z + x * q.0 + y * q.1) / (x * x + y * y);
+        let (px, py) = (q.0 + t * x, q.1 + t * y);
+        let parameter = if x.abs() <= y.abs() {
+            (px - start.0) / y
+        } else {
+            (start.1 - py) / x
+        };
+        if parameter < 0.0 {
+            start
+        } else if parameter > 1.0 {
+            end
+        } else {
+            (px, py)
+        }
     };
-    if parameter < 0.0 {
-        my_length(start.0 - p.0, start.1 - p.1)
-    } else if parameter > 1.0 {
-        my_length(end.0 - p.0, end.1 - p.1)
-    } else {
-        ((x * p.0 + y * p.1 + z) / my_length(x, y)).abs()
-    }
+    let closest = pass(pass(p));
+    my_length(p.0 - closest.0, p.1 - closest.1)
 }
 
 /// `GeoLine.distance(GeoLine)` for `this` = `g` and the argument `h`:

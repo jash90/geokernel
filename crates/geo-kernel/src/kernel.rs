@@ -2361,7 +2361,7 @@ impl Construction {
             Def::Conditional {
                 args,
                 kind: Kind::Segment,
-            } if self.mixed_conditional(args) => {
+            } => {
                 let initial = self.conditional_segment_copy(args);
                 let (value, carrier) = self.conditional_segment(args, initial);
                 self.set_segment_carrier(id, carrier);
@@ -2884,7 +2884,7 @@ impl Construction {
                 Def::Conditional {
                     args,
                     kind: Kind::Segment,
-                } if self.mixed_conditional(args) => {
+                } => {
                     let id = Id(i);
                     let previous = (self.values[i], self.segment_carriers.get(&id).copied());
                     let (value, carrier) = self.conditional_segment(args, previous);
@@ -3861,14 +3861,6 @@ impl Construction {
         };
     }
 
-    /// Whether a conditional segment has a line alternative.
-    fn mixed_conditional(&self, args: IdList) -> bool {
-        let ids = self.list(args);
-        ids.iter()
-            .enumerate()
-            .any(|(k, &id)| (k % 2 == 1 || k + 1 == ids.len()) && self.kind(id) == Kind::Line)
-    }
-
     /// The state of a new conditional segment: `AlgoIf` starts from a copy
     /// of `GeoList.getGenericElement(alternatives)`, the last alternative of
     /// the leading run that a segment can be set from.
@@ -3891,8 +3883,8 @@ impl Construction {
         (self.stored_value(id), self.segment_carrier(id))
     }
 
-    /// `AlgoIf.compute` for a segment output with line alternatives, from
-    /// the state the output holds. A false condition first applies the else
+    /// `AlgoIf.compute` for a segment output, from the state the output
+    /// holds. A selected segment brings the coefficients it carries. A false condition first applies the else
     /// alternative, or makes the output undefined when there is none, before
     /// the next condition is tested. `GeoSegment.set` copies a segment
     /// whole; from a line it copies only the coefficients and keeps the end

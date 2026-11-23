@@ -305,4 +305,12 @@ case("conditionalmixed",
      "n = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nE = (1, 2)\nr = Segment(A, B)\nq = Segment(A, E)\n"
      "g = Line(A, C)\ns = If(n > 0, r, n > -5, q, n > -9, g)",
      [setn("n", -2), setn("n", -6), setn("n", -10), setn("n", -6), setn("n", 1), setn("n", -6)])
+# A segment output copies the coefficients a selected conditional segment
+# carries (`GeoSegment.set` calls `GeoLine.set` first).
+case("conditionalmixed",
+     "n = -1\nm = 1\nA = (0, 0)\nB = (4, 0)\nC = (0, 3)\nD = (2, 2)\nE = (1, 2)\nr = Segment(A, B)\n"
+     "q = Segment(A, E)\ng = Line(A, C)\ns = If(n > 0, r, g)\nt = If(m > 0, s, q)\n"
+     "h = PerpendicularLine(D, t)\nk = Distance(D, t)\nl = Length(t)",
+     [setn("m", -1), setn("m", 1), mv("C", 2, 3), setn("n", 1), setn("n", -1), mv("A", 1, 1),
+      setn("m", -1), setn("m", 1)])
 cases.write("reference")
