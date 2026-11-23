@@ -379,4 +379,12 @@ for x0, y0 in ((0.001, 0.002), (10000, 20000), (1000000000, -3)):
           mv("D", x0 + 0.001, y0 + 0.00201), mv("D", x0 + 0.001, y0 + 0.002),
           mv("D", x0 + 0.001, y0 + 0.0021)])
 
+topic("keptcircle")
+case("keptcircle", [pt("O", 0, 0), num("r", 2), "k = Circle(O, r)", "rr = Radius(k)",
+                    "cc = Circumference(k)", "Q = Point(k)"],
+     [setn("r", -2), mv("Q", 0, 10), setn("r", 3)])
+
+case("keptcircle", [pt("O", 0, 0), num("r", 2), "k = Circle(O, r)", "Q = Point(k)"],
+     [setn("r", -2), mv("Q", 0, 10), mv("O", 1, 0), setn("r", 3)])
+
 cases.write()

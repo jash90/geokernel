@@ -345,4 +345,9 @@ case("tangent", HYP + [pt("U", 0, 0), pt("V", 1, 4), "s = Segment(U, V)", "t = T
                        "w = Tangent(r, k)"],
      [mv("V", 4, 1), mv("V", -1, 3)])
 
+topic("keptcircle")
+case("keptcircle", [pt("O", 0, 0), pt("B", 4, 0), "g = Line(O, B)", num("n", 1),
+                    "r = If(n > 0, 2, If(n < 0, -2))", "k = Circle(O, r)", "d = Diameter(g, k)"],
+     [setn("n", -1), setn("n", 0), mv("O", 1, 0)])
+
 cases.write()

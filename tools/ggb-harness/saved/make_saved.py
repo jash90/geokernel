@@ -664,6 +664,13 @@ case("slowplot", [
     "h = SlowPlot(l, false)", "k = SlowPlot(x^2, 0)",
 ], [])
 
+topic("keptvertices")
+case("keptvertices", [
+    "n = 1", "U = (0, 0)", "A = If(n > 0, U)", "B = (2, 0)",
+    "nv = 5", "p = Polygon(A, B, nv)",
+], [{"action": "set_number", "label": label, "value": value}
+    for label, value in [("n", 0), ("nv", 3), ("nv", 5)]])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

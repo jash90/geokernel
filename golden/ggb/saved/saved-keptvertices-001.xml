@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<geogebra format="5.0" version="5.4.936.0" app="classic" platform="a" xsi:noNamespaceSchemaLocation="https://www.geogebra.org/apps/xsd/ggb.xsd" xmlns="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<gui>
+	<window width="800" height="600"/>
+	<labelingStyle val="3"/>
+	<font size="12"/>
+</gui>
+<euclidianView>
+	<viewNumber viewNo="1"/>
+	<size width="800" height="600"/>
+	<coordSystem xZero="215" yZero="315" scale="50" yscale="50"/>
+	<evSettings axes="true" grid="false" gridIsBold="false" pointCapturing="3" rightAngleStyle="1" checkboxSize="26" gridType="3"/>
+	<bgColor r="255" g="255" b="255"/>
+	<axesColor r="28" g="28" b="31"/>
+	<gridColor r="180" g="179" b="186"/>
+	<lineStyle axes="1" grid="0"/>
+	<axis id="0" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+	<axis id="1" show="true" label="" unitLabel="" tickStyle="1" showNumbers="true"/>
+</euclidianView>
+<algebraView>
+	<mode val="1"/>
+</algebraView>
+<kernel>
+	<continuous val="false"/>
+	<usePathAndRegionParameters val="true"/>
+	<decimals val="2"/>
+	<angleUnit val="degree"/>
+	<algebraStyle val="0" spreadsheet="0"/>
+	<coordStyle val="0"/>
+</kernel>
+<tableview min="0" max="0" step="0"/>
+<scripting blocked="false" disabled="false"/>
+<construction title="" author="" date="">
+<element type="numeric" label="n">
+	<value val="0"/>
+	<show object="false" label="true"/>
+	<layer val="0"/>
+	<labelMode val="1"/>
+	<animation type="0" playing="false"/>
+</element>
+<expression label="U" exp="(0, 0)" type="point"/>
+<element type="point" label="U">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="0" y="0" z="1"/>
+</element>
+<command name="If">
+	<input a0="n &gt; 0" a1="U"/>
+	<output a0="A"/>
+</command>
+<element type="point" label="A">
+	<show object="true" label="true"/>
+	<objColor r="110" g="109" b="115" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<pointSize val="4"/>
+	<pointStyle val="0"/>
+	<coords x="NaN" y="NaN" z="NaN"/>
+</element>
+<expression label="B" exp="(2, 0)" type="point"/>
+<element type="point" label="B">
+	<show object="true" label="true"/>
+	<objColor r="77" g="77" b="255" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<animation step="0.1" type="1" playing="false"/>
+	<pointSize val="5"/>
+	<pointStyle val="0"/>
+	<coords x="2" y="0" z="1"/>
+</element>
+<element type="numeric" label="nv">
+	<value val="5"/>
+	<show object="false" label="true"/>
+	<layer val="0"/>
+	<labelMode val="1"/>
+	<animation type="0" playing="false"/>
+</element>
+<command name="Polygon">
+	<input a0="A" a1="B" a2="nv"/>
+	<output a0="p" a1="f" a2="g" a3="h" a4="i" a5="j" a6="C" a7="D" a8="E"/>
+</command>
+<element type="polygon" label="p">
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0.10000000149011612"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+</element>
+<element type="segment" label="f">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="false"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="NaN" y="NaN" z="NaN"/>
+</element>
+<element type="segment" label="g">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="-1.9021130325903064" y="0.6180339887498949" z="3.804226065180613"/>
+</element>
+<element type="segment" label="h">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="NaN" y="NaN" z="NaN"/>
+</element>
+<element type="segment" label="i">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="NaN" y="NaN" z="NaN"/>
+</element>
+<element type="segment" label="j">
+	<show object="true" label="false"/>
+	<objColor r="153" g="51" b="0" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<lineStyle thickness="5" type="0" typeHidden="1" opacity="178"/>
+	<eqnStyle style="implicit"/>
+	<outlyingIntersections val="false"/>
+	<keepTypeOnTransform val="true"/>
+	<startStyle val="default"/>
+	<endStyle val="default"/>
+	<coords x="NaN" y="NaN" z="NaN"/>
+</element>
+<element type="point" label="C">
+	<show object="true" label="true"/>
+	<objColor r="110" g="109" b="115" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<pointSize val="4"/>
+	<pointStyle val="0"/>
+	<coords x="2.618033988749895" y="1.9021130325903064" z="1"/>
+</element>
+<element type="point" label="D">
+	<show object="true" label="true"/>
+	<objColor r="110" g="109" b="115" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<pointSize val="4"/>
+	<pointStyle val="0"/>
+	<coords x="NaN" y="NaN" z="NaN"/>
+</element>
+<element type="point" label="E">
+	<show object="true" label="true"/>
+	<objColor r="110" g="109" b="115" alpha="0"/>
+	<layer val="0"/>
+	<labelMode val="0"/>
+	<auxiliary val="true"/>
+	<pointSize val="4"/>
+	<pointStyle val="0"/>
+	<coords x="NaN" y="NaN" z="NaN"/>
+</element>
+</construction>
+</geogebra>
