@@ -804,6 +804,9 @@ impl<const M: bool> Ctx<'_, M> {
             return Ex::plain(N(f64::NAN));
         }
         match self.node(i) {
+            Node::ObjectDefined(id) if super::predicate_has_undefined_value(self.c, id) => {
+                Ex::plain(Val::B(false, true))
+            }
             Node::Num(v) => {
                 let lit = &self.e.lits[i as usize];
                 Ex {
@@ -1234,7 +1237,7 @@ impl<const M: bool> Ctx<'_, M> {
                     if let Node::Bin(Bin::Div, _, degree) = self.node(b) {
                         let n = self.fast(degree);
                         if n != 0.0 && math::is_integer(n) && math::java_round(n) % 2 == 0 {
-                            return Ex::kept(special, math::java_pow(base, e));
+                            return Ex::kept(special, math::my_pow(base, e));
                         }
                     }
                 }
@@ -1312,6 +1315,7 @@ impl<const M: bool> Ctx<'_, M> {
                 return Ex::plain(Val::N(match op {
                     Un::X => x,
                     Un::Y => y,
+                    Un::Length => length(x, y),
                     Un::Abs => complex_abs(x, y),
                     _ => f64::NAN,
                 }))
@@ -1380,7 +1384,7 @@ impl<const M: bool> Ctx<'_, M> {
                 } else if initial {
                     let template = self
                         .if_list_template(i)
-                        .and_then(|branch| self.list(branch));
+                        .and_then(|branch| self.list_for_arithmetic(branch));
                     self.remember_list_shape(i, template.unwrap_or((mark, 0)));
                     lists.truncate(mark);
                 }
@@ -1405,11 +1409,12 @@ impl<const M: bool> Ctx<'_, M> {
                 .is_some_and(|s| s.iter().copied().eq(kinds.clone()))
             {
                 history.shapes.insert(node, kinds.collect());
+                history.revision = history.revision.wrapping_add(1);
             }
             history.elements = total;
-        } else {
-            history.shapes.remove(&node);
+        } else if history.shapes.remove(&node).is_some() {
             history.elements -= old;
+            history.revision = history.revision.wrapping_add(1);
         }
     }
 
@@ -1510,7 +1515,10 @@ impl<const M: bool> Ctx<'_, M> {
         if self.is_list(i) {
             return match self.list(i) {
                 Some((start, len)) => Slot::list(start, len),
-                None => Slot::undefined(Kind::List),
+                None => match self.node(i) {
+                    Node::Obj(id) => Slot::object(self.c, id),
+                    _ => Slot::undefined(Kind::List),
+                },
             };
         }
         if let Node::FunctionObject(id) = self.node(i) {
@@ -1625,15 +1633,27 @@ impl<const M: bool> Ctx<'_, M> {
         Some((base, len))
     }
 
-    fn list_for_arithmetic(&self, i: u32) -> Option<(u32, u32)> {
+    pub(super) fn list_for_arithmetic(&self, i: u32) -> Option<(u32, u32)> {
         if let Some(run) = self.list(i) {
             return Some(run);
         }
-        let lists = self.lists?;
         let kept = match self.node(i) {
             Node::Obj(id) => super::kept_list_shape(self.c, id),
             _ => self.e.kept_list_shape(i),
         }?;
+        self.undefined_list_elements(&kept)
+    }
+
+    pub(super) fn transpose_row(&self, row: Slot) -> Option<(u32, u32)> {
+        if let Some(run) = row.run() {
+            return Some(run);
+        }
+        let shape = super::kept_list_shape(self.c, row.object_id()?)?;
+        self.undefined_list_elements(&shape)
+    }
+
+    fn undefined_list_elements(&self, kept: &[Kind]) -> Option<(u32, u32)> {
+        let lists = self.lists?;
         if !lists.charge(kept.len() as u64) {
             return None;
         }
@@ -1899,6 +1919,7 @@ pub(super) fn scalar(op: Un, x: f64, deg: bool) -> f64 {
         Un::Sqrt => x.sqrt(),
         Un::Cbrt => math::cbrt(x),
         Un::Abs => x.abs(),
+        Un::Length => f64::NAN,
         Un::Sgn => math::sgn(x),
         Un::Floor => math::floor(x, deg),
         Un::Ceil => math::ceil(x, deg),

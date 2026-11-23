@@ -13,7 +13,7 @@
 //! Lines carry GeoGebra's raw coefficients (see [`Value::Line`]). A free
 //! point is `(x, y, 1)` in GeoGebra's homogeneous coordinates.
 
-use super::{join, length, line_value, normalized_coefficients};
+use super::{join, line_value, normalized_coefficients};
 use crate::kernel::{Construction, Id, Value};
 
 /// `AlgoJoinPoints`: `GeoVec3D.lineThroughPoints(P, Q)`.
@@ -38,9 +38,9 @@ pub(crate) fn midpoint(c: &Construction, p: Id, q: Id) -> Option<Value> {
 }
 
 pub(crate) fn distance(c: &Construction, p: Id, q: Id) -> Option<Value> {
-    let (x1, y1) = c.point(p)?;
-    let (x2, y2) = c.point(q)?;
-    Some(Value::Number(length(x2 - x1, y2 - y1)))
+    let (x1, y1) = c.cartesian_point(p)?;
+    let (x2, y2) = c.cartesian_point(q)?;
+    Some(Value::Number(super::measure::my_length(x2 - x1, y2 - y1)))
 }
 
 /// `GeoVec3D.cross(P, vx, vy, vz)` for the point `(px, py, 1)`.

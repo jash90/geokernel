@@ -300,6 +300,7 @@ fn unary_name(op: Un) -> &'static str {
         Un::Sqrt => "sqrt",
         Un::Cbrt => "cbrt",
         Un::Abs => "abs",
+        Un::Length => "Length",
         Un::Sgn => "sgn",
         Un::Floor => "floor",
         Un::Ceil => "ceil",

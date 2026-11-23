@@ -195,7 +195,7 @@ fn dimension(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node
 
 fn length(p: &mut Parser, args: &[u32], lists: &[bool]) -> Result<Option<Node>, String> {
     match (args, lists) {
-        (&[a], [false]) if p.is_point_or_vector(a) => Ok(Some(Node::Un(Un::Abs, a))),
+        (&[a], [false]) if p.is_point_or_vector(a) => Ok(Some(Node::Un(Un::Length, a))),
         _ => list_form("Length", ListOp::Length, false, args, lists),
     }
 }
@@ -621,21 +621,23 @@ fn transpose<const M: bool>(ctx: &Ctx<'_, M>, node: u32, input: u32) -> Option<(
                 .contains(&node))
             .then(|| (lists.len(), 0));
         }
-        let (_, cols) = lists.read(ctx.c, start).run()?;
-        if !lists.charge(u64::from(len) * (1 + u64::from(cols))) {
+        if !lists.charge(u64::from(len)) {
             return None;
         }
-        for k in 0..len {
-            if lists.read(ctx.c, start + k).run()?.1 != cols {
-                return None;
-            }
+        let rows = (start..start + len)
+            .map(|index| ctx.transpose_row(lists.read(ctx.c, index)))
+            .collect::<Option<Vec<_>>>()?;
+        let cols = rows[0].1;
+        if !lists.charge(u64::from(len) * u64::from(cols))
+            || rows.iter().any(|&(_, width)| width != cols)
+        {
+            return None;
         }
         let out = lists.reserve(cols)?;
         for col in 0..cols {
             let column = lists.reserve(len)?;
-            for row in 0..len {
-                let (source, _) = lists.read(ctx.c, start + row).run()?;
-                lists.set(column + row, lists.read(ctx.c, source + col));
+            for (row, &(source, _)) in rows.iter().enumerate() {
+                lists.set(column + row as u32, lists.read(ctx.c, source + col));
             }
             lists.set(out + col, Slot::list(column, len));
         }
@@ -643,10 +645,13 @@ fn transpose<const M: bool>(ctx: &Ctx<'_, M>, node: u32, input: u32) -> Option<(
     })();
     if !lists.over() {
         let mut history = ctx.e.list_history.records();
-        if result.is_some() {
-            history.invalid_transposes.remove(&node);
+        let changed = if result.is_some() {
+            history.invalid_transposes.remove(&node)
         } else {
-            history.invalid_transposes.insert(node);
+            history.invalid_transposes.insert(node)
+        };
+        if changed {
+            history.revision = history.revision.wrapping_add(1);
         }
     }
     result

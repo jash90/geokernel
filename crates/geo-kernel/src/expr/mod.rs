@@ -553,6 +553,7 @@ pub(crate) enum Un {
     Sqrt,
     Cbrt,
     Abs,
+    Length,
     Sgn,
     Floor,
     Ceil,
@@ -872,6 +873,7 @@ pub(crate) struct ListRecords {
     shapes: std::collections::HashMap<u32, std::sync::Arc<[Kind]>>,
     elements: usize,
     invalid_transposes: std::collections::HashSet<u32>,
+    revision: u64,
 }
 
 #[derive(Default)]
@@ -891,6 +893,11 @@ impl Clone for ListHistory {
 
 pub(crate) fn list_records(c: &Construction, d: ExprDef) -> ListRecords {
     entry(c, d).list_history.records().clone()
+}
+
+pub(crate) fn list_record_revision(c: &Construction, d: ExprDef) -> Option<u64> {
+    let e = entry(c, d);
+    e.lists.then(|| e.list_history.records().revision)
 }
 
 pub(crate) fn restore_list_records(c: &Construction, d: ExprDef, records: ListRecords) {
@@ -1769,6 +1776,25 @@ pub(crate) fn object_defined(c: &Construction, id: Id) -> bool {
             !matches!(raw(c, d), Raw::Num(v) if v.is_nan())
         }
         _ => c.value(id).is_defined(),
+    }
+}
+
+/// Exceptions to the general defined flag in AlgoDefined. In particular,
+/// coordinates of a projective point print as "?" even when the function
+/// that reads them keeps its defined flag.
+fn predicate_has_undefined_value(c: &Construction, id: Id) -> bool {
+    match c.value(id) {
+        Value::Point { x, y } | Value::Vector { x, y } => x.is_infinite() || y.is_infinite(),
+        Value::Function => {
+            let Def::Expr(d) = c.def(id) else {
+                return false;
+            };
+            let e = entry(c, d);
+            matches!(e.nodes[e.root as usize], Node::Un(Un::X | Un::Y, _))
+                && e.vars == 0
+                && c.function_value(id, 0.0).is_some_and(f64::is_nan)
+        }
+        _ => false,
     }
 }
 
@@ -2776,7 +2802,14 @@ fn add_entry(
     angle_style: AngleStyle,
 ) -> Result<Id, Error> {
     let index = u32::try_from(c.exprs.entries.len()).map_err(|_| Error::UnknownObject)?;
-    let independent = entry.inputs.is_empty();
+    // A command in a point expression supplies an algorithm output even
+    // when all its own inputs are literals (for example If(true, 1/0, 0)).
+    let independent = entry.inputs.is_empty()
+        && (kind != Kind::Point
+            || !entry
+                .nodes
+                .iter()
+                .any(|node| matches!(node, Node::Cmd(..) | Node::If(IfMode::Algo, ..))));
     c.exprs.entries.push(entry);
     c.exprs.pending = Some(index);
     let result = c.add(

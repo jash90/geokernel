@@ -619,6 +619,9 @@ fn files_saved_after_moves_agree_with_what_geogebra_computed_when_saving() {
                     "saved-vertex-image-003",
                     // Its values are deliberately stale. The replay test checks the clamped values.
                     "saved-slider-bounds-001",
+                    // The loaded self-intersection differs from its live
+                    // snapshot; its file-load behaviour is tested separately.
+                    "saved-keptvalues-002",
                     // Its numbers are rounded in the file; checked above.
                     "saved-strokes-001",
                     // `tests/export.rs` compares the visibility and the
@@ -801,4 +804,15 @@ fn an_undefined_regular_polygon_reloads_its_saved_vertices() {
     c.set_number(r, 0.5).unwrap();
     assert_eq!(c.value(p), Value::Undefined);
     assert_eq!(c.value(d), updated);
+}
+
+#[test]
+fn a_saved_self_intersection_follows_the_reference_load_order() {
+    let (_, imported) = fixture("saved-keptvalues-002");
+    assert!(imported.skipped.is_empty(), "{:?}", imported.skipped);
+    let c = script::load(&imported.script.join("\n")).unwrap();
+    let value = |label| c.value(c.id(label).unwrap());
+    assert_eq!(value("P"), Value::Undefined);
+    assert!(value("X").is_defined());
+    assert_eq!(value("Q"), value("X"));
 }

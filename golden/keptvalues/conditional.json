@@ -1,0 +1,115 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "keptvalues-conditional-001",
+      "group": "keptvalues",
+      "script": [
+        "a = 0",
+        "m = 3",
+        "u = If(a > 0, Take({1, 2}, m) + 1, {0})"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 1.0 },
+        { "action": "set_number", "label": "m", "value": 4.0 },
+        { "action": "set_number", "label": "a", "value": 1.0 }
+      ],
+      "snapshots": [
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 3.0 },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 0.0 },
+          "m": { "type": "number", "defined": true, "value": 4.0 },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 0.0 }
+            ]
+          }
+        },
+        {
+          "a": { "type": "number", "defined": true, "value": 1.0 },
+          "m": { "type": "number", "defined": true, "value": 4.0 },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-conditional-002",
+      "group": "keptvalues",
+      "script": [
+        "m = 1",
+        "t = Take({1, 2}, m)",
+        "u = If(false, t) + 1"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "set_number", "label": "m", "value": 4.0 }
+      ],
+      "snapshots": [
+        {
+          "m": { "type": "number", "defined": true, "value": 1.0 },
+          "t": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": true, "value": 1.0 },
+              { "type": "number", "defined": true, "value": 2.0 }
+            ]
+          },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        },
+        {
+          "m": { "type": "number", "defined": true, "value": 4.0 },
+          "t": { "type": "list", "defined": false },
+          "u": {
+            "type": "list",
+            "defined": true,
+            "elements": [
+              { "type": "number", "defined": false },
+              { "type": "number", "defined": false }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

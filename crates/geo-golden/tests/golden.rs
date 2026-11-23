@@ -153,3 +153,20 @@ fn fitted_svg_view_contains_bounded_conics() {
         assert!(view.xmax >= 30.0 && view.ymax >= 30.0, "{view:?}");
     }
 }
+
+#[test]
+fn a_rolled_back_addition_restores_take_slots() {
+    let cases = model::load_all(&repo_root()).unwrap();
+    let case = cases
+        .iter()
+        .find(|c| c.id == "keptvalues-checkpoint-002")
+        .unwrap();
+    let mut c = script::load(&case.script[..3].join("\n")).unwrap();
+    let n = c.id("n").unwrap();
+    assert_eq!(c.value(n), Value::Number(0.0));
+    let checkpoint = c.checkpoint();
+    script::exec(&mut c, &case.script[3]).unwrap();
+    assert_eq!(c.value(n), Value::Number(2.0));
+    c.rollback(checkpoint).unwrap();
+    assert_eq!(c.value(n), Value::Number(0.0));
+}

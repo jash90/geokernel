@@ -1749,7 +1749,7 @@ fn typed_slider_assignments_reveal_interval_roots() {
 }
 
 #[test]
-fn points_from_a_growing_list_keep_their_labels_after_reload() {
+fn a_saved_surplus_list_point_stays_undefined_when_the_list_regrows() {
     let src = "a = 1\nl = If(a > 0, {{a, 2}}, {{a, 2}, {3, 4}})\nP = Point(l)";
     let mut w = Workbench::from_script(src).unwrap();
     assert!(w.construction().id("A").is_none());
@@ -1764,11 +1764,12 @@ fn points_from_a_growing_list_keep_their_labels_after_reload() {
     let id = restored.construction().id("A").unwrap();
     assert_eq!(restored.construction().value(id), Value::Undefined);
     restored.run_line("a = 0").unwrap();
+    assert_eq!(restored.construction().value(id), Value::Undefined);
+    let b = restored.construction().id("B").unwrap();
     assert_eq!(
-        restored.construction().value(id),
+        restored.construction().value(b),
         Value::Point { x: 3.0, y: 4.0 }
     );
-    assert!(restored.construction().id("B").is_none());
 }
 
 #[test]
@@ -1961,4 +1962,40 @@ fn deleting_an_object_replays_labels_another_command_took() {
     let p = w.construction().id("P").unwrap();
     assert!(w.delete(p));
     assert_eq!(labelled_values(&w), before);
+}
+
+#[test]
+fn replay_and_redo_keep_successful_takes_before_an_invalid_update() {
+    let mut w = Workbench::from_script("m = 3\nt = Take({1, 2}, m)\nn = Length(t + 1)\nD = (0, 0)")
+        .unwrap();
+    let m = w.construction().id("m").unwrap();
+    let n = |w: &Workbench| w.construction().value(w.construction().id("n").unwrap());
+    assert_eq!(n(&w), Value::Number(0.0));
+    assert!(w.set_number(m, 1.0));
+    assert!(w.set_number(m, 4.0));
+    assert_eq!(n(&w), Value::Number(2.0));
+    assert!(w.delete(w.construction().id("D").unwrap()));
+    assert_eq!(n(&w), Value::Number(2.0));
+    assert!(w.undo());
+    assert!(w.redo());
+    assert_eq!(n(&w), Value::Number(2.0));
+}
+
+#[test]
+fn adding_a_construction_step_can_grow_point_outputs() {
+    let mut w = Workbench::from_script(
+        "s = ConstructionStep()\nl = If(s == 4, {{1, 2}, {3, 4}}, {{1, 2}})\nP = Point(l)",
+    )
+    .unwrap();
+    assert!(w.construction().id("A").is_none());
+    w.run_line("Z = (7, 7)").unwrap();
+    let check = |w: &Workbench| {
+        let c = w.construction();
+        assert_eq!(c.value(c.id("A").unwrap()), Value::Point { x: 3.0, y: 4.0 });
+    };
+    check(&w);
+    assert!(w.undo());
+    assert!(w.construction().id("A").is_none());
+    assert!(w.redo());
+    check(&w);
 }

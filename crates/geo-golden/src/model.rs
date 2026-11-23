@@ -1321,7 +1321,9 @@ fn validate_case(case: &Case) -> Result<(), String> {
                     }
                     match snap[key].kind {
                         Kind::Point => {
-                            names.point(key) || rotated_prefixes.contains(label_prefix(key))
+                            names.point(key)
+                                || rotated_prefixes.contains(label_prefix(key))
+                                || has_point_list && POINT_LABELS.contains(&label_prefix(key))
                         }
                         Kind::Segment => names.segment(key),
                         // `Directrix` gives both lines the script label, so the

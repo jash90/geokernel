@@ -84,34 +84,6 @@ impl CurveIntersection {
         }
     }
 
-    pub(super) fn retains_output(self, c: &Construction) -> bool {
-        use crate::algo::analysis::AnalysisDef;
-        if !matches!(self.method, Method::Line(_)) || c.value(self.curve).is_defined() {
-            return false;
-        }
-        let Def::Analysis(AnalysisDef::Spline(input)) = c.def(self.curve) else {
-            return false;
-        };
-        // IntersectLineSpline leaves the previous roots when adjacent
-        // input points coincide and the spline cannot be rebuilt.
-        let Some(points) = c.elements(input.points) else {
-            return false;
-        };
-        let work = IntersectionWork::new();
-        let mut previous = None;
-        for i in 0..points.len() {
-            if !work.charge(1) {
-                break;
-            }
-            let current = points.raw_point(i).map(Value::cartesian);
-            if matches!(current, Some(Value::Point { .. })) && current == previous {
-                return true;
-            }
-            previous = current;
-        }
-        false
-    }
-
     pub(super) fn can_grow(self) -> bool {
         matches!(self.method, Method::Line(0) | Method::Pair(0))
     }
@@ -244,8 +216,32 @@ impl Group for CurveIntersection {
     }
 }
 
+fn retained_spline(c: &Construction, curve: Id) -> Option<Cartesian<'_>> {
+    use crate::algo::analysis::AnalysisDef;
+    let Def::Analysis(AnalysisDef::Spline(input)) = c.def(curve) else {
+        return None;
+    };
+    // AlgoSpline leaves its functions in place when coincident points
+    // make the solve fail. AlgoIntersectLineCurve reads those functions.
+    let points = c.elements(input.points)?;
+    let work = IntersectionWork::new();
+    let mut previous = None;
+    for i in 0..points.len() {
+        if !work.charge(1) {
+            break;
+        }
+        let current = points.raw_point(i).map(Value::cartesian);
+        if matches!(current, Some(Value::Point { .. })) && current == previous {
+            return Cartesian::retained_spline(c, curve, input);
+        }
+        previous = current;
+    }
+    None
+}
+
 fn line_roots(c: &Construction, curve: Id, line: Id) -> CurveRoots {
-    let Some((cartesian, carrier)) = Cartesian::new(c, curve).zip(Carrier::of(c, line)) else {
+    let cartesian = Cartesian::new(c, curve).or_else(|| retained_spline(c, curve));
+    let Some((cartesian, carrier)) = cartesian.zip(Carrier::of(c, line)) else {
         return Vec::new();
     };
     let (start, end) = cartesian.parameter_bounds();

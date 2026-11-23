@@ -108,12 +108,16 @@ pub fn load_with_assets(
     for (i, raw) in src.lines().enumerate() {
         let slider = slider_assignment_target(&c, raw);
         let before = c.len();
+        let step_before = c.step();
         let first = exec(&mut c, raw).map_err(|message| ScriptError {
             line: i + 1,
             message,
         })?;
         if let Some(first) = first.filter(|_| c.len() > before) {
             groups.record(&c, raw, first, c.len() - before);
+        }
+        if c.step() != step_before {
+            groups.grow_after_step(&mut c, |_, _, _| {});
         }
         if let Some(id) = slider {
             groups.grow(&mut c, id, |_, _, _| {});

@@ -617,7 +617,7 @@ impl Log {
     }
 
     pub(crate) fn record_update(&mut self, c: &Construction, label: &str, to: Setting) {
-        self.push_set(label, to, c.last_update_changed_automatic_root());
+        self.push_set(label, to, c.last_update_requires_ordered_replay());
     }
 
     fn push_set(&mut self, label: &str, to: Setting, ordered: bool) {
@@ -725,6 +725,19 @@ impl Log {
         released || recorded
     }
 
+    pub(crate) fn grow_after_step(
+        &mut self,
+        c: &mut Construction,
+        groups: &mut BoundaryOutputs,
+    ) -> bool {
+        let mut recorded = false;
+        let released = groups.grow_after_step(c, |c, id, line| {
+            recorded = true;
+            self.record_definition(c, c.len(), Some(id), line);
+        });
+        released || recorded
+    }
+
     fn keep_last_set(&mut self) {
         if let Some(Op::Set {
             label,
@@ -818,8 +831,16 @@ impl Log {
         else {
             return false;
         };
-        let grown = (BoundaryOutputs::is_command(entry.rhs())
-            || boundary_slot_owner(entry.rhs()).is_some())
+        let appended_list_point = boundary_slot_owner(entry.rhs()).is_some()
+            && c.id(label).is_some_and(|id| {
+                matches!(
+                    c.def(id),
+                    Def::Point(geo_kernel::algo::point::PointDef::Coordinates { .. })
+                )
+            });
+        let grown = (!appended_list_point
+            && (BoundaryOutputs::is_command(entry.rhs())
+                || boundary_slot_owner(entry.rhs()).is_some()))
         .then(|| {
             self.grown_groups()
                 .into_iter()
@@ -1114,7 +1135,7 @@ impl Log {
                     // A set right after a set of the same object is merged
                     // into it by `record_set` (after a `remove` they can
                     // meet): the journal and `kept` part there.
-                    let keep_order = *ordered || c.last_update_changed_automatic_root();
+                    let keep_order = *ordered || c.last_update_requires_ordered_replay();
                     let merges = !keep_order
                         && i > 0
                         && matches!(
@@ -1344,7 +1365,7 @@ impl Log {
                     kept.push_set(
                         label,
                         *to,
-                        *ordered || c.last_update_changed_automatic_root(),
+                        *ordered || c.last_update_requires_ordered_replay(),
                     );
                 }
                 Op::MovePoints(points) => {
@@ -1705,10 +1726,14 @@ impl Log {
                         }
                         let expected = (checked || listed.is_some()).then_some(named.as_slice());
                         let before = c.len();
+                        let step_before = c.step();
                         let slider = geo_kernel::script::slider_assignment_target(&c, &line);
                         let first = log.define_checked(&mut c, &line, expected)?;
                         if let Some(id) = first {
                             groups.record(&c, &line, id, c.len() - before);
+                        }
+                        if grow && c.step() != step_before {
+                            log.grow_after_step(&mut c, &mut groups);
                         }
                         match slider {
                             Some(id) if grow => {
@@ -1837,6 +1862,7 @@ impl Log {
             }
             check_names(&line).map_err(at)?;
             let before = c.len();
+            let step_before = c.step();
             let labels = comment
                 .and_then(snapshot_labels)
                 .map(|labels| labels.split(',').map(str::trim).collect::<Vec<_>>());
@@ -1859,6 +1885,9 @@ impl Log {
             log.apply_hidden_requests(&mut c);
             if let Some(id) = first.filter(|_| grow) {
                 groups.record(&c, &line, id, c.len() - before);
+            }
+            if grow && c.step() != step_before {
+                log.grow_after_step(&mut c, &mut groups);
             }
             if let Some(id) = slider.filter(|_| grow) {
                 log.grow_boundary_outputs(&mut c, &mut groups, std::iter::once(id));

@@ -58,7 +58,6 @@ impl BoundaryDef {
     pub(crate) fn retains_output(self, c: &Construction) -> bool {
         match self.0 {
             Intersection::Implicit(d) => d.retains_output(c),
-            Intersection::Cartesian(d) => d.retains_output(c),
             _ => false,
         }
     }

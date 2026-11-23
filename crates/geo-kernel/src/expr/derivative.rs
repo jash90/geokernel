@@ -233,7 +233,7 @@ impl Walker<'_> {
             Un::Log2 => (du / u) / LN_2,
             Un::Gamma => (self.digamma(u) * math::gamma(u)) * du,
             Un::Factorial => (self.digamma(u + 1.0) * math::factorial(u)) * du,
-            Un::X | Un::Y | Un::Not => 0.0,
+            Un::X | Un::Y | Un::Length | Un::Not => 0.0,
         }
     }
 

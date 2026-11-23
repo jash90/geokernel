@@ -1,0 +1,108 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "keptvalues-selfintersect-001",
+      "group": "keptvalues",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 0)",
+        "r = Distance(A, B)",
+        "k = Circle(A, r)",
+        "C = (-5, 1)",
+        "D = (5, 1)",
+        "g = Line(C, D)",
+        "X = Intersect(g, k, 1)",
+        "P = Intersect(k, k, 1)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -5.0, "y": 2.0 },
+        { "action": "move", "label": "B", "x": 0.0, "y": 3.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "C": { "type": "point", "defined": true, "x": -5.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 10.0, "c": -10.0 },
+          "X": { "type": "point", "defined": true, "x": -2.82842712474619, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -2.82842712474619, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "C": { "type": "point", "defined": true, "x": -5.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 10.0, "c": -15.0 },
+          "X": { "type": "point", "defined": true, "x": -2.440930065469707, "y": 1.7440930065469706 },
+          "P": { "type": "point", "defined": true, "x": -2.82842712474619, "y": 1.0 }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 3.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "C": { "type": "point", "defined": true, "x": -5.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 10.0, "c": -15.0 },
+          "X": { "type": "point", "defined": true, "x": -2.440930065469707, "y": 1.7440930065469706 },
+          "P": { "type": "point", "defined": true, "x": -2.440930065469707, "y": 1.7440930065469706 }
+        }
+      ]
+    },
+    {
+      "id": "keptvalues-selfintersect-002",
+      "group": "keptvalues",
+      "script": [
+        "A = (0, 0)",
+        "B = (3, 0)",
+        "r = Distance(A, B)",
+        "k = Circle(A, r)",
+        "C = (-5, 1)",
+        "D = (5, 1)",
+        "g = Line(C, D)",
+        "X = Intersect(g, k, 1)",
+        "P = Intersect(k, k, 1)",
+        "Q = Intersect(k, k, 2)"
+      ],
+      "steps": [
+        { "action": "initial" },
+        { "action": "move", "label": "C", "x": -5.0, "y": 2.0 }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "C": { "type": "point", "defined": true, "x": -5.0, "y": 1.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 0.0, "b": 10.0, "c": -10.0 },
+          "X": { "type": "point", "defined": true, "x": -2.82842712474619, "y": 1.0 },
+          "P": { "type": "point", "defined": true, "x": -2.82842712474619, "y": 1.0 },
+          "Q": { "type": "point", "defined": false }
+        },
+        {
+          "A": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "B": { "type": "point", "defined": true, "x": 3.0, "y": 0.0 },
+          "r": { "type": "number", "defined": true, "value": 3.0 },
+          "k": { "type": "circle", "defined": true, "cx": 0.0, "cy": 0.0, "r": 3.0 },
+          "C": { "type": "point", "defined": true, "x": -5.0, "y": 2.0 },
+          "D": { "type": "point", "defined": true, "x": 5.0, "y": 1.0 },
+          "g": { "type": "line", "defined": true, "a": 1.0, "b": 10.0, "c": -15.0 },
+          "X": { "type": "point", "defined": true, "x": -2.440930065469707, "y": 1.7440930065469706 },
+          "P": { "type": "point", "defined": true, "x": -2.82842712474619, "y": 1.0 },
+          "Q": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

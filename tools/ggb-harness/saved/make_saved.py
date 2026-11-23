@@ -664,6 +664,16 @@ case("slowplot", [
     "h = SlowPlot(l, false)", "k = SlowPlot(x^2, 0)",
 ], [])
 
+topic("keptvalues")
+case("keptvalues", [
+    "a = 1", "l = If(a > 0, {{a, 2}}, {{a, 2}, {3, 4}})", "P = Point(l)",
+], [{"action": "set_number", "label": "a", "value": value} for value in (0, 1)])
+case("keptvalues", [
+    "A = (0, 0)", "B = (3, 0)", "r = Distance(A, B)", "k = Circle(A, r)",
+    "C = (-5, 1)", "D = (5, 1)", "g = Line(C, D)", "X = Intersect(g, k, 1)",
+    "P = Intersect(k, k, 1)", "Q = Intersect(k, k, 2)",
+], [mv("C", -5, 2)])
+
 out = Path(__file__).with_name("saved.json")
 lines = ",\n".join("    " + json.dumps(c, separators=(", ", ": ")) for c in cases)
 out.write_text('{\n  "cases": [\n' + lines + "\n  ]\n}\n")

@@ -132,7 +132,7 @@ fn is_equal(a: f64, b: f64) -> bool {
 }
 
 /// GeoGebra's `MyMath.length`: no overflow, no underflow.
-fn my_length(x: f64, y: f64) -> f64 {
+pub(super) fn my_length(x: f64, y: f64) -> f64 {
     let (ax, ay) = (x.abs(), y.abs());
     if ax == 0.0 {
         ay
@@ -603,7 +603,9 @@ impl Group for MeasureDef {
             }
             MeasureDef::Radius(k) => {
                 if c.kind(k) == Kind::Circle {
-                    return number(circle_radius(c, k)?);
+                    return number(circle_radius(c, k).or_else(|| {
+                        super::circle::infinite_center_record(c, c.def(k)).map(|(_, _, r)| r)
+                    })?);
                 }
                 let d = conic_object(c, k)?;
                 match d.ty {

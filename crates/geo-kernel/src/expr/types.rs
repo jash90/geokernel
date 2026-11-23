@@ -924,7 +924,7 @@ fn scalar_unary_type(op: Un, a: Ty) -> Result<Ty, String> {
     match (op, numeric(a)) {
         (Un::X | Un::Y, Ty::Vec) => Ok(Ty::Num(0)),
         (Un::X | Un::Y, Ty::Num(_)) => Err("`x()` and `y()` need a point or a vector".into()),
-        (Un::Abs, Ty::Vec) => Ok(Ty::Num(0)),
+        (Un::Abs | Un::Length, Ty::Vec) => Ok(Ty::Num(0)),
         (_, Ty::Vec) => Err("complex numbers are not supported".into()),
         (Un::Abs | Un::Floor | Un::Ceil | Un::Round, Ty::Num(d)) => Ok(Ty::Num(d)),
         // `MyDouble.asin(true)`: `makeAngle`

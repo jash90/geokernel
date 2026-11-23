@@ -903,6 +903,7 @@ pub struct Checkpoint {
     lists: usize,
     exprs: usize,
     frozen_line_starts: usize,
+    protocol_list_changes: usize,
     image_assets: usize,
     step: usize,
     /// How many rollbacks the construction had made when it was taken.
@@ -1056,10 +1057,19 @@ pub struct Construction {
     /// Most recently added output for each pair owns its solver state.
     line_conic_pairs: BTreeMap<(Id, Id), usize>,
     continuous_conic_intersections: bool,
+    // Edges that must send an update even when their source value stays
+    // equal, along the input graph of a circle intersected with itself.
+    self_circle_updates: BTreeMap<Id, BTreeSet<Id>>,
+    self_circle_outputs: Vec<Id>,
     pub(crate) function_roots: algo::intersect::functions::FunctionRootCache,
     pub(crate) clips: algo::polygon_clip::ClipCache,
     pub(crate) analysis: AnalysisCache,
     last_update_changed_automatic_root: bool,
+    pub(crate) last_update_changed_list_record: bool,
+    // An addition can update ConstructionStep readers before it commits.
+    // Save their previous list records so discarding the addition is exact.
+    protocol_list_changes: Vec<(ExprDef, expr::ListRecords)>,
+    record_protocol_list_changes: bool,
     /// The states of the points on paths, with the index of each point, in
     /// creation order.
     paths: Vec<(usize, PathState)>,
@@ -1734,6 +1744,7 @@ impl Construction {
             lists: self.lists.len(),
             exprs: self.exprs.len(),
             frozen_line_starts: self.frozen_line_starts.len(),
+            protocol_list_changes: self.protocol_list_changes.len(),
             image_assets: self.images.asset_count(),
             step: self.step,
             generation: self.generation,
@@ -1776,6 +1787,7 @@ impl Construction {
             return Err(StaleCheckpoint);
         }
         self.discard_since(at);
+        self.protocol_list_changes.clear();
         self.generation += 1;
         Ok(())
     }
@@ -1832,6 +1844,14 @@ impl Construction {
             }
         }
         self.evaluation_order.discard_since(at.len);
+        if self
+            .self_circle_outputs
+            .last()
+            .is_some_and(|id| id.0 >= at.len)
+        {
+            self.self_circle_outputs.retain(|id| id.0 < at.len);
+            self.rebuild_self_circle_updates();
+        }
         // A removed object may have opened an element before a surviving
         // one if it was created after navigating back. Normally only the
         // tail changes, so a brief probe need not scan the whole protocol.
@@ -1855,6 +1875,13 @@ impl Construction {
         self.view_readers
             .truncate(self.view_readers.partition_point(|&i| i < at.len));
         self.lists.truncate(at.lists.min(self.lists.len()));
+        while self.protocol_list_changes.len() > at.protocol_list_changes {
+            let (def, previous) = self
+                .protocol_list_changes
+                .pop()
+                .expect("list record change");
+            expr::restore_list_records(self, def, previous);
+        }
         self.exprs.truncate(at.exprs, at.len);
         self.function_roots.clear();
         self.clips.clear();
@@ -2169,8 +2196,10 @@ impl Construction {
                 dirty.insert(self.evaluation_rank(child));
             }
         }
+        self.rebuild_self_circle_updates();
         self.propagate_dirty(dirty, 0, true);
         // A checkpoint only stores lengths, so it cannot restore a changed definition.
+        self.protocol_list_changes.clear();
         self.generation += 1;
         Ok(Some(id))
     }
@@ -2604,6 +2633,12 @@ impl Construction {
         }
         self.defs.push(def);
         self.values.push(value);
+        if let Def::IntersectCircles { c1, c2, .. } = def {
+            if c1 == c2 {
+                self.self_circle_outputs.push(id);
+                self.track_self_circle_update(c1, id);
+            }
+        }
         if def.kind() == Kind::Image {
             self.register_transformed_image(id, def);
         }
@@ -2640,7 +2675,9 @@ impl Construction {
             self.view_readers.push(id.0);
         }
         if reads_step || matches!(element, ProtocolEntry::Element(_)) {
+            self.record_protocol_list_changes = true;
             self.update_protocol();
+            self.record_protocol_list_changes = false;
         }
         Ok(id)
     }
@@ -2688,6 +2725,10 @@ impl Construction {
         for (position, &id) in self.elements.iter().enumerate().skip(start) {
             self.element_of[id as usize] = ProtocolEntry::Element(position as u32);
         }
+    }
+
+    pub(crate) fn has_protocol_readers(&self) -> bool {
+        !self.protocol.is_empty()
     }
 
     /// Recomputes the objects that read the construction step and whatever
@@ -2818,6 +2859,7 @@ impl Construction {
     /// still recomputes the intersection, which does not change.
     pub fn move_point(&mut self, id: Id, x: f64, y: f64) -> Result<usize, Error> {
         self.last_update_changed_automatic_root = false;
+        self.last_update_changed_list_record = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -2954,6 +2996,7 @@ impl Construction {
         clamp_slider: bool,
     ) -> Result<usize, Error> {
         self.last_update_changed_automatic_root = false;
+        self.last_update_changed_list_record = false;
         if let Some(axis) = axis::get(id) {
             return Err(Error::NotFree(axis.label.to_string()));
         }
@@ -3011,6 +3054,11 @@ impl Construction {
         self.last_update_changed_automatic_root
     }
 
+    /// A replay must retain edits that change a command's hidden state.
+    pub fn last_update_requires_ordered_replay(&self) -> bool {
+        self.last_update_changed_automatic_root || self.last_update_changed_list_record
+    }
+
     /// Recomputes the descendants of `start` in dependency order.
     ///
     /// A set of dirty indices ([`DirtySet`]) gives the order: the smallest
@@ -3037,6 +3085,7 @@ impl Construction {
         refresh_definitions: bool,
     ) -> usize {
         self.last_update_changed_automatic_root = false;
+        self.last_update_changed_list_record = false;
         self.function_roots.clear();
         self.clips.clear();
         self.analysis.clear();
@@ -3047,6 +3096,11 @@ impl Construction {
             let i = self.evaluation_id(rank);
             let mut def = self.defs[i];
             recomputed += 1;
+            if let Some(children) = self.self_circle_updates.get(&Id(i)) {
+                for &child in children {
+                    dirty.insert(self.evaluation_rank(child));
+                }
+            }
             if refresh_definitions {
                 // A rule can use the structure of an ancestor even when
                 // intermediate objects have exactly the same value.
@@ -3231,6 +3285,39 @@ impl Construction {
         recomputed
     }
 
+    fn rebuild_self_circle_updates(&mut self) {
+        self.self_circle_updates.clear();
+        for index in 0..self.self_circle_outputs.len() {
+            let output = self.self_circle_outputs[index];
+            if let Def::IntersectCircles { c1, c2, .. } = self.def(output) {
+                if c1 == c2 {
+                    self.track_self_circle_update(c1, output);
+                }
+            }
+        }
+    }
+
+    fn track_self_circle_update(&mut self, circle: Id, output: Id) {
+        let mut pending = vec![(circle, output)];
+        let mut remaining = MAX_REDEFINITION_EDGES;
+        while let Some((input, dependent)) = pending.pop() {
+            if !self
+                .self_circle_updates
+                .entry(input)
+                .or_default()
+                .insert(dependent)
+            {
+                continue;
+            }
+            let reads = self.reads(input);
+            let Some(next) = remaining.checked_sub(reads.len()) else {
+                break;
+            };
+            remaining = next;
+            pending.extend(reads.into_iter().map(|parent| (parent, input)));
+        }
+    }
+
     fn refresh_intersection_definition(
         &mut self,
         i: usize,
@@ -3363,9 +3450,21 @@ impl Construction {
     /// Kept out of line so that the loop of [`Self::propagate`] stays small.
     #[inline(never)]
     fn update_expr(&mut self, i: usize, d: ExprDef) -> bool {
+        let revision = expr::list_record_revision(self, d);
+        let previous = self
+            .record_protocol_list_changes
+            .then(|| revision.map(|_| expr::list_records(self, d)))
+            .flatten();
         let (value, changed) = expr::update(self, Id(i), d);
         self.values[i] = value;
-        changed
+        let record_changed = revision != expr::list_record_revision(self, d);
+        if record_changed {
+            self.last_update_changed_list_record = true;
+            if let Some(previous) = previous {
+                self.protocol_list_changes.push((d, previous));
+            }
+        }
+        changed || record_changed
     }
 
     /// Recomputes the conic record of object `i` from its previous record;
@@ -4299,8 +4398,15 @@ impl Construction {
     }
 
     pub(crate) fn point(&self, id: Id) -> Option<(f64, f64)> {
+        self.cartesian_point(id)
+            .filter(|(x, y)| x.is_finite() && y.is_finite())
+    }
+
+    /// A Cartesian point can have an infinite coordinate with weight 1.
+    /// Projective points at infinity have no Cartesian coordinates.
+    pub(crate) fn cartesian_point(&self, id: Id) -> Option<(f64, f64)> {
         match self.value(id) {
-            Value::Point { x, y } if x.is_finite() && y.is_finite() => Some((x, y)),
+            Value::Point { x, y } => Some((x, y)),
             _ => None,
         }
     }

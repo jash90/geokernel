@@ -513,7 +513,11 @@ fn sum_value(c: &Construction, d: &CalculusDef) -> Option<Value> {
         Sum::Lower | Sum::Upper => {
             let negated = sum == Sum::Upper;
             let fmin = |x: f64| if negated { -f(x) } else { f(x) };
-            if step.is_infinite() && source_entry(c, function).is_some_and(|e| e.vars == 0) {
+            if step.is_infinite()
+                && source_entry(c, function)
+                    .or_else(|| c.calculus_record(function)?.tree.as_ref())
+                    .is_some_and(|e| e.vars == 0)
+            {
                 // The extremum of a constant is its height even when
                 // the first bracket starts at a NaN (0 * STEP).
                 f(f64::NAN) * n as f64
@@ -637,9 +641,17 @@ fn lower_upper_area(
             left = java_max(left, min_sample - sub_step);
             right = java_min(right, min_sample + sub_step);
         }
-        let Some(x) = expr::brent_minimum(left, right, SUM_TOLERANCE, fmin, |n| !budget.step(c, n))
-        else {
-            return f64::NAN;
+        let x = if left.is_finite() && right.is_finite() {
+            let Some(x) =
+                expr::brent_minimum(left, right, SUM_TOLERANCE, fmin, |n| !budget.step(c, n))
+            else {
+                return f64::NAN;
+            };
+            x
+        } else {
+            // A bracket with a nonfinite width supplies a NaN argument.
+            // Expressions such as If(x == 0, 2, 1) still have a value there.
+            f64::NAN
         };
         let mut y = fmin(x);
         if y.is_nan() {

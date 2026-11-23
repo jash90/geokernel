@@ -321,7 +321,33 @@ impl<const M: bool> Ctx<'_, M> {
         let mark = lists.len();
         let chosen = self.if_alternative(i);
         lists.truncate(mark);
+        if matches!(self.node(i), Node::If(IfMode::Algo, ..)) {
+            self.update_unchosen_takes(i, chosen);
+        }
         self.list(chosen?)
+    }
+
+    // Inline Take commands are independently updated inputs of AlgoIf.
+    // Traverse the unchosen alternatives without evaluating ordinary operations.
+    fn update_unchosen_takes(&self, node: u32, chosen: Option<u32>) {
+        if Some(node) == chosen || self.stop(1) {
+            return;
+        }
+        match self.node(node) {
+            Node::Call(crate::expr::CallOp::Take, ..) => {
+                let lists = self.lists.expect("list evaluation");
+                let mark = lists.len();
+                self.list(node);
+                lists.truncate(mark);
+            }
+            // These expressions are evaluated with locally bound arguments.
+            Node::Seq(..) | Node::Filter { .. } => {}
+            node => {
+                for child in children(&node) {
+                    self.update_unchosen_takes(child, chosen);
+                }
+            }
+        }
     }
 }
 

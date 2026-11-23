@@ -1,0 +1,32 @@
+{
+  "schema": 4,
+  "generator": "ggb-harness",
+  "upstream_commit": "112919f2d450ec7430a5cd3b65dba226fdc43b74",
+  "cases": [
+    {
+      "id": "keptvalues-cartesian-001",
+      "group": "keptvalues",
+      "script": [
+        "A = (-1/0, 0)",
+        "B = (0, 0)",
+        "d = Distance(A, B)",
+        "k = Circle(A, 1)",
+        "r = Radius(k)",
+        "P = (If(true, 1/0, 0), 1)"
+      ],
+      "steps": [
+        { "action": "initial" }
+      ],
+      "snapshots": [
+        {
+          "A": { "type": "point", "defined": false },
+          "B": { "type": "point", "defined": true, "x": 0.0, "y": 0.0 },
+          "d": { "type": "number", "defined": true, "infinity": 1 },
+          "k": { "type": "circle", "defined": false },
+          "r": { "type": "number", "defined": true, "value": 1.0 },
+          "P": { "type": "point", "defined": false }
+        }
+      ]
+    }
+  ]
+}

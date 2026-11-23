@@ -220,7 +220,34 @@ impl BoundaryOutputs {
         changed: impl Iterator<Item = Id> + Clone,
         record: impl FnMut(&Construction, Id, &str),
     ) -> bool {
-        self.update(c, changed, Some(record))
+        self.update(
+            c,
+            |_, group| changed.clone().any(|id| group.dependencies.contains(&id)),
+            Some(record),
+        )
+    }
+
+    /// Updates growing output groups that read the construction protocol.
+    pub fn grow_after_step(
+        &mut self,
+        c: &mut Construction,
+        record: impl FnMut(&Construction, Id, &str),
+    ) -> bool {
+        if !c.has_protocol_readers() {
+            return false;
+        }
+        self.update(
+            c,
+            |c, group| {
+                group.dependencies.iter().any(|&id| {
+                    matches!(
+                        c.def(id),
+                        Def::Measure(crate::algo::measure::MeasureDef::ConstructionStep(_))
+                    )
+                })
+            },
+            Some(record),
+        )
     }
 
     /// Only the removals of [`Self::grow_after`], for a replay whose
@@ -235,13 +262,17 @@ impl BoundaryOutputs {
         c: &mut Construction,
         changed: impl Iterator<Item = Id> + Clone,
     ) -> bool {
-        self.update(c, changed, None::<fn(&Construction, Id, &str)>)
+        self.update(
+            c,
+            |_, group| changed.clone().any(|id| group.dependencies.contains(&id)),
+            None::<fn(&Construction, Id, &str)>,
+        )
     }
 
     fn update(
         &mut self,
         c: &mut Construction,
-        changed: impl Iterator<Item = Id> + Clone,
+        affected: impl Fn(&Construction, &Outputs) -> bool,
         mut record: Option<impl FnMut(&Construction, Id, &str)>,
     ) -> bool {
         let revision = c.definition_revision();
@@ -254,7 +285,7 @@ impl BoundaryOutputs {
         }
         let mut released = false;
         for group in &mut self.groups {
-            if !changed.clone().any(|id| group.dependencies.contains(&id)) {
+            if !affected(c, group) {
                 continue;
             }
             let Some(anchor) = GrowthAnchor::from_def(c.def(group.first)) else {
